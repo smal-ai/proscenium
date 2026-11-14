@@ -31,6 +31,26 @@ def main():
     plan = read("plan-private.json")
     reservation = read("send-reservation.json")
     audits = [read(f"host-{number}-audit.json") for number in (1, 2)]
+    recorded_processes = list(supervisor["recorded_process_cleanup"])
+    known = {(p["pid"], p["start"]) for p in recorded_processes}
+    for audit in audits:
+        for process in audit["native_processes"]:
+            if (process["pid"], process["start"]) in known:
+                continue
+            try:
+                fields = Path(f"/proc/{process['pid']}/stat").read_text().rsplit(") ", 1)[1].split()
+                gone = fields[19] != process["start"]
+            except FileNotFoundError:
+                gone = True
+            recorded_processes.append(
+                {
+                    **process,
+                    "kind": "sdk-native-producer",
+                    "receipt_source": f"host-{audit['generation']}-audit.json",
+                    "original_kernel_identity_gone": gone,
+                }
+            )
+            known.add((process["pid"], process["start"]))
     stages = {
         path.stem: json.loads(path.read_text())
         for path in sorted((root / "checkpoints").glob("*.json"))
@@ -131,13 +151,13 @@ def main():
             "supervisor": supervisor["supervisor"],
             "controller": supervisor["controller"],
             "controller_exit_code": supervisor["node_exit_code"],
-            "recorded_processes": supervisor["recorded_process_cleanup"],
+            "recorded_processes": recorded_processes,
             "reaped_adopted_children": supervisor["reaped_adopted_children"],
             "remaining_children": supervisor["remaining_children"],
             "signals_to_owned_children": supervisor["signals"],
             "browser_context_close_awaited": browser["browser_close_awaited"],
             "all_recorded_kernel_identities_gone": all(
-                p["original_kernel_identity_gone"] for p in supervisor["recorded_process_cleanup"]
+                p["original_kernel_identity_gone"] for p in recorded_processes
             ),
         },
         "source_hashes_at_export": {
