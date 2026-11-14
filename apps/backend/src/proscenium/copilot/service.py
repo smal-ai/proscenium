@@ -830,7 +830,12 @@ class Copilot:
                         self.state.request_state(tx, record["request_id"], "stopped")
                 work = tx.require("work", work_id)
                 if work["state"] not in TERMINAL:
-                    self.state.work_state(tx, work_id, "stopped")
+                    self.state.work_state(
+                        tx,
+                        work_id,
+                        "stopped",
+                        evidence="Verified Stop barrier: pause and Abort acknowledged, sends and invocations settled, native queue empty",
+                    )
                 self.state.request_state(
                     tx,
                     operation_id,

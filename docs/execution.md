@@ -145,6 +145,13 @@ Stop is a durable control request, not a model prompt. It names the active work 
 
 Stop invalidates unanswered user-input/permission decisions for that work. A racing late answer receives `stale_decision`. It does not cancel independently running jobs. A separate job-cancel operation records `cancel_requested`, calls only that job's supported cancellation method and waits for confirmation. Unsupported cancellation returns `cancel_unsupported` while the job remains visible.
 
+For an explicitly targeted work already `awaiting_resume` or `outcome_uncertain`,
+the **Stop request** records `stop_requested` while the work retains its observed
+recovery state. No unsupported work-state edge or implicit Resume is introduced.
+Only the verified native barrier may take that work to `stopped` through the
+existing reconciliation edge, with recorded evidence. A missing acknowledgement
+or unresolved invocation keeps the control uncertain and admission closed.
+
 ### Deferred steering and the Stop barrier
 
 On Stop admission, fence both Queue delivery and new Steer admission for that work. Retain the native IDs of every accepted directive, including any Steer which became a queued native message during a completion race. Before reporting confirmed Stop, use the pinned runtime's verified queue hold/removal or execution-fencing facility to settle those owned deferred messages. They must be proven cancelled or accounted for as already executed before the barrier. `session.abort()` alone is insufficient because it does not hold the native queue.

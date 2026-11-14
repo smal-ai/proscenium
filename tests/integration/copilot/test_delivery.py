@@ -195,6 +195,74 @@ def test_lost_ack_closes_gate_and_never_blind_resubmits(runtime):
     asyncio.run(run())
 
 
+@pytest.mark.parametrize("recovery_state", ["awaiting_resume", "outcome_uncertain"])
+def test_recovery_stop_records_control_without_an_illegal_work_edge(runtime, recovery_state):
+    async def run():
+        context(runtime)
+        submit(runtime)
+        session = await runtime.session(PROJECT, allow_create=True)
+        await runtime.send(PROJECT, "request-one")
+        work_id = record(runtime)["receipt"]["work_id"]
+        store = runtime.services.registry.project_store(PROJECT)
+        with store.transaction() as tx:
+            runtime.state.work_state(tx, work_id, recovery_state)
+            runtime.state.fence(tx, "awaiting_resume")
+        accepted = submit(runtime, "recovery-stop", "stop", target_work_id=work_id)
+        assert accepted["state"] == "stop_requested"
+        with store.transaction(write=False) as tx:
+            assert tx.require("work", work_id)["state"] == recovery_state
+            assert tx.require("copilot.stops", "recovery-stop")["phase"] == "admitted"
+        assert session.aborts == 0 and len(session.sent) == 1
+        await runtime.stop(PROJECT, work_id, "recovery-stop")
+        assert record(runtime, "recovery-stop")["receipt"]["state"] == "completed"
+        assert session.aborts == 1 and len(session.sent) == 1
+        with store.transaction(write=False) as tx:
+            assert tx.require("work", work_id)["state"] == "stopped"
+            assert tx.require("copilot.stops", "recovery-stop")["pending_empty"]
+            assert runtime.state.control(tx)["fenced"]
+        await runtime.close()
+
+    asyncio.run(run())
+
+
+def test_recovery_stop_does_not_fabricate_an_unfinished_tool_outcome(runtime, monkeypatch):
+    original_sleep = asyncio.sleep
+
+    async def scheduler_tick(_delay):
+        await original_sleep(0)
+
+    async def run():
+        context(runtime)
+        submit(runtime)
+        session = await runtime.session(PROJECT, allow_create=True)
+        await runtime.send(PROJECT, "request-one")
+        work_id = record(runtime)["receipt"]["work_id"]
+        store = runtime.services.registry.project_store(PROJECT)
+        with store.transaction() as tx:
+            runtime.state.work_state(tx, work_id, "awaiting_resume")
+            runtime.state.fence(tx, "awaiting_resume")
+            tx.put(
+                "invocations",
+                "unfinished-native-tool",
+                {"work_id": work_id, "state": "outcome_uncertain"},
+            )
+        submit(runtime, "recovery-stop", "stop", target_work_id=work_id)
+        monkeypatch.setattr(asyncio, "sleep", scheduler_tick)
+        await runtime.stop(PROJECT, work_id, "recovery-stop")
+        assert record(runtime, "recovery-stop")["receipt"]["state"] == "outcome_uncertain"
+        with store.transaction(write=False) as tx:
+            assert tx.require("work", work_id)["state"] == "awaiting_resume"
+            assert tx.require("invocations", "unfinished-native-tool") == {
+                "work_id": work_id,
+                "state": "outcome_uncertain",
+            }
+            assert runtime.state.control(tx)["fenced"]
+        assert session.aborts == 1 and runtime.native.closed
+        await runtime.close()
+
+    asyncio.run(run())
+
+
 def test_scheduler_survives_request_lifetime_and_fifo(runtime):
     async def run():
         await runtime.start()

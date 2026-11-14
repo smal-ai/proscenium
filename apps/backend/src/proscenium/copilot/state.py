@@ -295,7 +295,13 @@ class State:
                         },
                     )
                     self.cancel_decisions(tx, work_id)
-                    if work["state"] not in TERMINAL:
+                    # The control has its own stop_requested receipt. A recovery
+                    # state must not take an undeclared intermediate work edge.
+                    if work["state"] not in TERMINAL | {
+                        "stop_requested",
+                        "awaiting_resume",
+                        "outcome_uncertain",
+                    }:
                         self.work_state(tx, work_id, "stop_requested")
                 tx.enqueue(
                     identity,
