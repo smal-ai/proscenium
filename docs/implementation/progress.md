@@ -48,16 +48,25 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `0b8e9ba` | Actual pre-completion frame annotation/playback, pinned source isolation, detached render survival and final movie lineage. |
 | `2ea26dd`, `134eb2f` | Read-only source backup handles and actual same-session native-history restoration/held-message continuation. Accepted-send ACK-loss remains separate. |
 | `bdea12c` | Actual native sequence assembly, same-work UI Resume, composite annotation, revised edit and matching UI downloads. |
+| `4c14ab4`, `milestone/m03` | Coordinator acceptance of durable discussion, native delegation, Queue/Steer/Stop and explicit continuation. |
+| `a616460`, `milestone/m04` | Coordinator acceptance of static inspection, exact camera renders and saved markup. |
+| `4866886`, `304c245`, `milestone/m05` | Actual `scene-main-v2` adoption of unchanged `asset-cube-v3`, followed by cumulative acceptance. |
+| `b044e89`, `milestone/m06` | Coordinator acceptance of model-authored planning, targeted revisions, owner selection and corrected direct review. |
+| `455840a`, `milestone/m08` | Coordinator acceptance of progressive review, pinned inputs and final frame lineage. |
+| `8da4147`, `milestone/m09` | Coordinator acceptance of actual VLM reviews and exactly-once owner-approved native handoff. |
+| `03dbad1` | Selective ACK filtering reached real native acceptance; the original explicit-cut helper failed. The failed allocation and corrected offline pipe helper are retained. |
+| `b85ce21`, `cc4d1a6`, `289b93a`, `904f733` | Exact native-denial/unentered-checkpoint recovery and validated operation-aware permission classification. Both original M10/M11 records have zero live invocations and await explicit Resume. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| M07 generation | `/home/quintin/.cache/proscenium-development/fleet/m07-generation`, `impl/m07-generation` | `069a854` | Original image-job continuation, then native generation/correction and UI acceptance if resources fit. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
-| Runtime recovery | `/home/quintin/.cache/proscenium-development/fleet/runtime-recovery`, `impl/runtime-recovery` | `0b8e9ba` | Normal Continue assessment and evidence-led diagnosis of stale native coordination/health failures. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
-| M05 adoption | `/home/quintin/.cache/proscenium-development/fleet/m05-adoption`, `impl/m05-adoption` | `bdea12c` | Finish the explicit one-scene adoption and historical inspection with a narrow native continuation. | `ses_e263d813fffefNumtCvVqwR169` |
-| M10 continuation | `/home/quintin/.cache/proscenium-development/fleet/m10-continuation`, `impl/m10-continuation` | `bdea12c` | Reconcile and continue the original generated-asset revision without replacing its Queue or manually running its script. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
-| Accepted ACK-loss | `/home/quintin/.cache/proscenium-development/fleet/m12-accepted-ack`, `impl/m12-accepted-ack` | `0b8e9ba` | Callback-aware actual pipe interruption after native admission, then original-ID reconciliation. | `ses_e25df843bffetn697vChzMs1dn` |
+| M07 FP16 preparation | `/home/quintin/.cache/proscenium-development/fleet/m07-fp16`, `impl/m07-fp16` | `455840a` | Bounded CPU conversion of the verified SD-Turbo checkpoint into a separately identified FP16 derivative/profile. No new inference in this preparation. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
+| Final accepted ACK-loss | `/home/quintin/.cache/proscenium-development/fleet/m12-ack-final`, `impl/m12-ack-final` | `03dbad1` | Preflighted selective-response loss, persisted pre-cut facts, real pipe closure and original-ID reconciliation. | `ses_e25df843bffetn697vChzMs1dn` |
+| M10 final continuation | `/home/quintin/.cache/proscenium-development/fleet/m10-final`, `impl/m10-final` | `904f733` | One original-work Continue, canonical asset revision and native checkpoint/publication. No inference. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
+| M11 final publication | `/home/quintin/.cache/proscenium-development/fleet/m11-final`, `impl/m11-final` | `904f733` | One original-work Continue to checkpoint/publish the existing tested Unity scene. No new children, Editors or exports. | `ses_e24cae3afffeduGiWpAGVlgj62` |
+| Stateless Geometry Nodes | `/home/quintin/.cache/proscenium-development/fleet/geometry-nodes`, `impl/geometry-nodes` | `03dbad1` | Bounded stateless Geometry Nodes presentation and actual model-authored CPU/native proof. Unsupported simulation/cache/import dependencies remain explicit. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
+| M14 SSH/review | `/home/quintin/.cache/proscenium-development/fleet/m14-ssh`, `impl/m14-ssh` | `904f733` | Actual message continuity, selected-video playback/download and saved feedback over authenticated SSH, followed by configured-unavailable service review. | `ses_e24c92d5effec3g3ZSSa6I6Ytm` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
@@ -65,20 +74,29 @@ The later composed F00 baseline passed 26 unit, 45 contract and 292 offline inte
 
 The subsequent integrated run at `e3cddf8` passed **26 unit, 45 contract and 488 offline integration tests**. Recovery-Stop admission changes additionally passed 31 targeted delivery/fault/cancellation tests. No native execution was inferred from those checks.
 
+The integrated browser matrix has **173 passing unique cases** across Chromium, Brave,
+Edge and the DPR-2 review subset. It combines 109 initial passes and 64 remainder
+passes after correcting an Edge test-oracle timing race, with no production change
+between those runs. [The exact matrix](../evidence/browser-matrix-20261114.json)
+preserves that execution history. At `904f733`, **77 affected recovery/permission/evidence
+checks passed**. These are additional scoped checks, not a relabelled full baseline run.
+
 ## Current acceptance blockers
 
-- W07's original `w07-live-initial` remains planned with one reservation and no prompt/client ID. Its 600-second allocation ended before inference because host RAM stayed below 20,427,268,612 bytes. Preserve that identity for a separately allocated continuation.
-- E04 `e04-live-a` created no project, job, reservation or native process. The distinct `e04-live-b` passed hardware execution under the unchanged guards. M10 still needs static inspection and normal revision/reuse acceptance.
+- W07's original `w07-live-initial` remains planned with one reservation and no prompt/client ID. Both original and append-only continuation windows ended without inference. The separate SD-Turbo F32 profile also failed before startup, short of its unchanged floor by 288,244,784 bytes. Its original checkpoint is preserved while a bounded, separately identified FP16 derivative is prepared.
+- E04 `e04-live-a` created no project, job, reservation or native process. The distinct `e04-live-b` passed hardware execution under the unchanged guards. M10 static inspection passed; its normal revision/publication is now allocated to the original work.
 - M02 is accepted. Its clean A→B run and real closed-gate cancellation supplement the preserved historical-source proof.
 - M03 proved active-child Stop, economical native delegation, queued context and durable owner input. The cinematic journey additionally proved actual same-work Continue through the corrected UI. Older genuinely interrupted invocations remain a recovery diagnosis; no terminal return is invented.
-- M05 proved metadata discovery, real Khronos acquisition, editable import/revision and a real asset render. A test selector included floor/wall geometry and stopped its adoption script. The explicit scene-adoption continuation remains unexecuted. Re-selecting the current version is fixed.
-- M06's actual planning/revision/selection proof is retained. The shared-reference readiness defect now passes an actual guarded application replay without further model calls.
-- M09's positive journey passed after two narrowly scoped VLM fixes. Only the owned Gemma instance was unloaded; Qwen and the saved profile remained unchanged. Milestone acceptance still depends on M03/M04.
-- M10 has actual proxy inspection but its original revision request was fenced before Blender launch. Late proxy association and duplicate permission-stage defects are fixed. Preserve request `927cf238-56c2-454e-a063-014e072f9010` and session `5971843f-f216-40f8-b8cb-995675f48161` for explicit continuation; no replacement Queue or manual script execution.
+- M05 is accepted. The final native scene adoption was saved and published as `scene-main-v2`, pinning unchanged `asset-cube-v3`; alternate scene v1 retains asset v1. Earlier failed scripts/reports are preserved.
+- M06 is accepted. The shared-reference readiness correction passed an actual guarded application replay without further model calls.
+- M09 is accepted after M03/M04. Both real review origins and exactly-once approved handoff passed; only the owned Gemma instance was unloaded. Qwen and the saved profile remained unchanged.
+- M10's exact native commands denial is reconciled, with orphaned reply/authority/ACK facts preserved. Request `927cf238-56c2-454e-a063-014e072f9010`, work `work-bc19a5da5fcd4aaf9ae552a13d06b20d` and session `5971843f-f216-40f8-b8cb-995675f48161` now have a bounded original-work continuation. No revised v2 is claimed before its result.
 - W10's protected-process blocker is fixed. The final SSH audit passed. Same-host transport/API traffic does not itself close full model-message/video playback or cumulative M12/M14.
-- M08's native progressive path and detached-worker recovery passed. M11 import and PlayMode passed, but the original publication root is held by an unresolved native parent-task outcome. M12 restored the real M01 native session and delivered a held request once in the relocated project; its first pipe-loss placement was pre-admission and remains unproved for accepted ACK loss.
+- M08 is accepted after M04/M06. M11 import/PlayMode passed. The `tool-install.json` permission false positive is fixed and the unentered wait is reconciled without an invented owner answer. Original request `1a914aa8-2bbc-461a-a87d-1bb7431de02c` and work `work-4a7e644e78514109b4a5232316e3aacc` now have a publication-only continuation. No Unity publication is claimed before its result.
+- M12 restored the real M01 native session and delivered a held request once in the relocated project. Its latest selective ACK-loss test reached native acceptance, but a pipe-helper type assumption prevented the explicit cut. The next proof preflights that helper and persists acceptance/withheld-response facts before cutting; previous attempts remain failed/partial.
 - M07 host pressure is now materially external: the latest observation was 14,436,642,816 bytes available. An unrelated SQL Server used about 5 GiB RSS and a Blender instance in `smal-ai-blender` about 3 GiB. Neither is owned by this build or eligible for cleanup. The original cold-fit threshold is unchanged.
 - Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
+- FR-08.4's stateless Geometry Nodes presentation gap is assigned. M14 additionally needs the remaining provider/recovery evidence, the complete SSH message/video journey and revision-aware consolidated release validation.
 
 ## Resource allocations
 
@@ -107,7 +125,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M10 | W09 agent | No inference. Two cloud roots, one authoring process, one readback, two proxy exports and two 640×360 CPU keyframes maximum. Four threads/eight samples; preserve four-GiB host headroom and the original E04 project. |
 | M02 follow-up | M02 agent | Two small read-only roots maximum, no children/native authoring/rendering. Actual UI project switch and planned-preview cancellation only. |
 | M03 Resume | W01 agent | One SDK continuation send and at most one product child; 180-second root and 90-second harmless helper bounds. No replacement Queue, renderer or provider. |
-| M07 continuation/native | W07 agent, active exclusive GPU allocation | Preserve original job/attempt/task/reservation in append-only window `w07-continuation-b`, with unchanged cold-fit threshold. At most three Comfy executions total: original 64×64 plus two native 256×256/four-step image cases. Three cloud roots maximum, no children. No service lifecycle changes. |
+| M07 continuation/native, consumed without inference | W07 agent | Original job/attempt/task/reservation remain in append-only window `w07-continuation-b`, with unchanged cold-fit threshold. No generation or native request was admitted in that continuation window. |
 | M08 | W03 agent | Three roots/one child maximum, eighteen 640×360 CPU frames/eight samples/four threads, one proxy and two bounded authoring/inspection processes. One owned-backend kill tests detached-worker recovery. |
 | M11 | W08 agent | Three roots/two product children maximum, three bounded Unity invocations and one Blender export. Actual import/PlayMode/result publication; no GPU inference. |
 | M12 native | W10 agent | Two read-only SDK sends maximum, no children/native authoring/providers. Exact native-history recovery and one owned transport interruption only. |
@@ -116,6 +134,12 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M05 adoption follow-up | W06 agent | One SDK root, one bounded authoring/inspection process, one proxy and one optional CPU still. No reacquisition or inference. |
 | M10 continuation | W09 agent | One original-work SDK continuation, one authoring process/readback, one proxy and one CPU still. No new Queue, manual script execution or GPU inference. |
 | M12 accepted ACK-loss | W10 agent | One SDK send, no tools/children/providers. Genuine hook reply precedes stdout gating and actual pipe closure. Old uncertain request is not retried. |
+| M07 FP16 conversion | W07 agent | CPU-only streaming conversion of the existing F32 checkpoint, at most 1 GiB conversion RSS and 300 seconds. Preserve original bytes, non-F32 tensors and metadata, reject overflow/non-finite conversion. Four-GiB host headroom. No service/model execution or second download. |
+| M12 final selective proof | W10 agent | One SDK send after actual buffered/unbuffered pipe and import/path preflight. Persist RPC/response/native-acceptance facts before the real cut. No second send, local provider or native authoring. |
+| M10 final continuation | W09 agent | One original-work SDK continuation, 180 seconds, after exact denial recovery. At most one four-thread Blender authoring/readback, one proxy and one 640×360/eight-sample CPU still under the existing resource claim. Four-GiB host headroom. No new Queue or inference. |
+| M11 final publication | W08 agent | One original-work SDK continuation, 180 seconds. Existing saved/tested scene only. Zero children, Editors, Blender, exports or renders. New private before/after snapshots and one bounded Full-HD browser/server stack. |
+| Stateless Geometry Nodes | W03 agent | One native root, 180 seconds, no children. One four-thread authoring process, one proxy and at most two 640×360/eight-sample CPU stills, 300-second worker bounds and shared render claim. Four-GiB host headroom. No simulation, GPU or provider execution. |
+| M14 SSH/review | W10 agent | One read-only SDK Queue, 180 seconds. One private fixture-key loopback sshd and at most two sequential forwarding clients, one browser/server at a time, 600-second proof bound. Read-only import of accepted M13 media into new isolated storage. No new renders/inference or independent-service changes. Four-GiB host headroom. |
 
 ## Milestones
 
@@ -127,14 +151,14 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M04 Inspection and markup | Completed on 2026-11-14 | `milestone/m04` | [Native framing and composed review acceptance](m04.md) |
 | M05 Asset research and reuse | Completed on 2026-11-14 | `milestone/m05` | [Actual discovery, import, revision and explicit adoption](m05.md) |
 | M06 Storyboards | Completed on 2026-11-14 | `milestone/m06` | [Model-authored planning and corrected direct review](m06.md) |
-| M07 Concept generation | Original-job continuation running under resource guard | — | — |
+| M07 Concept generation | Model-fit preparation; both previous execution windows remain blocked before effects | — | [Original and lightweight limits](m07.md) |
 | M08 Progressive animation | Completed on 2026-11-14 | `milestone/m08` | [Pre-completion review, pinned inputs and final lineage](m08.md) |
 | M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
 | M10 Image-to-3D | Hardware/inspection passed; original revision awaits continuation | — | [E04](../evidence/w09/live-b/README.md), [M10](m10.md) |
-| M11 Playable Unity scene | Native import/PlayMode passed; original publication blocked | — | [Exact criteria and blocker](m11.md) |
+| M11 Playable Unity scene | Native import/PlayMode passed; original publication continuation active | — | [Exact criteria and retained blocker](m11.md) |
 | M12 Recovery and backup | Same-session restore/continuation and worker recovery passed; accepted ACK-loss pending | — | [Native recovery](m12.md), [worker recovery](m08.md) |
 | M13 Silent cinematic delivery | All seven targeted criteria passed; dependencies pending | — | [Native edit/review/download proof](m13.md) |
-| M14 Consolidated acceptance | Pending | — | — |
+| M14 Consolidated acceptance | SSH message/video and Geometry Nodes slices active; consolidation pending | — | — |
 
 ## Host observations
 
