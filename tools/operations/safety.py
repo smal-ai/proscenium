@@ -3,6 +3,7 @@
 import fcntl
 import hashlib
 import os
+import re
 import stat
 from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
@@ -124,6 +125,30 @@ def still_live(process: Path) -> bool:
         return True
 
 
+def native_may_use_roots(process: Path, roots: list[Path]) -> bool:
+    """Pinned SDK base_directory is passed as COPILOT_HOME, not an argv flag.
+
+    Read only that scope value into the decision. Never log/export the environment.
+    Explicit unrelated native homes are not a reason to interrupt another project.
+    Missing/relative/uninspectable scope remains ambiguous and must block backup.
+    """
+    try:
+        homes = [
+            value.removeprefix(b"COPILOT_HOME=")
+            for value in (process / "environ").read_bytes().split(b"\0")
+            if value.startswith(b"COPILOT_HOME=")
+        ]
+        if len(homes) != 1:
+            return True
+        home = Path(os.fsdecode(homes[0]))
+        if not home.is_absolute():
+            return True
+        home = home.resolve(strict=True)
+        return any(home.is_relative_to(root) or root.is_relative_to(home) for root in roots)
+    except (OSError, RuntimeError, ValueError):
+        return True
+
+
 def assert_stopped(roots: list[Path]) -> None:
     """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
 
@@ -158,6 +183,13 @@ def assert_stopped(roots: list[Path]) -> None:
                 "ssh-agent",
             }:
                 continue
+            if executable == "runc" and re.fullmatch(
+                r"runc:\[\d+:INIT\]", (process / "comm").read_text().strip()
+            ):
+                # Observed privileged container namespace initialiser. V1 owns
+                # host-native workers, not container setup. External container
+                # source writers are covered by the operator's no-writers condition.
+                continue
             paths = [os.fsdecode(arg) for arg in argv]
             paths.append(os.readlink(process / "cwd"))
             for fd in (process / "fd").iterdir():
@@ -170,7 +202,8 @@ def assert_stopped(roots: list[Path]) -> None:
                 for value in paths
                 for root in roots
             )
-            if scoped or executable == "copilot":
+            native_ambiguous = executable == "copilot" and native_may_use_roots(process, roots)
+            if scoped or (native_ambiguous and still_live(process)):
                 raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
         except (FileNotFoundError, ProcessLookupError):
             continue
