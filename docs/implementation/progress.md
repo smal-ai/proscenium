@@ -27,19 +27,37 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `76d8451` | W06 maintained research/storyboard skills and typed shotboard UI. Integrated journeys remain pending. |
 | `9945df9`, `5da13fb` | W05 review backend and UI. Forty-eight component browser cases passed, including continuous numbered segment boundaries and missing-interval behaviour. |
 | `72b0771`, `3c38031`, `df933fa`, `d2fe9a6` | W02 projects/catalogue/checkpoints/media and native historical-source evidence. |
+| `029e56a`, `cfa378d`, `b907972` | Production Copilot adapter, actual native-child context consumption and scoped metadata tools. |
+| `3881c80`, `a55f2f2` | Production renderer/assembly and atomic frame/artefact/job/event reduction. |
+| `ae02c10`, `10b439b` | Canonical generation budgets, exact-worker registration and versioned image/mesh capability plugins. |
+| `65358d1` | All 53 normative operations, quiet application lifecycle, native association projection and copy/rebind coordination. |
+| `2920201` | W10 backup/restore tooling and evidence validator, including retained incomplete-release results. |
+| `a218a65` | Actual M01 browser/SDK/Blender visual-feedback journey, source correction and replay/restart evidence. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| W01 | `/tmp/opencode/proscenium-fleet/w01`, `impl/w01` | `2bc3d5c` | Production Copilot adapter, context, durable request/decision/event delivery and native Stop/Resume. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
-| W07 | `/tmp/opencode/proscenium-fleet/w07`, `impl/w07` | `76d8451` | ComfyUI generation/budget/recovery and requested LM Studio critique. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
-| W08 | `/tmp/opencode/proscenium-fleet/w08`, `impl/w08` | `76d8451` | Scoped Unity CLI/Editor import, controller and actual Play mode validation. | `ses_e262dde9cffevqHbPSmMm5CYKL` |
-| W03 | `/tmp/opencode/proscenium-fleet/w03`, `impl/w03` | `66f653b` | Production render/proxy/receipt pipeline, progressive encoding, assembly and scoped Blender launch. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
+| Native workflows | `/home/quintin/.cache/proscenium-development/fleet/native-workflows`, `impl/native-workflows` | `b907972` | Unity specialist, tracked nonblocking Unity jobs, sequence assembly and catalogue-discovery tools. | `ses_e262dde9cffevqHbPSmMm5CYKL` |
+| Inspection/catalogue | `/home/quintin/.cache/proscenium-development/fleet/review-camera`, `impl/review-camera` | `b907972` | Actual GLB picking/capture, Render this view context, provenance/search and pinned metadata refresh. | `ses_e264897f0ffe99g7L7VPZVpjjv` |
+| E04 live-b | `/home/quintin/.cache/proscenium-development/fleet/w09-live-b`, `impl/w09-live-b` | `9720285` | Renewed one-attempt mesh execution after reclaiming build-owned tmpfs caches. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
+| Recovery/SSH | `/home/quintin/.cache/proscenium-development/fleet/w10-integration`, `impl/w10-integration` | `9720285` | Fix unrelated protected-process backup blocker and prove actual SSH-forwarded application traffic. | `ses_e25df843bffetn697vChzMs1dn` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
+The later composed F00 baseline passed 26 unit, 45 contract and 292 offline integration tests, plus lint/types/specification/build and a real pairing/project/WebSocket CLI startup smoke with external execution blocked. Package test counts describe their recorded revisions, not a new full release run.
+
+## Current acceptance blockers
+
+- W07's original `w07-live-initial` remains planned with one reservation and no prompt/client ID. Its 600-second allocation ended before inference because host RAM stayed below 20,427,268,612 bytes. Preserve that identity for a separately allocated continuation.
+- E04 `e04-live-a` created no project, job, reservation or native process. It recorded 10.46 GiB available against a 12 GiB fit floor. The distinct `e04-live-b` allocation retains those guards.
+- LM Studio's inspected resident model is non-vision. No VLM inference or approved-finding native journey has passed yet.
+- Parent integration found 18 W10 checks blocked by an unrelated protected `sshd-session` process. The 127 other checks in that affected run passed. Recovery/SSH owns the scoped-process correction.
+- Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
+
 ## Resource allocations
+
+Earlier rows record consumed allocations. Only the explicitly active assignments above may start their current bounded work.
 
 | Allocation | Owner | Boundaries |
 | --- | --- | --- |
@@ -53,12 +71,15 @@ F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected jo
 | W07 VLM | W07 agent | Read-only provider inventory and at most two 64×64-image, 512-output-token VLM calls on an already loaded model, 120 seconds each. No model loading or ComfyUI generation/service lifecycle. |
 | W08 | W08 agent | Its own disposable Unity project. At most three Unity invocations, 600 seconds each, plus one Blender CPU export, four threads, 180 seconds. Existing official Editor/licence, isolated project dependencies, own Xvfb if needed. |
 | W03 | W03 agent | At most twenty CPU-rendered 640×360 frames, sixteen samples, four threads, 300 seconds per worker, plus three static proxies. One renderer at a time and bounded short encodes. No model/GPU/service changes. |
+| M01 | M01 agent, completed | Three cloud roots, no children, two rendered frames. All 18 observed owned processes exited. Independent Blender on 9876 preserved. |
+| E04 live-b | W09 agent, active exclusive GPU allocation | One temporary ComfyUI on free loopback 18588, one fixed Hunyuan attempt, 1800-second server bound, four CPU threads. Unchanged 12 GiB fit floor and four-GiB protected headroom. One Blender import, 180 seconds. Fresh disk-backed run directory. |
+| Recovery/SSH | W10 agent | One temporary unprivileged loopback sshd, one SSH client, one disposable application server and Chromium profile, 300-second process bounds. Fixture keys only. No native/model/GPU work. |
 
 ## Milestones
 
 | Milestone | State | Completion commit | Evidence |
 | --- | --- | --- | --- |
-| M01 First Blender authoring loop | Foundation in progress | — | — |
+| M01 First Blender authoring loop | Real journey passed, integration acceptance pending | — | [Exact criteria and limitations](m01.md) |
 | M02 Projects and history | Pending | — | — |
 | M03 Discussion and delegation | Pending | — | — |
 | M04 Inspection and markup | Pending | — | — |
@@ -67,7 +88,7 @@ F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected jo
 | M07 Concept generation | Pending | — | — |
 | M08 Progressive animation | Pending | — | — |
 | M09 Requested VLM critique | Pending | — | — |
-| M10 Image-to-3D | Feasibility pending | — | — |
+| M10 Image-to-3D | Plugin implemented, hardware proof pending | — | [E04 resource blocker](../evidence/w09/execution/README.md) |
 | M11 Playable Unity scene | Pending | — | — |
 | M12 Recovery and backup | Pending | — | — |
 | M13 Silent cinematic delivery | Pending | — | — |
@@ -94,3 +115,5 @@ W02's 17 operations are now composed. Its actual production resolver reopens ori
 The integration-owned browser command now covers the composed shell, review/context and storyboard suites. **126 cases passed** across Chromium, Brave, Edge and the Chromium DPR-2 review subset. Main-chat preparation includes unsaved annotations and masks, rejects failed saves and preserves the captured target through navigation. The browser APIs remain controlled fixtures. Live application journeys are the next acceptance layer.
 
 Resource inspection found `/tmp` is a 31 GiB tmpfs with about 8 GiB free, while the disk-backed home filesystem has about 348 GiB free. Larger subsequent native scratch work uses `/home/quintin/.cache/proscenium-development/` to avoid exhausting RAM-backed temporary storage. Existing evidence is retained.
+
+Seven completed-proof native package caches, totalling 2,058,885,576 bytes, were copied to disk, hash-verified and replaced by cache-path links. Native histories, databases and media stayed in place. The private relocation receipt is `/home/quintin/.cache/proscenium-development/retained-build-caches/2026-11-14-cache-moves.json`. The immediate post-move observation was 16,004,345,856 bytes of available RAM, enabling the renewed E04 allocation without lowering its threshold.

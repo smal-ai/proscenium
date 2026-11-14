@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** V1 specification with normative contract 1.0 and confirmed owner policy. Application implementation and acceptance remain outstanding.
+**Status:** V1 requirements with normative contract 1.0 and confirmed owner policy. Application components are implemented. [Cumulative acceptance](implementation/progress.md) records completed journeys and remaining gaps.
 
 Start with the [specification index and precedence](specification.md). Related documents include [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md), [execution](execution.md) and [user journeys](user-journeys.md).
 

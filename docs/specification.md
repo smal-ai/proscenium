@@ -6,7 +6,7 @@
 
 **Owner decisions incorporated:** 2026-11-14
 
-**Implementation status:** Not started. Contract fixtures are examples, not execution evidence.
+**Implementation status:** The host-native application and W01–W10 components are implemented and under cumulative journey acceptance. [Implementation progress](implementation/progress.md) records actual revisions, active work and blockers. Contract fixtures remain examples, not execution evidence.
 
 The 3.2.0 review amendment closes request-history and publication read models, instance selections, sequence/composite frame maps, attempt/cancellation recovery, idle owner reviews, checkpoint receipts and backend ownership. Contract 1.0 is amended before any implementation baseline or client deployment, so no migration is claimed. F00 freezes the corrected revision before generating consumer bindings.
 
@@ -39,7 +39,7 @@ The 3.2.0 review amendment closes request-history and publication read models, i
 
 The foundation owner versions contract changes and updates affected examples, consumer fixtures and the coverage table in the same change. A breaking wire change requires a new major contract revision and an explicit migration. Additive optional fields require a minor revision. Clarifications which preserve accepted payloads require a patch revision. The initial wire value is `schema_version: "1.0"`; a supported minor revision must be negotiated before a client emits its additional fields. Unknown fields are rejected by the closed 1.0 schemas.
 
-No document in this pack claims that the SDK integration, progressive player or image-to-3D capability has already passed its implementation proof. [F00](development-fleet.md#f00-foundation-and-compatibility-gate) must establish those facts before dependent development work is accepted.
+The original specification fixtures do not establish implementation. Accepted SDK, source, renderer and browser observations are recorded separately under `docs/evidence/` and indexed by [implementation progress](implementation/progress.md). Image-to-3D hardware acceptance remains open.
 
 ## Decisions fixed by the owner
 

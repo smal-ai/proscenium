@@ -1,6 +1,6 @@
 # Development fleet handover
 
-**Baseline:** specification 3.2.0, contract 1.0.0 amended before implementation. **Status:** implementation authorised on 2026-11-14. F00 and the bounded E01 proof are dispatched. [Implementation progress](implementation/progress.md) records accepted revisions, assignments and milestone evidence.
+**Baseline:** specification 3.2.0, contract 1.0.0 amended before implementation. **Status:** F00 and W01–W10 components are integrated, with bounded workflow integration and cumulative acceptance in progress. [Implementation progress](implementation/progress.md) records accepted revisions, active assignments and milestone evidence.
 
 This document governs agents developing Proscenium. It is separate from the product's native Copilot subagents, which author user projects at runtime. A work-package description is not authority to start agents, install models, alter shared services or modify the reference projects.
 
@@ -22,7 +22,7 @@ F00 overlaps the foundation work of M01; it is not an additional product feature
 
 ### Command contract to implement in F00
 
-These are required future developer commands, **not commands currently available**:
+These commands are implemented by the accepted foundation. Native profiles still require their explicit resource allocation:
 
 | Command | Required scope |
 | --- | --- |
@@ -36,7 +36,7 @@ These are required future developer commands, **not commands currently available
 | `make test-native PROFILE=<profile>` | Explicit bounded Blender/Unity/provider tests under an acquired resource reservation. |
 | `make test-browser-installed BROWSER=brave` / `BROWSER=edge` | Actual installed-browser compatibility cases. |
 
-The current documentation-only validation command is documented in [acceptance](acceptance/README.md#documentation-validation). F00 supplies dependency manifests and the remaining commands before consumers are asked to run them.
+The documentation-only validation command is documented in [acceptance](acceptance/README.md#documentation-validation). The implemented dependency and command interfaces are documented in [the foundation handover](implementation/foundation.md).
 
 ## Work packages and write ownership
 

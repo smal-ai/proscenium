@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** V1 design and normative contract 1.0 baseline. Compatibility proofs and application implementation remain outstanding.
+**Status:** Implemented V1 architecture against normative contract 1.0. [Implementation progress](implementation/progress.md) records accepted compatibility evidence and remaining cumulative journey acceptance.
 
 See the [specification index](specification.md) for precedence, [requirements](requirements.md) for scope and [user journeys](user-journeys.md) for cumulative acceptance. [Contracts](contracts/README.md), [execution](execution.md), [source publication](source-publication.md), [review/media](review-media.md) and [owner policy](owner-policy.md) define the implementation hand-offs.
 

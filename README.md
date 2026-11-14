@@ -2,7 +2,16 @@
 
 A personal, desktop-browser studio for directing AI-authored Blender assets, scenes, storyboards and silent cinematics, with playable Unity scenes as a downstream output.
 
-**Status: specification 3.2.0.** V1 requirements, architecture, contract 1.0 amended before implementation, acceptance fixtures and a development-fleet handover are documented. Application implementation has not started, and there is no runnable studio or installation procedure yet.
+**Status: implemented, cumulative acceptance in progress.** The host-native studio runs against specification 3.2.0 and contract 1.0. The first real browser → Copilot → Blender → rendered-feedback journey has passed. Image/VLM/mesh execution and remaining cumulative journeys are tracked in [implementation progress](docs/implementation/progress.md).
+
+## Run
+
+```bash
+make bootstrap
+make run CONFIG=/absolute/path/to/private/operator.json ARGS=--pair
+```
+
+Start the private configuration from [`config.example.json`](config.example.json). Configure the installed native tools and independent model services for this workstation. Consume the printed pairing URL in the trusted browser. See [operator instructions](docs/operator.md) for startup, SSH access, Resume and backup/restore, and [development instructions](docs/development.md) for checks.
 
 ## Start here
 
@@ -18,7 +27,7 @@ A personal, desktop-browser studio for directing AI-authored Blender assets, sce
 | [Development fleet handover](docs/development-fleet.md) | Foundation gate, work packages, file ownership and integration criteria. |
 | [Acceptance pack](docs/acceptance/README.md) | Named fixtures, fault scenarios, browser matrix and documentation validation. |
 
-## Planned V1 experience
+## V1 scope
 
 - One user, multiple saved projects and one active project at a time.
 - A persistent project-wide Copilot discussion with immutable Queue/Steer context. Stop is a native cancellation control and holds subsequent requests until explicit Resume.
@@ -31,13 +40,13 @@ A personal, desktop-browser studio for directing AI-authored Blender assets, sce
 - Canonical source filenames with Git/Git LFS history and pinned asset dependencies.
 - Browser disconnections leave work running. Backend/workstation restarts require explicit Resume.
 
-Image-to-3D is planned but **not yet proven** on the target workstation. It has an early feasibility proof and a dedicated implementation milestone.
+Image-to-3D has a budgeted Hunyuan implementation but is **not yet hardware-proven**. Its first allocation stopped before inference on a host-memory guard. The proof and milestone remain open.
 
 ## Architecture boundary
 
 **Copilot and its tools own Blender/Unity authoring. Proscenium owns the interaction, published-output catalogue and review presentation.**
 
-The planned application uses:
+The application uses:
 
 | Component | Role |
 | --- | --- |
@@ -59,7 +68,7 @@ The project consolidates lessons from `smal-ai-blender`, `smal-ai-game` and `sma
 
 **Prompt → Copilot/Blender → Git checkpoint → published render → annotation → follow-up.**
 
-Start with the [F00 foundation gate](docs/development-fleet.md#f00-foundation-and-compatibility-gate): prove SDK/tool scope compatibility, generate the shared bindings and establish the offline harness. Then demonstrate M01 with the existing Blender tooling. The remaining milestones build out the full V1 experience against accepted contracts.
+The [real M01 evidence](docs/evidence/m01/README.md) records the source correction, two rendered versions, clean/marked image delivery, retained annotation and idempotent publication replay. The [foundation handover](docs/implementation/foundation.md) records the pinned runtime, shared interfaces and startup checks. Remaining milestones require their own cumulative acceptance.
 
 ## Validate the specification
 
@@ -73,4 +82,4 @@ This checks schemas/examples, API references, document links, preserved design h
 
 ## Local configuration
 
-`.env`, `.envrc` and `.direnv/` remain local and ignored by Git. Do not commit credentials or copy secret configuration from the reference projects. Installation and run commands will be documented when the first working application is available.
+`.env`, `.envrc` and `.direnv/` remain local and ignored by Git. Do not commit credentials or copy secret configuration from the reference projects. Keep operator configuration, runtime stores and generated media outside source control.

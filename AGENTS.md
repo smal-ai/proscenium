@@ -1,7 +1,7 @@
 # Proscenium development
 
 - Read `docs/specification.md`, `docs/owner-policy.md` and the assigned work package in `docs/development-fleet.md` before implementation.
-- The application is not yet implemented. Documentation, synthetic fixtures and reference-project checks are not product completion evidence.
+- The application is implemented and undergoing cumulative journey acceptance. Documentation, synthetic fixtures and reference-project checks are not product completion evidence. Use `docs/implementation/progress.md` for accepted revisions and active ownership.
 - Use the normative contracts in `docs/contracts/`. Shared schemas, generated types, dependency locks, database migrations and router composition have one foundation/integration owner.
 - A work package defines its permitted write paths and accepted dependency revisions. Raise shared-interface changes to the integration owner rather than inventing a parallel schema.
 - Preserve unrelated changes, reference repositories, active Blender/Unity sessions and independent model services. Inspect Git status before edits.
