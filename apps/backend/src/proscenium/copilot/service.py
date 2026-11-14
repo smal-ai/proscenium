@@ -7,8 +7,10 @@ import hashlib
 import re
 from collections.abc import Callable
 from contextlib import suppress
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from copilot.generated.rpc import PermissionDecisionApproveOnce, PermissionDecisionReject
 
@@ -25,6 +27,28 @@ from .state import SYSTEM, TERMINAL, State, key, receipt, save
 from .tools import Tools
 
 CONTINUATION_TEXT = "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
+
+
+@dataclass
+class CallbackOwner:
+    """One exact SDK callback registration, including cold resumes of the same ID."""
+
+    project_id: str
+    session_id: str | None
+    generation: str = field(default_factory=lambda: uuid4().hex)
+    retired: bool = False
+    settled: bool = False
+    failure: str | None = None
+    failure_handled: bool = False
+
+
+def retired_housekeeping(event: dict[str, Any]) -> bool:
+    # Never use a broad session/assistant/tool prefix here. Completion of a model
+    # turn is not proof of settlement, and execution/content must not be discarded.
+    return event.get("type") in {"session.shutdown", "session.idle", "assistant.idle"} or (
+        event.get("type") in {"hook.start", "hook.end"}
+        and event.get("data", {}).get("hookType") == "sessionEnd"
+    )
 
 
 def wire(value: Any) -> Any:
@@ -65,7 +89,10 @@ class Copilot:
         self.worker: asyncio.Task[None] | None = None
         self.wake = asyncio.Event()
         self.closing = False
-        self.failure: str | None = None
+        self.callback_owners: dict[str, CallbackOwner] = {}
+        self.session_callback_owners: dict[int, CallbackOwner] = {}
+        self.send_projects: dict[str, str] = {}
+        self.send_callback_owners: dict[str, CallbackOwner] = {}
         self.pause_owner: dict[str, str] = {}
         self.checked_projects: set[str] = set()
 
@@ -132,6 +159,75 @@ class Copilot:
     def notify(self) -> None:
         self.wake.set()
 
+    def callback_failure(
+        self, owner: CallbackOwner, code: str, event: dict[str, Any] | None = None
+    ) -> None:
+        """Keep old-project incidents private and scoped. Never write an inactive Store.
+
+        Only this registration's current project may consume its failure. The
+        diagnostic retains original identity without native payloads/reasoning.
+        """
+        if not owner.failure_handled and not self.closing:
+            owner.failure = code
+        current = self.callback_owners.get(owner.project_id) is owner
+        if current:
+            self.services.gate.close(owner.project_id)
+        event = event or {}
+        try:
+            digest = hashlib.sha256(canonical(event)).hexdigest()
+        except Exception:
+            digest = None
+        diagnostic = {
+            "project_id": owner.project_id,
+            "native_session_id": owner.session_id,
+            "callback_generation": owner.generation,
+            "native_event_id": event.get("id"),
+            "event_type": event.get("type"),
+            "event_sha256": digest,
+            "code": code,
+            "retired": owner.retired,
+            "settled_before_retirement": owner.settled,
+            "observed_at": now(),
+        }
+        try:
+            with self.services.registry.store.transaction() as tx:
+                identity = "copilot.callback." + key(
+                    owner.project_id,
+                    owner.session_id or "unbound",
+                    owner.generation,
+                    str(event.get("id", code)),
+                )
+                if tx.get("private", identity, required=False) is None:
+                    tx.put("private", identity, diagnostic)
+            if current and not owner.retired and not self.closing:
+                with self.services.activation_lock:
+                    if self.services.registry.active_id() == owner.project_id:
+                        with self.services.registry.project_store(
+                            owner.project_id
+                        ).transaction() as tx:
+                            self.state.fence(tx, code)
+        except Exception:
+            # The in-memory gate/failure still fences its original owner if storage
+            # itself fails. Never convert that exception into a different project fault.
+            pass
+        self.notify()
+
+    def retire_callback(self, project_id: str, session: Any, *, settled: bool) -> None:
+        owner = self.session_callback_owners.get(id(session))
+        if owner is not None:
+            if owner.project_id != project_id or owner.session_id != session.session_id:
+                raise DomainError("attribution_unavailable", 409)
+            owner.retired = True
+            owner.settled = owner.settled or settled
+
+    def retire_open_callbacks(self) -> None:
+        # Called before owned client teardown. Already retired registrations keep
+        # their settlement proof and any separately scoped unresolved incident.
+        for owner in self.callback_owners.values():
+            if not owner.retired:
+                owner.retired = True
+                owner.failure_handled = True
+
     async def close(self) -> None:
         self.closing = True
         self.wake.set()
@@ -149,22 +245,35 @@ class Copilot:
                 self.worker = None
             try:
                 if self.native:
+                    self.retire_open_callbacks()
                     await self.native.close()  # Fence/reap BEFORE discarding in-flight tasks.
             finally:
                 for task in self.sends.values():
                     task.cancel()
                 await asyncio.gather(*self.sends.values(), return_exceptions=True)
                 self.sends.clear()
+                self.send_projects.clear()
+                self.send_callback_owners.clear()
                 self.sessions.clear()
                 self.pause_owner.clear()
 
     async def failed(self, project_id: str, code: str) -> None:
-        self.failure = None
+        owner = self.callback_owners.get(project_id)
+        if self.services.registry.active_id() != project_id:
+            if owner is not None:
+                self.callback_failure(owner, code)
+            else:
+                self.services.gate.close(project_id)
+            return
+        if owner is not None:
+            owner.failure = None
+            owner.failure_handled = True
         self.services.gate.close(project_id)
         try:
             self.persist_failure(project_id, code)
         finally:
             if self.native:
+                self.retire_open_callbacks()
                 await self.native.close()
             self.sessions.clear()
             self.pause_owner.clear()
@@ -209,7 +318,16 @@ class Copilot:
 
     async def session(self, project_id: str, *, allow_create: bool = False) -> Any:
         if project_id in self.sessions:
-            return self.sessions[project_id]
+            cached = self.sessions[project_id]
+            previous = self.session_callback_owners.get(id(cached))
+            if previous is None or not previous.retired:
+                return cached
+            del self.sessions[project_id]
+            if hasattr(cached, "disconnect"):
+                try:
+                    await cached.disconnect()
+                except Exception:
+                    self.callback_failure(previous, "provider_unavailable")
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             association = tx.get("copilot.session", "native", required=False)
         if not association and not allow_create:
@@ -217,6 +335,8 @@ class Copilot:
         if self.native is None:
             self.native = Native(self.services)
         session_id = association["session_id"] if association else None
+        owner = CallbackOwner(project_id, session_id)
+        self.callback_owners[project_id] = owner
         tools = Tools(self.services, self.state, project_id)
         # Native session events can precede create/resume ACK. Session ID is bound by the SDK
         # callback context below once known, or by its event's sessionId on session.start.
@@ -225,31 +345,54 @@ class Copilot:
         def on_event(event: Any) -> None:
             value = wire(event)
             sid = holder.get("session_id") or value.get("data", {}).get("sessionId")
+            if sid:
+                holder["session_id"] = sid
+                owner.session_id = sid
+            if self.closing:
+                owner.retired = True
+                owner.failure_handled = True
+            if not owner.retired and self.services.registry.active_id() != project_id:
+                # Activation may precede the delivery task's disconnect pass. Read
+                # settlement only; this does not relax the reducer's inactive guard.
+                owner.retired = True
+                try:
+                    self.services.registry.assert_settled(project_id)
+                    owner.settled = True
+                except DomainError:
+                    pass
+            if owner.retired:
+                if owner.settled and retired_housekeeping(value):
+                    return
+                self.callback_failure(owner, "attribution_unavailable", value)
+                return
             if not sid:
                 # session.start is emitted before create returns; execution must not occur yet.
                 if value.get("type", "").startswith(("assistant.", "tool.", "user.", "subagent.")):
-                    self.failure = "attribution_unavailable"
+                    self.callback_failure(owner, "attribution_unavailable", value)
                 return
             holder["session_id"] = sid
             try:
                 self.state.reduce(project_id, sid, value)
                 self.state.drain_pending(project_id, sid)
                 if value["type"] == "session.error":
-                    self.failure = "provider_unavailable"
+                    self.callback_failure(owner, "provider_unavailable", value)
             except Exception:
-                self.failure = "attribution_unavailable"
-                self.services.gate.close(project_id)
-                with self.services.registry.project_store(project_id).transaction() as tx:
-                    self.state.fence(tx, "attribution_unavailable")
+                self.callback_failure(owner, "attribution_unavailable", value)
             self.notify()
 
         async def permission(request: Any, invocation: Any) -> Any:
+            if owner.retired or self.closing:
+                return PermissionDecisionReject()
             return await self.permission(project_id, wire(request), invocation)
 
         async def user_input(request: Any, invocation: Any) -> Any:
+            if owner.retired or self.closing:
+                raise DomainError("stale_decision", 409)
             return await self.user_input(project_id, wire(request), invocation)
 
         def prompt_hook(data: dict[str, Any], context: Any) -> dict[str, str]:
+            if owner.retired or self.closing:
+                raise DomainError("permission_denied", 403)
             agent = data.get("agentId")
             if not agent:
                 return {}  # Root uses immutable per-message extension_context. No global prompt.
@@ -287,6 +430,8 @@ class Copilot:
             ),
         )
         holder["session_id"] = session.session_id
+        owner.session_id = session.session_id
+        self.session_callback_owners[id(session)] = owner
         with self.services.registry.project_store(project_id).transaction() as tx:
             save(
                 tx,
@@ -311,19 +456,50 @@ class Copilot:
         for old_project, old_session in list(self.sessions.items()):
             if old_project != project_id:
                 self.services.registry.assert_settled(old_project)
-                if hasattr(old_session, "disconnect"):
-                    await old_session.disconnect()
+                self.retire_callback(old_project, old_session, settled=True)
                 del self.sessions[old_project]
-        if self.failure:
-            code, self.failure = self.failure, None
+                if hasattr(old_session, "disconnect"):
+                    try:
+                        await old_session.disconnect()
+                    except Exception:
+                        owner = self.session_callback_owners.get(id(old_session))
+                        if owner is not None:
+                            self.callback_failure(owner, "provider_unavailable")
+        owner = self.callback_owners.get(project_id)
+        if owner is not None and owner.failure:
+            code, owner.failure = owner.failure, None
             await self.failed(project_id, code)
             return
         for identity, task in list(self.sends.items()):
             if task.done():
                 # send() persists all uncertainty itself.
                 with suppress(asyncio.CancelledError):
-                    task.result()
+                    try:
+                        task.result()
+                    except Exception as exc:
+                        original_project = self.send_projects.get(identity)
+                        original_owner = self.send_callback_owners.get(identity)
+                        if original_owner is not None:
+                            self.callback_failure(
+                                original_owner,
+                                exc.code
+                                if isinstance(exc, DomainError)
+                                else "provider_unavailable",
+                            )
+                        elif original_project == project_id:
+                            raise
+                        elif original_project is not None:
+                            self.callback_failure(
+                                CallbackOwner(
+                                    original_project, None, generation=key("send", identity)
+                                ),
+                                exc.code
+                                if isinstance(exc, DomainError)
+                                else "provider_unavailable",
+                            )
                 del self.sends[identity]
+                self.send_projects.pop(identity, None)
+                self.send_callback_owners.pop(identity, None)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             stops = [
                 (r["request_id"], tx.require("copilot.stops", r["request_id"]))
@@ -366,6 +542,7 @@ class Copilot:
 
     def launch_send(self, project_id: str, request_id: str) -> None:
         if request_id not in self.sends:
+            self.send_projects[request_id] = project_id
             self.sends[request_id] = asyncio.create_task(
                 self.send(project_id, request_id), name=f"copilot-send:{request_id}"
             )
@@ -373,6 +550,9 @@ class Copilot:
     async def send(self, project_id: str, request_id: str) -> None:
         try:
             session = await self.session(project_id, allow_create=True)
+            owner = self.session_callback_owners.get(id(session))
+            if owner is not None:
+                self.send_callback_owners[request_id] = owner
             with self.services.registry.project_store(project_id).transaction() as tx:
                 if self.state.control(tx)["fenced"]:
                     return
@@ -668,6 +848,7 @@ class Copilot:
                 self.state.fence(tx, "outcome_uncertain")
             # Terminating the owned runtime is an execution fence, not invented cancellation evidence.
             if self.native:
+                self.retire_open_callbacks()
                 await self.native.close()
             self.sessions.clear()
 
@@ -1000,6 +1181,7 @@ class Copilot:
                     operation_id, "outcome_uncertain", {"detail_code": operation["detail_code"]}
                 )
             if self.native:
+                self.retire_open_callbacks()
                 await self.native.close()
             self.sessions.clear()
             self.pause_owner.clear()

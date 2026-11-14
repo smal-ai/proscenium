@@ -111,7 +111,7 @@ def test_duplicate_native_identity_conflict_is_fenced(runtime):
         session.event(
             "assistant.message", {**message, "content": "Conflicting"}, event_id="duplicate"
         )
-        assert runtime.failure == "attribution_unavailable"
+        assert runtime.callback_owners[PROJECT].failure == "attribution_unavailable"
         await runtime.tick(PROJECT)
         assert runtime.native.closed
         assert record(runtime)["receipt"]["state"] == "outcome_uncertain"

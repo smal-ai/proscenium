@@ -1,0 +1,12 @@
+{
+  "evidence_kind": "Retained real terminal SDK event, replayed only in offline causality tests",
+  "source_commit": "432d3eadb9e9dfd220c84d249ca1addda4ebbb67",
+  "source_path": "docs/evidence/m02/native-redacted.json",
+  "native_session_id": "51c6df9c-92d8-4b35-9057-e41731de5e40",
+  "event": {
+    "id": "7ac983ea-b318-4512-9504-d9edfb7be54d",
+    "type": "session.shutdown",
+    "timestamp": "2026-11-14T13:59:25.679Z",
+    "data": {}
+  }
+}
