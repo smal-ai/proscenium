@@ -56,17 +56,30 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `8da4147`, `milestone/m09` | Coordinator acceptance of actual VLM reviews and exactly-once owner-approved native handoff. |
 | `03dbad1` | Selective ACK filtering reached real native acceptance; the original explicit-cut helper failed. The failed allocation and corrected offline pipe helper are retained. |
 | `b85ce21`, `cc4d1a6`, `289b93a`, `904f733` | Exact native-denial/unentered-checkpoint recovery and validated operation-aware permission classification. Both original M10/M11 records have zero live invocations and await explicit Resume. |
+| `778c61d`, `7800d0f` | Separately identified 2,607,364,064-byte SD-Turbo FP16 derivative and frozen profile provenance. CPU conversion passed with 103,510,016-byte peak RSS. |
+| `011ab92` | Actual accepted-send ACK-loss recovery passed after selective response loss, persisted native acceptance, real FileIO closure, quiet restart and original-ID reconciliation. Exactly one SDK send. |
+| `005ffc5`, `2ab15e7` | Actual model-authored stateless Geometry Nodes graph, checkpoint/publication, 12-triangle mapped GLB and CPU still passed. Renderer tasks now seal all three direct source files. |
+| `c897729` | M11's original native lead created checkpoint `8d49caaee980d18a140111e81b15a46c71e229ce`. Publication then blocked on the remaining native-read filename classifier. |
+| `0c77d89` | M10's original Continue was acknowledged but its missing-file read was automatically denied. No revised source/publication exists; completion-boundary diagnosis is separate. |
+| `fe5b7c8` | Explicit complete cherry-pick mappings preserve original tested commits during release applicability validation. Twenty-six validator tests and five actual transferred-edit comparisons passed. |
+| `86f745b` | Operator guide and uninstalled user-service template now match implemented `--config`, profile selection and recovery behaviour. |
+| `dd3abd2` | Actual FP16 initial/correction generation, explicit selections and provider-response recovery passed with two POSTs. Requested cobalt-blue colour was not achieved. |
+| `84edbe3` | Real native lead/child admitted three same-task/target reservations and refused the fourth. Provider execution was intentionally disabled; no consumed-exhaustion claim. |
+| `46ef4ea`, `c82d1a6`, `33950ca` | Concept image/job identity correction and installed-browser regressions passed. First actual retained-image readback stopped at a stale project-menu locator. |
+| `ed75296`, `9e33fe1`, `2afebc9` | Typed native file permissions and stronger completion candidates. Original M10 premature completion remains historical. M11's exact Stop remains uncertain pending positive cold-idle evidence. |
+| `d12b9b0` | Actual failed writer/partial-output and same-job retry passed: first worker exit 1, second exit 0, frame 1 reused, only frames 2–3 rerendered. |
+| `535d56f` | Small/heavy proxy load, draw-callback cadence and resource measurements completed. Heavy 90 MB proxy achieved 2.469 callbacks/s under the recorded SwiftShader profile. |
+| `02a3a8d` | Complete authenticated SSH message/media journey passed, including active-task tunnel cut, exactly-once replay, all ten film frames, uploads/downloads and quiet unavailable-service feedback. |
+| `cef82ee` | Empty-WAL source reads now preserve zero-byte sidecars. Nonempty committed-WAL recovery remains unchanged and tested. |
+| `6c7cec5` | Exact small M13 delivery/frame/source bytes retained for portable evidence tests. No new rendering or model execution. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| M07 FP16 preparation | `/home/quintin/.cache/proscenium-development/fleet/m07-fp16`, `impl/m07-fp16` | `455840a` | Bounded CPU conversion of the verified SD-Turbo checkpoint into a separately identified FP16 derivative/profile. No new inference in this preparation. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
-| Final accepted ACK-loss | `/home/quintin/.cache/proscenium-development/fleet/m12-ack-final`, `impl/m12-ack-final` | `03dbad1` | Preflighted selective-response loss, persisted pre-cut facts, real pipe closure and original-ID reconciliation. | `ses_e25df843bffetn697vChzMs1dn` |
-| M10 final continuation | `/home/quintin/.cache/proscenium-development/fleet/m10-final`, `impl/m10-final` | `904f733` | One original-work Continue, canonical asset revision and native checkpoint/publication. No inference. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
-| M11 final publication | `/home/quintin/.cache/proscenium-development/fleet/m11-final`, `impl/m11-final` | `904f733` | One original-work Continue to checkpoint/publish the existing tested Unity scene. No new children, Editors or exports. | `ses_e24cae3afffeduGiWpAGVlgj62` |
-| Stateless Geometry Nodes | `/home/quintin/.cache/proscenium-development/fleet/geometry-nodes`, `impl/geometry-nodes` | `03dbad1` | Bounded stateless Geometry Nodes presentation and actual model-authored CPU/native proof. Unsupported simulation/cache/import dependencies remain explicit. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
-| M14 SSH/review | `/home/quintin/.cache/proscenium-development/fleet/m14-ssh`, `impl/m14-ssh` | `904f733` | Actual message continuity, selected-video playback/download and saved feedback over authenticated SSH, followed by configured-unavailable service review. | `ses_e24c92d5effec3g3ZSSa6I6Ytm` |
+| M07 final readback | `/home/quintin/.cache/proscenium-development/fleet/m07-review-final`, `impl/m07-review-final` | `6c7cec5` | Correct retained-image job/shot context in the actual app, with native/provider execution disabled. | `ses_e24a65242ffe1NBgQTlIPeFUw1` |
+| M10 explicit follow-up | `/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete`, `impl/m10-revision-complete` | `02a3a8d` | One new explicitly authorised remaining-work Queue in the original project/session. Preserve the old prematurely completed row, author/publish v2 through normal tools. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
+| M11 cold Stop recovery | `/home/quintin/.cache/proscenium-development/fleet/cold-stop-recovery`, `impl/cold-stop-recovery` | `02a3a8d` | Verify the pinned native inactive-main-loop RPC plus empty paused queue/background/callback conditions for the exact departed read wait. Zero model sends. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
@@ -81,22 +94,33 @@ between those runs. [The exact matrix](../evidence/browser-matrix-20261114.json)
 preserves that execution history. At `904f733`, **77 affected recovery/permission/evidence
 checks passed**. These are additional scoped checks, not a relabelled full baseline run.
 
+The next integrated slices passed **173 provider/preview/ACK checks** at `011ab92`
+and **110 renderer-seal/lifecycle/SSH/M11 checks** at `c0cdf58`. Their exact JUnit
+observations are retained in `docs/evidence/integration-final-slices-20261114.xml`
+and `docs/evidence/integration-procedural-ssh-20261114.xml`. Five converter unit
+checks used the existing CPU-only Comfy Python/NumPy environment.
+
+At `02a3a8d`, **275 runtime and retained-evidence checks** passed, followed by
+**12 focused installed-browser job-identity checks**. The empty-WAL correction
+passed **34 backup/recovery checks**. Portable M13 retention passed **12 checks**
+and an identical second retention invocation reused all 16 files (2,879,627 bytes).
+
 ## Current acceptance blockers
 
-- W07's original `w07-live-initial` remains planned with one reservation and no prompt/client ID. Both original and append-only continuation windows ended without inference. The separate SD-Turbo F32 profile also failed before startup, short of its unchanged floor by 288,244,784 bytes. Its original checkpoint is preserved while a bounded, separately identified FP16 derivative is prepared.
+- W07's original Klein reservation and failed F32 admission remain preserved. The FP16 journey succeeded with two actual executions and original-provider response-loss recovery. Native parent/child reserved-budget enforcement also passed. M07's remaining actual-app readback is assigned after fixing its stale job label. The requested colour correction remains an explicit model-quality failure.
 - E04 `e04-live-a` created no project, job, reservation or native process. The distinct `e04-live-b` passed hardware execution under the unchanged guards. M10 static inspection passed; its normal revision/publication is now allocated to the original work.
 - M02 is accepted. Its clean A→B run and real closed-gate cancellation supplement the preserved historical-source proof.
 - M03 proved active-child Stop, economical native delegation, queued context and durable owner input. The cinematic journey additionally proved actual same-work Continue through the corrected UI. Older genuinely interrupted invocations remain a recovery diagnosis; no terminal return is invented.
 - M05 is accepted. The final native scene adoption was saved and published as `scene-main-v2`, pinning unchanged `asset-cube-v3`; alternate scene v1 retains asset v1. Earlier failed scripts/reports are preserved.
 - M06 is accepted. The shared-reference readiness correction passed an actual guarded application replay without further model calls.
 - M09 is accepted after M03/M04. Both real review origins and exactly-once approved handoff passed; only the owned Gemma instance was unloaded. Qwen and the saved profile remained unchanged.
-- M10's exact native commands denial is reconciled, with orphaned reply/authority/ACK facts preserved. Request `927cf238-56c2-454e-a063-014e072f9010`, work `work-bc19a5da5fcd4aaf9ae552a13d06b20d` and session `5971843f-f216-40f8-b8cb-995675f48161` now have a bounded original-work continuation. No revised v2 is claimed before its result.
+- M10's old Continue was acknowledged but did not author v2. W01 identified and fixed missing-file permission semantics and the empty-batch completion candidate. The historical completed work row remains unchanged. A new explicitly authorised remaining-work Queue in the original project/session is now allocated, rather than pretending the terminal old work was resumed.
 - W10's protected-process blocker is fixed. The final SSH audit passed. Same-host transport/API traffic does not itself close full model-message/video playback or cumulative M12/M14.
-- M08 is accepted after M04/M06. M11 import/PlayMode passed. The `tool-install.json` permission false positive is fixed and the unentered wait is reconciled without an invented owner answer. Original request `1a914aa8-2bbc-461a-a87d-1bb7431de02c` and work `work-4a7e644e78514109b4a5232316e3aacc` now have a publication-only continuation. No Unity publication is claimed before its result.
-- M12 restored the real M01 native session and delivered a held request once in the relocated project. Its latest selective ACK-loss test reached native acceptance, but a pipe-helper type assumption prevented the explicit cut. The next proof preflights that helper and persists acceptance/withheld-response facts before cutting; previous attempts remain failed/partial.
-- M07 host pressure is now materially external: the latest observation was 14,436,642,816 bytes available. An unrelated SQL Server used about 5 GiB RSS and a Blender instance in `smal-ai-blender` about 3 GiB. Neither is owned by this build or eligible for cleanup. The original cold-fit threshold is unchanged.
+- M11 import/PlayMode and checkpoint pass. Typed file policy is fixed, but the original cold Stop has acknowledged pause/Abort without a fresh Abort/idle event. Work remains stop_requested and the read wrapper unresolved. The decision is cancelled without an owner answer. A narrowly scoped positive native-idle RPC proof is assigned before original publication continuation.
+- M12's accepted-send ACK-loss, same-session backup/continuation, detached renderer, provider-response recovery, partial-output retry and SSH continuity evidence now pass within their recorded scopes. M11's cold Stop/publication and cumulative integration remain open. Original unknown returns and failed recovery attempts are preserved.
+- Earlier M07 windows were constrained by independent SQL Server/Blender workloads. Later FP16 conversion observed at least 35,388,723,200 bytes available. No independent workload was stopped or evicted by this programme. Every new allocation still checks its own unchanged admission threshold.
 - Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
-- FR-08.4's stateless Geometry Nodes presentation gap is assigned. M14 additionally needs the remaining provider/recovery evidence, the complete SSH message/video journey and revision-aware consolidated release validation.
+- Geometry Nodes, complete SSH message/video use and proxy measurements passed. M14 still needs final cumulative milestone integration, browser/offline checks and release validation. Earlier SSH/palette/selector harness failures remain retained. The heavy SwiftShader workload is measurably sluggish; no unmeasured hardware-accelerated performance claim is made.
 
 ## Resource allocations
 
@@ -140,6 +164,17 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M11 final publication | W08 agent | One original-work SDK continuation, 180 seconds. Existing saved/tested scene only. Zero children, Editors, Blender, exports or renders. New private before/after snapshots and one bounded Full-HD browser/server stack. |
 | Stateless Geometry Nodes | W03 agent | One native root, 180 seconds, no children. One four-thread authoring process, one proxy and at most two 640×360/eight-sample CPU stills, 300-second worker bounds and shared render claim. Four-GiB host headroom. No simulation, GPU or provider execution. |
 | M14 SSH/review | W10 agent | One read-only SDK Queue, 180 seconds. One private fixture-key loopback sshd and at most two sequential forwarding clients, one browser/server at a time, 600-second proof bound. Read-only import of accepted M13 media into new isolated storage. No new renders/inference or independent-service changes. Four-GiB host headroom. |
+| M07 FP16 execution, completed | W07 agent | Two 512×512/four-step executions and two native roots passed. Owned Comfy/SDK/browser/host exited. Minimum available RAM was 29,554,343,936 bytes and maximum Comfy RSS 2,216,775,680 bytes. No active GPU allocation remains. |
+| Stateless Geometry Nodes follow-up, completed | W03 agent | One root, one authoring Blender, one proxy and one CPU still passed after correcting the protected-directory discovery request. Initial automatic refusal and its zero-authoring outcome remain historical evidence. |
+| Native file policy/recovery | W01 agent | One metadata-only cold runtime per original M10/M11 project, 180 seconds each, zero SDK sends. Explicit native Stop/pause/Abort reconciliation is permitted only with its verified barrier. No source mutation, Continue or publication. |
+| M14 SSH complete fixture | W10 agent | Up to three sequential owned SSH/API/browser startup sets in one 1200-second allocation, with actual browser/media preflight before the only permitted SDK send. One shared durable send guard across phases. Scope remains fixture-only, read/review, no provider or authoring effects. |
+| M14 proxy performance | W10 agent | One software-WebGL Chromium profile/server, two retained small/heavy proxy cases, 240 seconds. Four-GiB host headroom and a two-GiB attributable browser-RSS guard. No SDK, native export, GPU-model or provider work. |
+| M14 partial-output/retry | W03/W10 agent | Two sequential four-thread CPU workers, at most four 640×360/eight-sample rendered frames total, 300 seconds per worker. One explicit own-output partial-file fault, then a normal same-job/new-attempt retry. No SDK, authoring, Unity or provider execution. |
+| M14 proxy follow-up, completed | W10 agent | One 240-second maximum browser/server allocation with a newly specified four-GiB summed-RSS ceiling. Both cases completed in 41.362 seconds, maximum sampled summed RSS 1.949 GiB. The old two-GiB allocation remains unchanged. |
+| M07 native budget, completed | W07 agent | One root/one real native child, no provider executor or HTTP. Three planned/reserved jobs and a fourth refusal. All actual native processes exited; intentionally unexecuted reservations remain in that disposable fixture. |
+| M07 final readback | W05 agent | At most two sequential owned app/browser stacks, 600 seconds total, zero SDK/provider/authoring calls and four-GiB headroom. Exact original images and protected records preserved, including the scripted setup orphan. |
+| M10 explicit follow-up | W09 agent | One new owner Queue in the original project/session, 240-second SDK bound, no children or inference. At most two four-thread authoring processes, second only after verified failure and repair, one readback, one proxy and one CPU still. Four-GiB headroom and existing render claim. |
+| M11 cold Stop RPC proof | W01 agent | One 180-second metadata/control runtime, zero sends. Exact paused-empty queue before/after, Abort ACK, actual inactive-main-loop response and no active background/external calls. Unknown results cannot become a barrier. No publication in this allocation. |
 
 ## Milestones
 
@@ -151,14 +186,14 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M04 Inspection and markup | Completed on 2026-11-14 | `milestone/m04` | [Native framing and composed review acceptance](m04.md) |
 | M05 Asset research and reuse | Completed on 2026-11-14 | `milestone/m05` | [Actual discovery, import, revision and explicit adoption](m05.md) |
 | M06 Storyboards | Completed on 2026-11-14 | `milestone/m06` | [Model-authored planning and corrected direct review](m06.md) |
-| M07 Concept generation | Model-fit preparation; both previous execution windows remain blocked before effects | — | [Original and lightweight limits](m07.md) |
+| M07 Concept generation | Generation/recovery/native budget passed; final actual UI job-context readback pending | — | [Actual generation and limitations](m07.md) |
 | M08 Progressive animation | Completed on 2026-11-14 | `milestone/m08` | [Pre-completion review, pinned inputs and final lineage](m08.md) |
 | M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
-| M10 Image-to-3D | Hardware/inspection passed; original revision awaits continuation | — | [E04](../evidence/w09/live-b/README.md), [M10](m10.md) |
-| M11 Playable Unity scene | Native import/PlayMode passed; original publication continuation active | — | [Exact criteria and retained blocker](m11.md) |
-| M12 Recovery and backup | Same-session restore/continuation and worker recovery passed; accepted ACK-loss pending | — | [Native recovery](m12.md), [worker recovery](m08.md) |
+| M10 Image-to-3D | Hardware/inspection passed; explicit remaining-work revision Queue active | — | [E04](../evidence/w09/live-b/README.md), [M10](m10.md) |
+| M11 Playable Unity scene | Native import/PlayMode/checkpoint passed; cold Stop barrier pending | — | [Exact criteria and retained blocker](m11.md) |
+| M12 Recovery and backup | Required recovery observations substantially complete; M11/cumulative integration pending | — | [Native recovery](m12.md), [worker recovery](m08.md) |
 | M13 Silent cinematic delivery | All seven targeted criteria passed; dependencies pending | — | [Native edit/review/download proof](m13.md) |
-| M14 Consolidated acceptance | SSH message/video and Geometry Nodes slices active; consolidation pending | — | — |
+| M14 Consolidated acceptance | Geometry Nodes, SSH, performance and native-fault slices passed; final consolidation pending | — | [SSH](m14-ssh.md), [performance](performance.md), [native faults](m14-native-faults.md) |
 
 ## Host observations
 
