@@ -24,8 +24,10 @@ export interface ReviewSurfaceProps {
   version: VersionRecord | null;
   jobs: JobRecord[];
   refreshRevision: number;
+  selection?: TurnSelection;
   onContextChange: (selection: TurnSelection) => void;
-  onQueue: (text: string, selection: TurnSelection) => void;
+  onNavigate?: (version: VersionRecord, selection: TurnSelection) => void;
+  onQueue: (text: string, selection: TurnSelection) => void | Promise<void>;
 }
 
 export interface CatalogueSurfaceProps {
@@ -42,7 +44,8 @@ export interface CriticSurfaceProps {
   projectId: string;
   selection: TurnSelection;
   refreshRevision: number;
-  onQueue: (text: string, selection: TurnSelection) => void;
+  onQueue: (text: string, selection: TurnSelection) => void | Promise<void>;
+  onSteer?: (text: string, selection: TurnSelection) => void | Promise<void>;
 }
 
 export interface StudioComponents {

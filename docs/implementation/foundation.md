@@ -136,6 +136,12 @@ The integration-owned frontend seams are `apps/frontend/src/api/studio.ts`. W04 
 `StoryboardBrowser`. The parent composes those accepted components in `main.tsx`. `TurnSelection`
 is an omission of the generated `ContextSnapshot`, not a new wire DTO. Queue handlers add
 fresh request/context IDs and capture time, retaining every supplied target and attachment.
+`ReviewSurfaceProps.selection` carries the current controlled selection to sibling views.
+`onNavigate(version, selection)` explicitly opens a storyboard frame or saved annotation
+in the central reviewer. Ordinary reviewer `onContextChange` only updates captured context.
+The shell passes both callbacks and preserves a selected target instead of resetting it to
+the first image on each refresh. `CriticSurfaceProps.onSteer` is supplied only for eligible
+active work. Queue/Steer callbacks may return a promise so submission state is truthful.
 
 ## Storage, migrations and transactions
 

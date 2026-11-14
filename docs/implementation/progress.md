@@ -31,6 +31,8 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | W04 | `/tmp/opencode/proscenium-fleet/w04`, `impl/w04` | `7b95381` | Desktop shell, projects, conversation and runtime-control UI. | `ses_e264898baffe4JFIm65KLpjHLp` |
 | W05 | `/tmp/opencode/proscenium-fleet/w05`, `impl/w05` | `7b95381` | Review backend, three viewer modes, annotation, selections and critic presentation. | `ses_e264897f0ffe99g7L7VPZVpjjv` |
 | W01 | `/tmp/opencode/proscenium-fleet/w01`, `impl/w01` | `2bc3d5c` | Production Copilot adapter, context, durable request/decision/event delivery and native Stop/Resume. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
+| E03 | `/tmp/opencode/proscenium-fleet/e03`, `impl/e03` | `148ad0f` | Bounded native progressive-render proof and numbered media/browser fixtures. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
+| W06 | `/tmp/opencode/proscenium-fleet/w06`, `impl/w06` | `148ad0f` | Adapted research/storyboard resources and typed shotboard UI against accepted API seams. | `ses_e263d813fffefNumtCvVqwR169` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
@@ -44,6 +46,7 @@ F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected jo
 | W02 native source checks | W02 agent | Its own disposable copy of F01 or newly generated fixture. Sequential Blender CPU inspections, four threads, 180-second per-process timeout. |
 | W04/W05 | Respective agents | Isolated browser data, local dependency environments and offline tests. No model/native/GPU processes. |
 | W01 live persistence | W01 agent | Six small cloud root requests and at most two native children, 120-second request bounds. Its own direct runtimes and disposable projects, no Blender/Unity/GPU. |
+| E03 | E03 agent | One CPU renderer, four threads, at most twelve 640×360 frames and sixteen samples, 300-second limit. Six short synthetic segments, one encoder at a time, sixty seconds each. Isolated Chromium/Brave/Edge profiles. No GPU/model services. |
 
 ## Milestones
 
