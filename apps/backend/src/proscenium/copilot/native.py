@@ -182,6 +182,7 @@ class Native:
         self.services = services
         self.config = Configuration.load(services.settings.runtime)
         self.client: Any = None
+        self.departed_process: dict[str, Any] | None = None
 
     def reconcile_process(self) -> None:
         record_path = self.services.settings.data_directory / "copilot-runtime/process.json"
@@ -190,6 +191,13 @@ class Native:
         record = json.loads(record_path.read_text())
         pid = record["pid"]
         if identity(pid) != record["start"]:
+            self.departed_process = {
+                "pid": pid,
+                "start": record["start"],
+                "observed_identity": identity(pid),
+                "parent_pid": record["parent_pid"],
+                "parent_start": record["parent_start"],
+            }
             return
         # Refuse to attach over an original live backend. OS ownership should also prevent this.
         if identity(record["parent_pid"]) == record["parent_start"]:
@@ -304,6 +312,8 @@ class Native:
             **callbacks,
         )
         if session_id:
+            if self.departed_process is not None:
+                self.departed_process = {**self.departed_process, "session_id": session_id}
             try:
                 return await asyncio.wait_for(
                     self.client.resume_session(session_id, **settings, continue_pending_work=False),
@@ -333,6 +343,24 @@ class Native:
     async def health(self) -> None:
         if self.client:
             await asyncio.wait_for(self.client.ping(), 5)
+
+    def transport_alive(self) -> bool:
+        """Positive exact-process/connected-transport evidence, not absence of an error."""
+        if self.client is None or getattr(self.client, "_state", None) != "connected":
+            return False
+        process = getattr(self.client, "_process", None)
+        if process is None or process.returncode is not None:
+            return False
+        stdin = getattr(process, "stdin", None)
+        if stdin is not None and (
+            getattr(stdin, "closed", False) or (hasattr(stdin, "is_closing") and stdin.is_closing())
+        ):
+            return False
+        record_path = self.services.settings.data_directory / "copilot-runtime/process.json"
+        if not record_path.exists():
+            return False
+        record = json.loads(record_path.read_text())
+        return record["pid"] == process.pid and identity(record["pid"]) == record["start"]
 
     async def close(self) -> None:
         if self.client is not None:

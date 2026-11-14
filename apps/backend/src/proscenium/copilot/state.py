@@ -822,6 +822,8 @@ class State:
                 state = (
                     "running"
                     if starting
+                    else "cancelled"
+                    if data.get("cancelled") is True
                     else "failed"
                     if kind.endswith("failed") or data.get("success") is False
                     else "completed"
@@ -935,3 +937,131 @@ class State:
                             raise DomainError("idempotency_conflict", 409)
                 return
         self.reduce(project_id, session_id, event)
+
+    def interrupt_coordinators(
+        self,
+        tx: Transaction,
+        session_id: str,
+        history: list[dict[str, Any]],
+        departed: dict[str, Any],
+    ) -> None:
+        """Settle lost *coordination*, never infer external-tool success or side effects."""
+        if (
+            departed.get("session_id") != session_id
+            or departed.get("observed_identity") == departed["start"]
+        ):
+            return
+        for invocation in tx.all("invocations"):
+            if (
+                invocation.get("session_id") != session_id
+                or invocation.get("invocation_id") not in departed.get("invocation_ids", [])
+                or invocation["state"] in TERMINAL
+                or invocation.get("kind") != "tool"
+                or invocation.get("name") not in {"task", "ask_user"}
+            ):
+                continue
+            native_id = invocation["native_id"]
+            binding = self.binding(tx, session_id, "tool", native_id)
+            if not binding or any(binding[k] != invocation[k] for k in ("work_id", "request_id")):
+                continue
+            evidence_ids = []
+            if invocation["name"] == "task":
+                children = [
+                    e
+                    for e in history
+                    if e["type"] == "subagent.started"
+                    and e.get("data", {}).get("toolCallId") == native_id
+                ]
+                terminals = [
+                    e
+                    for e in history
+                    if e["type"] in {"subagent.completed", "subagent.failed"}
+                    and e.get("data", {}).get("toolCallId") == native_id
+                ]
+                if not children or any(
+                    not any(t.get("agentId") == c.get("agentId") for t in terminals)
+                    for c in children
+                ):
+                    continue
+                if any(
+                    not (
+                        child := tx.get(
+                            "invocations",
+                            key(session_id, "agent", str(c.get("agentId"))),
+                            required=False,
+                        )
+                    )
+                    or child["state"] not in TERMINAL
+                    or child["work_id"] != invocation["work_id"]
+                    for c in children
+                ):
+                    continue
+                evidence_ids = [e["id"] for e in children + terminals]
+            else:
+                decisions = [
+                    d
+                    for d in tx.all("decisions")
+                    if d["invocation_id"] == invocation["invocation_id"]
+                ]
+                if (
+                    len(decisions) != 1
+                    or decisions[0]["state"] != "pending"
+                    or decisions[0]["response"] is not None
+                ):
+                    continue
+                decision = decisions[0]
+                events = [
+                    e
+                    for e in history
+                    if e["type"] == "user_input.requested"
+                    and e.get("data", {}).get("toolCallId") == native_id
+                    and e["data"].get("requestId") == decision["native_decision_id"]
+                ]
+                if not events:
+                    continue
+                evidence_ids = [e["id"] for e in events]
+                revision = tx.revision("decisions", decision["decision_id"])
+                decision.update(state="cancelled", state_revision=revision + 1)
+                tx.put(
+                    "decisions",
+                    decision["decision_id"],
+                    decision,
+                    expected_revision=revision,
+                    schema="Decision",
+                )
+                tx.emit(
+                    "decision.resolved",
+                    decision,
+                    actor=SYSTEM,
+                    work_id=invocation["work_id"],
+                    request_id=invocation["request_id"],
+                )
+            evidence = {
+                "kind": "coordinator_interrupted",
+                "session_id": session_id,
+                "departed_process": departed,
+                "native_event_ids": evidence_ids,
+                "native_return_observed": False,
+                "at": now(),
+            }
+            save(tx, "copilot.recovery_evidence", invocation["invocation_id"], evidence)
+            save(
+                tx,
+                "invocations",
+                invocation["invocation_id"],
+                {**invocation, "state": "cancelled", "recovery": evidence},
+            )
+            tx.emit(
+                "tool.completed",
+                {
+                    "invocation_id": invocation["invocation_id"],
+                    "name": invocation["name"],
+                    "state": "cancelled",
+                    "summary": "Native coordination interrupted after exact owner process exit; no successful return observed.",
+                    "artifact_ids": [],
+                    "model_id": invocation.get("model_id"),
+                },
+                actor=SYSTEM,
+                work_id=invocation["work_id"],
+                request_id=invocation["request_id"],
+            )

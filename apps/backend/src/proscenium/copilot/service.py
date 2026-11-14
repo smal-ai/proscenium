@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import re
+import time
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -40,6 +41,8 @@ class CallbackOwner:
     settled: bool = False
     failure: str | None = None
     failure_handled: bool = False
+    progress_at: float = 0
+    progress_sequence: int = 0
 
 
 def retired_housekeeping(event: dict[str, Any]) -> bool:
@@ -308,21 +311,67 @@ class Copilot:
             self.wake.clear()
             project_id = self.services.registry.active_id()
             if project_id:
+                boundary = "tick"
+                started = time.monotonic()
                 try:
                     await self.tick(project_id)
                     if self.native and self.sessions:
-                        await self.native.health()
+                        boundary, started = "health", time.monotonic()
+                        await self.check_health(project_id)
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:
+                    self.runtime_error(project_id, boundary, exc, started)
                     await self.failed(
                         project_id,
-                        exc.code if isinstance(exc, DomainError) else "provider_unavailable",
+                        exc.code
+                        if isinstance(exc, DomainError)
+                        else "provider_unavailable"
+                        if isinstance(exc, (ConnectionError, OSError, TimeoutError))
+                        else "outcome_uncertain",
                     )
             try:
                 await asyncio.wait_for(self.wake.wait(), 0.1 if self.sessions else 1)
             except TimeoutError:
                 pass
+
+    def runtime_error(self, project_id: str, boundary: str, exc: Exception, started: float) -> None:
+        # Private structured diagnostics. Never persist exception text, prompts or auth data.
+        with self.services.registry.project_store(project_id).transaction() as tx:
+            tx.put(
+                "copilot.runtime_errors",
+                uuid4().hex,
+                {
+                    "at": now(),
+                    "boundary": boundary,
+                    "exception_type": type(exc).__qualname__,
+                    "exception_module": type(exc).__module__,
+                    "elapsed_seconds": time.monotonic() - started,
+                    "code": exc.code if isinstance(exc, DomainError) else None,
+                },
+            )
+
+    async def check_health(self, project_id: str) -> None:
+        owner = self.callback_owners.get(project_id)
+        before = owner.progress_sequence if owner else 0
+        started = time.monotonic()
+        try:
+            await self.native.health()
+        except TimeoutError as exc:
+            self.runtime_error(project_id, "health_timeout", exc, started)
+            if (
+                owner is None
+                or owner.retired
+                or owner.failure
+                or owner is not self.callback_owners.get(project_id)
+                or owner.progress_sequence <= before
+                or time.monotonic() - owner.progress_at > 5
+                or not hasattr(self.native, "transport_alive")
+                or not self.native.transport_alive()
+            ):
+                raise
+            # One additional five-second probe, never indefinite timeout forgiveness.
+            await self.native.health()
 
     async def session(self, project_id: str, *, allow_create: bool = False) -> Any:
         if project_id in self.sessions:
@@ -382,6 +431,27 @@ class Copilot:
             try:
                 self.state.reduce(project_id, sid, value)
                 self.state.drain_pending(project_id, sid)
+                if (
+                    value["type"]
+                    in {
+                        "assistant.message_delta",
+                        "assistant.message",
+                        "tool.execution_start",
+                        "tool.execution_complete",
+                        "subagent.started",
+                        "subagent.completed",
+                        "subagent.failed",
+                        "assistant.usage",
+                    }
+                    and time.monotonic() - owner.progress_at >= 0.25
+                ):
+                    with self.services.registry.project_store(project_id).transaction(
+                        write=False
+                    ) as tx:
+                        reduced = tx.get("copilot.native", key(sid, value["id"]), required=False)
+                    if reduced and reduced["attributed"]:
+                        owner.progress_at = time.monotonic()
+                        owner.progress_sequence += 1
                 if value["type"] == "session.error":
                     self.callback_failure(owner, "provider_unavailable", value)
             except Exception:
@@ -906,6 +976,13 @@ class Copilot:
             }, replayed
 
     async def reconcile(self, project_id: str) -> dict[str, Any]:
+        cold_resume = project_id not in self.sessions
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            prior_invocations = [
+                i["invocation_id"]
+                for i in tx.all("invocations")
+                if i["state"] not in TERMINAL and i.get("invocation_id")
+            ]
         session = await self.session(project_id)
         history: list[dict[str, Any]] = []
         if hasattr(session, "get_events"):
@@ -971,6 +1048,15 @@ class Copilot:
                             },
                         )
         pending = await self.native.pending(session)
+        departed = getattr(self.native, "departed_process", None)
+        if cold_resume and departed and empty(pending):
+            with self.services.registry.project_store(project_id).transaction() as tx:
+                self.state.interrupt_coordinators(
+                    tx,
+                    session.session_id,
+                    history,
+                    {**departed, "invocation_ids": prior_invocations},
+                )
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             uncertain = [
                 r["request_id"]
