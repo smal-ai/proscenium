@@ -14,6 +14,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -159,6 +160,22 @@ class Supervisor:
             if self.process.poll() is None and ticks(self.process.pid) == self.start:
                 os.killpg(self.process.pid, signal.SIGKILL)
                 self.process.wait(timeout=10)
+
+
+class FixtureServer(uvicorn.Server):
+    @contextmanager
+    def capture_signals(self):
+        # Uvicorn normally re-raises SIGTERM after lifespan shutdown, which can
+        # bypass this development controller's outer child-cleanup finally.
+        # Only this owned fixture host changes that behaviour, not production.
+        original = {
+            sig: signal.signal(sig, self.handle_exit) for sig in (signal.SIGINT, signal.SIGTERM)
+        }
+        try:
+            yield
+        finally:
+            for sig, handler in original.items():
+                signal.signal(sig, handler)
 
 
 class ObservedTransport(httpx.BaseTransport):
@@ -670,12 +687,14 @@ def main():
         report["host"] = {"pid": os.getpid(), "start_ticks": ticks(os.getpid()), "origin": ORIGIN}
         report["ready_for_native_queues"] = True
         save("host-report.json", report)
-        uvicorn.run(
-            create_app(settings, services=services, manage_features=True),
-            host="127.0.0.1",
-            port=18959,
-            log_level="warning",
-        )
+        FixtureServer(
+            uvicorn.Config(
+                create_app(settings, services=services, manage_features=True),
+                host="127.0.0.1",
+                port=18959,
+                log_level="warning",
+            )
+        ).run()
     except Exception as error:
         report["blocker"] = type(error).__name__ + ": " + str(error)[:512]
     finally:
