@@ -1,6 +1,7 @@
 """Read-only structured visual review. Model output never supplies authority or identities."""
 
 import base64
+import copy
 import json
 from typing import Any
 
@@ -46,6 +47,41 @@ RESULT_SCHEMA: dict[str, Any] = {
         }
     },
 }
+
+
+def result_schema(request: dict[str, Any]) -> dict[str, Any]:
+    """Constrain evidence roles to the actual supplied IDs before generation as well.
+
+    Runtime validation remains authoritative. Never repair a model's measured citation
+    by substituting a telemetry ID after inference.
+    """
+    schema = copy.deepcopy(RESULT_SCHEMA)
+    finding = schema["properties"]["findings"]["items"]
+    finding["properties"]["target_index"] = {
+        "type": "integer",
+        "enum": list(range(len(request["targets"]))),
+    }
+    variants = []
+    for kind, identities in (
+        ("visual", [target["artifact_id"] for target in request["targets"]]),
+        ("measured", request["telemetry_artifact_ids"]),
+    ):
+        if not identities:
+            continue
+        variants.append(
+            {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["kind", "artifact_id", "description"],
+                "properties": {
+                    "kind": {"const": kind},
+                    "artifact_id": {"type": "string", "enum": sorted(set(identities))},
+                    "description": {"type": "string", "minLength": 1},
+                },
+            }
+        )
+    finding["properties"]["evidence"]["items"] = {"oneOf": variants}
+    return schema
 
 
 def findings(request: dict[str, Any], result: Any) -> list[dict[str, Any]]:
@@ -105,6 +141,15 @@ class VLMClient:
             raise DomainError(
                 "capability_unavailable", 501, "Configured vision model is not loaded"
             )
+        # A reasoning-enabled local model can consume the entire bounded review output
+        # on reasoning_content, leaving no structured findings. Request non-reasoning
+        # inference only when this exact model advertises an off switch. This changes
+        # neither the loaded profile nor context/KV/batch settings. Never parse private
+        # reasoning as findings or silently spend another inference after truncation.
+        reasoning = suitable[0].get("capabilities", {}).get("reasoning", {})
+        execution = (
+            {"reasoning_effort": "none"} if "off" in reasoning.get("allowed_options", []) else {}
+        )
         content: list[dict[str, Any]] = [
             {
                 "type": "text",
@@ -135,6 +180,7 @@ class VLMClient:
                 "model": model,
                 "temperature": 0,
                 "max_tokens": max_tokens,
+                **execution,
                 "messages": [
                     {
                         "role": "system",
@@ -152,7 +198,7 @@ class VLMClient:
                     "json_schema": {
                         "name": "visual_review",
                         "strict": True,
-                        "schema": RESULT_SCHEMA,
+                        "schema": result_schema(request),
                     },
                 },
             },
