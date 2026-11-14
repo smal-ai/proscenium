@@ -19,6 +19,12 @@ async function mark(label,body={}){const value=await post('/m08-harness/mark',{l
 async function poll(check,seconds,description){const until=Date.now()+seconds*1000;let last;while(Date.now()<until){try{last=await state();if(check(last))return last;}catch(error){if(!description.includes('restart'))throw error;}await page.waitForTimeout(40);}if(last)await write(`timeout-${phase}.json`,last);throw new Error(`Bounded wait: ${description}`);}
 async function reserve(label){for(const slot of [1,2,3]){try{const f=await fs.open(`${path.dirname(root)}/m08-a2a2097-cloud-${slot}.json`,'wx',0o600);await f.writeFile(JSON.stringify({root,label,slot,at:new Date().toISOString()}));await f.close();return slot;}catch(error){if(error.code!=='EEXIST')throw error;}}throw new Error('Three-root allocation exhausted. Inspect original reservations.');}
 async function queue(text,label){const slot=await reserve(label);await fs.writeFile(`${root}/send-${label}.json`,JSON.stringify({slot,at:new Date().toISOString()}),{flag:'wx',mode:0o600});await page.getByRole('textbox',{name:'Message Copilot',exact:true}).fill(text);await page.getByRole('button',{name:'Queue message',exact:true}).click();log.events.push({label,slot,at:new Date().toISOString()});}
+async function explicitOwnerResume(label){
+  const project=await page.evaluate(async(id)=>{const response=await fetch('/api/v1/projects');if(!response.ok)throw new Error('Owner project read failed');return (await response.json()).items.find(project=>project.project_id===id);},fixture.project_id);
+  assert.ok(project);
+  log.events.push({label:'disclosed harness owner API Resume, not a UI Resume pass',operation:label,project_revision:project.state_revision});
+  return post(`/api/v1/projects/${fixture.project_id}/resume`,{schema_version:'1.0',operation_id:label,project_id:fixture.project_id,expected_revision:project.state_revision,mode:'release_held_queue',work_id:null});
+}
 
 try{
   const until=Date.now()+30000;while(true){try{if((await fetch(config.origin+'/health')).ok)break;}catch{}if(Date.now()>until)throw new Error('Host did not become ready');await new Promise(r=>setTimeout(r,80));}
@@ -35,8 +41,7 @@ try{
       const before=await state();
       assert.equal(before.jobs.length,0);assert.equal(before.versions.length,0);
       assert.ok(before.requests.every(request=>request.receipt.state==='completed'),'Do not replay uncertain original work');
-      await page.getByLabel('Resume mode',{exact:true}).selectOption('release_held_queue');
-      await page.getByRole('button',{name:'Resume',exact:true}).click();
+      await explicitOwnerResume('m08-explicit-correction-resume');
       await poll(s=>s.gate_open,30,'explicit owner reconciliation/release before corrected request');
     }
     // Install passive presentation observers BEFORE the model starts authoring.
@@ -119,8 +124,7 @@ try{
     const motion=before.jobs.find(job=>job.render_spec?.intent_id==='m08-motion');assert.equal(motion.state,'succeeded');
     const held=before.jobs.find(job=>job.render_spec?.intent_id==='m08-held-output');assert.ok(held);
     if(held.state==='planned')await post(`/api/v1/projects/${fixture.project_id}/jobs/${held.job_id}/cancel`,{schema_version:'1.0',operation_id:'m08-cancel-unlaunched-probe',project_id:fixture.project_id,expected_revision:held.state_revision});
-    await page.getByLabel('Resume mode',{exact:true}).selectOption('release_held_queue');
-    await page.getByRole('button',{name:'Resume',exact:true}).click();
+    await explicitOwnerResume('m08-explicit-assembly-resume');
     before=await poll(s=>s.gate_open&&s.jobs.find(job=>job.job_id===held.job_id)?.state==='cancelled',30,'explicit owner Resume and prelaunch probe cancellation');
     await write('before-explicit-assembly.json',before);
     const task=`Explicit continuation after the worker-recovery read checks. Do NOT repeat the original animation task. All 12 motion frames already exist for job ${motion.job_id}, scene item m08-scene/version m08-scene-v1, shot m08-motion, frames 1..12 at24/1. No source/texture/camera edit, Blender process, rendering, child, GPU or provider work. The green live texture edit is deliberately UNRELATED and must not be staged or included. Use get_version and list_job_frames/get_artifact, never private SQLite.
