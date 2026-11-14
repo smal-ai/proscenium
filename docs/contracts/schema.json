@@ -218,6 +218,10 @@
       "type": "object", "additionalProperties": false, "required": ["schema_version", "job_id", "project_id", "work_id", "kind", "state", "state_revision", "availability", "input_digest", "external_job_id", "provider_id", "owner_epoch", "completed_frames", "expected_frames", "artifact_ids", "render_spec"],
       "properties": {"schema_version": {"const": "1.0"}, "job_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "work_id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["render", "encode", "image_generation", "mesh_generation", "unity", "vlm_review"]}, "state": {"enum": ["planned", "waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "state_revision": {"$ref": "#/$defs/Revision"}, "availability": {"enum": ["pending", "partial", "complete"]}, "input_digest": {"$ref": "#/$defs/Sha256"}, "external_job_id": {"type": ["string", "null"]}, "provider_id": {"$ref": "#/$defs/NullableId"}, "owner_epoch": {"$ref": "#/$defs/Id"}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "expected_frames": {"type": ["integer", "null"], "minimum": 1}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "render_spec": {"anyOf": [{"$ref": "#/$defs/RenderSpec"}, {"type": "null"}]}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}}
     },
+    "JobStateUpdate": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "job_id", "expected_revision", "state", "availability"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "state": {"enum": ["waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "availability": {"enum": ["pending", "partial", "complete"]}, "external_job_id": {"type": ["string", "null"]}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}}
+    },
     "SelectionSave": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "selection_id", "expected_revision", "slot_id", "version", "action"],
       "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "selection_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "slot_id": {"$ref": "#/$defs/Id"}, "version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "action": {"enum": ["select", "withdraw"]}},
@@ -247,6 +251,10 @@
     "ReviewFinding": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "finding_id", "review_id", "project_id", "revision", "target", "observation", "recommendation", "evidence", "state"],
       "properties": {"schema_version": {"const": "1.0"}, "finding_id": {"$ref": "#/$defs/Id"}, "review_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "revision": {"type": "integer", "minimum": 1}, "target": {"$ref": "#/$defs/FrameTarget"}, "observation": {"type": "string"}, "recommendation": {"type": "string"}, "state": {"enum": ["unreviewed", "submitted", "rejected"]}, "evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["kind", "artifact_id", "description"], "properties": {"kind": {"enum": ["visual", "measured"]}, "artifact_id": {"$ref": "#/$defs/Id"}, "description": {"type": "string"}}}}}
+    },
+    "ReviewComplete": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "review_id", "status", "findings"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "review_id": {"$ref": "#/$defs/Id"}, "status": {"enum": ["ready", "failed"]}, "findings": {"type": "array", "items": {"$ref": "#/$defs/ReviewFinding"}}, "error_code": {"type": ["string", "null"]}}
     },
     "GenerationSubmit": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "job_id", "project_id", "generation_task_id", "target_id", "provider_id", "capability", "workflow_artifact_id", "prompt_artifact_id", "input_artifact_ids", "seed", "model_ids", "settings"],
@@ -283,7 +291,7 @@
     },
     "ProjectSnapshot": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project", "settings", "event_sequence", "active_work", "held_requests", "items", "jobs", "pending_decisions"],
-      "properties": {"schema_version": {"const": "1.0"}, "project": {"$ref": "#/$defs/ProjectRecord"}, "settings": {"$ref": "#/$defs/ProjectSettingsRecord"}, "event_sequence": {"type": "integer", "minimum": 0}, "active_work": {"anyOf": [{"$ref": "#/$defs/WorkRecord"}, {"type": "null"}]}, "held_requests": {"type": "array", "items": {"$ref": "#/$defs/RequestReceipt"}}, "items": {"type": "array", "items": {"$ref": "#/$defs/ItemRecord"}}, "jobs": {"type": "array", "items": {"$ref": "#/$defs/JobRecord"}}, "pending_decisions": {"type": "array", "items": {"$ref": "#/$defs/Decision"}}}
+      "properties": {"schema_version": {"const": "1.0"}, "project": {"$ref": "#/$defs/ProjectRecord"}, "settings": {"$ref": "#/$defs/ProjectSettingsRecord"}, "event_sequence": {"type": "integer", "minimum": 0}, "active_work": {"anyOf": [{"$ref": "#/$defs/WorkRecord"}, {"type": "null"}]}, "held_requests": {"type": "array", "items": {"$ref": "#/$defs/RequestReceipt"}}, "items": {"type": "array", "items": {"$ref": "#/$defs/ItemRecord"}}, "jobs": {"type": "array", "items": {"$ref": "#/$defs/JobRecord"}}, "pending_decisions": {"type": "array", "items": {"$ref": "#/$defs/Decision"}}, "reviews": {"type": "array", "items": {"$ref": "#/$defs/ReviewTicket"}}}
     },
     "ProxyMapping": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "version_id", "proxy_artifact_id", "source_closure_digest", "sample_frame", "space", "nodes"],
@@ -305,7 +313,7 @@
       "type": "object", "additionalProperties": false, "required": ["schema_version", "revision", "generation_attempt_limit", "profiles", "services"],
       "properties": {
         "schema_version": {"const": "1.0"}, "revision": {"$ref": "#/$defs/Revision"}, "generation_attempt_limit": {"type": "integer", "minimum": 1},
-        "profiles": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["profile_id", "name", "lead_model_id", "worker_model_ids", "scope_status"], "properties": {"profile_id": {"$ref": "#/$defs/Id"}, "name": {"type": "string"}, "lead_model_id": {"type": ["string", "null"]}, "worker_model_ids": {"type": "array", "items": {"type": "string"}}, "scope_status": {"enum": ["scope_unverified", "project_scoped", "unavailable"]}}}},
+        "profiles": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["profile_id", "name", "lead_model_id", "worker_model_ids", "scope_status"], "properties": {"profile_id": {"$ref": "#/$defs/Id"}, "name": {"type": "string"}, "lead_model_id": {"type": ["string", "null"]}, "worker_model_ids": {"type": "array", "items": {"type": "string"}}, "scope_status": {"enum": ["project_scoped", "unavailable"]}}}},
         "services": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["provider_id", "endpoint", "capabilities", "model_id", "available"], "properties": {"provider_id": {"$ref": "#/$defs/Id"}, "endpoint": {"type": "string", "format": "uri"}, "capabilities": {"type": "array", "items": {"enum": ["vlm", "image", "image_to_3d"]}}, "model_id": {"type": ["string", "null"]}, "available": {"type": ["boolean", "null"]}}}}
       }
     },
@@ -372,6 +380,7 @@
     "SegmentPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/PreviewSegment"}}}}]},
     "AnnotationPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/AnnotationSnapshot"}}}}]},
     "FindingPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/ReviewFinding"}}}}]},
+    "ReviewPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/ReviewTicket"}}}}]},
     "SelectionPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/SelectionRecord"}}}}]},
     "Subscription": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "type", "project_id", "after_sequence"],

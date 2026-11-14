@@ -13,6 +13,8 @@
     {"file": "event-before-ack.json", "definition": "Event", "valid": true},
     {"file": "generation.json", "definition": "GenerationSubmit", "valid": true},
     {"file": "review-ticket.json", "definition": "ReviewTicket", "valid": true},
+    {"file": "review-complete.json", "definition": "ReviewComplete", "valid": true},
+    {"file": "job-state-update.json", "definition": "JobStateUpdate", "valid": true},
     {"file": "selection.json", "definition": "SelectionSave", "valid": true},
     {"file": "resume.json", "definition": "ResumeCommand", "valid": true},
     {"file": "error.json", "definition": "Error", "valid": true},

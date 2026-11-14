@@ -6,23 +6,21 @@
 
 The runtime agent may read relevant files and images in the active project folder without requiring the user to attach every file manually. Those tool accesses are visible in the activity stream. The attachment preview describes the context automatically captured for one request, not all content the agent may subsequently inspect.
 
-The scope is the active project's canonical real path, including its project-owned historical materialisations and artefact store. It excludes other projects, parent directories, credentials and environment files. Resolving a symlink, archive member, Git path or file URI must not widen that scope.
+The scope is the active project's canonical real path, including its project-owned historical materialisations and artefact store. It excludes other projects, parent directories, credentials and environment files. Resolving a symlink, archive member, Git path or file URI in Proscenium's own routes must not widen that scope.
 
 For V1, an agent-operated Unity project must be inside the active project folder. A previously external Unity project can be copied or moved into that folder by an explicit owner operation before it is exposed to the agent. Configuring a path is not permission to read a second project. Likewise, a reusable asset from another project must be explicitly imported by the owner into the current workspace before the agent may inspect it. Online acquisition through approved tools downloads into the active workspace.
 
-At minimum, exclude `.env`, `.env.*` except an explicitly sanitised example, `.envrc`, `.direnv/`, private keys, credential stores, SDK/provider tokens and runtime authentication data. The prohibition applies to content from historical revisions as well as the current working tree. Raw `.git` access is replaced by scoped Git operations which return permitted project history and redacted metadata.
+At minimum, exclude `.env`, `.env.*` except an explicitly sanitised example, `.envrc`, `.direnv/`, private keys, credential stores, SDK/provider tokens and runtime authentication data from Proscenium's automatic context capture, file serving and source materialisation. Native cross-session memory (`memory={"enabled": False}`) must be disabled or namespaced to the active project so context from other projects is not injected automatically.
 
-Installed executables, approved tool code, standard libraries and private runtime authentication are used by trusted processes as implementation dependencies. This does not expose their directories for general agent browsing. Public tool definitions and sanitised capability diagnostics may be supplied as runtime context.
+### Pragmatic boundary and the existing MCP bridge
 
-Native cross-session memory, search and automatic context retrieval must be disabled or demonstrably namespaced to the active project. A scoped filesystem tool does not prevent a global native memory feature from introducing another project's content. E01 includes a cross-project native-context sentinel and records the actual SDK configuration used.
+To avoid crippling authoring tools or adding fragile OS sandboxes, V1 uses a pragmatic, bare-minimum boundary:
 
-### Enforcement and the existing MCP bridge
+1. **Session working directory and instructions:** Proscenium sets the Copilot session's `working_directory` to the active project root and configures system instructions and skills to operate only within that root, preserve unsaved Blender/Unity work, and never read or stage `.env*`, credentials or sibling projects.
+2. **Application route validation:** Proscenium's own HTTP media/artefact routes, source-closure materialisation and Git checkpoint helpers validate that resolved paths remain inside the active project root and exclude secret/runtime files.
+3. **Caller channel separation:** Owner browser routes, native tool routes and worker receipt routes use separate tokens (`OwnerSession`, `ToolCapability`, `WorkerCapability`) so an agent tool cannot call an owner approval endpoint directly.
 
-A working directory, prompt rule or `exec` namespace does not enforce this policy. The tool profile must combine validated file operations with an execution boundary for general shell/Python/MCP capabilities. An unrestricted Blender Python endpoint can read files outside the project even when the SDK's ordinary file tool is scoped.
-
-E01 must test a sentinel outside the project and a credential sentinel inside it through **each enabled file, shell and Blender-code path**, including symlink and Git-history routes. A profile which cannot uphold the scope is `scope_unverified` and cannot advertise project-only operation or receive automatic approval for the affected capability. It may still support proven scoped operations. A broader permission is a new owner decision, not a fallback selected by an agent.
-
-This is a filesystem/tool-access requirement. It does not introduce a Proscenium scene planner, authoring transaction manager or creative validator. F00 records the actual enforcement mechanism and its limits before enabling general code execution. Reusing a live desktop Blender instance is allowed only when its project association and enabled tool paths satisfy that proof.
+Blender MCP, Unity CLI and tool scripts run with normal workstation user permissions so add-ons, GPU rendering and Python libraries work without friction. E01 verifies that the session `working_directory`, disabled cross-session memory, Proscenium path validators and caller-channel tokens behave as specified.
 
 ## 2. Automatic operations and confirmations
 

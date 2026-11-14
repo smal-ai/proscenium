@@ -50,7 +50,7 @@ Run the smallest necessary proofs early so integration risks are discovered befo
 
 | Proof | When | Evidence required |
 | --- | --- | --- |
-| E01: Copilot SDK compatibility | F00/M01 | Authentication, image input, scoped MCP/subagents, Queue/Steer/Stop, pending decisions, callback attribution, lost-ack reconciliation and native session loading without premature execution. Pin compatible SDK/runtime versions and prove every enabled project-boundary path. |
+| E01: Copilot SDK compatibility | F00/M01 | Authentication, image input, scoped MCP/subagents, Queue/Steer/Stop, pending decisions, callback attribution, lost-ack reconciliation, native session loading without premature execution, active-project `working_directory` and disabled cross-session memory. Pin compatible SDK/runtime versions. |
 | E02: Source and identity contract | During M01, extended in M02/M04 | A saved source checkpoint, actual LFS hydration, dependency fingerprints, stable item/object identity and image/camera coordinate fixtures. |
 | E03: Progressive-media path | After the first render loop, before committing to the M08 player implementation | A bounded Blender render exposes completed frames and a playable contiguous segment before the last frame exists. Record the source-to-video frame mapping. |
 | E04: Image-to-3D feasibility | Begin after M01 rather than waiting until M10 | A candidate with usable licence and real host support produces a mesh that opens in Blender. Record failure if no candidate works. Runtime/model installation needs explicit approval for changes to independent services. |
@@ -106,7 +106,7 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 - Missing Copilot access or Blender bridge produces an actionable unavailable state, not a local-model fallback or a fake result.
 - Invalid publication/missing output leaves the last available preview intact.
 - A dirty live Blender scene is preserved. Any timed-out edit is inspected through tools before retrying.
-- C01, C02, C08, C09 and C14 cover early event/ACK ordering, publication retries, worker-launch uncertainty and content/caller scope. A working-directory setting alone cannot establish scoped operation.
+- C01, C02, C08, C09 and C14 cover early event/ACK ordering, publication retries, worker-launch uncertainty and Proscenium route/channel separation.
 
 **Reuse:** Blender bridge configuration/skill, isolated renderer/worker and the Review Studio feedback identity pattern listed in the [reference inventory](architecture.md#15-reference-implementation-inventory).
 
@@ -173,7 +173,7 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 6. A lost send acknowledgement is reconciled using durable request/runtime IDs rather than automatically duplicating the request.
 7. Usage is measured over completed work, including workers/retries. Missing metrics are labelled unavailable rather than converted to free execution.
 8. Stop bypasses the queue, records requested/confirmed cancellation and holds pending requests. Existing external jobs remain separately visible/cancellable. Resume explicitly chooses whether to continue work or release held requests.
-9. A consequential action waits for the owner's exact decision and survives browser loss. Cross-project/native-memory/credential sentinels remain inaccessible through every enabled path.
+9. A consequential action waits for the owner's exact decision and survives browser loss. Proscenium routes reject cross-project paths, `.env` files and tool calls to owner approval endpoints.
 
 ### Failure and recovery checks
 
@@ -574,7 +574,7 @@ These scenarios catch integration failures that isolated milestone tests can mis
 | Copy/restore a project to a new location | M02, M12, M14 | Relative source references, LFS content, session association and retained review media have explicit recovery behaviour. |
 | Open the application with generation services offline | M07, M09, M14 | Existing catalogue/media/feedback work without silently starting services. |
 | Stop while a Steer or child result is in flight | M03, M12 | Correct original attribution, confirmed cancellation and held Queue requests. |
-| Read another project through shell/MCP/native memory | M01, M03, M14 | Project-only policy holds on every enabled path, not merely the ordinary file tool. |
+| Read another project or `.env` through Proscenium routes | M01, M03, M14 | Session `working_directory` is pinned, cross-session memory is disabled and Proscenium HTTP/publication routes reject outside/secret paths. |
 | Exceed a generation allowance across native subagents | M07, M10 | One task/target ledger, no reset through a new internal job ID. |
 | Crash after publication commit but before worker acknowledgement | M01, M08, M12 | Reconcile one durable job intent and no second writer. |
 

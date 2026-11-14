@@ -233,7 +233,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 - **FR-17.1:** Routine in-scope authoring, project edits, local checkpoints, configured free asset acquisition and configured local generation MUST run under the automatic policy in [owner policy](owner-policy.md).
 - **FR-17.2:** Purchases, installation/service changes, external publishing and destructive retained-content/Git operations MUST require the exact owner authorisation specified there. An agent statement is not a human approval.
-- **FR-17.3:** Active-project content scope MUST apply through every enabled tool path, including general shell/Python/MCP capabilities. E01 MUST test excluded/cross-project sentinels; unproven paths cannot claim scoped automatic operation.
+- **FR-17.3:** Active-project content scope MUST set the session working directory to the active project root, disable cross-session memory, instruct agents/skills to stay within the project root, and enforce path/exclusion checks on Proscenium's own HTTP and publication routes. No OS-level sandbox wrapper is required around Blender MCP or CLI tools.
 - **FR-17.4:** Owner, native-tool and worker API channels MUST have distinct capabilities. A tool cannot answer its own permission request or submit a user selection by spoofing an actor field.
 
 ### FR-18: Uploads and explicit selections
@@ -255,7 +255,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 ### NFR-02: Deployment and service boundaries
 
 - **NFR-02.1:** V1 MUST run host-native on one workstation, with FastAPI serving the compiled frontend. Browser access MUST work through SSH forwarding.
-- **NFR-02.2:** Blender desktop authoring MUST work with the existing bridge and virtual-display tooling. Preview rendering MUST not replace the live authoring session.
+- **NFR-02.2:** Blender desktop authoring MUST work with the existing bridge and virtual-display tooling. If no compatible Blender instance is listening on the bridge port, Copilot MUST start one using the launch tooling and verify active-file/dirty state before editing. Preview rendering MUST not replace the live authoring session.
 - **NFR-02.3:** LM Studio and ComfyUI MUST remain independent services. Their availability and capabilities MUST be reported honestly rather than assumed.
 
 ### NFR-03: Integrity and repeatability
@@ -276,7 +276,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 - **NFR-05.1:** The personal service MUST bind to loopback by default and use the existing SSH access model. Public exposure is outside V1.
 - **NFR-05.2:** Only intended UI assets and published media MUST be served. Arbitrary project roots, Git metadata, environment files and credentials MUST NOT be exposed by file-serving routes.
-- **NFR-05.3:** Copilot tools and permissions MUST implement [owner policy](owner-policy.md), including the project-only scope proof. Working directories and prompts MUST NOT be described as OS-enforced isolation.
+- **NFR-05.3:** Copilot tools and permissions MUST implement the pragmatic [owner policy](owner-policy.md): session working directory pinned to the active project root, cross-session memory disabled, validated Proscenium HTTP/publication paths and distinct caller tokens.
 - **NFR-05.4:** Relevant permitted active-project images/files may reach cloud reasoning through attachments or agent tools. The UI MUST show captured attachments and public tool access. Credentials, environment files and cross-project content remain excluded.
 - **NFR-05.5:** Asset rights, attribution and private/local-only exclusions MUST survive reuse. Source checkpoints do not imply permission to push repositories or redistribute restricted assets.
 
@@ -315,4 +315,3 @@ The full workflow, dependencies, tests and failure cases are in [user journeys a
 - Progressive playback and version-pinned annotation are new integration work despite the existing per-frame render receipts.
 - Image-to-3D has no established working implementation. Model choice, licence, runtime support, mesh quality and resource limits remain an explicit feasibility task.
 - Contract 1.0 is specified in [contracts](contracts/README.md). F00 must validate it, generate bindings, establish the offline harness and pin/prove the SDK/runtime combination before dependent agents implement against it.
-- Project-only operation through the existing arbitrary Python/MCP path requires an execution-boundary proof. The existing bridge's working directory is not that proof.

@@ -206,13 +206,17 @@ The current-published pointer is application metadata. It is not a declaration o
 
 ## 7. Blender tooling and preview jobs
 
-### 7.1 Live authoring
+### 7.1 Live authoring and Blender lifecycle
 
-Reuse the pinned MCP bridge and desktop/virtual-display launcher patterns. Agent skills instruct Copilot to inspect the active file and dirty state, preserve unsaved work and reconcile uncertain edits before retrying.
+Reuse the pinned MCP bridge (`127.0.0.1:9876`) and desktop/virtual-display launcher patterns (`launch.py`). Unlike LM Studio and ComfyUI (which are independent external model servers), **Copilot owns starting the Blender authoring instance when none is listening on the bridge port**:
+
+1. Copilot checks bridge liveness (`get_addon_status` / `doctor`). If no Blender instance is listening on `127.0.0.1:9876`, Copilot starts one via the launch tool (using the active desktop `DISPLAY` when available, or `Xvfb` via `--virtual-display` on headless/SSH sessions) and waits for the bridge to answer.
+2. When a Blender instance is already running on `9876`, Copilot inspects `get_scene_info`, `bpy.data.filepath` and `bpy.data.is_dirty` before any mutation.
+3. If `bpy.data.is_dirty` is true or `bpy.data.filepath` belongs to another project, Copilot preserves that state and requests an explicit user decision (`user_input` / `permission` card) rather than overwriting or closing the artist's unsaved scene.
 
 The existing virtual-display reference starts a real Blender UI under Xvfb because the MCP add-on needs its event loop. This does not imply that every GPU render mode is supported by that display setup. Verify viewport capture and the selected renderer/device separately.
 
-There is no new Proscenium authoring daemon or transaction-manager class. Arbitrary agent Python and shell commands have their tool/process permissions. An `exec` namespace or working directory is not a sandbox. The project-only access policy therefore requires a proven execution boundary for each enabled code path; an unproven path remains unavailable for scoped automatic operation. Authoring writers and Git checkpoints use the tool-owned coordination policy in [execution](execution.md#2-process-and-resource-ownership).
+There is no new Proscenium authoring daemon, transaction-manager class or OS sandbox wrapper around Blender. Agent Python and shell commands run with normal workstation user permissions under the pragmatic [owner policy](owner-policy.md). Authoring writers and Git checkpoints use the tool-owned coordination policy in [execution](execution.md#2-process-and-resource-ownership).
 
 ### 7.2 Presentation rendering
 

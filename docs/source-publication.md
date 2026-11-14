@@ -6,6 +6,44 @@
 
 Each active project has a dedicated Git working tree. V1 project registration requires its root to be the working-tree root, rather than a subdirectory of a repository containing other projects. A Unity project lives beneath that root. Trusted Git tooling may access the repository's object storage, but agent-visible content remains project-scoped.
 
+### Project workspace bootstrap
+
+When `POST /api/v1/projects` runs with `create: true` (or initialises an unbootstrapped workspace root), it sets up the workspace idempotently before returning `ProjectRecord`:
+
+1. Create project directories `brief/`, `assets/`, `scenes/`, `storyboards/`, `sequences/` and `.proscenium/`, and write `project.json` (`ProjectConfig`).
+2. Run `git init -b main` if `.git/` is absent, then run `git lfs install --local`.
+3. Write or ensure `.gitignore` contains:
+   ```gitignore
+   .proscenium/
+   .env
+   .env.*
+   !.env.example
+   .envrc
+   .direnv/
+   *.blend1
+   *.blend2
+   [Ll]ibrary/
+   [Tt]emp/
+   [Ll]ogs/
+   [Bb]uilds/
+   [Uu]serSettings/
+   [Mm]emoryCaptures/
+   ```
+4. Write or ensure `.gitattributes` tracks binary authoring and media formats in Git LFS so agent checkpoints never commit raw binaries into standard Git objects:
+   ```gitattributes
+   *.blend filter=lfs diff=lfs merge=lfs -text
+   *.fbx filter=lfs diff=lfs merge=lfs -text
+   *.glb filter=lfs diff=lfs merge=lfs -text
+   *.png filter=lfs diff=lfs merge=lfs -text
+   *.jpg filter=lfs diff=lfs merge=lfs -text
+   *.jpeg filter=lfs diff=lfs merge=lfs -text
+   *.webp filter=lfs diff=lfs merge=lfs -text
+   *.exr filter=lfs diff=lfs merge=lfs -text
+   *.hdr filter=lfs diff=lfs merge=lfs -text
+   *.mp4 filter=lfs diff=lfs merge=lfs -text
+   *.tga filter=lfs diff=lfs merge=lfs -text
+   ```
+
 Copilot edits canonical filenames and checkpoints a coherent, completed change set. A checkpoint records the files and dependencies required by that result. The tool checks staged/working-file ownership before committing and preserves unrelated staging. Uncommitted or dirty input bytes cannot masquerade as the contents of the declared commit.
 
 Version identity is opaque and stable. Source identity combines full commit SHA, canonical path, actual content SHA-256 and a complete materialisation manifest. File modification times, branch names, Git HEAD at review time and model-generated version labels are not source identities.

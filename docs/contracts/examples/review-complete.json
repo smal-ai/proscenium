@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "operation_id": "op-review-complete-1",
+  "project_id": "fixture-project",
+  "review_id": "review-frame-2",
+  "status": "ready",
+  "findings": [
+    {
+      "schema_version": "1.0",
+      "finding_id": "finding-ground-gap",
+      "review_id": "review-frame-2",
+      "project_id": "fixture-project",
+      "revision": 1,
+      "target": {
+        "origin": "blender_render",
+        "artifact_id": "image-frame-2",
+        "displayed_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "dimensions": {"width": 640, "height": 360},
+        "item_id": "scene-fixture",
+        "version_id": "scene-fixture-v1",
+        "shot_id": "shot-fixture",
+        "render_job_id": "job-draft-1",
+        "source_frame": 2,
+        "media_artifact_id": "video-segment-1-4"
+      },
+      "observation": "Cube appears 0.14 m above the floor plane.",
+      "recommendation": "Set the cube Z location to rest on the floor.",
+      "state": "unreviewed",
+      "evidence": [
+        {
+          "kind": "measured",
+          "artifact_id": "telemetry-scene-v1",
+          "description": "Minimum Z bound is +0.14 m relative to floor top."
+        }
+      ]
+    }
+  ],
+  "error_code": null
+}

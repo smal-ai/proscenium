@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "operation_id": "op-job-complete-1",
+  "project_id": "fixture-project",
+  "job_id": "job-draft-1",
+  "expected_revision": 1,
+  "state": "succeeded",
+  "availability": "complete",
+  "external_job_id": null,
+  "completed_frames": 12,
+  "artifact_ids": ["video-segment-1-4"],
+  "native_exit_code": 0,
+  "error_code": null
+}

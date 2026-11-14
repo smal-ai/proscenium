@@ -37,7 +37,7 @@
 
 The foundation owner versions contract changes and updates affected examples, consumer fixtures and the coverage table in the same change. A breaking wire change requires a new major contract revision and an explicit migration. Additive optional fields require a minor revision. Clarifications which preserve accepted payloads require a patch revision. The initial wire value is `schema_version: "1.0"`; a supported minor revision must be negotiated before a client emits its additional fields. Unknown fields are rejected by the closed 1.0 schemas.
 
-No document in this pack claims that the SDK integration, confinement mechanism, progressive player or image-to-3D capability has already passed its implementation proof. [F00](development-fleet.md#f00-foundation-and-compatibility-gate) must establish those facts before dependent development work is accepted.
+No document in this pack claims that the SDK integration, progressive player or image-to-3D capability has already passed its implementation proof. [F00](development-fleet.md#f00-foundation-and-compatibility-gate) must establish those facts before dependent development work is accepted.
 
 ## Decisions fixed by the owner
 

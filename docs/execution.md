@@ -30,7 +30,9 @@ Before a new owner attaches for execution, the previous native owner must be qui
 
 The lead assigns one owner for edits to a live Blender instance and one owner for the project's Git index/checkpoint operation. Other specialists can perform read-only research, produce independent files or use genuinely separate application contexts. Shared writers must use the toolchain's resource lock and base-state check.
 
-The lock does not approve a scene change. It protects against concurrent operations on the same application/index. A tool must check its intended project/instance and preserve unsaved artist work. A stale base returns `source_conflict` for Copilot to inspect. Routine source checkpoints stage only explicitly owned files and retain unrelated staging. A generic `git add .` is not a checkpoint protocol.
+If no Blender instance is listening on the configured MCP bridge port (`127.0.0.1:9876`), Copilot launches one through the Blender launcher tool (desktop `DISPLAY` or `Xvfb` virtual display). Before mutating a running instance, the tool/skill checks `get_addon_status`, `get_scene_info`, `bpy.data.filepath` and `bpy.data.is_dirty`. If an unsaved scene or a file outside the active project is open, Copilot pauses for a user decision rather than discarding or overwriting that work.
+
+The lock does not approve a scene change. It protects against concurrent operations on the same application/index. A stale base returns `source_conflict` for Copilot to inspect. Routine source checkpoints stage only explicitly owned files and retain unrelated staging. A generic `git add .` is not a checkpoint protocol.
 
 SDK permission to request multiple tools is not a serialization guarantee. E01 proves the chosen tool-path coordination, including native subagent calls. The Proscenium application does not introduce a Blender authoring transaction queue.
 
@@ -41,11 +43,58 @@ The application holds the durable FIFO of human Queue requests. It submits one e
 1. Validate active project, ready attachment/context references and request type.
 2. In one SQLite transaction, record the immutable body hash, request, context snapshot and `request.accepted` event. A matching retry returns that record. A different body under the same ID returns `idempotency_conflict`.
 3. A live owner reserves delivery and records `dispatching` before making the SDK call. Never hold a database transaction open across that call.
-4. Forward the text/context once with the application request ID as the supported native correlation value. Record the native acknowledgement separately.
+4. Serialise the user prompt and immutable `ContextSnapshot` using the deterministic `<proscenium_context>` envelope below, attach the resolved local image files (`attachments=[{"type": "file", "path": ...}]`), and forward once with the application request ID as `client_turn_id`. Record the native acknowledgement separately.
 5. Events arriving before the acknowledgement are joined using their proven native correlation. Persist before broadcasting.
 6. On an authoritative request terminal, finish that request/work only after accounting for its accepted steering directives and native children. External jobs retain their own states.
 
 `client_turn_id` is a correlation facility, not a promised server deduplication key. E01 must prove its persisted echo and callback mapping in the pinned SDK/runtime. F00 supplies a compatibility adapter for root request, steering, subagent and tool attribution. Do not use a mutable global “current request” as the sole callback identity.
+
+### Prompt context envelope
+
+Every `QueueRequest` or `SteerRequest` delivered to `session.send` formats `prompt` as the user's `text`, two newlines, and a `<proscenium_context>` block containing canonical UTF-8 JSON:
+
+```text
+<user text>
+
+<proscenium_context>
+{
+  "schema_version": "1.0",
+  "request_id": "req-create-scene",
+  "work_id": "work-create-scene",
+  "generation_task_id": "gen-task-1",
+  "delivery_mode": "queue",
+  "context_id": "ctx-project-only",
+  "project": {
+    "project_id": "fixture-project",
+    "path": "/home/quintin/play/fixture-project"
+  },
+  "selection": {
+    "item_id": "scene-fixture",
+    "version_id": "scene-fixture-v1",
+    "view_mode": "keyframes",
+    "target": { "...FrameTarget or null..." },
+    "camera": { "...Camera or null..." },
+    "range": { "start": 2, "end": 4 },
+    "selected_object_ids": ["object-cube-source"]
+  },
+  "annotations": [ "...AnnotationSnapshot items..." ],
+  "approved_findings": [ "...ApprovedFinding items..." ],
+  "attached_files": [
+    {
+      "artifact_id": "image-frame-2",
+      "role": "render",
+      "sha256": "dddd...",
+      "path": ".proscenium/artefacts/sha256/dddd.../image.png",
+      "dimensions": { "width": 1920, "height": 1080 }
+    }
+  ]
+}
+</proscenium_context>
+```
+
+- `attached_files` lists the exact files passed to the SDK's `attachments` parameter in the same order: clean target renders/concepts (`role: "render"` | `"concept"` | `"reference"`), rendered markup composites (`role: "markup"`), and lossless PNG masks (`role: "mask"`).
+- For `Render this view`, the UI submits a `QueueRequest` whose `selection.view_mode` is `"3d_inspection"` and whose `selection.camera` contains the complete `Camera` record (`camera_to_world`, `projection`, `aspect`, `near_m`, `far_m`, `vertical_fov_degrees` or `orthographic_height_m`, and optional `shift`), allowing Copilot to pass that exact camera to `request_preview`.
+- Agent skills and subagent prompts consume this envelope directly rather than parsing coordinates, object IDs or finding revisions out of free-form prose.
 
 ### Lost acknowledgement
 

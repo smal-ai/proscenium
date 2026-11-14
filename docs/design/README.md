@@ -14,7 +14,7 @@ Acceptance viewport: **1920 × 1080 CSS pixels**, desktop Chromium/Brave/Edge. T
 
 | Region | Baseline |
 | --- | --- |
-| Header | 48 px high, full width. Project identity, source/version and actual status/actions. |
+| Header | 48 px high, full width. Project identity (saved-project dropdown plus workstation path text input for create/open/rebind), source/version and actual status/actions. |
 | Left panel | 280 px wide, internally scrollable. Shots, Outliner and Assets tabs. |
 | Right panel | 360 px wide, internally scrollable. Copilot/Critic content, decision cards and persistent message controls. |
 | Centre | Remaining width, minimum zero in the layout grid. Exactly one review mode is mounted visibly. |

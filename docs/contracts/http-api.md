@@ -20,7 +20,7 @@ Use a local owner-session capability established through the trusted SSH/operato
 
 Pairing retry is bound to its original operation ID and client nonce. A consumed pairing code cannot create a different client session. Pairing codes/cookies/CSRF tokens and tool/worker capabilities never enter project context, agent-readable files or public event logs. Tool and worker routes use separate scoped capabilities or equivalent in-process authenticated bindings. A supplied `actor` string cannot elevate a caller.
 
-F00 must prove separation of these channels together with the project-only filesystem policy. The existing unrestricted shell/MCP process is not assumed to enforce it merely because the web server is private.
+F00 must verify separation of these HTTP caller channels together with the active-project path validators.
 
 ## 2. Commands and responses
 
@@ -32,14 +32,14 @@ F00 must prove separation of these channels together with the project-only files
 - A response identifies a durable resource. If the connection is lost, the caller reads/retries that identity rather than creating a new command.
 - Standard read endpoints do not create SDK sessions, launch providers or regenerate missing media.
 
-The publication tool is named `publish_outputs`; its input is `PublicationSubmit`. The `request_vlm_review` tool returns only `ReviewTicket`. Unapproved findings are available through the owner review route, not in the model-facing tool result. Generation/tool adapters record jobs under their original work and budget identity.
+The publication tool is named `publish_outputs`; its input is `PublicationSubmit`. The `request_vlm_review` tool returns only `ReviewTicket`. Unapproved findings are registered via `/internal/v1/reviews/{review_id}/complete` and read through the owner review route, never in the model-facing tool result. Generation/tool adapters record jobs and state updates (`/internal/v1/jobs/{job_id}/state`) under their original work and budget identity.
 
 ## 3. Operation catalogue
 
 | Operation | Request | Response / behaviour |
 | --- | --- | --- |
 | `GET /api/v1/configuration` | — | `ConfigurationView`; configured profiles/endpoints and known availability, with no secrets or service startup. |
-| `POST /api/v1/projects` | `ProjectOpen` | Create/open a chosen project, `ProjectRecord`. Creates no model work. |
+| `POST /api/v1/projects` | `ProjectOpen` | Create/open a chosen project by workstation path (`ProjectRecord`). Creates no model work. |
 | `GET /api/v1/projects` | Pagination | `ProjectPage`; owner-only saved-project metadata. |
 | `POST /api/v1/projects/{project_id}/activate` | `RevisionCommand` | `CommandReceipt`; previous project must be settled. |
 | `POST /api/v1/projects/{project_id}/rebind` | `ProjectRebind` | `CommandReceipt`; settled project only, verifies the already moved/copied matching workspace and changes its registry location. |
@@ -54,6 +54,9 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `PUT /api/v1/projects/{project_id}/settings` | `ProjectSettings` | `CommandReceipt`; applies to future work. In-flight jobs retain admitted settings. |
 | `GET /api/v1/projects/{project_id}/items` | Pagination, optional kind | `ItemPage`. |
 | `GET /api/v1/projects/{project_id}/items/{item_id}/versions` | Pagination | `VersionPage`. |
+| `GET /api/v1/projects/{project_id}/versions/{version_id}/shot-plan` | — | `ShotPlan`; server projection with `source_commit` and resolved owner selection state. |
+| `GET /api/v1/projects/{project_id}/versions/{version_id}/sequence-map` | — | `SequenceMap` for a published sequence version. |
+| `GET /api/v1/projects/{project_id}/versions/{version_id}/proxy-mapping` | — | `ProxyMapping` for a published asset or scene version. |
 | `GET /api/v1/projects/{project_id}/jobs` | Pagination | `JobPage`. |
 | `GET /api/v1/projects/{project_id}/jobs/{job_id}` | — | `JobRecord`, including the admitted render specification where applicable. |
 | `GET /api/v1/projects/{project_id}/jobs/{job_id}/availability` | — | `FrameAvailability`; available/pending/failed partition plus playable subset. |
@@ -67,6 +70,7 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `GET /api/v1/projects/{project_id}/annotations` | Pagination, optional target | `AnnotationPage`. |
 | `POST /api/v1/projects/{project_id}/selections` | `SelectionSave` | `CommandReceipt`; owner selection/supersession/withdrawal. |
 | `GET /api/v1/projects/{project_id}/selections` | Pagination | `SelectionPage`; current owner choices by slot, with revision history retained in events. |
+| `GET /api/v1/projects/{project_id}/reviews` | Pagination | `ReviewPage`; project review tickets ordered newest first. |
 | `POST /api/v1/projects/{project_id}/reviews` | `ReviewRequest` | `ReviewTicket`; no automatic source change. |
 | `GET /api/v1/projects/{project_id}/reviews/{review_id}/findings` | Pagination | `FindingPage`; owner channel only. |
 | `POST /api/v1/projects/{project_id}/reviews/{review_id}/findings/{finding_id}/reject` | `RevisionCommand` | `CommandReceipt`; owner rejects that exact finding revision without source mutation. |
@@ -76,7 +80,9 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `POST /internal/v1/publications` | `PublicationSubmit` | `PublicationReceipt`; same contract as `publish_outputs`. |
 | `POST /internal/v1/previews` | `PreviewRequest` | `JobRecord`; same contract as `request_preview`, with no source/head change. |
 | `POST /internal/v1/generation-jobs` | `GenerationSubmit` | `JobRecord`; reserve attempt before dispatch. |
+| `POST /internal/v1/jobs/{job_id}/state` | `JobStateUpdate` | `JobRecord`; worker/tool updates job state, availability, external ID or exit/error code. |
 | `POST /internal/v1/reviews` | `ReviewRequest` | `ReviewTicket`; model-facing result contains no findings. |
+| `POST /internal/v1/reviews/{review_id}/complete` | `ReviewComplete` | `ReviewTicket`; registers completed owner-visible findings and sets `ready` or `failed`. |
 | `POST /internal/v1/frame-receipts` | `FrameReceipt` | `CommandReceipt`; exact admitted job and output hash required. |
 | `POST /internal/v1/segments` | `PreviewSegment` | `CommandReceipt`; exact contiguous frame/encode mapping required. |
 
@@ -90,7 +96,7 @@ An owner answer is persisted in the decision's `response` with `resolved_by`. Na
 
 Lists use a keyset cursor bound to project, filters and sort order; default limit 50, maximum 100. `next_cursor: null` ends traversal. Cursors cannot be reused against another project. Events use their monotonic integer sequence and a separate `after` cursor; zero means the beginning.
 
-A snapshot is read consistently with `event_sequence = N`. Subscribe after N to avoid losing publications between initial fetch and socket attachment. If a cursor is unavailable or from an incompatible journal epoch, return `cursor_expired` and fetch a fresh snapshot. Do not treat an empty page as proof that an uncertain native request never executed.
+A snapshot is read consistently with `event_sequence = N` and includes current items, jobs, decisions and reviews. In V1 the SQLite event journal is append-only and never truncated (`earliest_sequence = 1` whenever `last_sequence >= 1`), so a client can always recover complete conversation and tool-activity history from `after = 0` and subscribe after `N`. If a client supplies a cursor from a restored/rebound database whose sequence is ahead of `last_sequence`, return `cursor_expired` and fetch a fresh snapshot plus events from `0`. Do not treat an empty page as proof that an uncertain native request never executed.
 
 The progressive viewer can recover interval/frame/segment state through the job read endpoints without replaying the entire project journal. Available, pending and failed ranges form a non-overlapping partition of the expected source interval. Playable ranges are a subset of available frames covered by ready encoded segments. Ranges are sorted and coalesced. Frame rate fractions are reduced to lowest terms before fingerprinting.
 
@@ -116,7 +122,7 @@ Use private cache semantics appropriate to owner-authenticated immutable media. 
 | 429 | `generation_budget_exhausted`: wait for an explicit allowance change/new human task. |
 | 500 | `internal_error`: unexpected failure with a redacted message and correlation. Preserve any uncertain operation outcome; do not imply that retrying a fresh effect is safe. |
 | 501 | `cancel_unsupported`, `capability_unavailable`: requested feature not supported by the selected integration. |
-| 503 | `provider_unavailable`, `native_session_missing`, `scope_unverified`, `storage_unavailable`: capability unavailable, no fabricated result. |
+| 503 | `provider_unavailable`, `native_session_missing`, `storage_unavailable`: capability unavailable, no fabricated result. |
 | 507 | `storage_full`: preserve completed data and require storage recovery. |
 
 `outcome_uncertain` is a persisted resource state, not a reason for automatic retries. An asynchronous operation failure is represented on its request/job and corresponding event even if the original HTTP acceptance was 202. Error `retryable: true` permits retrying a read or the same known operation identity; it never authorises a fresh inference submission.

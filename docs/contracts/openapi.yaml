@@ -234,6 +234,45 @@ paths:
             application/json:
               schema: {$ref: './schema.json#/$defs/VersionPage'}
         default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/versions/{version_id}/shot-plan:
+    parameters:
+      - {$ref: '#/components/parameters/ProjectId'}
+      - {name: version_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    get:
+      operationId: getVersionShotPlan
+      responses:
+        '200':
+          description: Server-projected ShotPlan with source_commit and resolved owner selection state.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ShotPlan'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/versions/{version_id}/sequence-map:
+    parameters:
+      - {$ref: '#/components/parameters/ProjectId'}
+      - {name: version_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    get:
+      operationId: getVersionSequenceMap
+      responses:
+        '200':
+          description: SequenceMap for a published sequence version.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/SequenceMap'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/versions/{version_id}/proxy-mapping:
+    parameters:
+      - {$ref: '#/components/parameters/ProjectId'}
+      - {name: version_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    get:
+      operationId: getVersionProxyMapping
+      responses:
+        '200':
+          description: ProxyMapping for a published asset or scene version.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ProxyMapping'}
+        default: {$ref: '#/components/responses/Error'}
   /api/v1/projects/{project_id}/jobs:
     parameters: [{$ref: '#/components/parameters/ProjectId'}]
     get:
@@ -413,6 +452,16 @@ paths:
         default: {$ref: '#/components/responses/Error'}
   /api/v1/projects/{project_id}/reviews:
     parameters: [{$ref: '#/components/parameters/ProjectId'}]
+    get:
+      operationId: listOwnerReviews
+      parameters: [{$ref: '#/components/parameters/Cursor'}, {$ref: '#/components/parameters/Limit'}]
+      responses:
+        '200':
+          description: Review tickets for the project, ordered newest first.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ReviewPage'}
+        default: {$ref: '#/components/responses/Error'}
     post:
       operationId: requestOwnerReview
       parameters: *ownerWrite
@@ -555,6 +604,21 @@ paths:
               schema: {$ref: './schema.json#/$defs/JobRecord'}
         '200': *jobResponse
         default: {$ref: '#/components/responses/Error'}
+  /internal/v1/jobs/{job_id}/state:
+    parameters:
+      - {name: job_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    post:
+      operationId: updateJobState
+      security: [{ToolCapability: []}, {WorkerCapability: []}]
+      parameters: *toolWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/JobStateUpdate'}
+      responses:
+        '200': *jobResponse
+        default: {$ref: '#/components/responses/Error'}
   /internal/v1/reviews:
     post:
       operationId: requestToolReview
@@ -563,6 +627,21 @@ paths:
       requestBody: {$ref: '#/components/requestBodies/ReviewRequest'}
       responses:
         '202': {$ref: '#/components/responses/ReviewTicket'}
+        '200': {$ref: '#/components/responses/ReviewTicket'}
+        default: {$ref: '#/components/responses/Error'}
+  /internal/v1/reviews/{review_id}/complete:
+    parameters:
+      - {name: review_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    post:
+      operationId: completeToolReview
+      security: [{ToolCapability: []}, {WorkerCapability: []}]
+      parameters: *toolWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/ReviewComplete'}
+      responses:
         '200': {$ref: '#/components/responses/ReviewTicket'}
         default: {$ref: '#/components/responses/Error'}
   /internal/v1/frame-receipts:

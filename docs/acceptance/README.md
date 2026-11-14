@@ -8,7 +8,7 @@ F00 implements deterministic generators/readers for these definitions in disposa
 
 | ID | Fixture | Required oracle |
 | --- | --- | --- |
-| F01 | [Source fixture recipe](source-fixture.json): floor, cubes, linked asset/texture versions, instance and renamed object | Stable identities, known bounds, exact source/dependency hashes and protected neighbouring project/credential sentinels. |
+| F01 | [Source fixture recipe](source-fixture.json): floor, cubes, linked asset/texture versions, instance and renamed object | Stable identities, known bounds, exact source/dependency hashes and excluded `.env`/outside-path checks on Proscenium routes. |
 | F02 | Perspective and orthographic cameras, non-default aspect/shift, known landmarks | [Coordinate vectors](coordinate-vectors.json), matrix round trip and rendered landmark correspondence. |
 | F03 | Twelve numbered frames at 24/1 FPS in segments 1–4, 5–8, 9–12; withhold the middle interval | Sequence never skips 5–8, resumes in order, and preserves a paused annotation when availability changes. |
 | F04 | The same numbered sequence at 24000/1001 FPS, including letterboxing/DPR fixtures | Exact rational source↔media mapping and displayed-frame identity at segment boundaries. |

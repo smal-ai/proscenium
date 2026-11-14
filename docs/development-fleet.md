@@ -12,7 +12,7 @@ F00 must deliver:
 
 1. Validation of contract 1.0 and deterministic TypeScript/Pydantic-compatible bindings, with no hand-written competing DTOs.
 2. An exact SDK/runtime/dependency lock based on E01, including authentication, native image input, MCP/subagent invocation and callback attribution.
-3. A project-scope proof for each enabled tool path and distinct owner/tool/worker authority. Existing arbitrary Blender Python is not assumed confined.
+3. Active-project working directory, disabled cross-session memory, Proscenium HTTP/publication path validation and distinct owner/tool/worker HTTP capabilities. No OS sandbox wrapper is required around Blender MCP or CLI tools.
 4. One backend owner, request/outbox/event primitives, Stop/Resume transitions and the publication-to-job-intent commit boundary.
 5. An offline fake-runtime/worker/provider harness for named scenarios. Test doubles must emit failures, races and uncertainty, not just successful replies.
 6. An isolated test workspace factory, database migrations and source/coordinate/media fixture generators.

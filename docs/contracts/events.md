@@ -45,7 +45,7 @@ Server control frames are separate from durable events:
 {"type":"resync_required","schema_version":"1.0","project_id":"project-demo","reason":"cursor_expired"}
 ```
 
-1. Read a replay watermark, send all persisted events after the requested sequence through that watermark, then send `caught_up`.
+1. Read a replay watermark, send all persisted events after the requested sequence through that watermark, then send `caught_up`. In V1 the project event journal is append-only (`earliest_sequence = 1` for any non-empty project), so full conversation and activity replay from `after_sequence: 0` is always available.
 2. Buffer/tail later committed events without a gap while replay is running.
 3. Client ignores already-applied sequences and persists its last applied cursor. Receiving a gap triggers HTTP replay or a fresh snapshot, not invented intermediate state.
 4. Heartbeats are control messages with no business sequence. They do not count as progress or keep a completed work unit running.

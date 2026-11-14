@@ -30,7 +30,7 @@
     "Generate native Blender sources and the texture inside a disposable project, then record actual Git/LFS/content identities.",
     "Scene v1 uses v1 asset and texture bytes. A later asset-v2 commit must not change the materialised scene-v1 result.",
     "Record the actual native inspection bounds and proxy object/instance mapping. Metadata labels do not substitute for a Blender reopen.",
-    "Create neighbouring-project and excluded-credential sentinels outside permitted agent content, without using real secrets.",
+    "Verify that Proscenium file-serving, upload and source-materialisation routes reject outside-project paths and .env files.",
     "Use coordinate-vectors.json camera cases and a numbered-frame overlay/fixture to establish image/frame oracles."
   ]
 }

@@ -4,7 +4,7 @@
 
 ## 1. Ingestion and attachment lifecycle
 
-Browser upload and project-folder opening are different actions. A remote browser uploads selected bytes to Proscenium; it does not supply a local browser-machine path for the workstation to open.
+Browser upload and project-folder opening are different actions. A remote browser uploads selected bytes to Proscenium; it does not supply a local browser-machine path for the workstation to open. Because `<input type="file" webkitdirectory>` reads the client laptop's disk over an SSH-forwarded session, opening, creating or rebinding a project in the UI uses the saved-project selector (`GET /api/v1/projects`) plus a simple workstation path text input (pre-filled with the configured default projects root, e.g. `~/play/`) validated server-side by `POST /api/v1/projects` and `POST /api/v1/projects/{project_id}/rebind`.
 
 V1 browser uploads accept PNG, JPEG and WebP images. Default limits are 25 MiB and 40 million decoded pixels per image, eight images and 100 MiB total per request. These are configurable input limits, not model capability claims. F00 also establishes the configured model's supported attachment limits. Oversized input returns a specific error before a Queue request is accepted; it is not silently omitted.
 
