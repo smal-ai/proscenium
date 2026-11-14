@@ -22,8 +22,8 @@ startup, configuration reads, project restoration or job reads.
 - `uv.lock` freezes the Python dependency graph. Development uses installed CPython 3.12.13.
   The package supports Python >=3.11.
 - `package-lock.json` freezes the Node graph. Development uses Node 24.18.0, npm 11.16.0.
-- E01 owns the SDK/CLI compatibility proof. No guessed SDK dependency is installed here.
-  The parent must integrate its accepted exact SDK/runtime pin before native execution.
+- E01 owns the SDK/CLI compatibility proof. The coordinator integrated its accepted exact
+  SDK/runtime pair after the initial offline foundation commit.
 - `make test-browser`, `make test-native PROFILE=...` and
   `make test-browser-installed BROWSER=brave|edge` fail explicitly while their real suites
   are absent. They do not claim a browser/native test passed. The native runner deliberately
@@ -119,6 +119,15 @@ Public container members:
 `ContextService` protocol seams. Register accepted implementations in `extensions` using
 `artifacts`, `sources`, `reviews` and `contexts`. These protocols contain no pretend handlers.
 Feature packages may propose interface additions to the parent without editing shared files.
+
+Integration accepts the E01 runtime pair `github-copilot-sdk==1.0.34` and direct native
+`@github/copilot==1.0.112`. The pinned local npm platform binary is used for SDK process
+ownership. The `runtime` private configuration object belongs to the W01 adapter and
+`rendering` belongs to W03. Their modules validate documented settings. Neither object is
+exposed by `ConfigurationView`. Configurable input limits are `upload_max_bytes` (25 MiB),
+`upload_max_pixels` (40 million), `attachment_max_count` (8) and `attachment_max_bytes`
+(100 MiB). The exact E01 observations and remaining proof limits are in
+`docs/evidence/e01/README.md`.
 
 The integration-owned frontend seams are `apps/frontend/src/api/studio.ts`. W04 exports
 `StudioApp({components}: {components?: StudioComponents})`. W05 supplies `ReviewWorkspace`,

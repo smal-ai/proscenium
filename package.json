@@ -11,6 +11,7 @@
     "lint": "eslint apps/frontend/src scripts/*.mjs"
   },
   "devDependencies": {
+    "@github/copilot": "1.0.112",
     "@playwright/test": "1.65.1",
     "@eslint/js": "9.39.1",
     "eslint": "9.39.1",

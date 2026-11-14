@@ -15,4 +15,5 @@ dependencies = [
     "pillow>=11,<13",
     "httpx>=0.28,<1",
     "websockets>=15,<17",
+    "github-copilot-sdk==1.0.34",
 ]

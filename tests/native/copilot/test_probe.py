@@ -8,9 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "tools/proofs/copilot"))
-
 from copilot import CopilotClient
 from copilot.client import RuntimeConnection
 from copilot.generated.rpc import (
@@ -19,9 +16,13 @@ from copilot.generated.rpc import (
     SandboxConfig,
 )
 from copilot.session import CopilotSession
-from live import CloudBudget
-from probe import clean_environment
-from replay_attribution import replay
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "tools/proofs/copilot"))
+
+from live import CloudBudget  # noqa: E402
+from probe import clean_environment  # noqa: E402
+from replay_attribution import replay  # noqa: E402
 
 
 class FakeRpc:
@@ -67,9 +68,7 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("source", payload)
 
     async def test_create_resume_send_both_separate_memory_controls(self):
-        client = CopilotClient(
-            connection=RuntimeConnection.for_stdio(path=sys.executable), env={}
-        )
+        client = CopilotClient(connection=RuntimeConnection.for_stdio(path=sys.executable), env={})
         rpc = FakeRpc()
         client._client = rpc
         settings = {
@@ -92,9 +91,7 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
     async def test_native_pause_and_withdraw_use_distinct_message_identity(self):
         rpc = FakeRpc()
         session = CopilotSession("owned-session", rpc)
-        await session.rpc.queue.set_drain_paused(
-            QueueSetDrainPausedRequest(paused=True)
-        )
+        await session.rpc.queue.set_drain_paused(QueueSetDrainPausedRequest(paused=True))
         self.assertEqual(
             rpc.calls[-1],
             (
@@ -153,10 +150,7 @@ class CapturedEvidenceTests(unittest.TestCase):
         self.assertIsNone(reports[0]["agent_id"])
         self.assertIsNotNone(reports[1]["agent_id"])
         self.assertTrue(
-            all(
-                report["arguments"]["sentinel"] == result["context_sentinel"]
-                for report in reports
-            )
+            all(report["arguments"]["sentinel"] == result["context_sentinel"] for report in reports)
         )
         self.assertEqual(
             result["prompt_hooks"][1]["workingDirectory"],
@@ -172,9 +166,7 @@ class CapturedEvidenceTests(unittest.TestCase):
             self.assertEqual(
                 connection.execute("SELECT count(*) FROM events").fetchone()[0], before
             )
-            self.assertTrue(
-                all(row["request_id"] == "e01-hook-child" for row in callbacks)
-            )
+            self.assertTrue(all(row["request_id"] == "e01-hook-child" for row in callbacks))
             changed = json.loads(json.dumps(capture))
             changed["events"][0]["data"]["content"] = "different body"
             with self.assertRaises(ValueError):
@@ -196,8 +188,7 @@ class CapturedEvidenceTests(unittest.TestCase):
         self.assertFalse(result["pause_released"])
         self.assertFalse(
             any(
-                event["type"]
-                in {"user.message", "assistant.message", "tool.execution_start"}
+                event["type"] in {"user.message", "assistant.message", "tool.execution_start"}
                 for event in result["cold_resume_events"]
             )
         )
@@ -205,24 +196,15 @@ class CapturedEvidenceTests(unittest.TestCase):
     def test_real_two_project_resumes_did_not_reveal_other_sentinel(self):
         reports = self.load("followup.json")["followup"]["reports"]
         self.assertEqual(len(reports), 2)
+        self.assertTrue(reports[0]["arguments"]["context_sentinel"].startswith("E01_B_"))
+        self.assertTrue(reports[1]["arguments"]["context_sentinel"].startswith("E01_A_"))
         self.assertTrue(
-            reports[0]["arguments"]["context_sentinel"].startswith("E01_B_")
-        )
-        self.assertTrue(
-            reports[1]["arguments"]["context_sentinel"].startswith("E01_A_")
-        )
-        self.assertTrue(
-            all(
-                report["arguments"]["other_project_sentinel"] == "unknown"
-                for report in reports
-            )
+            all(report["arguments"]["other_project_sentinel"] == "unknown" for report in reports)
         )
 
     def test_direct_runtime_is_reaped_on_graceful_and_forced_exit(self):
         observations = self.load("lifecycle.json")["lifecycle"]["observations"]
-        self.assertEqual(
-            [row["action"] for row in observations], ["stop", "force_stop"]
-        )
+        self.assertEqual([row["action"] for row in observations], ["stop", "force_stop"])
         self.assertTrue(
             all(
                 row["poll_after"] is not None and not row["proc_exists_after"]

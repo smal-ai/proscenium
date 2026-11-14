@@ -23,6 +23,12 @@ class Settings:
     free_space_reserve_bytes: int = 5 * 1024**3
     frontend_directory: Path | None = None
     revision: int = 0
+    runtime: dict[str, Any] = field(default_factory=dict)
+    rendering: dict[str, Any] = field(default_factory=dict)
+    upload_max_bytes: int = 25 * 1024**2
+    upload_max_pixels: int = 40_000_000
+    attachment_max_count: int = 8
+    attachment_max_bytes: int = 100 * 1024**2
 
     @classmethod
     def load(cls, path: Path | None = None) -> "Settings":
@@ -62,8 +68,14 @@ class Settings:
             self.generation_attempt_limit < 1
             or self.free_space_reserve_bytes < 0
             or self.revision < 0
+            or self.upload_max_bytes < 1
+            or self.upload_max_pixels < 1
+            or self.attachment_max_count < 1
+            or self.attachment_max_bytes < 1
         ):
             raise ValueError("Invalid configured limit")
+        if not isinstance(self.runtime, dict) or not isinstance(self.rendering, dict):
+            raise ValueError("Runtime and rendering configuration must be objects")
         for service in self.services:
             endpoint = urlsplit(service["endpoint"])
             if endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
