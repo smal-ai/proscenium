@@ -134,4 +134,5 @@ def accepted_ack_loss(facts):
         and not facts.get("reader_expired")
         and facts.get("os_descriptor_closed")
         and facts.get("sdk_transport_closed")
+        and not facts.get("application_send_ack_delivered")
     )

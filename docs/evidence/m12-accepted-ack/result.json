@@ -1,0 +1,320 @@
+{
+  "format": "proscenium-m12-accepted-ack-evidence-1",
+  "status": "not_proved_one_send_exhausted",
+  "m12_complete": false,
+  "m14_complete": false,
+  "base": "0b8e9ba",
+  "executed_commit": "243b34a",
+  "export_commit": "acbdcfb36f8f8e9b9a03210c54eb28e3e1b48bcf",
+  "root": "/home/quintin/.cache/pa12ack-b",
+  "project_id": "project-ae85729c-27aa-46b6-ad99-9ad705edfca7",
+  "native_session_id": "46c4b503-afb9-4df0-aa59-f44384df7644",
+  "request_id": "cb87e709-864a-4350-be08-d4dbdfdc32ba",
+  "send_reservations": 1,
+  "safe_public_input": "Read-only transport probe. Do not use tools, delegate, edit files or alter services. Reply exactly ACK_BOUNDARY_OK and stop.",
+  "runtime": {
+    "sdk": "1.0.34",
+    "sdk_jsonrpc_source_sha256": "d1133b6a35f90875885156862617db59ffb920630c8727c5437bc6ebaa3d6af2",
+    "cli_package": "1.0.112",
+    "direct_cli_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "browser": "159.0.8154.6",
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "same_continuous_browser_context": true,
+  "actual_owner_api": [
+    {
+      "url": "/api/v1/projects",
+      "status": 201,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-ae85729c-27aa-46b6-ad99-9ad705edfca7/activate",
+      "status": 200,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-ae85729c-27aa-46b6-ad99-9ad705edfca7/contexts",
+      "status": 201,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-ae85729c-27aa-46b6-ad99-9ad705edfca7/requests",
+      "status": 202,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-ae85729c-27aa-46b6-ad99-9ad705edfca7/resume",
+      "status": 202,
+      "code": null
+    }
+  ],
+  "quiet_initial": {
+    "sdk_constructed": false,
+    "gate_open": false,
+    "send_reservations": 0
+  },
+  "actual_cut_facts": {
+    "native_observed_before_cut_ns": null,
+    "send_await_pending_before_cut": false,
+    "hook_matches": 1,
+    "genuine_reply_writes": 1,
+    "send_rpc_id": "4f26d580-edc9-430b-9b9a-0c5d1aad4750",
+    "send_write_started_ns": 467464644841294,
+    "hook_rpc_id": 2,
+    "hook_received_ns": 467467013609857,
+    "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+    "genuine_reply_written_ns": 467467024277973,
+    "cut_ns": 467475027858329,
+    "reader_paused": true,
+    "reader_expired": false,
+    "genuine_reply_written": true,
+    "send_rpc_pending": false,
+    "pending_rpc_count": 1,
+    "real_stdout_is_pipe": true,
+    "os_descriptor_closed": true,
+    "sdk_transport_closed": false,
+    "application_send_ack_delivered": true,
+    "accepted_ack_loss": false
+  },
+  "request_before_restart": {
+    "detail_code": "provider_unavailable",
+    "native_message_id": "94579db0-254e-4ac4-8773-1fb30371bee9",
+    "project_id": "project-ae85729c-27aa-46b6-ad99-9ad705edfca7",
+    "replayed": false,
+    "request_id": "cb87e709-864a-4350-be08-d4dbdfdc32ba",
+    "schema_version": "1.0",
+    "state": "outcome_uncertain",
+    "state_revision": 3,
+    "type": "queue",
+    "work_id": "work-d7bc86dbb4d54b639aa0d884ef807482"
+  },
+  "quiet_restart": {
+    "sdk_constructed": false,
+    "gate_open": false,
+    "send_reservations": 1,
+    "request_receipt": {
+      "detail_code": "provider_unavailable",
+      "native_message_id": "94579db0-254e-4ac4-8773-1fb30371bee9",
+      "project_id": "project-ae85729c-27aa-46b6-ad99-9ad705edfca7",
+      "replayed": false,
+      "request_id": "cb87e709-864a-4350-be08-d4dbdfdc32ba",
+      "schema_version": "1.0",
+      "state": "outcome_uncertain",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-d7bc86dbb4d54b639aa0d884ef807482"
+    },
+    "resumes": [],
+    "jobs": 0,
+    "invocations": 0
+  },
+  "explicit_reconcile": {
+    "operation_id": "4964bf7c-2918-4d1d-9a37-c445853f8557",
+    "state": "outcome_uncertain",
+    "detail_code": "attribution_unavailable"
+  },
+  "final_request_receipt": {
+    "detail_code": "provider_unavailable",
+    "native_message_id": "94579db0-254e-4ac4-8773-1fb30371bee9",
+    "project_id": "project-ae85729c-27aa-46b6-ad99-9ad705edfca7",
+    "replayed": false,
+    "request_id": "cb87e709-864a-4350-be08-d4dbdfdc32ba",
+    "schema_version": "1.0",
+    "state": "outcome_uncertain",
+    "state_revision": 3,
+    "type": "queue",
+    "work_id": "work-d7bc86dbb4d54b639aa0d884ef807482"
+  },
+  "final_gate_open": false,
+  "matching_native_user_messages_after_run": [],
+  "accepted_native_user_before_cut": false,
+  "send_ack_was_lost": false,
+  "original_native_id_join_proved": false,
+  "completion_claimed": false,
+  "classification": "The actual enqueue ACK reached the application before the selected hook. Callback-aware reader gating did not retract an already-delivered ACK. No matching native user.message was observed before or after cut. This is not accepted-send ACK loss.",
+  "host_audits": [
+    {
+      "generation": "1",
+      "session_ids": [
+        "46c4b503-afb9-4df0-aa59-f44384df7644"
+      ],
+      "options": [
+        {
+          "working_directory": "/home/quintin/.cache/pa12ack-b/p",
+          "memory": {
+            "enabled": false
+          },
+          "enable_session_store": false,
+          "available_tools": [],
+          "custom_agents": []
+        }
+      ],
+      "continue_pending_work": null,
+      "native_processes": [
+        {
+          "pid": 3888034,
+          "start": "46746102",
+          "direct_verified_binary": true
+        }
+      ],
+      "native_identities_gone": [
+        true
+      ],
+      "provider_http_attempts": 0
+    },
+    {
+      "generation": "2",
+      "session_ids": [
+        "46c4b503-afb9-4df0-aa59-f44384df7644"
+      ],
+      "options": [
+        {
+          "working_directory": "/home/quintin/.cache/pa12ack-b/p",
+          "memory": {
+            "enabled": false
+          },
+          "enable_session_store": false,
+          "available_tools": [],
+          "custom_agents": []
+        }
+      ],
+      "continue_pending_work": false,
+      "native_processes": [
+        {
+          "pid": 3888925,
+          "start": "46747687",
+          "direct_verified_binary": true
+        }
+      ],
+      "native_identities_gone": [
+        true
+      ],
+      "provider_http_attempts": 0
+    }
+  ],
+  "cleanup": {
+    "recorded_processes": [
+      {
+        "pid": 3887827,
+        "state": "R",
+        "parent": 3887812,
+        "start": "46745849",
+        "kind": "product-host",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3887905,
+        "state": "S",
+        "parent": 3887812,
+        "start": "46745974",
+        "kind": "chromium:browser",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3887961,
+        "state": "S",
+        "parent": 3887908,
+        "start": "46745993",
+        "kind": "chromium:renderer",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3887926,
+        "state": "S",
+        "parent": 3887907,
+        "start": "46745989",
+        "kind": "chromium:GPU",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3887929,
+        "state": "S",
+        "parent": 3887905,
+        "start": "46745990",
+        "kind": "chromium:network.mojom.NetworkService",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3887907,
+        "state": "S",
+        "parent": 3887905,
+        "start": "46745984",
+        "kind": "owned-descendant",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3887908,
+        "state": "S",
+        "parent": 3887905,
+        "start": "46745984",
+        "kind": "owned-descendant",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3888034,
+        "state": "S",
+        "parent": 3887827,
+        "start": "46746102",
+        "kind": "owned-descendant",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3888865,
+        "state": "R",
+        "parent": 3887812,
+        "start": "46747540",
+        "kind": "product-host",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 3888925,
+        "state": "S",
+        "parent": 3888865,
+        "start": "46747687",
+        "kind": "owned-descendant",
+        "original_kernel_identity_gone": true
+      }
+    ],
+    "controller": {
+      "pid": 3887812,
+      "parent": 3887811,
+      "state": "R",
+      "start": "46745824"
+    },
+    "controller_exit_code": 2,
+    "reaped_adopted_children": [
+      {
+        "pid": 3887907,
+        "exit_code": 0
+      },
+      {
+        "pid": 3887908,
+        "exit_code": 0
+      }
+    ],
+    "remaining_children": [],
+    "signals_to_recorded_own_children": [],
+    "browser_context_close_awaited": true,
+    "all_recorded_kernel_identities_gone": true
+  },
+  "source_hashes": {
+    "tests/native/studio/m12_ack_browser.mjs": "a8de7c0fabead654d747145ea964f6a88a42b37d7adb8d57efd1e4029932197f",
+    "tests/native/studio/m12_ack_export.py": "9a68bc72283a3adb1b2e1b03e08f8b7e2c3f59942599e795af35bfd325bbc756",
+    "tests/native/studio/m12_ack_gate.py": "b05896682e89067e581bde794bbafb69954fb5257e041fd0832a52e64a3444d1",
+    "tests/native/studio/m12_ack_host.py": "b745552594242709c71f2b2a5d08aff592633e78788e5641319dfccdea56445a",
+    "tests/native/studio/m12_ack_prepare.py": "5149ee13a1e95b1a66016d725d42385dbe417e7c1357b3d8cbb0208161054444",
+    "tests/native/studio/m12_ack_run.py": "671b5d9cbb316ccc042210e769feedcfa0a413c8ea66afb90dc8590f225f9388"
+  },
+  "limits": [
+    "One actual SDK send only. No second root or replay after the missed boundary.",
+    "No accepted native user message ID existed before the cut; the application already had the normal enqueue ACK. Admission/model/tool completion is not inferred.",
+    "The original fresh request remains outcome_uncertain and the execution gate is closed. No legacy request or old M12 directory was retried or modified.",
+    "A future separately allocated proof would need to drop only the known session.send response before application dispatch while forwarding genuine hook traffic, then close the real pipe after observing native acceptance. That alternative was not run.",
+    "No production SDK/service/state/hook implementation was edited, no hook ACK fabricated, no private reasoning/auth exported, and no CLI hash bypass used.",
+    "No child agents, local providers, native authoring, GPU work or SSH daemon was used. Full M12/M14 not claimed."
+  ]
+}

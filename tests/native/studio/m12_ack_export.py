@@ -20,8 +20,10 @@ def sha(path):
 def main():
     root = Path(sys.argv[1])
     output = Path(sys.argv[2])
+
     def read(name):
         return json.loads((root / name).read_text())
+
     browser = read("browser-result-private.json")
     supervisor = read("supervisor-private.json")
     reservation = read("send-reservation.json")

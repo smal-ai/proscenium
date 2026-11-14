@@ -1,0 +1,63 @@
+{
+  "format": "proscenium-m12-accepted-ack-checks-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "base": "0b8e9ba",
+  "driver_commit": "94a98b1",
+  "executed_commit": "243b34a",
+  "export_code_commit": "acbdcfb",
+  "result": "NOT PROVED. The single real SDK send received its normal enqueue ACK before the selected hook. No accepted native user message was observed before cut. No second send was attempted.",
+  "commands": [
+    {"command": "uv sync --frozen", "exit_code": 0, "result": "Pinned SDK 1.0.34 and application dependencies installed only in owned worktree."},
+    {"command": "npm ci --ignore-scripts", "exit_code": 0, "result": "Pinned Node dependencies installed. No root manifest/lock edits. Existing ESLint deprecation warning."},
+    {"command": "npm run build", "exit_code": 0, "result": "Actual compiled production frontend. Existing Lucide directive and large-bundle warnings."},
+    {"command": "uv run pytest -xq tests/acceptance/m12_ack_gate_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-ack-offline-01", "exit_code": 0, "result": "Five offline framing/gate checks passed BEFORE any live send."},
+    {"command": "uv run python tests/native/studio/m12_ack_prepare.py /home/quintin/.cache/pa12ack-a", "exit_code": 0, "result": "Fresh short private disk/temp root; zero sends."},
+    {"command": "uv run python tests/native/studio/m12_ack_run.py /home/quintin/.cache/pa12ack-a", "exit_code": 2, "result": "Preflight import failure before pairing, SDK construction, browser or owner Queue. Zero send reservation; no actual fault. Composition needs repository tools visible before its import. Owned processes reaped; no allocation send consumed."},
+    {"command": "uv run pytest -xq tests/acceptance/m12_ack_gate_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-ack-offline-02", "exit_code": 0, "result": "Six offline tests passed, including isolated import-only preflight, before the sole actual send."},
+    {"command": "uv run python tests/native/studio/m12_ack_prepare.py /home/quintin/.cache/pa12ack-b", "exit_code": 0, "result": "Fresh independent fixture; zero sends before execution. No old M12 root read or retried."},
+    {"command": "uv run python tests/native/studio/m12_ack_run.py /home/quintin/.cache/pa12ack-b", "exit_code": 2, "result": "One actual SDK send and one actual fault. Genuine production hook ran once; unchanged reply flushed while reader paused. But ACK was already delivered and native user.message was absent. Restart quiet, explicit reconcile outcome_uncertain, no resend. All ten recorded target process identities gone; two adopted children reaped; no remaining children."},
+    {"command": "uv run python tests/native/studio/m12_ack_export.py /home/quintin/.cache/pa12ack-b docs/evidence/m12-accepted-ack/result.json", "exit_code": 0, "result": "Allowlisted failed-boundary observations exported. No private native reasoning, auth, raw hook input/result or browser profile published."},
+    {"command": "uv run pytest -q tests/acceptance/m12_ack_gate_test.py tests/acceptance/m12_ack_evidence_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-ack-final-offline-04 --junitxml docs/evidence/m12-accepted-ack/offline-final-junit.xml", "exit_code": 0, "result": "Ten focused offline and retained-evidence tests passed. No native recertification. Existing Starlette/httpx warning retained."},
+    {"command": "uv run ruff check tests/native/studio/m12_ack*.py tests/acceptance/m12_ack*.py", "exit_code": 0, "result": "Passed"},
+    {"command": "uv run ruff format --check tests/native/studio/m12_ack*.py tests/acceptance/m12_ack*.py", "exit_code": 0, "result": "Seven files already formatted"},
+    {"command": "make spec-check", "exit_code": 0, "result": "Specification, ownership, local links and Python/TypeScript generated bindings passed. Not native recertification."},
+    {"command": "node --check tests/native/studio/m12_ack_browser.mjs", "exit_code": 0, "result": "Passed"}
+  ],
+  "actual_identity": {
+    "project_id": "project-ae85729c-27aa-46b6-ad99-9ad705edfca7",
+    "native_session_id": "46c4b503-afb9-4df0-aa59-f44384df7644",
+    "original_request_id": "cb87e709-864a-4350-be08-d4dbdfdc32ba",
+    "normal_ack_message_id": "94579db0-254e-4ac4-8773-1fb30371bee9",
+    "actual_send_rpc_id": "4f26d580-edc9-430b-9b9a-0c5d1aad4750",
+    "genuine_hook_rpc_id": 2,
+    "send_call_limit": 1,
+    "actual_send_reservations": 1,
+    "remaining_sends": 0,
+    "sdk": "1.0.34",
+    "direct_cli_package": "1.0.112",
+    "browser": "159.0.8154.6",
+    "viewport": {"width": 1920, "height": 1080, "dpr": 1}
+  },
+  "cleanup": {
+    "recorded_target_processes": 10,
+    "browser_and_helpers": "PID/start captured from live browser CDP SystemInfo and kernel parentage/root association, controller ancestors excluded",
+    "sdk_and_hosts": "Exact PID/start records, SDK executable verified as direct pinned native binary",
+    "all_recorded_kernel_identities_gone": true,
+    "adopted_children_reaped": 2,
+    "remaining_children": 0,
+    "scope": "Process-local child subreaper; no ptrace/permissions changes or system lifecycle changes. Only recorded own children may be signalled."
+  },
+  "artifacts": [
+    {"path": "docs/evidence/m12-accepted-ack/result.json", "sha256": "761a09eb2a8cdf15d72380ed353d8d553fc3acd92559fa0b47a1d848481063f9"},
+    {"path": "docs/evidence/m12-accepted-ack/offline-final-junit.xml", "sha256": "f23403e83f47cc2d57a63858edff7f9ddd0ada75bf7676b36937a7e886c827a2"},
+    {"path": "docs/evidence/m12-accepted-ack/offline-junit.xml", "sha256": "8cac9ee2d17cc74c2a9e685ceaae26924f1266bd1f0c53d58776e0bb677701dd"}
+  ],
+  "limits": [
+    "Accepted-native-send ACK-loss criterion remains open. Already delivered ACK is not a lost ACK; no native user identity existed before cut.",
+    "The current request remains outcome_uncertain with its earlier normal ACK ID, not a recovered admission ID. No model/tool completion is inferred.",
+    "One actual fault only. No alternative response filter, second root, old uncertain-call retry, new SSH daemon, child agent, local provider/editor or GPU operation was attempted.",
+    "No production SDK/service/state/hook code changed. A response-selective future test requires a separate explicit allocation.",
+    "The old M12 retained directories and evidence were not modified. No full C02/C20, M12 or M14 completion claim."
+  ]
+}
