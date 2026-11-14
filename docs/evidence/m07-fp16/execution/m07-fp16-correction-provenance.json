@@ -1,0 +1,464 @@
+{
+  "client_id": "ab8daef0-5b4f-4b16-84ad-a45f4796de45",
+  "derived_images": [
+    "m07-fp16-correction-artifact-input-0"
+  ],
+  "graph": {
+    "checkpoint": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "sd_turbo-proscenium-fp16-1.safetensors"
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "sample",
+          0
+        ],
+        "vae": [
+          "checkpoint",
+          2
+        ]
+      }
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "reference",
+          0
+        ],
+        "vae": [
+          "checkpoint",
+          2
+        ]
+      }
+    },
+    "guider": {
+      "class_type": "CFGGuider",
+      "inputs": {
+        "cfg": 1,
+        "model": [
+          "checkpoint",
+          0
+        ],
+        "negative": [
+          "zero",
+          0
+        ],
+        "positive": [
+          "text",
+          0
+        ]
+      }
+    },
+    "noise": {
+      "class_type": "RandomNoise",
+      "inputs": {
+        "noise_seed": 43
+      }
+    },
+    "reference": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "e12594f79d3afc5deb395c5c0959caa2ad364c8da8d2956edf4ff8f0f5372acc.png"
+      }
+    },
+    "sample": {
+      "class_type": "SamplerCustomAdvanced",
+      "inputs": {
+        "guider": [
+          "guider",
+          0
+        ],
+        "latent_image": [
+          "encode",
+          0
+        ],
+        "noise": [
+          "noise",
+          0
+        ],
+        "sampler": [
+          "sampler",
+          0
+        ],
+        "sigmas": [
+          "sigmas",
+          0
+        ]
+      }
+    },
+    "sampler": {
+      "class_type": "KSamplerSelect",
+      "inputs": {
+        "sampler_name": "euler_ancestral"
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "filename_prefix": "proscenium/sd-turbo-img2img-fp16-1",
+        "images": [
+          "decode",
+          0
+        ]
+      }
+    },
+    "sigmas": {
+      "class_type": "SDTurboScheduler",
+      "inputs": {
+        "denoise": 0.5,
+        "model": [
+          "checkpoint",
+          0
+        ],
+        "steps": 4
+      }
+    },
+    "text": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "clip": [
+          "checkpoint",
+          1
+        ],
+        "text": "The same ceramic coffee mug and white background, change only the mug surface to cobalt blue, preserve its shape and composition."
+      }
+    },
+    "zero": {
+      "class_type": "ConditioningZeroOut",
+      "inputs": {
+        "conditioning": [
+          "text",
+          0
+        ]
+      }
+    }
+  },
+  "graph_sha256": "f828c827dfacb79c992918cdc3ba6a2d2c01f83c2fff9de5681fde63703c2797",
+  "input_digest": "861e3135e42e6eabb15c809eeb5f5a68f88ae3fd3fc714f99248e762ff3444f8",
+  "inputs": {
+    "graph": {
+      "checkpoint": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {
+          "ckpt_name": "sd_turbo-proscenium-fp16-1.safetensors"
+        }
+      },
+      "decode": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "sample",
+            0
+          ],
+          "vae": [
+            "checkpoint",
+            2
+          ]
+        }
+      },
+      "encode": {
+        "class_type": "VAEEncode",
+        "inputs": {
+          "pixels": [
+            "reference",
+            0
+          ],
+          "vae": [
+            "checkpoint",
+            2
+          ]
+        }
+      },
+      "guider": {
+        "class_type": "CFGGuider",
+        "inputs": {
+          "cfg": 1,
+          "model": [
+            "checkpoint",
+            0
+          ],
+          "negative": [
+            "zero",
+            0
+          ],
+          "positive": [
+            "text",
+            0
+          ]
+        }
+      },
+      "noise": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 43
+        }
+      },
+      "reference": {
+        "class_type": "LoadImage",
+        "inputs": {
+          "image": "artifact:m07-fp16-initial-artifact-0"
+        }
+      },
+      "sample": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "guider": [
+            "guider",
+            0
+          ],
+          "latent_image": [
+            "encode",
+            0
+          ],
+          "noise": [
+            "noise",
+            0
+          ],
+          "sampler": [
+            "sampler",
+            0
+          ],
+          "sigmas": [
+            "sigmas",
+            0
+          ]
+        }
+      },
+      "sampler": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler_ancestral"
+        }
+      },
+      "save": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "proscenium/sd-turbo-img2img-fp16-1",
+          "images": [
+            "decode",
+            0
+          ]
+        }
+      },
+      "sigmas": {
+        "class_type": "SDTurboScheduler",
+        "inputs": {
+          "denoise": 0.5,
+          "model": [
+            "checkpoint",
+            0
+          ],
+          "steps": 4
+        }
+      },
+      "text": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "checkpoint",
+            1
+          ],
+          "text": "The same ceramic coffee mug and white background, change only the mug surface to cobalt blue, preserve its shape and composition."
+        }
+      },
+      "zero": {
+        "class_type": "ConditioningZeroOut",
+        "inputs": {
+          "conditioning": [
+            "text",
+            0
+          ]
+        }
+      }
+    },
+    "minimum_free_vram_bytes": 1073741824,
+    "plugin": {
+      "capability": "image",
+      "conditioning_method": "VAE-encoded latent img2img, SDTurboScheduler denoise=0.5, 4 steps, cfg=1, no resize",
+      "expected_model_hashes": {
+        "sd_turbo-proscenium-fp16-1.safetensors": "c1a0a0af943c0c197215fb7cd5bb8b72e342b98461e1c3719d8ba28300ba015e"
+      },
+      "model_source": {
+        "bytes": 2607364064,
+        "conversion": {
+          "absolute_tolerance": 2.9802322387695312e-08,
+          "converted_elements": 1303598228,
+          "converted_tensor_count": 1229,
+          "converter_sha256": "42e5311f48e85d455b3ccf929da517468a489a21126808d7e4c7fcfca845feb3",
+          "full_streaming_readback_validated": true,
+          "max_abs_error": 0.0038881301879882812,
+          "max_normal_relative_error": 0.0004880429477794046,
+          "numpy_version": "2.5.3",
+          "operation": "CPU streaming F32-to-F16, no training or clamping",
+          "original_hash_unchanged_after": true,
+          "relative_tolerance": 0.00048828125,
+          "report_sha256": "b44b82b596d3c6caeed02ffd3cf432b11f53a401f5a270c0177e4b61368a824a",
+          "rounded_nonzero_to_zero": 231210,
+          "rounding": "IEEE binary16 round-to-nearest ties-to-even"
+        },
+        "filename": "sd_turbo-proscenium-fp16-1.safetensors",
+        "fit_floor_bytes": 12884901888,
+        "fit_floor_formula": "max(12 GiB, actual derivative bytes + 8 GiB)",
+        "is_local_derivative_not_official_download": true,
+        "licence": "Stability AI Community License, 2024-07-05; local precision derivative, no retraining",
+        "repository": "stabilityai/sd-turbo",
+        "revision": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
+        "sha256": "c1a0a0af943c0c197215fb7cd5bb8b72e342b98461e1c3719d8ba28300ba015e",
+        "source_filename": "sd_turbo.safetensors",
+        "source_sha256": "3f067a1b943cf162f2b8f8588f6cf5824bd5b4c7d1d88d87164b9ca123616549"
+      },
+      "revision": "comfy-sd-turbo-img2img-fp16-1"
+    },
+    "prompt": "The same ceramic coffee mug and white background, change only the mug surface to cobalt blue, preserve its shape and composition.",
+    "prompt_sha256": "93b8d145e57dd02a3cfb8ca5afeb356c1d8aac007502bf30010db8bfaeffe7ff",
+    "provider": {
+      "available": null,
+      "capabilities": [
+        "image"
+      ],
+      "endpoint": "http://127.0.0.1:18589",
+      "model_id": null,
+      "provider_id": "m07-fp16-comfy"
+    },
+    "references": {
+      "m07-fp16-initial-artifact-0": {
+        "derived_sha256": "e12594f79d3afc5deb395c5c0959caa2ad364c8da8d2956edf4ff8f0f5372acc",
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d"
+      }
+    },
+    "request": {
+      "capability": "image",
+      "generation_task_id": "task-64f49649d9004a15a32ba790eb6b81e7",
+      "input_artifact_ids": [
+        "m07-fp16-initial-artifact-0"
+      ],
+      "job_id": "m07-fp16-correction",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "prompt_artifact_id": "m07-prompt-correction",
+      "provider_id": "m07-fp16-comfy",
+      "schema_version": "1.0",
+      "seed": "43",
+      "settings": {
+        "target_slot": {
+          "frame_id": "frame-mug",
+          "kind": "storyboard_frame",
+          "shot_id": "shot-mug",
+          "storyboard_version": {
+            "item_id": "m07-fp16-storyboard",
+            "version_id": "m07-fp16-plan-v1"
+          }
+        }
+      },
+      "target_id": "m07-mug-correction",
+      "workflow_artifact_id": "m07-graph-correction"
+    },
+    "target_resolution": {
+      "context": null,
+      "document_sha256": "ce2f98b7508be3dec868e89a8001595a8d3d590b2b2bec38c99d7d281815d527",
+      "item": {
+        "current_version_id": "m07-fp16-plan-v1",
+        "description": "Labelled reference/source fixture; generation is NOT pre-seeded",
+        "item_id": "m07-fp16-storyboard",
+        "kind": "storyboard",
+        "name": "M07 FP16 concept storyboard",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0
+      },
+      "slot": {
+        "frame_id": "frame-mug",
+        "kind": "storyboard_frame",
+        "shot_id": "shot-mug",
+        "storyboard_version": {
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1"
+        }
+      },
+      "target": {
+        "shot_id": "shot-mug",
+        "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+        "version": {
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1"
+        }
+      },
+      "version_record": {
+        "actor": {
+          "id": "labelled-fixture-publisher",
+          "kind": "tool"
+        },
+        "artifact_ids": [
+          "m07-owner-reference",
+          "m07-unrelated-reference"
+        ],
+        "created_at": "2026-11-14T18:13:53.356140+00:00",
+        "description": "Labelled reference/source fixture; generation is NOT pre-seeded",
+        "item_id": "m07-fp16-storyboard",
+        "kind": "storyboard",
+        "name": "M07 FP16 concept storyboard",
+        "preview_job_ids": [],
+        "preview_requests": [],
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "publication_id": "m07-fp16-fixture-publication",
+        "schema_version": "1.0",
+        "source": {
+          "dependencies": [],
+          "digest": "d81ffd557e2312ae193ea199410866a8c486eb3d9c13c51ef360f78769e1072d",
+          "entry_path": "storyboards/m07-fp16-plan.json",
+          "files": [
+            {
+              "destination": "storyboards/m07-fp16-plan.json",
+              "origin": {
+                "commit": "1746e6bd1b080dc26cc9c889ead0f60596cea766",
+                "kind": "git",
+                "path": "storyboards/m07-fp16-plan.json",
+                "repository_id": "repository-b4a28e9c-4077-481a-b659-7a42037cd94c",
+                "sha256": "ce2f98b7508be3dec868e89a8001595a8d3d590b2b2bec38c99d7d281815d527"
+              }
+            }
+          ],
+          "required_runtime": {
+            "application": "fixture",
+            "features": [],
+            "version": "1"
+          }
+        },
+        "source_commit": "1746e6bd1b080dc26cc9c889ead0f60596cea766",
+        "version_id": "m07-fp16-plan-v1"
+      },
+      "work_id": "work-ad69c51436d44f3a9e634fbb59db0764"
+    },
+    "workflow_sha256": "a66cc39fbf8028684bf6e7ef5a163f3e7ef1fd93316822f9d2ab36959833889a"
+  },
+  "output_artifact_ids": [
+    "m07-fp16-correction-artifact-0"
+  ],
+  "output_inspections": [
+    {
+      "artifact_id": "m07-fp16-correction-artifact-0",
+      "inspection": {
+        "conditioning_method": "VAE-encoded latent img2img, SDTurboScheduler denoise=0.5, 4 steps, cfg=1, no resize",
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "sha256_verified_during_registration": true
+      },
+      "sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df"
+    }
+  ],
+  "prompt_id": "9cbb1228-e32a-4c81-a587-06dbd66c20ab"
+}

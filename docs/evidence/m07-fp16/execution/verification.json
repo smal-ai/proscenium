@@ -1,0 +1,22 @@
+{
+  "result": "GENERATION_SELECTION_RECOVERY_WORKFLOW_PROVEN_COORDINATOR_ACCEPTANCE_PENDING",
+  "actual_inferences": 2,
+  "actual_prompt_posts": 2,
+  "actual_cloud_roots": 2,
+  "native_children": 0,
+  "actual_initial_prompt_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+  "known_provider_response_loss": "ONE actual completed initial response withheld; production received no out-of-band ID and reconciled original client ID through genuine history",
+  "native_rpc_ack_loss": "NOT_TESTED",
+  "quiet_application_restart_recovery": "NOT_TESTED",
+  "c12_actual_scope": "Two separate explicit owner Queues -> two distinct frozen human task IDs, default policy 3 each, one consumed reservation each, one identical canonical frame target. No native children or actual default-three exhaustion were allocated. Existing accepted offline cases remain the child/uncertainty/exhaustion evidence.",
+  "source_unchanged": true,
+  "old_fixtures_unchanged": true,
+  "unrelated_frame_unchanged": true,
+  "previous_selected_png_retained": true,
+  "no_auto_selection_on_technical_success": true,
+  "reuse_and_reload_extra_prompt_posts": 0,
+  "quality_limit": "Requested cobalt-blue correction was NOT achieved: both observed images remain red, though output PNG hashes and some shape/detail differ. No reroll or extra inference.",
+  "ui_defect_for_coordinator": "After selecting correction, displayed img URI/hash is the correction but the job selector still labels the initial image-generation job. No unowned UI fix or identity relabelling.",
+  "cleanup_deviation": "Uvicorn re-raised SIGTERM after lifespan, bypassing outer Python finally. Exact saved PID/start/port/root verified external Comfy cleanup completed at <1800s. Corrected fixture signal wrapper has offline coverage, not another native run.",
+  "private_runtime": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114"
+}

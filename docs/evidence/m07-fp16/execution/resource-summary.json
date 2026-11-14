@@ -1,0 +1,56 @@
+{
+  "samples": 711,
+  "minimum_mem_available_bytes": 29554343936,
+  "maximum_owned_comfy_rss_bytes": 2216775680,
+  "maximum_gpu_busy_percent": 100,
+  "maximum_device_vram_used": 37459898368,
+  "not_exact_allocator_peak": true,
+  "first": {
+    "at": 1794680023.0862415,
+    "mem_available_bytes": 36237549568,
+    "owned_comfy_rss_bytes": 6492160,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 13,
+        "mem_info_vram_used": 33120821248,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "last": {
+    "at": 1794680379.6092165,
+    "mem_available_bytes": 31578472448,
+    "owned_comfy_rss_bytes": 2054148096,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 69,
+        "mem_info_vram_used": 33590870016,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "host_before_start": {
+    "at": 1794680019.0427027,
+    "mem_available_bytes": 36721819648,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 13,
+        "mem_info_vram_used": 33120821248,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "host_after_startup": {
+    "at": 1794680033.1323395,
+    "mem_available_bytes": 35767062528,
+    "owned_comfy_rss_bytes": 1232932864,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 13,
+        "mem_info_vram_used": 33314856960,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "all_device_vram_counters_include_protected_other_residents": true
+}

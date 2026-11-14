@@ -1,0 +1,12 @@
+{
+  "m07-fp16-correction": {
+    "owner_queue_accepted_to_native_work_completed_seconds": 7.185695,
+    "prompt_post_to_product_job_succeeded_seconds": 1.7977910041809082,
+    "comfy_execution_seconds": 1.346
+  },
+  "m07-fp16-initial": {
+    "owner_queue_accepted_to_native_work_completed_seconds": 17.666806,
+    "prompt_post_to_product_job_succeeded_seconds": 5.372196435928345,
+    "comfy_execution_seconds": 4.632
+  }
+}

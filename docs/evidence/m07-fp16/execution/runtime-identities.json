@@ -1,0 +1,16 @@
+{
+  "application_base": "011ab92d7c0f2a85ce61ea0235ad305d98b317fe",
+  "executed_host_commit": "970040b8a22a3298b653924b2ce033e1b8ffba86",
+  "sdk_version": "1.0.34",
+  "httpx_version": "0.28.1",
+  "pillow_version": "12.3.0",
+  "browser": "159.0.8154.6",
+  "source_sha256": {
+    "apps/backend/src/proscenium/providers/service.py": "16c6888767534f49b5d66b92a17e9505c448c23173ddf7a092c904c23b6812ff",
+    "apps/backend/src/proscenium/providers/sd_turbo_fp16.py": "921929dbc3b54765a4be69de0f8875bdc6e53168cd2b0eef33f8e69b37640965",
+    "apps/backend/src/proscenium/copilot/tools.py": "3701babb632ae2ab0ff556ee54bcb1c8b22444d2b920cfa0e0349ac815fcbf82",
+    "apps/backend/src/proscenium/copilot/native.py": "3d5d71c9489d60b3c2c68cbf44ec637ff07bb54da0846b427f6f15b6ea0d56dd"
+  },
+  "native_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+  "note": "No production changes. Browser fixture corrected explicit owner activation before the first native Queue; signal-cleanup fix added after run, with offline coverage only."
+}

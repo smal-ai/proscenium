@@ -1,0 +1,98 @@
+{
+  "project": {
+    "name": "M07 FP16 actual img2img fixture",
+    "native_session_id": null,
+    "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project",
+    "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+    "repository_id": "repository-b4a28e9c-4077-481a-b659-7a42037cd94c",
+    "schema_version": "1.0",
+    "state": "inactive",
+    "state_revision": 0
+  },
+  "references": [
+    {
+      "schema_version": "1.0",
+      "artifact_id": "m07-owner-reference",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "kind": "image",
+      "purpose": "reference",
+      "sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+      "bytes": 3325,
+      "media_type": "image/png",
+      "state": "ready",
+      "derived_from": [],
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "artifact_id": "m07-unrelated-reference",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "kind": "image",
+      "purpose": "reference",
+      "sha256": "588bfaf07d944da5c0339d0dd92d226eaa21e951ae92426e8a3b7c8a2105c54c",
+      "bytes": 2126,
+      "media_type": "image/png",
+      "state": "ready",
+      "derived_from": [],
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      }
+    }
+  ],
+  "plan": {
+    "schema_version": "1.0",
+    "plan_id": "m07-fp16-plan",
+    "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+    "brief_artifact_ids": [],
+    "asset_dependencies": [],
+    "unresolved": [],
+    "shots": [
+      {
+        "shot_id": "shot-mug",
+        "intent": "One bounded img2img target and one unrelated reference",
+        "camera_intent": "Static image fixture",
+        "motion_beats": [],
+        "scene_version": null,
+        "source_range": null,
+        "fps": null,
+        "frames": [
+          {
+            "frame_id": "frame-mug",
+            "role": "start",
+            "composition": "Mug concept target",
+            "artifact_id": "m07-owner-reference",
+            "state": "available"
+          },
+          {
+            "frame_id": "frame-unrelated",
+            "role": "end",
+            "composition": "Unrelated green reference, do not generate",
+            "artifact_id": "m07-unrelated-reference",
+            "state": "available"
+          }
+        ]
+      }
+    ]
+  },
+  "publication": {
+    "schema_version": "1.0",
+    "publication_id": "m07-fp16-fixture-publication",
+    "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+    "versions": [
+      {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1"
+      }
+    ],
+    "job_ids": [],
+    "event_sequence": 1,
+    "replayed": false
+  },
+  "source_commit": "1746e6bd1b080dc26cc9c889ead0f60596cea766",
+  "source_path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project/storyboards/m07-fp16-plan.json",
+  "source_sha256": "ce2f98b7508be3dec868e89a8001595a8d3d590b2b2bec38c99d7d281815d527"
+}

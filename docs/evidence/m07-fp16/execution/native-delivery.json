@@ -1,0 +1,140 @@
+[
+  {
+    "at": 1794680238.607083,
+    "session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+    "prompt": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+    "display_prompt": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+    "mode": "enqueue",
+    "client_turn_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+    "attachments": [
+      {
+        "type": "file",
+        "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project/.proscenium/artefacts/sha256/e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73/content"
+      },
+      {
+        "type": "extension_context",
+        "extensionId": "proscenium",
+        "title": "Turn context",
+        "capturedAt": "2026-11-14T18:17:14.555Z",
+        "payload": {
+          "schema_version": "1.0",
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "delivery_mode": "queue",
+          "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+          "project": {
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project"
+          },
+          "selection": {
+            "item_id": "m07-fp16-storyboard",
+            "version_id": "m07-fp16-plan-v1",
+            "view_mode": "keyframes",
+            "target": {
+              "artifact_id": "m07-owner-reference",
+              "dimensions": {
+                "height": 512,
+                "width": 512
+              },
+              "displayed_sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+              "item_id": "m07-fp16-storyboard",
+              "media_artifact_id": null,
+              "origin": "reference",
+              "render_job_id": null,
+              "shot_id": "shot-mug",
+              "source_frame": null,
+              "version_id": "m07-fp16-plan-v1"
+            },
+            "camera": null,
+            "range": null,
+            "selected_objects": []
+          },
+          "annotations": [],
+          "approved_findings": [],
+          "attached_files": [
+            {
+              "artifact_id": "m07-owner-reference",
+              "role": "reference",
+              "sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+              "path": ".proscenium/artefacts/sha256/e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73/content",
+              "dimensions": {
+                "height": 512,
+                "width": 512
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "at": 1794680293.980039,
+    "session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+    "prompt": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-correction\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-correction\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-correction\", \"prompt_artifact_id\": \"m07-prompt-correction\", \"input_artifact_ids\": [\"m07-fp16-initial-artifact-0\"], \"seed\": \"43\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+    "display_prompt": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-correction\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-correction\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-correction\", \"prompt_artifact_id\": \"m07-prompt-correction\", \"input_artifact_ids\": [\"m07-fp16-initial-artifact-0\"], \"seed\": \"43\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+    "mode": "enqueue",
+    "client_turn_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+    "attachments": [
+      {
+        "type": "file",
+        "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project/.proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content"
+      },
+      {
+        "type": "extension_context",
+        "extensionId": "proscenium",
+        "title": "Turn context",
+        "capturedAt": "2026-11-14T18:18:13.936Z",
+        "payload": {
+          "schema_version": "1.0",
+          "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+          "work_id": "work-ad69c51436d44f3a9e634fbb59db0764",
+          "generation_task_id": "task-64f49649d9004a15a32ba790eb6b81e7",
+          "delivery_mode": "queue",
+          "context_id": "4c88786b-685f-40f7-9a8f-eee3dfc7960d",
+          "project": {
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project"
+          },
+          "selection": {
+            "item_id": "m07-fp16-storyboard",
+            "version_id": "m07-fp16-plan-v1",
+            "view_mode": "keyframes",
+            "target": {
+              "artifact_id": "m07-fp16-initial-artifact-0",
+              "dimensions": {
+                "height": 512,
+                "width": 512
+              },
+              "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+              "item_id": "m07-fp16-storyboard",
+              "media_artifact_id": null,
+              "origin": "concept",
+              "render_job_id": null,
+              "shot_id": "shot-mug",
+              "source_frame": null,
+              "version_id": "m07-fp16-plan-v1"
+            },
+            "camera": null,
+            "range": null,
+            "selected_objects": []
+          },
+          "annotations": [],
+          "approved_findings": [],
+          "attached_files": [
+            {
+              "artifact_id": "m07-fp16-initial-artifact-0",
+              "role": "concept",
+              "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+              "path": ".proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content",
+              "dimensions": {
+                "height": 512,
+                "width": 512
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

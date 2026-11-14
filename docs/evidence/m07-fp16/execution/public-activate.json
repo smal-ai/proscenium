@@ -1,0 +1,279 @@
+{
+  "action": "activate",
+  "unrelated_selection": {
+    "schema_version": "1.0",
+    "operation_id": "e3b80435-bda7-418f-87aa-684165e173b3",
+    "resource_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+    "state": "selected",
+    "state_revision": 1,
+    "replayed": false
+  },
+  "state": {
+    "snapshot": {
+      "schema_version": "1.0",
+      "project": {
+        "name": "M07 FP16 actual img2img fixture",
+        "native_session_id": null,
+        "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "repository_id": "repository-b4a28e9c-4077-481a-b659-7a42037cd94c",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 1
+      },
+      "settings": {
+        "default_profile_id": "authoring",
+        "generation_attempt_limit": 3,
+        "state_revision": 1
+      },
+      "event_sequence": 3,
+      "active_work": null,
+      "held_requests": [],
+      "items": [
+        {
+          "current_version_id": "m07-fp16-plan-v1",
+          "description": "Labelled reference/source fixture; generation is NOT pre-seeded",
+          "item_id": "m07-fp16-storyboard",
+          "kind": "storyboard",
+          "name": "M07 FP16 concept storyboard",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "jobs": [],
+      "pending_decisions": [],
+      "reviews": []
+    },
+    "requests": {
+      "schema_version": "1.0",
+      "items": [],
+      "next_cursor": null
+    },
+    "jobs": {
+      "schema_version": "1.0",
+      "items": [],
+      "next_cursor": null
+    },
+    "items": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "current_version_id": "m07-fp16-plan-v1",
+          "description": "Labelled reference/source fixture; generation is NOT pre-seeded",
+          "item_id": "m07-fp16-storyboard",
+          "kind": "storyboard",
+          "name": "M07 FP16 concept storyboard",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "next_cursor": null
+    },
+    "selections": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+            "kind": "user"
+          },
+          "choice": {
+            "artifact_id": "m07-unrelated-reference",
+            "kind": "artifact"
+          },
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selection_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+          "slot": {
+            "frame_id": "frame-unrelated",
+            "kind": "storyboard_frame",
+            "shot_id": "shot-mug",
+            "storyboard_version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "state": "selected",
+          "state_revision": 1
+        }
+      ],
+      "next_cursor": null
+    },
+    "annotations": {
+      "schema_version": "1.0",
+      "items": [],
+      "next_cursor": null
+    },
+    "contexts": {},
+    "attempts": {},
+    "plan": {
+      "asset_dependencies": [],
+      "brief_artifact_ids": [],
+      "plan_id": "m07-fp16-plan",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "schema_version": "1.0",
+      "shots": [
+        {
+          "camera_intent": "Static image fixture",
+          "fps": null,
+          "frames": [
+            {
+              "artifact_id": "m07-owner-reference",
+              "composition": "Mug concept target",
+              "frame_id": "frame-mug",
+              "role": "start",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "artifact_id": "m07-unrelated-reference",
+              "composition": "Unrelated green reference, do not generate",
+              "frame_id": "frame-unrelated",
+              "role": "end",
+              "state": "available",
+              "owner_selected": true
+            }
+          ],
+          "intent": "One bounded img2img target and one unrelated reference",
+          "motion_beats": [],
+          "scene_version": null,
+          "shot_id": "shot-mug",
+          "source_range": null
+        }
+      ],
+      "unresolved": [],
+      "source_commit": "1746e6bd1b080dc26cc9c889ead0f60596cea766"
+    },
+    "artifacts": {
+      "m07-owner-reference": {
+        "artifact_id": "m07-owner-reference",
+        "bytes": 3325,
+        "derived_from": [],
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "purpose": "reference",
+        "schema_version": "1.0",
+        "sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+        "state": "ready"
+      },
+      "m07-unrelated-reference": {
+        "artifact_id": "m07-unrelated-reference",
+        "bytes": 2126,
+        "derived_from": [],
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "purpose": "reference",
+        "schema_version": "1.0",
+        "sha256": "588bfaf07d944da5c0339d0dd92d226eaa21e951ae92426e8a3b7c8a2105c54c",
+        "state": "ready"
+      }
+    },
+    "events": [
+      {
+        "actor": {
+          "id": "labelled-fixture-publisher",
+          "kind": "tool"
+        },
+        "event_type": "publication.created",
+        "native_event_id": null,
+        "native_session_id": "fixture-only",
+        "occurred_at": "2026-11-14T18:13:53.356973+00:00",
+        "payload": {
+          "event_sequence": 1,
+          "job_ids": [],
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "publication_id": "m07-fp16-fixture-publication",
+          "replayed": false,
+          "schema_version": "1.0",
+          "versions": [
+            {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          ]
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "fixture-only-no-native-request",
+        "schema_version": "1.0",
+        "sequence": 1,
+        "work_id": "m07-setup-work"
+      },
+      {
+        "actor": {
+          "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+          "kind": "user"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:13.395340+00:00",
+        "payload": {
+          "name": "M07 FP16 actual img2img fixture",
+          "native_session_id": null,
+          "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "repository_id": "repository-b4a28e9c-4077-481a-b659-7a42037cd94c",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 1
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 2,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+          "kind": "user"
+        },
+        "event_type": "selection.changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:13.711130+00:00",
+        "payload": {
+          "operation_id": "e3b80435-bda7-418f-87aa-684165e173b3",
+          "replayed": false,
+          "resource_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+          "schema_version": "1.0",
+          "state": "selected",
+          "state_revision": 1
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 3,
+        "work_id": null
+      }
+    ]
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "images": [
+    {
+      "complete": true,
+      "width": 512,
+      "height": 512,
+      "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference/content"
+    }
+  ]
+}

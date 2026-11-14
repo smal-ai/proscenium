@@ -1,0 +1,11 @@
+{
+  "action": "setup",
+  "error": "TimeoutError: locator.selectOption: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Storyboard version', { exact: true })\u001b[22m\n",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "images": []
+}

@@ -1,0 +1,11 @@
+[
+  "\u001b[32m[INFO]\u001b[0m Device: cuda:0 AMD Radeon 8060S Graphics : native",
+  "\u001b[32m[INFO]\u001b[0m model weight dtype torch.float16, manual cast: None",
+  "\u001b[32m[INFO]\u001b[0m VAE load device: cuda:0, offload device: cpu, dtype: torch.bfloat16",
+  "\u001b[32m[INFO]\u001b[0m CLIP/text encoder model load device: cuda:0, offload device: cpu, current: cpu, dtype: torch.float16",
+  "\u001b[32m[INFO]\u001b[0m \u001b[32mPrompt executed in 4.65 seconds\u001b[0m",
+  "\u001b[32m[INFO]\u001b[0m model weight dtype torch.float16, manual cast: None",
+  "\u001b[32m[INFO]\u001b[0m VAE load device: cuda:0, offload device: cpu, dtype: torch.bfloat16",
+  "\u001b[32m[INFO]\u001b[0m CLIP/text encoder model load device: cuda:0, offload device: cpu, current: cpu, dtype: torch.float16",
+  "\u001b[32m[INFO]\u001b[0m \u001b[32mPrompt executed in 1.36 seconds\u001b[0m"
+]

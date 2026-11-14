@@ -1,0 +1,11 @@
+{
+  "at": 1794680467.5931256,
+  "owned_comfy": {
+    "pid": 4126660,
+    "start_ticks": "47273461"
+  },
+  "exact_pid_start_and_port_paths_verified": true,
+  "method": "SIGTERM to exact owned group after native jobs terminal",
+  "status_after": "Z",
+  "reason": "Owned host Uvicorn re-raised SIGTERM after lifespan, so outer Python finally did not run. External exact-owned-child cleanup completed; no independent process touched."
+}

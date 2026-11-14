@@ -1,0 +1,370 @@
+{
+  "at": 1794680248.4335945,
+  "endpoint": "http://127.0.0.1:18589/prompt",
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+    "attempt_number": 1,
+    "availability": "pending",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": null,
+    "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+    "job_id": "m07-fp16-initial",
+    "kind": "image_generation",
+    "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+    "owner_operation_id": null,
+    "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+    "provider_id": "m07-fp16-comfy",
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "starting",
+    "state_revision": 1,
+    "target": {
+      "shot_id": "shot-mug",
+      "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+      "version": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1"
+      }
+    },
+    "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+  },
+  "body": {
+    "prompt": {
+      "checkpoint": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {
+          "ckpt_name": "sd_turbo-proscenium-fp16-1.safetensors"
+        }
+      },
+      "reference": {
+        "class_type": "LoadImage",
+        "inputs": {
+          "image": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73.png"
+        }
+      },
+      "encode": {
+        "class_type": "VAEEncode",
+        "inputs": {
+          "pixels": [
+            "reference",
+            0
+          ],
+          "vae": [
+            "checkpoint",
+            2
+          ]
+        }
+      },
+      "text": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "checkpoint",
+            1
+          ],
+          "text": "A studio photograph of a red ceramic coffee mug on a white background, matching the reference composition."
+        }
+      },
+      "zero": {
+        "class_type": "ConditioningZeroOut",
+        "inputs": {
+          "conditioning": [
+            "text",
+            0
+          ]
+        }
+      },
+      "guider": {
+        "class_type": "CFGGuider",
+        "inputs": {
+          "model": [
+            "checkpoint",
+            0
+          ],
+          "positive": [
+            "text",
+            0
+          ],
+          "negative": [
+            "zero",
+            0
+          ],
+          "cfg": 1.0
+        }
+      },
+      "noise": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 42
+        }
+      },
+      "sampler": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler_ancestral"
+        }
+      },
+      "sigmas": {
+        "class_type": "SDTurboScheduler",
+        "inputs": {
+          "model": [
+            "checkpoint",
+            0
+          ],
+          "steps": 4,
+          "denoise": 0.5
+        }
+      },
+      "sample": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "noise": [
+            "noise",
+            0
+          ],
+          "guider": [
+            "guider",
+            0
+          ],
+          "sampler": [
+            "sampler",
+            0
+          ],
+          "sigmas": [
+            "sigmas",
+            0
+          ],
+          "latent_image": [
+            "encode",
+            0
+          ]
+        }
+      },
+      "decode": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "sample",
+            0
+          ],
+          "vae": [
+            "checkpoint",
+            2
+          ]
+        }
+      },
+      "save": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "images": [
+            "decode",
+            0
+          ],
+          "filename_prefix": "proscenium/sd-turbo-img2img-fp16-1"
+        }
+      }
+    },
+    "client_id": "5fa50976-23f6-4d2a-a383-11fa433d9765"
+  },
+  "request_sha256": "1fe34e38f49fa127da23861fab4ae9cf4574cb38d00a0d2fde63e9f92ca1db6b",
+  "before": {
+    "jobs": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": null,
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+        "job_id": "m07-fp16-initial",
+        "kind": "image_generation",
+        "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+        "owner_operation_id": null,
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "provider_id": "m07-fp16-comfy",
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "starting",
+        "state_revision": 1,
+        "target": {
+          "shot_id": "shot-mug",
+          "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+          "version": {
+            "item_id": "m07-fp16-storyboard",
+            "version_id": "m07-fp16-plan-v1"
+          }
+        },
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      }
+    ],
+    "executions": [
+      {
+        "client_id": "5fa50976-23f6-4d2a-a383-11fa433d9765",
+        "derived_images": [
+          "m07-fp16-initial-artifact-input-0"
+        ],
+        "graph": {
+          "checkpoint": {
+            "class_type": "CheckpointLoaderSimple",
+            "inputs": {
+              "ckpt_name": "sd_turbo-proscenium-fp16-1.safetensors"
+            }
+          },
+          "decode": {
+            "class_type": "VAEDecode",
+            "inputs": {
+              "samples": [
+                "sample",
+                0
+              ],
+              "vae": [
+                "checkpoint",
+                2
+              ]
+            }
+          },
+          "encode": {
+            "class_type": "VAEEncode",
+            "inputs": {
+              "pixels": [
+                "reference",
+                0
+              ],
+              "vae": [
+                "checkpoint",
+                2
+              ]
+            }
+          },
+          "guider": {
+            "class_type": "CFGGuider",
+            "inputs": {
+              "cfg": 1,
+              "model": [
+                "checkpoint",
+                0
+              ],
+              "negative": [
+                "zero",
+                0
+              ],
+              "positive": [
+                "text",
+                0
+              ]
+            }
+          },
+          "noise": {
+            "class_type": "RandomNoise",
+            "inputs": {
+              "noise_seed": 42
+            }
+          },
+          "reference": {
+            "class_type": "LoadImage",
+            "inputs": {
+              "image": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73.png"
+            }
+          },
+          "sample": {
+            "class_type": "SamplerCustomAdvanced",
+            "inputs": {
+              "guider": [
+                "guider",
+                0
+              ],
+              "latent_image": [
+                "encode",
+                0
+              ],
+              "noise": [
+                "noise",
+                0
+              ],
+              "sampler": [
+                "sampler",
+                0
+              ],
+              "sigmas": [
+                "sigmas",
+                0
+              ]
+            }
+          },
+          "sampler": {
+            "class_type": "KSamplerSelect",
+            "inputs": {
+              "sampler_name": "euler_ancestral"
+            }
+          },
+          "save": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "filename_prefix": "proscenium/sd-turbo-img2img-fp16-1",
+              "images": [
+                "decode",
+                0
+              ]
+            }
+          },
+          "sigmas": {
+            "class_type": "SDTurboScheduler",
+            "inputs": {
+              "denoise": 0.5,
+              "model": [
+                "checkpoint",
+                0
+              ],
+              "steps": 4
+            }
+          },
+          "text": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "clip": [
+                "checkpoint",
+                1
+              ],
+              "text": "A studio photograph of a red ceramic coffee mug on a white background, matching the reference composition."
+            }
+          },
+          "zero": {
+            "class_type": "ConditioningZeroOut",
+            "inputs": {
+              "conditioning": [
+                "text",
+                0
+              ]
+            }
+          }
+        },
+        "graph_sha256": "929930005d81787f816fb86fbed737c298bb03678ba7bbe133a65acfd74741c6",
+        "phase": "submitting"
+      }
+    ],
+    "reservations": [
+      {
+        "id": "m07-fp16-initial",
+        "task_id": "task-278fabc477684504bd316016216ea8f3",
+        "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+        "state": "reserved"
+      }
+    ]
+  },
+  "pre_post_resources": {
+    "at": 1794680248.4336216,
+    "mem_available_bytes": 34046513152,
+    "owned_comfy_rss_bytes": 1210728448,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 10,
+        "mem_info_vram_used": 33316954112,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  }
+}

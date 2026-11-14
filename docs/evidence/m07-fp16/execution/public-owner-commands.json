@@ -1,0 +1,339 @@
+[
+  {
+    "phase": "activate",
+    "at": 1794680233401,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/activate",
+    "method": "POST",
+    "status": 200,
+    "request": {
+      "schema_version": "1.0",
+      "operation_id": "43e29ca5-39e8-401a-86b5-f847a3123e3d",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "expected_revision": 0
+    },
+    "response": {
+      "schema_version": "1.0",
+      "operation_id": "43e29ca5-39e8-401a-86b5-f847a3123e3d",
+      "resource_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "state": "awaiting_resume",
+      "state_revision": 1,
+      "replayed": false
+    }
+  },
+  {
+    "phase": "activate",
+    "at": 1794680233717,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+    "method": "POST",
+    "status": 200,
+    "request": {
+      "schema_version": "1.0",
+      "operation_id": "e3b80435-bda7-418f-87aa-684165e173b3",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "selection_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+      "expected_revision": 0,
+      "slot": {
+        "kind": "storyboard_frame",
+        "storyboard_version": {
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1"
+        },
+        "shot_id": "shot-mug",
+        "frame_id": "frame-unrelated"
+      },
+      "choice": {
+        "kind": "artifact",
+        "artifact_id": "m07-unrelated-reference"
+      },
+      "action": "select"
+    },
+    "response": {
+      "schema_version": "1.0",
+      "operation_id": "e3b80435-bda7-418f-87aa-684165e173b3",
+      "resource_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+      "state": "selected",
+      "state_revision": 1,
+      "replayed": false
+    }
+  },
+  {
+    "phase": "initial",
+    "at": 1794680234574,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/contexts",
+    "method": "POST",
+    "status": 201,
+    "request": {
+      "item_id": "m07-fp16-storyboard",
+      "version_id": "m07-fp16-plan-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "m07-owner-reference",
+        "displayed_sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "shot_id": "shot-mug",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m07-owner-reference",
+          "role": "reference"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "captured_at": "2026-11-14T18:17:14.555Z"
+    },
+    "response": {
+      "item_id": "m07-fp16-storyboard",
+      "version_id": "m07-fp16-plan-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "m07-owner-reference",
+        "displayed_sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "shot_id": "shot-mug",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m07-owner-reference",
+          "role": "reference"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "captured_at": "2026-11-14T18:17:14.555Z"
+    }
+  },
+  {
+    "phase": "initial",
+    "at": 1794680234592,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+    "method": "POST",
+    "status": 202,
+    "request": {
+      "schema_version": "1.0",
+      "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+      "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+      "type": "queue",
+      "profile_id": "authoring"
+    },
+    "response": {
+      "native_message_id": null,
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "replayed": false,
+      "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+      "schema_version": "1.0",
+      "state": "held",
+      "state_revision": 0,
+      "type": "queue",
+      "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+    }
+  },
+  {
+    "phase": "select-initial",
+    "at": 1794680269825,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+    "method": "POST",
+    "status": 200,
+    "request": {
+      "schema_version": "1.0",
+      "operation_id": "03300a7c-9060-4119-92d1-e95110adc101",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "selection_id": "deb3502b-7283-44ea-899d-ccc28377e459",
+      "expected_revision": 0,
+      "slot": {
+        "kind": "storyboard_frame",
+        "storyboard_version": {
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1"
+        },
+        "shot_id": "shot-mug",
+        "frame_id": "frame-mug"
+      },
+      "choice": {
+        "kind": "artifact",
+        "artifact_id": "m07-fp16-initial-artifact-0"
+      },
+      "action": "select"
+    },
+    "response": {
+      "schema_version": "1.0",
+      "operation_id": "03300a7c-9060-4119-92d1-e95110adc101",
+      "resource_id": "deb3502b-7283-44ea-899d-ccc28377e459",
+      "state": "selected",
+      "state_revision": 1,
+      "replayed": false
+    }
+  },
+  {
+    "phase": "correction",
+    "at": 1794680293956,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/contexts",
+    "method": "POST",
+    "status": 201,
+    "request": {
+      "item_id": "m07-fp16-storyboard",
+      "version_id": "m07-fp16-plan-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "concept",
+        "artifact_id": "m07-fp16-initial-artifact-0",
+        "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "shot_id": "shot-mug",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m07-fp16-initial-artifact-0",
+          "role": "concept"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "4c88786b-685f-40f7-9a8f-eee3dfc7960d",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "captured_at": "2026-11-14T18:18:13.936Z"
+    },
+    "response": {
+      "item_id": "m07-fp16-storyboard",
+      "version_id": "m07-fp16-plan-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "concept",
+        "artifact_id": "m07-fp16-initial-artifact-0",
+        "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "shot_id": "shot-mug",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m07-fp16-initial-artifact-0",
+          "role": "concept"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "4c88786b-685f-40f7-9a8f-eee3dfc7960d",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "captured_at": "2026-11-14T18:18:13.936Z"
+    }
+  },
+  {
+    "phase": "correction",
+    "at": 1794680293970,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+    "method": "POST",
+    "status": 202,
+    "request": {
+      "schema_version": "1.0",
+      "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-correction\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-correction\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-correction\", \"prompt_artifact_id\": \"m07-prompt-correction\", \"input_artifact_ids\": [\"m07-fp16-initial-artifact-0\"], \"seed\": \"43\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+      "context_id": "4c88786b-685f-40f7-9a8f-eee3dfc7960d",
+      "type": "queue",
+      "profile_id": "authoring"
+    },
+    "response": {
+      "native_message_id": null,
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "replayed": false,
+      "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+      "schema_version": "1.0",
+      "state": "held",
+      "state_revision": 0,
+      "type": "queue",
+      "work_id": "work-ad69c51436d44f3a9e634fbb59db0764"
+    }
+  },
+  {
+    "phase": "select-correction",
+    "at": 1794680302351,
+    "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+    "method": "POST",
+    "status": 200,
+    "request": {
+      "schema_version": "1.0",
+      "operation_id": "daa196b9-6592-4fca-9772-9beeef1483f5",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "selection_id": "deb3502b-7283-44ea-899d-ccc28377e459",
+      "expected_revision": 1,
+      "slot": {
+        "kind": "storyboard_frame",
+        "storyboard_version": {
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1"
+        },
+        "shot_id": "shot-mug",
+        "frame_id": "frame-mug"
+      },
+      "choice": {
+        "kind": "artifact",
+        "artifact_id": "m07-fp16-correction-artifact-0"
+      },
+      "action": "select"
+    },
+    "response": {
+      "schema_version": "1.0",
+      "operation_id": "daa196b9-6592-4fca-9772-9beeef1483f5",
+      "resource_id": "deb3502b-7283-44ea-899d-ccc28377e459",
+      "state": "selected",
+      "state_revision": 2,
+      "replayed": false
+    }
+  }
+]

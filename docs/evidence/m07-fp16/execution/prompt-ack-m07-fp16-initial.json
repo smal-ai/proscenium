@@ -1,0 +1,11 @@
+{
+  "at": 1794680248.4395707,
+  "status": 200,
+  "body": {
+    "prompt_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+    "number": 0,
+    "node_errors": {}
+  },
+  "response_sha256": "cb36683ca5a763875bde3d3a4606839785ccc576affef8604ea7e2db66bd6ae6",
+  "client_id": "5fa50976-23f6-4d2a-a383-11fa433d9765"
+}

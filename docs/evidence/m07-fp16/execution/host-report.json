@@ -1,0 +1,225 @@
+{
+  "instance_plan": {
+    "allocation": "m07-fp16-execution-20261114",
+    "root": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114",
+    "argv": [
+      "/home/quintin/.local/opt/ComfyUI/.venv/bin/python",
+      "-B",
+      "/home/quintin/.local/opt/ComfyUI/main.py",
+      "--listen",
+      "127.0.0.1",
+      "--port",
+      "18589",
+      "--base-directory",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/comfy",
+      "--models-directory",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/models",
+      "--user-directory",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/user",
+      "--input-directory",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/input",
+      "--output-directory",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/output",
+      "--temp-directory",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/temp",
+      "--database-url",
+      "sqlite:////home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/user/comfyui.db",
+      "--disable-all-custom-nodes",
+      "--disable-api-nodes",
+      "--disable-auto-launch",
+      "--cache-none"
+    ],
+    "cwd": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114",
+    "source_revision": "8ff6dc384ba5c410266b40e137799e049459d4f2",
+    "endpoint": "http://127.0.0.1:18589",
+    "maximum_process_seconds": 1800,
+    "create_before_start": [
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/comfy",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/user",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/input",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/output",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/temp",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/cache",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/cache/torch",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/cache/hf"
+    ],
+    "environment_overrides": {
+      "OMP_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "XDG_CACHE_HOME": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/cache",
+      "TORCH_HOME": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/cache/torch",
+      "HF_HOME": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/cache/hf",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "TMPDIR": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/temp"
+    },
+    "independent_8188_mutation": false,
+    "extra_model_paths_present": false,
+    "executed": false
+  },
+  "before_start": {
+    "at": 1794680019.0427027,
+    "mem_available_bytes": 36721819648,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 13,
+        "mem_info_vram_used": 33120821248,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "preservation_before": {
+    "files": {
+      "/home/quintin/.cache/proscenium-development/providers-w07-20261114/w07-live-initial-report.json": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+      "/home/quintin/.cache/proscenium-development/providers-w07-20261114/w07-live-initial-timing.json": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe",
+      "/home/quintin/.cache/proscenium-development/providers-w07-20261114/project/.proscenium/state.sqlite3": "3ca79e931930e13482957f0c8b9c060d5403276f433a437ae8ead9979d2c6485",
+      "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-lightweight-20261114/admission.json": "94f1db249ae25e8254d3030d043c57c598c490f6fd44c5a7d5ee813d421cb1a1"
+    },
+    "job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-70a06bf9-1fbb-4188-8162-bddc030e7cd4",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "ab6c1b4bf2ab8d097f0b8550c08a3a60faebb20d78a909e47a88a19fdef04a8e",
+      "job_id": "w07-live-initial",
+      "kind": "image_generation",
+      "owner_epoch": "epoch-fb3d33c0-48a7-441b-9b15-ed735c226cd3",
+      "owner_operation_id": null,
+      "project_id": "w07-live-proof",
+      "provider_id": "live-comfy",
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "w07-live-task",
+        "version": null
+      },
+      "work_id": "w07-live-work"
+    },
+    "reservations": [
+      [
+        "w07-live-initial",
+        "w07-live-task",
+        "w07-live-task",
+        "reserved"
+      ]
+    ]
+  },
+  "weights": {
+    "filename": "sd_turbo-proscenium-fp16-1.safetensors",
+    "bytes": 2607364064,
+    "sha256": "c1a0a0af943c0c197215fb7cd5bb8b72e342b98461e1c3719d8ba28300ba015e"
+  },
+  "fit_floor_bytes": 12884901888,
+  "stopguard_bytes": 5368709120,
+  "protected_headroom_bytes": 4294967296,
+  "actual_generation_started": false,
+  "owned_comfy": {
+    "pid": 4126660,
+    "start_ticks": "47273461"
+  },
+  "owned_system_stats": {
+    "system": {
+      "os": "linux",
+      "ram_total": 65959243776,
+      "ram_free": 35767062528,
+      "comfyui_version": "0.37.4",
+      "required_frontend_version": "1.52.7",
+      "installed_templates_version": "0.11.69",
+      "required_templates_version": "0.11.69",
+      "comfy_package_versions": [
+        {
+          "name": "comfyui-frontend-package",
+          "installed": "1.52.7",
+          "required": "1.52.7"
+        },
+        {
+          "name": "comfyui-workflow-templates",
+          "installed": "0.11.69",
+          "required": "0.11.69"
+        },
+        {
+          "name": "comfyui-embedded-docs",
+          "installed": "0.5.12",
+          "required": "0.5.12"
+        },
+        {
+          "name": "comfy-kitchen",
+          "installed": "0.2.35",
+          "required": "0.2.35"
+        },
+        {
+          "name": "comfy-aimdo",
+          "installed": "0.5.5",
+          "required": "0.5.5"
+        }
+      ],
+      "python_version": "3.12.13 (main, Jul 18 2026, 17:02:19) [Clang 22.1.3 ]",
+      "pytorch_version": "2.13.0+rocm10.0.0",
+      "embedded_python": false,
+      "deploy_environment": "local-git",
+      "argv": [
+        "/home/quintin/.local/opt/ComfyUI/main.py",
+        "--listen",
+        "127.0.0.1",
+        "--port",
+        "18589",
+        "--base-directory",
+        "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/comfy",
+        "--models-directory",
+        "/home/quintin/.cache/proscenium-development/image-generation-light/models",
+        "--user-directory",
+        "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/user",
+        "--input-directory",
+        "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/input",
+        "--output-directory",
+        "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/output",
+        "--temp-directory",
+        "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/temp",
+        "--database-url",
+        "sqlite:////home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/user/comfyui.db",
+        "--disable-all-custom-nodes",
+        "--disable-api-nodes",
+        "--disable-auto-launch",
+        "--cache-none"
+      ]
+    },
+    "devices": [
+      {
+        "name": "cuda:0 AMD Radeon 8060S Graphics : native",
+        "type": "cuda",
+        "index": 0,
+        "vram_total": 68719476736,
+        "vram_free": 38317064192,
+        "torch_vram_total": 2097152,
+        "torch_vram_free": 2097152
+      }
+    ]
+  },
+  "after_startup": {
+    "at": 1794680033.1323395,
+    "mem_available_bytes": 35767062528,
+    "owned_comfy_rss_bytes": 1232932864,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 13,
+        "mem_info_vram_used": 33314856960,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "actual_node_preflight_passed": true,
+  "host": {
+    "pid": 4126445,
+    "start_ticks": "47272962",
+    "origin": "http://127.0.0.1:18959"
+  },
+  "ready_for_native_queues": true
+}

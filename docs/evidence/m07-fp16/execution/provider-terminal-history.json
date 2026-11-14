@@ -1,0 +1,392 @@
+{
+  "79d8948d-8ed9-4975-ac2c-a628b957a27b": {
+    "prompt": [
+      0,
+      "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+      {
+        "checkpoint": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "sd_turbo-proscenium-fp16-1.safetensors"
+          }
+        },
+        "reference": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73.png"
+          }
+        },
+        "encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": [
+              "reference",
+              0
+            ],
+            "vae": [
+              "checkpoint",
+              2
+            ]
+          }
+        },
+        "text": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "checkpoint",
+              1
+            ],
+            "text": "A studio photograph of a red ceramic coffee mug on a white background, matching the reference composition."
+          }
+        },
+        "zero": {
+          "class_type": "ConditioningZeroOut",
+          "inputs": {
+            "conditioning": [
+              "text",
+              0
+            ]
+          }
+        },
+        "guider": {
+          "class_type": "CFGGuider",
+          "inputs": {
+            "model": [
+              "checkpoint",
+              0
+            ],
+            "positive": [
+              "text",
+              0
+            ],
+            "negative": [
+              "zero",
+              0
+            ],
+            "cfg": 1.0
+          }
+        },
+        "noise": {
+          "class_type": "RandomNoise",
+          "inputs": {
+            "noise_seed": 42
+          }
+        },
+        "sampler": {
+          "class_type": "KSamplerSelect",
+          "inputs": {
+            "sampler_name": "euler_ancestral"
+          }
+        },
+        "sigmas": {
+          "class_type": "SDTurboScheduler",
+          "inputs": {
+            "model": [
+              "checkpoint",
+              0
+            ],
+            "steps": 4,
+            "denoise": 0.5
+          }
+        },
+        "sample": {
+          "class_type": "SamplerCustomAdvanced",
+          "inputs": {
+            "noise": [
+              "noise",
+              0
+            ],
+            "guider": [
+              "guider",
+              0
+            ],
+            "sampler": [
+              "sampler",
+              0
+            ],
+            "sigmas": [
+              "sigmas",
+              0
+            ],
+            "latent_image": [
+              "encode",
+              0
+            ]
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "sample",
+              0
+            ],
+            "vae": [
+              "checkpoint",
+              2
+            ]
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "decode",
+              0
+            ],
+            "filename_prefix": "proscenium/sd-turbo-img2img-fp16-1"
+          }
+        }
+      },
+      {
+        "client_id": "5fa50976-23f6-4d2a-a383-11fa433d9765",
+        "create_time": 1794680248439
+      },
+      [
+        "save"
+      ]
+    ],
+    "outputs": {
+      "save": {
+        "images": [
+          {
+            "filename": "sd-turbo-img2img-fp16-1_00001_.png",
+            "subfolder": "proscenium",
+            "type": "output"
+          }
+        ]
+      }
+    },
+    "status": {
+      "status_str": "success",
+      "completed": true,
+      "messages": [
+        [
+          "execution_start",
+          {
+            "prompt_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+            "timestamp": 1794680248439
+          }
+        ],
+        [
+          "execution_cached",
+          {
+            "nodes": [],
+            "prompt_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+            "timestamp": 1794680248439
+          }
+        ],
+        [
+          "execution_success",
+          {
+            "prompt_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+            "timestamp": 1794680253071
+          }
+        ]
+      ]
+    },
+    "meta": {
+      "save": {
+        "node_id": "save",
+        "display_node": "save",
+        "parent_node": null,
+        "real_node_id": "save"
+      }
+    }
+  },
+  "9cbb1228-e32a-4c81-a587-06dbd66c20ab": {
+    "prompt": [
+      1,
+      "9cbb1228-e32a-4c81-a587-06dbd66c20ab",
+      {
+        "checkpoint": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "sd_turbo-proscenium-fp16-1.safetensors"
+          }
+        },
+        "reference": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "e12594f79d3afc5deb395c5c0959caa2ad364c8da8d2956edf4ff8f0f5372acc.png"
+          }
+        },
+        "encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": [
+              "reference",
+              0
+            ],
+            "vae": [
+              "checkpoint",
+              2
+            ]
+          }
+        },
+        "text": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "checkpoint",
+              1
+            ],
+            "text": "The same ceramic coffee mug and white background, change only the mug surface to cobalt blue, preserve its shape and composition."
+          }
+        },
+        "zero": {
+          "class_type": "ConditioningZeroOut",
+          "inputs": {
+            "conditioning": [
+              "text",
+              0
+            ]
+          }
+        },
+        "guider": {
+          "class_type": "CFGGuider",
+          "inputs": {
+            "model": [
+              "checkpoint",
+              0
+            ],
+            "positive": [
+              "text",
+              0
+            ],
+            "negative": [
+              "zero",
+              0
+            ],
+            "cfg": 1.0
+          }
+        },
+        "noise": {
+          "class_type": "RandomNoise",
+          "inputs": {
+            "noise_seed": 43
+          }
+        },
+        "sampler": {
+          "class_type": "KSamplerSelect",
+          "inputs": {
+            "sampler_name": "euler_ancestral"
+          }
+        },
+        "sigmas": {
+          "class_type": "SDTurboScheduler",
+          "inputs": {
+            "model": [
+              "checkpoint",
+              0
+            ],
+            "steps": 4,
+            "denoise": 0.5
+          }
+        },
+        "sample": {
+          "class_type": "SamplerCustomAdvanced",
+          "inputs": {
+            "noise": [
+              "noise",
+              0
+            ],
+            "guider": [
+              "guider",
+              0
+            ],
+            "sampler": [
+              "sampler",
+              0
+            ],
+            "sigmas": [
+              "sigmas",
+              0
+            ],
+            "latent_image": [
+              "encode",
+              0
+            ]
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "sample",
+              0
+            ],
+            "vae": [
+              "checkpoint",
+              2
+            ]
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "decode",
+              0
+            ],
+            "filename_prefix": "proscenium/sd-turbo-img2img-fp16-1"
+          }
+        }
+      },
+      {
+        "client_id": "ab8daef0-5b4f-4b16-84ad-a45f4796de45",
+        "create_time": 1794680299260
+      },
+      [
+        "save"
+      ]
+    ],
+    "outputs": {
+      "save": {
+        "images": [
+          {
+            "filename": "sd-turbo-img2img-fp16-1_00002_.png",
+            "subfolder": "proscenium",
+            "type": "output"
+          }
+        ]
+      }
+    },
+    "status": {
+      "status_str": "success",
+      "completed": true,
+      "messages": [
+        [
+          "execution_start",
+          {
+            "prompt_id": "9cbb1228-e32a-4c81-a587-06dbd66c20ab",
+            "timestamp": 1794680299261
+          }
+        ],
+        [
+          "execution_cached",
+          {
+            "nodes": [],
+            "prompt_id": "9cbb1228-e32a-4c81-a587-06dbd66c20ab",
+            "timestamp": 1794680299262
+          }
+        ],
+        [
+          "execution_success",
+          {
+            "prompt_id": "9cbb1228-e32a-4c81-a587-06dbd66c20ab",
+            "timestamp": 1794680300607
+          }
+        ]
+      ]
+    },
+    "meta": {
+      "save": {
+        "node_id": "save",
+        "display_node": "save",
+        "parent_node": null,
+        "real_node_id": "save"
+      }
+    }
+  }
+}

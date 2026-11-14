@@ -1,0 +1,1573 @@
+{
+  "action": "initial",
+  "admission": {
+    "native_message_id": null,
+    "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+    "replayed": false,
+    "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+    "schema_version": "1.0",
+    "state": "held",
+    "state_revision": 0,
+    "type": "queue",
+    "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+  },
+  "request": {
+    "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+    "effective_profile_id": "authoring",
+    "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+    "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+    "receipt": {
+      "native_message_id": "4f1491b1-13d0-4943-815c-7cf4b364bd99",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "replayed": false,
+      "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+    },
+    "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+    "schema_version": "1.0",
+    "submission": {
+      "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+      "profile_id": "authoring",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+      "schema_version": "1.0",
+      "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+      "type": "queue"
+    }
+  },
+  "job": {
+    "artifact_ids": [
+      "m07-fp16-initial-artifact-0",
+      "m07-fp16-initial-artifact-provenance"
+    ],
+    "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+    "attempt_number": 1,
+    "availability": "complete",
+    "completed_frames": null,
+    "error_code": null,
+    "expected_frames": null,
+    "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+    "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+    "job_id": "m07-fp16-initial",
+    "kind": "image_generation",
+    "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+    "owner_operation_id": null,
+    "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+    "provider_id": "m07-fp16-comfy",
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "succeeded",
+    "state_revision": 4,
+    "target": {
+      "shot_id": "shot-mug",
+      "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+      "version": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1"
+      }
+    },
+    "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+  },
+  "state": {
+    "snapshot": {
+      "schema_version": "1.0",
+      "project": {
+        "name": "M07 FP16 actual img2img fixture",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "repository_id": "repository-b4a28e9c-4077-481a-b659-7a42037cd94c",
+        "schema_version": "1.0",
+        "state": "active",
+        "state_revision": 2
+      },
+      "settings": {
+        "default_profile_id": "authoring",
+        "generation_attempt_limit": 3,
+        "state_revision": 1
+      },
+      "event_sequence": 43,
+      "active_work": null,
+      "held_requests": [],
+      "items": [
+        {
+          "current_version_id": "m07-fp16-plan-v1",
+          "description": "Labelled reference/source fixture; generation is NOT pre-seeded",
+          "item_id": "m07-fp16-storyboard",
+          "kind": "storyboard",
+          "name": "M07 FP16 concept storyboard",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "jobs": [
+        {
+          "artifact_ids": [
+            "m07-fp16-initial-artifact-0",
+            "m07-fp16-initial-artifact-provenance"
+          ],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 4,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        }
+      ],
+      "pending_decisions": [],
+      "reviews": []
+    },
+    "requests": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": "4f1491b1-13d0-4943-815c-7cf4b364bd99",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+          },
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        }
+      ],
+      "next_cursor": null
+    },
+    "jobs": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "artifact_ids": [
+            "m07-fp16-initial-artifact-0",
+            "m07-fp16-initial-artifact-provenance"
+          ],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 4,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        }
+      ],
+      "next_cursor": null
+    },
+    "items": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "current_version_id": "m07-fp16-plan-v1",
+          "description": "Labelled reference/source fixture; generation is NOT pre-seeded",
+          "item_id": "m07-fp16-storyboard",
+          "kind": "storyboard",
+          "name": "M07 FP16 concept storyboard",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "next_cursor": null
+    },
+    "selections": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+            "kind": "user"
+          },
+          "choice": {
+            "artifact_id": "m07-unrelated-reference",
+            "kind": "artifact"
+          },
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selection_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+          "slot": {
+            "frame_id": "frame-unrelated",
+            "kind": "storyboard_frame",
+            "shot_id": "shot-mug",
+            "storyboard_version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "state": "selected",
+          "state_revision": 1
+        }
+      ],
+      "next_cursor": null
+    },
+    "annotations": {
+      "schema_version": "1.0",
+      "items": [],
+      "next_cursor": null
+    },
+    "contexts": {
+      "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc": {
+        "annotations": [],
+        "approved_findings": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-owner-reference",
+            "role": "reference"
+          }
+        ],
+        "camera": null,
+        "captured_at": "2026-11-14T18:17:14.555Z",
+        "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+        "item_id": "m07-fp16-storyboard",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "range": null,
+        "schema_version": "1.0",
+        "selected_objects": [],
+        "target": {
+          "artifact_id": "m07-owner-reference",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "displayed_sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+          "item_id": "m07-fp16-storyboard",
+          "media_artifact_id": null,
+          "origin": "reference",
+          "render_job_id": null,
+          "shot_id": "shot-mug",
+          "source_frame": null,
+          "version_id": "m07-fp16-plan-v1"
+        },
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes"
+      }
+    },
+    "attempts": {
+      "m07-fp16-initial": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+            "attempt_number": 1,
+            "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+            "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+            "job_id": "m07-fp16-initial",
+            "native_exit_code": null,
+            "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "schema_version": "1.0",
+            "state": "succeeded",
+            "trigger_operation_id": "m07-fp16-initial"
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "plan": {
+      "asset_dependencies": [],
+      "brief_artifact_ids": [],
+      "plan_id": "m07-fp16-plan",
+      "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "schema_version": "1.0",
+      "shots": [
+        {
+          "camera_intent": "Static image fixture",
+          "fps": null,
+          "frames": [
+            {
+              "artifact_id": "m07-owner-reference",
+              "composition": "Mug concept target",
+              "frame_id": "frame-mug",
+              "role": "start",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "artifact_id": "m07-unrelated-reference",
+              "composition": "Unrelated green reference, do not generate",
+              "frame_id": "frame-unrelated",
+              "role": "end",
+              "state": "available",
+              "owner_selected": true
+            }
+          ],
+          "intent": "One bounded img2img target and one unrelated reference",
+          "motion_beats": [],
+          "scene_version": null,
+          "shot_id": "shot-mug",
+          "source_range": null
+        }
+      ],
+      "unresolved": [],
+      "source_commit": "1746e6bd1b080dc26cc9c889ead0f60596cea766"
+    },
+    "artifacts": {
+      "m07-fp16-initial-artifact-0": {
+        "artifact_id": "m07-fp16-initial-artifact-0",
+        "bytes": 84651,
+        "derived_from": [],
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "purpose": "concept",
+        "schema_version": "1.0",
+        "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+        "source_version_id": "m07-fp16-plan-v1",
+        "state": "ready"
+      },
+      "m07-fp16-initial-artifact-provenance": {
+        "artifact_id": "m07-fp16-initial-artifact-provenance",
+        "bytes": 8480,
+        "derived_from": [],
+        "kind": "document",
+        "media_type": "application/json",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "purpose": "metadata",
+        "schema_version": "1.0",
+        "sha256": "c9e2297b1f531435091f1f3cfa0857da4d0a4fcc9a4ed9b28b4f5bfac89c94db",
+        "source_version_id": "m07-fp16-plan-v1",
+        "state": "ready"
+      },
+      "m07-owner-reference": {
+        "artifact_id": "m07-owner-reference",
+        "bytes": 3325,
+        "derived_from": [],
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "purpose": "reference",
+        "schema_version": "1.0",
+        "sha256": "e2ef9f4b004d9eb3a4780040d82f67ba1fae3d777f8d6c4e764b498f7feb5e73",
+        "state": "ready"
+      },
+      "m07-unrelated-reference": {
+        "artifact_id": "m07-unrelated-reference",
+        "bytes": 2126,
+        "derived_from": [],
+        "dimensions": {
+          "height": 512,
+          "width": 512
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "purpose": "reference",
+        "schema_version": "1.0",
+        "sha256": "588bfaf07d944da5c0339d0dd92d226eaa21e951ae92426e8a3b7c8a2105c54c",
+        "state": "ready"
+      }
+    },
+    "events": [
+      {
+        "actor": {
+          "id": "labelled-fixture-publisher",
+          "kind": "tool"
+        },
+        "event_type": "publication.created",
+        "native_event_id": null,
+        "native_session_id": "fixture-only",
+        "occurred_at": "2026-11-14T18:13:53.356973+00:00",
+        "payload": {
+          "event_sequence": 1,
+          "job_ids": [],
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "publication_id": "m07-fp16-fixture-publication",
+          "replayed": false,
+          "schema_version": "1.0",
+          "versions": [
+            {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          ]
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "fixture-only-no-native-request",
+        "schema_version": "1.0",
+        "sequence": 1,
+        "work_id": "m07-setup-work"
+      },
+      {
+        "actor": {
+          "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+          "kind": "user"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:13.395340+00:00",
+        "payload": {
+          "name": "M07 FP16 actual img2img fixture",
+          "native_session_id": null,
+          "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "repository_id": "repository-b4a28e9c-4077-481a-b659-7a42037cd94c",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 1
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 2,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+          "kind": "user"
+        },
+        "event_type": "selection.changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:13.711130+00:00",
+        "payload": {
+          "operation_id": "e3b80435-bda7-418f-87aa-684165e173b3",
+          "replayed": false,
+          "resource_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+          "schema_version": "1.0",
+          "state": "selected",
+          "state_revision": 1
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 3,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+          "kind": "user"
+        },
+        "event_type": "request.accepted",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:14.587417+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "state": "held",
+            "state_revision": 0,
+            "type": "queue",
+            "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+          },
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 4,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "project-host",
+          "kind": "system"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:18.590053+00:00",
+        "payload": {
+          "name": "M07 FP16 actual img2img fixture",
+          "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+          "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "repository_id": "repository-b4a28e9c-4077-481a-b659-7a42037cd94c",
+          "schema_version": "1.0",
+          "state": "active",
+          "state_revision": 2
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 5,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:18.601088+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "state": "dispatching",
+            "state_revision": 1,
+            "type": "queue",
+            "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+          },
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 6,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:18.602108+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "job_ids": [],
+          "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+          "originating_request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "state": "running",
+          "state_revision": 1,
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 7,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:18.637727+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": "4f1491b1-13d0-4943-815c-7cf4b364bd99",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "state": "acknowledged",
+            "state_revision": 2,
+            "type": "queue",
+            "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+          },
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 8,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "b18b56bd-1482-4ae2-8ad4-c23b6e3d3cfe",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:27.960909+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 16467,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 244,
+          "reported_cost": 1
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 9,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "ad150c6d-047e-498e-9ea8-c451bf81a900",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:27.990244+00:00",
+        "payload": {
+          "message_id": "ed7607d5-9003-47fe-9607-f6dd570f965e",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 10,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "19259426-1dc0-4471-a2bc-449a0460dc0b",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:27.997224+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "0cd12130f72f1570443a02b0857085bf848f89a6609ea54ddd262765fdf8774e",
+          "model_id": "gpt-6.1-sol",
+          "name": "submit_generation",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 11,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "call_WGxN3V6A4S9esEzvrrvBhwQs",
+          "kind": "tool"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:28.112130+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "planned",
+          "state_revision": 0,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 12,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "8da1d92d-c91d-45c3-8464-3f3420fa5012",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:28.190020+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "0cd12130f72f1570443a02b0857085bf848f89a6609ea54ddd262765fdf8774e",
+          "model_id": "gpt-6.1-sol",
+          "name": "submit_generation",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 13,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:28.404044+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "starting",
+          "state_revision": 1,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 14,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "ef25950b-9ae2-4bb6-b72f-4b793a71136a",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.733261+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "Job"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 15,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "218f43a8-8a68-4778-b504-4e25607e3dd8",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.750613+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": " `"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 16,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "06892b3f-a79f-403f-8f10-df4593879e7f",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.767944+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "m"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 17,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2268b9fe-a87d-4aa9-8d8d-b5fe40d7a52b",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.782909+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "07"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 18,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "33c65f2b-a48c-46bb-bdbc-6863a2b9040a",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.796572+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "-f"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 19,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "858bc51f-f7e3-4168-9f3a-44aba01d1dfb",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.819533+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "p"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 20,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "39f7b468-fb1b-48b5-8a4e-ff2dba96ac10",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.830485+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "16"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 21,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "95a05153-36b2-4a58-a3c6-cdf2d602969f",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.849606+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "-in"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 22,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "9ada69e6-0cb8-4c0c-94c1-9ee07c605a08",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.859525+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "itial"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 23,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e38a4575-ca14-4c13-8a74-08a44e4cbe50",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.877410+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "`"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 24,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "5ce61521-d5ee-4794-86d7-7b4e58a2803c",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.897670+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": " admitted"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 25,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "b05e0d2b-6443-4eb9-9ab1-7c5205b474ad",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.913349+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "."
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 26,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "1569fec5-bdcc-476a-b62e-a6a140ab4fc0",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.931350+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": " Status"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 27,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "b676cfdd-a440-49ec-abf9-2c3fdd5baf10",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.944816+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": ":"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 28,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "deabb353-f582-4849-be06-692ba5eb23a0",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.957767+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": " `"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 29,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "fe8eced6-942f-4a03-a840-2161091bec40",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.971150+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "planned"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 30,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "79a5be55-82c7-4300-a677-ea64b5e01119",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:31.985025+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "`;"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 31,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "9241622d-26e2-4c8b-8f32-6c2725720c15",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:32.004611+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": " availability"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 32,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "b5ab7256-cf78-44a9-aa19-acfeb34ea8db",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:32.021408+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": ":"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 33,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "10757e92-33da-4f3c-802a-efe2d0562c69",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:32.038248+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": " `"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 34,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "cd9ad707-c265-47cf-b75f-3e91786bde2a",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:32.053307+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "pending"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 35,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2a0a1b1e-f3ef-439d-8cfc-d039a6ef003c",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:32.068035+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "`."
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 36,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "7d599a2f-de9b-4617-8c0e-04827202b324",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:32.089658+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 17340,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 26,
+          "reported_cost": 1
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 37,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "5e949eb8-d997-43a5-8d64-7ff59d6566a1",
+        "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+        "occurred_at": "2026-11-14T18:17:32.127910+00:00",
+        "payload": {
+          "message_id": "730aa2e7-771e-42e7-801d-c713e4f3f3e2",
+          "native_agent_id": null,
+          "text": "Job `m07-fp16-initial` admitted. Status: `planned`; availability: `pending`."
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 38,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:32.252683+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": "4f1491b1-13d0-4943-815c-7cf4b364bd99",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+          },
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 39,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:32.253623+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "job_ids": [],
+          "native_session_id": "ebd1aede-27fc-492f-80e1-7c461531bd15",
+          "originating_request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 2,
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+        "schema_version": "1.0",
+        "sequence": 40,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:33.477936+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "error_code": "provider_unavailable",
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "outcome_uncertain",
+          "state_revision": 2,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 41,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:33.760512+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "running",
+          "state_revision": 3,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 42,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:17:33.805791+00:00",
+        "payload": {
+          "artifact_ids": [
+            "m07-fp16-initial-artifact-0",
+            "m07-fp16-initial-artifact-provenance"
+          ],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 4,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        },
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 43,
+        "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+      }
+    ]
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "images": [
+    {
+      "complete": true,
+      "width": 512,
+      "height": 512,
+      "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference/content"
+    }
+  ]
+}
