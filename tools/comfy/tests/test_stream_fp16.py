@@ -37,6 +37,19 @@ def fixture(path, tensors, metadata=None):
 
 
 class ConversionTests(unittest.TestCase):
+    def test_rss_guard_uses_this_exec_high_water_and_keeps_same_limit(self):
+        def fake_read(path):
+            if str(path) == "/proc/self/status":
+                return "VmRSS: 16000 kB\nVmHWM: 16000 kB\n"
+            return "MemAvailable: 999999999 kB\n"
+
+        with patch.object(converter.Path, "read_text", fake_read):
+            guard = converter.Guard()
+            guard.check()
+        with patch.object(converter, "process_peak_rss", return_value=converter.RSS_LIMIT):
+            with self.assertRaises(MemoryError):
+                converter.Guard()
+
     def test_streams_deterministically_and_preserves_metadata_names_shapes_other_types(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

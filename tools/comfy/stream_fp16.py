@@ -59,13 +59,20 @@ class Guard:
             raise RuntimeError("Torch import is prohibited in this CPU conversion")
         if time.monotonic() - self.started >= 300:
             raise TimeoutError("300-second conversion bound reached")
-        if resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024 >= RSS_LIMIT:
+        # Linux ru_maxrss can retain the launcher's pre-exec high-water value.
+        # VmHWM/VmRSS here describe THIS exec's actual mappings, not the parent.
+        if process_peak_rss() >= RSS_LIMIT:
             raise MemoryError("One-GiB converter peak-RSS bound exceeded")
         values = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
         available = int(values["MemAvailable"].split()[0]) * 1024
         self.minimum_available = min(self.minimum_available or available, available)
         if available < HEADROOM:
             raise MemoryError("Four-GiB protected host headroom unavailable")
+
+
+def process_peak_rss() -> int:
+    status = dict(line.split(":", 1) for line in Path("/proc/self/status").read_text().splitlines())
+    return max(int(status[name].split()[0]) * 1024 for name in ("VmRSS", "VmHWM"))
 
 
 def unique_object(pairs):
@@ -366,7 +373,9 @@ def main() -> None:
         torch_imported="torch" in sys.modules,
         converter_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         elapsed_seconds=time.monotonic() - guard.started,
-        peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024,
+        peak_rss_bytes=process_peak_rss(),
+        rss_measurement="Linux /proc/self/status VmHWM/VmRSS for this exec; excludes inherited pre-exec getrusage high-water",
+        inherited_ru_maxrss_counter_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024,
         minimum_host_mem_available_bytes=guard.minimum_available,
         source_repository="stabilityai/sd-turbo",
         source_revision="b261bac6fd2cf515557d5d0707481eafa0485ec2",
