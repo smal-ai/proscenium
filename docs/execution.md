@@ -26,6 +26,16 @@ V1 uses one authoritative application process, one active project and at most on
 
 Before a new owner attaches for execution, the previous native owner must be quiescent or fenced. New authoring/tool admission cannot continue through an orphaned native connection after the new backend has entered its awaiting-Resume state. The selected service/runtime lifecycle must prove this boundary in E01. Already-admitted independent operations may finish and leave receipts to reconcile; unrelated desktop/provider processes are never killed to manufacture ownership.
 
+### Pinned runtime lock
+
+E01 records the exact SDK, CLI and login method. Proscenium starts the runtime through the SDK client. It does not ask the user to run a second Copilot server, and it does not copy tokens into the project, events or logs. Operator login uses the CLI's existing credential store. If that process exits while FastAPI is still up, close the admission gate and wait for Resume. Do not send a new turn to replace it.
+
+The lock enables the agent's ordinary file, shell and Git tools. It does not install a Proscenium sandbox or a network filter. If the pinned CLI has its own sandbox, turn that off for this session and record the setting. Set `memory.enabled` false. Set `working_directory` to the active project root. Load skills from `skill_directories` pointing at Proscenium's adapted skills, not from an OpenCode discovery path inside the project.
+
+Worker profiles set `model_policy` to `required`. An unavailable worker model is reported. The lead may do that work itself. Do not silently fall back to the parent model.
+
+Leave Autopilot continuation enabled. Do not set `max_continues` below the runtime default of five. The operator may raise it. Infinite sessions stay enabled. After compaction, skills re-read the brief and current plan from the project. Large tool output uses `.proscenium/tool-output/`, not the OS temp directory.
+
 ### Authoring and Git coordination belong to tools
 
 The lead assigns one owner for edits to a live Blender instance and one owner for the project's Git index/checkpoint operation. Other specialists can perform read-only research, produce independent files or use genuinely separate application contexts. Shared writers must use the toolchain's resource lock and base-state check.
@@ -43,20 +53,27 @@ The application holds the durable FIFO of human Queue requests. It submits one e
 1. Validate active project, ready attachment/context references and request type.
 2. In one SQLite transaction, record the immutable body hash, request, context snapshot and `request.accepted` event. A matching retry returns that record. A different body under the same ID returns `idempotency_conflict`.
 3. A live owner reserves delivery and records `dispatching` before making the SDK call. Never hold a database transaction open across that call.
-4. Serialise the user prompt and immutable `ContextSnapshot` using the deterministic `<proscenium_context>` envelope below, attach the resolved local image files (`attachments=[{"type": "file", "path": ...}]`), and forward once with the application request ID as `client_turn_id`. Record the native acknowledgement separately.
+4. Send the user's text once, with the application request ID as `client_turn_id`. Attach image files and one `extension_context` payload carrying the immutable context JSON below. Do not append that JSON to the user prompt. Record the native acknowledgement separately.
 5. Events arriving before the acknowledgement are joined using their proven native correlation. Persist before broadcasting.
 6. On an authoritative request terminal, finish that request/work only after accounting for its accepted steering directives and native children. External jobs retain their own states.
 
-`client_turn_id` is a correlation facility, not a promised server deduplication key. E01 must prove its persisted echo and callback mapping in the pinned SDK/runtime. F00 supplies a compatibility adapter for root request, steering, subagent and tool attribution. Do not use a mutable global “current request” as the sole callback identity.
+`client_turn_id` is a correlation facility, not a server deduplication key. At the pinned SDK it is echoed on the persisted user-message event. The MCP turn stamp is memory-only and is not restored on resume. Persist request, work and invocation attribution in SQLite at admission. Do not use a mutable global “current request”, and do not wait for E01 to prove that MCP metadata survives restart.
 
-### Prompt context envelope
+### Prompt and context delivery
 
-Every `QueueRequest` or `SteerRequest` delivered to `session.send` formats `prompt` as the user's `text`, two newlines, and a `<proscenium_context>` block containing canonical UTF-8 JSON:
+`session.send` receives:
 
-```text
-<user text>
+- `prompt` and `display_prompt`: the user's text only. The conversation UI shows that text, not the context JSON.
+- `source` left unset, so the runtime treats the message as the person's.
+- `mode`: `enqueue` for an admitted Queue request, `immediate` for Steer.
+- `client_turn_id`: the application request ID.
+- `attachments`: image files in the existing role order, then one `extension_context` attachment (`extensionId` `proscenium`, `title` `Turn context`, `capturedAt` from the snapshot, `payload` the canonical JSON below).
 
-<proscenium_context>
+E01 must prove the lead and subagents can read that payload. If the pinned runtime does not show `extension_context` to the model, put the same JSON in the user-prompt-submitted hook's `additionalContext`. Do not rewrite the user prompt to smuggle it. A `<proscenium_context>` block typed by the user is not authoritative.
+
+The payload is canonical UTF-8 JSON:
+
+```json
 {
   "schema_version": "1.0",
   "request_id": "req-create-scene",
@@ -89,12 +106,11 @@ Every `QueueRequest` or `SteerRequest` delivered to `session.send` formats `prom
     }
   ]
 }
-</proscenium_context>
 ```
 
 - `attached_files` lists the exact files passed to the SDK's `attachments` parameter in the same order: clean target renders/concepts (`role: "render"` | `"concept"` | `"reference"`), rendered markup composites (`role: "markup"`), and lossless PNG masks (`role: "mask"`).
 - For `Render this view`, the UI submits a `QueueRequest` whose `selection.view_mode` is `"3d_inspection"` and whose `selection.camera` contains the complete `Camera` record (`camera_to_world`, `projection`, `aspect`, `near_m`, `far_m`, `vertical_fov_degrees` or `orthographic_height_m`, and optional `shift`), allowing Copilot to pass that exact camera to `request_preview`.
-- Agent skills and subagent prompts consume this envelope directly rather than parsing coordinates, object IDs or finding revisions out of free-form prose.
+- Agent skills and subagent prompts read this payload. They do not parse coordinates, object IDs or finding revisions out of the user's text.
 
 ### Lost acknowledgement
 
@@ -118,7 +134,7 @@ The original Queue snapshot and each Steer snapshot remain distinct. A steering 
 
 ## 5. Stop
 
-Stop is a durable control request, not a model prompt. It names the active work ID, records `stop_requested`, closes delivery of application-held Queue requests and invokes native cancellation exactly once per control ID.
+Stop is a durable control request, not a model prompt. It names the active work ID, records `stop_requested`, closes delivery of application-held Queue requests and calls `session.abort()` exactly once per control ID. Abort cancels the current message and that work's pending Autopilot continuations. It does not hold the native queue, so the application FIFO stays held until explicit Resume. The session remains usable.
 
 | Situation | Result |
 | --- | --- |

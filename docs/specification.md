@@ -1,8 +1,8 @@
 # Specification index and authority
 
-**Specification revision:** 3.0.0
+**Specification revision:** 3.1.0
 
-**Contract revision:** 1.0.0
+**Contract revision:** 1.0.0, amended 2026-11-14 before implementation. Wire `schema_version` remains `1.0`. No migration.
 
 **Owner decisions incorporated:** 2026-11-14
 
@@ -44,8 +44,8 @@ No document in this pack claims that the SDK integration, progressive player or 
 - One user and one active project, host-native on this Linux development workstation.
 - Desktop Chromium, Brave and Edge, at a 1920 × 1080 CSS-pixel acceptance viewport.
 - Relevant active-project content may be inspected through agent tools and sent to cloud reasoning. Other projects and credentials are excluded.
-- Routine in-scope authoring, local checkpoints, configured generation and free asset acquisition run automatically.
-- Consequential external actions use the explicit permission matrix. Creative stages progress autonomously within the requested task.
+- Routine in-scope authoring, local checkpoints, configured generation and asset acquisition run automatically. Licence text is not a permission gate.
+- Consequential external actions use the explicit permission matrix. Creative stages progress autonomously within the requested task. Shell stays available. The generation budget applies to the adapter, not to a network filter.
 - Queue, Steer and Stop are explicit request types. Stop is a runtime control, holds subsequent requests, and leaves external-job cancellation separate.
 - Generation attempts are configurable, with a default of three per target and human-originated generation task.
 - Git/Git LFS source history, immutable published identities, three exclusive review modes and progressive silent animation review remain the V1 baseline.

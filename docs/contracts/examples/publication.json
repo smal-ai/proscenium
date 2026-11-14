@@ -55,7 +55,8 @@
           "device": "CPU",
           "samples": 16,
           "colour_management": {"view_transform": "AgX", "look": "None", "exposure": 0, "gamma": 1},
-          "renderer_revision": "synthetic-fixture-profile-1"
+          "renderer_revision": "synthetic-fixture-profile-1",
+          "review_output": {"media_type": "image/png", "encoding": "view_transformed_srgb", "bit_depth": 8}
         }
       ]
     }

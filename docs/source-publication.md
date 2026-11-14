@@ -10,7 +10,7 @@ Each active project has a dedicated Git working tree. V1 project registration re
 
 When `POST /api/v1/projects` runs with `create: true` (or initialises an unbootstrapped workspace root), it sets up the workspace idempotently before returning `ProjectRecord`:
 
-1. Create project directories `brief/`, `assets/`, `scenes/`, `storyboards/`, `sequences/` and `.proscenium/`, and write `project.json` (`ProjectConfig`).
+1. Create project directories `brief/`, `assets/`, `scenes/`, `storyboards/`, `sequences/` and `.proscenium/`, and write `project.json` (`ProjectConfig`) with those paths, including `brief`.
 2. Run `git init -b main` if `.git/` is absent, then run `git lfs install --local`.
 3. Write or ensure `.gitignore` contains:
    ```gitignore
@@ -42,9 +42,20 @@ When `POST /api/v1/projects` runs with `create: true` (or initialises an unboots
    *.hdr filter=lfs diff=lfs merge=lfs -text
    *.mp4 filter=lfs diff=lfs merge=lfs -text
    *.tga filter=lfs diff=lfs merge=lfs -text
+   *.tif filter=lfs diff=lfs merge=lfs -text
+   *.tiff filter=lfs diff=lfs merge=lfs -text
+   *.obj filter=lfs diff=lfs merge=lfs -text
+   *.mtl filter=lfs diff=lfs merge=lfs -text
+   *.abc filter=lfs diff=lfs merge=lfs -text
+   *.usd filter=lfs diff=lfs merge=lfs -text
+   *.usda filter=lfs diff=lfs merge=lfs -text
+   *.usdc filter=lfs diff=lfs merge=lfs -text
+   *.usdz filter=lfs diff=lfs merge=lfs -text
+   *.zip filter=lfs diff=lfs merge=lfs -text
+   *.7z filter=lfs diff=lfs merge=lfs -text
    ```
 
-Copilot edits canonical filenames and checkpoints a coherent, completed change set. A checkpoint records the files and dependencies required by that result. The tool checks staged/working-file ownership before committing and preserves unrelated staging. Uncommitted or dirty input bytes cannot masquerade as the contents of the declared commit.
+Copilot edits canonical filenames and checkpoints a coherent, completed change set through `checkpoint_sources` (`CheckpointRequest`). The tool commits only the listed paths, checks `expected_head`, and preserves unrelated staging. A generic `git add .` is not the protocol. Uncommitted or dirty input bytes cannot masquerade as the contents of the declared commit. Checkpoint is automatic. It is not an owner approval.
 
 Version identity is opaque and stable. Source identity combines full commit SHA, canonical path, actual content SHA-256 and a complete materialisation manifest. File modification times, branch names, Git HEAD at review time and model-generated version labels are not source identities.
 
@@ -55,7 +66,7 @@ A `SourceClosure` contains an entry path, all files needed to open/render it and
 - `git`: repository ID, full commit, source path and expected hydrated content hash; or
 - `retained`: a project-owned immutable retained blob and its hash, for permitted local-only content which must not enter Git/LFS.
 
-Every origin belongs to the active project. Referencing another project or a mutable absolute path is rejected. A local-only source requires a durable retained copy before publication and is included in the project's backup manifest.
+Every origin belongs to the active project. Referencing another project or a mutable absolute path is rejected. Local-only retained storage is only for bytes the user asked to keep out of Git. Unknown or restrictive rights do not force a retained copy, and they do not reject publication. When a retained copy is used, it is included in the project's backup manifest.
 
 ### Resolution algorithm
 
@@ -74,7 +85,7 @@ The closure digest is SHA-256 of RFC 8785 canonical JSON for the manifest exclud
 
 ## 3. Stable object and instance identity
 
-Blender tooling persists a project-scoped object ID on each authored object. Renaming preserves it. Duplication/replacement creates a new instance/object ID with optional `derived_from` provenance; a name or glTF node index cannot substitute for that ID.
+Blender tooling persists `proscenium_object_id` and `proscenium_instance_id` custom properties on each authored object. Renaming preserves them. Duplication or replacement creates a new instance ID, and a new object ID unless the tool is explicitly making another instance of the same object. A name or glTF node index cannot substitute for those properties. Optional `derived_from` is another custom property, not a gate.
 
 The proxy mapping records source object ID, instance ID, node path, sampled frame and source closure digest. Linked/collection instances need persistent tool-authored IDs. If a topology change makes identity ambiguous, publish new identities and retain old annotation targets. Do not fabricate correspondence.
 
@@ -112,7 +123,9 @@ For a new camera/profile preview of an **already published** version, Copilot ca
 
 ## 5. Render admission and ownership
 
-Each preview intent identifies source closure, scene/shot, camera or validated override, sample/range, rational FPS, dimensions, purpose, engine/device and renderer implementation revision. The renderer uses a fixed installed entry point and structured data. Publication cannot supply an arbitrary shell command.
+Each preview intent identifies source closure, scene/shot, camera, sample/range, rational FPS, dimensions, purpose, engine/device and renderer implementation revision. `camera: null` means the authored shot cameras, including an animated camera. A camera object is a static override for that job only, used for Render this view or an explicitly locked camera. Do not send one pose and call it an animated shot. `purpose: "proxy"` exports the static `.glb` and mapping. It does not require `review_output`.
+
+Keyframe, draft and final jobs require `review_output`: an 8-bit sRGB PNG with the declared view transform baked in. The browser reviews that PNG. An extra linear EXR may be listed in `extra_outputs`. It is not the review image, and a missing EXR does not fail review. The renderer uses a fixed installed entry point and structured data. Publication cannot supply an arbitrary shell command.
 
 Before launch, verify input availability, closure digest, free output space and the required execution profile. A missing device/model/feature is an actionable state. Do not silently substitute a different quality profile.
 

@@ -31,14 +31,16 @@ Automatic permission applies only to work within the active human request, activ
 | Relevant project file/image inspection, text search and scoped Git history | Automatic. May provide relevant content to the configured cloud LLM. |
 | Blender/Unity authoring, project code/file edits and ordinary generated-working-file maintenance | Automatic. Tools preserve unsaved user work and inspect uncertain outcomes. |
 | Local Git checkpoint of the completed, explicitly owned change set | Automatic. Preserve unrelated staging and user changes. |
-| Configured online asset search and free downloads into the project | Automatic, subject to source terms and import checks. Running acquired code is a different operation. |
+| Configured online asset search, downloads and imports into the active project | Automatic. Record source, creator and licence when the tool actually knows them. Unknown or restrictive rights do not block download, import, local use, checkpoint or publication. Do not invent a cleared licence. |
 | Workflow submission, conditioning-image upload and output retrieval through configured local services | Automatic within the generation budget. |
 | Read-only VLM assessment requested by the user or Copilot | Automatic. Only subsequently user-approved findings become critique instructions. |
 | Purchases, paid asset acquisition or a new chargeable external service | Confirm the exact item/service, price where known and intended action. |
-| Software/model installation, upgrades, add-ons or service configuration/lifecycle changes | Confirm explicitly. Routine generation does not own service installation/start/stop. |
+| Software/model installation, upgrades, persistent add-on installation or service configuration/lifecycle changes | Confirm explicitly. Routine generation does not own service installation/start/stop. Running an importer or script to use an asset already in the project is ordinary authoring, not this row. |
 | Remote Git push, external upload/sharing or publishing beyond the agreed reasoning/configured service workflow | Confirm destination and exact scope. |
 | Destructive Git operations or deletion of retained sources, published versions or selected/submitted media | Confirm unless that exact action was explicitly requested by the user. |
 | Cross-project content access or credential disclosure | Denied by the V1 policy. An ordinary tool approval cannot silently change the project boundary. |
+
+Licence text is metadata. It is not an approval type, a download block, or a reason to keep an asset out of the project Git history. Remote push and external sharing still use the destination confirmation above, because they leave the machine, not because a licence string was parsed.
 
 A permission request has a durable ID, request/work/tool correlation, exact proposed operation, bounded resource/destination list and a fingerprint. The UI can approve once or decline. An explicit user request covering the exact consequential action can supply that approval, but it must still be attributed and recorded. Model text such as “the user approved this” is not an approval record.
 
@@ -66,7 +68,7 @@ Published content starts `unreviewed`. An agent's technical/visual assessment is
 
 This is a shared tool-adapter budget ledger, not a new agent-planning loop. It must apply across native subagents using the same target.
 
-Configured generation submission is exposed through the budgeted adapter. A general shell/Python path must not provide an unmetered alternative submission route to the same providers. The enabled tool profile and E01/C12 prove that routing boundary; diagnostic/status reads remain available without consuming an attempt.
+Configured generation submission goes through the budgeted adapter. General shell and Python stay available for Git, Blender, files and inspection. Do not add a network filter or sandbox to stop a bypass. The lead is instructed to use the adapter. C12 proves the adapter. Diagnostic and status reads do not consume an attempt. A shell call that happens to reach a provider is not a new permission system.
 
 ## 5. Queue, Steer and Stop
 

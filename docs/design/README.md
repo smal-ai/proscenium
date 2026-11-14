@@ -37,6 +37,8 @@ App/header `#09090b`; panels `#101013`; raised surfaces `#18181c`; inputs `#1414
 - Critic approval submits selected findings to Copilot; it does not execute a UI repair function.
 - The Unity action delegates to the specialist and produces an Editor-playable scene. No game HUD or cinematic gameplay transition is drawn over the review viewport.
 - One theme and three review modes: 3D Inspection, Keyframes and Animation. A mode change does not itself start rendering.
+- The outliner lists the published proxy mapping. A row selection is the same object selection as a proxy pick. It does not start a render.
+- Keyboard, when focus is not in a text field: `1` `2` `3` select 3D Inspection, Keyframes and Animation. Space plays or pauses animation. Left and Right step one frame. Shift+Left and Shift+Right change shot.
 - The current image and drafts remain pinned while new render ranges or newer versions arrive. Progress is visible without retargeting the review.
 
 The mockup's scene colours and dummy measurements are not authored scene requirements. UI styling must not retint the actual Blender images used for material judgement.

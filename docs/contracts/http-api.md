@@ -16,7 +16,7 @@ There are three authenticated caller channels:
 
 An agent cannot approve its own permission request by calling an owner endpoint. Loopback alone cannot establish that a request came from the human rather than a local tool process.
 
-Use a local owner-session capability established through the trusted SSH/operator channel. Initial pairing uses an unpredictable one-use code, delivered outside agent context (for example in the operator's launch URL fragment), with a 15-minute expiry. `/api/v1/owner/session` exchanges it for an HttpOnly, SameSite=Strict owner cookie and an anti-CSRF token. Match allowed origins for all writes. Default owner-session lifetime is 12 hours. No external account-registration service is required.
+Use a local owner-session capability established through the trusted SSH/operator channel. Initial pairing uses an unpredictable one-use code, delivered outside agent context (for example in the operator's launch URL fragment), with a 15-minute expiry. `/api/v1/owner/session` exchanges it for an HttpOnly, SameSite=Strict owner cookie and an anti-CSRF token. Match allowed origins for all writes. Any authenticated owner request renews the session for 12 hours. Do not force a new pairing while that browser session is in use. No external account-registration service is required.
 
 Pairing retry is bound to its original operation ID and client nonce. A consumed pairing code cannot create a different client session. Pairing codes/cookies/CSRF tokens and tool/worker capabilities never enter project context, agent-readable files or public event logs. Tool and worker routes use separate scoped capabilities or equivalent in-process authenticated bindings. A supplied `actor` string cannot elevate a caller.
 
@@ -54,7 +54,7 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `PUT /api/v1/projects/{project_id}/settings` | `ProjectSettings` | `CommandReceipt`; applies to future work. In-flight jobs retain admitted settings. |
 | `GET /api/v1/projects/{project_id}/items` | Pagination, optional kind | `ItemPage`. |
 | `GET /api/v1/projects/{project_id}/items/{item_id}/versions` | Pagination | `VersionPage`. |
-| `GET /api/v1/projects/{project_id}/versions/{version_id}/shot-plan` | — | `ShotPlan`; server projection with `source_commit` and resolved owner selection state. |
+| `GET /api/v1/projects/{project_id}/versions/{version_id}/shot-plan` | — | `ShotPlan`. Host adds `source_commit` and `owner_selected`. The file on disk is `AuthoredShotPlan`. |
 | `GET /api/v1/projects/{project_id}/versions/{version_id}/sequence-map` | — | `SequenceMap` for a published sequence version. |
 | `GET /api/v1/projects/{project_id}/versions/{version_id}/proxy-mapping` | — | `ProxyMapping` for a published asset or scene version. |
 | `GET /api/v1/projects/{project_id}/jobs` | Pagination | `JobPage`. |
@@ -86,7 +86,7 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `POST /internal/v1/frame-receipts` | `FrameReceipt` | `CommandReceipt`; exact admitted job and output hash required. |
 | `POST /internal/v1/segments` | `PreviewSegment` | `CommandReceipt`; exact contiguous frame/encode mapping required. |
 
-Project `paths` are directories and may use `.` for the root, including a Unity project whose root is the active project itself. Source/artefact file paths must name a file and cannot use that directory shorthand. `ShotPlan` is a wire projection: its source commit is attached from the published version, avoiding a self-referential commit field inside the source plan file.
+Project `paths` are directories and may use `.` for the root, including a Unity project whose root is the active project itself. Source/artefact file paths must name a file and cannot use that directory shorthand. `brief` is a required project path. `ShotPlan` is a wire projection. Copilot writes `AuthoredShotPlan` and calls `checkpoint_sources` (`CheckpointRequest`) for an owned local commit. That tool is not an owner approval and has no separate HTTP route.
 
 Internal routes are a protocol boundary, not a requirement to put an extra HTTP hop inside the same process. SDK handlers may invoke the same authenticated service operation directly. Owner routes are not automatically exposed as agent tools.
 

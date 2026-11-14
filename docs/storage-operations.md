@@ -11,6 +11,7 @@
 | Managed project bytes | `<project>/.proscenium/artefacts/sha256/<digest>/...` | Immutable uploaded, captured, generated and encoded bytes referenced by artefact records. |
 | Retained local-only sources | `<project>/.proscenium/retained/` | Explicitly permitted source bytes excluded from Git, with immutable hashes and backup references. |
 | Render materialisations and working output | `<project>/.proscenium/snapshots/` and `jobs/` | Reconstructible input trees, worker receipts and temporary output. Active jobs have exclusive ownership. |
+| Large tool output | `<project>/.proscenium/tool-output/` | SDK large-tool spills. Not the OS temp directory. |
 | Copilot native session storage | Location reported/configured for the pinned runtime | Authoritative native conversation, compaction/planning data and native artefacts. |
 | Project source | The chosen Git/Git LFS working tree | Canonical authored files, brief, plans and permitted source/reference assets. |
 
@@ -58,7 +59,7 @@ F00 defines schema upgrade/backup preconditions. A failed migration preserves th
 
 Tooling coordinates its own writes and the isolated renderer has its own admission queue. V1 uses a shared advisory execution-host claim for cooperating **Proscenium heavy GPU jobs**, with capacity one by default. This claim does not control unrelated applications or replace Copilot's planning.
 
-The initiating tool acquires the claim before provider submission; it records ownership and retains it while a provider job is queued/running/uncertain. A preview GPU worker acquires the same claim. A separate renderer-writer lock serialises owned Blender renders. CPU rendering can use a configured bounded thread profile. Lightweight planning, browsing and metadata operations continue.
+The initiating tool acquires the claim before provider submission and releases it when that job is terminal. The claim covers that submitted job only. A loaded LM Studio or ComfyUI process does not hold it. Status reads and a VLM call do not wait behind a render unless that call itself submits a heavy GPU job. A preview GPU worker acquires the same claim for its own job. A separate renderer-writer lock serialises owned Blender renders. CPU rendering can use a configured bounded thread profile. Lightweight planning, browsing and metadata operations continue.
 
 External services remain independently managed. Inspect their actual queue/memory state as well as the advisory claim: another client may have submitted work. Busy/unavailable resources yield `waiting_resource` or an actionable failure, not queue clearing, global model unloading or killing another application's processes. Release a claim only on verified terminal state. An expired timestamp alone cannot prove that a job stopped.
 

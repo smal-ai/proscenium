@@ -19,6 +19,7 @@ An upload is not automatically a creative selection or an LLM attachment. The us
 One central viewer switches between **3D Inspection**, **Keyframes** and **Animation**. Available Blender keyframes are the default. Concept references have explicit source labels and can be inspected through the image-review surface without pretending to be material evidence.
 
 - A mode change loads available data only. It does not dispatch rendering or generation.
+- The outliner lists the published proxy mapping. Selecting a row sets the same `selected_object_ids` as a proxy pick. It does not start a render. In Keyframes or Animation, an outliner selection is context for the next message, not a spatial hit, unless the proxy version and sample frame match.
 - The current published head can change while the viewer stays pinned to an older version. Show a newer-version indicator; do not jump automatically.
 - Before starting markup, pause playback/orbit and obtain the actual displayed-frame/camera capture. A requested seek is not proof that its target frame has been presented.
 - A draft pins that capture at creation. Send freezes the full UI context, including each draft's own target. Later selection changes never retarget an earlier draft.
@@ -29,7 +30,7 @@ One central viewer switches between **3D Inspection**, **Keyframes** and **Anima
 - Source frame numbers are one-based. Ranges are inclusive and identify a single shot/job unless an explicit sequence mapping is supplied.
 - Frame rate is an exact positive rational `{numerator, denominator}`. A timestamp string is display text, not identity.
 - For a segment starting at source frame `s` and rate `n/d`, frame `f` starts at `(f-s)*d/n` seconds and ends at `(f-s+1)*d/n`. Seek to its centre for a paused-frame request, then confirm the displayed frame.
-- Sequence frame, shot frame and source frame are separate domains. A mapping entry contains source range, destination range and any trim/retime/transition transform. A crossfade can have two contributors. Do not invent a single source frame for a composite.
+- Sequence frame, shot frame and source frame are separate domains. A mapping entry contains source range, destination range and any trim, retime or transition. A transition's `contributors` list is authoritative and has at least two shots. The entry's own shot fields name the outgoing shot for catalogue linking. Do not invent a single source frame for a composite. `choice` omitted means the agent proposed the cut. An owner selection is optional and does not block assembly.
 - Store 2D points normalised to the original displayed image bounds, top-left origin, `[0,1]` on each axis. Convert through the actual media-content rectangle, including zoom/pan, letterboxing and DPR. Clip geometry to the image rather than clamping outside-panel gestures into false edge points.
 - Stroke widths are image pixels. Retain editable strokes/pins/regions and lossless masks, plus a rendered markup image for model input.
 - A range annotation has an **anchor frame containing the drawing** and a separate inclusive temporal range describing applicability. V1 does not track a mask across moving frames automatically.
@@ -67,7 +68,7 @@ Use immutable frames and independently decodable short segments. The initial ref
 7. At a segment boundary, show each source frame in order once. E03 must detect blank frames, duplicated/skipped frame IDs and timestamp drift on all three browsers.
 8. Keep source/job/frame identities when complete assembly becomes available. A new encode hash does not move annotations. Actual editorial reordering, retiming or compositing creates a new mapping/version.
 
-Draft motion, material-capable keyframes and final delivery use distinct profile identities. Full delivery can differ in resolution or samples from a draft, so it is not claimed to have identical pixels. Old annotations continue pointing to their actual reviewed images; any carry-forward records both the original and the new target.
+Draft motion, material-capable keyframes and final delivery use distinct profile identities. Their review frames are the view-transformed sRGB PNG from `review_output`. Full delivery can differ in resolution or samples from a draft, so it is not claimed to have identical pixels. Old annotations continue pointing to their actual reviewed images; any carry-forward records both the original and the new target.
 
 ## 5. User selections and VLM findings
 

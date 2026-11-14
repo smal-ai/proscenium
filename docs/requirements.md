@@ -1,6 +1,6 @@
 # Proscenium: product and technical requirements
 
-**Version:** 3.0.0
+**Version:** 3.1.0
 
 **Updated:** 2026-11-14
 
@@ -36,7 +36,7 @@ This is a consolidation of the working practices and tooling in `smal-ai-blender
 - One central viewer toggled between static **3D Inspection**, rendered **Keyframes** and rendered **Animation**.
 - Annotation of keyframes and available animation frames/ranges, including during an unfinished render.
 - Story planning, reference research, storyboard images, Blender camera/timeline authoring and silent cinematic delivery.
-- Text/file-based local asset discovery and configured online asset MCPs, including the existing BlendSwap integration.
+- Text/file-based local asset discovery and configured online asset MCPs. BlendSwap is optional. A missing key or endpoint is an unavailable capability, not a failed studio.
 - Independent LM Studio and ComfyUI services reached through configurable endpoints.
 - On-demand local VLM critique, with user-approved findings and relevant images passed to Copilot.
 - A planned image-to-3D integration, subject to an early real-hardware feasibility proof.
@@ -131,7 +131,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-05.4:** Animation MUST support rendered playback, pause, frame stepping, shot navigation and inclusive frame-range selection at the declared frame rate.
 - **FR-05.5:** Mode changes MUST preserve the selected item/version and associated review state. Selecting an annotation MUST restore its captured view/frame context.
 - **FR-05.6:** Render this view MUST send the inspection camera and target version to Copilot. Copilot supplies the Blender render instructions. Switching modes alone MUST NOT start a render.
-- **FR-05.7:** The UI MUST report actual dimensions, frame rate, renderer/profile and availability. Media resolution MUST be independent of the desktop UI's Full HD design reference.
+- **FR-05.7:** The UI MUST report actual dimensions, frame rate, renderer/profile and availability. Media resolution MUST be independent of the desktop UI's Full HD design reference. Keyframe, draft and final review images MUST be the view-transformed sRGB PNG declared by `review_output`.
 
 ### FR-06: Annotation and spatial identity
 
@@ -156,7 +156,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 - **FR-08.1:** Copilot MUST discover reusable assets within the active project using filenames, text metadata and ordinary search tools, without requiring a vector database. Another project's content requires an explicit owner import into the active folder before agent access.
 - **FR-08.2:** Configured online MCPs MUST support asset discovery/acquisition where available. Search results MUST NOT be reported as imported or validated assets.
-- **FR-08.3:** Asset records MUST include descriptive metadata, source/licence information, paths and source-version references. Unknown rights MUST remain unknown.
+- **FR-08.3:** When a tool knows a source URL, creator or licence, it records them on optional `provenance`. Unknown stays null. Missing or restrictive rights MUST NOT block download, import, local use, checkpoint or publication, and MUST NOT be rewritten as a cleared licence.
 - **FR-08.4:** Copilot/tools MUST perform imports, procedural/Geometry Nodes authoring, scale/origin preparation and actual Blender validation as required by the request.
 - **FR-08.5:** Reusing or revising an asset MUST preserve existing scenes and published versions. Proscenium presents the result rather than choosing replacements.
 
@@ -191,7 +191,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 ### FR-12: Image-to-3D capability
 
-- **FR-12.1:** The plan MUST include an early hardware/model/licence feasibility proof and a later end-to-end image-to-3D journey. No working local pipeline is currently established.
+- **FR-12.1:** The plan MUST include an early hardware and import feasibility proof and a later end-to-end image-to-3D journey. No working local pipeline is currently established. A known licence is recorded. Rights do not decide the proof.
 - **FR-12.2:** A successful integration MUST produce an actual mesh that Copilot imports into Blender, inspects, saves and publishes with its inputs and source history.
 - **FR-12.3:** Supported topology, textures, scale/origin preparation, memory usage and limitations MUST be measured. Automatic production-ready retopology or rigging MUST NOT be assumed.
 - **FR-12.4:** Failure of the proof MUST be recorded as an unresolved capability, not a completed feature. Core studio journeys can proceed, but changing this planned V1 scope requires an explicit owner decision.
@@ -201,7 +201,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-13.1:** Copilot MUST be able to delegate Unity-specific work to a native specialist subagent with the configured Unity CLI/tools.
 - **FR-13.2:** The specialist MUST consume explicitly pinned Blender outputs, perform needed material/mesh/collider preparation and configure a saved Unity scene.
 - **FR-13.3:** The result MUST include basic movement, camera control, collision/floor support and a safe spawn appropriate to the brief. No additional gameplay is required.
-- **FR-13.4:** The specialist MUST validate the result and publish source-version references, Unity project/scene locations and validation results. Playtesting stays in the Unity Editor.
+- **FR-13.4:** The specialist publishes source-version references, the Unity scene path and a `UnityResult` validation status of passed, failed or not_run. A failed or skipped playtest does not block publication. Playtesting stays in the Unity Editor. Keyboard and mouse are sufficient. Visual parity with Blender is not required.
 - **FR-13.5:** Unity changes MUST use Unity APIs and preserve asset GUIDs. Tools MUST respect active/dirty Editor state rather than force-close an instance to run a batch command.
 - **FR-13.6:** The agent-operated Unity project MUST be within the active Proscenium project folder in V1. A configured external path does not widen the owner's current-project-only content permission.
 
@@ -249,7 +249,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 - **NFR-01.1:** The acceptance viewport MUST be 1920 × 1080 in a desktop browser. Panels MAY scroll internally. No mobile layout is required.
 - **NFR-01.2:** Linear Minimal MUST be the V1 visual baseline: neutral dark surfaces, thin borders, restrained indigo, Inter UI text and monospace technical labels. A multi-theme system is not required.
-- **NFR-01.3:** Busy, pending, partial, saved, failed and unavailable states MUST be visible. Keyboard playback/frame controls and selectable conversation text MUST remain usable.
+- **NFR-01.3:** Busy, pending, partial, saved, failed and unavailable states MUST be visible. Keyboard playback and mode controls follow the [design reference](design/README.md). Selectable conversation text MUST remain usable. Keys are ignored while a text field has focus.
 - **NFR-01.4:** Desktop Chromium, Brave and Edge MUST pass the defined acceptance cases. Automated Chromium checks and actual Brave/Edge checks MUST record browser versions on the Linux reference workstation.
 
 ### NFR-02: Deployment and service boundaries
@@ -278,12 +278,12 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **NFR-05.2:** Only intended UI assets and published media MUST be served. Arbitrary project roots, Git metadata, environment files and credentials MUST NOT be exposed by file-serving routes.
 - **NFR-05.3:** Copilot tools and permissions MUST implement the pragmatic [owner policy](owner-policy.md): session working directory pinned to the active project root, cross-session memory disabled, validated Proscenium HTTP/publication paths and distinct caller tokens.
 - **NFR-05.4:** Relevant permitted active-project images/files may reach cloud reasoning through attachments or agent tools. The UI MUST show captured attachments and public tool access. Credentials, environment files and cross-project content remain excluded.
-- **NFR-05.5:** Asset rights, attribution and private/local-only exclusions MUST survive reuse. Source checkpoints do not imply permission to push repositories or redistribute restricted assets.
+- **NFR-05.5:** Record known provenance when reuse happens. Do not block reuse because rights are unknown or restrictive. A source checkpoint does not itself push the repository. External push and sharing still require the destination confirmation in owner policy.
 
 ### NFR-06: Verification and portability
 
 - **NFR-06.1:** Contract, integration and desktop-browser tests MUST cover the completed journeys, including retry and failure paths. A technical pass MUST NOT be presented as creative acceptance.
-- **NFR-06.2:** Reused tools MUST be adapted into maintained, licensed project tooling rather than depend on the reference repositories' active scenes, secrets, environments or machine-specific defaults.
+- **NFR-06.2:** Reused tools MUST be copied into maintained Proscenium tooling with their copyright notices, rather than depend on the reference repositories' active scenes, secrets, environments or machine-specific defaults. Asset rights are not a runtime gate.
 - **NFR-06.3:** The mockup is a visual reference, not production code. Runtime frontend assets MUST be bundled rather than depend on its Tailwind/Three.js/font CDNs.
 - **NFR-06.4:** Development work packages MUST consume a frozen contract revision and named fixtures, have explicit file ownership and follow the [fleet handover](development-fleet.md). Shared contracts, migrations and root build files have one integration owner.
 
@@ -313,5 +313,5 @@ The full workflow, dependencies, tests and failure cases are in [user journeys a
 - The reference Blender/Unity/ComfyUI workflows have historical code and test evidence. They have not yet been integrated into or validated as Proscenium.
 - Copilot SDK compatibility with the actual authentication, MCP definitions, image inputs and native subagent profiles must be proved first.
 - Progressive playback and version-pinned annotation are new integration work despite the existing per-frame render receipts.
-- Image-to-3D has no established working implementation. Model choice, licence, runtime support, mesh quality and resource limits remain an explicit feasibility task.
+- Image-to-3D has no established working implementation. Model choice, runtime support, mesh quality and resource limits remain an explicit feasibility task. Rights do not decide it.
 - Contract 1.0 is specified in [contracts](contracts/README.md). F00 must validate it, generate bindings, establish the offline harness and pin/prove the SDK/runtime combination before dependent agents implement against it.

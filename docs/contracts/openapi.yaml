@@ -242,7 +242,7 @@ paths:
       operationId: getVersionShotPlan
       responses:
         '200':
-          description: Server-projected ShotPlan with source_commit and resolved owner selection state.
+          description: Server-projected ShotPlan. source_commit and owner_selected are host-resolved. The authored file is AuthoredShotPlan.
           content:
             application/json:
               schema: {$ref: './schema.json#/$defs/ShotPlan'}

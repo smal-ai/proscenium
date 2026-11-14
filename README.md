@@ -2,7 +2,7 @@
 
 A personal, desktop-browser studio for directing AI-authored Blender assets, scenes, storyboards and silent cinematics, with playable Unity scenes as a downstream output.
 
-**Status: specification baseline.** V1 requirements, architecture, normative contract 1.0, acceptance fixtures and a development-fleet handover are documented. Application implementation has not started, and there is no runnable studio or installation procedure yet.
+**Status: specification 3.1.0.** V1 requirements, architecture, contract 1.0 amended before implementation, acceptance fixtures and a development-fleet handover are documented. Application implementation has not started, and there is no runnable studio or installation procedure yet.
 
 ## Start here
 

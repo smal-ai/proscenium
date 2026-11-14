@@ -1,6 +1,6 @@
 # Acceptance pack
 
-**Specification:** 3.0.0. **Contract:** 1.0.0. This pack defines fixtures and expected outcomes. It does not claim that application tests have run or passed.
+**Specification:** 3.1.0. **Contract:** 1.0.0, amended before implementation. This pack defines fixtures and expected outcomes. It does not claim that application tests have run or passed.
 
 ## Fixture families
 

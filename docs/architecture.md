@@ -1,6 +1,6 @@
 # Proscenium: system architecture
 
-**Version:** 3.0.0
+**Version:** 3.1.0
 
 **Updated:** 2026-11-14
 
@@ -24,7 +24,7 @@ See the [specification index](specification.md) for precedence, [requirements](r
 | Versions | Canonical working filenames, Git/Git LFS source history, pinned dependencies and immutable published-media identities. |
 | Review | Static 3D inspection, material-capable rendered keyframes and progressively available draft animation. |
 | Critique | Requested by user or Copilot. User-approved findings and relevant images are sent to the lead. |
-| Asset search | Text/files and configured online MCPs. No vector database. |
+| Asset search | Text/files and configured online MCPs. No vector database. Optional BlendSwap endpoint `https://blendswap.com/api/mcp`, using `BLENDSWAP_KEY` if present. Missing key means disabled. |
 | Storyboards | V1 capability, including research, concept images, shot planning and Blender camera/timeline bindings. |
 | Cinematics | Silent in V1. |
 | Unity | Native specialist subagent delivers a playable scene with basic controls. Playtesting stays in Unity. |
@@ -94,7 +94,7 @@ The model inference is cloud-hosted. The Copilot runtime and tool execution are 
 | Unity | Reference baseline is Unity 6000.3.27f1/URP and the existing Python CLI plus C# Editor methods. Do not copy its game-specific scene assumptions. |
 | VLM | LM Studio, configured endpoint initially `http://localhost:1234`, configured model and supported API. |
 | Image generation | Independent ComfyUI endpoint, historically `http://127.0.0.1:8188`. Existing FLUX.2 Klein tooling is the starting reference. |
-| Image-to-3D | Unproven. Select the workflow only after a real Radeon/ROCm, licence and import proof. |
+| Image-to-3D | Unproven. Select the workflow after a real Radeon/ROCm and Blender import proof. Record a known licence. Do not fail the proof because the licence is unknown or restrictive. |
 | Video assembly | Existing Blender frame receipts plus FFmpeg probing, encoding and assembly patterns. |
 
 Installed versions in the reference repositories are evidence about those workflows, not a declaration that all Proscenium dependencies or GPU modes are currently working.
@@ -113,7 +113,7 @@ Configuration supplies:
 - Explicit SDK permission handling and project working directory.
 - Public event subscriptions and supported usage reporting.
 
-The lead decides when to delegate and progresses autonomously through the requested stages. Economical worker profiles provide model choices for suitable work. Generation attempts use the shared task/target budget, default three. No assumption is made that default delegation automatically chooses the cheapest model or reduces total cost.
+The lead decides when to delegate and progresses autonomously through the requested stages. Economical worker profiles set `model_policy` to `required`. An unavailable worker model is reported, and the lead may do the work itself. Generation attempts use the shared task/target budget, default three. No assumption is made that default delegation automatically chooses the cheapest model or reduces total cost. Autopilot continuation stays on. Shell, file and Git tools stay available. The [execution lock](execution.md#pinned-runtime-lock) names `abort()`, context delivery, sandbox, memory and skill paths.
 
 Routine in-scope work is automatically permitted. Consequential operations and actual project-content boundaries follow [owner policy](owner-policy.md). Native user-input/permission callbacks become durable decision cards; an agent cannot manufacture owner approval. The interface exposes public tool access in addition to the initially attached UI context.
 
@@ -157,10 +157,10 @@ The following overview is implemented as a normative specification in [contract 
 | Annotation | Immutable target reference, actual displayed frame/media hash, vector/pin/mask data, image dimensions/coordinates, optional valid spatial hits, text and save revision. |
 | Render job | Job ID, pinned source closure, profile/engine/device, camera, sample or inclusive frame range, rational frame rate, expected outputs, process identity and frame receipts. |
 | Preview segment | Job/shot ID, inclusive source-frame interval, frame count, frame-to-video-time mapping and encoded artefact hash. |
-| Shot plan | Stable shot/sequence IDs, intent, composition, assets/references, ordered storyboard frames, scene/camera bindings, motion, timing and unresolved inputs. |
+| Shot plan | Authored file is `AuthoredShotPlan`. The wire `ShotPlan` adds the publication commit and owner-selection flags. |
 | Generation job | Exact graph/prompt/model/seed/settings, input hashes/roles, endpoint/job IDs, execution status and output/derivative records. |
 | Review finding | Exact source/media target, evidence, observation versus telemetry, recommendation and separate agent/user review states. |
-| Unity result | Pinned Blender inputs, Unity project revision, Editor/pipeline, saved scene/controller locations and validation results. |
+| Unity result | `UnityResult` on a `unity_result` publication: editor, pipeline, scene path and validation status. Missing playtest does not block publication. |
 
 ### Identity rules
 
@@ -179,7 +179,7 @@ The following overview is implemented as a normative specification in [contract 
 
 Each project keeps canonical files such as `assets/food-cart/asset.blend` and `scenes/alley/scene.blend`. Copilot creates local checkpoints for completed authored changes, retaining the plans, dependencies and applicable source/licence metadata.
 
-On publication, record the source commit and hashes of the files actually used. Assets excluded by licence require a permitted private/local storage reference and backup policy rather than an accidental Git upload. Source commits do not authorise remote pushes.
+On publication, record the source commit and hashes of the files actually used. Optional `provenance` records source, creator and licence when known. Null licence means unknown. It does not reject the publication or force local-only storage. Source commits do not themselves push the repository.
 
 A scene published against food-cart version A continues to use A after food-cart version B is created. Copilot chooses how the Blender source preserves that binding: appended/packed content or explicitly pinned linked dependencies. Proscenium never follows a mutable asset path and declares it equivalent to the recorded dependency.
 
@@ -237,10 +237,10 @@ Reuse input fingerprints, process identity, per-frame hashes, writer locks and a
 
 | Purpose | Contract |
 | --- | --- |
-| Spatial proxy | Static `.glb`, object-ID mapping, source revision, sample frame and camera metadata. Not final lighting evidence. |
-| Keyframe | Actual Blender render suitable for material/lighting review, with recorded engine and settings. |
-| Draft animation | Reduced resolution/samples or a suitable Blender preview engine, retaining the requested motion and native timing. |
-| Final delivery | Explicitly selected production settings and source inputs. Not inferred from an approved draft. |
+| Spatial proxy | `purpose: "proxy"`. Static `.glb`, `proscenium_object_id` / `proscenium_instance_id` mapping, source revision and sample frame. Not final lighting evidence. |
+| Keyframe | Blender still with the view transform baked into an 8-bit sRGB PNG. That PNG is the review image. |
+| Draft animation | `camera: null` uses the authored cameras, including animation. Reduced resolution or samples, native timing, same PNG review contract. |
+| Final delivery | Explicit production settings and source inputs. Not inferred from an approved draft. Same PNG review contract. An extra EXR is optional. |
 
 Workbench is suitable for geometric/motion checks but must be labelled accordingly. The existing production notes record material artefacts that were misleading in Workbench. Do not approve lighting or change materials based only on that evidence.
 
@@ -338,7 +338,7 @@ Retain independently invocable stages:
 
 Copilot progresses autonomously within the user's request and can delegate through native subagents. It pauses for material unknowns, requested checkpoints, consequential permissions or exhausted generation budgets. Proscenium displays plans and artefacts. Merely opening a gallery, changing a selected reference or discovering stale dependencies does not submit a new generation job.
 
-Plans distinguish reusable assets, shots, storyboard frames, scene bindings, reference roles, motion beats, timing and unresolved inputs. Shared style text contains treatment, not a previous project's industrial subjects or cast. Concept images remain design references until actual geometry is authored.
+Copilot writes `AuthoredShotPlan` under `storyboards/<plan_id>/plan.json`. One project treatment lives in `brief/`. There is no styles directory and no requirement to compare styles. `selected` in the file is the agent's choice. The user can select later. Neither wait is mandatory. Concept images remain design references until actual geometry is authored. Do not copy a previous project's subjects or cast into the treatment text.
 
 ### 10.2 ComfyUI integration
 
@@ -366,7 +366,7 @@ The user can select/amend findings and submit them as a batch. The next Copilot 
 
 ### 10.4 Image-to-3D
 
-No functioning reference workflow exists. Run an early proof of model/licence compatibility, real Radeon/ROCm execution and Blender import. The integration milestone then turns a successful proof into repeatable CLI/MCP tooling and publication.
+No functioning reference workflow exists. Run an early proof of real Radeon/ROCm execution and Blender import. Record a known licence. Do not reject a working mesh because the licence is unknown or restrictive. The integration milestone then turns a successful proof into repeatable CLI/MCP tooling and publication.
 
 A result must be an actual mesh with inspected scale, topology/material availability and source evidence. Do not promise automatic clean retopology, rigging or production-ready materials. If the proof fails, leave the capability visibly unresolved and obtain an explicit scope decision before excluding it from V1.
 
@@ -376,7 +376,7 @@ Register a native Copilot specialist with Unity instructions and tool access. It
 
 Reuse the tested FBX/export and Editor-method approach before selecting an unverified alternative importer. Adapt the existing player/camera logic to a minimal controller without inheriting SMAL-specific characters, wardrobe, route, HUD or private assets.
 
-The output includes basic movement, camera control, collision/floor support and a safe spawn. Publish the Unity project/scene revision and source-input mapping. The user playtests in Unity Editor Play mode. No cinematic transition, additional game mechanics, Web build or browser player is required.
+The output includes basic movement, camera control, collision/floor support and a safe spawn. Keyboard and mouse are enough. WASD moves, the mouse looks, and a documented key returns to spawn. Jump and gamepad are not required. Publish a `unity_result` with `UnityResult`: editor version, pipeline, scene path and validation status `passed`, `failed` or `not_run`. A failed or skipped playtest can still be published. The user playtests in Unity Editor Play mode. No cinematic transition, additional game mechanics, Web build or browser player is required. Visual match to Blender is not an acceptance gate. Collision, scale and a usable material are.
 
 The Unity workspace must be inside the active project folder. An external location from an older draft is not automatically authorised under the confirmed project-only access policy.
 

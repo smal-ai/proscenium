@@ -1,6 +1,6 @@
 # Proscenium: user journeys and implementation milestones
 
-**Version:** 2.0.0
+**Version:** 3.1.0
 
 **Updated:** 2026-11-14
 
@@ -50,10 +50,10 @@ Run the smallest necessary proofs early so integration risks are discovered befo
 
 | Proof | When | Evidence required |
 | --- | --- | --- |
-| E01: Copilot SDK compatibility | F00/M01 | Authentication, image input, scoped MCP/subagents, Queue/Steer/Stop, pending decisions, callback attribution, lost-ack reconciliation, native session loading without premature execution, active-project `working_directory` and disabled cross-session memory. Pin compatible SDK/runtime versions. |
+| E01: Copilot SDK compatibility | F00/M01 | The [runtime lock](execution.md#pinned-runtime-lock): existing CLI login, SDK-started runtime, `session.abort()`, SQLite attribution, context attachment visible to the model, sandbox off, shell available, `model_policy: required`, Autopilot left on, infinite sessions, tool-output directory, image input, Queue/Steer/Stop and no execution on session load. |
 | E02: Source and identity contract | During M01, extended in M02/M04 | A saved source checkpoint, actual LFS hydration, dependency fingerprints, stable item/object identity and image/camera coordinate fixtures. |
-| E03: Progressive-media path | After the first render loop, before committing to the M08 player implementation | A bounded Blender render exposes completed frames and a playable contiguous segment before the last frame exists. Record the source-to-video frame mapping. |
-| E04: Image-to-3D feasibility | Begin after M01 rather than waiting until M10 | A candidate with usable licence and real host support produces a mesh that opens in Blender. Record failure if no candidate works. Runtime/model installation needs explicit approval for changes to independent services. |
+| E03: Progressive-media path | After the first render loop, before committing to the M08 player implementation | A bounded render on the display setup the product will use, with the draft engine, exposes view-transformed PNG frames and a playable contiguous segment before the last frame exists. `camera: null` keeps the authored camera motion. Record the source-to-video frame mapping. |
+| E04: Image-to-3D feasibility | Begin after M01 rather than waiting until M10 | A candidate that runs on this host produces a mesh that opens in Blender. Record a known licence. Unknown or restrictive rights do not fail the proof. Record failure only if no candidate produces a mesh. Runtime/model installation needs explicit approval for changes to independent services. |
 
 E04 does not block development of the authoring/review studio. It does determine whether M10 is deliverable as designed. A failed proof is not completion of M10 or permission to silently remove it from V1.
 
@@ -230,8 +230,8 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 
 - Adapt the production-research skill to the chosen project's brief, required fidelity and actual asset needs.
 - Give Copilot ordinary filename/text search over the active project's library and descriptive metadata. Content from another project must be explicitly imported by the owner before agent access.
-- Connect the installed online asset MCPs, including BlendSwap, through the Copilot tool configuration.
-- Record source URLs, creators/licences/restrictions, acquired files, transformations and inspection results.
+- Connect configured online asset MCPs. BlendSwap is optional. A missing key or endpoint is reported unavailable and does not fail the journey.
+- Record source URL, creator and licence when the tool knows them. Continue when they are unknown.
 - Let Copilot import or procedurally author an asset through Blender, inspect it and publish its editable source/proxy/keyframes.
 - Support explicit reuse/adoption of an asset version in a scene, with no automatic update propagation.
 
@@ -239,16 +239,16 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 
 1. Copilot finds an active-project asset from its name/tags/description without an embedding service or access to another project's content.
 2. An online search result is visibly distinct from an acquired file and a successfully imported asset.
-3. The imported asset opens in Blender with declared units, available materials and dependencies, and has a searchable source/licence record.
+3. The imported asset opens in Blender with declared units and available materials. Known provenance is searchable. A null licence does not hide or reject the asset.
 4. The user can inspect that asset independently of a scene and request a revision.
 5. Publishing the revised asset leaves an existing scene's recorded asset version untouched until Copilot explicitly adopts the revision.
-6. Unknown licence, unavailable download or failed import is reported with the exact limitation rather than an invented successful acquisition.
+6. An unavailable download or failed import is reported with the exact limitation. Unknown licence is recorded as unknown and is not treated as a failed acquisition.
 
 ### Failure and recovery checks
 
 - Preserve existing local asset/scene files on a failed or partial import.
 - Account-gated, paid or installation-requiring routes require appropriate explicit permission rather than implicit purchases/add-on execution.
-- Private/licensed assets are not automatically staged or uploaded.
+- A failed or partial import preserves existing local files. Licence text does not block staging an acquired file into the project.
 
 **Reuse:** `production-research` skill and its acquisition/coverage templates, plus existing Blender inspection and export validation.
 
@@ -396,7 +396,7 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 
 ### Scope and implementation
 
-- Use E04's real-hardware result to choose a model/workflow with an appropriate licence and supported runtime.
+- Use E04's real-hardware result to choose a model/workflow that produced a mesh on this host. Record a known licence. Do not reject the workflow over rights.
 - Adapt the tool interface for job submission, history/status and output acquisition, preferably through the configured ComfyUI service where a working graph exists.
 - Record the conditioning image, graph/model/settings, actual mesh outputs and limitations.
 - Let Copilot inspect/import the mesh, prepare scale/origin/materials as needed and save a canonical editable Blender asset with a source checkpoint.
@@ -436,7 +436,7 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 ### Acceptance
 
 1. The frontier lead can delegate the task to a native Unity specialist with a configured model/tool profile.
-2. The saved Unity scene uses the requested Blender source versions, tested units/axes/material mapping and preserved `.meta` GUIDs.
+2. The saved Unity scene uses the requested Blender source versions, tested units/axes and preserved `.meta` GUIDs. A usable material is enough. Look-dev parity with Blender is not required.
 3. In Play mode, basic movement and camera input work, the player stands on the floor, walls block movement and reset/spawn is safe.
 4. Importing the same declared result again does not duplicate scene objects or silently replace unrelated project content.
 5. An active/dirty Editor is respected rather than force-closed. Batch operations use a supported context or clearly report the required action.
@@ -553,7 +553,7 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 - A clean-workspace failure must identify the missing configuration/tool/input, not depend on a reference checkout or borrow its secret configuration.
 - A capability that fails acceptance stays incomplete until fixed or explicitly removed from V1 by the owner.
 
-**Boundary:** Readiness is a verified implementation plus the owner's selected scope. It does not authorise publishing repositories, redistributing licensed sources, merging changes or exposing the service publicly.
+**Boundary:** Readiness is a verified implementation plus the owner's selected scope. It does not itself push a repository, merge changes or expose the service publicly.
 
 ## 4. Cross-journey acceptance scenarios
 
@@ -591,7 +591,7 @@ These are bounded implementation decisions, not reasons to repeat the architectu
 | Proxy export/instance IDs and exact coordinate mappings | E02, M04 | Test real Blender → proxy → camera/image mapping, then Unity conversion. |
 | Progressive segment length and buffering | E03, M08 | Measure first-review latency, frame accuracy and encoding overhead. |
 | Local VLM model/API capabilities | M09 | Use the configured service and structured evidence, without assuming the old Qwen model. |
-| Image-to-3D model/workflow/runtime | E04, M10 | Real hardware support, appropriate licence and actual Blender-importable mesh. |
+| Image-to-3D model/workflow/runtime | E04, M10 | Real hardware support and an actual Blender-importable mesh. Record a known licence. Do not reject the mesh over rights. |
 | Render profiles and device choices | M01, M08, M14 | Distinguish purpose and measured capability. No fixed 128 GB allocation or untested HIP guarantee. |
 | Minimum Unity controller/import setup | M11 | Basic movement/camera/collision only, using tested formats and no private content dependency. |
 | Storage/backup implementation | F00, M02, M12, M14 | Follow the defined XDG registry, project-local SQLite, retained artefact and native-session policy. |

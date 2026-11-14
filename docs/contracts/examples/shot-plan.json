@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "plan-fixture",
+  "project_id": "fixture-project",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "treatment": "Neutral daylight, no inherited cast",
+  "brief_artifact_ids": [],
+  "asset_dependencies": [],
+  "shots": [
+    {
+      "shot_id": "shot-fixture",
+      "intent": "A cube on a floor",
+      "camera_intent": "Authored camera move",
+      "motion_beats": ["hold", "push in"],
+      "frames": [
+        {"frame_id": "frame-start", "role": "start", "composition": "Wide", "artifact_id": null, "state": "missing", "owner_selected": false},
+        {"frame_id": "frame-end", "role": "end", "composition": "Closer", "artifact_id": "image-end", "state": "selected", "owner_selected": false}
+      ],
+      "scene_version": null,
+      "source_range": {"start": 1, "end": 48},
+      "fps": {"numerator": 24, "denominator": 1}
+    }
+  ],
+  "unresolved": []
+}

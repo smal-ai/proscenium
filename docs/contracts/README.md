@@ -27,7 +27,7 @@
 
 ## Generation of language bindings
 
-Wire projections can include host-supplied provenance which is not written self-referentially into an authored source file. In particular, `ShotPlan.source_commit` comes from its publication. A storyboard frame's `selected` projection must resolve to an actual owner selection record; a model-authored status string cannot create that authority.
+Wire projections can include host-supplied provenance which is not written into the authored file. Copilot writes `AuthoredShotPlan` to `storyboards/<plan_id>/plan.json`. It has no `source_commit` and no `owner_selected`. `selected` there is the agent's choice and does not create an owner selection. `GET` shot-plan returns `ShotPlan`: the host adds `source_commit` and sets each frame's `owner_selected` from owner selection records. Missing provenance, an unknown licence, or the absence of an owner selection does not reject the file or block the next production step.
 
 The foundation owner generates TypeScript wire types and Pydantic-compatible models from this schema or supplies proven equivalent generated bindings. Neither consumer maintains a hand-written parallel schema. F00 records the generator versions and a deterministic regeneration/check command. SQLite migrations remain owned by the storage component and are tested against these wire fixtures.
 
@@ -40,9 +40,9 @@ The API/tool owner checks, at minimum:
 1. Project/work/actor association and effective permission scope.
 2. Every referenced record exists in that project at the requested revision.
 3. Files are complete, decoded where applicable and match declared hashes/dimensions.
-4. Source closure paths are unambiguous and entry/dependency references agree.
-5. Frame ranges are ordered and inside the declared shot/job. The anchor frame is in its applicable range where one is supplied.
-6. Camera matrices, projection parameters and spatial hits describe the same sampled content.
+4. Source closure paths are unambiguous and entry/dependency references agree. A null render camera means the authored shot cameras, including animation. A camera object is a static override for that job only.
+5. Frame ranges are ordered and inside the declared shot/job. The anchor frame is in its applicable range where one is supplied. A transition entry has at least two contributors. Those contributors are the sources. Do not collapse a crossfade to one invented source frame.
+6. Camera matrices, projection parameters and spatial hits describe the same sampled content. Keyframe, draft and final review frames are view-transformed 8-bit sRGB PNG. An extra EXR is optional and is not the review image.
 7. Masks/markup share the target image coordinate system and dimensions.
 8. Publication heads, save revisions and decision fingerprints match before mutation.
 9. Generation limits are reserved against the original human task/target.
