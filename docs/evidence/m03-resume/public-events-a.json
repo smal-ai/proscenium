@@ -1,0 +1,115 @@
+[
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T15:44:02.360210+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 4,
+      "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 55,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T15:45:27.639354+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:35.108751+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "detail_code": "m03_test_deadline",
+        "native_message_id": "f01329f2-ea39-4e37-9bf8-e8972d199c1d",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 4,
+        "type": "queue",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      },
+      "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b41b621a-9dd8-457e-a0c3-3407230049fb",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "text": "M03 queued request B. Read get_version for the version in THIS request's captured selection and report its actual labelled name. Do not use whichever item is now visible in the browser. Then use ask_user exactly once: ask whether TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation, is approved. Explain that no actual sharing, purchase, installation or external action occurs. Wait for the owner's exact decision. If declined, do nothing further and finish. Never perform real sharing, authoring, rendering or delegation for this request.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 56,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T15:45:27.647987+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:17.961579+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "detail_code": "attribution_unavailable",
+        "native_message_id": "a19c1703-fe1a-4164-94d5-2f32cff8e6b8",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 4,
+        "type": "queue",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "23409722-0736-43d9-827d-903d3427feee",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "text": "M03 bounded runtime test for scene A. First do the small direct lead task by running exactly `python3 m03_direct.py` with bash once. Then delegate exactly once to authoring-specialist. Ask that specialist to run exactly `python3 m03_hold.py` with bash in this active project; it is a harmless project-local heartbeat helper with a hard 70-second self-timeout. It must remain on that task until completion or native Stop, not start other work. Do not inspect other files, install anything, render, or use external services. Do not answer an owner question yourself. Report actual outcomes only.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 57,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  }
+]

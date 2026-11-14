@@ -1,0 +1,864 @@
+{
+  "application_revision": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+  "accepted_ui_fix": "5333468",
+  "evidence_date": "2026-11-14",
+  "status": "BLOCKED: UI commands accepted correctly; original A continuation not executed",
+  "source_sha256": {
+    "apps/frontend/src/features/chat/ChatPanel.tsx": "44b43d220af5361215bb9de2fae01514ed545430ec336ba0f367916c92db3dde",
+    "apps/frontend/src/features/chat/resume.ts": "0035e2f03ca7df93bfa8c8f0745229b243f9342b0e0e4ea5420d885a737ca7c9",
+    "apps/backend/src/proscenium/copilot/service.py": "51c56f1dcc7f3814947addeb8549b9a04b14b39230f638bc403aa55901662d10",
+    "apps/backend/src/proscenium/copilot/state.py": "af31b772a3f37d27a7dac9589efda061814e716a365a9d125ad2246f514bcbc7",
+    "apps/backend/src/proscenium/copilot/context.py": "274b824b66051b74f1256d25a6909818df99959823fa2007b23531f07973bbd0",
+    "apps/backend/src/proscenium/copilot/native.py": "e2131962aa36bd60943d9bf72287d5f6f776fa2e256e8e2a16d27c25190a5a8d"
+  },
+  "compiled_sha256": {
+    "apps/frontend/dist/index.html": "6c7923cf123e05ba3559e8ccdad8fec3de0fed5818d98c3d709950b15beb08e3",
+    "apps/frontend/dist/assets/index-Bv2DCldO.js": "96cce6056a70de2f554fc392f471f6a874f2c8527fd20014f0cda5461577ce95",
+    "apps/frontend/dist/assets/index-VG5WV1Cp.css": "8d68faf9412d4fb66e6eba2ff9831a78d7076648dbf12581b45d653eca41d517"
+  },
+  "sdk": "1.0.34",
+  "cli": "1.0.112",
+  "browser": "159.0.8154.6",
+  "lead_model": "gpt-6.1-sol",
+  "required_worker_model": "gpt-6-luna",
+  "snapshots": {
+    "a": {
+      "files": 875,
+      "manifest_sha256": "eaf5433b84b1fadcb7ac696463d2b36348ef40ce9f0b101548b0eea06109d5a4",
+      "verified_exact_before_copy": true
+    },
+    "b": {
+      "files": 583,
+      "manifest_sha256": "90a9edfb6aac6ea72b4540c948a4d34e86cd9263756be540df9f6cf214da2f15",
+      "verified_exact_before_copy": true
+    }
+  },
+  "original_evidence_unchanged_sha256": {
+    "a": {
+      "action-start-a-default.png": "a64915d849881e5c529caba3147bd0a96c5d44eb4114c3ac4ca3569fc0642870",
+      "cleanup.json": "74c0deaab97362fb199b28783bcacb9b82802cc03969c183517153b318665536",
+      "action-resume-reconcile_only.png": "40f2d3ad98034baaeb7312c45cbde3bd5e93697c7c3926975495ba85c96fd1d5",
+      "04-stop-requested.png": "adbf25b6c93af860914b12862da54f006f3f06855a234c7ccd34001832d89939",
+      "05-stop-observed.png": "8771b3461d050d678cd9c1c38a51c2a6c33f35ec2539df23d3cc9ea58fcfb0d9",
+      "FAILED-decision-disconnect.png": "90056616f6a460ec1b635017af393a2e0e2584d73f1f49a8eb7a6538d4f89532",
+      "action-setup-default.png": "437253713ade13c0b56cf687b52fa3e053f0eb83ed1c8d70582f2fc7307509f8",
+      "action-resume-release_held_queue.png": "d0d207e49331c0fd261277a65cb379589339bb1177090fcf5ec9f280f3fd900c",
+      "action-resume-continue_work.png": "aa210584617d087219065e95c79fbe47932e02e4b08aa2ad7fd42354f39da696",
+      "native-events.jsonl": "e841d1c9a72196c88b9a7ac8c3e1690fdaa3b6197e85d2ea7395c546af74b02c",
+      "action-reload-default.png": "daa3c9c5f888f063dff9e3f1d061775dd5c5e51090d0d8aa6b328882b75e8110",
+      "send-acks.jsonl": "58c1c139be8576cf0403410b58a45a092b73fefdad327fa3b7e5b8c4f20766dd",
+      "sends.jsonl": "2fab8e5e73ba058df247c73c8673c9d0f048ac10a992d4f3c76ec881dc93f33b",
+      "fixture.json": "72cc31f7ff2d3a0508be5a7181a68390d7105e66e012f0cf84a67cb088a5b47c",
+      "03-steer-before-stop.png": "00d616ed852f769672575026c1b604d0c27e7241917477499f6e61f760ddbc44",
+      "outside.png": "72f078688f94bd9e868931034084679d328398ec1dcf582713e450675dc5c0c7",
+      "08-decision-before-disconnect.png": "ca8491490736793479936d741d7f49e46892b6c116d3c84b1f16b1c55b5babc6",
+      "action-queue-b-default.png": "eeb655f51daf1cf618a43dfb2044f572833c6be65ca15f27fd18bbb600ea1433",
+      "action-steer-stop-default.png": "37284e51a2c1b4b4003cba65941599390ad5d115344465e0b8542cfc4990f6ed",
+      "database-export.json": "14327da1be85e0e0881457f4c74222358298723eed9f640e07f82a55a0469624"
+    },
+    "b": {
+      "cleanup.json": "50e789fe09a105bff1f5c42f3ee7d87a65727dfdb64b61b444b73a454e9d7ef2",
+      "action-resume-reconcile_only.png": "93705fc60e7fa40cc2df68cda175283334afc9b8e49a0b7f86bb0c1f7bddaa0b",
+      "action-setup-default.png": "14da7f56554bdd0af9472ec9a3c7a3bd3cfd79b5d52870022a8775b9cd28c517",
+      "native-events.jsonl": "146608f1ba3f97887eaabe65dd3ad200c8e90b9368ef9636c7d82920d81acddb",
+      "action-transport-default.png": "20d0fc1d975b4fc6600e4ac061ed1b68f563056738870b3a2c09d6134c302b20",
+      "09-decision-restored.png": "fdb346a969d1d9e3b0b76b3838cbad66f5ad095db6194269e30c74833aa0b44c",
+      "send-acks.jsonl": "d7adf8579521cdbe686cf700065e7c8723dbd8e7411f7cec89ade264a317ab8e",
+      "sends.jsonl": "c2a4a63121479bcbe9f24e606f2936cd7346fc64b31ec7f7a9e4b752c868baa6",
+      "fixture.json": "8f67a1a91072188784e0c5562ccf33f1dbe19beff552280de41f252ecf1e4dbd",
+      "transport.jsonl": "27f2c720034e7aa0755a9b58bc4d41c4e6f50348035a233368e240bc4235415f",
+      "action-decision-cycle-default.png": "f3593540657abeec4924b222e195921bd6ee1e9e7c3263dd539262fbd1150a61",
+      "outside.png": "72f078688f94bd9e868931034084679d328398ec1dcf582713e450675dc5c0c7",
+      "08-decision-before-disconnect.png": "33f94444975dd982cfc5d1ee13f30b42f87d98d9cbede4c5c1ede11261535e84",
+      "database-export.json": "3f97c31b999148b221840b8705be7c3c5ad1583d407705404a975a7f9a7ac54f",
+      "action-collect-default.png": "2675cc83d2ce140fa60d121de28e7e5fe71333df89f86305493eb0f7de00c32b"
+    }
+  },
+  "allocation": {
+    "original_actual_sdk_sends": 5,
+    "followup_sdk_sends": 0,
+    "followup_children": 0,
+    "followup_helpers": 0,
+    "maximum_followup_sends": 1,
+    "maximum_followup_children": 1,
+    "named_followup_roots": 1,
+    "new_queue_requests": 0
+  },
+  "runs": {
+    "a": {
+      "action": "continue-a",
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "command": {
+        "schema_version": "1.0",
+        "operation_id": "e7dcff21-3afe-4843-b215-e489ae99fd8f",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "mode": "continue_work",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "expected_revision": 4
+      },
+      "http_status": 202,
+      "receipt": {
+        "schema_version": "1.0",
+        "operation_id": "e7dcff21-3afe-4843-b215-e489ae99fd8f",
+        "resource_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "state": "accepted",
+        "state_revision": 4,
+        "replayed": false
+      },
+      "operation": {
+        "body": {
+          "expected_revision": 4,
+          "mode": "continue_work",
+          "operation_id": "e7dcff21-3afe-4843-b215-e489ae99fd8f",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "schema_version": "1.0",
+          "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+        },
+        "detail_code": "attribution_unavailable",
+        "state": "outcome_uncertain"
+      },
+      "target_before": {
+        "directive_request_ids": [
+          "af380f55-58ae-470c-b238-e39be8a42ac3"
+        ],
+        "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 4,
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "project_revision": 5,
+      "requests_before": [
+        {
+          "accepted_at": "2026-11-14T14:08:17.961579+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "native_message_id": "a19c1703-fe1a-4164-94d5-2f32cff8e6b8",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+            "schema_version": "1.0",
+            "state": "stopped",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+          },
+          "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "23409722-0736-43d9-827d-903d3427feee",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+            "schema_version": "1.0",
+            "text": "M03 bounded runtime test for scene A. First do the small direct lead task by running exactly `python3 m03_direct.py` with bash once. Then delegate exactly once to authoring-specialist. Ask that specialist to run exactly `python3 m03_hold.py` with bash in this active project; it is a harmless project-local heartbeat helper with a hard 70-second self-timeout. It must remain on that task until completion or native Stop, not start other work. Do not inspect other files, install anything, render, or use external services. Do not answer an owner question yourself. Report actual outcomes only.",
+            "type": "queue"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:08:45.916914+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "detail_code": null,
+            "native_message_id": null,
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 1,
+            "type": "stop",
+            "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+          },
+          "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+          "schema_version": "1.0",
+          "submission": {
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+            "schema_version": "1.0",
+            "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+            "type": "stop"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:08:45.749799+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "native_message_id": "23a48149-31e4-4f4a-9bc1-7ce6798999ac",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+            "schema_version": "1.0",
+            "state": "stopped",
+            "state_revision": 3,
+            "type": "steer",
+            "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+          },
+          "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "78188733-78ab-40eb-975f-9cf730ab9f73",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+            "schema_version": "1.0",
+            "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+            "text": "M03 Steer correction for this active work: report the actual bounded-helper outcome and preserve the original source/work identities. A native Stop must not be described as natural helper completion. This correction does not undo already executed actions. Do not delegate again.",
+            "type": "steer"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:08:35.108751+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "detail_code": "m03_test_deadline",
+            "native_message_id": "f01329f2-ea39-4e37-9bf8-e8972d199c1d",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+            "schema_version": "1.0",
+            "state": "outcome_uncertain",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+          },
+          "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "b41b621a-9dd8-457e-a0c3-3407230049fb",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+            "schema_version": "1.0",
+            "text": "M03 queued request B. Read get_version for the version in THIS request's captured selection and report its actual labelled name. Do not use whichever item is now visible in the browser. Then use ask_user exactly once: ask whether TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation, is approved. Explain that no actual sharing, purchase, installation or external action occurs. Wait for the owner's exact decision. If declined, do nothing further and finish. Never perform real sharing, authoring, rendering or delegation for this request.",
+            "type": "queue"
+          }
+        }
+      ],
+      "requests_after": [
+        {
+          "accepted_at": "2026-11-14T14:08:17.961579+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "detail_code": "attribution_unavailable",
+            "native_message_id": "a19c1703-fe1a-4164-94d5-2f32cff8e6b8",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+            "schema_version": "1.0",
+            "state": "stopped",
+            "state_revision": 4,
+            "type": "queue",
+            "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+          },
+          "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "23409722-0736-43d9-827d-903d3427feee",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+            "schema_version": "1.0",
+            "text": "M03 bounded runtime test for scene A. First do the small direct lead task by running exactly `python3 m03_direct.py` with bash once. Then delegate exactly once to authoring-specialist. Ask that specialist to run exactly `python3 m03_hold.py` with bash in this active project; it is a harmless project-local heartbeat helper with a hard 70-second self-timeout. It must remain on that task until completion or native Stop, not start other work. Do not inspect other files, install anything, render, or use external services. Do not answer an owner question yourself. Report actual outcomes only.",
+            "type": "queue"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:08:45.916914+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "detail_code": null,
+            "native_message_id": null,
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 1,
+            "type": "stop",
+            "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+          },
+          "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+          "schema_version": "1.0",
+          "submission": {
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+            "schema_version": "1.0",
+            "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+            "type": "stop"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:08:45.749799+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "native_message_id": "23a48149-31e4-4f4a-9bc1-7ce6798999ac",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+            "schema_version": "1.0",
+            "state": "stopped",
+            "state_revision": 3,
+            "type": "steer",
+            "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+          },
+          "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "78188733-78ab-40eb-975f-9cf730ab9f73",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+            "schema_version": "1.0",
+            "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+            "text": "M03 Steer correction for this active work: report the actual bounded-helper outcome and preserve the original source/work identities. A native Stop must not be described as natural helper completion. This correction does not undo already executed actions. Do not delegate again.",
+            "type": "steer"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:08:35.108751+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "receipt": {
+            "detail_code": "m03_test_deadline",
+            "native_message_id": "f01329f2-ea39-4e37-9bf8-e8972d199c1d",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "replayed": false,
+            "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+            "schema_version": "1.0",
+            "state": "acknowledged",
+            "state_revision": 4,
+            "type": "queue",
+            "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+          },
+          "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "b41b621a-9dd8-457e-a0c3-3407230049fb",
+            "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+            "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+            "schema_version": "1.0",
+            "text": "M03 queued request B. Read get_version for the version in THIS request's captured selection and report its actual labelled name. Do not use whichever item is now visible in the browser. Then use ask_user exactly once: ask whether TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation, is approved. Explain that no actual sharing, purchase, installation or external action occurs. Wait for the owner's exact decision. If declined, do nothing further and finish. Never perform real sharing, authoring, rendering or delegation for this request.",
+            "type": "queue"
+          }
+        }
+      ],
+      "held_before": [],
+      "held_after": [],
+      "work_after": [
+        {
+          "directive_request_ids": [],
+          "generation_task_id": "m03-fixture-task",
+          "job_ids": [],
+          "native_session_id": "fixture-not-native",
+          "originating_request_id": "m03-fixture-command",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 1,
+          "work_id": "m03-fixture-work"
+        },
+        {
+          "directive_request_ids": [
+            "af380f55-58ae-470c-b238-e39be8a42ac3"
+          ],
+          "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+          "job_ids": [],
+          "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+          "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "schema_version": "1.0",
+          "state": "stopped",
+          "state_revision": 4,
+          "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+        },
+        {
+          "directive_request_ids": [],
+          "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+          "job_ids": [],
+          "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+          "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 4,
+          "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+        }
+      ],
+      "live_invocations": [
+        {
+          "agent_id": null,
+          "delivery_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+          "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+          "kind": "tool",
+          "model_id": "gpt-6.1-sol",
+          "name": "ask_user",
+          "native_id": "call_FZq8En5js167XKIiM3ZgoGc4",
+          "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+          "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+          "session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+          "state": "running",
+          "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+        }
+      ],
+      "decisions_after": [
+        {
+          "decision_id": "decision-c8518db7f6ae26fbeeb9d6260eaa45d25e91d9633e36beb0bc0a29424eb8df12",
+          "delivery_state": "not_sent",
+          "fingerprint": "946cdc04be28b6581de350a5ad5e892ae3b0023b7165db5a0aa3be9f0206fd3c",
+          "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+          "kind": "user_input",
+          "native_decision_id": "09fd488d-94b3-490e-bd02-d61eb21cb974",
+          "options": [
+            "Approve TEST_SHARE_SIMULATION",
+            "Decline TEST_SHARE_SIMULATION"
+          ],
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "prompt": "The captured version m03-version-B is labelled \"M03 labelled asset B\". Do you approve TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation? No actual sharing, purchase, installation or external action occurs.",
+          "resolved_by": null,
+          "response": null,
+          "schema_version": "1.0",
+          "state": "pending",
+          "state_revision": 0,
+          "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+        }
+      ],
+      "native_session": [
+        {
+          "created_at": "2026-11-14T14:08:21.813621+00:00",
+          "owner_epoch": "epoch-e9ed52a6-70b7-48b2-afa4-12d75d3683bc",
+          "session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25"
+        }
+      ],
+      "reconciliation_evidence": null,
+      "reconciliation_evidence_boundary": "A did not have the observational evidence wrapper; only its retained guard result and live invocation are claimed",
+      "cleanup": {
+        "server": {
+          "pid": 3727109,
+          "start": "46375273",
+          "same_identity_alive": false
+        },
+        "browser": {
+          "pid": 3727179,
+          "start": "46375394",
+          "cdp": 41341,
+          "same_identity_alive": false
+        },
+        "native": {
+          "pid": 3735712,
+          "start": "46383675",
+          "same_identity_alive": false
+        },
+        "helpers": [
+          {
+            "pid": 3459753,
+            "observed_at": 1794665317.6990736,
+            "proc_exists": false
+          }
+        ]
+      }
+    },
+    "b": {
+      "action": "reconcile-b",
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "command": {
+        "schema_version": "1.0",
+        "operation_id": "08c8cb04-28d8-4d44-94a1-a6f60cae3b24",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "mode": "reconcile_only",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a",
+        "expected_revision": 3
+      },
+      "http_status": 202,
+      "receipt": {
+        "schema_version": "1.0",
+        "operation_id": "08c8cb04-28d8-4d44-94a1-a6f60cae3b24",
+        "resource_id": "work-ea4ab25e133747dba8e1f74dad160d2a",
+        "state": "accepted",
+        "state_revision": 3,
+        "replayed": false
+      },
+      "operation": {
+        "body": {
+          "expected_revision": 3,
+          "mode": "reconcile_only",
+          "operation_id": "08c8cb04-28d8-4d44-94a1-a6f60cae3b24",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "schema_version": "1.0",
+          "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+        },
+        "detail_code": "attribution_unavailable",
+        "state": "outcome_uncertain"
+      },
+      "target_before": {
+        "directive_request_ids": [],
+        "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+        "job_ids": [],
+        "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+        "originating_request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 3,
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      },
+      "project_revision": 3,
+      "requests_before": [
+        {
+          "accepted_at": "2026-11-14T14:19:43.391955+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "receipt": {
+            "native_message_id": "893e9ade-ae19-4de0-9c10-6cdf5b290797",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "replayed": false,
+            "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+          },
+          "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "d19dc7f4-b925-4532-b9ba-0c084dbf514a",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+            "schema_version": "1.0",
+            "text": "M03 independent bounded owner-card test. Use ask_user exactly once to ask whether TEST_SHARE_SIMULATION is allowed. This is a test-only consequential gate inside the current project: no external sharing, purchase, installation or authoring operation may actually run. Offer DENY_TEST_SHARE_SIMULATION and ALLOW_LOCAL_TEST_ONLY. Wait for the owner's exact answer. If denied, explicitly report that nothing was executed and finish. Do not inspect files, use other tools or delegate.",
+            "type": "queue"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "receipt": {
+            "detail_code": "provider_unavailable",
+            "native_message_id": "2fa74a64-fda2-49c9-abef-710a8cffb705",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "replayed": false,
+            "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+            "schema_version": "1.0",
+            "state": "outcome_uncertain",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+          },
+          "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+            "schema_version": "1.0",
+            "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+            "type": "queue"
+          }
+        }
+      ],
+      "requests_after": [
+        {
+          "accepted_at": "2026-11-14T14:19:43.391955+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "receipt": {
+            "native_message_id": "893e9ade-ae19-4de0-9c10-6cdf5b290797",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "replayed": false,
+            "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+          },
+          "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "d19dc7f4-b925-4532-b9ba-0c084dbf514a",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+            "schema_version": "1.0",
+            "text": "M03 independent bounded owner-card test. Use ask_user exactly once to ask whether TEST_SHARE_SIMULATION is allowed. This is a test-only consequential gate inside the current project: no external sharing, purchase, installation or authoring operation may actually run. Offer DENY_TEST_SHARE_SIMULATION and ALLOW_LOCAL_TEST_ONLY. Wait for the owner's exact answer. If denied, explicitly report that nothing was executed and finish. Do not inspect files, use other tools or delegate.",
+            "type": "queue"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "receipt": {
+            "detail_code": "attribution_unavailable",
+            "native_message_id": "2fa74a64-fda2-49c9-abef-710a8cffb705",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "replayed": false,
+            "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+            "schema_version": "1.0",
+            "state": "acknowledged",
+            "state_revision": 5,
+            "type": "queue",
+            "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+          },
+          "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+            "schema_version": "1.0",
+            "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+            "type": "queue"
+          }
+        }
+      ],
+      "held_before": [],
+      "held_after": [],
+      "work_after": [
+        {
+          "directive_request_ids": [],
+          "generation_task_id": "m03-fixture-task",
+          "job_ids": [],
+          "native_session_id": "fixture-not-native",
+          "originating_request_id": "m03-fixture-command",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 1,
+          "work_id": "m03-fixture-work"
+        },
+        {
+          "directive_request_ids": [],
+          "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+          "job_ids": [],
+          "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+          "originating_request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 4,
+          "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+        },
+        {
+          "directive_request_ids": [],
+          "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+          "job_ids": [],
+          "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+          "originating_request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 3,
+          "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+        }
+      ],
+      "live_invocations": [
+        {
+          "agent_id": null,
+          "delivery_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+          "invocation_id": "276193492ef46e08939a9eaacb31ad540bb624a365e589eab4477f35bf0ce8f3",
+          "kind": "tool",
+          "model_id": "gpt-6.1-sol",
+          "name": "bash",
+          "native_id": "call_ZnLmPpinhkSxNCWJS2lDE5RJ",
+          "owner_epoch": "epoch-ec6efc7a-f422-4bc6-82fd-0eb70f387692",
+          "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+          "session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+          "state": "running",
+          "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+        }
+      ],
+      "decisions_after": [
+        {
+          "decision_id": "decision-7eee821715d655f6c01fa81c815afdff746542863a65e473d5f07b2b7b1aca42",
+          "delivery_state": "acknowledged",
+          "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+          "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+          "kind": "user_input",
+          "native_decision_id": "effebdb2-dda6-44cd-b093-d0e0e05c075e",
+          "options": [
+            "DENY_TEST_SHARE_SIMULATION",
+            "ALLOW_LOCAL_TEST_ONLY"
+          ],
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "prompt": "Is TEST_SHARE_SIMULATION allowed? This is a local test-only gate; no external sharing, purchase, installation, or authoring operation will run.",
+          "resolved_by": {
+            "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+            "kind": "user"
+          },
+          "response": {
+            "action": "answer",
+            "answer": "DENY_TEST_SHARE_SIMULATION",
+            "expected_revision": 0,
+            "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+            "operation_id": "cf424067-0cd2-4b7b-88d6-f2b9bce8ac0b",
+            "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+            "schema_version": "1.0"
+          },
+          "schema_version": "1.0",
+          "state": "answered",
+          "state_revision": 3,
+          "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+        }
+      ],
+      "native_session": [
+        {
+          "created_at": "2026-11-14T14:19:47.338623+00:00",
+          "owner_epoch": "epoch-92b9944c-49bb-426e-b0b0-766060a0585a",
+          "session_id": "4870c130-95d7-44f6-9e76-4541e9166f14"
+        }
+      ],
+      "reconciliation_evidence": [
+        {
+          "at": "2026-11-14T15:46:53.884447+00:00",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "pending_empty": true,
+          "uncertain_request_ids": [],
+          "live_invocations": 1,
+          "uncertain_stops": 0,
+          "uncertain_continuations": 0,
+          "duplicate_correlations": 0
+        }
+      ],
+      "reconciliation_evidence_boundary": "Actual returned metadata evidence",
+      "cleanup": {
+        "server": {
+          "pid": 3738910,
+          "start": "46391133",
+          "same_identity_alive": false
+        },
+        "browser": {
+          "pid": 3738945,
+          "start": "46391233",
+          "cdp": 49275,
+          "same_identity_alive": false
+        },
+        "native": {
+          "pid": 3739547,
+          "start": "46392348",
+          "same_identity_alive": false
+        },
+        "helpers": [
+          {
+            "pid": 3495541,
+            "observed_at": 1794666055.4364643,
+            "proc_exists": false
+          }
+        ]
+      }
+    }
+  },
+  "selector": {
+    "options": [
+      {
+        "value": "",
+        "text": "Select original work"
+      },
+      {
+        "value": "work-6c566aaa39084a139da0b42fcff0b555",
+        "text": "work-6c566aaa39084a139da0b42fcff0b555 \u00b7 awaiting_resume"
+      },
+      {
+        "value": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "text": "work-6361ef13fbeb4f4884ff382bf96d8815 \u00b7 stopped"
+      }
+    ],
+    "selected": "work-6361ef13fbeb4f4884ff382bf96d8815",
+    "known_original": {
+      "directive_request_ids": [
+        "af380f55-58ae-470c-b238-e39be8a42ac3"
+      ],
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "stopped",
+      "state_revision": 4,
+      "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "exact_pending_b_stop": {
+    "at": "2026-11-14T15:44:19.000Z",
+    "status": 400,
+    "receipt": {
+      "schema_version": "1.0",
+      "error": {
+        "code": "invalid_state_transition",
+        "message": "invalid state transition",
+        "operation_id": null,
+        "retryable": false,
+        "details": {}
+      }
+    },
+    "command": {
+      "schema_version": "1.0",
+      "request_id": "e7ee803a-e050-406b-8d96-9d4b7471f9e5",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "type": "stop",
+      "target_work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+    },
+    "error": "Error: Bounded observation timed out"
+  },
+  "ui_checks": {
+    "passed": 4,
+    "evidence_kind": "Real Chromium and compiled UI with controlled HTTP/socket APIs, not native continuation",
+    "cases": [
+      "stopped work from durable events and own revision",
+      "work-targeted Reconcile own revision",
+      "multiple eligible targets require selection",
+      "uncertain Resume retries exact original command after reload"
+    ],
+    "server": {
+      "pid": 3744126,
+      "start": "46401687",
+      "same_identity_alive": false
+    },
+    "browsers": [
+      {
+        "pid": 3744255,
+        "start": "46401918",
+        "same_identity_alive": false
+      }
+    ]
+  },
+  "owned_process_leftovers": [],
+  "no_product_source_changes": true,
+  "original_m10_accessed": false,
+  "actual_missing_native_ack_proof": false,
+  "successful_continuation": false,
+  "pending_original_resume_retry_live_fault_tested": false
+}

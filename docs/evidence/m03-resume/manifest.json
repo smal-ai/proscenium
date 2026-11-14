@@ -1,0 +1,11 @@
+{
+  "known-ACK-reconcile-control.png": "512333af27591da78079e73753458a3dc07c986baf7f7d6d1245230fdc010e6a",
+  "original-A-selector.png": "4d645a65908a5d02b8776d1c3c4be9a06530923d16f3456fe0dec2cc48a56f00",
+  "continue-A-admitted.png": "4d645a65908a5d02b8776d1c3c4be9a06530923d16f3456fe0dec2cc48a56f00",
+  "public-events-b.json": "7edc094d32624954feede9d51235bf281bae8ef6460d5d606ee704f09686a00a",
+  "exact-B-stop-refused.png": "aaeb17c2649df94f02356e7cddc9b6aff88e4d0d74f6cf9d5eca9e339feea3c4",
+  "known-ACK-reconcile-admitted.png": "dcc3a0650bea018b2bb2b8af95749bf43d6b5f3d92b7e92ff6a02b08c88c87c3",
+  "README.md": "d6b129db91bbcfd6af51595bf31ffd73cc3b63e8363e8120f6940078a51714db",
+  "run.json": "fb87ba23c1e3d49e6c247424e860b7b965a968e27ac8549f3674abd15ddbdcef",
+  "public-events-a.json": "da69e4e99632e3beac37c63ad3adc52daa58f460800cedc0339028657172258c"
+}

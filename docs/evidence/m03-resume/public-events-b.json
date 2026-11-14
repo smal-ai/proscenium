@@ -1,0 +1,115 @@
+[
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T15:46:40.738149+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "job_ids": [],
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "originating_request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 3,
+      "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 44,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T15:46:53.877910+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "detail_code": "provider_unavailable",
+        "native_message_id": "2fa74a64-fda2-49c9-abef-710a8cffb705",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 4,
+        "type": "queue",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      },
+      "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 45,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T15:46:53.886797+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "detail_code": "attribution_unavailable",
+        "native_message_id": "2fa74a64-fda2-49c9-abef-710a8cffb705",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 5,
+        "type": "queue",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      },
+      "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 46,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  }
+]
