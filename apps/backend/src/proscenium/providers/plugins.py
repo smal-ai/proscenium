@@ -8,7 +8,7 @@ from typing import Any, Protocol
 from PIL import Image
 
 from proscenium.api.errors import DomainError
-from proscenium.providers import hunyuan, sd_turbo
+from proscenium.providers import hunyuan, sd_turbo, sd_turbo_fp16
 from proscenium.providers.comfy import bind_graph, preflight
 from proscenium.providers.mesh import inspect_glb_bytes
 
@@ -110,7 +110,7 @@ class HunyuanPlugin:
 class SDTurboImg2ImgPlugin(ImagePlugin):
     revision = sd_turbo.REVISION
     expected_model_hashes = {sd_turbo.FILENAME: sd_turbo.SHA256}
-    model_source = {
+    model_source: dict[str, Any] = {
         "repository": "stabilityai/sd-turbo",
         "revision": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
         "filename": sd_turbo.FILENAME,
@@ -137,6 +137,15 @@ class SDTurboImg2ImgPlugin(ImagePlugin):
         }
 
 
+class SDTurboFP16Img2ImgPlugin(SDTurboImg2ImgPlugin):
+    revision = sd_turbo_fp16.REVISION
+    expected_model_hashes = {sd_turbo_fp16.FILENAME: sd_turbo_fp16.SHA256}
+    model_source = sd_turbo_fp16.MODEL_SOURCE
+
+    def bind_graph(self, workflow, prompt, seed, references, models):
+        return sd_turbo_fp16.bind(workflow, prompt, seed, references, models)
+
+
 # No model/request/graph field can register a plugin, nominate Python or choose a revision.
 PLUGINS: dict[str, GenerationCapabilityPlugin] = {
     "image": ImagePlugin(),
@@ -144,7 +153,11 @@ PLUGINS: dict[str, GenerationCapabilityPlugin] = {
 }
 REGISTRY = MappingProxyType(PLUGINS)
 IMAGE_REVISIONS = MappingProxyType(
-    {"comfy-image-1": PLUGINS["image"], sd_turbo.REVISION: SDTurboImg2ImgPlugin()}
+    {
+        "comfy-image-1": PLUGINS["image"],
+        sd_turbo.REVISION: SDTurboImg2ImgPlugin(),
+        sd_turbo_fp16.REVISION: SDTurboFP16Img2ImgPlugin(),
+    }
 )
 
 
