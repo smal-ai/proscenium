@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import io
 import json
+import os
 import time
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,7 @@ from proscenium.contracts import canonical
 from proscenium.jobs import TERMINAL
 from proscenium.projects.service import Projects
 from proscenium.providers import install, register_provider_artifact
+from proscenium.providers.comfy import ComfyClient, preflight
 from proscenium.providers.klein import graph
 from proscenium.providers.service import sha
 from proscenium.reviews import install as install_reviews
@@ -45,6 +47,308 @@ def memory_available() -> int:
 def write(path: Path, value) -> None:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     path.write_text(json.dumps(value, indent=2) + "\n")
+
+
+def write_once(path: Path, value) -> None:
+    """Append-only allocation/receipt publication. Never rewrite a previous observation."""
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with path.open("x") as stream:
+        json.dump(value, stream, indent=2)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+class ContinuationHTTP(httpx.BaseTransport):
+    """Actual adapter transport with optional known-acceptance ACK-loss observation."""
+
+    def __init__(self, directory: Path, *, drop_known_ack: bool):
+        self.directory, self.drop_known_ack = directory, drop_known_ack
+        self.delegate = httpx.HTTPTransport(retries=0, trust_env=False)
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path.endswith("/prompt"):
+            write_once(
+                self.directory / "prompt-dispatch.json",
+                {
+                    "at": time.time(),
+                    "endpoint": str(request.url),
+                    "request_sha256": sha(request.content),
+                    "client_id": json.loads(request.content).get("client_id"),
+                    "limit": "One network submission for the original admitted job. A repeated POST is refused before transport.",
+                },
+            )
+        response = self.delegate.handle_request(request)
+        response.read()
+        if request.method == "POST" and request.url.path.endswith("/prompt"):
+            body = response.json()
+            record = {
+                "at": time.time(),
+                "endpoint": str(request.url),
+                "status": response.status_code,
+                "request_sha256": sha(request.content),
+                "response_sha256": sha(response.content),
+                "prompt_id": body.get("prompt_id"),
+                "client_id": json.loads(request.content).get("client_id"),
+            }
+            with (self.directory / "prompt-transport.jsonl").open("a") as stream:
+                stream.write(json.dumps(record) + "\n")
+            lost = self.directory / "known-ack-loss.json"
+            if (
+                self.drop_known_ack
+                and response.is_success
+                and isinstance(body.get("prompt_id"), str)
+                and not lost.exists()
+            ):
+                write_once(
+                    lost,
+                    {
+                        **record,
+                        "injection": "Lost transport acknowledgement AFTER actual successful provider acceptance. Not native RPC loss.",
+                    },
+                )
+                raise httpx.ReadTimeout(
+                    "M07 injected known provider ACK loss; reconcile original identity",
+                    request=request,
+                )
+        return response
+
+    def close(self) -> None:
+        self.delegate.close()
+
+
+def continue_original(window: str, *, drop_known_ack: bool = False) -> None:
+    """Explicit new window for the ORIGINAL job only. No submit/admit/reset/old-file writes."""
+    if window != "w07-continuation-b":
+        raise ValueError(
+            "This code grants no allocation. Only the exact coordinator-authorised window is accepted."
+        )
+    directory = SCRATCH / "continuations" / window
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    report_path, receipt_path = directory / "report.json", directory / "window.json"
+    if report_path.exists():
+        print(
+            json.dumps(
+                {
+                    "retained_report": str(report_path),
+                    "job": json.loads(report_path.read_text())["after"]["job"],
+                    "no_external_effect": True,
+                },
+                indent=2,
+            )
+        )
+        return
+    old_paths = [SCRATCH / "w07-live-initial-report.json", SCRATCH / "w07-live-initial-timing.json"]
+    original_hashes = {p.name: sha(p.read_bytes()) for p in old_paths}
+    original = json.loads(old_paths[0].read_text())
+    expected = original["job"]
+    job_id = "w07-live-initial"
+    assert expected["job_id"] == job_id and expected["target"]["target_id"] == TASK
+    settings = Settings(data_directory=SCRATCH / "machine", free_space_reserve_bytes=1024**3)
+    services = Services.create(settings)
+    client = httpx.Client(
+        timeout=15,
+        transport=ContinuationHTTP(directory, drop_known_ack=drop_known_ack),
+        trust_env=False,
+        follow_redirects=False,
+    )
+    try:
+        if services.registry.active_id() != PROJECT:
+            raise RuntimeError("The original project must remain the active registry identity")
+        services.acquire_project(PROJECT)
+        install_catalogue(services)
+        install_reviews(services)
+        adapter = install(
+            services,
+            client=client,
+            registrar=lambda c, b: register_provider_artifact(services, c, b),
+        )
+        store = services.registry.project_store(PROJECT)
+
+        def snapshot():
+            with store.transaction(write=False) as tx:
+                return {
+                    "job": tx.require("jobs", job_id),
+                    "execution": tx.get("providers.execution", job_id, required=False) or {},
+                    "inputs": tx.require("job_inputs", job_id),
+                    "reservations": [
+                        dict(r) for r in tx.connection.execute("SELECT * FROM budget_reservations")
+                    ],
+                    "outbox": [
+                        dict(r)
+                        for r in tx.connection.execute(
+                            "SELECT id,kind,state FROM outbox WHERE id=?", (expected["attempt_id"],)
+                        )
+                    ],
+                }
+
+        before = snapshot()
+        for field in (
+            "job_id",
+            "attempt_id",
+            "attempt_number",
+            "work_id",
+            "input_digest",
+            "provider_id",
+            "target",
+        ):
+            if before["job"][field] != expected[field]:
+                raise RuntimeError("Original admitted job/attempt/authority identity changed")
+        if before["inputs"] != original["frozen_inputs"] or len(before["reservations"]) != 1:
+            raise RuntimeError("Original frozen inputs or reservation identity changed")
+        request = before["inputs"]["request"]
+        assert request["generation_task_id"] == TASK and request["model_ids"] == MODELS
+        frozen_graph = before["inputs"]["graph"]
+        assert (
+            frozen_graph["latent"]["inputs"]["width"]
+            == frozen_graph["latent"]["inputs"]["height"]
+            == 64
+        )
+        assert frozen_graph["sigmas"]["inputs"]["steps"] == 4
+        base = before["inputs"]["provider"]["endpoint"]
+        if base != "http://127.0.0.1:8188":
+            raise RuntimeError("No provider substitution is authorised")
+        comfy = ComfyClient(base, client)
+        execution = before["execution"]
+        known_prompt = execution.get("prompt_id") or before["job"]["external_job_id"]
+        if not known_prompt and execution.get("client_id"):
+            known_prompt = comfy.reconcile(execution["client_id"])
+        history_before = comfy.status(known_prompt) if known_prompt else None
+        preflight(frozen_graph, comfy.capabilities(), MODELS)
+        if not receipt_path.exists():
+            write_once(
+                receipt_path,
+                {
+                    "window": window,
+                    "started_epoch": time.time(),
+                    "duration_seconds": 600,
+                    "origin": "Original W07 harness job, NOT native M07 work. No new job/attempt/task/reservation.",
+                    "allocation": "M07 total maximum three actual executions: this original continuation plus two later native jobs.",
+                    "original_hashes": original_hashes,
+                    "before": before,
+                    "known_prompt_before": known_prompt,
+                    "history_before": history_before,
+                    "drop_known_prompt_ack": drop_known_ack,
+                    "application_revision": git(Path(__file__).parents[2], "rev-parse", "HEAD")
+                    .decode()
+                    .strip(),
+                },
+            )
+        receipt = json.loads(receipt_path.read_text())
+        if receipt["original_hashes"] != original_hashes:
+            raise RuntimeError("A retained original report/timing changed; no execution")
+        deadline = receipt["started_epoch"] + receipt["duration_seconds"]
+        services.gate.resume(
+            PROJECT,
+            reconciliation_evidence=f"explicit coordinator allocation {window}; preserve original admitted identity",
+        )
+        while time.time() < deadline:
+            current = snapshot()
+            if current["job"]["state"] in TERMINAL:
+                break
+            client.timeout = httpx.Timeout(min(15, max(0.25, (deadline - time.time()) / 16)))
+            stats = comfy.get("/system_stats")
+            queue = comfy.get("/queue")
+            available = memory_available()
+            execution = current["execution"]
+            observation = {
+                "at": time.time(),
+                "mem_available_bytes": available,
+                "devices": stats.get("devices", []),
+                "queue_running": len(queue.get("queue_running", [])),
+                "queue_pending": len(queue.get("queue_pending", [])),
+                "job_state": current["job"]["state"],
+                "execution_phase": execution.get("phase"),
+                "prompt_id": execution.get("prompt_id") or current["job"]["external_job_id"],
+                "client_id": execution.get("client_id"),
+            }
+            with (directory / "observations.jsonl").open("a") as stream:
+                stream.write(json.dumps(observation) + "\n")
+            if execution.get("phase") == "submitting":
+                # Existing acceptance is reconciled, never subjected to another cold launch.
+                adapter.pump(PROJECT, job_id)
+            elif (
+                execution.get("phase") in {None, "waiting"}
+                and current["job"]["external_job_id"] is None
+            ):
+                if (
+                    available >= WEIGHT_BYTES + 4 * 1024**3
+                    and not queue.get("queue_running")
+                    and not queue.get("queue_pending")
+                    and any(
+                        d.get("vram_free", 0) >= before["inputs"]["minimum_free_vram_bytes"]
+                        for d in stats.get("devices", [])
+                    )
+                    and deadline - time.time() > 60
+                ):
+                    adapter.pump(PROJECT, job_id)
+            else:
+                break  # Ambiguous preparation or inconsistent identity needs explicit reconciliation, not resubmission.
+            time.sleep(min(2, max(0, deadline - time.time())))
+        after = snapshot()
+        for field in (
+            "job_id",
+            "attempt_id",
+            "attempt_number",
+            "work_id",
+            "input_digest",
+            "provider_id",
+            "target",
+        ):
+            assert after["job"][field] == before["job"][field]
+        assert after["inputs"] == before["inputs"] and len(after["reservations"]) == 1
+        assert {k: after["reservations"][0][k] for k in ("id", "task_id", "target_id")} == {
+            k: before["reservations"][0][k] for k in ("id", "task_id", "target_id")
+        }
+        final_hashes = {p.name: sha(p.read_bytes()) for p in old_paths}
+        assert final_hashes == original_hashes
+        prompt = after["execution"].get("prompt_id") or after["job"]["external_job_id"]
+        history_after = comfy.status(prompt) if prompt else None
+        write_once(
+            report_path,
+            {
+                "window": window,
+                "finished_epoch": time.time(),
+                "before": before,
+                "after": after,
+                "history_before": history_before,
+                "history_after": history_after,
+                "original_hashes_before": original_hashes,
+                "original_hashes_after": final_hashes,
+                "artifacts": [
+                    services.extension("artifacts").get(PROJECT, a)
+                    for a in after["job"]["artifact_ids"]
+                ],
+                "provider_source_sha256": {
+                    p.name: sha(p.read_bytes())
+                    for p in (
+                        Path(__file__).parents[2] / "apps/backend/src/proscenium/providers"
+                    ).glob("*.py")
+                },
+                "status": "succeeded"
+                if after["job"]["state"] == "succeeded"
+                else "blocked_or_failed",
+                "note": "No native M07 journey has been executed by this original-job continuation.",
+            },
+        )
+        print(
+            json.dumps(
+                {
+                    "window": window,
+                    "report": str(report_path),
+                    "job": after["job"],
+                    "reservations": after["reservations"],
+                },
+                indent=2,
+            )
+        )
+        if after["job"]["state"] != "succeeded":
+            raise SystemExit(
+                "Original continuation did not succeed. Stop before native M07 inference; retain all identities."
+            )
+    finally:
+        client.close()
+        services.close()
 
 
 def run(*, correction: bool) -> None:
@@ -324,5 +628,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true", required=True)
     parser.add_argument("--correction", action="store_true")
+    parser.add_argument("--continuation-window")
+    parser.add_argument("--drop-known-prompt-ack", action="store_true")
     args = parser.parse_args()
-    run(correction=args.correction)
+    if args.continuation_window:
+        if args.correction:
+            parser.error("The original-job continuation is not a new correction")
+        continue_original(args.continuation_window, drop_known_ack=args.drop_known_prompt_ack)
+    else:
+        if args.drop_known_prompt_ack:
+            parser.error("ACK-loss injection requires the explicit continuation window")
+        run(correction=args.correction)
