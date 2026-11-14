@@ -449,15 +449,36 @@ def serve(root):
         services.close()
 
 
-def run(root, phase):
+def run(root, phase, permission_fix):
+    if not permission_fix:
+        raise RuntimeError(
+            "Native hold: coordinator must supply the exact accepted W01 permission fix"
+        )
+    subprocess.run(
+        ["git", "merge-base", "--is-ancestor", permission_fix, "HEAD"], cwd=REPO, check=True
+    )
     assert root.is_relative_to(BASE)
     if phase == "initial":
         root.mkdir(parents=True, mode=0o700, exist_ok=False)
         prepare(root)
+    elif phase == "correction":
+        previous = read(root / "failure-initial.json")
+        assert not previous["jobs"] and not previous["versions"] and not previous["frames"], (
+            "Inspect any existing native/source effects before a correction"
+        )
     else:
         assert (root / "passive-recovery.json").is_file(), (
             "Inspect original recovery before explicit continuation"
         )
+    write(
+        root / "accepted-permission-fix.json",
+        {
+            "coordinator_supplied_commit": permission_fix,
+            "driver_head": subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
+            ).strip(),
+        },
+    )
     temporary = Path.home() / ".cache" / ("m08-" + sha(str(root).encode())[:10])
     temporary.mkdir(mode=0o700, exist_ok=True)
     environment = {**os.environ, "TMPDIR": str(temporary)}
@@ -542,6 +563,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("run", "serve"))
     parser.add_argument("root", type=Path)
-    parser.add_argument("--phase", choices=("initial", "assembly"), default="initial")
+    parser.add_argument("--phase", choices=("initial", "correction", "assembly"), default="initial")
+    parser.add_argument(
+        "--permission-fix", help="Exact coordinator-accepted commit, already merged into HEAD"
+    )
     args = parser.parse_args()
-    (serve(args.root.resolve()) if args.action == "serve" else run(args.root.resolve(), args.phase))
+    (
+        serve(args.root.resolve())
+        if args.action == "serve"
+        else run(args.root.resolve(), args.phase, args.permission_fix)
+    )

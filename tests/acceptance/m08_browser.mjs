@@ -8,11 +8,13 @@ import { chromium } from '@playwright/test';
 const root=path.resolve(process.argv[2]), phase=process.argv[3];
 const config=JSON.parse(await fs.readFile(`${root}/config.private.json`,'utf8'));
 const fixture=JSON.parse(await fs.readFile(`${root}/fixture.json`,'utf8'));
+const acceptedFix=JSON.parse(await fs.readFile(`${root}/accepted-permission-fix.json`,'utf8'));
+assert.ok(acceptedFix.coordinator_supplied_commit,'Native authoring remains held pending accepted W01 fix');
 const write=(name,value)=>fs.writeFile(`${root}/${name}`,JSON.stringify(value,null,2)+'\n');
 const log={phase,events:[],viewport:{width:1920,height:1080,dpr:1}};
 let context,page,csrf;
 async function state(final=false){return page.evaluate(async(final)=>{const r=await fetch(`/m08-harness/state?final=${final}`);if(!r.ok)throw new Error(`state ${r.status}`);return r.json();},final);}
-async function post(route,body){return page.evaluate(async({route,body,csrf})=>{const r=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(body)});if(!r.ok)throw new Error(`${route} ${r.status}: ${await r.text()}`);return r.json();},{route,body,csrf});}
+async function post(route,body){return page.evaluate(async({route,body,csrf})=>{const r=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':body.operation_id??body.label??'m08-harness'},body:JSON.stringify(body)});if(!r.ok)throw new Error(`${route} ${r.status}: ${await r.text()}`);return r.json();},{route,body,csrf});}
 async function mark(label,body={}){const value=await post('/m08-harness/mark',{label,...body});log.events.push({label,host_ns:value.host_ns,last_png_exists:value.last_png_exists});return value;}
 async function poll(check,seconds,description){const until=Date.now()+seconds*1000;let last;while(Date.now()<until){try{last=await state();if(check(last))return last;}catch(error){if(!description.includes('restart'))throw error;}await page.waitForTimeout(40);}if(last)await write(`timeout-${phase}.json`,last);throw new Error(`Bounded wait: ${description}`);}
 async function reserve(label){for(const slot of [1,2,3]){try{const f=await fs.open(`${path.dirname(root)}/m08-a2a2097-cloud-${slot}.json`,'wx',0o600);await f.writeFile(JSON.stringify({root,label,slot,at:new Date().toISOString()}));await f.close();return slot;}catch(error){if(error.code!=='EEXIST')throw error;}}throw new Error('Three-root allocation exhausted. Inspect original reservations.');}
@@ -22,11 +24,21 @@ try{
   const until=Date.now()+30000;while(true){try{if((await fetch(config.origin+'/health')).ok)break;}catch{}if(Date.now()>until)throw new Error('Host did not become ready');await new Promise(r=>setTimeout(r,80));}
   context=await chromium.launchPersistentContext(`${root}/browser-profile`,{executablePath:path.join(os.homedir(),'.cache/ms-playwright/chromium-1255/chrome-linux64/chrome'),headless:true,viewport:{width:1920,height:1080},deviceScaleFactor:1,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-background-networking']});
   page=context.pages()[0];page.setDefaultTimeout(12000);log.browser=context.browser().version();
-  if(phase==='initial'){
-    const pair=page.waitForResponse(r=>r.url().endsWith('/api/v1/owner/session')&&r.request().method()==='POST');
-    await page.goto((await fs.readFile(`${root}/pairing.private.url`,'utf8')).trim());
-    await page.getByRole('button',{name:'Connect this browser'}).click();csrf=(await(await pair).json()).csrf_token;
-    await fs.writeFile(`${root}/csrf.private`,csrf,{mode:0o600});
+  if(phase==='initial'||phase==='correction'){
+    if(phase==='initial'){
+      const pair=page.waitForResponse(r=>r.url().endsWith('/api/v1/owner/session')&&r.request().method()==='POST');
+      await page.goto((await fs.readFile(`${root}/pairing.private.url`,'utf8')).trim());
+      await page.getByRole('button',{name:'Connect this browser'}).click();csrf=(await(await pair).json()).csrf_token;
+      await fs.writeFile(`${root}/csrf.private`,csrf,{mode:0o600});
+    }else{
+      csrf=await fs.readFile(`${root}/csrf.private`,'utf8');await page.goto(config.origin);
+      const before=await state();
+      assert.equal(before.jobs.length,0);assert.equal(before.versions.length,0);
+      assert.ok(before.requests.every(request=>request.receipt.state==='completed'),'Do not replay uncertain original work');
+      await page.getByLabel('Resume mode',{exact:true}).selectOption('release_held_queue');
+      await page.getByRole('button',{name:'Resume',exact:true}).click();
+      await poll(s=>s.gate_open,30,'explicit owner reconciliation/release before corrected request');
+    }
     // Install passive presentation observers BEFORE the model starts authoring.
     await page.evaluate(()=>{
       window.__m08Presentations=[];window.__m08Ended=[];
@@ -35,7 +47,9 @@ try{
       new MutationObserver(install).observe(document.body,{subtree:true,childList:true});install();
     });
     await page.getByRole('button',{name:'Assets',exact:true}).click();
-    const started=Date.now();await queue(await fs.readFile(`${root}/prompt.txt`,'utf8'),'author-animation');
+    const requestCount=(await state()).requests.length;
+    const started=Date.now();const task=await fs.readFile(`${root}/prompt.txt`,'utf8');
+    await queue(phase==='correction'?'Explicit bounded correction after accepted permission fix. Earlier read-only discovery stopped without authoring or publication. Use the existing brief/ directory, not nonexistent briefs/. Do not repeat denied stages or approve unknown permissions. Continue with this actual task:\n\n'+task:task,phase==='correction'?'author-correction':'author-animation');
     let current=await poll(s=>s.versions.some(v=>v.version_id==='m08-scene-v1'),180,'actual source publication');
     log.publication_seconds=(Date.now()-started)/1000;
     await write('publication-first-observed.json',current);
@@ -87,7 +101,7 @@ try{
     assert.equal(current.gate_open,false);assert.equal(current.sdk_object_created,false);
     assert.deepEqual(current.annotations[0],annotation);
     const held=current.jobs.find(j=>j.render_spec?.intent_id==='m08-held-output');assert.ok(held);assert.equal(held.state,'planned');
-    assert.equal(current.requests.length,1);
+    assert.equal(current.requests.length,requestCount+1);
     assert.equal(current.frames.filter(f=>f.job_id===motion.job_id).length,12);
     assert.equal(current.segments.filter(s=>s.job_id===motion.job_id).length,3);
     assert.equal(current.jobs.find(j=>j.job_id===motion.job_id).attempt_id,motion.attempt_id);
@@ -100,7 +114,28 @@ try{
     log.status='progressive_note_playback_before_last_and_passive_worker_recovery_pass';
   }else{
     csrf=await fs.readFile(`${root}/csrf.private`,'utf8');await page.goto(config.origin);
-    throw new Error('Explicit assembly continuation must be selected after inspecting original recovery outcome. No automatic replay.');
+    let before=await state();
+    assert.ok(before.requests.every(request=>request.receipt.state==='completed'),'Original work is unresolved. Stop and seek the explicitly scoped continuation, never resend it.');
+    const motion=before.jobs.find(job=>job.render_spec?.intent_id==='m08-motion');assert.equal(motion.state,'succeeded');
+    const held=before.jobs.find(job=>job.render_spec?.intent_id==='m08-held-output');assert.ok(held);
+    if(held.state==='planned')await post(`/api/v1/projects/${fixture.project_id}/jobs/${held.job_id}/cancel`,{schema_version:'1.0',operation_id:'m08-cancel-unlaunched-probe',project_id:fixture.project_id,expected_revision:held.state_revision});
+    await page.getByLabel('Resume mode',{exact:true}).selectOption('release_held_queue');
+    await page.getByRole('button',{name:'Resume',exact:true}).click();
+    before=await poll(s=>s.gate_open&&s.jobs.find(job=>job.job_id===held.job_id)?.state==='cancelled',30,'explicit owner Resume and prelaunch probe cancellation');
+    await write('before-explicit-assembly.json',before);
+    const task=`Explicit continuation after the worker-recovery read checks. Do NOT repeat the original animation task. All 12 motion frames already exist for job ${motion.job_id}, scene item m08-scene/version m08-scene-v1, shot m08-motion, frames 1..12 at24/1. No source/texture/camera edit, Blender process, rendering, child, GPU or provider work. The green live texture edit is deliberately UNRELATED and must not be staged or included. Use get_version and list_job_frames/get_artifact, never private SQLite.
+Update canonical storyboards/m08/plan.json to link the opening and motion start/intermediate/end roles to their actual ready frame artifact IDs, preserving the existing shot/frame IDs, scene_version/range/FPS and camera/motion bindings. Opening job is the m08-keyframe preview; motion start/middle/end source frames are1/6/12. Publish storyboard item m08-board version m08-board-v2, expected head m08-board-v1, no previews.
+Also author canonical sequences/m08/sequence.json as normative SequenceMap with sequence_version_id m08-clip-v1,project_id ${fixture.project_id},fps24/1,frame_count12,silent:true. ONE identity entry m08-main-entry: shot_id m08-motion,version_id m08-scene-v1,job_id ${motion.job_id},source_frames1..12,sequence_frames1..12,transform identity,mapping_artifact_id:null. This bounded movie is only the motion shot; opening is the separate one-frame review reference. Checkpoint ONLY your plan and sequence JSON through checkpoint_sources with actual expected HEAD, preserve the green working edit. tools/m08_contract.py computes exact closures. Both documents pin m08-scene/m08-scene-v1 as dependency. Publish sequence item m08-clip/version m08-clip-v1 expectedheadnull, no previews, in the same publication as the new storyboard.
+Finally call assemble_sequence with operation_id m08-assemble-op,job_id m08-final-encode,version {item_id:m08-clip,version_id:m08-clip-v1},execution_profile_id blender-cpu. This facade resolves the actual map/receipt hashes. Finish with its actual job ID. Do not invent a ready movie or move the existing annotation to the sequence. Its pin/range context is evidence to retain, not a source correction instruction.`;
+    await queue(task,'explicit-assembly');
+    const final=await poll(s=>s.jobs.some(job=>job.job_id==='m08-final-encode'&&job.state==='succeeded')
+      &&s.requests.some(request=>request.submission.text===task&&request.receipt.state==='completed'),180,'real SDK published sequence and assembly');
+    const original=JSON.parse(await fs.readFile(`${root}/annotation-original.json`,'utf8'));
+    assert.deepEqual(final.annotations[0],original);
+    assert.equal(final.frames.filter(frame=>frame.job_id===motion.job_id).length,12);
+    await write('assembly-complete.json',await state(true));
+    await page.screenshot({path:`${root}/after-explicit-assembly.png`});
+    log.status='explicit_sdk_assembly_continuation_pass';
   }
 }catch(error){log.status='failed';log.error=String(error.stack??error);if(page){await page.screenshot({path:`${root}/failure-${phase}.png`}).catch(()=>{});const last=await state(true).catch(()=>null);if(last)await write(`failure-${phase}.json`,last);}throw error;
 }finally{await context?.close();log.browser_closed=true;await write(`browser-${phase}.json`,log);}
