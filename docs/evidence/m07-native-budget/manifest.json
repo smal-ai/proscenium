@@ -1,0 +1,58 @@
+{
+  "README.md": {
+    "bytes": 9596,
+    "sha256": "4242b3aa529c3b70983dd468cc6b54be4c5f9f8f762d04082c9f1e73ce58ece7"
+  },
+  "cleanup-observation.json": {
+    "bytes": 368,
+    "sha256": "8b225f9d31f53e3d2f5db1e512afabc001f145f3b5823584efa4b11393185b87"
+  },
+  "fixture.json": {
+    "bytes": 10217,
+    "sha256": "9e2113d6adf8165c2b5c324049beb176f458cb6b65afdbb8f772b0396e5994b7"
+  },
+  "native-events.json": {
+    "bytes": 137757,
+    "sha256": "1294d414d23d94b7ee4065f888e177c0b032bab96b02e8a631611e43bd4d3397"
+  },
+  "owner-queue.json": {
+    "bytes": 4765,
+    "sha256": "d3488029c0e018114e38777f45410a37d43cdcac450554039e217d013081455f"
+  },
+  "post-cleanup.json": {
+    "bytes": 227398,
+    "sha256": "01f7d9b99dbb7dbdd11c520ef01d20cdc8e43540eebe82bbf89104860d383f65"
+  },
+  "prompt-hooks.json": {
+    "bytes": 9489,
+    "sha256": "8e1446b1b8e545f09a44e49f2e47ad88c947921ac1587df0cb6763cf5c1e6633"
+  },
+  "report.json": {
+    "bytes": 6072,
+    "sha256": "01755086a6d9b75e31f400802491d8c215876c8977c14d6b9baf5489a4360643"
+  },
+  "resources.json": {
+    "bytes": 4811,
+    "sha256": "a6f8f2e84312e72799cb4f321ee330bac1ebac2d5f821c3bddd12b28307fe7d0"
+  },
+  "runtime-identities.json": {
+    "bytes": 1438,
+    "sha256": "30e1b2736de5274b5506570ec6ba6f712ea9d09c3e2635d1a454e6ad4acbdc1e"
+  },
+  "sdk-send.json": {
+    "bytes": 11578,
+    "sha256": "625de50bb5e48291633f0cf77c35dc603725d046addc73f5b0c3f3aa23cc6a36"
+  },
+  "settled.json": {
+    "bytes": 226431,
+    "sha256": "6653475c793ba8760c2225659d20c7953a6d488979fddf3b03ea200eedbe210f"
+  },
+  "tool-results.json": {
+    "bytes": 7929,
+    "sha256": "01e825a3e9639b73fb23ed31aa549feeab1b230e1e71c5a3c0ca8b3b03d8f2be"
+  },
+  "verification.json": {
+    "bytes": 1850,
+    "sha256": "728b2f45b6daac9729649216255f3b7886eb323e2805ede1daaa59fd078d395e"
+  }
+}

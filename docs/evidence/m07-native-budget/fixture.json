@@ -1,0 +1,194 @@
+{
+  "project": {
+    "name": "M07 native budget admission ONLY",
+    "native_session_id": null,
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project",
+    "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+    "repository_id": "repository-db3198f9-a198-410e-a4f1-e05b67ecd639",
+    "schema_version": "1.0",
+    "state": "inactive",
+    "state_revision": 0
+  },
+  "image": {
+    "schema_version": "1.0",
+    "artifact_id": "m07-budget-real-png-input",
+    "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+    "kind": "image",
+    "purpose": "reference",
+    "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+    "bytes": 84651,
+    "media_type": "image/png",
+    "state": "ready",
+    "derived_from": [],
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    }
+  },
+  "plan": {
+    "schema_version": "1.0",
+    "plan_id": "m07-budget-plan",
+    "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+    "brief_artifact_ids": [],
+    "asset_dependencies": [],
+    "unresolved": [],
+    "shots": [
+      {
+        "shot_id": "shot-mug",
+        "intent": "Admission-only canonical target",
+        "camera_intent": "No execution",
+        "motion_beats": [],
+        "scene_version": null,
+        "source_range": null,
+        "fps": null,
+        "frames": [
+          {
+            "frame_id": "frame-mug",
+            "role": "start",
+            "composition": "Read-only prior actual M07 PNG",
+            "artifact_id": "m07-budget-real-png-input",
+            "state": "available"
+          }
+        ]
+      }
+    ]
+  },
+  "publication": {
+    "schema_version": "1.0",
+    "publication_id": "m07-budget-publication",
+    "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+    "versions": [
+      {
+        "item_id": "m07-budget-storyboard",
+        "version_id": "m07-budget-plan-v1"
+      }
+    ],
+    "job_ids": [],
+    "event_sequence": 2,
+    "replayed": false
+  },
+  "source_commit": "2797e0955ae8a0abc4bd268806a23cc05feaa53a",
+  "source_path": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project/storyboards/m07-budget-plan.json",
+  "source_sha256": "742e89641df8a2b6334e8b3b8df723ea6177c79811079d8f4b2d9b19b7db433b",
+  "envelopes": [
+    {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "COPY_FROM_TRUSTED_HOST_CONTEXT",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-1",
+      "target_id": "renamed-alias-1"
+    },
+    {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "COPY_FROM_TRUSTED_HOST_CONTEXT",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-2",
+      "target_id": "renamed-alias-2"
+    },
+    {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "COPY_FROM_TRUSTED_HOST_CONTEXT",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-3",
+      "target_id": "renamed-alias-3"
+    },
+    {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "COPY_FROM_TRUSTED_HOST_CONTEXT",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-4",
+      "target_id": "renamed-alias-4"
+    }
+  ],
+  "prompt": "M07 ADMISSION-ONLY native parent/child budget test. Executor is deliberately DISABLED. Stop on admission receipts, never poll outputs. No files, shell, provider HTTP, services, GPU, generation execution, approvals or other work. Use submit_generation twice as lead with envelopes 1 and 2 below, replacing generation_task_id ONLY with the exact authoritative HOST extension-context generation_task_id. Then delegate EXACTLY ONE task to authoring-specialist (required gpt-6.1-sol), no other child. Give child envelopes 3 and 4 and tell it to read its own trusted additionalContext JSON inside system_reminder and use that ORIGINAL generation_task_id, not a new task. Child must call submit_generation for 3, then for 4 even though target_id is renamed. All four settings.target_slot values are identical. Expect jobs 1/2/3 planned and fourth generation_budget_exhausted. Do not retry, change allowance, or claim images. Child finishes <=120s, root <=180s. Named registered inputs are m07-budget-real-png-input (actual prior M07 PNG), m07-budget-graph and m07-budget-prompt; no discovery needed. [{\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-1\", \"target_id\": \"renamed-alias-1\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-2\", \"target_id\": \"renamed-alias-2\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-3\", \"target_id\": \"renamed-alias-3\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-4\", \"target_id\": \"renamed-alias-4\"}]",
+  "input_original_path": "docs/evidence/m07-fp16/execution/m07-fp16-initial.png",
+  "input_original_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d"
+}

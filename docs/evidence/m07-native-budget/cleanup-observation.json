@@ -1,0 +1,16 @@
+{
+  "observed_epoch": 1794682030.6684258,
+  "host": {
+    "pid": 14943,
+    "expected_start": "47463344",
+    "observed_start": null
+  },
+  "sdk": {
+    "pid": 15068,
+    "expected_start": "47463469",
+    "observed_start": null
+  },
+  "gate_closed_at_host_shutdown": true,
+  "asgi_in_process_no_listener": true,
+  "unexecuted_reservations_intentionally_retained": 3
+}

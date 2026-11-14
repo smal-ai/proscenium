@@ -1,0 +1,166 @@
+[
+  {
+    "at": 1794681935.9566042,
+    "tool": "submit_generation",
+    "arguments": {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-1",
+      "target_id": "renamed-alias-1"
+    },
+    "invocation": {
+      "tool_call_id": "call_BbK1oJLa5ajqabq6YY1McsPE",
+      "session_id": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+      "agent_id": null,
+      "turn_id": null
+    },
+    "result_type": "success",
+    "result": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-2675d0ac-fc22-4d29-bd3d-befd1ea62ef8\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"cede1a1d280f39d52a529da031e44dc6678e4f50fd5b6a0297148e173c293174\",\"job_id\":\"m07-budget-1\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}"
+  },
+  {
+    "at": 1794681940.241749,
+    "tool": "submit_generation",
+    "arguments": {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-2",
+      "target_id": "renamed-alias-2"
+    },
+    "invocation": {
+      "tool_call_id": "call_sL9EcSVs3aJ2pS20FCZohje7",
+      "session_id": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+      "agent_id": null,
+      "turn_id": null
+    },
+    "result_type": "success",
+    "result": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-3c0ef09b-16b7-456f-86b3-efca8160c568\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"ae704ac4ee442ab0e7b4e020ccc5a4db4f8d2eb45d69ebb422abed5ef32701d7\",\"job_id\":\"m07-budget-2\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}"
+  },
+  {
+    "at": 1794681955.412972,
+    "tool": "submit_generation",
+    "arguments": {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-3",
+      "target_id": "renamed-alias-3"
+    },
+    "invocation": {
+      "tool_call_id": "call_JN0pGSgkoSM7fuGb3wOFQxUU",
+      "session_id": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+      "agent_id": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "turn_id": null
+    },
+    "result_type": "success",
+    "result": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-9a26fe5b-c78e-41ea-825b-aad2dbedc8fc\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"40402c65c0581466d9e952b0c9d35e7c31e8b13afc09a851c41af4a81b09a1b2\",\"job_id\":\"m07-budget-3\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}"
+  },
+  {
+    "at": 1794681959.1473365,
+    "tool": "submit_generation",
+    "arguments": {
+      "schema_version": "1.0",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+      "provider_id": "m07-budget-unprobed",
+      "capability": "image",
+      "workflow_artifact_id": "m07-budget-graph",
+      "prompt_artifact_id": "m07-budget-prompt",
+      "input_artifact_ids": [
+        "m07-budget-real-png-input"
+      ],
+      "seed": "42",
+      "model_ids": [
+        "sd_turbo-proscenium-fp16-1.safetensors"
+      ],
+      "settings": {
+        "target_slot": {
+          "kind": "storyboard_frame",
+          "storyboard_version": {
+            "item_id": "m07-budget-storyboard",
+            "version_id": "m07-budget-plan-v1"
+          },
+          "shot_id": "shot-mug",
+          "frame_id": "frame-mug"
+        }
+      },
+      "job_id": "m07-budget-4",
+      "target_id": "renamed-alias-4"
+    },
+    "invocation": {
+      "tool_call_id": "call_f9HkkC5UI4HdOw6OD8oAfD2x",
+      "session_id": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+      "agent_id": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "turn_id": null
+    },
+    "result_type": "failure",
+    "result": "{\"details\":{},\"error\":\"generation_budget_exhausted\",\"message\":\"The operation could not complete. Inspect its original durable receipt before retrying; the external outcome may be uncertain.\"}"
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "started_at": "2026-11-14T20:45:22.813721+02:00",
+  "pid": 14943,
+  "base": "dd3abd2a9d3a6d7365e824c089276c1ccc1a64b6",
+  "execution_disabled": true,
+  "application_transport": "in-process ASGI, no listener/service process",
+  "before_mem_available": 39177179136,
+  "request_final": {
+    "accepted_at": "2026-11-14T18:45:23.024048+00:00",
+    "effective_profile_id": "authoring",
+    "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+    "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+    "receipt": {
+      "native_message_id": "8770b1a0-d86b-47f9-bd43-b4390c450bd5",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "replayed": false,
+      "request_id": "2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-05561bb76eb340dc93ff6affd1e36974"
+    },
+    "request_id": "2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336",
+    "schema_version": "1.0",
+    "submission": {
+      "context_id": "75d27cbd-2f3c-413b-87d3-bab92e7c5ad3",
+      "profile_id": "authoring",
+      "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+      "request_id": "2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336",
+      "schema_version": "1.0",
+      "text": "M07 ADMISSION-ONLY native parent/child budget test. Executor is deliberately DISABLED. Stop on admission receipts, never poll outputs. No files, shell, provider HTTP, services, GPU, generation execution, approvals or other work. Use submit_generation twice as lead with envelopes 1 and 2 below, replacing generation_task_id ONLY with the exact authoritative HOST extension-context generation_task_id. Then delegate EXACTLY ONE task to authoring-specialist (required gpt-6.1-sol), no other child. Give child envelopes 3 and 4 and tell it to read its own trusted additionalContext JSON inside system_reminder and use that ORIGINAL generation_task_id, not a new task. Child must call submit_generation for 3, then for 4 even though target_id is renamed. All four settings.target_slot values are identical. Expect jobs 1/2/3 planned and fourth generation_budget_exhausted. Do not retry, change allowance, or claim images. Child finishes <=120s, root <=180s. Named registered inputs are m07-budget-real-png-input (actual prior M07 PNG), m07-budget-graph and m07-budget-prompt; no discovery needed. [{\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-1\", \"target_id\": \"renamed-alias-1\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-2\", \"target_id\": \"renamed-alias-2\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-3\", \"target_id\": \"renamed-alias-3\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-4\", \"target_id\": \"renamed-alias-4\"}]",
+      "type": "queue"
+    }
+  },
+  "gate_closed": true,
+  "elapsed_seconds": 42.85828051500721,
+  "sdk_sends": 1,
+  "guarded_task_calls": 1,
+  "children_observed": [
+    "bf8e5b76-5e18-4072-b596-1157827da49d"
+  ],
+  "violations": [],
+  "provider_http_attempts": [],
+  "provider_pump_attempts": [],
+  "input_original_unchanged": true,
+  "minimum_mem_available": 37589626880,
+  "native_process": {
+    "pid": 15068,
+    "start": "47463469",
+    "parent_pid": 14943,
+    "parent_start": "47463344",
+    "binary": "/home/quintin/.cache/proscenium-development/fleet/m07-native-budget/node_modules/@github/copilot-linux-x64/copilot"
+  },
+  "native_process_exited": true
+}

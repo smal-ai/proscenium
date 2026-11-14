@@ -1,0 +1,20 @@
+{
+  "base": "dd3abd2a9d3a6d7365e824c089276c1ccc1a64b6",
+  "executed_driver_commit": "e5787dc50e6ca3afd053e6cff83e6f69abf7ca0e",
+  "sdk_version": "1.0.34",
+  "direct_cli_version": "1.0.112",
+  "model": "gpt-6.1-sol",
+  "child_configured_model_policy": "required",
+  "actual_child_model_selection_source": "explicit_override",
+  "native_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+  "production_source_sha256": {
+    "apps/backend/src/proscenium/copilot/service.py": "6a6578a7786684d3b34ebb275dca55a1430c7b71bd3486a8bb1eab8ad5924fc4",
+    "apps/backend/src/proscenium/copilot/state.py": "126bbfb7dba5958c07822a6c470571b3c88e54fd6a08b99616335a43a44a61dc",
+    "apps/backend/src/proscenium/copilot/tools.py": "3701babb632ae2ab0ff556ee54bcb1c8b22444d2b920cfa0e0349ac815fcbf82",
+    "apps/backend/src/proscenium/copilot/native.py": "3d5d71c9489d60b3c2c68cbf44ec637ff07bb54da0846b427f6f15b6ea0d56dd",
+    "apps/backend/src/proscenium/providers/service.py": "16c6888767534f49b5d66b92a17e9505c448c23173ddf7a092c904c23b6812ff",
+    "apps/backend/src/proscenium/providers/targets.py": "65f6afefd08874f4e42554bd4c3435a2fcf92f513bd9b0ca5c5b8816a524d87c",
+    "apps/backend/src/proscenium/jobs/resources.py": "769c028d38bcffd52ef8772b054791803b3c3e9543f117a984c39f66afcabf0f",
+    "apps/backend/src/proscenium/providers/sd_turbo_fp16.py": "921929dbc3b54765a4be69de0f8875bdc6e53168cd2b0eef33f8e69b37640965"
+  }
+}

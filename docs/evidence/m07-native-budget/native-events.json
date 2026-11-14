@@ -1,0 +1,2858 @@
+[
+  {
+    "at": 1794681926.8675554,
+    "event": {
+      "data": {
+        "copilotVersion": "1.0.112",
+        "producer": "copilot-agent",
+        "sessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "startTime": "2026-11-14T18:45:25.465000+00:00",
+        "version": 1,
+        "alreadyInUse": false,
+        "context": {
+          "cwd": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project",
+          "branch": "main",
+          "gitRoot": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project",
+          "headCommit": "2797e0955ae8a0abc4bd268806a23cc05feaa53a"
+        },
+        "remoteSteerable": false,
+        "selectedModel": "gpt-6.1-sol"
+      },
+      "id": "c2062e63-ad4d-4767-b47c-911f77e47411",
+      "timestamp": "2026-11-14T18:45:25.477000+00:00",
+      "type": "session.start",
+      "parentId": null
+    }
+  },
+  {
+    "at": 1794681929.537432,
+    "event": {
+      "data": {
+        "content": "M07 ADMISSION-ONLY native parent/child budget test. Executor is deliberately DISABLED. Stop on admission receipts, never poll outputs. No files, shell, provider HTTP, services, GPU, generation execution, approvals or other work. Use submit_generation twice as lead with envelopes 1 and 2 below, replacing generation_task_id ONLY with the exact authoritative HOST extension-context generation_task_id. Then delegate EXACTLY ONE task to authoring-specialist (required gpt-6.1-sol), no other child. Give child envelopes 3 and 4 and tell it to read its own trusted additionalContext JSON inside system_reminder and use that ORIGINAL generation_task_id, not a new task. Child must call submit_generation for 3, then for 4 even though target_id is renamed. All four settings.target_slot values are identical. Expect jobs 1/2/3 planned and fourth generation_budget_exhausted. Do not retry, change allowance, or claim images. Child finishes <=120s, root <=180s. Named registered inputs are m07-budget-real-png-input (actual prior M07 PNG), m07-budget-graph and m07-budget-prompt; no discovery needed. [{\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-1\", \"target_id\": \"renamed-alias-1\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-2\", \"target_id\": \"renamed-alias-2\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-3\", \"target_id\": \"renamed-alias-3\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-4\", \"target_id\": \"renamed-alias-4\"}]",
+        "attachments": [
+          {
+            "displayName": "content",
+            "path": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project/.proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content",
+            "type": "file",
+            "taggedFilesEntry": "* /home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project/.proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content (343 lines)"
+          },
+          {
+            "displayName": "content",
+            "path": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project/.proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content",
+            "type": "file",
+            "taggedFilesEntry": "* /home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project/.proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content (343 lines)"
+          },
+          {
+            "capturedAt": "2026-11-14T20:45:22.951331+02:00",
+            "extensionId": "proscenium",
+            "title": "Turn context",
+            "type": "extension_context",
+            "payload": {
+              "schema_version": "1.0",
+              "request_id": "2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336",
+              "work_id": "work-05561bb76eb340dc93ff6affd1e36974",
+              "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+              "delivery_mode": "queue",
+              "context_id": "75d27cbd-2f3c-413b-87d3-bab92e7c5ad3",
+              "project": {
+                "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+                "path": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project"
+              },
+              "selection": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1",
+                "view_mode": "keyframes",
+                "target": {
+                  "artifact_id": "m07-budget-real-png-input",
+                  "dimensions": {
+                    "height": 512,
+                    "width": 512
+                  },
+                  "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+                  "item_id": "m07-budget-storyboard",
+                  "media_artifact_id": null,
+                  "origin": "concept",
+                  "render_job_id": null,
+                  "shot_id": "shot-mug",
+                  "source_frame": null,
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "camera": null,
+                "range": null,
+                "selected_objects": []
+              },
+              "annotations": [],
+              "approved_findings": [],
+              "attached_files": [
+                {
+                  "artifact_id": "m07-budget-real-png-input",
+                  "role": "reference",
+                  "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+                  "path": ".proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content",
+                  "dimensions": {
+                    "height": 512,
+                    "width": 512
+                  }
+                },
+                {
+                  "artifact_id": "m07-budget-real-png-input",
+                  "role": "concept",
+                  "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+                  "path": ".proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content",
+                  "dimensions": {
+                    "height": 512,
+                    "width": 512
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "delivery": "idle",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "messageId": "8770b1a0-d86b-47f9-bd43-b4390c450bd5",
+        "parentAgentTaskId": "123199fc-16b5-4507-ba14-7a98b805e5bb",
+        "responsesReasoning": {
+          "effort": "medium",
+          "initialEffort": "medium",
+          "model": "gpt-6.1-sol"
+        },
+        "supportedNativeDocumentMimeTypes": [],
+        "transformedContent": "<current_datetime>2026-11-14T20:45:29.512+02:00</current_datetime>\n\nM07 ADMISSION-ONLY native parent/child budget test. Executor is deliberately DISABLED. Stop on admission receipts, never poll outputs. No files, shell, provider HTTP, services, GPU, generation execution, approvals or other work. Use submit_generation twice as lead with envelopes 1 and 2 below, replacing generation_task_id ONLY with the exact authoritative HOST extension-context generation_task_id. Then delegate EXACTLY ONE task to authoring-specialist (required gpt-6.1-sol), no other child. Give child envelopes 3 and 4 and tell it to read its own trusted additionalContext JSON inside system_reminder and use that ORIGINAL generation_task_id, not a new task. Child must call submit_generation for 3, then for 4 even though target_id is renamed. All four settings.target_slot values are identical. Expect jobs 1/2/3 planned and fourth generation_budget_exhausted. Do not retry, change allowance, or claim images. Child finishes <=120s, root <=180s. Named registered inputs are m07-budget-real-png-input (actual prior M07 PNG), m07-budget-graph and m07-budget-prompt; no discovery needed. [{\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-1\", \"target_id\": \"renamed-alias-1\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-2\", \"target_id\": \"renamed-alias-2\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-3\", \"target_id\": \"renamed-alias-3\"}, {\"schema_version\": \"1.0\", \"project_id\": \"project-f99b7621-5277-42ca-a491-76229a2e2cf6\", \"generation_task_id\": \"COPY_FROM_TRUSTED_HOST_CONTEXT\", \"provider_id\": \"m07-budget-unprobed\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-budget-graph\", \"prompt_artifact_id\": \"m07-budget-prompt\", \"input_artifact_ids\": [\"m07-budget-real-png-input\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-budget-storyboard\", \"version_id\": \"m07-budget-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}, \"job_id\": \"m07-budget-4\", \"target_id\": \"renamed-alias-4\"}]",
+        "turnId": "0",
+        "clientTurnId": "2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336",
+        "hasSubmittedTask": true
+      },
+      "id": "abe0cb6f-7168-4c51-aa47-79492837450d",
+      "timestamp": "2026-11-14T18:45:29.523000+00:00",
+      "type": "user.message",
+      "parentId": "525dff79-d5c5-4cb1-b02d-70a332ae2765"
+    }
+  },
+  {
+    "at": 1794681929.5527585,
+    "event": {
+      "data": {
+        "turnId": "0",
+        "agentMode": "interactive",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051"
+      },
+      "id": "8e98d339-e3ad-4e65-93ca-6a8a4d34326f",
+      "timestamp": "2026-11-14T18:45:29.528000+00:00",
+      "type": "assistant.turn_start",
+      "parentId": "a70bf492-738b-47bb-b216-e984f8e0b40e"
+    }
+  },
+  {
+    "at": 1794681935.831827,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "accounting": {
+          "sequence": 1,
+          "sourceSessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+          "usageId": "V74mPvR/wmXe5ssmINt7PE2NTr10LtDUHilldd3HIoQq7JF/LWC8SPYHHfUS9lRzJKGbWEl4Xan2q+0qZcAbDyOmjEh0eHCu3o1o7Q8dnfTplvyLCFHSHB9ofqqhcRiCNYvkb/qUO5QQMAN66DexRQwLBxq70dXxpvX9hghTtVQM9+0ATfbqJDrzXuSCCDv0WeyfnHyr++Gh06hWdBX8lBSKCNgBvB7q0k18gi+SzslUDnOgCHs8omcZzgMocWs6n+3paXJLzixXMN+7Y7euXtY/csMHhD/puwkXZ+gZpfpPjhTolG8NUDlBYUI8YRMtxcd9/3fqB+O5JXmojL9pokD4jUv5SRxUCxFEQCC4Sq0oOmfVxT52q36DFwS59I86vbUVvNu4dCaPHJewB0nlXX3jj91pH+iygacu901fYuF2mkCQtenceyRjuZhaWkxniEnI7Wn16+qsYcVa//rjFvRBmd72FtPBEyAjBZD/V1tPUlnZ7mg="
+        },
+        "aiCreditsStatus": "complete",
+        "apiCallId": "V74mPvR/wmXe5ssmINt7PE2NTr10LtDUHilldd3HIoQq7JF/LWC8SPYHHfUS9lRzJKGbWEl4Xan2q+0qZcAbDyOmjEh0eHCu3o1o7Q8dnfTplvyLCFHSHB9ofqqhcRiCNYvkb/qUO5QQMAN66DexRQwLBxq70dXxpvX9hghTtVQM9+0ATfbqJDrzXuSCCDv0WeyfnHyr++Gh06hWdBX8lBSKCNgBvB7q0k18gi+SzslUDnOgCHs8omcZzgMocWs6n+3paXJLzixXMN+7Y7euXtY/csMHhD/puwkXZ+gZpfpPjhTolG8NUDlBYUI8YRMtxcd9/3fqB+O5JXmojL9pokD4jUv5SRxUCxFEQCC4Sq0oOmfVxT52q36DFwS59I86vbUVvNu4dCaPHJewB0nlXX3jj91pH+iygacu901fYuF2mkCQtenceyRjuZhaWkxniEnI7Wn16+qsYcVa//rjFvRBmd72FtPBEyAjBZD/V1tPUlnZ7mg=",
+        "apiEndpoint": "ws:/responses",
+        "availableToolCount": 42,
+        "cacheDetailsReported": true,
+        "cacheExpiresAt": "2026-11-14T19:15:30.367000+00:00",
+        "cachePolicyTtlSeconds": 1800,
+        "cacheReadTokens": 9184,
+        "cacheTtlSeconds": 1800,
+        "cacheWriteTokens": 7758,
+        "contentFilterTriggered": false,
+        "copilotUsage": {
+          "totalNanoAiu": 2365340000.0,
+          "tokenDetails": [
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 200000000000,
+              "tokenCount": 490,
+              "tokenType": "input",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 10000000000,
+              "tokenCount": 9184,
+              "tokenType": "cache_read",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 250000000000,
+              "tokenCount": 7758,
+              "tokenType": "cache_write",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 1000000000000,
+              "tokenCount": 236,
+              "tokenType": "output",
+              "model": "gpt-6.1-sol"
+            }
+          ]
+        },
+        "cost": 1.0,
+        "customToolCallCount": 0,
+        "duration": 4882,
+        "finishReason": "tool_calls",
+        "frontierSource": "reported_writes",
+        "inferenceGateway": false,
+        "initiator": "user",
+        "inputTokens": 17432,
+        "interactionType": "conversation-agent",
+        "interTokenLatencyMs": 4.587,
+        "isAuto": false,
+        "isByok": false,
+        "maxPromptTokens": 272000,
+        "modelDisplayName": "GPT-6.1 Sol",
+        "numToolCalls": 1,
+        "orphanToolCallCount": 0,
+        "outputTokens": 236,
+        "outputTtftMs": 3597.8669999999997,
+        "provider": {
+          "id": "copilot",
+          "kind": "copilot",
+          "label": "GitHub Copilot"
+        },
+        "providerCallId": "00000-15d57730-a9df-4e58-a4c8-ab8a900579d6",
+        "quotaSnapshots": {
+          "chat": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "completions": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "premium_interactions": {
+            "entitlementRequests": 1000000,
+            "isUnlimitedEntitlement": false,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": true,
+            "remainingPercentage": 45.9,
+            "usageAllowedWithExhaustedQuota": true,
+            "usedRequests": 541000,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          }
+        },
+        "reasoningEffort": "medium",
+        "reasoningSummary": "detailed",
+        "reasoningTokens": 20,
+        "requestBodyBytes": 110198,
+        "requestBodyEncoding": "identity",
+        "requestBodyWireBytes": 110198,
+        "rte": true,
+        "serviceRequestId": "43062f3e-e0b9-4c44-b422-4ef89934f376",
+        "timeToFirstTokenMs": 3597.8669999999997,
+        "toolCounts": {
+          "submit_generation": 1
+        },
+        "toolTokenCount": 7833,
+        "transport": "websocket",
+        "unmatchedToolResultCount": 0,
+        "responseModel": "gpt-6.1-sol"
+      },
+      "id": "9bf62e67-c27c-4ae7-bac7-6005832976dc",
+      "timestamp": "2026-11-14T18:45:35.249000+00:00",
+      "type": "assistant.usage",
+      "ephemeral": true,
+      "parentId": "8e98d339-e3ad-4e65-93ca-6a8a4d34326f"
+    }
+  },
+  {
+    "at": 1794681935.8531883,
+    "event": {
+      "data": {
+        "content": "",
+        "messageId": "f06c90f7-9d05-4867-9cea-5fc6999765e7",
+        "apiCallId": "V74mPvR/wmXe5ssmINt7PE2NTr10LtDUHilldd3HIoQq7JF/LWC8SPYHHfUS9lRzJKGbWEl4Xan2q+0qZcAbDyOmjEh0eHCu3o1o7Q8dnfTplvyLCFHSHB9ofqqhcRiCNYvkb/qUO5QQMAN66DexRQwLBxq70dXxpvX9hghTtVQM9+0ATfbqJDrzXuSCCDv0WeyfnHyr++Gh06hWdBX8lBSKCNgBvB7q0k18gi+SzslUDnOgCHs8omcZzgMocWs6n+3paXJLzixXMN+7Y7euXtY/csMHhD/puwkXZ+gZpfpPjhTolG8NUDlBYUI8YRMtxcd9/3fqB+O5JXmojL9pokD4jUv5SRxUCxFEQCC4Sq0oOmfVxT52q36DFwS59I86vbUVvNu4dCaPHJewB0nlXX3jj91pH+iygacu901fYuF2mkCQtenceyRjuZhaWkxniEnI7Wn16+qsYcVa//rjFvRBmd72FtPBEyAjBZD/V1tPUlnZ7mg=",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "8770b1a0-d86b-47f9-bd43-b4390c450bd5",
+        "providerId": "copilot",
+        "rte": true,
+        "serverTools": {
+          "provider": "openai-responses",
+          "functionCallNamespaces": {
+            "call_BbK1oJLa5ajqabq6YY1McsPE": "submit_generation"
+          },
+          "items": [
+            {
+              "arguments": {
+                "paths": [
+                  "submit_generation"
+                ]
+              },
+              "call_id": null,
+              "execution": "server",
+              "id": "blPZKuxUWxW8ttxNnLFSozqoRC1rqSAB6J7QLhJOIP0WDDKptfiZtVmD7WJcxOYQ+ENahgABiNikG2sMV9i/3dGCAOIrhn5ulNejMliFSysP+snv0grwf6sD1aynr6dtLId8v1fdBUZsySKGj5wkwpMo5x0Yf8vPdn4YlFB0tu4/psa0rZoGX1iKOhtVa321VrU2fPzZgZWTiZyTFNJ1Zn2X6acvsI6x9AY/ZPQIs3kRPgY0pU1m9gUWCs8+O/iOrgoyuL0ZoYhaU5mVUmuI1buSrT+gohaUqMm+Do/09t8hHEw9wF4xeKjAST2kF7SmgzKwK/nnB4RwSlycOrqyVJpwgPZiIdYrc0nGisxgFLx4IaJtHDzr+jqZ5vM03KYTsOHPzQU8KCay4Ez+isuvZoyTRHLCmJBypVv4FR6FaI//pHY9LY0wksyCTYVVEvbITIINTRABhArHIgeTocM4wjk8g6J1KZDG9swdCwM9fpW+3Kq/Mw==",
+              "status": "completed",
+              "type": "tool_search_call"
+            },
+            {
+              "call_id": null,
+              "execution": "server",
+              "id": "NjFQLM98G4NWt49hBUORJd4AyfvhJro3pvnhTUAsd+7v6LbZOVHIECItQ7tLRv8ULXHZZkO3N7Ndhcd7plN0MO34dpVctxS/g77E19uMZ4B/5n/1Wr/aNXIbD2oB541xpWXLVjQwWb0ISJMekPbvr03ZBSJnYLcg1ByowBQ5TnvMcVoUpCnhvFemXLi16GMWPpViYkVCjO/UBGD7cr209PFdxDuIIffYCpsPbXTEDrJzLHj09Vo+gKb55Mz7D7AePkPFYQNxx24cbHfvmcxUCH/HOLKMluRr5PWZLF2NBf2wNyoDU3cIHEywKosPB74fHTLR5bYqmg9h28WQeLwyAGVUhQOMfP3WQ5plprNll3ndOWWinxlHNKCjmOd8av++kLKNp7nrtYF815Fk84ZFyqtsEIoQR4uEWjaExwJLWHT1jJwFJ9I4C7nu7UX88xKq3a907naANVlle9reLHS2IqrQFGNZH94qz+yS9wHdfr3WQ1mSDg==",
+              "status": "completed",
+              "tools": [
+                {
+                  "defer_loading": true,
+                  "description": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+                  "name": "submit_generation",
+                  "output_schema": null,
+                  "parameters": {
+                    "$defs": {
+                      "Id": {
+                        "description": "{pattern: \"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$\"}",
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "properties": {
+                      "capability": {
+                        "enum": [
+                          "image",
+                          "image_to_3d"
+                        ]
+                      },
+                      "generation_task_id": {
+                        "$ref": "#/$defs/Id"
+                      },
+                      "input_artifact_ids": {
+                        "items": {
+                          "$ref": "#/$defs/Id"
+                        },
+                        "type": "array"
+                      },
+                      "job_id": {
+                        "$ref": "#/$defs/Id"
+                      },
+                      "model_ids": {
+                        "description": "{minItems: 1}",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "project_id": {
+                        "$ref": "#/$defs/Id"
+                      },
+                      "prompt_artifact_id": {
+                        "$ref": "#/$defs/Id"
+                      },
+                      "provider_id": {
+                        "$ref": "#/$defs/Id"
+                      },
+                      "schema_version": {
+                        "const": "1.0"
+                      },
+                      "seed": {
+                        "description": "{pattern: \"^[0-9]+$\"}",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "settings": {
+                        "type": "object"
+                      },
+                      "target_id": {
+                        "$ref": "#/$defs/Id"
+                      },
+                      "workflow_artifact_id": {
+                        "$ref": "#/$defs/Id"
+                      }
+                    },
+                    "required": [
+                      "schema_version",
+                      "job_id",
+                      "project_id",
+                      "generation_task_id",
+                      "target_id",
+                      "provider_id",
+                      "capability",
+                      "workflow_artifact_id",
+                      "prompt_artifact_id",
+                      "input_artifact_ids",
+                      "seed",
+                      "model_ids",
+                      "settings"
+                    ],
+                    "type": "object"
+                  },
+                  "strict": false,
+                  "type": "function"
+                }
+              ],
+              "type": "tool_search_output"
+            }
+          ]
+        },
+        "toolRequests": [
+          {
+            "name": "submit_generation",
+            "toolCallId": "call_BbK1oJLa5ajqabq6YY1McsPE",
+            "arguments": {
+              "schema_version": "1.0",
+              "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+              "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+              "provider_id": "m07-budget-unprobed",
+              "capability": "image",
+              "workflow_artifact_id": "m07-budget-graph",
+              "prompt_artifact_id": "m07-budget-prompt",
+              "input_artifact_ids": [
+                "m07-budget-real-png-input"
+              ],
+              "seed": "42",
+              "model_ids": [
+                "sd_turbo-proscenium-fp16-1.safetensors"
+              ],
+              "settings": {
+                "target_slot": {
+                  "kind": "storyboard_frame",
+                  "storyboard_version": {
+                    "item_id": "m07-budget-storyboard",
+                    "version_id": "m07-budget-plan-v1"
+                  },
+                  "shot_id": "shot-mug",
+                  "frame_id": "frame-mug"
+                }
+              },
+              "job_id": "m07-budget-1",
+              "target_id": "renamed-alias-1"
+            },
+            "type": "function"
+          }
+        ],
+        "turnId": "0"
+      },
+      "id": "8b306c68-39ec-4a93-9836-7d5a905cdd5c",
+      "timestamp": "2026-11-14T18:45:35.250000+00:00",
+      "type": "assistant.message",
+      "parentId": "8e98d339-e3ad-4e65-93ca-6a8a4d34326f"
+    }
+  },
+  {
+    "at": 1794681935.8574126,
+    "event": {
+      "data": {
+        "toolCallId": "call_BbK1oJLa5ajqabq6YY1McsPE",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-1",
+          "target_id": "renamed-alias-1"
+        },
+        "model": "gpt-6.1-sol",
+        "turnId": "0"
+      },
+      "id": "a0d6bbc2-f865-4f0a-854a-7cd8b6d39b87",
+      "timestamp": "2026-11-14T18:45:35.251000+00:00",
+      "type": "tool.execution_start",
+      "parentId": "8b306c68-39ec-4a93-9836-7d5a905cdd5c"
+    }
+  },
+  {
+    "at": 1794681935.8802035,
+    "event": {
+      "data": {
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-1",
+            "target_id": "renamed-alias-1"
+          },
+          "toolCallId": "call_BbK1oJLa5ajqabq6YY1McsPE"
+        },
+        "requestId": "61910cd3-84b8-4002-9d34-c9e5f30fc9fd",
+        "agentMode": "interactive",
+        "assistedApprovalAssessment": {
+          "reason": "inactive",
+          "status": "not-run"
+        },
+        "ownerSessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "permissionMode": "manual",
+        "promptRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-1",
+            "target_id": "renamed-alias-1"
+          },
+          "toolCallId": "call_BbK1oJLa5ajqabq6YY1McsPE"
+        }
+      },
+      "id": "9ca028e1-5087-4e7b-8ee3-f5fe7a5cdc53",
+      "timestamp": "2026-11-14T18:45:35.869000+00:00",
+      "type": "permission.requested",
+      "parentId": "9fd68c4c-bcf2-4bf7-b6cd-353c13a6a391"
+    }
+  },
+  {
+    "at": 1794681935.8973103,
+    "event": {
+      "data": {
+        "requestId": "61910cd3-84b8-4002-9d34-c9e5f30fc9fd",
+        "result": {
+          "kind": "approved"
+        },
+        "toolCallId": "call_BbK1oJLa5ajqabq6YY1McsPE"
+      },
+      "id": "ecad3531-81f2-4a40-a782-5d0b6248197e",
+      "timestamp": "2026-11-14T18:45:35.890000+00:00",
+      "type": "permission.completed",
+      "parentId": "9ca028e1-5087-4e7b-8ee3-f5fe7a5cdc53"
+    }
+  },
+  {
+    "at": 1794681935.902991,
+    "event": {
+      "data": {
+        "requestId": "3c423310-aac8-403c-9347-a05fdc1b9a48",
+        "sessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "toolCallId": "call_BbK1oJLa5ajqabq6YY1McsPE",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-1",
+          "target_id": "renamed-alias-1"
+        },
+        "hasHandler": true,
+        "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project"
+      },
+      "id": "85a518fd-d0c3-4ce9-8f49-ff468ca87199",
+      "timestamp": "2026-11-14T18:45:35.891000+00:00",
+      "type": "external_tool.requested",
+      "parentId": "ecad3531-81f2-4a40-a782-5d0b6248197e"
+    }
+  },
+  {
+    "at": 1794681935.9637837,
+    "event": {
+      "data": {
+        "requestId": "3c423310-aac8-403c-9347-a05fdc1b9a48"
+      },
+      "id": "a521dbbc-ece8-40de-ad16-ec52347daf94",
+      "timestamp": "2026-11-14T18:45:35.957000+00:00",
+      "type": "external_tool.completed",
+      "parentId": "85a518fd-d0c3-4ce9-8f49-ff468ca87199"
+    }
+  },
+  {
+    "at": 1794681935.990015,
+    "event": {
+      "data": {
+        "success": true,
+        "toolCallId": "call_BbK1oJLa5ajqabq6YY1McsPE",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "model": "gpt-6.1-sol",
+        "result": {
+          "content": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-2675d0ac-fc22-4d29-bd3d-befd1ea62ef8\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"cede1a1d280f39d52a529da031e44dc6678e4f50fd5b6a0297148e173c293174\",\"job_id\":\"m07-budget-1\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}",
+          "detailedContent": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-2675d0ac-fc22-4d29-bd3d-befd1ea62ef8\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"cede1a1d280f39d52a529da031e44dc6678e4f50fd5b6a0297148e173c293174\",\"job_id\":\"m07-budget-1\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}"
+        },
+        "rte": true,
+        "toolTelemetry": {
+          "metrics": {
+            "context_token_limit": 272000.0,
+            "context_current_tokens": 16611.0,
+            "large_output_threshold_bytes": 20480.0,
+            "result_token_count": 296
+          }
+        },
+        "turnId": "0"
+      },
+      "id": "6ec66879-f818-4591-9acc-babae1e9aa64",
+      "timestamp": "2026-11-14T18:45:35.974000+00:00",
+      "type": "tool.execution_complete",
+      "parentId": "ae3844e5-06ef-4eab-9e26-8fb76649d583"
+    }
+  },
+  {
+    "at": 1794681936.0018172,
+    "event": {
+      "data": {
+        "turnId": "0"
+      },
+      "id": "f3a4e48c-cc11-466e-96a1-1dad09ca9622",
+      "timestamp": "2026-11-14T18:45:35.978000+00:00",
+      "type": "assistant.turn_end",
+      "parentId": "6ec66879-f818-4591-9acc-babae1e9aa64"
+    }
+  },
+  {
+    "at": 1794681936.009882,
+    "event": {
+      "data": {
+        "turnId": "1",
+        "agentMode": "interactive",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051"
+      },
+      "id": "be136a00-43df-4d1d-b386-276676bb687d",
+      "timestamp": "2026-11-14T18:45:35.978000+00:00",
+      "type": "assistant.turn_start",
+      "parentId": "f3a4e48c-cc11-466e-96a1-1dad09ca9622"
+    }
+  },
+  {
+    "at": 1794681940.10055,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "accounting": {
+          "sequence": 2,
+          "sourceSessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+          "usageId": "hWAVr4ABidyJ+cmFiglbK4ULXGq1u+QQg6rpgTqejq/dCX2INAy72L0OnhgeT2XWviqw4Zbp8+BoZvppq7mtzAVJUXiKru3lfqRTgg3hmhn4pOf4T5rN1G//Fu5Vni0eA8wpeqrHA65MmbdW/zCn/Ke4fcdlF21T008IlBn+jvPLgkR/JtUwRzlhdmzhTa5AEAkwb6ApylTN1UM4csqqTGwXlxZcqSIMZ2EiNLl2BLn/0l1Lj4ApLN57W+7C1mbfE3wPQ8ZPQx57xKqSpS47cB9/Fk6Pt4ZyxOKCkQNMks4MdQwMjk/0iucw/dcmuNiXKivynDo99V/fEyVaI7udUI+K/OJyeedKxd+JhVDM7vKI4OI0sG3o0NA1yjV7R/896CLwoXYUJsqLhVwV+EKOuGWHrIY+4BvdDMza0M4ZRVEUvoCklLTnhITm+GFRe0rkVxSbj5lHJbdw4qK7i5yi5t5b0VH2JG+OHgK1++cEAFfhcAAKp1I="
+        },
+        "aiCreditsStatus": "complete",
+        "apiCallId": "hWAVr4ABidyJ+cmFiglbK4ULXGq1u+QQg6rpgTqejq/dCX2INAy72L0OnhgeT2XWviqw4Zbp8+BoZvppq7mtzAVJUXiKru3lfqRTgg3hmhn4pOf4T5rN1G//Fu5Vni0eA8wpeqrHA65MmbdW/zCn/Ke4fcdlF21T008IlBn+jvPLgkR/JtUwRzlhdmzhTa5AEAkwb6ApylTN1UM4csqqTGwXlxZcqSIMZ2EiNLl2BLn/0l1Lj4ApLN57W+7C1mbfE3wPQ8ZPQx57xKqSpS47cB9/Fk6Pt4ZyxOKCkQNMks4MdQwMjk/0iucw/dcmuNiXKivynDo99V/fEyVaI7udUI+K/OJyeedKxd+JhVDM7vKI4OI0sG3o0NA1yjV7R/896CLwoXYUJsqLhVwV+EKOuGWHrIY+4BvdDMza0M4ZRVEUvoCklLTnhITm+GFRe0rkVxSbj5lHJbdw4qK7i5yi5t5b0VH2JG+OHgK1++cEAFfhcAAKp1I=",
+        "apiEndpoint": "ws:/responses",
+        "availableToolCount": 42,
+        "cacheDetailsReported": true,
+        "cacheExpiresAt": "2026-11-14T19:15:35.985000+00:00",
+        "cachePolicyTtlSeconds": 1800,
+        "cacheReadTokens": 17429,
+        "cacheTtlSeconds": 1800,
+        "cacheWriteTokens": 840,
+        "contentFilterTriggered": false,
+        "copilotUsage": {
+          "totalNanoAiu": 600890000.0,
+          "tokenDetails": [
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 200000000000,
+              "tokenCount": 3,
+              "tokenType": "input",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 10000000000,
+              "tokenCount": 17429,
+              "tokenType": "cache_read",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 250000000000,
+              "tokenCount": 840,
+              "tokenType": "cache_write",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 1000000000000,
+              "tokenCount": 216,
+              "tokenType": "output",
+              "model": "gpt-6.1-sol"
+            }
+          ]
+        },
+        "cost": 1.0,
+        "customToolCallCount": 0,
+        "duration": 3556,
+        "finishReason": "tool_calls",
+        "frontierSource": "reported_writes",
+        "inferenceGateway": false,
+        "initiator": "agent",
+        "inputTokens": 18272,
+        "interactionType": "conversation-agent",
+        "interTokenLatencyMs": 5.965,
+        "isAuto": false,
+        "isByok": false,
+        "maxPromptTokens": 272000,
+        "modelDisplayName": "GPT-6.1 Sol",
+        "numToolCalls": 1,
+        "orphanToolCallCount": 0,
+        "outputTokens": 216,
+        "outputTtftMs": 2236.101,
+        "provider": {
+          "id": "copilot",
+          "kind": "copilot",
+          "label": "GitHub Copilot"
+        },
+        "providerCallId": "00000-15d57730-a9df-4e58-a4c8-ab8a900579d6",
+        "quotaSnapshots": {
+          "chat": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "completions": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "premium_interactions": {
+            "entitlementRequests": 1000000,
+            "isUnlimitedEntitlement": false,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": true,
+            "remainingPercentage": 45.9,
+            "usageAllowedWithExhaustedQuota": true,
+            "usedRequests": 541000,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          }
+        },
+        "reasoningEffort": "medium",
+        "reasoningSummary": "detailed",
+        "reasoningTokens": 0,
+        "requestBodyBytes": 71525,
+        "requestBodyEncoding": "identity",
+        "requestBodyWireBytes": 71525,
+        "rte": true,
+        "serviceRequestId": "2eb13c8d-d0e9-4666-961f-6ba52ba755c7",
+        "timeToFirstTokenMs": 2236.0989999999997,
+        "toolCounts": {
+          "submit_generation": 1
+        },
+        "toolTokenCount": 7833,
+        "transport": "websocket",
+        "unmatchedToolResultCount": 0,
+        "responseModel": "gpt-6.1-sol"
+      },
+      "id": "dc28242b-f90f-408e-9519-bacd8cfcf942",
+      "timestamp": "2026-11-14T18:45:39.541000+00:00",
+      "type": "assistant.usage",
+      "ephemeral": true,
+      "parentId": "be136a00-43df-4d1d-b386-276676bb687d"
+    }
+  },
+  {
+    "at": 1794681940.1254284,
+    "event": {
+      "data": {
+        "content": "",
+        "messageId": "5eb8a18f-05a1-4f5f-8881-3eb319914deb",
+        "apiCallId": "hWAVr4ABidyJ+cmFiglbK4ULXGq1u+QQg6rpgTqejq/dCX2INAy72L0OnhgeT2XWviqw4Zbp8+BoZvppq7mtzAVJUXiKru3lfqRTgg3hmhn4pOf4T5rN1G//Fu5Vni0eA8wpeqrHA65MmbdW/zCn/Ke4fcdlF21T008IlBn+jvPLgkR/JtUwRzlhdmzhTa5AEAkwb6ApylTN1UM4csqqTGwXlxZcqSIMZ2EiNLl2BLn/0l1Lj4ApLN57W+7C1mbfE3wPQ8ZPQx57xKqSpS47cB9/Fk6Pt4ZyxOKCkQNMks4MdQwMjk/0iucw/dcmuNiXKivynDo99V/fEyVaI7udUI+K/OJyeedKxd+JhVDM7vKI4OI0sG3o0NA1yjV7R/896CLwoXYUJsqLhVwV+EKOuGWHrIY+4BvdDMza0M4ZRVEUvoCklLTnhITm+GFRe0rkVxSbj5lHJbdw4qK7i5yi5t5b0VH2JG+OHgK1++cEAFfhcAAKp1I=",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "8770b1a0-d86b-47f9-bd43-b4390c450bd5",
+        "providerId": "copilot",
+        "rte": true,
+        "serverTools": {
+          "provider": "openai-responses",
+          "functionCallNamespaces": {
+            "call_sL9EcSVs3aJ2pS20FCZohje7": "submit_generation"
+          }
+        },
+        "toolRequests": [
+          {
+            "name": "submit_generation",
+            "toolCallId": "call_sL9EcSVs3aJ2pS20FCZohje7",
+            "arguments": {
+              "schema_version": "1.0",
+              "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+              "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+              "provider_id": "m07-budget-unprobed",
+              "capability": "image",
+              "workflow_artifact_id": "m07-budget-graph",
+              "prompt_artifact_id": "m07-budget-prompt",
+              "input_artifact_ids": [
+                "m07-budget-real-png-input"
+              ],
+              "seed": "42",
+              "model_ids": [
+                "sd_turbo-proscenium-fp16-1.safetensors"
+              ],
+              "settings": {
+                "target_slot": {
+                  "kind": "storyboard_frame",
+                  "storyboard_version": {
+                    "item_id": "m07-budget-storyboard",
+                    "version_id": "m07-budget-plan-v1"
+                  },
+                  "shot_id": "shot-mug",
+                  "frame_id": "frame-mug"
+                }
+              },
+              "job_id": "m07-budget-2",
+              "target_id": "renamed-alias-2"
+            },
+            "type": "function"
+          }
+        ],
+        "turnId": "1"
+      },
+      "id": "8988bbc7-c315-4d09-ad07-7d09ade1b4e1",
+      "timestamp": "2026-11-14T18:45:39.543000+00:00",
+      "type": "assistant.message",
+      "parentId": "be136a00-43df-4d1d-b386-276676bb687d"
+    }
+  },
+  {
+    "at": 1794681940.1319835,
+    "event": {
+      "data": {
+        "toolCallId": "call_sL9EcSVs3aJ2pS20FCZohje7",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-2",
+          "target_id": "renamed-alias-2"
+        },
+        "model": "gpt-6.1-sol",
+        "turnId": "1"
+      },
+      "id": "cfdbb657-705c-4574-9e91-6e27e84cb500",
+      "timestamp": "2026-11-14T18:45:39.543000+00:00",
+      "type": "tool.execution_start",
+      "parentId": "8988bbc7-c315-4d09-ad07-7d09ade1b4e1"
+    }
+  },
+  {
+    "at": 1794681940.1621187,
+    "event": {
+      "data": {
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-2",
+            "target_id": "renamed-alias-2"
+          },
+          "toolCallId": "call_sL9EcSVs3aJ2pS20FCZohje7"
+        },
+        "requestId": "8b10e080-d00e-45c1-b2c9-81d466cd633a",
+        "agentMode": "interactive",
+        "assistedApprovalAssessment": {
+          "reason": "inactive",
+          "status": "not-run"
+        },
+        "ownerSessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "permissionMode": "manual",
+        "promptRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-2",
+            "target_id": "renamed-alias-2"
+          },
+          "toolCallId": "call_sL9EcSVs3aJ2pS20FCZohje7"
+        }
+      },
+      "id": "ba1712c3-10a9-4ea4-ac83-f9a53f2e4c47",
+      "timestamp": "2026-11-14T18:45:40.145000+00:00",
+      "type": "permission.requested",
+      "parentId": "c8f3fea0-b874-4564-bb71-5795cf66fc90"
+    }
+  },
+  {
+    "at": 1794681940.1860254,
+    "event": {
+      "data": {
+        "requestId": "8b10e080-d00e-45c1-b2c9-81d466cd633a",
+        "result": {
+          "kind": "approved"
+        },
+        "toolCallId": "call_sL9EcSVs3aJ2pS20FCZohje7"
+      },
+      "id": "c72e3aae-20de-4284-a1af-478a830f6806",
+      "timestamp": "2026-11-14T18:45:40.179000+00:00",
+      "type": "permission.completed",
+      "parentId": "ba1712c3-10a9-4ea4-ac83-f9a53f2e4c47"
+    }
+  },
+  {
+    "at": 1794681940.1906502,
+    "event": {
+      "data": {
+        "requestId": "80d39b00-6cc0-4b69-bbca-6a3fdd5ccc8e",
+        "sessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "toolCallId": "call_sL9EcSVs3aJ2pS20FCZohje7",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-2",
+          "target_id": "renamed-alias-2"
+        },
+        "hasHandler": true,
+        "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project"
+      },
+      "id": "dfa9b5fe-c65d-492d-8178-800ef0ea4852",
+      "timestamp": "2026-11-14T18:45:40.181000+00:00",
+      "type": "external_tool.requested",
+      "parentId": "c72e3aae-20de-4284-a1af-478a830f6806"
+    }
+  },
+  {
+    "at": 1794681940.2487872,
+    "event": {
+      "data": {
+        "requestId": "80d39b00-6cc0-4b69-bbca-6a3fdd5ccc8e"
+      },
+      "id": "9f8e3e52-1719-4a74-8085-d54218c97060",
+      "timestamp": "2026-11-14T18:45:40.242000+00:00",
+      "type": "external_tool.completed",
+      "parentId": "dfa9b5fe-c65d-492d-8178-800ef0ea4852"
+    }
+  },
+  {
+    "at": 1794681940.273548,
+    "event": {
+      "data": {
+        "success": true,
+        "toolCallId": "call_sL9EcSVs3aJ2pS20FCZohje7",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "model": "gpt-6.1-sol",
+        "result": {
+          "content": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-3c0ef09b-16b7-456f-86b3-efca8160c568\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"ae704ac4ee442ab0e7b4e020ccc5a4db4f8d2eb45d69ebb422abed5ef32701d7\",\"job_id\":\"m07-budget-2\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}",
+          "detailedContent": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-3c0ef09b-16b7-456f-86b3-efca8160c568\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"ae704ac4ee442ab0e7b4e020ccc5a4db4f8d2eb45d69ebb422abed5ef32701d7\",\"job_id\":\"m07-budget-2\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}"
+        },
+        "rte": true,
+        "toolTelemetry": {
+          "metrics": {
+            "context_token_limit": 272000.0,
+            "context_current_tokens": 17487.0,
+            "large_output_threshold_bytes": 20480.0,
+            "result_token_count": 299
+          }
+        },
+        "turnId": "1"
+      },
+      "id": "d994e03e-5b37-4041-b6ef-6f596a3f8e0e",
+      "timestamp": "2026-11-14T18:45:40.259000+00:00",
+      "type": "tool.execution_complete",
+      "parentId": "57b7e59c-c676-4dc4-96a4-b96a12dc1600"
+    }
+  },
+  {
+    "at": 1794681940.2892208,
+    "event": {
+      "data": {
+        "turnId": "1"
+      },
+      "id": "35896ae5-113a-44e7-bc11-77a8a54c4f53",
+      "timestamp": "2026-11-14T18:45:40.264000+00:00",
+      "type": "assistant.turn_end",
+      "parentId": "d994e03e-5b37-4041-b6ef-6f596a3f8e0e"
+    }
+  },
+  {
+    "at": 1794681940.2979727,
+    "event": {
+      "data": {
+        "turnId": "2",
+        "agentMode": "interactive",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051"
+      },
+      "id": "2ccc7c95-0f1c-40b2-898e-66c5e52c0e5c",
+      "timestamp": "2026-11-14T18:45:40.264000+00:00",
+      "type": "assistant.turn_start",
+      "parentId": "35896ae5-113a-44e7-bc11-77a8a54c4f53"
+    }
+  },
+  {
+    "at": 1794681950.8978934,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "accounting": {
+          "sequence": 3,
+          "sourceSessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+          "usageId": "eI3MQqKJ8BfOaEHX5Ij6Ywxvs4OSyrh37RwqQbeuvOu2nEEqXmCflX0+ISvb2zrzQEkzk+qj8cgz1k91LTbsfiEybrXBQeUxFLohtuxuSpYLgXh13ydWPvna+2jm6iYrL6XSKhcoTDCd+mGdM+45Ks6fIs3v6jr6hzQkhLaQOUl+XgjHJGSjUT0M5aiORpiAydpEIuxQGkeZJWQsqHaVHuuMSAP/Imy8L2UMOwrPPyEQcHSmeNVf2DUMJSrHWTDa1sW72YZZDEkgSwLoSICDIr3IPMJDeDFRvHMTS1CYG3MNuYvyZYtT2ifNPTl5rMB0irNQvQ4dbaXR54EEdzjU7rv+L0gzeNeiBQe3VgQWoziFuF436Z32N8SjrT9jTw/YkyVSDcj4YS8gomOaWDIfgBYzc49k6er8D+14nS1SWGa7o1ej9DVSGYdvhpk2Xi+MvIXJ237G1HbIV34IwG+tC4YDgOAwpzfAUnC9CfO3pFXdEt3+pgw="
+        },
+        "aiCreditsStatus": "complete",
+        "apiCallId": "eI3MQqKJ8BfOaEHX5Ij6Ywxvs4OSyrh37RwqQbeuvOu2nEEqXmCflX0+ISvb2zrzQEkzk+qj8cgz1k91LTbsfiEybrXBQeUxFLohtuxuSpYLgXh13ydWPvna+2jm6iYrL6XSKhcoTDCd+mGdM+45Ks6fIs3v6jr6hzQkhLaQOUl+XgjHJGSjUT0M5aiORpiAydpEIuxQGkeZJWQsqHaVHuuMSAP/Imy8L2UMOwrPPyEQcHSmeNVf2DUMJSrHWTDa1sW72YZZDEkgSwLoSICDIr3IPMJDeDFRvHMTS1CYG3MNuYvyZYtT2ifNPTl5rMB0irNQvQ4dbaXR54EEdzjU7rv+L0gzeNeiBQe3VgQWoziFuF436Z32N8SjrT9jTw/YkyVSDcj4YS8gomOaWDIfgBYzc49k6er8D+14nS1SWGa7o1ej9DVSGYdvhpk2Xi+MvIXJ237G1HbIV34IwG+tC4YDgOAwpzfAUnC9CfO3pFXdEt3+pgw=",
+        "apiEndpoint": "ws:/responses",
+        "availableToolCount": 42,
+        "cacheDetailsReported": true,
+        "cacheExpiresAt": "2026-11-14T19:15:40.271000+00:00",
+        "cachePolicyTtlSeconds": 1800,
+        "cacheReadTokens": 18269,
+        "cacheTtlSeconds": 1800,
+        "cacheWriteTokens": 527,
+        "contentFilterTriggered": false,
+        "copilotUsage": {
+          "totalNanoAiu": 1095040000.0,
+          "tokenDetails": [
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 200000000000,
+              "tokenCount": 3,
+              "tokenType": "input",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 10000000000,
+              "tokenCount": 18269,
+              "tokenType": "cache_read",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 250000000000,
+              "tokenCount": 527,
+              "tokenType": "cache_write",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 1000000000000,
+              "tokenCount": 780,
+              "tokenType": "output",
+              "model": "gpt-6.1-sol"
+            }
+          ]
+        },
+        "cost": 1.0,
+        "customToolCallCount": 0,
+        "duration": 8640,
+        "finishReason": "tool_calls",
+        "frontierSource": "reported_writes",
+        "inferenceGateway": false,
+        "initiator": "agent",
+        "inputTokens": 18799,
+        "interactionType": "conversation-agent",
+        "interTokenLatencyMs": 8.191,
+        "isAuto": false,
+        "isByok": false,
+        "maxPromptTokens": 272000,
+        "modelDisplayName": "GPT-6.1 Sol",
+        "numToolCalls": 1,
+        "orphanToolCallCount": 0,
+        "outputTokens": 780,
+        "outputTtftMs": 2215.576,
+        "provider": {
+          "id": "copilot",
+          "kind": "copilot",
+          "label": "GitHub Copilot"
+        },
+        "providerCallId": "00000-15d57730-a9df-4e58-a4c8-ab8a900579d6",
+        "quotaSnapshots": {
+          "chat": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "completions": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "premium_interactions": {
+            "entitlementRequests": 1000000,
+            "isUnlimitedEntitlement": false,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": true,
+            "remainingPercentage": 45.9,
+            "usageAllowedWithExhaustedQuota": true,
+            "usedRequests": 541000,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          }
+        },
+        "reasoningEffort": "medium",
+        "reasoningSummary": "detailed",
+        "reasoningTokens": 0,
+        "requestBodyBytes": 70039,
+        "requestBodyEncoding": "identity",
+        "requestBodyWireBytes": 70039,
+        "rte": true,
+        "serviceRequestId": "6142305f-6630-4f93-840c-c6ff500c02d0",
+        "timeToFirstTokenMs": 2215.575,
+        "toolCounts": {
+          "task": 1
+        },
+        "toolTokenCount": 7833,
+        "transport": "websocket",
+        "unmatchedToolResultCount": 0,
+        "responseModel": "gpt-6.1-sol"
+      },
+      "id": "8d01c24f-faae-4075-87e6-668a6747aaed",
+      "timestamp": "2026-11-14T18:45:48.911000+00:00",
+      "type": "assistant.usage",
+      "ephemeral": true,
+      "parentId": "2ccc7c95-0f1c-40b2-898e-66c5e52c0e5c"
+    }
+  },
+  {
+    "at": 1794681950.9225638,
+    "event": {
+      "data": {
+        "content": "",
+        "messageId": "a5151cb3-3c71-4a67-a90b-bf1ff8902fa6",
+        "apiCallId": "eI3MQqKJ8BfOaEHX5Ij6Ywxvs4OSyrh37RwqQbeuvOu2nEEqXmCflX0+ISvb2zrzQEkzk+qj8cgz1k91LTbsfiEybrXBQeUxFLohtuxuSpYLgXh13ydWPvna+2jm6iYrL6XSKhcoTDCd+mGdM+45Ks6fIs3v6jr6hzQkhLaQOUl+XgjHJGSjUT0M5aiORpiAydpEIuxQGkeZJWQsqHaVHuuMSAP/Imy8L2UMOwrPPyEQcHSmeNVf2DUMJSrHWTDa1sW72YZZDEkgSwLoSICDIr3IPMJDeDFRvHMTS1CYG3MNuYvyZYtT2ifNPTl5rMB0irNQvQ4dbaXR54EEdzjU7rv+L0gzeNeiBQe3VgQWoziFuF436Z32N8SjrT9jTw/YkyVSDcj4YS8gomOaWDIfgBYzc49k6er8D+14nS1SWGa7o1ej9DVSGYdvhpk2Xi+MvIXJ237G1HbIV34IwG+tC4YDgOAwpzfAUnC9CfO3pFXdEt3+pgw=",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "8770b1a0-d86b-47f9-bd43-b4390c450bd5",
+        "providerId": "copilot",
+        "rte": true,
+        "serverTools": {
+          "provider": "openai-responses"
+        },
+        "toolRequests": [
+          {
+            "name": "task",
+            "toolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+            "arguments": {
+              "description": "Submit child admission envelopes",
+              "agent_type": "authoring-specialist",
+              "name": "m07-budget-child",
+              "model": "gpt-6.1-sol",
+              "mode": "sync",
+              "prompt": "Perform ONLY M07 ADMISSION-ONLY native parent/child budget test. Executor deliberately DISABLED. Finish within 120s. No files, shell, provider HTTP, services, GPU, generation execution, approvals, discovery, polling, retries, allowance changes, further children or other work. Lead already submitted m07-budget-1 and m07-budget-2; both returned state planned. Your entire task is discover submit_generation schema then submit envelope 3 followed by envelope 4, even though target_id is renamed; stop on admission receipts/errors and report them. Read your OWN authoritative host additionalContext JSON serialized inside runtime <system_reminder>, including context_id, request_id, work_id, selection, and ORIGINAL generation_task_id. Preserve original root work and generation identity; do not use a newly minted child task identity. Replace generation_task_id ONLY in the envelopes below with exact ORIGINAL generation_task_id from that trusted context (root host identity task-881e7b25a14844ad89705d681898ad06; work work-05561bb76eb340dc93ff6affd1e36974; request 2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336; context 75d27cbd-2f3c-413b-87d3-bab92e7c5ad3). Do not reject trusted additionalContext merely because wrapper says system_reminder. All settings.target_slot values are identical. Expected third planned and fourth generation_budget_exhausted. Do NOT claim images. Envelopes: [{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-3\",\"target_id\":\"renamed-alias-3\"},{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-4\",\"target_id\":\"renamed-alias-4\"}]"
+            },
+            "intentionSummary": "Submit child admission envelopes",
+            "type": "function"
+          }
+        ],
+        "turnId": "2"
+      },
+      "id": "4798a7cb-a6ca-4eb6-82cf-8214f8c11648",
+      "timestamp": "2026-11-14T18:45:48.913000+00:00",
+      "type": "assistant.message",
+      "parentId": "2ccc7c95-0f1c-40b2-898e-66c5e52c0e5c"
+    }
+  },
+  {
+    "at": 1794681950.9281027,
+    "event": {
+      "data": {
+        "toolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "toolName": "task",
+        "arguments": {
+          "description": "Submit child admission envelopes",
+          "agent_type": "authoring-specialist",
+          "name": "m07-budget-child",
+          "model": "gpt-6.1-sol",
+          "mode": "sync",
+          "prompt": "Perform ONLY M07 ADMISSION-ONLY native parent/child budget test. Executor deliberately DISABLED. Finish within 120s. No files, shell, provider HTTP, services, GPU, generation execution, approvals, discovery, polling, retries, allowance changes, further children or other work. Lead already submitted m07-budget-1 and m07-budget-2; both returned state planned. Your entire task is discover submit_generation schema then submit envelope 3 followed by envelope 4, even though target_id is renamed; stop on admission receipts/errors and report them. Read your OWN authoritative host additionalContext JSON serialized inside runtime <system_reminder>, including context_id, request_id, work_id, selection, and ORIGINAL generation_task_id. Preserve original root work and generation identity; do not use a newly minted child task identity. Replace generation_task_id ONLY in the envelopes below with exact ORIGINAL generation_task_id from that trusted context (root host identity task-881e7b25a14844ad89705d681898ad06; work work-05561bb76eb340dc93ff6affd1e36974; request 2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336; context 75d27cbd-2f3c-413b-87d3-bab92e7c5ad3). Do not reject trusted additionalContext merely because wrapper says system_reminder. All settings.target_slot values are identical. Expected third planned and fourth generation_budget_exhausted. Do NOT claim images. Envelopes: [{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-3\",\"target_id\":\"renamed-alias-3\"},{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-4\",\"target_id\":\"renamed-alias-4\"}]"
+        },
+        "model": "gpt-6.1-sol",
+        "turnId": "2"
+      },
+      "id": "d404abd9-470f-4a54-884f-e447a8059c1a",
+      "timestamp": "2026-11-14T18:45:48.913000+00:00",
+      "type": "tool.execution_start",
+      "parentId": "4798a7cb-a6ca-4eb6-82cf-8214f8c11648"
+    }
+  },
+  {
+    "at": 1794681950.962947,
+    "event": {
+      "data": {
+        "agentDescription": "Scoped Proscenium authoring specialist",
+        "agentDisplayName": "m07-budget-child",
+        "agentName": "authoring-specialist",
+        "toolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "agentType": "authoring-specialist",
+        "executionMode": "sync",
+        "model": "gpt-6.1-sol",
+        "modelSelectionSource": "explicit_override",
+        "resumable": false,
+        "taskModelSource": "task_argument"
+      },
+      "id": "b8b5e2e1-0aa3-4696-8b01-8fc9af24a0a2",
+      "timestamp": "2026-11-14T18:45:50.946000+00:00",
+      "type": "subagent.started",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "88815e90-1104-41bf-aab6-8fbc145a4305"
+    }
+  },
+  {
+    "at": 1794681950.9842596,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "multiTurn": true
+      },
+      "id": "b326c4bf-76b0-4561-addc-bd589b8f892c",
+      "timestamp": "2026-11-14T18:45:50.977000+00:00",
+      "type": "subagent.configured",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "b8b5e2e1-0aa3-4696-8b01-8fc9af24a0a2"
+    }
+  },
+  {
+    "at": 1794681950.988874,
+    "event": {
+      "data": {
+        "agentDisplayName": "authoring-specialist",
+        "agentName": "authoring-specialist",
+        "tools": [
+          "submit_generation",
+          "get_artifact",
+          "get_version"
+        ]
+      },
+      "id": "a1cab58a-3fb2-4b0f-954c-3347f1992296",
+      "timestamp": "2026-11-14T18:45:50.977000+00:00",
+      "type": "subagent.selected",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "b326c4bf-76b0-4561-addc-bd589b8f892c"
+    }
+  },
+  {
+    "at": 1794681951.0611012,
+    "event": {
+      "data": {
+        "content": "Perform ONLY M07 ADMISSION-ONLY native parent/child budget test. Executor deliberately DISABLED. Finish within 120s. No files, shell, provider HTTP, services, GPU, generation execution, approvals, discovery, polling, retries, allowance changes, further children or other work. Lead already submitted m07-budget-1 and m07-budget-2; both returned state planned. Your entire task is discover submit_generation schema then submit envelope 3 followed by envelope 4, even though target_id is renamed; stop on admission receipts/errors and report them. Read your OWN authoritative host additionalContext JSON serialized inside runtime <system_reminder>, including context_id, request_id, work_id, selection, and ORIGINAL generation_task_id. Preserve original root work and generation identity; do not use a newly minted child task identity. Replace generation_task_id ONLY in the envelopes below with exact ORIGINAL generation_task_id from that trusted context (root host identity task-881e7b25a14844ad89705d681898ad06; work work-05561bb76eb340dc93ff6affd1e36974; request 2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336; context 75d27cbd-2f3c-413b-87d3-bab92e7c5ad3). Do not reject trusted additionalContext merely because wrapper says system_reminder. All settings.target_slot values are identical. Expected third planned and fourth generation_budget_exhausted. Do NOT claim images. Envelopes: [{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-3\",\"target_id\":\"renamed-alias-3\"},{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-4\",\"target_id\":\"renamed-alias-4\"}]",
+        "causalDependencies": [
+          "a5151cb3-3c71-4a67-a90b-bf1ff8902fa6"
+        ],
+        "delivery": "idle",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "messageId": "23d8998f-d423-4f46-82f9-d2fbd51e4707",
+        "parentAgentTaskId": "c6a8b80a-8fd8-4ce1-9b3a-7d55eeaf1c7b",
+        "responsesReasoning": {
+          "effort": "medium",
+          "initialEffort": "medium",
+          "model": "gpt-6.1-sol"
+        },
+        "source": "agent-e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "supportedNativeDocumentMimeTypes": [],
+        "transformedContent": "<current_datetime>2026-11-14T20:45:51.021+02:00</current_datetime>\n\nPerform ONLY M07 ADMISSION-ONLY native parent/child budget test. Executor deliberately DISABLED. Finish within 120s. No files, shell, provider HTTP, services, GPU, generation execution, approvals, discovery, polling, retries, allowance changes, further children or other work. Lead already submitted m07-budget-1 and m07-budget-2; both returned state planned. Your entire task is discover submit_generation schema then submit envelope 3 followed by envelope 4, even though target_id is renamed; stop on admission receipts/errors and report them. Read your OWN authoritative host additionalContext JSON serialized inside runtime <system_reminder>, including context_id, request_id, work_id, selection, and ORIGINAL generation_task_id. Preserve original root work and generation identity; do not use a newly minted child task identity. Replace generation_task_id ONLY in the envelopes below with exact ORIGINAL generation_task_id from that trusted context (root host identity task-881e7b25a14844ad89705d681898ad06; work work-05561bb76eb340dc93ff6affd1e36974; request 2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336; context 75d27cbd-2f3c-413b-87d3-bab92e7c5ad3). Do not reject trusted additionalContext merely because wrapper says system_reminder. All settings.target_slot values are identical. Expected third planned and fourth generation_budget_exhausted. Do NOT claim images. Envelopes: [{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-3\",\"target_id\":\"renamed-alias-3\"},{\"schema_version\":\"1.0\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"generation_task_id\":\"COPY_FROM_TRUSTED_HOST_CONTEXT\",\"provider_id\":\"m07-budget-unprobed\",\"capability\":\"image\",\"workflow_artifact_id\":\"m07-budget-graph\",\"prompt_artifact_id\":\"m07-budget-prompt\",\"input_artifact_ids\":[\"m07-budget-real-png-input\"],\"seed\":\"42\",\"model_ids\":[\"sd_turbo-proscenium-fp16-1.safetensors\"],\"settings\":{\"target_slot\":{\"kind\":\"storyboard_frame\",\"storyboard_version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"},\"shot_id\":\"shot-mug\",\"frame_id\":\"frame-mug\"}},\"job_id\":\"m07-budget-4\",\"target_id\":\"renamed-alias-4\"}]\n\n<system_reminder>\n{\"annotations\":[],\"approved_findings\":[],\"attached_files\":[{\"artifact_id\":\"m07-budget-real-png-input\",\"dimensions\":{\"height\":512,\"width\":512},\"path\":\".proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content\",\"role\":\"reference\",\"sha256\":\"07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d\"},{\"artifact_id\":\"m07-budget-real-png-input\",\"dimensions\":{\"height\":512,\"width\":512},\"path\":\".proscenium/artefacts/sha256/07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d/content\",\"role\":\"concept\",\"sha256\":\"07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d\"}],\"context_id\":\"75d27cbd-2f3c-413b-87d3-bab92e7c5ad3\",\"delivery_mode\":\"queue\",\"generation_task_id\":\"task-881e7b25a14844ad89705d681898ad06\",\"project\":{\"path\":\"/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project\",\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\"},\"request_id\":\"2c3ee8b1-9acb-4a4a-bf85-f11de9cc8336\",\"schema_version\":\"1.0\",\"selection\":{\"camera\":null,\"item_id\":\"m07-budget-storyboard\",\"range\":null,\"selected_objects\":[],\"target\":{\"artifact_id\":\"m07-budget-real-png-input\",\"dimensions\":{\"height\":512,\"width\":512},\"displayed_sha256\":\"07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d\",\"item_id\":\"m07-budget-storyboard\",\"media_artifact_id\":null,\"origin\":\"concept\",\"render_job_id\":null,\"shot_id\":\"shot-mug\",\"source_frame\":null,\"version_id\":\"m07-budget-plan-v1\"},\"version_id\":\"m07-budget-plan-v1\",\"view_mode\":\"keyframes\"},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}\n</system_reminder>",
+        "turnId": "0",
+        "hasSubmittedTask": true
+      },
+      "id": "99d3b3ca-7c26-49fc-a4c9-d661b538e89a",
+      "timestamp": "2026-11-14T18:45:51.045000+00:00",
+      "type": "user.message",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "8defee22-5e66-4f7d-82a6-bfcbc260715f"
+    }
+  },
+  {
+    "at": 1794681951.0713418,
+    "event": {
+      "data": {
+        "turnId": "0",
+        "agentMode": "interactive",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ"
+      },
+      "id": "2927df03-17e4-459d-9b4b-7dcaee424a75",
+      "timestamp": "2026-11-14T18:45:51.047000+00:00",
+      "type": "assistant.turn_start",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "c9015e4c-3f40-44f7-b142-39aee7bb6e34"
+    }
+  },
+  {
+    "at": 1794681955.3040078,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "accounting": {
+          "sequence": 1,
+          "sourceSessionId": "f6121274-3e3c-42d9-97fc-90649dab5496",
+          "usageId": "R5oCJCeoxMi5MtbStNwvQLc82WcGNwi8qwBNesv2f9PAANr/vSM5ZmcobAK38Uf9inZ3jzRuQF+ARFSzpdrqL6IsNhRsTVfaklJp4M2Hn2v3HKgvtG4oIOmHzGxyIGnQ/tAeOc7NzzXto/awJ34mRwyDW898raq317CGwBe9+lgyYXxqNkrauZP/jTsAakU7VMDuKDoSXitnO50dUOaTdIlDC1FAfKSo03PKMNOiv2lWUDJKg4EUXOeA+z++5cBI6wnJUsiD5A3XYkjKjeO7f9jJMZgTvauvKv0TOqCbsHh4rNDTNnHwB9OmqaxlLUPj9vMmRPjHTNOgb714XitoWN7qkAZGwTOnxlw0Aw9dbCo7u5CF+LEMrRboL1IEDBBanaR75Dm7hBrHYBHkloABz8N6RywH7+tlzGa6zeuoTWwLm1CygL1+yq01/Qf8u0WhtdJDGAVK8UOLrYYR7WqUqj2PBNPhzOirezinKqptXHypymoQNN4="
+        },
+        "aiCreditsStatus": "complete",
+        "apiCallId": "R5oCJCeoxMi5MtbStNwvQLc82WcGNwi8qwBNesv2f9PAANr/vSM5ZmcobAK38Uf9inZ3jzRuQF+ARFSzpdrqL6IsNhRsTVfaklJp4M2Hn2v3HKgvtG4oIOmHzGxyIGnQ/tAeOc7NzzXto/awJ34mRwyDW898raq317CGwBe9+lgyYXxqNkrauZP/jTsAakU7VMDuKDoSXitnO50dUOaTdIlDC1FAfKSo03PKMNOiv2lWUDJKg4EUXOeA+z++5cBI6wnJUsiD5A3XYkjKjeO7f9jJMZgTvauvKv0TOqCbsHh4rNDTNnHwB9OmqaxlLUPj9vMmRPjHTNOgb714XitoWN7qkAZGwTOnxlw0Aw9dbCo7u5CF+LEMrRboL1IEDBBanaR75Dm7hBrHYBHkloABz8N6RywH7+tlzGa6zeuoTWwLm1CygL1+yq01/Qf8u0WhtdJDGAVK8UOLrYYR7WqUqj2PBNPhzOirezinKqptXHypymoQNN4=",
+        "apiEndpoint": "ws:/responses",
+        "availableToolCount": 3,
+        "cacheDetailsReported": true,
+        "cachePolicyTtlSeconds": 1800,
+        "cacheReadTokens": 0,
+        "cacheTtlSeconds": 1800,
+        "cacheWriteTokens": 2996,
+        "contentFilterTriggered": false,
+        "copilotUsage": {
+          "totalNanoAiu": 964600000.0,
+          "tokenDetails": [
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 200000000000,
+              "tokenCount": 3,
+              "tokenType": "input",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 10000000000,
+              "tokenCount": 0,
+              "tokenType": "cache_read",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 250000000000,
+              "tokenCount": 2996,
+              "tokenType": "cache_write",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 1000000000000,
+              "tokenCount": 215,
+              "tokenType": "output",
+              "model": "gpt-6.1-sol"
+            }
+          ]
+        },
+        "cost": 1.0,
+        "customToolCallCount": 0,
+        "duration": 2698,
+        "finishReason": "tool_calls",
+        "frontierSource": "reported_writes",
+        "inferenceGateway": false,
+        "initiator": "sub-agent",
+        "inputTokens": 2999,
+        "interactionType": "conversation-subagent",
+        "interTokenLatencyMs": 6.0280000000000005,
+        "isAuto": false,
+        "isByok": false,
+        "maxPromptTokens": 272000,
+        "modelDisplayName": "GPT-6.1 Sol",
+        "numToolCalls": 1,
+        "orphanToolCallCount": 0,
+        "outputTokens": 215,
+        "outputTtftMs": 1410.607,
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "provider": {
+          "id": "copilot",
+          "kind": "copilot",
+          "label": "GitHub Copilot"
+        },
+        "providerCallId": "00000-78fefd85-9252-4bca-862f-c87f35f525fb",
+        "quotaSnapshots": {
+          "chat": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "completions": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "premium_interactions": {
+            "entitlementRequests": 1000000,
+            "isUnlimitedEntitlement": false,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": true,
+            "remainingPercentage": 45.9,
+            "usageAllowedWithExhaustedQuota": true,
+            "usedRequests": 541000,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          }
+        },
+        "reasoningEffort": "medium",
+        "reasoningSummary": "detailed",
+        "reasoningTokens": 0,
+        "requestBodyBytes": 13628,
+        "requestBodyEncoding": "identity",
+        "requestBodyWireBytes": 13628,
+        "rte": true,
+        "serviceRequestId": "77e3e2d5-78d0-488e-8d5a-1cea6c59e039",
+        "timeToFirstTokenMs": 1410.606,
+        "toolCounts": {
+          "submit_generation": 1
+        },
+        "toolTokenCount": 535,
+        "transport": "websocket",
+        "unmatchedToolResultCount": 0,
+        "responseModel": "gpt-6.1-sol"
+      },
+      "id": "250e93d3-808c-4df3-ae8e-0534c7921989",
+      "timestamp": "2026-11-14T18:45:54.581000+00:00",
+      "type": "assistant.usage",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "ephemeral": true,
+      "parentId": "2927df03-17e4-459d-9b4b-7dcaee424a75"
+    }
+  },
+  {
+    "at": 1794681955.3165371,
+    "event": {
+      "data": {
+        "content": "",
+        "messageId": "006ed329-853c-4f92-9bdf-705f0c0dc3ef",
+        "apiCallId": "R5oCJCeoxMi5MtbStNwvQLc82WcGNwi8qwBNesv2f9PAANr/vSM5ZmcobAK38Uf9inZ3jzRuQF+ARFSzpdrqL6IsNhRsTVfaklJp4M2Hn2v3HKgvtG4oIOmHzGxyIGnQ/tAeOc7NzzXto/awJ34mRwyDW898raq317CGwBe9+lgyYXxqNkrauZP/jTsAakU7VMDuKDoSXitnO50dUOaTdIlDC1FAfKSo03PKMNOiv2lWUDJKg4EUXOeA+z++5cBI6wnJUsiD5A3XYkjKjeO7f9jJMZgTvauvKv0TOqCbsHh4rNDTNnHwB9OmqaxlLUPj9vMmRPjHTNOgb714XitoWN7qkAZGwTOnxlw0Aw9dbCo7u5CF+LEMrRboL1IEDBBanaR75Dm7hBrHYBHkloABz8N6RywH7+tlzGa6zeuoTWwLm1CygL1+yq01/Qf8u0WhtdJDGAVK8UOLrYYR7WqUqj2PBNPhzOirezinKqptXHypymoQNN4=",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "23d8998f-d423-4f46-82f9-d2fbd51e4707",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "providerId": "copilot",
+        "rte": true,
+        "serverTools": {
+          "provider": "openai-responses"
+        },
+        "toolRequests": [
+          {
+            "name": "submit_generation",
+            "toolCallId": "call_JN0pGSgkoSM7fuGb3wOFQxUU",
+            "arguments": {
+              "schema_version": "1.0",
+              "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+              "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+              "provider_id": "m07-budget-unprobed",
+              "capability": "image",
+              "workflow_artifact_id": "m07-budget-graph",
+              "prompt_artifact_id": "m07-budget-prompt",
+              "input_artifact_ids": [
+                "m07-budget-real-png-input"
+              ],
+              "seed": "42",
+              "model_ids": [
+                "sd_turbo-proscenium-fp16-1.safetensors"
+              ],
+              "settings": {
+                "target_slot": {
+                  "kind": "storyboard_frame",
+                  "storyboard_version": {
+                    "item_id": "m07-budget-storyboard",
+                    "version_id": "m07-budget-plan-v1"
+                  },
+                  "shot_id": "shot-mug",
+                  "frame_id": "frame-mug"
+                }
+              },
+              "job_id": "m07-budget-3",
+              "target_id": "renamed-alias-3"
+            },
+            "type": "function"
+          }
+        ],
+        "turnId": "0"
+      },
+      "id": "cf518343-d014-4ee3-b237-7a5ca9e60303",
+      "timestamp": "2026-11-14T18:45:54.583000+00:00",
+      "type": "assistant.message",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "2927df03-17e4-459d-9b4b-7dcaee424a75"
+    }
+  },
+  {
+    "at": 1794681955.3213036,
+    "event": {
+      "data": {
+        "toolCallId": "call_JN0pGSgkoSM7fuGb3wOFQxUU",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-3",
+          "target_id": "renamed-alias-3"
+        },
+        "model": "gpt-6.1-sol",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "turnId": "0"
+      },
+      "id": "e8ce0562-7597-4e52-8812-9d1fd42d8371",
+      "timestamp": "2026-11-14T18:45:54.584000+00:00",
+      "type": "tool.execution_start",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "cf518343-d014-4ee3-b237-7a5ca9e60303"
+    }
+  },
+  {
+    "at": 1794681955.3480785,
+    "event": {
+      "data": {
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-3",
+            "target_id": "renamed-alias-3"
+          },
+          "toolCallId": "call_JN0pGSgkoSM7fuGb3wOFQxUU"
+        },
+        "requestId": "c528a54e-7e0a-4cb1-b88c-1f38c79e7c0c",
+        "agentMode": "interactive",
+        "assistedApprovalAssessment": {
+          "reason": "inactive",
+          "status": "not-run"
+        },
+        "ownerSessionId": "f6121274-3e3c-42d9-97fc-90649dab5496",
+        "permissionMode": "manual",
+        "promptRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-3",
+            "target_id": "renamed-alias-3"
+          },
+          "toolCallId": "call_JN0pGSgkoSM7fuGb3wOFQxUU"
+        }
+      },
+      "id": "e9efc132-d025-450a-958e-4fe2d82d413e",
+      "timestamp": "2026-11-14T18:45:55.337000+00:00",
+      "type": "permission.requested",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "59080d59-6847-4393-9e57-2f1b8e95fa42"
+    }
+  },
+  {
+    "at": 1794681955.3635721,
+    "event": {
+      "data": {
+        "requestId": "c528a54e-7e0a-4cb1-b88c-1f38c79e7c0c",
+        "result": {
+          "kind": "approved"
+        },
+        "toolCallId": "call_JN0pGSgkoSM7fuGb3wOFQxUU"
+      },
+      "id": "00d19542-0f81-4ee4-a7fd-af0dde29f12c",
+      "timestamp": "2026-11-14T18:45:55.358000+00:00",
+      "type": "permission.completed",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "e9efc132-d025-450a-958e-4fe2d82d413e"
+    }
+  },
+  {
+    "at": 1794681955.3671277,
+    "event": {
+      "data": {
+        "requestId": "cf46f595-eda2-4f31-bae2-29988ef9cf5a",
+        "sessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "toolCallId": "call_JN0pGSgkoSM7fuGb3wOFQxUU",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-3",
+          "target_id": "renamed-alias-3"
+        },
+        "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project"
+      },
+      "id": "f2266445-10fe-48c1-92fb-c91b1e3a6720",
+      "timestamp": "2026-11-14T18:45:55.360000+00:00",
+      "type": "external_tool.requested",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "00d19542-0f81-4ee4-a7fd-af0dde29f12c"
+    }
+  },
+  {
+    "at": 1794681955.4189818,
+    "event": {
+      "data": {
+        "requestId": "cf46f595-eda2-4f31-bae2-29988ef9cf5a"
+      },
+      "id": "db8d2424-a84a-444f-83c1-fc15e6111b8d",
+      "timestamp": "2026-11-14T18:45:55.413000+00:00",
+      "type": "external_tool.completed",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "f2266445-10fe-48c1-92fb-c91b1e3a6720"
+    }
+  },
+  {
+    "at": 1794681955.4362743,
+    "event": {
+      "data": {
+        "success": true,
+        "toolCallId": "call_JN0pGSgkoSM7fuGb3wOFQxUU",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "model": "gpt-6.1-sol",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "result": {
+          "content": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-9a26fe5b-c78e-41ea-825b-aad2dbedc8fc\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"40402c65c0581466d9e952b0c9d35e7c31e8b13afc09a851c41af4a81b09a1b2\",\"job_id\":\"m07-budget-3\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}",
+          "detailedContent": "{\"artifact_ids\":[],\"attempt_id\":\"attempt-9a26fe5b-c78e-41ea-825b-aad2dbedc8fc\",\"attempt_number\":1,\"availability\":\"pending\",\"completed_frames\":null,\"expected_frames\":null,\"external_job_id\":null,\"input_digest\":\"40402c65c0581466d9e952b0c9d35e7c31e8b13afc09a851c41af4a81b09a1b2\",\"job_id\":\"m07-budget-3\",\"kind\":\"image_generation\",\"owner_epoch\":\"epoch-51e438c6-32bf-470c-b734-b56937acbe82\",\"owner_operation_id\":null,\"project_id\":\"project-f99b7621-5277-42ca-a491-76229a2e2cf6\",\"provider_id\":\"m07-budget-unprobed\",\"render_spec\":null,\"schema_version\":\"1.0\",\"state\":\"planned\",\"state_revision\":0,\"target\":{\"shot_id\":\"shot-mug\",\"target_id\":\"storyboard-3688d96cacef07c5437eb9af10f6c481b60563259aca34667f4edaeeae988a42\",\"version\":{\"item_id\":\"m07-budget-storyboard\",\"version_id\":\"m07-budget-plan-v1\"}},\"work_id\":\"work-05561bb76eb340dc93ff6affd1e36974\"}"
+        },
+        "rte": true,
+        "toolTelemetry": {
+          "metrics": {
+            "context_token_limit": 272000.0,
+            "context_current_tokens": 3047.0,
+            "large_output_threshold_bytes": 20480.0,
+            "result_token_count": 303
+          }
+        },
+        "turnId": "0"
+      },
+      "id": "6bfaaf79-3192-455c-801a-0bbb88b2d1a5",
+      "timestamp": "2026-11-14T18:45:55.427000+00:00",
+      "type": "tool.execution_complete",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "c8a60db5-6a86-49df-9c5b-cbde20c5b3b7"
+    }
+  },
+  {
+    "at": 1794681955.4399514,
+    "event": {
+      "data": {
+        "turnId": "0",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ"
+      },
+      "id": "b6899683-6402-4308-9aa8-e7921f785763",
+      "timestamp": "2026-11-14T18:45:55.428000+00:00",
+      "type": "assistant.turn_end",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "6bfaaf79-3192-455c-801a-0bbb88b2d1a5"
+    }
+  },
+  {
+    "at": 1794681955.4481413,
+    "event": {
+      "data": {
+        "turnId": "1",
+        "agentMode": "interactive",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ"
+      },
+      "id": "8cb3b2d2-afdf-4c4d-9359-e451023d1392",
+      "timestamp": "2026-11-14T18:45:55.428000+00:00",
+      "type": "assistant.turn_start",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "b6899683-6402-4308-9aa8-e7921f785763"
+    }
+  },
+  {
+    "at": 1794681959.02979,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "accounting": {
+          "sequence": 2,
+          "sourceSessionId": "f6121274-3e3c-42d9-97fc-90649dab5496",
+          "usageId": "DComROLhMlzdEjQy+6+XvlXHdXrHr3VC/qFRrk+TcCJLlbz+OIZLEfle2OJYOBhPVLSyutCwEpp5ZUvQrdZXgdUeRvrfFfmtvWrzvwxmXAIQMQcF3bFCmycwqm259RGlzpB8myWxZKkB5EEjH+JeS6Ei2FLrR2mGKeQ383BmAxhhogIGS+h21I9eYJZSEvCWmKlTQKRUNP0quKApaZCNemCcaZF7YA0QcLBk3vloGIu5VTPLdUMaZ7neorL1lG2ulhzl/Azn+WZbAPGQ5F+emhc/MUH6cN1qKlvTRGUkSWMDUXeIJYZNnPc1kp0p7s351vKKE24thDbgETMc6sAWrrpV73Qki+KvpSp7S+7CBqr5LDu9m0phmvtkIZA6FJ/aawroS/58p7dHqoERAXuHVnG7zavV3md3IZBQkVJew+7gFenA5tIy95NqRsCu1s5tCj9XP1doyCFYUqUvxutkjRU1jCvduoEDr0x61vyhiEOD59tJ7HI="
+        },
+        "aiCreditsStatus": "complete",
+        "apiCallId": "DComROLhMlzdEjQy+6+XvlXHdXrHr3VC/qFRrk+TcCJLlbz+OIZLEfle2OJYOBhPVLSyutCwEpp5ZUvQrdZXgdUeRvrfFfmtvWrzvwxmXAIQMQcF3bFCmycwqm259RGlzpB8myWxZKkB5EEjH+JeS6Ei2FLrR2mGKeQ383BmAxhhogIGS+h21I9eYJZSEvCWmKlTQKRUNP0quKApaZCNemCcaZF7YA0QcLBk3vloGIu5VTPLdUMaZ7neorL1lG2ulhzl/Azn+WZbAPGQ5F+emhc/MUH6cN1qKlvTRGUkSWMDUXeIJYZNnPc1kp0p7s351vKKE24thDbgETMc6sAWrrpV73Qki+KvpSp7S+7CBqr5LDu9m0phmvtkIZA6FJ/aawroS/58p7dHqoERAXuHVnG7zavV3md3IZBQkVJew+7gFenA5tIy95NqRsCu1s5tCj9XP1doyCFYUqUvxutkjRU1jCvduoEDr0x61vyhiEOD59tJ7HI=",
+        "apiEndpoint": "ws:/responses",
+        "availableToolCount": 3,
+        "cacheDetailsReported": true,
+        "cachePolicyTtlSeconds": 1800,
+        "cacheReadTokens": 2996,
+        "cacheTtlSeconds": 1800,
+        "cacheWriteTokens": 529,
+        "contentFilterTriggered": false,
+        "copilotUsage": {
+          "totalNanoAiu": 377810000.0,
+          "tokenDetails": [
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 200000000000,
+              "tokenCount": 3,
+              "tokenType": "input",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 10000000000,
+              "tokenCount": 2996,
+              "tokenType": "cache_read",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 250000000000,
+              "tokenCount": 529,
+              "tokenType": "cache_write",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 1000000000000,
+              "tokenCount": 215,
+              "tokenType": "output",
+              "model": "gpt-6.1-sol"
+            }
+          ]
+        },
+        "cost": 1.0,
+        "customToolCallCount": 0,
+        "duration": 2793,
+        "finishReason": "tool_calls",
+        "frontierSource": "reported_writes",
+        "inferenceGateway": false,
+        "initiator": "sub-agent",
+        "inputTokens": 3528,
+        "interactionType": "conversation-subagent",
+        "interTokenLatencyMs": 5.766,
+        "isAuto": false,
+        "isByok": false,
+        "maxPromptTokens": 272000,
+        "modelDisplayName": "GPT-6.1 Sol",
+        "numToolCalls": 1,
+        "orphanToolCallCount": 0,
+        "outputTokens": 215,
+        "outputTtftMs": 1551.985,
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "provider": {
+          "id": "copilot",
+          "kind": "copilot",
+          "label": "GitHub Copilot"
+        },
+        "providerCallId": "00000-78fefd85-9252-4bca-862f-c87f35f525fb",
+        "quotaSnapshots": {
+          "chat": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "completions": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "premium_interactions": {
+            "entitlementRequests": 1000000,
+            "isUnlimitedEntitlement": false,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": true,
+            "remainingPercentage": 45.9,
+            "usageAllowedWithExhaustedQuota": true,
+            "usedRequests": 541000,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          }
+        },
+        "reasoningEffort": "medium",
+        "reasoningSummary": "detailed",
+        "reasoningTokens": 0,
+        "requestBodyBytes": 4160,
+        "requestBodyEncoding": "identity",
+        "requestBodyWireBytes": 4160,
+        "rte": true,
+        "serviceRequestId": "dca398ca-c73b-4bff-a3fb-72cbb954aa64",
+        "timeToFirstTokenMs": 1551.985,
+        "toolCounts": {
+          "submit_generation": 1
+        },
+        "toolTokenCount": 535,
+        "transport": "websocket",
+        "unmatchedToolResultCount": 0,
+        "responseModel": "gpt-6.1-sol"
+      },
+      "id": "52afdc05-259f-4017-86c0-8ef4be66ff87",
+      "timestamp": "2026-11-14T18:45:58.225000+00:00",
+      "type": "assistant.usage",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "ephemeral": true,
+      "parentId": "8cb3b2d2-afdf-4c4d-9359-e451023d1392"
+    }
+  },
+  {
+    "at": 1794681959.045194,
+    "event": {
+      "data": {
+        "content": "",
+        "messageId": "d22a9942-c058-4efa-ae2a-a76e824b4c64",
+        "apiCallId": "DComROLhMlzdEjQy+6+XvlXHdXrHr3VC/qFRrk+TcCJLlbz+OIZLEfle2OJYOBhPVLSyutCwEpp5ZUvQrdZXgdUeRvrfFfmtvWrzvwxmXAIQMQcF3bFCmycwqm259RGlzpB8myWxZKkB5EEjH+JeS6Ei2FLrR2mGKeQ383BmAxhhogIGS+h21I9eYJZSEvCWmKlTQKRUNP0quKApaZCNemCcaZF7YA0QcLBk3vloGIu5VTPLdUMaZ7neorL1lG2ulhzl/Azn+WZbAPGQ5F+emhc/MUH6cN1qKlvTRGUkSWMDUXeIJYZNnPc1kp0p7s351vKKE24thDbgETMc6sAWrrpV73Qki+KvpSp7S+7CBqr5LDu9m0phmvtkIZA6FJ/aawroS/58p7dHqoERAXuHVnG7zavV3md3IZBQkVJew+7gFenA5tIy95NqRsCu1s5tCj9XP1doyCFYUqUvxutkjRU1jCvduoEDr0x61vyhiEOD59tJ7HI=",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "23d8998f-d423-4f46-82f9-d2fbd51e4707",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "providerId": "copilot",
+        "rte": true,
+        "serverTools": {
+          "provider": "openai-responses"
+        },
+        "toolRequests": [
+          {
+            "name": "submit_generation",
+            "toolCallId": "call_f9HkkC5UI4HdOw6OD8oAfD2x",
+            "arguments": {
+              "schema_version": "1.0",
+              "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+              "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+              "provider_id": "m07-budget-unprobed",
+              "capability": "image",
+              "workflow_artifact_id": "m07-budget-graph",
+              "prompt_artifact_id": "m07-budget-prompt",
+              "input_artifact_ids": [
+                "m07-budget-real-png-input"
+              ],
+              "seed": "42",
+              "model_ids": [
+                "sd_turbo-proscenium-fp16-1.safetensors"
+              ],
+              "settings": {
+                "target_slot": {
+                  "kind": "storyboard_frame",
+                  "storyboard_version": {
+                    "item_id": "m07-budget-storyboard",
+                    "version_id": "m07-budget-plan-v1"
+                  },
+                  "shot_id": "shot-mug",
+                  "frame_id": "frame-mug"
+                }
+              },
+              "job_id": "m07-budget-4",
+              "target_id": "renamed-alias-4"
+            },
+            "type": "function"
+          }
+        ],
+        "turnId": "1"
+      },
+      "id": "d02abeae-8b23-496b-ac8f-7270a175a8e0",
+      "timestamp": "2026-11-14T18:45:58.227000+00:00",
+      "type": "assistant.message",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "8cb3b2d2-afdf-4c4d-9359-e451023d1392"
+    }
+  },
+  {
+    "at": 1794681959.05064,
+    "event": {
+      "data": {
+        "toolCallId": "call_f9HkkC5UI4HdOw6OD8oAfD2x",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-4",
+          "target_id": "renamed-alias-4"
+        },
+        "model": "gpt-6.1-sol",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "turnId": "1"
+      },
+      "id": "7fe64262-e064-4f3b-914c-5980f928376d",
+      "timestamp": "2026-11-14T18:45:58.228000+00:00",
+      "type": "tool.execution_start",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "d02abeae-8b23-496b-ac8f-7270a175a8e0"
+    }
+  },
+  {
+    "at": 1794681959.078809,
+    "event": {
+      "data": {
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-4",
+            "target_id": "renamed-alias-4"
+          },
+          "toolCallId": "call_f9HkkC5UI4HdOw6OD8oAfD2x"
+        },
+        "requestId": "6b82a1ef-1fcf-4264-9865-3de39c242f99",
+        "agentMode": "interactive",
+        "assistedApprovalAssessment": {
+          "reason": "inactive",
+          "status": "not-run"
+        },
+        "ownerSessionId": "f6121274-3e3c-42d9-97fc-90649dab5496",
+        "permissionMode": "manual",
+        "promptRequest": {
+          "kind": "custom-tool",
+          "toolDescription": "Proscenium submit_generation. Active project only. Returns a durable receipt, not fabricated completion.",
+          "toolName": "submit_generation",
+          "args": {
+            "schema_version": "1.0",
+            "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+            "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+            "provider_id": "m07-budget-unprobed",
+            "capability": "image",
+            "workflow_artifact_id": "m07-budget-graph",
+            "prompt_artifact_id": "m07-budget-prompt",
+            "input_artifact_ids": [
+              "m07-budget-real-png-input"
+            ],
+            "seed": "42",
+            "model_ids": [
+              "sd_turbo-proscenium-fp16-1.safetensors"
+            ],
+            "settings": {
+              "target_slot": {
+                "kind": "storyboard_frame",
+                "storyboard_version": {
+                  "item_id": "m07-budget-storyboard",
+                  "version_id": "m07-budget-plan-v1"
+                },
+                "shot_id": "shot-mug",
+                "frame_id": "frame-mug"
+              }
+            },
+            "job_id": "m07-budget-4",
+            "target_id": "renamed-alias-4"
+          },
+          "toolCallId": "call_f9HkkC5UI4HdOw6OD8oAfD2x"
+        }
+      },
+      "id": "3d61edd5-9ebf-469e-a880-b540c2f22391",
+      "timestamp": "2026-11-14T18:45:59.066000+00:00",
+      "type": "permission.requested",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "6edc90cd-c347-4e90-8252-6582b03c6fe6"
+    }
+  },
+  {
+    "at": 1794681959.0978184,
+    "event": {
+      "data": {
+        "requestId": "6b82a1ef-1fcf-4264-9865-3de39c242f99",
+        "result": {
+          "kind": "approved"
+        },
+        "toolCallId": "call_f9HkkC5UI4HdOw6OD8oAfD2x"
+      },
+      "id": "adc02649-0228-428a-8108-266d6aa6b4e8",
+      "timestamp": "2026-11-14T18:45:59.092000+00:00",
+      "type": "permission.completed",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "3d61edd5-9ebf-469e-a880-b540c2f22391"
+    }
+  },
+  {
+    "at": 1794681959.1031237,
+    "event": {
+      "data": {
+        "requestId": "e084b3cd-00a1-4ff4-884a-1bb1848591f1",
+        "sessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+        "toolCallId": "call_f9HkkC5UI4HdOw6OD8oAfD2x",
+        "toolName": "submit_generation",
+        "arguments": {
+          "schema_version": "1.0",
+          "project_id": "project-f99b7621-5277-42ca-a491-76229a2e2cf6",
+          "generation_task_id": "task-881e7b25a14844ad89705d681898ad06",
+          "provider_id": "m07-budget-unprobed",
+          "capability": "image",
+          "workflow_artifact_id": "m07-budget-graph",
+          "prompt_artifact_id": "m07-budget-prompt",
+          "input_artifact_ids": [
+            "m07-budget-real-png-input"
+          ],
+          "seed": "42",
+          "model_ids": [
+            "sd_turbo-proscenium-fp16-1.safetensors"
+          ],
+          "settings": {
+            "target_slot": {
+              "kind": "storyboard_frame",
+              "storyboard_version": {
+                "item_id": "m07-budget-storyboard",
+                "version_id": "m07-budget-plan-v1"
+              },
+              "shot_id": "shot-mug",
+              "frame_id": "frame-mug"
+            }
+          },
+          "job_id": "m07-budget-4",
+          "target_id": "renamed-alias-4"
+        },
+        "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m07-native-budget-20261114/project"
+      },
+      "id": "7abcd99b-b363-4db9-89f0-6ef20ef90def",
+      "timestamp": "2026-11-14T18:45:59.094000+00:00",
+      "type": "external_tool.requested",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "adc02649-0228-428a-8108-266d6aa6b4e8"
+    }
+  },
+  {
+    "at": 1794681959.154764,
+    "event": {
+      "data": {
+        "requestId": "e084b3cd-00a1-4ff4-884a-1bb1848591f1"
+      },
+      "id": "023ffe8b-1b91-45fb-b945-fedd8f489efa",
+      "timestamp": "2026-11-14T18:45:59.148000+00:00",
+      "type": "external_tool.completed",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "7abcd99b-b363-4db9-89f0-6ef20ef90def"
+    }
+  },
+  {
+    "at": 1794681959.175967,
+    "event": {
+      "data": {
+        "success": false,
+        "toolCallId": "call_f9HkkC5UI4HdOw6OD8oAfD2x",
+        "error": {
+          "message": "{\"details\":{},\"error\":\"generation_budget_exhausted\",\"message\":\"The operation could not complete. Inspect its original durable receipt before retrying; the external outcome may be uncertain.\"}",
+          "code": "failure"
+        },
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "model": "gpt-6.1-sol",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "rte": true,
+        "toolTelemetry": {
+          "metrics": {
+            "context_token_limit": 272000.0,
+            "context_current_tokens": 3588.0,
+            "large_output_threshold_bytes": 20480.0
+          }
+        },
+        "turnId": "1"
+      },
+      "id": "477c8170-141c-44d2-8f64-7d07904b7e3c",
+      "timestamp": "2026-11-14T18:45:59.165000+00:00",
+      "type": "tool.execution_complete",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "57e75731-edd3-4abd-be77-c3ebddcd56dc"
+    }
+  },
+  {
+    "at": 1794681959.1861053,
+    "event": {
+      "data": {
+        "turnId": "1",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ"
+      },
+      "id": "1521d645-f862-430e-9498-068e152db024",
+      "timestamp": "2026-11-14T18:45:59.166000+00:00",
+      "type": "assistant.turn_end",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "477c8170-141c-44d2-8f64-7d07904b7e3c"
+    }
+  },
+  {
+    "at": 1794681959.1913054,
+    "event": {
+      "data": {
+        "turnId": "2",
+        "agentMode": "interactive",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ"
+      },
+      "id": "a54bdd77-9b87-4867-afc3-4c8c788f3c74",
+      "timestamp": "2026-11-14T18:45:59.167000+00:00",
+      "type": "assistant.turn_start",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "1521d645-f862-430e-9498-068e152db024"
+    }
+  },
+  {
+    "at": 1794681961.193483,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "accounting": {
+          "sequence": 3,
+          "sourceSessionId": "f6121274-3e3c-42d9-97fc-90649dab5496",
+          "usageId": "muAgrRvu/sKQMpCisQsTc7S1PUR/6hmT6iAddBB7p0x7pB1G2WNGmnq5nmV2YlX0s1MG6cB02KzRmxmG1b5pjrKqyAsfPicgvwlBKXBvDCZBwCDp89yQwfz3CWfx+WvBikd7+pt2l7wbNaZkNQhwIUukfKj1VyPQgRmN1QY2cs7iSt6quYNd4XtwIg8vCUSRM3nxKKyp8JUlJeNS95ACrTkebwNWTQEEiIQhep+XiYV28ZOEQcfayUrZL4qnHQGsQ5xBuxTjRqoTrujixvBU1noadYV7jRD5475IFDo+lJtpZPJ5E1eSTL5oruFgSHL4hfCQxMkjW0z3trP9n+zW5pTbwhdXLv6U8XWcZbUNPf9lYLtupWkOzT/so6iVCOzxGCjdUavHu2zODwijccmU94mtwQiXFq5Z4yX8Q0CcuIJxMUFTM6wu+n1nb2QIULUt5EJ1fOeY1echaoqzFry3BnZhlzsK9LGEkpOBpGo866uPh1tPxfM="
+        },
+        "aiCreditsStatus": "complete",
+        "apiCallId": "muAgrRvu/sKQMpCisQsTc7S1PUR/6hmT6iAddBB7p0x7pB1G2WNGmnq5nmV2YlX0s1MG6cB02KzRmxmG1b5pjrKqyAsfPicgvwlBKXBvDCZBwCDp89yQwfz3CWfx+WvBikd7+pt2l7wbNaZkNQhwIUukfKj1VyPQgRmN1QY2cs7iSt6quYNd4XtwIg8vCUSRM3nxKKyp8JUlJeNS95ACrTkebwNWTQEEiIQhep+XiYV28ZOEQcfayUrZL4qnHQGsQ5xBuxTjRqoTrujixvBU1noadYV7jRD5475IFDo+lJtpZPJ5E1eSTL5oruFgSHL4hfCQxMkjW0z3trP9n+zW5pTbwhdXLv6U8XWcZbUNPf9lYLtupWkOzT/so6iVCOzxGCjdUavHu2zODwijccmU94mtwQiXFq5Z4yX8Q0CcuIJxMUFTM6wu+n1nb2QIULUt5EJ1fOeY1echaoqzFry3BnZhlzsK9LGEkpOBpGo866uPh1tPxfM=",
+        "apiEndpoint": "ws:/responses",
+        "availableToolCount": 3,
+        "cacheDetailsReported": true,
+        "cachePolicyTtlSeconds": 1800,
+        "cacheReadTokens": 3525,
+        "cacheTtlSeconds": 1800,
+        "cacheWriteTokens": 264,
+        "contentFilterTriggered": false,
+        "copilotUsage": {
+          "totalNanoAiu": 174850000.0,
+          "tokenDetails": [
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 200000000000,
+              "tokenCount": 3,
+              "tokenType": "input",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 10000000000,
+              "tokenCount": 3525,
+              "tokenType": "cache_read",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 250000000000,
+              "tokenCount": 264,
+              "tokenType": "cache_write",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 1000000000000,
+              "tokenCount": 73,
+              "tokenType": "output",
+              "model": "gpt-6.1-sol"
+            }
+          ]
+        },
+        "cost": 1.0,
+        "customToolCallCount": 0,
+        "duration": 1940,
+        "finishReason": "stop",
+        "frontierSource": "reported_writes",
+        "inferenceGateway": false,
+        "initiator": "sub-agent",
+        "inputTokens": 3792,
+        "interactionType": "conversation-subagent",
+        "interTokenLatencyMs": 6.7780000000000005,
+        "isAuto": false,
+        "isByok": false,
+        "maxPromptTokens": 272000,
+        "modelDisplayName": "GPT-6.1 Sol",
+        "numToolCalls": 0,
+        "orphanToolCallCount": 0,
+        "outputTokens": 73,
+        "outputTtftMs": 1400.196,
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "provider": {
+          "id": "copilot",
+          "kind": "copilot",
+          "label": "GitHub Copilot"
+        },
+        "providerCallId": "00000-78fefd85-9252-4bca-862f-c87f35f525fb",
+        "quotaSnapshots": {
+          "chat": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "completions": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "premium_interactions": {
+            "entitlementRequests": 1000000,
+            "isUnlimitedEntitlement": false,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": true,
+            "remainingPercentage": 45.9,
+            "usageAllowedWithExhaustedQuota": true,
+            "usedRequests": 541000,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          }
+        },
+        "reasoningEffort": "medium",
+        "reasoningSummary": "detailed",
+        "reasoningTokens": 0,
+        "requestBodyBytes": 3444,
+        "requestBodyEncoding": "identity",
+        "requestBodyWireBytes": 3444,
+        "rte": true,
+        "serviceRequestId": "27303ece-d5cf-462c-ab33-e626d4c50aa8",
+        "timeToFirstTokenMs": 1400.196,
+        "toolCounts": {},
+        "toolTokenCount": 535,
+        "transport": "websocket",
+        "unmatchedToolResultCount": 0,
+        "responseModel": "gpt-6.1-sol"
+      },
+      "id": "fd1f68ab-0558-4e7c-bd90-bab51292415a",
+      "timestamp": "2026-11-14T18:46:01.111000+00:00",
+      "type": "assistant.usage",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "ephemeral": true,
+      "parentId": "a54bdd77-9b87-4867-afc3-4c8c788f3c74"
+    }
+  },
+  {
+    "at": 1794681961.206757,
+    "event": {
+      "data": {
+        "content": "- `m07-budget-3`: `planned`; attempt `attempt-9a26fe5b-c78e-41ea-825b-aad2dbedc8fc`.\n- `m07-budget-4`: `generation_budget_exhausted`.\n\nOriginal generation task identity preserved. Stopped without retries. No images generated.",
+        "messageId": "2c92e47a-9678-45c5-9ede-82c551d1cb3a",
+        "apiCallId": "muAgrRvu/sKQMpCisQsTc7S1PUR/6hmT6iAddBB7p0x7pB1G2WNGmnq5nmV2YlX0s1MG6cB02KzRmxmG1b5pjrKqyAsfPicgvwlBKXBvDCZBwCDp89yQwfz3CWfx+WvBikd7+pt2l7wbNaZkNQhwIUukfKj1VyPQgRmN1QY2cs7iSt6quYNd4XtwIg8vCUSRM3nxKKyp8JUlJeNS95ACrTkebwNWTQEEiIQhep+XiYV28ZOEQcfayUrZL4qnHQGsQ5xBuxTjRqoTrujixvBU1noadYV7jRD5475IFDo+lJtpZPJ5E1eSTL5oruFgSHL4hfCQxMkjW0z3trP9n+zW5pTbwhdXLv6U8XWcZbUNPf9lYLtupWkOzT/so6iVCOzxGCjdUavHu2zODwijccmU94mtwQiXFq5Z4yX8Q0CcuIJxMUFTM6wu+n1nb2QIULUt5EJ1fOeY1echaoqzFry3BnZhlzsK9LGEkpOBpGo866uPh1tPxfM=",
+        "interactionId": "2de6e33a-4c8d-4ac1-9ec5-173e6c3acc67",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "23d8998f-d423-4f46-82f9-d2fbd51e4707",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "phase": "final_answer",
+        "providerId": "copilot",
+        "rte": true,
+        "serverTools": {
+          "provider": "openai-responses"
+        },
+        "toolRequests": [],
+        "turnId": "2"
+      },
+      "id": "25019d66-930a-40cb-a1ac-b02227d27982",
+      "timestamp": "2026-11-14T18:46:01.112000+00:00",
+      "type": "assistant.message",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "a54bdd77-9b87-4867-afc3-4c8c788f3c74"
+    }
+  },
+  {
+    "at": 1794681961.2187471,
+    "event": {
+      "data": {
+        "turnId": "2",
+        "parentToolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ"
+      },
+      "id": "05fb9f90-ae4a-497b-a0e6-fc833927b9e6",
+      "timestamp": "2026-11-14T18:46:01.113000+00:00",
+      "type": "assistant.turn_end",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "25019d66-930a-40cb-a1ac-b02227d27982"
+    }
+  },
+  {
+    "at": 1794681961.2551768,
+    "event": {
+      "data": {
+        "agentDisplayName": "m07-budget-child",
+        "agentName": "authoring-specialist",
+        "toolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "durationMs": 10293,
+        "explicitModelOverride": "gpt-6.1-sol",
+        "firstDispatchedModel": "gpt-6.1-sol",
+        "model": "gpt-6.1-sol",
+        "modelSelectionSource": "explicit_override",
+        "totalTokens": 10822,
+        "totalToolCalls": 2
+      },
+      "id": "9c1e2351-b63b-4f06-b0e3-a9bd242c7235",
+      "timestamp": "2026-11-14T18:46:01.238000+00:00",
+      "type": "subagent.completed",
+      "agentId": "bf8e5b76-5e18-4072-b596-1157827da49d",
+      "parentId": "b7496bc2-12c2-4bb9-b787-1a0d8c474d27"
+    }
+  },
+  {
+    "at": 1794681961.2879322,
+    "event": {
+      "data": {
+        "success": true,
+        "toolCallId": "call_ZknDJ59kUeyf80KVfNO8VtKZ",
+        "causalDependencies": [
+          "2c92e47a-9678-45c5-9ede-82c551d1cb3a"
+        ],
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "model": "gpt-6.1-sol",
+        "result": {
+          "content": "- `m07-budget-3`: `planned`; attempt `attempt-9a26fe5b-c78e-41ea-825b-aad2dbedc8fc`.\n- `m07-budget-4`: `generation_budget_exhausted`.\n\nOriginal generation task identity preserved. Stopped without retries. No images generated.",
+          "detailedContent": "- `m07-budget-3`: `planned`; attempt `attempt-9a26fe5b-c78e-41ea-825b-aad2dbedc8fc`.\n- `m07-budget-4`: `generation_budget_exhausted`.\n\nOriginal generation task identity preserved. Stopped without retries. No images generated."
+        },
+        "rte": true,
+        "toolTelemetry": {
+          "properties": {
+            "prompt_length": "2660",
+            "response_length": "225",
+            "agent_name_hash": "6fde6220fa2f3fe62ae5a4f5039fc24843294d69d8383054b5425a117248a5c3",
+            "agent_type": "custom-agent",
+            "execution_mode": "sync",
+            "model": "dedfefd51120f28386c9dba78e46feb403523e23d67980cdf24514ee0b50b5ed"
+          },
+          "restrictedProperties": {
+            "agent_name": "authoring-specialist",
+            "model": "gpt-6.1-sol",
+            "agent_id": "bf8e5b76-5e18-4072-b596-1157827da49d"
+          },
+          "metrics": {
+            "numberOfToolCallsMadeByAgent": 2,
+            "response_length": 225,
+            "context_token_limit": 272000.0,
+            "context_current_tokens": 18342.0,
+            "large_output_threshold_bytes": 20480.0,
+            "result_token_count": 69
+          }
+        },
+        "turnId": "2"
+      },
+      "id": "c44c0dd4-0c7b-4f24-90c5-ed9953a759e5",
+      "timestamp": "2026-11-14T18:46:01.267000+00:00",
+      "type": "tool.execution_complete",
+      "parentId": "a78acab8-5e86-4f4c-bb3d-ec37d2b73653"
+    }
+  },
+  {
+    "at": 1794681961.301799,
+    "event": {
+      "data": {
+        "turnId": "2"
+      },
+      "id": "708bb009-4bb8-469e-86a0-3b6ffda14a41",
+      "timestamp": "2026-11-14T18:46:01.270000+00:00",
+      "type": "assistant.turn_end",
+      "parentId": "c44c0dd4-0c7b-4f24-90c5-ed9953a759e5"
+    }
+  },
+  {
+    "at": 1794681961.3111064,
+    "event": {
+      "data": {
+        "turnId": "3",
+        "agentMode": "interactive",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051"
+      },
+      "id": "6de904ba-f00b-4ff0-b676-0bbb444fe655",
+      "timestamp": "2026-11-14T18:46:01.271000+00:00",
+      "type": "assistant.turn_start",
+      "parentId": "708bb009-4bb8-469e-86a0-3b6ffda14a41"
+    }
+  },
+  {
+    "at": 1794681963.9371533,
+    "event": {
+      "data": {
+        "model": "gpt-6.1-sol",
+        "accounting": {
+          "sequence": 4,
+          "sourceSessionId": "e9b93ca9-ea09-4115-9b6b-a47a9d82db0e",
+          "usageId": "WLLgS3wYDeW0IYgFgmCPHhS+13bChRANCoty1i7seQpLNAhL2UIVzBfdcVmMHPiF6eemWBU8xTKh9oIOkdH0vr4iTtjXLhvtXbIyA4nW/lpOVZKbpMSJS7m3AikZGX+GJeLQn6upVPtlc37rchud/mhsYD88HHjGTDmLmTZk01TMHaXi4jsDsdHzDfRSn5ZE8fGDoRydOfu3XUC/KkVGZXIlGyIvxuDYGuDyF0N5wj+d/GJFBxgHq+RoLSp9ZlcGP/bIQb+TdL9LS3kqmRPKiT3sky2THn3HwpY5gbYq/AqSMot3WYg/grXnBPo3bIvLuAOmAfyNYnv57jeCvTJrJ3IFkBirepT6bNU8BDlVe1Zr3exfB+fXqbD8bFxYEDYhtwcF/4RfCpeQfBcK8T4e34sYa28eKQiQJUj0F4xgPrbGfJ1QdEb2gfiFEJ6W56J2n/2JkMxhQDiIs311awa8PJyC0re/Im6tPND/X1f9pTg3VqqpGZo="
+        },
+        "aiCreditsStatus": "complete",
+        "apiCallId": "WLLgS3wYDeW0IYgFgmCPHhS+13bChRANCoty1i7seQpLNAhL2UIVzBfdcVmMHPiF6eemWBU8xTKh9oIOkdH0vr4iTtjXLhvtXbIyA4nW/lpOVZKbpMSJS7m3AikZGX+GJeLQn6upVPtlc37rchud/mhsYD88HHjGTDmLmTZk01TMHaXi4jsDsdHzDfRSn5ZE8fGDoRydOfu3XUC/KkVGZXIlGyIvxuDYGuDyF0N5wj+d/GJFBxgHq+RoLSp9ZlcGP/bIQb+TdL9LS3kqmRPKiT3sky2THn3HwpY5gbYq/AqSMot3WYg/grXnBPo3bIvLuAOmAfyNYnv57jeCvTJrJ3IFkBirepT6bNU8BDlVe1Zr3exfB+fXqbD8bFxYEDYhtwcF/4RfCpeQfBcK8T4e34sYa28eKQiQJUj0F4xgPrbGfJ1QdEb2gfiFEJ6W56J2n/2JkMxhQDiIs311awa8PJyC0re/Im6tPND/X1f9pTg3VqqpGZo=",
+        "apiEndpoint": "ws:/responses",
+        "availableToolCount": 42,
+        "cacheDetailsReported": true,
+        "cacheExpiresAt": "2026-11-14T19:16:01.278000+00:00",
+        "cachePolicyTtlSeconds": 1800,
+        "cacheReadTokens": 18796,
+        "cacheTtlSeconds": 1800,
+        "cacheWriteTokens": 859,
+        "contentFilterTriggered": false,
+        "copilotUsage": {
+          "totalNanoAiu": 473310000.0,
+          "tokenDetails": [
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 200000000000,
+              "tokenCount": 3,
+              "tokenType": "input",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 10000000000,
+              "tokenCount": 18796,
+              "tokenType": "cache_read",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 250000000000,
+              "tokenCount": 859,
+              "tokenType": "cache_write",
+              "model": "gpt-6.1-sol"
+            },
+            {
+              "batchSize": 1000000,
+              "costPerBatch": 1000000000000,
+              "tokenCount": 70,
+              "tokenType": "output",
+              "model": "gpt-6.1-sol"
+            }
+          ]
+        },
+        "cost": 1.0,
+        "customToolCallCount": 0,
+        "duration": 2646,
+        "finishReason": "stop",
+        "frontierSource": "reported_writes",
+        "inferenceGateway": false,
+        "initiator": "agent",
+        "inputTokens": 19658,
+        "interactionType": "conversation-agent",
+        "interTokenLatencyMs": 8.142999999999999,
+        "isAuto": false,
+        "isByok": false,
+        "maxPromptTokens": 272000,
+        "modelDisplayName": "GPT-6.1 Sol",
+        "numToolCalls": 0,
+        "orphanToolCallCount": 0,
+        "outputTokens": 70,
+        "outputTtftMs": 1970.242,
+        "provider": {
+          "id": "copilot",
+          "kind": "copilot",
+          "label": "GitHub Copilot"
+        },
+        "providerCallId": "00000-15d57730-a9df-4e58-a4c8-ab8a900579d6",
+        "quotaSnapshots": {
+          "chat": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "completions": {
+            "entitlementRequests": -1,
+            "isUnlimitedEntitlement": true,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": false,
+            "remainingPercentage": 100.0,
+            "usageAllowedWithExhaustedQuota": false,
+            "usedRequests": 0,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          },
+          "premium_interactions": {
+            "entitlementRequests": 1000000,
+            "isUnlimitedEntitlement": false,
+            "overage": 0.0,
+            "overageAllowedWithExhaustedQuota": true,
+            "remainingPercentage": 45.9,
+            "usageAllowedWithExhaustedQuota": true,
+            "usedRequests": 541000,
+            "resetDate": "2026-12-01T00:00:00+00:00"
+          }
+        },
+        "reasoningEffort": "medium",
+        "reasoningSummary": "detailed",
+        "reasoningTokens": 0,
+        "requestBodyBytes": 69350,
+        "requestBodyEncoding": "identity",
+        "requestBodyWireBytes": 69350,
+        "rte": true,
+        "serviceRequestId": "5637a4ab-308b-4124-a71c-894282790242",
+        "timeToFirstTokenMs": 1970.242,
+        "toolCounts": {},
+        "toolTokenCount": 7833,
+        "transport": "websocket",
+        "unmatchedToolResultCount": 0,
+        "responseModel": "gpt-6.1-sol"
+      },
+      "id": "ce941874-7b53-43b1-a0ee-d674763f1d99",
+      "timestamp": "2026-11-14T18:46:03.924000+00:00",
+      "type": "assistant.usage",
+      "ephemeral": true,
+      "parentId": "6de904ba-f00b-4ff0-b676-0bbb444fe655"
+    }
+  },
+  {
+    "at": 1794681963.9583323,
+    "event": {
+      "data": {
+        "content": "Admission test matched expectations: jobs 1, 2, and 3 returned `planned`; job 4 returned `generation_budget_exhausted`.\n\nExactly one `authoring-specialist` child used `gpt-6.1-sol`, preserving the original generation task identity. No polling, retries, or generation execution performed.",
+        "messageId": "a61d6d94-96c5-40ec-aca3-f224cf2348d2",
+        "apiCallId": "WLLgS3wYDeW0IYgFgmCPHhS+13bChRANCoty1i7seQpLNAhL2UIVzBfdcVmMHPiF6eemWBU8xTKh9oIOkdH0vr4iTtjXLhvtXbIyA4nW/lpOVZKbpMSJS7m3AikZGX+GJeLQn6upVPtlc37rchud/mhsYD88HHjGTDmLmTZk01TMHaXi4jsDsdHzDfRSn5ZE8fGDoRydOfu3XUC/KkVGZXIlGyIvxuDYGuDyF0N5wj+d/GJFBxgHq+RoLSp9ZlcGP/bIQb+TdL9LS3kqmRPKiT3sky2THn3HwpY5gbYq/AqSMot3WYg/grXnBPo3bIvLuAOmAfyNYnv57jeCvTJrJ3IFkBirepT6bNU8BDlVe1Zr3exfB+fXqbD8bFxYEDYhtwcF/4RfCpeQfBcK8T4e34sYa28eKQiQJUj0F4xgPrbGfJ1QdEb2gfiFEJ6W56J2n/2JkMxhQDiIs311awa8PJyC0re/Im6tPND/X1f9pTg3VqqpGZo=",
+        "interactionId": "5a810c01-19d5-4c0c-9ad5-6dbb78a4f051",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "8770b1a0-d86b-47f9-bd43-b4390c450bd5",
+        "phase": "final_answer",
+        "providerId": "copilot",
+        "rte": true,
+        "serverTools": {
+          "provider": "openai-responses"
+        },
+        "toolRequests": [],
+        "turnId": "3"
+      },
+      "id": "0079e7b9-69f4-4ae5-a3a8-7611b331bd59",
+      "timestamp": "2026-11-14T18:46:03.925000+00:00",
+      "type": "assistant.message",
+      "parentId": "6de904ba-f00b-4ff0-b676-0bbb444fe655"
+    }
+  },
+  {
+    "at": 1794681963.9728317,
+    "event": {
+      "data": {
+        "turnId": "3"
+      },
+      "id": "dd5cbf12-ad5f-4e65-b3fa-0a9f5f2448ac",
+      "timestamp": "2026-11-14T18:46:03.926000+00:00",
+      "type": "assistant.turn_end",
+      "parentId": "0079e7b9-69f4-4ae5-a3a8-7611b331bd59"
+    }
+  },
+  {
+    "at": 1794681964.001816,
+    "event": {
+      "data": {
+        "mode": "interactive"
+      },
+      "id": "cc77e8b2-63e0-4185-858e-acc5ccc90b42",
+      "timestamp": "2026-11-14T18:46:03.987000+00:00",
+      "type": "session.idle",
+      "ephemeral": true,
+      "parentId": "113045f4-5500-49a0-b2e5-361a8d898daa"
+    }
+  }
+]
