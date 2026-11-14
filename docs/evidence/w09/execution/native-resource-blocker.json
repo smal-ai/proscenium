@@ -1,0 +1,139 @@
+{
+  "allocation": "e04-live-a",
+  "recorded_at": "2026-11-14T15:36:59.205483+02:00",
+  "code_revision": "8c2a0f72b5de2d86781f719ac01ca17406c2491c",
+  "instance_plan": {
+    "argv": [
+      "/home/quintin/.local/opt/ComfyUI/.venv/bin/python",
+      "-B",
+      "/home/quintin/.local/opt/ComfyUI/main.py",
+      "--listen",
+      "127.0.0.1",
+      "--port",
+      "18588",
+      "--base-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a",
+      "--models-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/models",
+      "--user-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/user",
+      "--input-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/input",
+      "--output-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/output",
+      "--temp-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/temp",
+      "--database-url",
+      "sqlite:////home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/user/comfyui.db",
+      "--disable-all-custom-nodes",
+      "--disable-api-nodes",
+      "--disable-auto-launch",
+      "--cache-none"
+    ],
+    "cwd": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a",
+    "create_before_authorised_start": [
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/user",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/input",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/output",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/temp",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/cache",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/cache/torch",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/cache/hf"
+    ],
+    "environment_overrides": {
+      "OMP_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "XDG_CACHE_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/cache",
+      "TORCH_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/cache/torch",
+      "HF_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/cache/hf",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "TMPDIR": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/temp"
+    },
+    "executed": false,
+    "requires": "parent allocation, heavy-gpu claim, budgeted plugin and recheck of port/revision"
+  },
+  "harness_sha256": "0bcef9ca8591acf9a03cdf8a5b6551f94fa26473f06fbe2bfe7492cf61dfde1e",
+  "baseline": {
+    "monotonic_ns": 456130717957176,
+    "mem_available_bytes": 11232055296,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 5,
+        "mem_info_vram_used": 35833184256,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "independent_queue_before": {
+    "queue_running": [],
+    "queue_pending": []
+  },
+  "independent_stats_before": {
+    "system": {
+      "os": "linux",
+      "ram_total": 65959243776,
+      "ram_free": 11228622848,
+      "comfyui_version": "0.37.4",
+      "required_frontend_version": "1.52.7",
+      "installed_templates_version": "0.11.69",
+      "required_templates_version": "0.11.69",
+      "comfy_package_versions": [
+        {
+          "name": "comfyui-frontend-package",
+          "installed": "1.52.7",
+          "required": "1.52.7"
+        },
+        {
+          "name": "comfyui-workflow-templates",
+          "installed": "0.11.69",
+          "required": "0.11.69"
+        },
+        {
+          "name": "comfyui-embedded-docs",
+          "installed": "0.5.12",
+          "required": "0.5.12"
+        },
+        {
+          "name": "comfy-kitchen",
+          "installed": "0.2.35",
+          "required": "0.2.35"
+        },
+        {
+          "name": "comfy-aimdo",
+          "installed": "0.5.5",
+          "required": "0.5.5"
+        }
+      ],
+      "python_version": "3.12.13 (main, Jul 18 2026, 17:02:19) [Clang 22.1.3 ]",
+      "pytorch_version": "2.13.0+rocm10.0.0",
+      "embedded_python": false,
+      "deploy_environment": "local-git",
+      "argv": [
+        "main.py",
+        "--auto-launch"
+      ]
+    },
+    "devices": [
+      {
+        "name": "cuda:0 AMD Radeon 8060S Graphics : native",
+        "type": "cuda",
+        "index": 0,
+        "vram_total": 68719476736,
+        "vram_free": 37585158144,
+        "torch_vram_total": 2097152,
+        "torch_vram_free": 2097152
+      }
+    ]
+  },
+  "fit_threshold_bytes": 12884901888,
+  "protected_host_headroom_bytes": 4294967296,
+  "maximum_server_seconds": 1800,
+  "sampling_interval_seconds": 0.5,
+  "e04_passed": false,
+  "m10_passed": false,
+  "gpu_inference_submitted": false,
+  "existing_services_mutated": false,
+  "blocker": "Immediate host fit/disk/independent queue admission guard"
+}

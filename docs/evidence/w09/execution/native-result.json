@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-14",
+  "allocation": "e04-live-a",
+  "shell_id": "sh_1da468bfb001mWtSW4c6hxLMZI",
+  "implementation_commit": "8c2a0f72b5de2d86781f719ac01ca17406c2491c",
+  "retained_report": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-a/report.json",
+  "report_sha256": "1d195a12e3c032e20252493c31ac30be80e5fab2347fb015d6aad169c0edaab8",
+  "committed_snapshot": "docs/evidence/w09/execution/native-resource-blocker.json",
+  "host_available_bytes": 11232055296,
+  "fit_floor_bytes": 12884901888,
+  "shortfall_bytes": 1652846592,
+  "independent_queue_empty": true,
+  "owned_run_entries": [
+    "report.json"
+  ],
+  "server_started": false,
+  "job_admitted": false,
+  "reservations_created": 0,
+  "inference_submissions": 0,
+  "blender_started": false,
+  "source_checkpoint_created": false,
+  "publication_created": false,
+  "measurements": "One pre-admission baseline only. No process sampling or model peak is claimed.",
+  "verification": {
+    "affected_offline_tests_passed": 111,
+    "read_only_negative_receipt_tests_passed": 1,
+    "ruff_lint": "passed",
+    "ruff_format": "28 files already formatted",
+    "mypy": "18 source files passed",
+    "documentation_validator": "passed",
+    "warning": "Existing Starlette/httpx deprecation warning"
+  },
+  "e04_passed": false,
+  "m10_passed": false,
+  "next_action": "Return to coordinator. No waiting loop, threshold reduction or second run. Retain the original directory."
+}
