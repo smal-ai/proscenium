@@ -359,10 +359,12 @@ def main(root):
         if runtime.exists():
             previous = read(runtime)
             actual = identity(previous["pid"])
+            previous_start = previous.get("start_ticks", previous.get("start"))
+            assert isinstance(previous_start, (int, str)), "Missing SDK start identity"
             result["cleanup"]["sdk_process"] = {"original": previous, "observed": actual}
             result["cleanup"]["sdk_process_absent"] = (
                 actual is None
-                or actual["start_ticks"] != previous.get("start_ticks")
+                or actual["start_ticks"] != int(previous_start)
                 or actual["state"] in {"Z", "X"}
             )
         receipts = {}

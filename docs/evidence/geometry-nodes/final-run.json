@@ -1,0 +1,1250 @@
+{
+  "status": "bounded_stateless_geometry_nodes_native_proof_pass",
+  "implementation_commit": "f33debac990e1fa6b7054bc62350a9626f35b178",
+  "base_commit": "011ab92d7c0f2a85ce61ea0235ad305d98b317fe",
+  "retained_root": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b",
+  "original_blocked_root": "geometry-nodes-20261114-a remains unchanged and is not an owner denial",
+  "runtime": {
+    "sdk": "1.0.34",
+    "cli": "1.0.112",
+    "model": "gpt-6.1-sol",
+    "session_id": "f9ad0ed6-5f97-40c5-b649-11489031c986",
+    "blender": {
+      "version": "4.5.14 LTS",
+      "build_hash": "62c1db4208e8",
+      "build_date": "2026-09-15",
+      "build_time": "01:31:19"
+    }
+  },
+  "allocation": {
+    "roots": 1,
+    "children": 0,
+    "authoring_processes": 1,
+    "proxy_exports": 1,
+    "cpu_stills": 1,
+    "unused_second_still": true
+  },
+  "session_allocation": {
+    "create_count": 1,
+    "excluded_tools": [
+      "task"
+    ],
+    "custom_agents": [],
+    "included_builtin_agents": [],
+    "enable_skills": false,
+    "permission_handler_preserved": true
+  },
+  "root_request": {
+    "native_message_id": "3b69ebe8-2796-449f-b3ba-812ca82ac580",
+    "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+    "replayed": false,
+    "request_id": "geometry-nodes-b-root",
+    "schema_version": "1.0",
+    "state": "completed",
+    "state_revision": 3,
+    "type": "queue",
+    "work_id": "work-3d84132f40bb43ebbfabc602e0d19216"
+  },
+  "accepted_at": "2026-11-14T20:06:20.999062+02:00",
+  "seconds_to_terminal_root_and_previews": 72.77788905496709,
+  "initial_headroom_bytes": 38315474944,
+  "checkpoint": {
+    "files": [
+      {
+        "path": "assets/procedural/asset.blend",
+        "sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+      },
+      {
+        "path": "assets/procedural/readback.json",
+        "sha256": "2d3a337e065450c98bda93489724558e48896f0d406adb8c2b88b0613710afe4"
+      },
+      {
+        "path": "tools/asset.py",
+        "sha256": "4ecfbfac6cf419b9fc9b645e23be066fe5bcb763c118820d218d728f8d1ee162"
+      }
+    ],
+    "operation_id": "checkpoint-procedural-block",
+    "parent_commit": "8ca0401bbb5db8c3736eae2663c609b14cc5ec20",
+    "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+    "replayed": false,
+    "schema_version": "1.0",
+    "source_commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+    "state": "completed"
+  },
+  "publication": {
+    "event_sequence": 75,
+    "job_ids": [
+      "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165",
+      "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c"
+    ],
+    "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+    "publication_id": "publish-procedural-block-v1",
+    "replayed": false,
+    "schema_version": "1.0",
+    "versions": [
+      {
+        "item_id": "procedural-block",
+        "version_id": "procedural-block-v1"
+      }
+    ]
+  },
+  "source_version": {
+    "actor": {
+      "id": "call_qXa5B9ZluaArKisYIaWCE76D",
+      "kind": "tool"
+    },
+    "artifact_ids": [],
+    "created_at": "2026-11-14T18:07:30.369939+00:00",
+    "item_id": "procedural-block",
+    "kind": "asset",
+    "name": "Model-authored stateless Geometry Nodes block",
+    "preview_job_ids": [
+      "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165",
+      "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c"
+    ],
+    "preview_requests": [
+      {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "procedural-proxy",
+        "purpose": "proxy",
+        "renderer_revision": "proscenium-blender-1",
+        "samples": 8,
+        "scene_name": "ProceduralAsset",
+        "shot_id": null,
+        "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+      },
+      {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "procedural-still",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "ProceduralAsset",
+        "shot_id": null,
+        "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+      }
+    ],
+    "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+    "publication_id": "publish-procedural-block-v1",
+    "schema_version": "1.0",
+    "source": {
+      "dependencies": [],
+      "digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1",
+      "entry_path": "assets/procedural/asset.blend",
+      "files": [
+        {
+          "destination": "assets/procedural/asset.blend",
+          "origin": {
+            "commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+            "kind": "git",
+            "path": "assets/procedural/asset.blend",
+            "repository_id": "repository-061e26c5-2db1-4f44-9dcb-729d828db283",
+            "sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+          }
+        }
+      ],
+      "required_runtime": {
+        "application": "blender",
+        "features": [
+          "geometry-nodes"
+        ],
+        "version": "4.5.14 LTS"
+      }
+    },
+    "source_commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+    "version_id": "procedural-block-v1"
+  },
+  "authorship": {
+    "recipe_absent_at_fixture_head": true,
+    "model_apply_patch_observed": true,
+    "recipe_sha256": "4ecfbfac6cf419b9fc9b645e23be066fe5bcb763c118820d218d728f8d1ee162",
+    "authoring_command": "python3 tools/asset_author.py tools/asset.py"
+  },
+  "authoring": {
+    "recipe": "tools/asset.py",
+    "recipe_sha256": "4ecfbfac6cf419b9fc9b645e23be066fe5bcb763c118820d218d728f8d1ee162",
+    "headroom_bytes": 37669335040,
+    "started_ns": 472344527115291,
+    "pid": 4104450,
+    "start_ticks": 47234452,
+    "argv": [
+      "/home/quintin/.local/bin/blender",
+      "--background",
+      "--factory-startup",
+      "--disable-autoexec",
+      "--threads",
+      "4",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/tools/asset.py"
+    ],
+    "native_exit_code": 0,
+    "finished_ns": 472345443753751
+  },
+  "authoring_process_after_cleanup": null,
+  "saved_graph_and_evaluation": {
+    "blender": {
+      "version": "4.5.14 LTS",
+      "build_hash": "62c1db4208e8",
+      "build_date": "2026-09-15",
+      "build_time": "01:31:19"
+    },
+    "blend_path": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/assets/procedural/asset.blend",
+    "scene_name": "ProceduralAsset",
+    "object_name": "Parametric block",
+    "proscenium_object_id": "object-procedural-block",
+    "proscenium_instance_id": "instance-procedural-block",
+    "base_vertex_count": 0,
+    "object_matrix_world": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "has_nodes_modifier": true,
+    "modifier": {
+      "name": "Block generator",
+      "type": "NODES",
+      "node_group": "Block generator"
+    },
+    "reachable_groups": {
+      "Block generator": {
+        "name": "Block generator",
+        "type": "GeometryNodeTree",
+        "interface": [
+          {
+            "name": "Geometry",
+            "identifier": "Socket_0",
+            "in_out": "OUTPUT",
+            "socket_type": "NodeSocketGeometry"
+          }
+        ],
+        "nodes": [
+          {
+            "name": "Block shape",
+            "type": "GeometryNodeGroup",
+            "node_group": "Block shape",
+            "inputs": [],
+            "outputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Socket_0"
+              }
+            ]
+          },
+          {
+            "name": "Realized block",
+            "type": "GeometryNodeRealizeInstances",
+            "node_group": null,
+            "inputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Geometry"
+              },
+              {
+                "name": "Selection",
+                "identifier": "Selection"
+              },
+              {
+                "name": "Realize All",
+                "identifier": "Realize All"
+              },
+              {
+                "name": "Depth",
+                "identifier": "Depth"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Geometry"
+              }
+            ]
+          },
+          {
+            "name": "Blue finish",
+            "type": "GeometryNodeSetMaterial",
+            "node_group": null,
+            "inputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Geometry"
+              },
+              {
+                "name": "Selection",
+                "identifier": "Selection"
+              },
+              {
+                "name": "Material",
+                "identifier": "Material"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Geometry"
+              }
+            ]
+          },
+          {
+            "name": "Generator output",
+            "type": "NodeGroupOutput",
+            "node_group": null,
+            "inputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Socket_0"
+              },
+              {
+                "name": "",
+                "identifier": "__extend__"
+              }
+            ],
+            "outputs": []
+          }
+        ],
+        "links": [
+          {
+            "from_node": "Block shape",
+            "from_socket": {
+              "name": "Geometry",
+              "identifier": "Socket_0"
+            },
+            "to_node": "Realized block",
+            "to_socket": {
+              "name": "Geometry",
+              "identifier": "Geometry"
+            },
+            "is_valid": true
+          },
+          {
+            "from_node": "Realized block",
+            "from_socket": {
+              "name": "Geometry",
+              "identifier": "Geometry"
+            },
+            "to_node": "Blue finish",
+            "to_socket": {
+              "name": "Geometry",
+              "identifier": "Geometry"
+            },
+            "is_valid": true
+          },
+          {
+            "from_node": "Blue finish",
+            "from_socket": {
+              "name": "Geometry",
+              "identifier": "Geometry"
+            },
+            "to_node": "Generator output",
+            "to_socket": {
+              "name": "Geometry",
+              "identifier": "Socket_0"
+            },
+            "is_valid": true
+          }
+        ]
+      },
+      "Block shape": {
+        "name": "Block shape",
+        "type": "GeometryNodeTree",
+        "interface": [
+          {
+            "name": "Geometry",
+            "identifier": "Socket_0",
+            "in_out": "OUTPUT",
+            "socket_type": "NodeSocketGeometry"
+          }
+        ],
+        "nodes": [
+          {
+            "name": "Block cube",
+            "type": "GeometryNodeMeshCube",
+            "node_group": null,
+            "inputs": [
+              {
+                "name": "Size",
+                "identifier": "Size"
+              },
+              {
+                "name": "Vertices X",
+                "identifier": "Vertices X"
+              },
+              {
+                "name": "Vertices Y",
+                "identifier": "Vertices Y"
+              },
+              {
+                "name": "Vertices Z",
+                "identifier": "Vertices Z"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "Mesh",
+                "identifier": "Mesh"
+              },
+              {
+                "name": "UV Map",
+                "identifier": "UV Map"
+              }
+            ]
+          },
+          {
+            "name": "Block placement",
+            "type": "GeometryNodeTransform",
+            "node_group": null,
+            "inputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Geometry"
+              },
+              {
+                "name": "Translation",
+                "identifier": "Translation"
+              },
+              {
+                "name": "Rotation",
+                "identifier": "Rotation"
+              },
+              {
+                "name": "Scale",
+                "identifier": "Scale"
+              },
+              {
+                "name": "Transform",
+                "identifier": "Transform"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Geometry"
+              }
+            ]
+          },
+          {
+            "name": "Shape output",
+            "type": "NodeGroupOutput",
+            "node_group": null,
+            "inputs": [
+              {
+                "name": "Geometry",
+                "identifier": "Socket_0"
+              },
+              {
+                "name": "",
+                "identifier": "__extend__"
+              }
+            ],
+            "outputs": []
+          }
+        ],
+        "links": [
+          {
+            "from_node": "Block cube",
+            "from_socket": {
+              "name": "Mesh",
+              "identifier": "Mesh"
+            },
+            "to_node": "Block placement",
+            "to_socket": {
+              "name": "Geometry",
+              "identifier": "Geometry"
+            },
+            "is_valid": true
+          },
+          {
+            "from_node": "Block placement",
+            "from_socket": {
+              "name": "Geometry",
+              "identifier": "Geometry"
+            },
+            "to_node": "Shape output",
+            "to_socket": {
+              "name": "Geometry",
+              "identifier": "Socket_0"
+            },
+            "is_valid": true
+          }
+        ]
+      }
+    },
+    "mesh_cube_size": [
+      2.0,
+      1.5,
+      1.0
+    ],
+    "translation": [
+      0.75,
+      0.0,
+      0.5
+    ],
+    "evaluated_vertex_count": 8,
+    "evaluated_polygon_count": 6,
+    "world_bounds": {
+      "min": [
+        -0.25,
+        -0.75,
+        0.0
+      ],
+      "max": [
+        1.75,
+        0.75,
+        1.0
+      ]
+    },
+    "units": "metres",
+    "unresolved_instance_count": 0
+  },
+  "production": {
+    "keyframe": {
+      "job": {
+        "artifact_ids": [
+          "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c-f1",
+          "attempt-7be16625-2488-4473-92de-2ab3dec4ea5d-s1-1"
+        ],
+        "attempt_id": "attempt-7be16625-2488-4473-92de-2ab3dec4ea5d",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 1,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "860c12aac6a5d9028f8a95b154b54d6c10c211013e72d6b5ed9a4abad5cc85e8",
+        "job_id": "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-bc44bac4-5f9f-4bb5-aed8-084419730396",
+        "owner_operation_id": null,
+        "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "procedural-still",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 7,
+        "target": {
+          "shot_id": null,
+          "target_id": "procedural-block",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "work_id": "work-3d84132f40bb43ebbfabc602e0d19216"
+      },
+      "profile": {
+        "build_hash": "62c1db4208e8",
+        "camera_override": null,
+        "device": "CPU",
+        "procedural_meshes": [
+          {
+            "bounds_max": [
+              1.75,
+              0.75,
+              1.0
+            ],
+            "bounds_min": [
+              -0.25,
+              -0.75,
+              0.0
+            ],
+            "evaluated_polygons": 6,
+            "evaluated_vertices": 8,
+            "instance_id": "instance-procedural-block",
+            "node_groups": [
+              "Block generator",
+              "Block shape"
+            ],
+            "object_id": "object-procedural-block",
+            "source_vertices": 0
+          }
+        ],
+        "process": {
+          "argv": [
+            "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+            "--background",
+            "--factory-startup",
+            "--disable-autoexec",
+            "--threads",
+            "4",
+            "--python-exit-code",
+            "1",
+            "--python",
+            "/home/quintin/.cache/proscenium-development/fleet/geometry-nodes-final/apps/backend/src/proscenium/previews/blender_worker.py",
+            "--",
+            "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/jobs/previews/preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c/attempt-7be16625-2488-4473-92de-2ab3dec4ea5d"
+          ],
+          "pid": 4105273,
+          "start_ticks": 47236348,
+          "state": "R"
+        },
+        "review_encoding": "view_transformed_srgb PNG RGB8",
+        "samples": 8,
+        "spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "procedural-still",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "threads": 4,
+        "version": "4.5.14 LTS"
+      },
+      "terminal": {
+        "finished_ns": 472364100697911,
+        "native_exit_code": 0,
+        "state": "succeeded",
+        "task_sha256": "6b85365789e9c5979fb57c8bb72c85c6d0c99ddd7002e386b6b0f24f06ae1aeb",
+        "timed_out": false
+      },
+      "renderer_verified": {
+        "renderer_files_sha256": {
+          "blender_worker.py": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+          "geometry_nodes.py": "72464fc3cab811349eab6b5dfc33af02f1bb6d80dd4c2ba0db610bbc0e6cdf9d",
+          "journal.py": "943310dae86c1575f28438280e555c66f20d256fff9fbfdb3aac89469b05b727"
+        },
+        "task_sha256": "6b85365789e9c5979fb57c8bb72c85c6d0c99ddd7002e386b6b0f24f06ae1aeb",
+        "verified_ns": 472363481214963
+      },
+      "supervisor": {
+        "argv": [
+          "/home/quintin/.cache/proscenium-development/fleet/geometry-nodes-final/.venv/bin/python",
+          "-m",
+          "proscenium.previews.worker",
+          "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/jobs/previews/preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c/attempt-7be16625-2488-4473-92de-2ab3dec4ea5d"
+        ],
+        "pid": 4105271,
+        "start_ticks": 47236321,
+        "started_ns": 472363478202049,
+        "state": "R",
+        "task_sha256": "6b85365789e9c5979fb57c8bb72c85c6d0c99ddd7002e386b6b0f24f06ae1aeb"
+      }
+    },
+    "proxy": {
+      "job": {
+        "artifact_ids": [
+          "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165-proxy",
+          "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165-proxy-map"
+        ],
+        "attempt_id": "attempt-1cad9112-3b11-4a18-a5f0-b8a6ddd3cce9",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 0,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "bbccf1b31fadca5b2d8390c8016dcea534df32a2353d4e32a2faa626eb2616d0",
+        "job_id": "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-bc44bac4-5f9f-4bb5-aed8-084419730396",
+        "owner_operation_id": null,
+        "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "procedural-proxy",
+          "purpose": "proxy",
+          "renderer_revision": "proscenium-blender-1",
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 4,
+        "target": {
+          "shot_id": null,
+          "target_id": "procedural-block",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "work_id": "work-3d84132f40bb43ebbfabc602e0d19216"
+      },
+      "profile": {
+        "build_hash": "62c1db4208e8",
+        "camera_override": null,
+        "device": "CPU",
+        "procedural_meshes": [
+          {
+            "bounds_max": [
+              1.75,
+              0.75,
+              1.0
+            ],
+            "bounds_min": [
+              -0.25,
+              -0.75,
+              0.0
+            ],
+            "evaluated_polygons": 6,
+            "evaluated_vertices": 8,
+            "instance_id": "instance-procedural-block",
+            "node_groups": [
+              "Block generator",
+              "Block shape"
+            ],
+            "object_id": "object-procedural-block",
+            "source_vertices": 0
+          }
+        ],
+        "process": {
+          "argv": [
+            "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+            "--background",
+            "--factory-startup",
+            "--disable-autoexec",
+            "--threads",
+            "4",
+            "--python-exit-code",
+            "1",
+            "--python",
+            "/home/quintin/.cache/proscenium-development/fleet/geometry-nodes-final/apps/backend/src/proscenium/previews/blender_worker.py",
+            "--",
+            "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/jobs/previews/preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165/attempt-1cad9112-3b11-4a18-a5f0-b8a6ddd3cce9"
+          ],
+          "pid": 4105180,
+          "start_ticks": 47236241,
+          "state": "R"
+        },
+        "review_encoding": "view_transformed_srgb PNG RGB8",
+        "samples": 8,
+        "spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "procedural-proxy",
+          "purpose": "proxy",
+          "renderer_revision": "proscenium-blender-1",
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "threads": 4,
+        "version": "4.5.14 LTS"
+      },
+      "terminal": {
+        "finished_ns": 472362892755574,
+        "native_exit_code": 0,
+        "state": "succeeded",
+        "task_sha256": "d43248e8921f50bde38657f144ae32b57a1bc431643682857b7118f6a6fd0533",
+        "timed_out": false
+      },
+      "renderer_verified": {
+        "renderer_files_sha256": {
+          "blender_worker.py": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+          "geometry_nodes.py": "72464fc3cab811349eab6b5dfc33af02f1bb6d80dd4c2ba0db610bbc0e6cdf9d",
+          "journal.py": "943310dae86c1575f28438280e555c66f20d256fff9fbfdb3aac89469b05b727"
+        },
+        "task_sha256": "d43248e8921f50bde38657f144ae32b57a1bc431643682857b7118f6a6fd0533",
+        "verified_ns": 472362411087135
+      },
+      "supervisor": {
+        "argv": [
+          "/home/quintin/.cache/proscenium-development/fleet/geometry-nodes-final/.venv/bin/python",
+          "-m",
+          "proscenium.previews.worker",
+          "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/jobs/previews/preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165/attempt-1cad9112-3b11-4a18-a5f0-b8a6ddd3cce9"
+        ],
+        "pid": 4105179,
+        "start_ticks": 47236215,
+        "started_ns": 472362409028547,
+        "state": "R",
+        "task_sha256": "d43248e8921f50bde38657f144ae32b57a1bc431643682857b7118f6a6fd0533"
+      }
+    }
+  },
+  "proxy_mapping": {
+    "nodes": [
+      {
+        "display_name": "Parametric block",
+        "instance_id": "instance-procedural-block",
+        "node_path": [
+          0
+        ],
+        "object_id": "object-procedural-block",
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    ],
+    "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+    "proxy_artifact_id": "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165-proxy",
+    "sample_frame": 1,
+    "schema_version": "1.0",
+    "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1",
+    "space": "proxy_world_m",
+    "version_id": "procedural-block-v1"
+  },
+  "actual_glb_triangle_identity": {
+    "position_accessor_count": 24,
+    "unique_positions": [
+      [
+        -0.25,
+        0.0,
+        -0.75
+      ],
+      [
+        -0.25,
+        0.0,
+        0.75
+      ],
+      [
+        -0.25,
+        1.0,
+        -0.75
+      ],
+      [
+        -0.25,
+        1.0,
+        0.75
+      ],
+      [
+        1.75,
+        0.0,
+        -0.75
+      ],
+      [
+        1.75,
+        0.0,
+        0.75
+      ],
+      [
+        1.75,
+        1.0,
+        -0.75
+      ],
+      [
+        1.75,
+        1.0,
+        0.75
+      ]
+    ],
+    "index_count": 36,
+    "triangle_count": 12,
+    "bounds_proxy_y_up_m": {
+      "min": [
+        -0.25,
+        0.0,
+        -0.75
+      ],
+      "max": [
+        1.75,
+        1.0,
+        0.75
+      ]
+    },
+    "axis_conversion": "Blender (x,y,z) -> glTF (x,z,-y)",
+    "all_triangles_mapped_to": {
+      "display_name": "Parametric block",
+      "instance_id": "instance-procedural-block",
+      "node_path": [
+        0
+      ],
+      "object_id": "object-procedural-block",
+      "world_matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "ray": {
+      "origin_proxy_m": [
+        0.6,
+        0.4,
+        5
+      ],
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "nearest": {
+        "triangle_index": 2,
+        "indices": [
+          0,
+          3,
+          15
+        ],
+        "distance_m": 4.25,
+        "barycentric": [
+          0.5750000000000001,
+          0.024999999999999967,
+          0.4
+        ]
+      },
+      "hit_point_proxy_m": [
+        0.6,
+        0.4,
+        0.75
+      ],
+      "object_id": "object-procedural-block",
+      "instance_id": "instance-procedural-block"
+    }
+  },
+  "artifacts": [
+    {
+      "artifact_id": "attempt-7be16625-2488-4473-92de-2ab3dec4ea5d-s1-1",
+      "bytes": 21127,
+      "derived_from": [],
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 1,
+      "kind": "video",
+      "media_type": "video/mp4",
+      "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+      "purpose": "keyframe",
+      "schema_version": "1.0",
+      "sha256": "6dc2bd4dc2bb5ed0a93a0f3b88a1b74327217730e5f0dcf67cbf32269a30c4ba",
+      "source_version_id": "procedural-block-v1",
+      "state": "ready"
+    },
+    {
+      "artifact_id": "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c-f1",
+      "bytes": 218906,
+      "derived_from": [],
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "kind": "image",
+      "media_type": "image/png",
+      "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+      "purpose": "keyframe",
+      "schema_version": "1.0",
+      "sha256": "d9289d604ef5afbae168abb590b1df915af4c8c13404d28700d4a224be3065c7",
+      "source_version_id": "procedural-block-v1",
+      "state": "ready"
+    },
+    {
+      "artifact_id": "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165-proxy",
+      "bytes": 1788,
+      "derived_from": [],
+      "kind": "proxy",
+      "media_type": "model/gltf-binary",
+      "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+      "purpose": "inspection",
+      "schema_version": "1.0",
+      "sha256": "2b5f01e288df8ad19c313507f285351347b2c951ebcb71000ea89930e484825c",
+      "source_version_id": "procedural-block-v1",
+      "state": "ready"
+    },
+    {
+      "artifact_id": "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165-proxy-map",
+      "bytes": 614,
+      "derived_from": [],
+      "kind": "proxy_map",
+      "media_type": "application/json",
+      "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+      "purpose": "metadata",
+      "schema_version": "1.0",
+      "sha256": "9d451294e1ba757da78000ec97b05128c5d10f565062932eba38a420f7098a3e",
+      "source_version_id": "procedural-block-v1",
+      "state": "ready"
+    }
+  ],
+  "frame_receipt": {
+    "artifact_id": "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c-f1",
+    "attempt_id": "attempt-7be16625-2488-4473-92de-2ab3dec4ea5d",
+    "dimensions": {
+      "height": 360,
+      "width": 640
+    },
+    "input_digest": "860c12aac6a5d9028f8a95b154b54d6c10c211013e72d6b5ed9a4abad5cc85e8",
+    "job_id": "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c",
+    "output_path": "frames/00000001.png",
+    "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+    "receipt_id": "attempt-7be16625-2488-4473-92de-2ab3dec4ea5d-f1",
+    "schema_version": "1.0",
+    "sha256": "d9289d604ef5afbae168abb590b1df915af4c8c13404d28700d4a224be3065c7",
+    "shot_id": null,
+    "source_frame": 1,
+    "version_id": "procedural-block-v1"
+  },
+  "editable_source_sha256_before_after": [
+    "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8",
+    "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+  ],
+  "project_git_status": "D  assets/procedural/asset.blend\nD  assets/procedural/readback.json\nD  tools/asset.py\n?? assets/\n?? tools/asset.py\n",
+  "project_index_note": "The accepted checkpoint uses an isolated index and advances HEAD without rewriting the user's index. Its newly committed paths therefore appear as staged deletions plus untracked working files relative to the old index. The reporter preserves that index and verifies every checkpoint file's exact working bytes instead of claiming a clean index.",
+  "source_preservation": "Actual authoring saved nested graph and read it back; both production processes reopened the exact checkpoint bytes with empty base mesh and the same reachable groups. Working and materialised source hashes remain identical after proxy/still. No second inspection Blender process was used.",
+  "cleanup": {
+    "sdk_process_absent": true,
+    "unrelated_blender_3834895": "not touched",
+    "authoring_mcp": false,
+    "sdk_process": {
+      "original": {
+        "pid": 4101730,
+        "start": "47229266",
+        "parent_pid": 4101640,
+        "parent_start": "47229130",
+        "binary": "/home/quintin/.cache/proscenium-development/fleet/geometry-nodes-final/node_modules/@github/copilot-linux-x64/copilot"
+      },
+      "observed": null
+    },
+    "native_processes": {
+      "project/.proscenium/jobs/previews/preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c/attempt-7be16625-2488-4473-92de-2ab3dec4ea5d/native-profile.json": {
+        "original": {
+          "argv": [
+            "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+            "--background",
+            "--factory-startup",
+            "--disable-autoexec",
+            "--threads",
+            "4",
+            "--python-exit-code",
+            "1",
+            "--python",
+            "/home/quintin/.cache/proscenium-development/fleet/geometry-nodes-final/apps/backend/src/proscenium/previews/blender_worker.py",
+            "--",
+            "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/jobs/previews/preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c/attempt-7be16625-2488-4473-92de-2ab3dec4ea5d"
+          ],
+          "pid": 4105273,
+          "start_ticks": 47236348,
+          "state": "R"
+        },
+        "observed": null,
+        "owned_process_gone": true
+      },
+      "project/.proscenium/jobs/previews/preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165/attempt-1cad9112-3b11-4a18-a5f0-b8a6ddd3cce9/native-profile.json": {
+        "original": {
+          "argv": [
+            "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+            "--background",
+            "--factory-startup",
+            "--disable-autoexec",
+            "--threads",
+            "4",
+            "--python-exit-code",
+            "1",
+            "--python",
+            "/home/quintin/.cache/proscenium-development/fleet/geometry-nodes-final/apps/backend/src/proscenium/previews/blender_worker.py",
+            "--",
+            "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/jobs/previews/preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165/attempt-1cad9112-3b11-4a18-a5f0-b8a6ddd3cce9"
+          ],
+          "pid": 4105180,
+          "start_ticks": 47236241,
+          "state": "R"
+        },
+        "observed": null,
+        "owned_process_gone": true
+      }
+    }
+  },
+  "limits": [
+    "Stateless saved graph compatibility only, no simulation/bake/cache/import or unresolved-instance expansion.",
+    "Actual GLB binary accessor/index ray test, not a browser picking/UI claim.",
+    "CPU eight-sample still, not final-quality or universal performance acceptance.",
+    "Renderer dependency seal validates local source identity before spawn; legacy unsealed tasks are refused at spawn, not silently migrated.",
+    "No extra milestone or release acceptance claim; FR08 coverage remains coordinator-owned."
+  ],
+  "retained_sha256": {
+    "root-reservation.json": "f819c8eac8d729284bf7a295198a0a6ab1af9ad74a22b997dbb8e5d968d268b9",
+    "session-allocation.json": "c540fe31d1f3f369c8ebb8fd750eb6337f79043faa7af068012ea5a83bbc1d53",
+    "native-result.json": "b8f67729af70a1f42f09616e67e412b3962b006d92e927eb3bae980388bdd0f4"
+  },
+  "native_history_sha256": "cf98cedc2a571233e7d5a4d53e924a75680641b5e41ab38f5631fedc22c4b31a"
+}
