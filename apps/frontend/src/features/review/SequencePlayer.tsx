@@ -3,8 +3,9 @@ import type { Artifact, FrameMap } from "../../api/generated/contracts";
 import { mediaUrl } from "./media";
 
 /** Complete assembly playback. A composite never pretends to be one contributor. */
-export function SequencePlayer({projectId, artifact, mapping, onCapture}: {
+export function SequencePlayer({projectId, artifact, mapping, requestedFrame = 1, onCapture}: {
   projectId: string; artifact: Artifact; mapping: FrameMap;
+  requestedFrame?: number;
   onCapture: (blob: Blob, frame: number, width: number, height: number) => Promise<void>;
 }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -12,6 +13,16 @@ export function SequencePlayer({projectId, artifact, mapping, onCapture}: {
   const [presented, setPresented] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+    const element = video.current; if (!element) return;
+    const seek = () => {
+      element.pause(); capture.current = null; setPresented(null);
+      element.currentTime = (Math.min(mapping.frame_count, Math.max(1, requestedFrame)) - 1) * mapping.fps.denominator / mapping.fps.numerator;
+    };
+    if (element.readyState >= 1) seek();
+    else element.addEventListener("loadedmetadata", seek, {once:true});
+    return () => element.removeEventListener("loadedmetadata", seek);
+  }, [requestedFrame, artifact.artifact_id, mapping.frame_count, mapping.fps.numerator, mapping.fps.denominator]);
   useEffect(() => {
     const element = video.current; if (!element) return;
     if (!element.requestVideoFrameCallback) {setError("Presented-frame provenance is unavailable in this browser"); return;}

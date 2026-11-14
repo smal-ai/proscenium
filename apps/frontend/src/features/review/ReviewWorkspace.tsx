@@ -77,6 +77,8 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
   const availability=availabilityByJob[reviewJobId ?? ""] ?? null;
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
+  const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
+  const deliveryManifest = deliveryJob ? artifacts.find(a => deliveryJob.artifact_ids.includes(a.artifact_id) && a.kind === "document" && a.purpose === "metadata" && a.state === "ready") : undefined;
   const readyToCapture = mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady;
   const imageFailure = useCallback((message: string) => setError(message), []);
 
@@ -363,9 +365,14 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       <button disabled={!target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
       {mode === "3d_inspection" && <button disabled={!proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>}
     </nav>
+    {assembly?.purpose === "final" && deliveryJob && deliveryManifest && <nav className="review-toolbar" aria-label="Sequence delivery">
+      <span>Final encode · technical completion is not owner selection</span>
+      <a href={mediaUrl(projectId,assembly.artifact_id)} download={`${version.version_id}.mp4`}>Download final video</a>
+      <a href={mediaUrl(projectId,deliveryManifest.artifact_id)} download={`${version.version_id}-manifest.json`}>Download delivery manifest</a>
+    </nav>}
     {draft ? <AnnotationEditor key={draft.key} api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onContextPreparer={registerEditorPreparer} onClose={() => setDraftId(null)}/>
       : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
-        : mode === "animation" ? assembly && frameMap ? <SequencePlayer projectId={projectId} artifact={assembly} mapping={frameMap.map} onCapture={async (blob,frame,width,height) => {
+        : mode === "animation" ? assembly && frameMap ? <SequencePlayer key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={frameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
