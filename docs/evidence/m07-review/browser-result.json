@@ -1,0 +1,17 @@
+{
+  "source": "f6747bb221f40a4680436d34fd0602fa07dbcd4f",
+  "views": [],
+  "errors": [],
+  "mutations": [
+    {
+      "path": "/api/v1/owner/session",
+      "method": "POST"
+    }
+  ],
+  "browser": {
+    "version": "159.0.8154.6",
+    "executable": "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+    "sha256": "045558b2f167db04624e36d952496705418a85d87ff9b5fb55a8c40cc59201ae"
+  },
+  "error": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Choose a project', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button aria-expanded=\"false\" class=\"project-trigger\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n"
+}

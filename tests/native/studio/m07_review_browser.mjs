@@ -28,7 +28,9 @@ try {
   await page.goto((await fs.readFile(`${root}/pair.private`,'utf8')).trim());
   const pair=page.waitForResponse(response=>response.url().endsWith('/api/v1/owner/session')&&response.request().method()==='POST');
   await page.getByRole('button',{name:'Connect this browser',exact:true}).click();assert.ok((await pair).ok());
-  await page.getByRole('button',{name:'Choose a project',exact:true}).click();
+  // Pairing can finish before the saved active-project snapshot. Its trigger's
+  // accessible name then changes from the placeholder to the project name.
+  await page.locator('button.project-trigger').click();
   await page.getByLabel('Saved project',{exact:true}).selectOption(projectId);
   const activation=page.waitForResponse(response=>response.url().endsWith(`${prefix}/activate`)&&response.request().method()==='POST');
   await page.getByRole('button',{name:'Activate selected project',exact:true}).click();assert.ok((await activation).ok());
@@ -86,5 +88,9 @@ try {
   result.viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,dpr:devicePixelRatio}));
   assert.deepEqual(result.viewport,{width:1920,height:1080,dpr:1});
   result.pass=true;
-} catch(error) {result.error=String(error);process.exitCode=1;}
+} catch(error) {
+  result.error=String(error);process.exitCode=1;
+  const page=browser?.contexts()[0]?.pages()[0];
+  if(page)await page.screenshot({path:`${root}/failed-readback.png`}).catch(()=>{});
+}
 finally {if(browser)await browser.close();await fs.writeFile(`${root}/browser-result.json`,JSON.stringify(result,null,2)+'\n');}

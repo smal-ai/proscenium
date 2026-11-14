@@ -44,7 +44,7 @@ def test_read_only_guard(method, path, allowed):
         assert sent[0]["status"] == 403
 
 
-def test_retained_actual_readback():
+def retained():
     root = os.environ.get("M07_REVIEW_ACTUAL")
     if not root:
         pytest.skip("Set M07_REVIEW_ACTUAL to retained actual readback, not a new execution")
@@ -52,17 +52,29 @@ def test_retained_actual_readback():
     run = json.loads((path / "run.json").read_text())
     result = json.loads((path / "browser-result.json").read_text())
     audit = json.loads((path / "server-audit.json").read_text())
-    assert run["pass"] and run["original_unchanged"] and run["port_released"]
+    return run, result, audit
+
+
+def test_retained_actual_boundary_cleanup():
+    run, result, audit = retained()
+    assert run["original_unchanged"] and run["port_released"]
     assert run["protected_identities_unchanged"]
     assert run["elapsed"] <= 300
     assert min(row["available"] for row in run["samples"]) >= 4 * 1024**3
     assert all(row["reaped"] for row in run["children"].values())
-    assert result["pass"] and len(result["views"]) == 7
-    assert result["before"] == result["after"]
-    assert result["viewport"] == {"width": 1920, "height": 1080, "dpr": 1}
     assert audit["forbidden"] == [] and audit["gate_closed"]
     assert audit["sdk_sends"] == audit["provider_sends"] == 0
     assert audit["services"] == audit["execution_profiles"] == []
+
+
+def test_retained_actual_readback():
+    run, result, audit = retained()
+    assert run.get("pass") and result.get("pass"), result.get(
+        "error", "Actual UI proof is incomplete"
+    )
+    assert len(result["views"]) == 7
+    assert result["before"] == result["after"]
+    assert result["viewport"] == {"width": 1920, "height": 1080, "dpr": 1}
     for row in result["views"]:
         assert row["context"]["target"]["displayed_sha256"] == row["content"]["sha256"]
         assert row["context"]["target"]["render_job_id"] is None

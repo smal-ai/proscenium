@@ -1,0 +1,78 @@
+{
+  "README.md": {
+    "bytes": 5853,
+    "sha256": "2a5bcf6cc450bcc80f93b395fdfa24addbda6f22b02f29e70715699d08461499"
+  },
+  "acceptance.xml": {
+    "bytes": 3576,
+    "sha256": "d80752eed9ceb3313b642f78395e4c7e92d3d5e0ef5adfecf9433c8c9d218437"
+  },
+  "browser-regressions/report.json": {
+    "bytes": 20224,
+    "sha256": "3f89a3395b278c0adb71d06588224bfc76450df7c6256eec6956f01ed29fd0a5"
+  },
+  "browser-regressions/review-job-late-jobs-prese-99e5c-nge-and-annotation-identity-brave/late-job-draft-preserved.png": {
+    "bytes": 21706,
+    "sha256": "54a4e5575f55e0a5d1e9706071d366e637939174cb2f7788cb4ecb65850ed877"
+  },
+  "browser-regressions/review-job-late-jobs-prese-99e5c-nge-and-annotation-identity-chromium/late-job-draft-preserved.png": {
+    "bytes": 21706,
+    "sha256": "54a4e5575f55e0a5d1e9706071d366e637939174cb2f7788cb4ecb65850ed877"
+  },
+  "browser-regressions/review-job-late-jobs-prese-99e5c-nge-and-annotation-identity-edge/late-job-draft-preserved.png": {
+    "bytes": 21706,
+    "sha256": "54a4e5575f55e0a5d1e9706071d366e637939174cb2f7788cb4ecb65850ed877"
+  },
+  "browser-regressions/review-job-references-cond-0cecd-r-inherit-another-job-label-brave/reference-no-job.png": {
+    "bytes": 22725,
+    "sha256": "323785fa66c3c4dd7fc67f568eb12b4412cc0a4f56762309857188804e958b4f"
+  },
+  "browser-regressions/review-job-references-cond-0cecd-r-inherit-another-job-label-chromium/reference-no-job.png": {
+    "bytes": 22725,
+    "sha256": "323785fa66c3c4dd7fc67f568eb12b4412cc0a4f56762309857188804e958b4f"
+  },
+  "browser-regressions/review-job-references-cond-0cecd-r-inherit-another-job-label-edge/reference-no-job.png": {
+    "bytes": 22725,
+    "sha256": "323785fa66c3c4dd7fc67f568eb12b4412cc0a4f56762309857188804e958b4f"
+  },
+  "browser-regressions/review-job-storyboard-jump-c1ef6--label-and-captured-context-brave/correction-job.png": {
+    "bytes": 22519,
+    "sha256": "c8be044850e361fb43a26b9594308082b39d37215229e5e126d0c30929c17dbb"
+  },
+  "browser-regressions/review-job-storyboard-jump-c1ef6--label-and-captured-context-chromium/correction-job.png": {
+    "bytes": 22519,
+    "sha256": "c8be044850e361fb43a26b9594308082b39d37215229e5e126d0c30929c17dbb"
+  },
+  "browser-regressions/review-job-storyboard-jump-c1ef6--label-and-captured-context-edge/correction-job.png": {
+    "bytes": 22519,
+    "sha256": "c8be044850e361fb43a26b9594308082b39d37215229e5e126d0c30929c17dbb"
+  },
+  "browser-result.json": {
+    "bytes": 904,
+    "sha256": "308f77ae2a0bd3f1cc7c94b23b524233e9c16ec02bb45c0d2cbe9f6907984b07"
+  },
+  "import-report.json": {
+    "bytes": 633,
+    "sha256": "cc1e26b71b0d10ad7a5458f9ab87a9496d4bf232e7c991c210f202f830666f88"
+  },
+  "preparation.json": {
+    "bytes": 988,
+    "sha256": "9af1648cab77d7f942738e33f0858aa45465e14cafef668e88f53030dc4a868b"
+  },
+  "protected-before.json": {
+    "bytes": 1638,
+    "sha256": "f7b69702f107221608399265d22f673d2b03dce40cebf7b24c1dd067f06d7c52"
+  },
+  "run.json": {
+    "bytes": 15186,
+    "sha256": "ac7cee2087e4ca0b5e5c70376a57ea7ad4daccb7fcfbac1989988fe8fbf8f6cc"
+  },
+  "server-audit.json": {
+    "bytes": 4989,
+    "sha256": "09d416c3d3f764230405d795a0ee2eb11e9a58eb492d861f0d47edb92793923e"
+  },
+  "summary.json": {
+    "bytes": 688,
+    "sha256": "cd977c45ed1b6861a1311275f76254fe7d218d5db6cfe82a68c7966bd7be069a"
+  }
+}

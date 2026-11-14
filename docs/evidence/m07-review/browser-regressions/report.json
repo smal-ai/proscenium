@@ -1,0 +1,656 @@
+{
+  "config": {
+    "argv": [
+      "/home/quintin/.nvm/versions/node/v24.18.0/bin/node",
+      "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "tests/browser/review-job.config.ts"
+    ],
+    "configFile": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser/review-job.config.ts",
+    "rootDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/opencode/m07-review-browser-20261114-d",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-job.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/tmp/opencode/m07-review-browser-20261114-d",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "brave",
+        "name": "brave",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-job.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/tmp/opencode/m07-review-browser-20261114-d",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "edge",
+        "name": "edge",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-job.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/opencode/m07-review-browser-20261114-d",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "snapshotDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-job.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5196",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "browserName": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/opencode/m07-review-browser-20261114-d",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "brave",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "snapshotDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-job.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5196",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "browserName": "chromium",
+          "launchOptions": {
+            "executablePath": "/usr/bin/brave-browser"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "brave"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/opencode/m07-review-browser-20261114-d",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "edge",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "snapshotDir": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-job.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5196",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "browserName": "chromium",
+          "launchOptions": {
+            "executablePath": "/usr/bin/microsoft-edge"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "edge"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/tmp/opencode/m07-review-browser-20261114-d/report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npx vite --host 127.0.0.1 --port 5196 --strictPort",
+      "cwd": "/home/quintin/.cache/proscenium-development/fleet/m07-review-job",
+      "url": "http://127.0.0.1:5196/tests/browser/review-job-harness.html",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "review-job.spec.ts",
+      "file": "review-job.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "storyboard jumps and explicit job choices synchronise image, label and captured context",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 813,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:10.583Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 735,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:13.388Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 774,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:16.360Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b6f83a55370ba7fa4a30-38a97621acf9c8935cc8",
+          "file": "review-job.spec.ts",
+          "line": 36,
+          "column": 1
+        },
+        {
+          "title": "late jobs preserve the selected image, local draft, range and annotation identity",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 896,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:11.468Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 962,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:14.236Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 974,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:17.268Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b6f83a55370ba7fa4a30-1138fdd2cd3f10d40617",
+          "file": "review-job.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "references, conditioning derivatives, pending and missing results never inherit another job label",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 716,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:12.377Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 824,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:15.212Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 702,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:18.257Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b6f83a55370ba7fa4a30-9ff14b2861146109e0db",
+          "file": "review-job.spec.ts",
+          "line": 58,
+          "column": 1
+        },
+        {
+          "title": "membership requires an exact output identity and never resolves ambiguous ownership",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:13.099Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:16.043Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T18:46:18.968Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b6f83a55370ba7fa4a30-293a88ed2bc6c39d14cf",
+          "file": "review-job.spec.ts",
+          "line": 68,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-14T18:46:09.708Z",
+    "duration": 9417.058,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

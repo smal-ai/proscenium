@@ -1,0 +1,17 @@
+{
+  "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+  "path": "/tmp/opencode/m07-review-actual-20261114-b/restored/project",
+  "data_directory": "/tmp/opencode/m07-review-actual-20261114-b/restored/machine",
+  "original_path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-fp16-execution-20261114/project",
+  "execution": "closed_read_only_import",
+  "limits": [
+    "original_scripted_setup_invocation_running"
+  ],
+  "preserved_blockers": [
+    {
+      "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+      "state": "running",
+      "work_id": "m07-setup-work"
+    }
+  ]
+}

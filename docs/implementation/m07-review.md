@@ -19,3 +19,11 @@ Specification 3.2.0 and contract 1.0.0 are unchanged. Parent owns M07 acceptance
 - Build retains existing Lucide `use client` and large-chunk warnings.
 
 Actual retained-image composed-app readback is recorded separately under `docs/evidence/m07-review/`. No fresh generation is authorised or required. The earlier cobalt-blue correction was not achieved and is not changed by this UI fix.
+
+## Actual follow-up limitation
+
+The single actual app/browser stack at `f6747bb` consumed 17.841484 seconds and was cleaned up. Pairing succeeded, but the driver used an obsolete project-trigger label after the saved-project snapshot loaded. It failed before explicit activation and review navigation. **Actual image/job/context readback is not complete.** The driver selector is corrected but no second stack was started without another allocation.
+
+The original scripted setup invocation also remains `running`, blocking the ordinary settled backup. A read-only SQLite backup/disposable import preserved this fixture defect unchanged. Protected record/budget hashes and original files were unchanged by readback. The first attempted backup removed two empty WAL sidecars, fully disclosed in the evidence. No backend repair, native send, provider call or model-service lifecycle occurred.
+
+The product fix is covered by the focused actual-browser fixtures and existing review regressions. Parent must allocate and accept the remaining real retained-image readback before treating this follow-up as complete.

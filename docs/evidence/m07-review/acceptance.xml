@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="8" time="0.051" timestamp="2026-11-14T20:49:44.923192+02:00" hostname="Gerard-EVO-X2"><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[GET-/api/v1/projects/p/artifacts/a/content-True]" time="0.001" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/owner/session-True]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/projects/p/activate-True]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/projects/p/requests-False]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/internal/v1/generation-jobs-False]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/projects/p/selections-False]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_retained_actual_boundary_cleanup" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_retained_actual_readback" time="0.000"><failure message="AssertionError: TimeoutError: locator.click: Timeout 15000ms exceeded.&#10;  Call log:&#10;  #x1B[2m  - waiting for getByRole('button', { name: 'Choose a project', exact: true })#x1B[22m&#10;  #x1B[2m    - locator resolved to &lt;button aria-expanded=&quot;false&quot; class=&quot;project-trigger&quot;&gt;…&lt;/button&gt;#x1B[22m&#10;  #x1B[2m  - attempting click action#x1B[22m&#10;  #x1B[2m    - waiting for element to be visible, enabled and stable#x1B[22m&#10;  #x1B[2m  - element was detached from the DOM, retrying#x1B[22m&#10;  &#10;assert (None)&#10; +  where None = &lt;built-in method get of dict object at 0x7f92078a24c0&gt;('pass')&#10; +    where &lt;built-in method get of dict object at 0x7f92078a24c0&gt; = {'build': {'apps/frontend/dist/assets/index-D8_DbBaC.js': '0fce5b5a5b3f76d973a8e2c5e6ca6e2989983d7b24aeb41ced81700b42e...'reaped': True, 'returncode': 0, 'start': '47473262'}}, 'elapsed': 17.841484149976168, 'original_unchanged': True, ...}.get">def test_retained_actual_readback():
+        run, result, audit = retained()
+&gt;       assert run.get("pass") and result.get("pass"), result.get(
+            "error", "Actual UI proof is incomplete"
+        )
+E       AssertionError: TimeoutError: locator.click: Timeout 15000ms exceeded.
+E         Call log:
+E         #x1B[2m  - waiting for getByRole('button', { name: 'Choose a project', exact: true })#x1B[22m
+E         #x1B[2m    - locator resolved to &lt;button aria-expanded="false" class="project-trigger"&gt;…&lt;/button&gt;#x1B[22m
+E         #x1B[2m  - attempting click action#x1B[22m
+E         #x1B[2m    - waiting for element to be visible, enabled and stable#x1B[22m
+E         #x1B[2m  - element was detached from the DOM, retrying#x1B[22m
+E         
+E       assert (None)
+E        +  where None = &lt;built-in method get of dict object at 0x7f92078a24c0&gt;('pass')
+E        +    where &lt;built-in method get of dict object at 0x7f92078a24c0&gt; = {'build': {'apps/frontend/dist/assets/index-D8_DbBaC.js': '0fce5b5a5b3f76d973a8e2c5e6ca6e2989983d7b24aeb41ced81700b42e...'reaped': True, 'returncode': 0, 'start': '47473262'}}, 'elapsed': 17.841484149976168, 'original_unchanged': True, ...}.get
+
+tests/acceptance/m07_review_test.py:72: AssertionError</failure></testcase></testsuite></testsuites>
