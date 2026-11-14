@@ -50,3 +50,24 @@ No film-specific source, asset, credential, inherited creative task or binary is
 copied. The owner explicitly authorised this same-owner adaptation. No licence
 file was present at the pinned `smal` repository root. No broader redistribution
 permission is inferred.
+# Isolated authoring bridge
+
+An independent installed Blender session must never be commandeered for a test.
+Choose a free loopback port and an explicitly owned project:
+
+```bash
+python -m tools.blender start --project /absolute/owned/project \
+  --isolated --host 127.0.0.1 --port 9877 --virtual-display
+```
+
+`--isolated` uses factory startup and disables automatic script execution. It enables
+the already installed `blender_mcp` add-on in memory, sets the scene's bridge port
+and starts that instance's server. It does not install an add-on, change installed
+files or save preferences. The default non-isolated endpoint remains port 9876.
+Custom endpoints require isolation and a numeric loopback address. Configure the
+official `mcp-for-blender==2.0.0` client with matching `--host` and `--port` flags.
+
+The private launch receipt records PID, process start ticks, boot ID and argv.
+An existing receipt with no ready socket remains `outcome_uncertain`, even if the
+recorded process has gone. A second start cannot erase its possible native effects.
+Inspect the retained log/receipt and resolve the original outcome explicitly.

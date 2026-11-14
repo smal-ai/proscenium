@@ -1,0 +1,9 @@
+{
+  "server_stopped": true,
+  "browser_stopped": true,
+  "owned_blender_group_stopped": true,
+  "independent_blender_2726862_preserved": true,
+  "all_observed_owned_processes_exited": true,
+  "observed_owned_process_count": 18,
+  "completed_at": "2026-11-14T13:40:08.236099+00:00"
+}

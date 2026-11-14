@@ -1,0 +1,91 @@
+{
+  "filepath": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/scenes/loop/scene.blend",
+  "is_dirty": false,
+  "version": "4.5.14 LTS",
+  "build_hash": "62c1db4208e8",
+  "dependencies": [],
+  "objects": [
+    {
+      "name": "Grey Floor",
+      "type": "MESH",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "dimensions": [
+        200.0,
+        200.0,
+        0.0
+      ],
+      "object_id": "loop-floor",
+      "instance_id": "loop-floor-001"
+    },
+    {
+      "name": "Orange Cube",
+      "type": "MESH",
+      "location": [
+        -2.0,
+        0.0,
+        1.0
+      ],
+      "dimensions": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "object_id": "loop-orange-cube",
+      "instance_id": "loop-orange-cube-001"
+    },
+    {
+      "name": "Blue Cube",
+      "type": "MESH",
+      "location": [
+        2.0,
+        0.0,
+        1.0
+      ],
+      "dimensions": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "object_id": "loop-blue-cube",
+      "instance_id": "loop-blue-cube-001"
+    },
+    {
+      "name": "Camera",
+      "type": "CAMERA",
+      "location": [
+        0.0,
+        -16.0,
+        8.0
+      ],
+      "dimensions": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "object_id": null,
+      "instance_id": null
+    },
+    {
+      "name": "Area Key",
+      "type": "LIGHT",
+      "location": [
+        -3.0,
+        -4.0,
+        8.0
+      ],
+      "dimensions": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "object_id": null,
+      "instance_id": null
+    }
+  ],
+  "captured_at": "2026-11-14T13:30:26.857685+00:00",
+  "source_sha256": "2751163384bbcf3c080604095f37728cb7f8f3889013362e6619e6d011406863"
+}

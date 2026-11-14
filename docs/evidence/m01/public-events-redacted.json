@@ -1,0 +1,3235 @@
+[
+  {
+    "actor": {
+      "id": "owner-655e92f4-58b8-47de-9b0c-de6d795abbf2",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:25:11.454426+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:25:11.453429+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-89515f4d22ad485fbd5dde7d596a048f",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "state": "held",
+        "state_revision": 0,
+        "type": "queue",
+        "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+      },
+      "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "162d05ab-9c6a-4ea7-9e3e-7e51245cddde",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER INPUT FIXTURE for the real M01 journey. Author a simple well-lit scene with a grey floor, an orange cube on the left and a clearly blue cube on the right, camera facing both, area light. Do this yourself as lead, no native children needed. All model/native/render effects must be real. Use only the configured blender MCP server on 127.0.0.1:9877. NEVER access 9876 or other Blender instances. The coordinator created this empty factory instance specifically for this test and explicitly authorises initialising its default unsaved scene, clearing its default objects, and saving in this active project. Do not start/install/reconfigure services.\nSave canonical scenes/loop/scene.blend. Stable mesh custom properties proscenium_object_id and proscenium_instance_id required, unique instances. Let initial blue cube height be 2, base on floor, and orange height 2, separated so clearly visible. Camera should frame a future blue height 4 too. Standard colour management, None look. Save without relative external dependencies. Can create a helper Python source under scenes/loop if useful. No direct rendering in authoring instance.\nUse checkpoint_sources on only explicitly owned files, expected_head from actual git HEAD (null only if unborn), then publish_outputs item loop-scene version loop-v1 expected_current_version_id null. Include exactly ONE initial preview request, frame 1 only, 640x360, CYCLES CPU samples 8, renderer_revision proscenium-blender-1, scene_name Scene, shot_id null, camera null, fps {numerator:24,denominator:1}, colour_management {view_transform:Standard,look:None,exposure:0,gamma:1}, review_output {media_type:image/png,encoding:view_transformed_srgb,bit_depth:8}. Required runtime is application blender, version EXACT '4.5.14 LTS', features []. Use actual checkpoint source_commit, repository_id and sha256 receipt values in source closure files [{destination:'scenes/loop/scene.blend',origin:{kind:'git',repository_id:<actual>,commit:<actual>,path:'scenes/loop/scene.blend',sha256:<actual>}}]. SourceClosure {entry_path:'scenes/loop/scene.blend',files:...,dependencies:[],required_runtime:...,digest:...} digest is SHA256 RFC8785 canonical JSON of that closure WITHOUT digest, sorted destinations/dependencies. For these all-string/int fields Python json.dumps(sort_keys=True,separators=(',',':'),ensure_ascii=False) is exact canonical JSON. You can compute with python3 in project, never inspect runtime database or credentials. Read project.json for repository identity if needed. preview source_closure_digest equals closure digest. IDs must be unique for operation/publication/intent.\nKeep prompt text separate from authored source. No generic git add and no hand-written receipts. Use only production checkpoint/publication tools. Do not request proxy/Comfy/VLM/Unity. Finish with actual publication/version/job IDs. Do not poll repeatedly for rendering, the real host handles it independently. If a call is uncertain inspect before retry. Stay within one keyframe and 180 seconds for this request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 2,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:25:17.052045+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:25:11.453429+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-89515f4d22ad485fbd5dde7d596a048f",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "queue",
+        "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+      },
+      "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "162d05ab-9c6a-4ea7-9e3e-7e51245cddde",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER INPUT FIXTURE for the real M01 journey. Author a simple well-lit scene with a grey floor, an orange cube on the left and a clearly blue cube on the right, camera facing both, area light. Do this yourself as lead, no native children needed. All model/native/render effects must be real. Use only the configured blender MCP server on 127.0.0.1:9877. NEVER access 9876 or other Blender instances. The coordinator created this empty factory instance specifically for this test and explicitly authorises initialising its default unsaved scene, clearing its default objects, and saving in this active project. Do not start/install/reconfigure services.\nSave canonical scenes/loop/scene.blend. Stable mesh custom properties proscenium_object_id and proscenium_instance_id required, unique instances. Let initial blue cube height be 2, base on floor, and orange height 2, separated so clearly visible. Camera should frame a future blue height 4 too. Standard colour management, None look. Save without relative external dependencies. Can create a helper Python source under scenes/loop if useful. No direct rendering in authoring instance.\nUse checkpoint_sources on only explicitly owned files, expected_head from actual git HEAD (null only if unborn), then publish_outputs item loop-scene version loop-v1 expected_current_version_id null. Include exactly ONE initial preview request, frame 1 only, 640x360, CYCLES CPU samples 8, renderer_revision proscenium-blender-1, scene_name Scene, shot_id null, camera null, fps {numerator:24,denominator:1}, colour_management {view_transform:Standard,look:None,exposure:0,gamma:1}, review_output {media_type:image/png,encoding:view_transformed_srgb,bit_depth:8}. Required runtime is application blender, version EXACT '4.5.14 LTS', features []. Use actual checkpoint source_commit, repository_id and sha256 receipt values in source closure files [{destination:'scenes/loop/scene.blend',origin:{kind:'git',repository_id:<actual>,commit:<actual>,path:'scenes/loop/scene.blend',sha256:<actual>}}]. SourceClosure {entry_path:'scenes/loop/scene.blend',files:...,dependencies:[],required_runtime:...,digest:...} digest is SHA256 RFC8785 canonical JSON of that closure WITHOUT digest, sorted destinations/dependencies. For these all-string/int fields Python json.dumps(sort_keys=True,separators=(',',':'),ensure_ascii=False) is exact canonical JSON. You can compute with python3 in project, never inspect runtime database or credentials. Read project.json for repository identity if needed. preview source_closure_digest equals closure digest. IDs must be unique for operation/publication/intent.\nKeep prompt text separate from authored source. No generic git add and no hand-written receipts. Use only production checkpoint/publication tools. Do not request proxy/Comfy/VLM/Unity. Finish with actual publication/version/job IDs. Do not poll repeatedly for rendering, the real host handles it independently. If a call is uncertain inspect before retry. Stay within one keyframe and 180 seconds for this request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 4,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:25:17.053106+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-89515f4d22ad485fbd5dde7d596a048f",
+      "job_ids": [],
+      "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "originating_request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 1,
+      "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 5,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:25:17.065212+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:25:11.453429+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-89515f4d22ad485fbd5dde7d596a048f",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": "009e3fc2-4977-4ace-90c0-e5f8763ca766",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+      },
+      "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "162d05ab-9c6a-4ea7-9e3e-7e51245cddde",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER INPUT FIXTURE for the real M01 journey. Author a simple well-lit scene with a grey floor, an orange cube on the left and a clearly blue cube on the right, camera facing both, area light. Do this yourself as lead, no native children needed. All model/native/render effects must be real. Use only the configured blender MCP server on 127.0.0.1:9877. NEVER access 9876 or other Blender instances. The coordinator created this empty factory instance specifically for this test and explicitly authorises initialising its default unsaved scene, clearing its default objects, and saving in this active project. Do not start/install/reconfigure services.\nSave canonical scenes/loop/scene.blend. Stable mesh custom properties proscenium_object_id and proscenium_instance_id required, unique instances. Let initial blue cube height be 2, base on floor, and orange height 2, separated so clearly visible. Camera should frame a future blue height 4 too. Standard colour management, None look. Save without relative external dependencies. Can create a helper Python source under scenes/loop if useful. No direct rendering in authoring instance.\nUse checkpoint_sources on only explicitly owned files, expected_head from actual git HEAD (null only if unborn), then publish_outputs item loop-scene version loop-v1 expected_current_version_id null. Include exactly ONE initial preview request, frame 1 only, 640x360, CYCLES CPU samples 8, renderer_revision proscenium-blender-1, scene_name Scene, shot_id null, camera null, fps {numerator:24,denominator:1}, colour_management {view_transform:Standard,look:None,exposure:0,gamma:1}, review_output {media_type:image/png,encoding:view_transformed_srgb,bit_depth:8}. Required runtime is application blender, version EXACT '4.5.14 LTS', features []. Use actual checkpoint source_commit, repository_id and sha256 receipt values in source closure files [{destination:'scenes/loop/scene.blend',origin:{kind:'git',repository_id:<actual>,commit:<actual>,path:'scenes/loop/scene.blend',sha256:<actual>}}]. SourceClosure {entry_path:'scenes/loop/scene.blend',files:...,dependencies:[],required_runtime:...,digest:...} digest is SHA256 RFC8785 canonical JSON of that closure WITHOUT digest, sorted destinations/dependencies. For these all-string/int fields Python json.dumps(sort_keys=True,separators=(',',':'),ensure_ascii=False) is exact canonical JSON. You can compute with python3 in project, never inspect runtime database or credentials. Read project.json for repository identity if needed. preview source_closure_digest equals closure digest. IDs must be unique for operation/publication/intent.\nKeep prompt text separate from authored source. No generic git add and no hand-written receipts. Use only production checkpoint/publication tools. Do not request proxy/Comfy/VLM/Unity. Finish with actual publication/version/job IDs. Do not poll repeatedly for rendering, the real host handles it independently. If a call is uncertain inspect before retry. Stay within one keyframe and 180 seconds for this request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 6,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "a2c9a536-af39-4562-b3c4-64a0c471c528",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:25:25.551580+00:00",
+    "payload": {
+      "message_id": "d6936da0-ca8e-4967-9e08-5985d1e4a8ec",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 8,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "f44c5139-b5bf-432d-a0a7-2c8d319521e0",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:25:34.094279+00:00",
+    "payload": {
+      "message_id": "70c8dc72-707b-4bf2-8395-1d1f13cd653e",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 37,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "44661dd5-17eb-48f7-8acf-b66371d8c7ae",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:25:34.103630+00:00",
+    "payload": {
+      "message_id": "8d2dffc8-cdf1-49f2-8e0f-7070d436cbc9",
+      "native_agent_id": null,
+      "text": "I\u2019ll author the scene in the configured Blender instance, save and checkpoint it, then publish it with one pinned preview request.\n"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 38,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "475f4393-a09d-448b-ac02-6261814d1310",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:25:38.444027+00:00",
+    "payload": {
+      "message_id": "29b4fd7b-2634-40c2-80dc-64c7898b480e",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 52,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "40bb5ec8-dc94-4d11-9d5a-b259109dd7e0",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:25:53.192315+00:00",
+    "payload": {
+      "message_id": "3506dd7c-ef78-40b8-aed2-a3af49b393bb",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 60,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "5b6e9e4b-1959-475b-897d-e83e88cdfa25",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:25:57.782659+00:00",
+    "payload": {
+      "message_id": "62b81fa8-6ea3-482e-a39f-d7baa9e32581",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 64,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "1adcd1f6-ac86-4caf-8830-48b90a75cd7d",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:26:03.705559+00:00",
+    "payload": {
+      "message_id": "7d5822a0-63d8-4a53-9475-7b0128878549",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 68,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "dcbc246c-3540-40f8-adfe-6b246d17f315",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:26:12.807576+00:00",
+    "payload": {
+      "message_id": "54e592b2-0046-4773-a1cc-504004f80dfb",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 72,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "call_XOvtPRgR1BiLxuMfL1GMqaSS",
+      "kind": "tool"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:26:12.954131+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "60ef8e7da3cfb9e1777e93f1707be98f8d87bd8ada09d0739e156970281e7aac",
+      "job_id": "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-57f2b8c1-loop-v1-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40"
+      },
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1"
+        }
+      },
+      "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 74,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "call_XOvtPRgR1BiLxuMfL1GMqaSS",
+      "kind": "tool"
+    },
+    "event_type": "publication.created",
+    "native_event_id": null,
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:26:12.958985+00:00",
+    "payload": {
+      "event_sequence": 75,
+      "job_ids": [
+        "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92"
+      ],
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "publication_id": "publication-57f2b8c1-loop-v1",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1"
+        }
+      ]
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 75,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:26:13.183272+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "60ef8e7da3cfb9e1777e93f1707be98f8d87bd8ada09d0739e156970281e7aac",
+      "job_id": "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-57f2b8c1-loop-v1-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40"
+      },
+      "schema_version": "1.0",
+      "state": "starting",
+      "state_revision": 1,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1"
+        }
+      },
+      "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 77,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:26:13.206614+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "60ef8e7da3cfb9e1777e93f1707be98f8d87bd8ada09d0739e156970281e7aac",
+      "job_id": "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-57f2b8c1-loop-v1-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40"
+      },
+      "schema_version": "1.0",
+      "state": "outcome_uncertain",
+      "state_revision": 2,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1"
+        }
+      },
+      "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 78,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:26:13.727684+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "60ef8e7da3cfb9e1777e93f1707be98f8d87bd8ada09d0739e156970281e7aac",
+      "job_id": "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-57f2b8c1-loop-v1-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1"
+        }
+      },
+      "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 79,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:26:14.512811+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "error_code": "dependency_missing",
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "60ef8e7da3cfb9e1777e93f1707be98f8d87bd8ada09d0739e156970281e7aac",
+      "job_id": "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92",
+      "kind": "render",
+      "native_exit_code": 1,
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-57f2b8c1-loop-v1-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40"
+      },
+      "schema_version": "1.0",
+      "state": "failed",
+      "state_revision": 4,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1"
+        }
+      },
+      "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 80,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "9b8040dc-e889-4b4b-880b-f13577df440a",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:26:17.318132+00:00",
+    "payload": {
+      "message_id": "f2eb809c-909f-4f35-a983-7eae92aab5af",
+      "native_agent_id": null,
+      "text": "Saved `scenes/loop/scene.blend` and published `loop-scene` version `loop-v1`. Both cubes are height 2, with unique stable mesh IDs; camera framing accommodates blue height 4.\n\nPublication: `publication-57f2b8c1-loop-v1`\n\nExactly one frame-1 preview queued, not yet confirmed rendered. Job: `preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92`"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 198,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:26:17.509524+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:25:11.453429+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-89515f4d22ad485fbd5dde7d596a048f",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": "009e3fc2-4977-4ace-90c0-e5f8763ca766",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+      },
+      "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "162d05ab-9c6a-4ea7-9e3e-7e51245cddde",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER INPUT FIXTURE for the real M01 journey. Author a simple well-lit scene with a grey floor, an orange cube on the left and a clearly blue cube on the right, camera facing both, area light. Do this yourself as lead, no native children needed. All model/native/render effects must be real. Use only the configured blender MCP server on 127.0.0.1:9877. NEVER access 9876 or other Blender instances. The coordinator created this empty factory instance specifically for this test and explicitly authorises initialising its default unsaved scene, clearing its default objects, and saving in this active project. Do not start/install/reconfigure services.\nSave canonical scenes/loop/scene.blend. Stable mesh custom properties proscenium_object_id and proscenium_instance_id required, unique instances. Let initial blue cube height be 2, base on floor, and orange height 2, separated so clearly visible. Camera should frame a future blue height 4 too. Standard colour management, None look. Save without relative external dependencies. Can create a helper Python source under scenes/loop if useful. No direct rendering in authoring instance.\nUse checkpoint_sources on only explicitly owned files, expected_head from actual git HEAD (null only if unborn), then publish_outputs item loop-scene version loop-v1 expected_current_version_id null. Include exactly ONE initial preview request, frame 1 only, 640x360, CYCLES CPU samples 8, renderer_revision proscenium-blender-1, scene_name Scene, shot_id null, camera null, fps {numerator:24,denominator:1}, colour_management {view_transform:Standard,look:None,exposure:0,gamma:1}, review_output {media_type:image/png,encoding:view_transformed_srgb,bit_depth:8}. Required runtime is application blender, version EXACT '4.5.14 LTS', features []. Use actual checkpoint source_commit, repository_id and sha256 receipt values in source closure files [{destination:'scenes/loop/scene.blend',origin:{kind:'git',repository_id:<actual>,commit:<actual>,path:'scenes/loop/scene.blend',sha256:<actual>}}]. SourceClosure {entry_path:'scenes/loop/scene.blend',files:...,dependencies:[],required_runtime:...,digest:...} digest is SHA256 RFC8785 canonical JSON of that closure WITHOUT digest, sorted destinations/dependencies. For these all-string/int fields Python json.dumps(sort_keys=True,separators=(',',':'),ensure_ascii=False) is exact canonical JSON. You can compute with python3 in project, never inspect runtime database or credentials. Read project.json for repository identity if needed. preview source_closure_digest equals closure digest. IDs must be unique for operation/publication/intent.\nKeep prompt text separate from authored source. No generic git add and no hand-written receipts. Use only production checkpoint/publication tools. Do not request proxy/Comfy/VLM/Unity. Finish with actual publication/version/job IDs. Do not poll repeatedly for rendering, the real host handles it independently. If a call is uncertain inspect before retry. Stay within one keyframe and 180 seconds for this request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 199,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:26:17.510492+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-89515f4d22ad485fbd5dde7d596a048f",
+      "job_ids": [],
+      "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "originating_request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 2,
+      "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3",
+    "schema_version": "1.0",
+    "sequence": 200,
+    "work_id": "work-0310e8a507b74af9b14c55c3b9855f1c"
+  },
+  {
+    "actor": {
+      "id": "owner-655e92f4-58b8-47de-9b0c-de6d795abbf2",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:27:25.586205+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:27:25.585278+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-40fe6971b22b44ce9c4133034760ed0d",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "state": "held",
+        "state_revision": 0,
+        "type": "queue",
+        "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+      },
+      "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "ffd3981c-e418-4f55-b514-45af4f799d65",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER ERROR-CORRECTION INPUT FIXTURE, cloud root 2 of at most 4. Real initial production job failed dependency_missing before rendering, native exit 1. Trusted read-only inspection of OUR owned 9877 scene returned bpy.utils.blend_paths(absolute=True, packed=False, local=False) = two links to installed essentials_brushes-gp_draw.blend outside the project. Images were only Render Result and Viewer Node with empty paths. These are factory Blender 4.5 unused Grease Pencil brush links, not required cube scene assets. Preserve geometry, camera and colours. Remove unused linked brushes/associated unused datablocks from THIS owned scene so blend_paths reports no external dependencies, save scenes/loop/scene.blend. No changes to any installed library or other Blender instance. Do not silently include workstation files. You can inspect libraries/brushes user counts first. Do not recreate the initial geometry or change cube heights. Checkpoint explicitly owned files with actual HEAD, then publish item loop-scene a NEW immutable version loop-v1-clean with expected_current_version_id loop-v1, derived_from may record loop-v1 if its source closure dependencies also pin it, but a self-contained replacement needs no dependencies. The original loop-v1 and failed job remain retained. Do not overwrite or forge them.\nUse same exact CPU preview recipe as previous root, ONE new frame at frame1,640x360,CYCLES CPU8 samples,4 host threads,300sec host bound. Renderer revision proscenium-blender-1, required_runtime {application:'blender',version:'4.5.14 LTS',features:[]}, Standard/None/0/1, review_output PNG8 view_transformed_srgb. Compute actual new checkpoint-based source closure RFC8785 digest. New distinct publication/intent/operation IDs. No manual rendering, no proxy, no provider dependency. Finish with exact new IDs, no repeated polling. Target 180sec request bound. Follow-up visual feedback will then target this real rendered clean version.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 201,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:27:25.596991+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:27:25.585278+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-40fe6971b22b44ce9c4133034760ed0d",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "queue",
+        "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+      },
+      "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "ffd3981c-e418-4f55-b514-45af4f799d65",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER ERROR-CORRECTION INPUT FIXTURE, cloud root 2 of at most 4. Real initial production job failed dependency_missing before rendering, native exit 1. Trusted read-only inspection of OUR owned 9877 scene returned bpy.utils.blend_paths(absolute=True, packed=False, local=False) = two links to installed essentials_brushes-gp_draw.blend outside the project. Images were only Render Result and Viewer Node with empty paths. These are factory Blender 4.5 unused Grease Pencil brush links, not required cube scene assets. Preserve geometry, camera and colours. Remove unused linked brushes/associated unused datablocks from THIS owned scene so blend_paths reports no external dependencies, save scenes/loop/scene.blend. No changes to any installed library or other Blender instance. Do not silently include workstation files. You can inspect libraries/brushes user counts first. Do not recreate the initial geometry or change cube heights. Checkpoint explicitly owned files with actual HEAD, then publish item loop-scene a NEW immutable version loop-v1-clean with expected_current_version_id loop-v1, derived_from may record loop-v1 if its source closure dependencies also pin it, but a self-contained replacement needs no dependencies. The original loop-v1 and failed job remain retained. Do not overwrite or forge them.\nUse same exact CPU preview recipe as previous root, ONE new frame at frame1,640x360,CYCLES CPU8 samples,4 host threads,300sec host bound. Renderer revision proscenium-blender-1, required_runtime {application:'blender',version:'4.5.14 LTS',features:[]}, Standard/None/0/1, review_output PNG8 view_transformed_srgb. Compute actual new checkpoint-based source closure RFC8785 digest. New distinct publication/intent/operation IDs. No manual rendering, no proxy, no provider dependency. Finish with exact new IDs, no repeated polling. Target 180sec request bound. Follow-up visual feedback will then target this real rendered clean version.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 202,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:27:25.598581+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-40fe6971b22b44ce9c4133034760ed0d",
+      "job_ids": [],
+      "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "originating_request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 1,
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 203,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:27:25.628587+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:27:25.585278+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-40fe6971b22b44ce9c4133034760ed0d",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": "07714493-2c5c-4d2d-bd80-a89029e3cfd5",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+      },
+      "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "ffd3981c-e418-4f55-b514-45af4f799d65",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER ERROR-CORRECTION INPUT FIXTURE, cloud root 2 of at most 4. Real initial production job failed dependency_missing before rendering, native exit 1. Trusted read-only inspection of OUR owned 9877 scene returned bpy.utils.blend_paths(absolute=True, packed=False, local=False) = two links to installed essentials_brushes-gp_draw.blend outside the project. Images were only Render Result and Viewer Node with empty paths. These are factory Blender 4.5 unused Grease Pencil brush links, not required cube scene assets. Preserve geometry, camera and colours. Remove unused linked brushes/associated unused datablocks from THIS owned scene so blend_paths reports no external dependencies, save scenes/loop/scene.blend. No changes to any installed library or other Blender instance. Do not silently include workstation files. You can inspect libraries/brushes user counts first. Do not recreate the initial geometry or change cube heights. Checkpoint explicitly owned files with actual HEAD, then publish item loop-scene a NEW immutable version loop-v1-clean with expected_current_version_id loop-v1, derived_from may record loop-v1 if its source closure dependencies also pin it, but a self-contained replacement needs no dependencies. The original loop-v1 and failed job remain retained. Do not overwrite or forge them.\nUse same exact CPU preview recipe as previous root, ONE new frame at frame1,640x360,CYCLES CPU8 samples,4 host threads,300sec host bound. Renderer revision proscenium-blender-1, required_runtime {application:'blender',version:'4.5.14 LTS',features:[]}, Standard/None/0/1, review_output PNG8 view_transformed_srgb. Compute actual new checkpoint-based source closure RFC8785 digest. New distinct publication/intent/operation IDs. No manual rendering, no proxy, no provider dependency. Finish with exact new IDs, no repeated polling. Target 180sec request bound. Follow-up visual feedback will then target this real rendered clean version.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 204,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "96d36407-5620-4694-80e9-f9ab8df009f5",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:27:32.130425+00:00",
+    "payload": {
+      "message_id": "90c9c3aa-8315-4fb6-9286-2ee0d36b96a6",
+      "native_agent_id": null,
+      "text": "I\u2019ll remove only the unused linked brush data, preserve the scene, and publish a new version with one preview request.\n"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 230,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "72c83c46-d0fc-4bfc-95d7-b491a3ed0b0a",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:27:40.284645+00:00",
+    "payload": {
+      "message_id": "b68c8277-2d66-4f23-bbdf-c9ec9bbef181",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 240,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "159aefa2-a73f-48f7-a18f-110c52c2b71d",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:27:49.872147+00:00",
+    "payload": {
+      "message_id": "674d6185-bd1e-404b-a72c-b586021cee2f",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 244,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "ba92b888-ed47-4bd5-a294-c020f31864b9",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:04.742476+00:00",
+    "payload": {
+      "message_id": "e362fb6f-7b02-481a-a4df-749e74261470",
+      "native_agent_id": null,
+      "text": "The paths are stored in factory Grease Pencil brush references, not linked brush datablocks. I\u2019ll replace the unused scene tool settings by creating a clean scene container, retaining the existing objects, camera, materials, and world.\n"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 293,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "73e40474-78c9-4ed6-a0a4-38458f7695e6",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:11.806270+00:00",
+    "payload": {
+      "message_id": "9ea1598e-67b4-4129-b0fe-a30d01f9683a",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 297,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "c9e310c7-147d-4708-80c0-47f18bbf757d",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:18.267060+00:00",
+    "payload": {
+      "message_id": "bf4bebe2-3768-44db-8ca4-bc213401e553",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 301,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "4b85918d-264c-4a7f-8684-7fb681ec4d13",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:24.808372+00:00",
+    "payload": {
+      "message_id": "79ecca8a-5446-46be-957f-d41a52d7621d",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 305,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "df970bd2-7f30-48f5-a05a-2c34e6da1bcb",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:32.188846+00:00",
+    "payload": {
+      "message_id": "706c4877-c4fc-481b-bc0d-1904d9272a4e",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 309,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "560a45df-3b1c-4e88-8f3e-ad2d95fdd4ee",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:39.772551+00:00",
+    "payload": {
+      "message_id": "c18f0434-17e0-47f0-aa90-e8419b4a6ff8",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 313,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "dfeeb003-fac8-4c09-a881-4a8a9e367154",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:49.864155+00:00",
+    "payload": {
+      "message_id": "e8919d9b-09ce-4d4f-bb26-d51b3a06d569",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 317,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "f0b247fd-b42d-42f5-b28f-e397ef07cd9a",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:28:58.599564+00:00",
+    "payload": {
+      "message_id": "fe5ddf3e-6089-4bee-b146-288fb11f5145",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 321,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "4186686c-66bf-4ad6-876d-26cadf80edb8",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:29:02.527921+00:00",
+    "payload": {
+      "message_id": "9ab8de08-3df1-43fc-90b0-f6b944267bc1",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 325,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "8e65fe2b-d387-47ef-a990-990c22997e43",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:29:08.538285+00:00",
+    "payload": {
+      "message_id": "fa6a0cde-1eca-4112-bf33-53e0927b6722",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 329,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "585621f5-32f9-4ee5-8176-d38035c992d1",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:29:16.466978+00:00",
+    "payload": {
+      "message_id": "a4b87231-3541-4f18-a6c5-0dd55ce46a49",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 333,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "call_hWIbLMaWoi3LUrAEqGoZxZct",
+      "kind": "tool"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:16.616759+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 335,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "call_hWIbLMaWoi3LUrAEqGoZxZct",
+      "kind": "tool"
+    },
+    "event_type": "publication.created",
+    "native_event_id": null,
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:29:16.620158+00:00",
+    "payload": {
+      "event_sequence": 336,
+      "job_ids": [
+        "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b"
+      ],
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "publication_id": "publication-ddac4977-loop-v1-clean",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      ]
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 336,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:16.917187+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "starting",
+      "state_revision": 1,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 338,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:16.956975+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "outcome_uncertain",
+      "state_revision": 2,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 339,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:17.482896+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 340,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "frame.available",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:19.134290+00:00",
+    "payload": {
+      "artifact_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b-f1",
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "output_path": "frames/00000001.png",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791-f1",
+      "schema_version": "1.0",
+      "sha256": "083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd",
+      "shot_id": null,
+      "source_frame": 1,
+      "version_id": "loop-v1-clean"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 345,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:19.136932+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b-f1"
+      ],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 4,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 346,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:19.146813+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b-f1"
+      ],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 5,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 347,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:19.768837+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b-f1",
+        "attempt-f1062382-e6fe-4db1-8014-0b754ee22791-s1-1"
+      ],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 6,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 397,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:19.780714+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b-f1",
+        "attempt-f1062382-e6fe-4db1-8014-0b754ee22791-s1-1"
+      ],
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "kind": "render",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 7,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v1-clean"
+        }
+      },
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 399,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "fa3e37e1-a596-438b-9908-c86bf681f234",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:29:20.796785+00:00",
+    "payload": {
+      "message_id": "796e0ebb-91b2-409f-a4d2-a8464ca7d616",
+      "native_agent_id": null,
+      "text": "Saved and reloaded `scenes/loop/scene.blend`; external dependency paths are empty. Geometry, camera, colours, and both height-2 cubes are preserved.\n\nPublished `loop-scene` version `loop-v1-clean`.\n- Publication: `publication-ddac4977-loop-v1-clean`\n- Operation: `checkpoint-ddac4977-loop-v1-clean`\n- Intent: `preview-ddac4977-loop-v1-clean-frame1`\n- Preview job: `preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b`\n\nExactly one preview queued; rendering is not yet confirmed."
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 496,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:20.930783+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:27:25.585278+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-40fe6971b22b44ce9c4133034760ed0d",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": "07714493-2c5c-4d2d-bd80-a89029e3cfd5",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+      },
+      "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "ffd3981c-e418-4f55-b514-45af4f799d65",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER ERROR-CORRECTION INPUT FIXTURE, cloud root 2 of at most 4. Real initial production job failed dependency_missing before rendering, native exit 1. Trusted read-only inspection of OUR owned 9877 scene returned bpy.utils.blend_paths(absolute=True, packed=False, local=False) = two links to installed essentials_brushes-gp_draw.blend outside the project. Images were only Render Result and Viewer Node with empty paths. These are factory Blender 4.5 unused Grease Pencil brush links, not required cube scene assets. Preserve geometry, camera and colours. Remove unused linked brushes/associated unused datablocks from THIS owned scene so blend_paths reports no external dependencies, save scenes/loop/scene.blend. No changes to any installed library or other Blender instance. Do not silently include workstation files. You can inspect libraries/brushes user counts first. Do not recreate the initial geometry or change cube heights. Checkpoint explicitly owned files with actual HEAD, then publish item loop-scene a NEW immutable version loop-v1-clean with expected_current_version_id loop-v1, derived_from may record loop-v1 if its source closure dependencies also pin it, but a self-contained replacement needs no dependencies. The original loop-v1 and failed job remain retained. Do not overwrite or forge them.\nUse same exact CPU preview recipe as previous root, ONE new frame at frame1,640x360,CYCLES CPU8 samples,4 host threads,300sec host bound. Renderer revision proscenium-blender-1, required_runtime {application:'blender',version:'4.5.14 LTS',features:[]}, Standard/None/0/1, review_output PNG8 view_transformed_srgb. Compute actual new checkpoint-based source closure RFC8785 digest. New distinct publication/intent/operation IDs. No manual rendering, no proxy, no provider dependency. Finish with exact new IDs, no repeated polling. Target 180sec request bound. Follow-up visual feedback will then target this real rendered clean version.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 497,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:29:20.931733+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-40fe6971b22b44ce9c4133034760ed0d",
+      "job_ids": [],
+      "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "originating_request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 2,
+      "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "schema_version": "1.0",
+    "sequence": 498,
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  {
+    "actor": {
+      "id": "owner-655e92f4-58b8-47de-9b0c-de6d795abbf2",
+      "kind": "user"
+    },
+    "event_type": "selection.changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:30:27.140041+00:00",
+    "payload": {
+      "operation_id": "c902b043-7233-49e4-812a-0ea29b9b9ae9",
+      "replayed": false,
+      "resource_id": "6586d471-2bac-482c-9071-b8238c3a7aa6",
+      "schema_version": "1.0",
+      "state": "selected",
+      "state_revision": 1
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 499,
+    "work_id": null
+  },
+  {
+    "actor": {
+      "id": "owner-655e92f4-58b8-47de-9b0c-de6d795abbf2",
+      "kind": "user"
+    },
+    "event_type": "annotation.saved",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:31:55.445580+00:00",
+    "payload": {
+      "operation_id": "3b45aab3-7960-47ad-b105-e6adc1f73421",
+      "replayed": false,
+      "resource_id": "cbacf788-56b6-4c57-81d0-a7ff1895d597",
+      "schema_version": "1.0",
+      "state": "saved",
+      "state_revision": 1
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 500,
+    "work_id": null
+  },
+  {
+    "actor": {
+      "id": "owner-655e92f4-58b8-47de-9b0c-de6d795abbf2",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:31:55.551477+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:31:55.550306+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-56fae10d5c8c485aa253b2f938704457",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "state": "held",
+        "state_revision": 0,
+        "type": "queue",
+        "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+      },
+      "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b3fc07a7-6d9e-49da-8460-27efbd8d3248",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER VISUAL FOLLOW-UP INPUT FIXTURE, cloud root 3 of at most 4. Use the actual attached clean and marked images and the saved pinned annotation in this turn's structured context. First briefly identify the target version, pin text, and which coloured cube is marked. Make that blue cube twice as tall (height 4), keeping its base on the floor, same width/depth, orange cube untouched. Preserve camera/light/materials and all stable object/instance IDs. This is the same discussion and owned Blender bridge on9877. NEVER access9876 or other instances.\nSave scenes/loop/scene.blend, verify no external blend_paths, checkpoint only owned source using actual HEAD, and publish loop-scene version loop-v2 with expected_current_version_id loop-v1-clean. Prior source/publications/media/annotation must remain retained and pinned to their original versions. Use actual new receipt SHA/content hashes and canonical SourceClosure digest. Do not copy previous digest or commit. One preview only, exact same CPU/CYCLES8,640x360,frame1,Standard/None/0/1,required runtime blender4.5.14 LTS,proscenium-blender-1,PNG8 view_transformed_srgb recipe as before. New operation/publication/intent IDs. No manual rendering, proxy, providers, children, installs, or owner selection by model. No need to poll renderer. Finish with actual source commit, version, publication and job IDs. This is a bounded180sec request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 501,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:31:55.577460+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:31:55.550306+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-56fae10d5c8c485aa253b2f938704457",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "queue",
+        "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+      },
+      "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b3fc07a7-6d9e-49da-8460-27efbd8d3248",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER VISUAL FOLLOW-UP INPUT FIXTURE, cloud root 3 of at most 4. Use the actual attached clean and marked images and the saved pinned annotation in this turn's structured context. First briefly identify the target version, pin text, and which coloured cube is marked. Make that blue cube twice as tall (height 4), keeping its base on the floor, same width/depth, orange cube untouched. Preserve camera/light/materials and all stable object/instance IDs. This is the same discussion and owned Blender bridge on9877. NEVER access9876 or other instances.\nSave scenes/loop/scene.blend, verify no external blend_paths, checkpoint only owned source using actual HEAD, and publish loop-scene version loop-v2 with expected_current_version_id loop-v1-clean. Prior source/publications/media/annotation must remain retained and pinned to their original versions. Use actual new receipt SHA/content hashes and canonical SourceClosure digest. Do not copy previous digest or commit. One preview only, exact same CPU/CYCLES8,640x360,frame1,Standard/None/0/1,required runtime blender4.5.14 LTS,proscenium-blender-1,PNG8 view_transformed_srgb recipe as before. New operation/publication/intent IDs. No manual rendering, proxy, providers, children, installs, or owner selection by model. No need to poll renderer. Finish with actual source commit, version, publication and job IDs. This is a bounded180sec request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 502,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:31:55.578703+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-56fae10d5c8c485aa253b2f938704457",
+      "job_ids": [],
+      "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "originating_request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 1,
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 503,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:31:55.612654+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:31:55.550306+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-56fae10d5c8c485aa253b2f938704457",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": "4cc19f1d-36e4-4cc9-8519-81abea92c40b",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+      },
+      "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b3fc07a7-6d9e-49da-8460-27efbd8d3248",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER VISUAL FOLLOW-UP INPUT FIXTURE, cloud root 3 of at most 4. Use the actual attached clean and marked images and the saved pinned annotation in this turn's structured context. First briefly identify the target version, pin text, and which coloured cube is marked. Make that blue cube twice as tall (height 4), keeping its base on the floor, same width/depth, orange cube untouched. Preserve camera/light/materials and all stable object/instance IDs. This is the same discussion and owned Blender bridge on9877. NEVER access9876 or other instances.\nSave scenes/loop/scene.blend, verify no external blend_paths, checkpoint only owned source using actual HEAD, and publish loop-scene version loop-v2 with expected_current_version_id loop-v1-clean. Prior source/publications/media/annotation must remain retained and pinned to their original versions. Use actual new receipt SHA/content hashes and canonical SourceClosure digest. Do not copy previous digest or commit. One preview only, exact same CPU/CYCLES8,640x360,frame1,Standard/None/0/1,required runtime blender4.5.14 LTS,proscenium-blender-1,PNG8 view_transformed_srgb recipe as before. New operation/publication/intent IDs. No manual rendering, proxy, providers, children, installs, or owner selection by model. No need to poll renderer. Finish with actual source commit, version, publication and job IDs. This is a bounded180sec request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 504,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "62cb4fe4-33ca-44d0-bd9d-352e66c83987",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:04.353646+00:00",
+    "payload": {
+      "message_id": "98f55c1d-f2fb-485d-bebb-0f21fe96d441",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 552,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "9a400ce3-5208-4cf9-8d1b-fcb076804395",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:04.359003+00:00",
+    "payload": {
+      "message_id": "7883e84d-420e-45e7-b2ca-621499b7c370",
+      "native_agent_id": null,
+      "text": "The annotation targets `loop-v1-clean`, frame 1. Its pin says \u201cMake this blue cube taller,\u201d and the saved instruction specifies doubling its height while preserving the orange cube. I\u2019ll inspect the attached images before editing.\n"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 553,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "44c5c70b-6a31-41f7-994f-3ee4aa6cbcce",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:09.702001+00:00",
+    "payload": {
+      "message_id": "4c1408af-3d64-4e31-aef0-32a156c9bf3e",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 569,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "5bf0efb0-4a77-439e-96ca-a1647df154e2",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:13.814748+00:00",
+    "payload": {
+      "message_id": "610b8851-86c8-4d7f-b884-5a77d1b8cffe",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 573,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "5758364a-5a1d-45ff-a0a8-29c6af65321b",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:21.501889+00:00",
+    "payload": {
+      "message_id": "064e6d15-2292-4a39-87b6-3d74aa9925a1",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 579,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "e430e9f1-8e13-4cda-9fe8-c43f79c74bc9",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:25.525490+00:00",
+    "payload": {
+      "message_id": "a43605c0-18de-4b3e-a9ff-8978d992cdcd",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 583,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "70de1385-2412-4b86-bd2e-4af1fcc30afd",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:38.230233+00:00",
+    "payload": {
+      "message_id": "3290422c-5aab-4790-9402-bf1c8a473473",
+      "native_agent_id": null,
+      "text": "The pin marks the **blue cube on the right**. I\u2019ll increase only its height from 2 to 4 and move its centre up to keep the base on the floor.\n"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 626,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "8b9bb344-f7b4-43a0-968c-4d5012494644",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:42.838600+00:00",
+    "payload": {
+      "message_id": "d483d1c3-5ab4-47d8-b6ab-b489aee9b163",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 630,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "9a62c955-1081-4f21-8674-0b04967e5d67",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:50.893437+00:00",
+    "payload": {
+      "message_id": "fea5d9f7-9cef-4d1a-b8c9-a1c8d4a490aa",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 634,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "dba7f9af-68a5-4dca-a9eb-1dfec75f9b6f",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:59.854226+00:00",
+    "payload": {
+      "message_id": "e7e325d3-22f0-4f22-9024-c00e9f804180",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 638,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "call_gPeybnF9REXfccBTTuIg7II7",
+      "kind": "tool"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:32:59.993741+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 640,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "call_gPeybnF9REXfccBTTuIg7II7",
+      "kind": "tool"
+    },
+    "event_type": "publication.created",
+    "native_event_id": null,
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:32:59.997137+00:00",
+    "payload": {
+      "event_sequence": 641,
+      "job_ids": [
+        "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1"
+      ],
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "publication_id": "publication-8506a2ab-loop-v2",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      ]
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 641,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:00.295103+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "starting",
+      "state_revision": 1,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 643,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:00.439836+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "outcome_uncertain",
+      "state_revision": 2,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 644,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:00.973091+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 645,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "frame.available",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:02.031140+00:00",
+    "payload": {
+      "artifact_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1-f1",
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "output_path": "frames/00000001.png",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0-f1",
+      "schema_version": "1.0",
+      "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+      "shot_id": null,
+      "source_frame": 1,
+      "version_id": "loop-v2"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 646,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:02.033755+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1-f1"
+      ],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 4,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 647,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:02.040409+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1-f1"
+      ],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 5,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 648,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:02.440959+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1-f1",
+        "attempt-7880b958-86df-4aba-bac8-218364e0bed0-s1-1"
+      ],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 6,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 650,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:02.454699+00:00",
+    "payload": {
+      "artifact_ids": [
+        "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1-f1",
+        "attempt-7880b958-86df-4aba-bac8-218364e0bed0-s1-1"
+      ],
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "kind": "render",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+      "owner_operation_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 7,
+      "target": {
+        "shot_id": null,
+        "target_id": "loop-scene",
+        "version": {
+          "item_id": "loop-scene",
+          "version_id": "loop-v2"
+        }
+      },
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 651,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "eb4c4466-6f62-4e18-91d7-2b1107e0a728",
+    "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "occurred_at": "2026-11-14T13:33:04.811385+00:00",
+    "payload": {
+      "message_id": "36de6a8d-1135-4969-a3af-56deeeec21a2",
+      "native_agent_id": null,
+      "text": "The marked right-hand blue cube is now height **4**, with its base on the floor and width/depth unchanged. Orange cube, camera, light, materials, and stable IDs are preserved; external dependency paths remain empty.\n\n- Source commit: `9cc229fe2d19c762d8a86576f75eb973d0a1860e`\n- Version: `loop-scene` / `loop-v2`\n- Publication: `publication-8506a2ab-loop-v2`\n- Preview job: `preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1`\n\nExactly one preview queued. Prior versions and annotation remain unchanged."
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 816,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:05.023382+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T13:31:55.550306+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-56fae10d5c8c485aa253b2f938704457",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "receipt": {
+        "native_message_id": "4cc19f1d-36e4-4cc9-8519-81abea92c40b",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "replayed": false,
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+      },
+      "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b3fc07a7-6d9e-49da-8460-27efbd8d3248",
+        "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+        "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+        "schema_version": "1.0",
+        "text": "SCRIPTED TEST OWNER VISUAL FOLLOW-UP INPUT FIXTURE, cloud root 3 of at most 4. Use the actual attached clean and marked images and the saved pinned annotation in this turn's structured context. First briefly identify the target version, pin text, and which coloured cube is marked. Make that blue cube twice as tall (height 4), keeping its base on the floor, same width/depth, orange cube untouched. Preserve camera/light/materials and all stable object/instance IDs. This is the same discussion and owned Blender bridge on9877. NEVER access9876 or other instances.\nSave scenes/loop/scene.blend, verify no external blend_paths, checkpoint only owned source using actual HEAD, and publish loop-scene version loop-v2 with expected_current_version_id loop-v1-clean. Prior source/publications/media/annotation must remain retained and pinned to their original versions. Use actual new receipt SHA/content hashes and canonical SourceClosure digest. Do not copy previous digest or commit. One preview only, exact same CPU/CYCLES8,640x360,frame1,Standard/None/0/1,required runtime blender4.5.14 LTS,proscenium-blender-1,PNG8 view_transformed_srgb recipe as before. New operation/publication/intent IDs. No manual rendering, proxy, providers, children, installs, or owner selection by model. No need to poll renderer. Finish with actual source commit, version, publication and job IDs. This is a bounded180sec request.\n",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 817,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  },
+  {
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T13:33:05.025352+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-56fae10d5c8c485aa253b2f938704457",
+      "job_ids": [],
+      "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "originating_request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 2,
+      "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+    },
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "request_id": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f",
+    "schema_version": "1.0",
+    "sequence": 818,
+    "work_id": "work-92b3fd8f7fae45fd95a246d2b7c04fce"
+  }
+]

@@ -1,0 +1,130 @@
+[
+  {
+    "pid": 3276040,
+    "parent_pid": 7418,
+    "start_ticks": "45534018",
+    "executable": "/home/quintin/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/bin/python3.12",
+    "executable_sha256": "7d43f6e86a6c6dd12005ec77eb2055f1be3f1bb3adedf8afe0a87973fa7371ce",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m01-proof/.venv/bin/python",
+      "-m",
+      "proscenium",
+      "--config",
+      "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/config.json",
+      "--pair"
+    ]
+  },
+  {
+    "pid": 3276041,
+    "parent_pid": 7418,
+    "start_ticks": "45534018",
+    "executable": "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+    "executable_sha256": "045558b2f167db04624e36d952496705418a85d87ff9b5fb55a8c40cc59201ae",
+    "argv": [
+      "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --headless --no-sandbox --disable-dev-shm-usage --remote-debugging-port=51979 --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/browser-profile --noerrdialogs --no-first-run --ozone-platform=headless --ozone-override-screen-size=800,600 --disable-gpu about:blank"
+    ]
+  },
+  {
+    "pid": 3277188,
+    "parent_pid": 7418,
+    "start_ticks": "45535080",
+    "executable": "/usr/bin/dash",
+    "executable_sha256": "c626229526bb58ec2d0f585f3c3ae1412e6f973b4353385042d11c38d8426917",
+    "argv": [
+      "/bin/sh",
+      "/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1920x1080x24",
+      "/home/quintin/.local/bin/blender",
+      "--factory-startup",
+      "--disable-autoexec",
+      "--python",
+      "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/tool-output/blender/isolated-bootstrap.py"
+    ]
+  },
+  {
+    "pid": 3277198,
+    "parent_pid": 3277188,
+    "start_ticks": "45535081",
+    "executable": "/usr/bin/Xvfb",
+    "executable_sha256": "4adf27968d6f78f329f88beb71cbd3d181fa2018850a95ae3716afae2ae236c9",
+    "argv": [
+      "Xvfb",
+      ":99",
+      "-screen",
+      "0",
+      "1920x1080x24",
+      "-nolisten",
+      "tcp",
+      "-auth",
+      "/tmp/xvfb-run.dZHUbZ/Xauthority"
+    ]
+  },
+  {
+    "pid": 3277358,
+    "parent_pid": 3277188,
+    "start_ticks": "45535102",
+    "executable": "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+    "executable_sha256": "050c02562f81fe80ba616a80198fa02d381e60f8b61b8d39add881f4bca0d7d8",
+    "argv": [
+      "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+      "--factory-startup",
+      "--disable-autoexec",
+      "--python",
+      "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/tool-output/blender/isolated-bootstrap.py"
+    ]
+  },
+  {
+    "pid": 3286228,
+    "parent_pid": 3276040,
+    "start_ticks": "45542338",
+    "executable": "/home/quintin/play/proscenium/node_modules/@github/copilot-linux-x64/copilot",
+    "executable_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m01-proof/node_modules/@github/copilot-linux-x64/copilot",
+      "--no-auto-update",
+      "--disable-builtin-mcps",
+      "--no-custom-instructions",
+      "--headless",
+      "--no-auto-update",
+      "--log-level",
+      "error",
+      "--stdio"
+    ]
+  },
+  {
+    "pid": 3286658,
+    "parent_pid": 3286228,
+    "start_ticks": "45542906",
+    "executable": "/home/quintin/.local/bin/uv",
+    "executable_sha256": "da15297d6879b2cfbe5ea3cb03725c1613d51ba72892cc996468d871f0a532fb",
+    "argv": [
+      "/home/quintin/.local/bin/uv",
+      "tool",
+      "uvx",
+      "--python",
+      "3.11",
+      "mcp-for-blender==2.0.0",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "9877"
+    ]
+  },
+  {
+    "pid": 3286767,
+    "parent_pid": 3286658,
+    "start_ticks": "45543050",
+    "executable": "/home/quintin/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/bin/python3.11",
+    "executable_sha256": "8deffe5dd9ebcf98a062917a4e73bb8fbb7d5846f83dec01fb7506fd5d41c54e",
+    "argv": [
+      "/home/quintin/.cache/uv/archive-v0/t8gkh5f56PYuYbL9/bin/python",
+      "/home/quintin/.cache/uv/archive-v0/t8gkh5f56PYuYbL9/bin/mcp-for-blender",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "9877"
+    ]
+  }
+]

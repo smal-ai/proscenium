@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-14",
+  "accepted_application_base": "b9079722800613513fa31bf17649f643e0e70411",
+  "integration_command": ".venv/bin/pytest -q tests/integration/copilot/test_delivery.py tests/integration/copilot/test_accepted_services.py tests/integration/previews/test_launcher.py tests/integration/foundation/test_atomic_preview.py tests/integration/foundation/test_auth_http.py tests/integration/sources/test_checkpoint.py tests/integration/sources/test_publication.py",
+  "targeted_offline_integration_passed": 53,
+  "retained_evidence_command": ".venv/bin/pytest -q tests/acceptance/m01_evidence_test.py",
+  "retained_evidence_passed": 5,
+  "combined_final_pytest_passed": 58,
+  "combined_final_pytest_seconds": 1.74,
+  "checks": [
+    {"command": "uv sync --frozen", "result": "passed"},
+    {"command": "npm run build", "result": "passed"},
+    {"command": "cmp package-lock.json /home/quintin/play/proscenium/package-lock.json", "result": "identical"},
+    {"command": ".venv/bin/ruff check tools/blender/ tests/native/studio/ tests/acceptance/m01_evidence_test.py tests/integration/previews/test_launcher.py", "result": "passed"},
+    {"command": ".venv/bin/ruff format --check tools/blender/ tests/native/studio/ tests/acceptance/m01_evidence_test.py tests/integration/previews/test_launcher.py", "result": "passed"},
+    {"command": ".venv/bin/mypy tools/blender/ tests/native/studio/mcp_configuration.py", "result": "passed, four source files"},
+    {"command": "node --check tests/native/studio/browser.mjs", "result": "passed"},
+    {"command": ".venv/bin/python tests/native/studio/verify.py <retained-private-root>", "result": "passed, actual source/media/native-history verification"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "warnings": [
+    "Existing Starlette/httpx TestClient deprecation warning.",
+    "Existing Lucide use-client directive and Vite bundle-size warnings."
+  ],
+  "limits": [
+    "Retained-evidence tests do not start a new live acceptance run.",
+    "No complete browser matrix, additional native child proof or other milestone was rerun.",
+    "Post-proof durable pre-spawn guard received offline fault coverage only."
+  ]
+}

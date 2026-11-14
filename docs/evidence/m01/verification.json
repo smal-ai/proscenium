@@ -1,0 +1,146 @@
+{
+  "verified_at": "2026-11-14T13:45:40.770524+00:00",
+  "fixture_input": true,
+  "real_model_native_render_effects": true,
+  "root_requests": 3,
+  "native_children": 0,
+  "rendered_frames": 2,
+  "changed_pixels": 55819,
+  "total_pixels": 230400,
+  "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+  "versions": {
+    "loop-v1": {
+      "source_commit": "aaee7d365596f0a2e3b1d327f74f7cd03df4de5e",
+      "source": {
+        "dependencies": [],
+        "digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40",
+        "entry_path": "scenes/loop/scene.blend",
+        "files": [
+          {
+            "destination": "scenes/loop/scene.blend",
+            "origin": {
+              "commit": "aaee7d365596f0a2e3b1d327f74f7cd03df4de5e",
+              "kind": "git",
+              "path": "scenes/loop/scene.blend",
+              "repository_id": "repository-20030390-716b-4863-a660-0211b4b89375",
+              "sha256": "1e7c8468664fcfa65839abb2936423ef1995ef437ce16506ac32dddd786ee494"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      }
+    },
+    "loop-v1-clean": {
+      "source_commit": "a79a27261d6d64c752b03b02368c7aef254d9cb8",
+      "source": {
+        "dependencies": [],
+        "digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7",
+        "entry_path": "scenes/loop/scene.blend",
+        "files": [
+          {
+            "destination": "scenes/loop/scene.blend",
+            "origin": {
+              "commit": "a79a27261d6d64c752b03b02368c7aef254d9cb8",
+              "kind": "git",
+              "path": "scenes/loop/scene.blend",
+              "repository_id": "repository-20030390-716b-4863-a660-0211b4b89375",
+              "sha256": "2751163384bbcf3c080604095f37728cb7f8f3889013362e6619e6d011406863"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      }
+    },
+    "loop-v2": {
+      "source_commit": "9cc229fe2d19c762d8a86576f75eb973d0a1860e",
+      "source": {
+        "dependencies": [],
+        "digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a",
+        "entry_path": "scenes/loop/scene.blend",
+        "files": [
+          {
+            "destination": "scenes/loop/scene.blend",
+            "origin": {
+              "commit": "9cc229fe2d19c762d8a86576f75eb973d0a1860e",
+              "kind": "git",
+              "path": "scenes/loop/scene.blend",
+              "repository_id": "repository-20030390-716b-4863-a660-0211b4b89375",
+              "sha256": "72bfdf2b3df4162f923138b3f7f33db425b041283ce8811b29f9f9e2ea33f413"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      }
+    }
+  },
+  "annotation_id": "cbacf788-56b6-4c57-81d0-a7ff1895d597",
+  "sdk_attachment_sha256": [
+    "083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd",
+    "a5df5d2a6fcc55167366a7e59a5d533536650fdbb0e4ac826a11d954eda78bc7"
+  ],
+  "checkpoints": [
+    {
+      "files": [
+        {
+          "path": "scenes/loop/scene.blend",
+          "sha256": "1e7c8468664fcfa65839abb2936423ef1995ef437ce16506ac32dddd786ee494"
+        }
+      ],
+      "operation_id": "checkpoint-57f2b8c1-loop-v1",
+      "parent_commit": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "replayed": false,
+      "schema_version": "1.0",
+      "source_commit": "aaee7d365596f0a2e3b1d327f74f7cd03df4de5e",
+      "state": "completed"
+    },
+    {
+      "files": [
+        {
+          "path": "scenes/loop/scene.blend",
+          "sha256": "2751163384bbcf3c080604095f37728cb7f8f3889013362e6619e6d011406863"
+        }
+      ],
+      "operation_id": "checkpoint-ddac4977-loop-v1-clean",
+      "parent_commit": "aaee7d365596f0a2e3b1d327f74f7cd03df4de5e",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "replayed": false,
+      "schema_version": "1.0",
+      "source_commit": "a79a27261d6d64c752b03b02368c7aef254d9cb8",
+      "state": "completed"
+    },
+    {
+      "files": [
+        {
+          "path": "scenes/loop/scene.blend",
+          "sha256": "72bfdf2b3df4162f923138b3f7f33db425b041283ce8811b29f9f9e2ea33f413"
+        }
+      ],
+      "operation_id": "checkpoint-8506a2ab-loop-v2",
+      "parent_commit": "a79a27261d6d64c752b03b02368c7aef254d9cb8",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "replayed": false,
+      "schema_version": "1.0",
+      "source_commit": "9cc229fe2d19c762d8a86576f75eb973d0a1860e",
+      "state": "completed"
+    }
+  ],
+  "application_base": "b9079722800613513fa31bf17649f643e0e70411",
+  "limits": [
+    "Original loop-v1 failed before rendering on unused factory brush references. Repaired immutable loop-v1-clean is the baseline image.",
+    "The initial and error-correction Send actions used the browser's default viewport after CDP disconnect. The real selection, annotation, visual follow-up Send and review were all 1920x1080 DPR1.",
+    "E01 comprehensive native decisions/Stop/child semantics use separately accepted proofs, not rerun here."
+  ]
+}

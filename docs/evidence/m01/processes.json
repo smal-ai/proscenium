@@ -1,0 +1,42 @@
+{
+  "server": {
+    "pid": 3327021,
+    "start": "45606004",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m01-proof/.venv/bin/python",
+      "-m",
+      "proscenium",
+      "--config",
+      "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/config.json"
+    ]
+  },
+  "browser": {
+    "pid": 3276041,
+    "start": "45534018",
+    "argv": [
+      "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+      "--headless",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--remote-debugging-port=51979",
+      "--user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/browser-profile",
+      "about:blank"
+    ]
+  },
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z",
+  "origin": "http://127.0.0.1:33011",
+  "cdp": 51979,
+  "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b",
+  "previous_server": {
+    "pid": 3276040,
+    "start": "45534018",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m01-proof/.venv/bin/python",
+      "-m",
+      "proscenium",
+      "--config",
+      "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/config.json",
+      "--pair"
+    ]
+  }
+}

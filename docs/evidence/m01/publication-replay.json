@@ -1,0 +1,114 @@
+{
+  "fixture": "trusted original persisted invocation replay, not fresh authority",
+  "publication_id": "publication-ddac4977-loop-v1-clean",
+  "invocation": {
+    "agent_id": null,
+    "delivery_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "invocation_id": "a4d488fbefae27bf833422d7b7c71dd5e60bf5e282587e54969eff5cc3cd8e89",
+    "kind": "tool",
+    "model_id": "gpt-6.1-sol",
+    "name": "publish_outputs",
+    "native_id": "call_hWIbLMaWoi3LUrAEqGoZxZct",
+    "owner_epoch": "epoch-c43c430c-22fb-4867-9069-1fb6ecbd9f1f",
+    "request_id": "ddac4977-3c7d-4a54-b390-6d2aee617b1b",
+    "session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+    "state": "completed",
+    "work_id": "work-56e533f3ae3b45e2a3c6a3941c661d89"
+  },
+  "original_receipt": {
+    "event_sequence": 336,
+    "job_ids": [
+      "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b"
+    ],
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "publication_id": "publication-ddac4977-loop-v1-clean",
+    "replayed": false,
+    "schema_version": "1.0",
+    "versions": [
+      {
+        "item_id": "loop-scene",
+        "version_id": "loop-v1-clean"
+      }
+    ]
+  },
+  "http_status": 200,
+  "response": {
+    "event_sequence": 336,
+    "job_ids": [
+      "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b"
+    ],
+    "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+    "publication_id": "publication-ddac4977-loop-v1-clean",
+    "replayed": true,
+    "schema_version": "1.0",
+    "versions": [
+      {
+        "item_id": "loop-scene",
+        "version_id": "loop-v1-clean"
+      }
+    ]
+  },
+  "before": {
+    "versions": [
+      "loop-v1",
+      "loop-v1-clean",
+      "loop-v2"
+    ],
+    "jobs": [
+      "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92"
+    ],
+    "attempts": [
+      "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "attempt-f1062382-e6fe-4db1-8014-0b754ee22791"
+    ],
+    "frames": [
+      "attempt-7880b958-86df-4aba-bac8-218364e0bed0-f1",
+      "attempt-f1062382-e6fe-4db1-8014-0b754ee22791-f1"
+    ],
+    "publications": [
+      "publication-57f2b8c1-loop-v1",
+      "publication-8506a2ab-loop-v2",
+      "publication-ddac4977-loop-v1-clean"
+    ],
+    "launch_claims": [
+      "project/.proscenium/jobs/previews/preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1/attempt-7880b958-86df-4aba-bac8-218364e0bed0/launch.claim",
+      "project/.proscenium/jobs/previews/preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b/attempt-f1062382-e6fe-4db1-8014-0b754ee22791/launch.claim",
+      "project/.proscenium/jobs/previews/preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92/attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2/launch.claim"
+    ]
+  },
+  "after": {
+    "versions": [
+      "loop-v1",
+      "loop-v1-clean",
+      "loop-v2"
+    ],
+    "jobs": [
+      "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92"
+    ],
+    "attempts": [
+      "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "attempt-f1062382-e6fe-4db1-8014-0b754ee22791"
+    ],
+    "frames": [
+      "attempt-7880b958-86df-4aba-bac8-218364e0bed0-f1",
+      "attempt-f1062382-e6fe-4db1-8014-0b754ee22791-f1"
+    ],
+    "publications": [
+      "publication-57f2b8c1-loop-v1",
+      "publication-8506a2ab-loop-v2",
+      "publication-ddac4977-loop-v1-clean"
+    ],
+    "launch_claims": [
+      "project/.proscenium/jobs/previews/preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1/attempt-7880b958-86df-4aba-bac8-218364e0bed0/launch.claim",
+      "project/.proscenium/jobs/previews/preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b/attempt-f1062382-e6fe-4db1-8014-0b754ee22791/launch.claim",
+      "project/.proscenium/jobs/previews/preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92/attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2/launch.claim"
+    ]
+  },
+  "unchanged": true
+}

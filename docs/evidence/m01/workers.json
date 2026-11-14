@@ -1,0 +1,384 @@
+[
+  {
+    "path": "project/.proscenium/jobs/previews/preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1/attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+    "task_sha256": "b99b65cde27d2c366a61572a831f958a3be9f71baeea13380ad33054b5e62855",
+    "task": {
+      "attempt_id": "attempt-7880b958-86df-4aba-bac8-218364e0bed0",
+      "closure": {
+        "dependencies": [],
+        "digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a",
+        "entry_path": "scenes/loop/scene.blend",
+        "files": [
+          {
+            "destination": "scenes/loop/scene.blend",
+            "origin": {
+              "commit": "9cc229fe2d19c762d8a86576f75eb973d0a1860e",
+              "kind": "git",
+              "path": "scenes/loop/scene.blend",
+              "repository_id": "repository-20030390-716b-4863-a660-0211b4b89375",
+              "sha256": "72bfdf2b3df4162f923138b3f7f33db425b041283ce8811b29f9f9e2ea33f413"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "config": {
+        "blender": "/home/quintin/.local/bin/blender",
+        "build_hash": "62c1db4208e8",
+        "claim_path": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/render.lock",
+        "encode_timeout": 60,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe",
+        "max_frames": 1,
+        "max_pixels": 230400,
+        "max_samples": 8,
+        "profile_id": "blender-cpu",
+        "threads": 4,
+        "timeout": 300
+      },
+      "entrypoint_sha256": "13463cf108810fc7d4f5abab4f49072df183d8d744ec67e5387cd11826d9cbb3",
+      "input_digest": "3b471d3160d0408ba2f9e6f86b612eda15b01bc8d6b890ef6f5c9227114205c1",
+      "job_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "proxy_artifact_id": "preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1-proxy",
+      "source_root": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/snapshots/79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a/e99c8d75-28f5-4670-a6fb-9d1c646a49d8",
+      "spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-8506a2ab-loop-v2-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "79e2ff07c12b430cf46df8c3551ceee47bdd183a9ac7016dbbc05793bab83f2a"
+      },
+      "version_id": "loop-v2"
+    },
+    "process": {
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m01-proof/.venv/bin/python",
+        "-m",
+        "proscenium.previews.worker",
+        "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/jobs/previews/preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1/attempt-7880b958-86df-4aba-bac8-218364e0bed0"
+      ],
+      "pid": 3319480,
+      "start_ticks": 45589183,
+      "started_ns": 455892301896101,
+      "state": "R",
+      "task_sha256": "b99b65cde27d2c366a61572a831f958a3be9f71baeea13380ad33054b5e62855"
+    },
+    "native-process": {
+      "argv": [
+        "/bin/sh",
+        "/home/quintin/.local/bin/blender",
+        "--background",
+        "--factory-startup",
+        "--disable-autoexec",
+        "--threads",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/quintin/.cache/proscenium-development/fleet/m01-proof/apps/backend/src/proscenium/previews/blender_worker.py",
+        "--",
+        "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/jobs/previews/preview-10f5ddc0cedb59b160e1ddc0e6af630354100e39ca4fd66b8cca576a4833d6f1/attempt-7880b958-86df-4aba-bac8-218364e0bed0"
+      ],
+      "pid": 3319502,
+      "start_ticks": 45589230,
+      "state": "R"
+    },
+    "terminal": {
+      "finished_ns": 455893682960733,
+      "native_exit_code": 0,
+      "state": "succeeded",
+      "task_sha256": "b99b65cde27d2c366a61572a831f958a3be9f71baeea13380ad33054b5e62855",
+      "timed_out": false
+    },
+    "native_error": null
+  },
+  {
+    "path": "project/.proscenium/jobs/previews/preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b/attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+    "task_sha256": "2a04b8fee3fd45e6406d34b3dc0b9ba26af49d78083aafcab95f7b55e5a7e7ce",
+    "task": {
+      "attempt_id": "attempt-f1062382-e6fe-4db1-8014-0b754ee22791",
+      "closure": {
+        "dependencies": [],
+        "digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7",
+        "entry_path": "scenes/loop/scene.blend",
+        "files": [
+          {
+            "destination": "scenes/loop/scene.blend",
+            "origin": {
+              "commit": "a79a27261d6d64c752b03b02368c7aef254d9cb8",
+              "kind": "git",
+              "path": "scenes/loop/scene.blend",
+              "repository_id": "repository-20030390-716b-4863-a660-0211b4b89375",
+              "sha256": "2751163384bbcf3c080604095f37728cb7f8f3889013362e6619e6d011406863"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "config": {
+        "blender": "/home/quintin/.local/bin/blender",
+        "build_hash": "62c1db4208e8",
+        "claim_path": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/render.lock",
+        "encode_timeout": 60,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe",
+        "max_frames": 1,
+        "max_pixels": 230400,
+        "max_samples": 8,
+        "profile_id": "blender-cpu",
+        "threads": 4,
+        "timeout": 300
+      },
+      "entrypoint_sha256": "13463cf108810fc7d4f5abab4f49072df183d8d744ec67e5387cd11826d9cbb3",
+      "input_digest": "6fe9a340f059104bba5eb4a0804b9e3c5bdc3ba7ed9032a26f578ac687b19851",
+      "job_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "proxy_artifact_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b-proxy",
+      "source_root": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/snapshots/801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7/1e967c19-ce79-40ea-8d94-2b51c4918d50",
+      "spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-ddac4977-loop-v1-clean-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "801c18ae16c6cbf4d24d2c728f1deedadf96e1746d0596eba8397d5e52bfe5d7"
+      },
+      "version_id": "loop-v1-clean"
+    },
+    "process": {
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m01-proof/.venv/bin/python",
+        "-m",
+        "proscenium.previews.worker",
+        "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/jobs/previews/preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b/attempt-f1062382-e6fe-4db1-8014-0b754ee22791"
+      ],
+      "pid": 3305542,
+      "start_ticks": 45566845,
+      "started_ns": 455668851913510,
+      "state": "R",
+      "task_sha256": "2a04b8fee3fd45e6406d34b3dc0b9ba26af49d78083aafcab95f7b55e5a7e7ce"
+    },
+    "native-process": {
+      "argv": [
+        "/bin/sh",
+        "/home/quintin/.local/bin/blender",
+        "--background",
+        "--factory-startup",
+        "--disable-autoexec",
+        "--threads",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/quintin/.cache/proscenium-development/fleet/m01-proof/apps/backend/src/proscenium/previews/blender_worker.py",
+        "--",
+        "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/jobs/previews/preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b/attempt-f1062382-e6fe-4db1-8014-0b754ee22791"
+      ],
+      "pid": 3305546,
+      "start_ticks": 45566885,
+      "state": "R"
+    },
+    "terminal": {
+      "finished_ns": 455670730759599,
+      "native_exit_code": 0,
+      "state": "succeeded",
+      "task_sha256": "2a04b8fee3fd45e6406d34b3dc0b9ba26af49d78083aafcab95f7b55e5a7e7ce",
+      "timed_out": false
+    },
+    "native_error": null
+  },
+  {
+    "path": "project/.proscenium/jobs/previews/preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92/attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+    "task_sha256": "cf3c99699633a764b0c119723ba47e83cd1f2982357670f1656b0514fa1a3d4a",
+    "task": {
+      "attempt_id": "attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2",
+      "closure": {
+        "dependencies": [],
+        "digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40",
+        "entry_path": "scenes/loop/scene.blend",
+        "files": [
+          {
+            "destination": "scenes/loop/scene.blend",
+            "origin": {
+              "commit": "aaee7d365596f0a2e3b1d327f74f7cd03df4de5e",
+              "kind": "git",
+              "path": "scenes/loop/scene.blend",
+              "repository_id": "repository-20030390-716b-4863-a660-0211b4b89375",
+              "sha256": "1e7c8468664fcfa65839abb2936423ef1995ef437ce16506ac32dddd786ee494"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "config": {
+        "blender": "/home/quintin/.local/bin/blender",
+        "build_hash": "62c1db4208e8",
+        "claim_path": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/render.lock",
+        "encode_timeout": 60,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe",
+        "max_frames": 1,
+        "max_pixels": 230400,
+        "max_samples": 8,
+        "profile_id": "blender-cpu",
+        "threads": 4,
+        "timeout": 300
+      },
+      "entrypoint_sha256": "13463cf108810fc7d4f5abab4f49072df183d8d744ec67e5387cd11826d9cbb3",
+      "input_digest": "60ef8e7da3cfb9e1777e93f1707be98f8d87bd8ada09d0739e156970281e7aac",
+      "job_id": "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "proxy_artifact_id": "preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92-proxy",
+      "source_root": "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/snapshots/d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40/842a6832-85d0-44bf-ac49-8aa04efafbed",
+      "spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "preview-57f2b8c1-loop-v1-frame1",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": null,
+        "source_closure_digest": "d8afb293d3414474c143eaa7610a0b1c65569dfc8966c48f7ebe3de796159c40"
+      },
+      "version_id": "loop-v1"
+    },
+    "process": {
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m01-proof/.venv/bin/python",
+        "-m",
+        "proscenium.previews.worker",
+        "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/jobs/previews/preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92/attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2"
+      ],
+      "pid": 3291852,
+      "start_ticks": 45548471,
+      "started_ns": 455485224366501,
+      "state": "R",
+      "task_sha256": "cf3c99699633a764b0c119723ba47e83cd1f2982357670f1656b0514fa1a3d4a"
+    },
+    "native-process": {
+      "argv": [
+        "/bin/sh",
+        "/home/quintin/.local/bin/blender",
+        "--background",
+        "--factory-startup",
+        "--disable-autoexec",
+        "--threads",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/quintin/.cache/proscenium-development/fleet/m01-proof/apps/backend/src/proscenium/previews/blender_worker.py",
+        "--",
+        "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/project/.proscenium/jobs/previews/preview-cb920388254e98d433a50f96b16b4cfae44a67e52626f965be83e485dff43a92/attempt-b201c1a2-dfda-4cf8-b220-08c6bd9ba1a2"
+      ],
+      "pid": 3291857,
+      "start_ticks": 45548522,
+      "state": "R"
+    },
+    "terminal": {
+      "error_code": "dependency_missing",
+      "finished_ns": 455486000956914,
+      "native_exit_code": 1,
+      "state": "failed",
+      "task_sha256": "cf3c99699633a764b0c119723ba47e83cd1f2982357670f1656b0514fa1a3d4a",
+      "timed_out": false
+    },
+    "native_error": {
+      "error_code": "dependency_missing",
+      "exception": "ValueError"
+    }
+  }
+]
