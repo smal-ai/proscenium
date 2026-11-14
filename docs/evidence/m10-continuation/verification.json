@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-14",
+  "base": "bdea12ca46c0be24aa98a4e2a72ef12d02dbf695",
+  "harness_commit": "9cc9496",
+  "overall": "BLOCKED_BEFORE_CONTINUATION_SEND",
+  "checks": [
+    {"command": "npm run build", "result": "passed", "scope": "Current compiled production studio"},
+    {"command": ".venv/bin/python -m pytest -q tests/acceptance/m10_continue_evidence_test.py", "result": "passed", "checks": 7, "meaning": "Retained positive context validation, safe legacy hold, preservation and cleanup; not M10 completion"},
+    {"command": ".venv/bin/python -m ruff check tests/native/image_to_3d/m10_continue*.py tests/acceptance/m10_continue*.py", "result": "passed"},
+    {"command": ".venv/bin/python -m ruff format --check tests/native/image_to_3d/m10_continue*.py tests/acceptance/m10_continue*.py", "result": "passed", "files": 4},
+    {"command": ".venv/bin/python -m mypy tests/native/image_to_3d/m10_continue*.py tests/acceptance/m10_continue*.py --ignore-missing-imports", "result": "passed", "source_files": 4},
+    {"command": "node --check tests/native/image_to_3d/m10_continue_browser.mjs", "result": "passed"},
+    {"command": ".venv/bin/python docs/validate_spec.py", "result": "passed"}
+  ],
+  "warning": "Existing Starlette/httpx deprecation warning and Vite dependency/bundle-size notices",
+  "metadata_reconcile_attempts": 1,
+  "picked_context_http_status": 201,
+  "owner_continue_commands": 0,
+  "sdk_continuation_sends": 0,
+  "replacement_queues": 0,
+  "new_native_children": 0,
+  "new_authoring_readback_proxy_or_still_processes": 0,
+  "new_inference_calls": 0,
+  "shared_implementation_edits": false
+}

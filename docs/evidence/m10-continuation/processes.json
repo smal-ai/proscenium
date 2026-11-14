@@ -1,0 +1,57 @@
+{
+  "server": {
+    "pid": 3901342,
+    "start": "46777681",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m10-continuation/.venv/bin/python",
+      "-m",
+      "proscenium",
+      "--config",
+      "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/config.private.json",
+      "--pair"
+    ]
+  },
+  "driver": {
+    "pid": 3901471,
+    "start": "46777945",
+    "argv": [
+      "node",
+      "/home/quintin/.cache/proscenium-development/fleet/m10-continuation/tests/native/image_to_3d/m10_continue_browser.mjs",
+      "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a"
+    ]
+  },
+  "browser_processes": [
+    {
+      "pid": 3901506,
+      "type": "browser"
+    },
+    {
+      "pid": 3901573,
+      "type": "renderer"
+    },
+    {
+      "pid": 3901529,
+      "type": "GPU"
+    },
+    {
+      "pid": 3901551,
+      "type": "network.mojom.NetworkService"
+    }
+  ],
+  "sdk": {
+    "pid": 3902206,
+    "start": "46779638",
+    "parent_pid": 3901342,
+    "parent_start": "46777681"
+  },
+  "server_exit": -15,
+  "browser_driver_exit": 0,
+  "checks": {
+    "server_remaining": false,
+    "driver_remaining": false,
+    "sdk_remaining": false,
+    "browser_processes_remaining": [],
+    "protected_blender_start_before": "46620374",
+    "protected_blender_start_after": "46620374"
+  }
+}

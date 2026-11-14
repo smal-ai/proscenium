@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/before.json",
+      "bytes": 23916,
+      "sha256": "15a9bb71a6ac558e982835b9741147e513d37dcbc1e5f233af2784c725248cb1"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/before-private/project.sqlite3",
+      "bytes": 4669440,
+      "sha256": "d200621afeb1bd63db1fc2da24b6dddd69c7bedcbd4695c75ce1d31427594126"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/before-private/machine-registry.sqlite3",
+      "bytes": 57344,
+      "sha256": "2233eda61e574961d4d4d101b628cc14d2060c9131b2c3db2f5426f0bddff519"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/browser-result.private.json",
+      "bytes": 56930,
+      "sha256": "758d04b3b0fc09aff48f49c1ed69442a3b97924dd411bfcca0cbcae35139e044"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/host.json",
+      "bytes": 21586,
+      "sha256": "4a204558def29d021c2bcbcfab3c686a4c87a78f0723114adc77c805305571a7"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/machine/copilot-runtime/home/session-state/5971843f-f216-40f8-b8cb-995675f48161/events.jsonl",
+      "bytes": 359022,
+      "sha256": "1f67910478035202cc86bea01b154959daa999573aec6f9521d984e9e00bb7de"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/picked-object.private.png",
+      "bytes": 178700,
+      "sha256": "01b811f3285ce0277fb411822ed66eec440ab36c4de9e07482acfa9b258cedf4"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/server.private.log",
+      "bytes": 10327,
+      "sha256": "6179b65429c408b3a859fcf8c9638498327f322d01e7de6aeb68568aef6a9416"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/browser-driver.private.log",
+      "bytes": 232,
+      "sha256": "5bbc4c39dd31b2ad703d60107790debfd39b44d11d5456da700522a243f951fb"
+    }
+  ],
+  "raw_history_authentication_databases_and_logs_exported": false,
+  "public_screenshot_redaction_bbox": [
+    1560,
+    48,
+    1920,
+    1080
+  ]
+}

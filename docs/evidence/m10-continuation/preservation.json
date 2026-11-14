@@ -1,0 +1,192 @@
+{
+  "file_hashes_before": {
+    "project/assets/e04/generation-provenance.json": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df",
+    "project/assets/e04/workflow.json": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875",
+    "project/assets/e04/revise_asset.py": "b65ddd7837abe49a00657f8eb5f6a75dd1c0da312ababff15f7ed2f63e3cdb37",
+    "project/assets/e04/inspection.json": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e",
+    "project/assets/e04/import-provenance.json": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c",
+    "project/assets/e04/original.glb": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06",
+    "project/assets/e04/asset.blend": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3",
+    "project/assets/e04/conditioning.png": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73",
+    "project/assets/e04/model-licence.txt": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy.glb": "7631a575fa9dfb3478fbbb5fa26dcff0f6ff4741956856933f23e6c8be0c219e",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy-map.json": "f1b9a31436bc664cd7f627fd1d9aea8f4e8d677db9dc4f06b8a67104c1c255cd",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/task.json": "efc2fc560ad9811b98f0eaab0eb17fcb2bb09ca7182443c705e9665e674272d1",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/terminal.json": "12a05e624020f9ba1c057d4a0444fd57fcc10bc8beb5ad3f686f681e7cad5bab"
+  },
+  "file_hashes_after": {
+    "project/assets/e04/generation-provenance.json": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df",
+    "project/assets/e04/workflow.json": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875",
+    "project/assets/e04/revise_asset.py": "b65ddd7837abe49a00657f8eb5f6a75dd1c0da312ababff15f7ed2f63e3cdb37",
+    "project/assets/e04/inspection.json": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e",
+    "project/assets/e04/import-provenance.json": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c",
+    "project/assets/e04/original.glb": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06",
+    "project/assets/e04/asset.blend": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3",
+    "project/assets/e04/conditioning.png": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73",
+    "project/assets/e04/model-licence.txt": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy.glb": "7631a575fa9dfb3478fbbb5fa26dcff0f6ff4741956856933f23e6c8be0c219e",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy-map.json": "f1b9a31436bc664cd7f627fd1d9aea8f4e8d677db9dc4f06b8a67104c1c255cd",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/task.json": "efc2fc560ad9811b98f0eaab0eb17fcb2bb09ca7182443c705e9665e674272d1",
+    "project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/terminal.json": "12a05e624020f9ba1c057d4a0444fd57fcc10bc8beb5ad3f686f681e7cad5bab"
+  },
+  "git_refs_before": [
+    "cd21a4d52c807d28f579ff37ea392c6567db1fc6 refs/heads/main",
+    "cd21a4d52c807d28f579ff37ea392c6567db1fc6 refs/proscenium/checkpoints/0461124525df2392b6cf768698bdf76f615d10afde2a698f1439c85a7b0cb2a5"
+  ],
+  "git_refs_after": [
+    "cd21a4d52c807d28f579ff37ea392c6567db1fc6 refs/heads/main",
+    "cd21a4d52c807d28f579ff37ea392c6567db1fc6 refs/proscenium/checkpoints/0461124525df2392b6cf768698bdf76f615d10afde2a698f1439c85a7b0cb2a5"
+  ],
+  "e04_file_hashes_before": {
+    "assets/e04/generation-provenance.json": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df",
+    "assets/e04/workflow.json": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875",
+    "assets/e04/inspection.json": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e",
+    "assets/e04/original.glb": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06",
+    "assets/e04/asset.blend": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3",
+    "assets/e04/conditioning.png": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73",
+    "assets/e04/model-licence.txt": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+  },
+  "e04_file_hashes_after": {
+    "assets/e04/generation-provenance.json": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df",
+    "assets/e04/workflow.json": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875",
+    "assets/e04/inspection.json": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e",
+    "assets/e04/original.glb": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06",
+    "assets/e04/asset.blend": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3",
+    "assets/e04/conditioning.png": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73",
+    "assets/e04/model-licence.txt": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+  },
+  "original_context_before": {
+    "annotations": [],
+    "approved_findings": [],
+    "attachments": [],
+    "camera": {
+      "aspect": 2.0215181127233244,
+      "camera_to_world": [
+        0.9901873188506188,
+        -0.09855950181644522,
+        0.09907117738836595,
+        0.804858049895587,
+        0.13974646180645484,
+        0.6983530573106134,
+        -0.7019785849707214,
+        -5.702900983534149,
+        0,
+        0.7089351394497336,
+        0.705273683085784,
+        5.729670487167961,
+        0,
+        0,
+        0,
+        1
+      ],
+      "far_m": 10000,
+      "kind": "perspective",
+      "near_m": 0.01,
+      "projection": [
+        1.0608398247891768,
+        0,
+        0,
+        0,
+        0,
+        2.1445069205095586,
+        0,
+        0,
+        0,
+        0,
+        -1.000002000002,
+        -0.02000002000002,
+        0,
+        0,
+        -1,
+        0
+      ],
+      "shift": [
+        0,
+        0
+      ],
+      "source_camera_id": null,
+      "space": "blender_world_m",
+      "vertical_fov_degrees": 50
+    },
+    "captured_at": "2026-11-14T14:36:19.186Z",
+    "context_id": "83857a90-4bdc-4617-a558-a5a5739ad1be",
+    "item_id": "m10-generated-asset",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "range": {
+      "end": 1,
+      "start": 1
+    },
+    "schema_version": "1.0",
+    "selected_objects": [],
+    "target": null,
+    "version_id": "m10-asset-v1",
+    "view_mode": "3d_inspection"
+  },
+  "original_context_after": {
+    "annotations": [],
+    "approved_findings": [],
+    "attachments": [],
+    "camera": {
+      "aspect": 2.0215181127233244,
+      "camera_to_world": [
+        0.9901873188506188,
+        -0.09855950181644522,
+        0.09907117738836595,
+        0.804858049895587,
+        0.13974646180645484,
+        0.6983530573106134,
+        -0.7019785849707214,
+        -5.702900983534149,
+        0,
+        0.7089351394497336,
+        0.705273683085784,
+        5.729670487167961,
+        0,
+        0,
+        0,
+        1
+      ],
+      "far_m": 10000,
+      "kind": "perspective",
+      "near_m": 0.01,
+      "projection": [
+        1.0608398247891768,
+        0,
+        0,
+        0,
+        0,
+        2.1445069205095586,
+        0,
+        0,
+        0,
+        0,
+        -1.000002000002,
+        -0.02000002000002,
+        0,
+        0,
+        -1,
+        0
+      ],
+      "shift": [
+        0,
+        0
+      ],
+      "source_camera_id": null,
+      "space": "blender_world_m",
+      "vertical_fov_degrees": 50
+    },
+    "captured_at": "2026-11-14T14:36:19.186Z",
+    "context_id": "83857a90-4bdc-4617-a558-a5a5739ad1be",
+    "item_id": "m10-generated-asset",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "range": {
+      "end": 1,
+      "start": 1
+    },
+    "schema_version": "1.0",
+    "selected_objects": [],
+    "target": null,
+    "version_id": "m10-asset-v1",
+    "view_mode": "3d_inspection"
+  }
+}

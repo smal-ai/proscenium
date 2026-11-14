@@ -1,0 +1,301 @@
+{
+  "overall": "BLOCKED_BEFORE_CONTINUATION_SEND",
+  "accepted_base": "bdea12ca46c0be24aa98a4e2a72ef12d02dbf695",
+  "harness_commit": "9cc94967ba543a74438b87f635f37b275137b630",
+  "attempt_root": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a",
+  "original_fixture": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a",
+  "original_ids": {
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+    "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "native_message_id": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+    "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f"
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "software_renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "browser_version": "159.0.8154.6",
+  "continuous_browser_connections": 1,
+  "selected_object_capture": {
+    "status": 201,
+    "body": {
+      "item_id": "m10-generated-asset",
+      "version_id": "m10-asset-v1",
+      "view_mode": "3d_inspection",
+      "target": null,
+      "camera": {
+        "space": "blender_world_m",
+        "camera_to_world": [
+          0.9901873188506188,
+          -0.09855950181644522,
+          0.09907117738836595,
+          0.804858049895587,
+          0.13974646180645484,
+          0.6983530573106134,
+          -0.7019785849707214,
+          -5.702900983534149,
+          0,
+          0.7089351394497336,
+          0.705273683085784,
+          5.729670487167961,
+          0,
+          0,
+          0,
+          1
+        ],
+        "projection": [
+          1.0608398247891768,
+          0,
+          0,
+          0,
+          0,
+          2.1445069205095586,
+          0,
+          0,
+          0,
+          0,
+          -1.000002000002,
+          -0.02000002000002,
+          0,
+          0,
+          -1,
+          0
+        ],
+        "aspect": 2.0215181127233244,
+        "near_m": 0.01,
+        "far_m": 10000,
+        "source_camera_id": null,
+        "shift": [
+          0,
+          0
+        ],
+        "kind": "perspective",
+        "vertical_fov_degrees": 50
+      },
+      "range": {
+        "start": 1,
+        "end": 1
+      },
+      "selected_objects": [
+        {
+          "object_id": "e04-object-001",
+          "instance_id": "e04-instance-001"
+        }
+      ],
+      "attachments": [],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "4b0a5a53-001d-464e-82f2-f7a1949eb593",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "captured_at": "2026-11-14T14:35:26.912Z"
+    }
+  },
+  "capture_scope": "Revalidation of the exact originally rejected actual-UI capture after a fresh real UI triangle pick. Its old camera is not claimed as the new live pose.",
+  "metadata_resume": {
+    "status": 202,
+    "command": {
+      "schema_version": "1.0",
+      "operation_id": "f055275c-71c2-42e8-802a-c74d7516da31",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "mode": "reconcile_only",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+      "expected_revision": 3
+    },
+    "receipt": {
+      "schema_version": "1.0",
+      "operation_id": "f055275c-71c2-42e8-802a-c74d7516da31",
+      "resource_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+      "state": "accepted",
+      "state_revision": 3,
+      "replayed": false
+    }
+  },
+  "metadata_operation": {
+    "body": {
+      "expected_revision": 3,
+      "mode": "reconcile_only",
+      "operation_id": "f055275c-71c2-42e8-802a-c74d7516da31",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "schema_version": "1.0",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    "detail_code": "attribution_unavailable",
+    "state": "outcome_uncertain"
+  },
+  "blocker_invocations": [
+    {
+      "agent_id": null,
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "bash",
+      "native_id": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+      "owner_epoch": "epoch-baf233f8-52b8-43e7-a489-293350676465",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "state": "running",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "blocker_permission_stages": [
+    {
+      "authority": null,
+      "completions": [
+        {
+          "matches": false,
+          "native_event_id": "43d539c1-3a3a-4173-abc4-8e09db265c51",
+          "result": "denied-interactively-by-user"
+        }
+      ],
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "not_sent",
+      "fingerprint": "f8367e60aed7c1990976ffeb013490623ff615dbca0aaf7010978f6c56ca9192",
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "native_id": "1fbd60bd-5e63-4553-af72-8b6d50648dc1",
+      "native_result": "denied-interactively-by-user",
+      "phase": "outcome_uncertain",
+      "reply": null,
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "tool_call_id": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "original_request_receipt_before": {
+    "detail_code": "attribution_unavailable",
+    "native_message_id": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "replayed": false,
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "schema_version": "1.0",
+    "state": "outcome_uncertain",
+    "state_revision": 3,
+    "type": "queue",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "original_request_receipt_after": {
+    "detail_code": "attribution_unavailable",
+    "native_message_id": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "replayed": false,
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "schema_version": "1.0",
+    "state": "acknowledged",
+    "state_revision": 4,
+    "type": "queue",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "request_state_meaning": "Acknowledged proves the exact original native message was admitted. It does not prove execution or a successful revision.",
+  "original_work_after": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+    "job_ids": [],
+    "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "originating_request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "schema_version": "1.0",
+    "state": "awaiting_resume",
+    "state_revision": 3,
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "control_after": {
+    "gate": {
+      "activation_revision": 4,
+      "epoch": "epoch-baf233f8-52b8-43e7-a489-293350676465",
+      "fenced": true,
+      "queue_released": true,
+      "reason": "awaiting_resume",
+      "reconciled_epoch": "epoch-baf233f8-52b8-43e7-a489-293350676465",
+      "revision": 8
+    }
+  },
+  "immutable_request_submission_preserved": true,
+  "immutable_original_context_preserved": true,
+  "original_source_proxy_media_hashes_preserved": true,
+  "original_git_refs_preserved": true,
+  "original_binding_rows_preserved": true,
+  "native_history_prefix_preserved": true,
+  "native_history_sha256_before": "1f67910478035202cc86bea01b154959daa999573aec6f9521d984e9e00bb7de",
+  "native_history_sha256_after": "1f67910478035202cc86bea01b154959daa999573aec6f9521d984e9e00bb7de",
+  "native_user_messages_before": 1,
+  "native_user_messages_after": 1,
+  "new_native_children": 0,
+  "replacement_queue_requests": 0,
+  "sdk_continuation_sends": 0,
+  "new_resume_operations": {
+    "f055275c-71c2-42e8-802a-c74d7516da31": {
+      "body": {
+        "expected_revision": 3,
+        "mode": "reconcile_only",
+        "operation_id": "f055275c-71c2-42e8-802a-c74d7516da31",
+        "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+        "schema_version": "1.0",
+        "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+      },
+      "detail_code": "attribution_unavailable",
+      "state": "outcome_uncertain"
+    }
+  },
+  "metadata_reconcile_attempts": 1,
+  "continue_owner_commands": 0,
+  "authoring_processes": 0,
+  "readbacks": 0,
+  "new_proxy_exports": 0,
+  "new_cpu_stills": 0,
+  "v2_exists": false,
+  "generation_reservations_before": [],
+  "generation_reservations_after": [],
+  "e04_generation_reservations_before": [
+    [
+      "e04-mesh-job",
+      "e04-generation-task",
+      "e04-generation-task",
+      "consumed"
+    ]
+  ],
+  "e04_generation_reservations_after": [
+    [
+      "e04-mesh-job",
+      "e04-generation-task",
+      "e04-generation-task",
+      "consumed"
+    ]
+  ],
+  "e04_original_hashes_preserved": true,
+  "mem_available_before_host": 14186799104,
+  "process_checks": {
+    "server_remaining": false,
+    "driver_remaining": false,
+    "sdk_remaining": false,
+    "browser_processes_remaining": [],
+    "protected_blender_start_before": "46620374",
+    "protected_blender_start_after": "46620374"
+  },
+  "remaining_owned_processes": [],
+  "unrelated_services_targeted": false,
+  "private_before_snapshot": "/home/quintin/.cache/proscenium-development/milestones/m10-continuation-a/before-private",
+  "backup_hashes": [
+    {
+      "path": "machine-registry.sqlite3",
+      "sha256": "2233eda61e574961d4d4d101b628cc14d2060c9131b2c3db2f5426f0bddff519"
+    },
+    {
+      "path": "project.sqlite3",
+      "sha256": "d200621afeb1bd63db1fc2da24b6dddd69c7bedcbd4695c75ce1d31427594126"
+    }
+  ],
+  "criteria": {
+    "1": "PASS_ACCEPTED_E04",
+    "2": "PASS",
+    "3": "REMAINING_LEGACY_RECONCILIATION",
+    "4": "PASS_RECORDED_SCOPES",
+    "5": "REMAINING"
+  },
+  "interpretation": "Accepted fresh-stage correlation fix correctly does not invent a prepared reply/ACK for this old orphaned stage. No production or private-binding repair was attempted. Parent runtime-recovery ownership is required."
+}
