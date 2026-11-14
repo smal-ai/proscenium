@@ -1,0 +1,140 @@
+{
+  "case": "W03",
+  "recorded_date_sast": "2026-11-14",
+  "base_commit": "66f653bcf1ef036a7473c7784fd15dd94db5a6a7",
+  "implementation_commits": {
+    "renderer_media_assembly": "67adfba53febf780535fba1d5d3a2823380c0e20",
+    "authoring_launcher": "e91eb07e7fb8651a33703989170f86faa744641d"
+  },
+  "specification": "3.2.0",
+  "contract": "1.0.0",
+  "status": "bounded_production_render_camera_proxy_and_assembly_pass_with_documented_integration_gap",
+  "integration_gap": "F00 update_in_transaction is absent. Media receipt/artifact/availability/event commit is atomic. JobRecord progress currently follows in a separate F00 reconciliation transaction.",
+  "raw_reports_sha256": {
+    "/tmp/opencode/proscenium-w03-native-a.json": "1dde814137051a6373fc2da9c6c27ec76cee40a897830189c868b67d66240528",
+    "/tmp/opencode/proscenium-w03-native-analysis.json": "9afb89aeb430653c79d5f0b865f19b0712965cb7b34525aad7d19beaf50bd914",
+    "/tmp/opencode/proscenium-w03-assembly-a.json": "beb07f5fd1938ec5e5d0f26d3b97cad014702be68c8f60495c8d906b4e498ddc"
+  },
+  "disposable_project": "/tmp/opencode/proscenium-w03-native-a/test_real_progressive_camera_a0/project",
+  "source": {
+    "original_fixture": "/tmp/opencode/proscenium-f01-20261114-a",
+    "source_commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+    "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7",
+    "files_sha256": {
+      "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+      "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+      "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+    },
+    "original_historical_and_working_sources_unchanged": true,
+    "assembly_sequence_checkpoint": "9d850afc99b72c1570222acdd16b848fe3d0a692"
+  },
+  "runtime": {
+    "host": "Gerard-EVO-X2",
+    "os": "Linux x86_64 7.0.0-43-generic",
+    "python": "3.12.13",
+    "pillow": "12.3.0",
+    "blender": "4.5.14 LTS",
+    "build_hash": "62c1db4208e8",
+    "ffmpeg_ffprobe": "8.0.1-3ubuntu2",
+    "engine": "CYCLES",
+    "device": "CPU",
+    "render_threads": 4,
+    "samples": 8,
+    "dimensions": [640, 360],
+    "draft_fps": [24, 1],
+    "additional_encoder_fps": [24000, 1001],
+    "review_output": "PNG RGB8, baked Standard view transform, sRGB display, look None, exposure 0, gamma 1",
+    "draft_camera": null,
+    "native_timeout_seconds": 300,
+    "encoder_timeout_seconds": 60,
+    "render_claim": "/tmp/opencode/proscenium-native-claims/blender-render.lock"
+  },
+  "allocation_used": {"cpu_rendered_frames": 15, "static_proxy_exports": 1, "maximum_simultaneous_renderers": 1, "gpu_model_cloud_calls": 0},
+  "performance_seconds": {
+    "first_frame_published": 1.284406269,
+    "first_segment_published": 3.259371882,
+    "last_frame_ready": 7.564896067,
+    "first_encode_including_full_validation": 0.133427938,
+    "frame_median": 0.5705226624999999,
+    "frame_p95_nearest_rank": 0.616549585,
+    "supervisor_total": 7.675434191
+  },
+  "first_encode_overlapped_frame5": true,
+  "frame12_existed_at_first_segment_publication": false,
+  "single_frame_observation_limit": "The original native helper checked literal frame 12. Its raw last-frame boolean must be ignored for camera/incoming one-frame jobs. The twelve-frame draft observation is valid. The helper was corrected without repeating native renders.",
+  "artificial_render_throttling": false,
+  "renderer_reported_peak_memory_M": 27.15,
+  "os_rss_cpu_gpu_telemetry": "not sampled",
+  "draft_png_sha256_frame_order_1_to_12": [
+    "9258c03703cd4101a07f8b3cf0d1241b64c1c10a67e115ffdaf34968d95931f5",
+    "1ab1e69ae6106d468da72b2ba26d171644ff5aec55652cb5f0c2be2e7162880f",
+    "f99a34d598e568ddbcccaee3e865c96af7015f011083321c32d5e69addd7153c",
+    "1ec8aaa3c98b760940e84b1089fbcaea5e9cc3bfb999f5e2657868133d3ed659",
+    "3a7f9fc4fe0316cde865634a5d23605586079c346cd465d7b249c1c20129f714",
+    "3ccd9990c4286e1dbb264e2782d517c593e8d8913ffcbfaf997efd100cd1815d",
+    "0e50fdd4919510f5b5c714796b0935a3e33a8e89498b4b83dc3c0221aa5fb775",
+    "f05e62d8078b7625d34a826feb077f4f3227b4be9ba81e1a3e33c2702a7f3177",
+    "35fc7946c1701bdfa73485f0f1eac886fa24fa3a5b83dd9805b7aac26f7f8bc7",
+    "d4547f8c7258c96de66c7ab19906f3a5a12c1154fda8be954d0a12449213c4e4",
+    "0832d97e9116e4c4e7a52db783ef5c1b80c7d85721a721c81809e2cb61c0b522",
+    "55ea45f10d95fdf349acbd5ec3c7195d38425c4f352bd349c597bc75dc07d487"
+  ],
+  "draft_mp4_sha256_intervals_1_4_5_8_9_12": [
+    "3d6413ab9eb01f9eeabaccd346e4ca2f8816e071631b28697a4bfdf6e5f52335",
+    "56bb04cb3caffbf4dfe68c618d5a8275aed4de7ccdea6aa4ea6cf868b1c972ef",
+    "6dac1621e7b65bd0df94cc0f1af52ff5585379a1cfca05aeccdddaed29e330d8"
+  ],
+  "other_output_sha256": {
+    "perspective_png": "79084729256196478717e660e9d565a70b03a2ef5fd142601ae83e22d44d7538",
+    "perspective_mp4": "11e3c54337ac94f195e8e2b8e5027ae87d872efd7ed7f60f673511f3283cf6bb",
+    "orthographic_png": "37bc616eb98da66fa53be1016c5dfed96d98ab85e7a4701af4ae7c57a66d6c96",
+    "orthographic_mp4": "6fea002c991bb5f3bdfc9e5eb779f4110ffa9288758608a2a184f22bda657941",
+    "incoming_shot_png": "d821a6e51bc425c87681c53b78aa7d3831839ce9a00b28800af017aac0262b81",
+    "incoming_shot_mp4": "befc3151ce19fce52d7aa8d113bee1f91f599519c40b95c4c44c5461faf90d71",
+    "proxy_glb": "7dc028503fea1b4d7b18b9ac922322940da212ed340430997e76affbdfc1ce6b",
+    "proxy_mapping": "4a5cbae6d4d12bc57d7cf74b197e001e8d50a09262833f47fda69b3176e41969",
+    "fractional_mp4": "da3b426baf84f988f463ee647b703e66acbb9d7ed533cd7d320abc8095f68d24",
+    "assembly_delivery": "f43436a0e0391497ab744efd88ca806d00714dc0c1f1894156aaebce56be4299",
+    "assembly_frame_map": "e21cf968975ac50a471ec577e41ee610e7d7a1507aa41910be8fa30ed436ff04",
+    "assembly_manifest": "38342e8a461e6da08926b99b579d2922a444ffa600015f45ef521a76d9c41260"
+  },
+  "camera_measurements": {
+    "perspective_projection_max_error": 2.4921395214150266e-7,
+    "orthographic_projection_max_error": 3.4570693974167455e-8,
+    "perspective_raster_edge_errors_pixels": [0.22262990994866527, 0.12278793776155794],
+    "orthographic_raster_edge_errors_pixels": [0.3637096774193651, 0.09186046511629797],
+    "scope": "Two shifted 640x360 overrides, controlled F01 cube-edge oracle, no browser-coordinate claim"
+  },
+  "proxy_measurements": {
+    "glb_bytes": 5908,
+    "ray_origins_proxy_m": [[1, 2, 0], [-1, 2, 0]],
+    "ray_direction_proxy": [0, -1, 0],
+    "hit_distances_m": [1.0, 1.0],
+    "object_ids": ["object-cube-source", "object-cube-source"],
+    "instance_ids": ["instance-blue", "instance-renamed"],
+    "node_paths": [[0], [1]],
+    "scope": "Decoded actual GLB indexed triangles and normative mapping, not a browser pick simulation"
+  },
+  "assembly": {
+    "job_id": "assembly-native",
+    "state": "succeeded",
+    "input_digest": "570dcbba4cdda3bcf7eb18e2c042b68dfa4e338f9de5b1b5b818a92507a4cc15",
+    "native_exit_code": null,
+    "terminal_basis": "Explicit in-process encode adapter evidence and verified full output decode, no invented Blender exit",
+    "frame_count": 12,
+    "fps": [24, 1],
+    "audio_streams": 0,
+    "retime_destination_5_8_source_ordinals": [5, 5, 7, 8],
+    "dissolve_destination": [9, 12],
+    "dissolve_shots": ["fixture-shot", "incoming-shot"],
+    "blend_space": "linear_rgb"
+  },
+  "execution_identity_limits": {
+    "first_draft_worker_sha256": "7bde350a960c0ce59c099529b96e0db7b157ba4a55989e1e6d134026b507dbdc",
+    "camera_proxy_intermediate_worker_sha256": null,
+    "incoming_still_task_pinned_worker_sha256": "be7c6c933bd39466578d62fcdc71605d9ef23728c3402f7cde8f82f0e93c048b",
+    "note": "Run used uncommitted candidate code over the exact accepted base. Camera wire correction preceded that subset. Per-task entry-point hashing was added before the incoming still. The intermediate camera/proxy script hash was not captured. Final closure hardening and optional atomic-update integration were verified offline, not by repeating the successful native allocation. All source closures, RenderSpecs, process identities, receipts and media hashes are retained."
+  },
+  "final_offline_verification": {"affected_integration_tests": 102, "mypy_source_files": 13, "ruff_files": 24, "result": "pass"},
+  "not_claimed": ["F00 atomic JobRecord seam completion", "live orphan/kill/retry fault acceptance", "real authoring bridge startup", "continuous browser segment playback", "all Blender engines/devices/features", "M01/M08/M13 full journey acceptance"]
+}
