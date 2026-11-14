@@ -1,0 +1,205 @@
+import bpy
+import hashlib
+import json
+import os
+from pathlib import Path
+from mathutils import Vector
+
+root = Path.cwd().resolve()
+report_path = root / "reports/history-adoption-completion.json"
+fixture = json.loads((root / "reports/historical-inputs.json").read_text())
+texture_hash = "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+asset_hash = "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+
+
+def safe(path):
+    p = Path(path)
+    if not p.is_absolute():
+        p = root / p
+    assert p.is_relative_to(root) and not any(x.is_symlink() for x in [p, *p.parents]), str(p)
+    return p
+
+
+def sha(path):
+    return hashlib.sha256(safe(path).read_bytes()).hexdigest()
+
+
+def plain(value):
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if hasattr(value, "to_dict"):
+        return {k: plain(v) for k, v in value.to_dict().items()}
+    return [plain(v) for v in value]
+
+
+def ids(data):
+    return {k: plain(v) for k, v in data.items()}
+
+
+def cubes():
+    objects = [o for o in bpy.context.scene.objects
+               if o.get("proscenium_object_id") == "object-cube-source"]
+    assert len(objects) == 2
+    assert {o.get("proscenium_instance_id") for o in objects} == {"instance-blue", "instance-renamed"}
+    assert all(o.type == "MESH" for o in objects)
+    return objects
+
+
+def measured(o):
+    points = [o.matrix_world @ Vector(c) for c in o.bound_box]
+    lo = [min(p[i] for p in points) for i in range(3)]
+    hi = [max(p[i] for p in points) for i in range(3)]
+    return {
+        "name": o.name, "ids": ids(o), "mesh": o.data.name, "mesh_ids": ids(o.data),
+        "library": o.data.library.filepath if o.data.library else None,
+        "bounds_m": {"min": lo, "max": hi}, "dimensions_m": [hi[i] - lo[i] for i in range(3)],
+        "location": list(o.location), "materials": [s.material.name if s.material else None for s in o.material_slots],
+        "vertices": len(o.data.vertices), "polygons": len(o.data.polygons),
+    }
+
+
+def dependencies(scope):
+    paths = list(bpy.utils.blend_paths(absolute=True, packed=False, local=False))
+    for path in paths:
+        p = safe(path)
+        assert p.is_relative_to(scope) and p.is_file(), f"Required path outside inspected source root or missing: {p}"
+    libraries = []
+    for lib in bpy.data.libraries:
+        p = safe(bpy.path.abspath(lib.filepath))
+        assert p.is_relative_to(scope) and p.is_file()
+        libraries.append({"name": lib.name, "filepath": lib.filepath, "resolved_path": str(p), "sha256": sha(p)})
+    textures = []
+    for image in bpy.data.images:
+        if image.source != "FILE" or not image.filepath or image.packed_file:
+            continue
+        p = safe(bpy.path.abspath(image.filepath, library=image.library))
+        assert p.is_relative_to(scope) and p.is_file()
+        textures.append({"name": image.name, "filepath": image.filepath, "resolved_path": str(p), "dimensions": list(image.size), "sha256": sha(p)})
+    return {"blend_paths": paths, "libraries": libraries, "textures": textures}
+
+
+def animation(o):
+    data = o.animation_data
+    if not data:
+        return None
+    action = data.action
+    curves = []
+    if action:
+        for curve in action.fcurves:
+            curves.append({"path": curve.data_path, "index": curve.array_index, "keys": [
+                {"co": list(k.co), "left": list(k.handle_left), "right": list(k.handle_right), "interpolation": k.interpolation}
+                for k in curve.keyframe_points
+            ]})
+    return {"action": action.name if action else None, "curves": curves,
+            "drivers": [(f.data_path, f.array_index, f.driver.expression) for f in data.drivers],
+            "nla": [(t.name, [(s.name, s.action.name if s.action else None, s.frame_start, s.frame_end) for s in t.strips]) for t in data.nla_tracks]}
+
+
+def scene_state():
+    scene = bpy.context.scene
+    return {
+        "objects": {o.name: {"ids": ids(o), "location": list(o.location), "rotation": list(o.rotation_euler),
+                             "scale": list(o.scale), "animation": animation(o)} for o in scene.objects},
+        "camera": scene.camera.name if scene.camera else None,
+        "timeline": [scene.frame_start, scene.frame_end, scene.frame_current, scene.render.fps, scene.render.fps_base],
+    }
+
+
+assert bpy.app.version == (4, 5, 14)
+protected = ["assets/cube/asset.blend", "assets/cube/colour.png", "assets/companion/asset.blend", "assets/companion/colour.png", "scenes/alternate/scene.blend"]
+protected += [p.relative_to(root).as_posix() for folder in ["research", "reports"] for p in (root / folder).rglob("*")
+              if p.is_file() and p != report_path and "native-adoption-allocation" not in p.parts]
+protected.append("tools/history_adopt.py")
+baseline = {p: sha(p) for p in protected}
+assert baseline["assets/cube/asset.blend"] == asset_hash
+report = {
+    "command": "python tools/m05_adopt_guard.py tools/history_adopt_completion.py",
+    "request_id": "0cac4d20-0fc1-48a5-b26a-9487c027cbee", "work_id": "work-314f1c4eee9f47278ce6d6e280e6950c",
+    "generation_task_id": "task-3d6f06b8c2204596b420a9de90174c08", "context_id": "9ba1a5f1-8731-4964-8939-c487fe382814",
+    "blender": {"version": bpy.app.version_string, "build_hash": bpy.app.build_hash.decode(), "build_branch": bpy.app.build_branch.decode()},
+    "historical_inspections": [], "requested_future_operation": "Adopt asset-cube-v3 only into scene-main-v2",
+    "status": "in_progress", "rendered": False, "protected_before": baseline,
+}
+report_path.write_text(json.dumps(report, indent=2) + "\n")
+for version_id in ["scene-main-v1", "scene-alternate-v1"]:
+    entry = fixture[version_id]
+    snapshot = safe(entry["path"])
+    version = entry["version"]
+    assert version["version_id"] == version_id
+    assert version["source_commit"] == "a4b388c4fdaeda6d6513076ceac86921f1017cad"
+    before = {}
+    for f in version["source"]["files"]:
+        p = safe(snapshot / f["destination"])
+        before[f["destination"]] = sha(p)
+        assert before[f["destination"]] == f["origin"]["sha256"]
+    bpy.ops.wm.open_mainfile(filepath=str(safe(snapshot / version["source"]["entry_path"])))
+    scene = bpy.context.scene
+    bpy.context.view_layer.update()
+    observations = [measured(o) for o in cubes()]
+    assert len(observations) == 2, observations
+    assert scene.unit_settings.system == "METRIC" and scene.unit_settings.scale_length == 1
+    for o in observations:
+        assert all(abs(a - 1) < 1e-5 for a in o["dimensions_m"]), o
+    deps = dependencies(snapshot)
+    assert deps["textures"], "Historical textured cube has no actual file-backed texture"
+    for t in deps["textures"]:
+        assert t["sha256"] == texture_hash and t["dimensions"] == [8, 8]
+    after = {p: sha(snapshot / p) for p in before}
+    assert before == after
+    report["historical_inspections"].append({
+        "version_id": version_id, "source_commit": version["source_commit"], "source_closure_digest": version["source"]["digest"],
+        "snapshot_root": entry["path"], "units": {"system": scene.unit_settings.system, "scale_length": scene.unit_settings.scale_length},
+        "instances": observations, "dependencies": deps, "hashes_before": before, "hashes_after": after,
+        "saved": False, "status": "actual_reopen_verified",
+    })
+    report_path.write_text(json.dumps(report, indent=2) + "\n")
+
+source = safe("scenes/fixture/scene.blend")
+temporary = source.with_name("scene.adopting-completion.blend")
+assert not temporary.exists()
+bpy.ops.wm.open_mainfile(filepath=str(source))
+scene = bpy.context.scene
+bpy.context.view_layer.update()
+state_before = scene_state()
+instances = cubes()
+assert len(instances) == 2
+assert scene.unit_settings.system == "METRIC" and scene.unit_settings.scale_length == 1
+observations = [measured(o) for o in instances]
+for o in observations:
+    assert all(abs(a - b) < 1e-5 for a, b in zip(o["dimensions_m"], [1, 1, 1.5])), o
+    assert o["materials"] == ["Red"], o
+    assert o["mesh"] == "Cube" and o["vertices"] == 24 and o["polygons"] == 12
+for lib in bpy.data.libraries:
+    p = safe(bpy.path.abspath(lib.filepath))
+    assert p == safe("assets/cube/asset.blend") and sha(p) == asset_hash
+    lib.filepath = "//" + os.path.relpath(p, source.parent)
+before_purge = list(bpy.utils.blend_paths(absolute=True, packed=False, local=False))
+purged = bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
+deps = dependencies(root)
+state_after = scene_state()
+assert state_before == state_after, "Scene identity/transforms/animation/camera/timeline changed"
+report["adoption"] = {
+    "based_on": "scene-main-v1", "version_id": "scene-main-v2",
+    "dependency": {"item_id": "asset-cube", "version_id": "asset-cube-v3"},
+    "instances": observations, "units": {"system": scene.unit_settings.system, "scale_length": scene.unit_settings.scale_length},
+    "state_before": state_before, "state_after": state_after, "state_preserved": True,
+    "dependency_paths_before_unused_purge": before_purge, "unused_datablocks_purged": purged,
+    "dependencies": deps, "input_sha256": sha(source),
+}
+bpy.context.preferences.filepaths.save_version = 0
+bpy.ops.wm.save_as_mainfile(filepath=str(temporary), check_existing=False)
+assert temporary.stat().st_size > 1000 and temporary.read_bytes()[:7] == b"BLENDER"
+saved_deps = dependencies(root)
+assert saved_deps == deps
+os.replace(temporary, source)
+report["adoption"]["output"] = {"path": "scenes/fixture/scene.blend", "sha256": sha(source), "bytes": source.stat().st_size}
+report["adoption"]["saved_dependency_recheck"] = saved_deps
+report["protected_after"] = {p: sha(p) for p in protected}
+assert baseline == report["protected_after"]
+for inspection in report["historical_inspections"]:
+    snapshot = safe(inspection["snapshot_root"])
+    assert inspection["hashes_before"] == {p: sha(snapshot / p) for p in inspection["hashes_before"]}
+report["status"] = "passed"
+report["limitations"] = ["No render, visual review, rig/motion acceptance or new preview performed", "Historical readback is verified; scene-main-v2 publication is a separate host operation"]
+report_path.write_text(json.dumps(report, indent=2) + "\n")
+print(json.dumps(report))

@@ -1,0 +1,62 @@
+[
+  {
+    "native_event_id": "e9d21b51-6f57-40ac-8458-f950ccbbbebd",
+    "type": "user.message",
+    "timestamp": "2026-11-14T16:45:46.763Z",
+    "content": "New explicit owner request after original request 113219f0-a14c-45b5-b740-3f0596d7bd60 completed honestly without adoption. This is a renewed narrow allocation, NOT a retry of an uncertain native effect. ONE cloud root under 170 seconds, no children, ONE additional background Blender inspection/authoring process under 180 seconds/four threads. No downloads, acquisition, imports, asset revision, GPU/VLM/Comfy/Unity, independent service changes, installs, purchases, remote uploads or SQLite. Do not retry any old failed job. Preserve all old reports, failed receipts, source versions, asset v3 bytes/provenance, previous owner selection and unrelated staged/dirty files.\n\nFinish only the previously blocked historical verification and main-scene adoption. Use actual get_version metadata for asset-cube-v3, scene-main-v1 and scene-alternate-v1. The earlier W02 materialisations recorded in reports/historical-inputs.json are still inside this project and byte-pinned to the actual old published scene versions. Use those exact historical source roots. Do not access original fixtures/sibling projects. Use the accepted research/source tools.\n\nThe known authored bug is ONLY the broad mesh-name OR fallback in tools/history_adopt.py:cubes(), which included Floor and Wall. Read the original script; preserve it and the original reports/history-adoption.json unchanged. Copy it to tools/history_adopt_completion.py and correct the selector to EXACT obj.get('proscenium_object_id') == 'object-cube-source'. Require exactly instance-blue and instance-renamed, not arbitrary objects sharing a Cube mesh-name prefix. Route all NEW proof output to reports/history-adoption-completion.json and fresh temporary scene filename; update only new request/work IDs in that copied proof where needed. Keep the existing inspection/adoption logic otherwise, including original texture assertions, metre units, before/after hashes and scene-state preservation.\n\nRun the model-authored corrected script ONCE via `python tools/m05_adopt_guard.py tools/history_adopt_completion.py`. The new operator-installed guard is allocation control only: one new reservation directory, four threads, 180 seconds, python-exit-code 1, common OS claim and protected host headroom. It does NOT author/import/revise geometry. Do not use the exhausted old m05_blender.py guard or remove/reset any old claims. Do not invoke Blender in any other way or repeat a failed/uncertain launch.\n\nIn that single actual Blender process: first reopen BOTH old materialised scenes without saving, prove the two exact stable-ID cube instances are one metre tall, units METRIC/1, original external texture decodes to 8x8 and hashes fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568, and retain every historical source hash unchanged. THEN explicitly adopt the existing 1.5-metre asset-cube-v3 into ONLY the working scenes/fixture/scene.blend, preserving scene instance IDs/transforms/animation/camera/timeline, with actual linked Red material and metre units. Save only that declared scene via a fresh temporary sibling and promote after successful validation. Preserve scenes/alternate/scene.blend and all asset/research/old report bytes. If anything unexpected blocks, report the exact limitation; do not fabricate completion or spend another process.\n\nIf the native process succeeds, use checkpoint_sources for ONLY scenes/fixture/scene.blend, tools/history_adopt_completion.py and reports/history-adoption-completion.json, with actual HEAD as expected_head. Then publish ONLY scene-main-v2 on item scene-main, expected_current_version_id scene-main-v1, with exact asset-cube/asset-cube-v3 source dependency, truthful description and preview_requests:[]. Build SourceClosure from actual scene/report/source hashes and the exact existing dependency origins from get_version(asset-cube-v3), correct project repository ID, returned source commit and canonical digest using installed proscenium.contracts. Validate before publish_outputs. No asset revision, no alternate scene publication and no new preview/proxy/still are needed. Do not call Git add/commit directly or include unrelated guard/dirty files.\n\nFinish with actual historical measurements/texture evidence, adoption readback, preserved-state checks and exact source/version/publication IDs. An explicit owner operation already authorises this main-only adoption, so do not impose an extra creative approval stage. The previous failure remains in history, unaltered.\n"
+  },
+  {
+    "native_event_id": "841831a3-5ac6-448d-860d-d613a382a30c",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:45:52.746Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "c3cdbc37-0832-4f1c-90fc-ac1225d9e32e",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:45:58.790Z",
+    "content": "I\u2019ll preserve the failed attempt and its reports, copy the script, and restrict selection to the exact object ID and two required instance IDs. The renewed guard will run once; only a successful readback and save will lead to main-scene publication.\n"
+  },
+  {
+    "native_event_id": "b080851d-77d0-4a1a-ad98-d3d2383aab4a",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:46:05.726Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "cddd2cd2-b203-4437-801f-d23717cef9e7",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:46:13.361Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "6dd3868d-9d0c-4528-a24f-d2889c539d38",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:46:17.903Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "11885cc9-96c3-4cf6-9c3a-1b66d5bc2cd6",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:46:27.968Z",
+    "content": "Both historical scenes passed the Blender reopen, metre-scale, 8\u00d78 texture and unchanged-hash checks. The main scene then passed its 1.5-metre geometry and `Red` material assertions, but stopped before saving at a path-equality check: the library path retained `../..` components. I won\u2019t spend another process or publish an unsaved adoption.\n"
+  },
+  {
+    "native_event_id": "201ef11c-ee03-4537-a533-5176000e1966",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:46:36.774Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "ae5c9aac-4c05-4d3f-9df6-be7d2cb7833e",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:46:42.101Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "80ca665e-9d86-419d-8595-cb3fe121124b",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T16:46:48.677Z",
+    "content": "**Historical verification succeeded; adoption remains blocked.**\n\nBoth `scene-main-v1` and `scene-alternate-v1` reopened in Blender 4.5.14 LTS with exactly `instance-blue` and `instance-renamed`, each **1 \u00d7 1 \u00d7 1 m**, METRIC/1. Their textures decoded to **8\u00d78**, with SHA-256 `fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568`. Historical source hashes remained unchanged.\n\nThe working main scene passed **1 \u00d7 1 \u00d7 1.5 m**, `Red`, and topology assertions, but my copied script then failed a lexical path comparison involving `../..`. The resolved path and asset-v3 hash match, but **no scene was saved or published**, and no second process ran.\n\nEvidence: `reports/history-adoption-completion.json`. Old reports, assets, alternate scene and main-scene bytes remain unchanged.\n\n- Existing scenes\u2019 source: `a4b388c4fdaeda6d6513076ceac86921f1017cad`\n- Asset retained: `asset-cube-v3`, source `b836298f258967c1c37a1b2521aded58cbaced2e`\n- New checkpoint/publication: **none**\n- `scene-main-v2`: **not created**"
+  }
+]

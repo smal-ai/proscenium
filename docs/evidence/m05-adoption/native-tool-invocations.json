@@ -1,0 +1,140 @@
+[
+  {
+    "native_event_id": "49babcb6-993a-41e7-9363-fab639c7a68b",
+    "timestamp": "2026-11-14T16:45:52.747Z",
+    "toolCallId": "call_KxMYYMOkqEErl1jW6TiDBVzB",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "asset-cube-v3"
+    }
+  },
+  {
+    "native_event_id": "48d208b5-3e5c-46d2-a1e6-a4cd166b9057",
+    "timestamp": "2026-11-14T16:45:52.748Z",
+    "toolCallId": "call_FqOIx5CVhlOAkdkEreoGNYT2",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "scene-main-v1"
+    }
+  },
+  {
+    "native_event_id": "dafd9405-2955-4fa6-b273-96955d22711a",
+    "timestamp": "2026-11-14T16:45:52.748Z",
+    "toolCallId": "call_baeyEXKEqk0KxRRW5i1CZdCI",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "scene-alternate-v1"
+    }
+  },
+  {
+    "native_event_id": "605cdb36-480f-46bb-b69d-2fc23588925f",
+    "timestamp": "2026-11-14T16:45:52.748Z",
+    "toolCallId": "call_sXdrc7Kqor9dppCWS3f5FttN",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/history_adopt.py"
+    }
+  },
+  {
+    "native_event_id": "c888a6c7-a5ed-4c79-8500-23d7f084b12a",
+    "timestamp": "2026-11-14T16:45:52.748Z",
+    "toolCallId": "call_P5b3s5xirl25uuJwJKPxYPvo",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/m05_adopt_guard.py"
+    }
+  },
+  {
+    "native_event_id": "921ddee8-1580-4da8-9c9d-14b736972b99",
+    "timestamp": "2026-11-14T16:45:52.754Z",
+    "toolCallId": "call_ogXXWHPU5kPECtlY3ladHYmq",
+    "toolName": "bash",
+    "arguments": {
+      "command": "git status --short && git rev-parse HEAD && cat project.json && cat reports/historical-inputs.json && sha256sum tools/history_adopt.py reports/history-adoption.json scenes/alternate/scene.blend assets/cube/asset.blend",
+      "description": "Read metadata, historical roots and preservation baseline"
+    }
+  },
+  {
+    "native_event_id": "6ae243b2-3a50-4c47-97b5-dd122e2d1daa",
+    "timestamp": "2026-11-14T16:45:58.791Z",
+    "toolCallId": "call_8jqGPr8vWcRInSCKVgbEVmi9",
+    "toolName": "bash",
+    "arguments": {
+      "command": "cp --no-clobber tools/history_adopt.py tools/history_adopt_completion.py",
+      "description": "Copy original authored script without altering failed-attempt evidence"
+    }
+  },
+  {
+    "native_event_id": "0fcae704-fd70-46db-8e22-05673ccf2533",
+    "timestamp": "2026-11-14T16:46:05.727Z",
+    "toolCallId": "custom_call_JQAj2aE0odTcwH99mBm2PT0i",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Update File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/history_adopt_completion.py\n@@\n-report_path = root / \"reports/history-adoption.json\"\n+report_path = root / \"reports/history-adoption-completion.json\"\n@@\n def cubes():\n-    return [o for o in bpy.context.scene.objects if o.type == \"MESH\" and (\n-        o.data.name.split(\".\")[0] == \"Cube\" or\n-        o.get(\"object_id\") == \"object-cube-source\" or\n-        o.get(\"proscenium_object_id\") == \"object-cube-source\" or\n-        o.data.get(\"object_id\") == \"object-cube-source\" or\n-        o.data.get(\"proscenium_object_id\") == \"object-cube-source\"\n-    )]\n+    objects = [o for o in bpy.context.scene.objects\n+               if o.get(\"proscenium_object_id\") == \"object-cube-source\"]\n+    assert len(objects) == 2\n+    assert {o.get(\"proscenium_instance_id\") for o in objects} == {\"instance-blue\", \"instance-renamed\"}\n+    assert all(o.type == \"MESH\" for o in objects)\n+    return objects\n@@\n-protected = [\"assets/cube/asset.blend\", \"assets/cube/colour.png\", \"assets/companion/asset.blend\", \"assets/companion/colour.png\", \"scenes/alternate/scene.blend\", \"research/Box.glb\"]\n+protected = [\"assets/cube/asset.blend\", \"assets/cube/colour.png\", \"assets/companion/asset.blend\", \"assets/companion/colour.png\", \"scenes/alternate/scene.blend\"]\n+protected += [p.relative_to(root).as_posix() for folder in [\"research\", \"reports\"] for p in (root / folder).rglob(\"*\")\n+              if p.is_file() and p != report_path and \"native-adoption-allocation\" not in p.parts]\n+protected.append(\"tools/history_adopt.py\")\n@@\n-    \"command\": \"python tools/m05_blender.py history-adopt tools/history_adopt.py\",\n-    \"request_id\": \"113219f0-a14c-45b5-b740-3f0596d7bd60\", \"work_id\": \"work-28be728f76cd4851b56ef075b70a653c\",\n-    \"generation_task_id\": \"task-11d15a7c6f964a6ab632ed1f716cea21\", \"context_id\": \"9c26d0fb-a3c5-4110-b64e-5a3cc2df6fdb\",\n+    \"command\": \"python tools/m05_adopt_guard.py tools/history_adopt_completion.py\",\n+    \"request_id\": \"0cac4d20-0fc1-48a5-b26a-9487c027cbee\", \"work_id\": \"work-314f1c4eee9f47278ce6d6e280e6950c\",\n+    \"generation_task_id\": \"task-3d6f06b8c2204596b420a9de90174c08\", \"context_id\": \"9ba1a5f1-8731-4964-8939-c487fe382814\",\n@@\n-        assert t[\"sha256\"] == texture_hash and all(n > 0 for n in t[\"dimensions\"])\n+        assert t[\"sha256\"] == texture_hash and t[\"dimensions\"] == [8, 8]\n@@\n-temporary = source.with_name(\"scene.adopting.blend\")\n+temporary = source.with_name(\"scene.adopting-completion.blend\")\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "54a82104-a424-49b2-b0ff-8dc1e26e2b20",
+    "timestamp": "2026-11-14T16:46:13.362Z",
+    "toolCallId": "call_3ZX2mDKloQIJZCzuFXROjgtm",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/m05_adopt_guard.py tools/history_adopt_completion.py && python - <<'PY'\nimport json\nfrom pathlib import Path\nr=json.loads(Path('reports/history-adoption-completion.json').read_text()); assert r['status']=='passed'; print(json.dumps({'status':r['status'],'history':r['historical_inspections'],'adoption':r['adoption'],'preserved':r['protected_before']==r['protected_after']}))\nPY",
+      "description": "Execute renewed single guarded history inspection and main-scene adoption",
+      "initial_wait": 30
+    }
+  },
+  {
+    "native_event_id": "f7f9fb19-77e2-4450-80ad-d8bf07bc77ed",
+    "timestamp": "2026-11-14T16:46:17.904Z",
+    "toolCallId": "call_EevqQVfXR9tNkRkpuS1YpO6P",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/reports/native-adoption-allocation/blender.log"
+    }
+  },
+  {
+    "native_event_id": "d61ade62-d446-4b09-949e-9edb276a8e7c",
+    "timestamp": "2026-11-14T16:46:17.904Z",
+    "toolCallId": "call_egKKv8jYTqwmZd9LeuYgRn2h",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/reports/history-adoption-completion.json"
+    }
+  },
+  {
+    "native_event_id": "dd76fac1-1249-4aca-8807-072edd92fd0a",
+    "timestamp": "2026-11-14T16:46:17.904Z",
+    "toolCallId": "call_L9UJYL4tdMz124cU0po8mGKm",
+    "toolName": "bash",
+    "arguments": {
+      "command": "sha256sum scenes/fixture/scene.blend scenes/alternate/scene.blend assets/cube/asset.blend tools/history_adopt.py reports/history-adoption.json && git rev-parse HEAD",
+      "description": "Verify unchanged retained sources after guarded process failure"
+    }
+  },
+  {
+    "native_event_id": "e10380d8-82f0-4edd-8513-70fac2fed278",
+    "timestamp": "2026-11-14T16:46:27.970Z",
+    "toolCallId": "call_c0U9FoycaNP8cubycndbMnjg",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport hashlib,json\nfrom pathlib import Path\nroot=Path.cwd(); r=json.loads((root/'reports/history-adoption-completion.json').read_text())\nfor p,h in r['protected_before'].items(): assert hashlib.sha256((root/p).read_bytes()).hexdigest()==h,p\nfor i in r['historical_inspections']:\n for p,h in i['hashes_before'].items(): assert hashlib.sha256((root/i['snapshot_root']/p).read_bytes()).hexdigest()==h,p\nraw=root/'scenes/fixture/../../assets/cube/asset.blend'; target=root/'assets/cube/asset.blend'\nprint(json.dumps({'all_protected_hashes_unchanged':True,'all_historical_hashes_unchanged':True,'lexical_equality':raw==target,'resolved_equality':raw.resolve()==target.resolve(),'resolved_asset_sha256':hashlib.sha256(raw.read_bytes()).hexdigest(),'working_main_sha256':hashlib.sha256((root/'scenes/fixture/scene.blend').read_bytes()).hexdigest(),'temporary_exists':(root/'scenes/fixture/scene.adopting-completion.blend').exists()}))\nPY",
+      "description": "Verify post-failure immutable hashes and diagnose lexical library-path comparison"
+    }
+  },
+  {
+    "native_event_id": "066751ad-5a57-4fec-a760-94c6e379e070",
+    "timestamp": "2026-11-14T16:46:36.775Z",
+    "toolCallId": "custom_call_uZM0HXyX3xjL5fOLT5bKZd9W",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Update File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/reports/history-adoption-completion.json\n@@\n-  \"status\": \"in_progress\",\n+  \"status\": \"historical_verification_passed_adoption_blocked\",\n+  \"failure\": {\n+    \"evidence\": \"reports/native-adoption-allocation/blender.log and terminal.json\",\n+    \"exit_code\": 1,\n+    \"location\": \"tools/history_adopt_completion.py:174\",\n+    \"exception\": \"AssertionError\",\n+    \"cause\": \"Lexical Path equality compared scenes/fixture/../../assets/cube/asset.blend with assets/cube/asset.blend without normalising dot components\",\n+    \"post_process_resolution_check\": {\n+      \"lexical_equality\": false,\n+      \"resolved_equality\": true,\n+      \"resolved_asset_sha256\": \"da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde\"\n+    },\n+    \"second_process_attempted\": false\n+  },\n+  \"adoption\": {\n+    \"status\": \"not_saved_or_published\",\n+    \"actual_process_progress\": \"Working main scene opened; exact instance selector, METRIC/1, dimensions within 1e-5 of 1 x 1 x 1.5, Red material, Cube mesh and 24-vertex/12-polygon assertions passed before library-path comparison failed\",\n+    \"measurement_arrays_persisted\": false,\n+    \"state_preservation_comparison_reached\": false,\n+    \"save_reached\": false,\n+    \"temporary_file_exists\": false,\n+    \"working_main_sha256_unchanged\": \"17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f\",\n+    \"scene_main_v2_published\": false\n+  },\n+  \"post_process_hash_verification\": {\n+    \"all_protected_before_entries_unchanged\": true,\n+    \"both_historical_closures_unchanged\": true,\n+    \"evidence\": \"Post-process SHA-256 comparison of every protected_before entry and each historical_inspections.hashes_before file\",\n+    \"old_script_and_old_failure_report_unchanged\": true\n+  },\n+  \"limitations\": [\n+    \"Historical inspections completed; main-scene adoption was not saved or published\",\n+    \"The single renewed process is exhausted; no second Blender launch performed\",\n+    \"No checkpoint or publication attempted because native success was required\",\n+    \"No render, preview, generation, visual acceptance or owner-selection change performed\"\n+  ],\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "8427ff18-0ef0-4a37-84ac-33591bac8e71",
+    "timestamp": "2026-11-14T16:46:42.102Z",
+    "toolCallId": "call_v7tRq2LG2rStRValxqnLCSe8",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport json,hashlib\nfrom pathlib import Path\nr=json.loads(Path('reports/history-adoption-completion.json').read_text()); assert len(r['historical_inspections'])==2\nfor h in r['historical_inspections']:\n assert h['hashes_before']==h['hashes_after']\n assert {o['ids']['proscenium_instance_id'] for o in h['instances']}=={'instance-blue','instance-renamed'}\n assert all(o['dimensions_m']==[1,1,1] for o in h['instances'])\n assert all(t['dimensions']==[8,8] and t['sha256']=='fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568' for t in h['dependencies']['textures'])\nprint(r['status']); print('Old evidence SHA-256:',hashlib.sha256(Path('reports/history-adoption.json').read_bytes()).hexdigest())\nPY",
+      "description": "Validate persisted completion proof accurately records historical success and adoption failure"
+    }
+  }
+]

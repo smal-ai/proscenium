@@ -1,0 +1,21 @@
+{
+  "pid": 3889462,
+  "start": "46748534",
+  "command": [
+    "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+    "--background",
+    "--factory-startup",
+    "--disable-autoexec",
+    "--threads",
+    "4",
+    "--python-exit-code",
+    "1",
+    "--python",
+    "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/history_adopt_completion.py"
+  ],
+  "available_bytes_before": 13210828800,
+  "claim": "/home/quintin/.cache/proscenium/native-claims/blender-render.lock",
+  "timeout": 180,
+  "exit_code": 1,
+  "reaped": true
+}

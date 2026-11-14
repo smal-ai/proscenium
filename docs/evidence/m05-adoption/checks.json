@@ -1,0 +1,12 @@
+{
+  "scope": "Targeted offline retained-proof checks after the one real model/native attempt",
+  "commands": [
+    {"command": "npm run build", "result": "passed", "note": "Accepted production frontend, no UI source changes"},
+    {"command": ".venv/bin/ruff check tests/native/studio/m05_adopt*.py tests/acceptance/m05_adopt_retained.py", "result": "passed"},
+    {"command": ".venv/bin/ruff format --check tests/native/studio/m05_adopt*.py tests/acceptance/m05_adopt_retained.py", "result": "passed"},
+    {"command": "PYTHONPATH=. .venv/bin/pytest -q tests/acceptance/m05_adopt_retained.py tests/acceptance/m05_retained.py tests/contracts", "result": "passed", "passed": 60, "new_follow_up_checks": 6, "warnings": ["Existing Starlette/httpx TestClient deprecation warning"]}
+  ],
+  "broad_browser_matrix_rerun": false,
+  "additional_cloud_or_native_calls_from_tests": 0,
+  "strict_journey_result": "remaining: adoption not saved or published"
+}

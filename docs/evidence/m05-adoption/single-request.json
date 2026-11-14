@@ -1,0 +1,30 @@
+{
+  "request": {
+    "accepted_at": "2026-11-14T16:45:43.155292+00:00",
+    "effective_profile_id": "authoring",
+    "generation_task_id": "task-3d6f06b8c2204596b420a9de90174c08",
+    "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+    "receipt": {
+      "native_message_id": "3486c167-677e-4bf3-88ee-6d80154aa882",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "replayed": false,
+      "request_id": "0cac4d20-0fc1-48a5-b26a-9487c027cbee",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-314f1c4eee9f47278ce6d6e280e6950c"
+    },
+    "request_id": "0cac4d20-0fc1-48a5-b26a-9487c027cbee",
+    "schema_version": "1.0",
+    "submission": {
+      "context_id": "9ba1a5f1-8731-4964-8939-c487fe382814",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "request_id": "0cac4d20-0fc1-48a5-b26a-9487c027cbee",
+      "schema_version": "1.0",
+      "text": "New explicit owner request after original request 113219f0-a14c-45b5-b740-3f0596d7bd60 completed honestly without adoption. This is a renewed narrow allocation, NOT a retry of an uncertain native effect. ONE cloud root under 170 seconds, no children, ONE additional background Blender inspection/authoring process under 180 seconds/four threads. No downloads, acquisition, imports, asset revision, GPU/VLM/Comfy/Unity, independent service changes, installs, purchases, remote uploads or SQLite. Do not retry any old failed job. Preserve all old reports, failed receipts, source versions, asset v3 bytes/provenance, previous owner selection and unrelated staged/dirty files.\n\nFinish only the previously blocked historical verification and main-scene adoption. Use actual get_version metadata for asset-cube-v3, scene-main-v1 and scene-alternate-v1. The earlier W02 materialisations recorded in reports/historical-inputs.json are still inside this project and byte-pinned to the actual old published scene versions. Use those exact historical source roots. Do not access original fixtures/sibling projects. Use the accepted research/source tools.\n\nThe known authored bug is ONLY the broad mesh-name OR fallback in tools/history_adopt.py:cubes(), which included Floor and Wall. Read the original script; preserve it and the original reports/history-adoption.json unchanged. Copy it to tools/history_adopt_completion.py and correct the selector to EXACT obj.get('proscenium_object_id') == 'object-cube-source'. Require exactly instance-blue and instance-renamed, not arbitrary objects sharing a Cube mesh-name prefix. Route all NEW proof output to reports/history-adoption-completion.json and fresh temporary scene filename; update only new request/work IDs in that copied proof where needed. Keep the existing inspection/adoption logic otherwise, including original texture assertions, metre units, before/after hashes and scene-state preservation.\n\nRun the model-authored corrected script ONCE via `python tools/m05_adopt_guard.py tools/history_adopt_completion.py`. The new operator-installed guard is allocation control only: one new reservation directory, four threads, 180 seconds, python-exit-code 1, common OS claim and protected host headroom. It does NOT author/import/revise geometry. Do not use the exhausted old m05_blender.py guard or remove/reset any old claims. Do not invoke Blender in any other way or repeat a failed/uncertain launch.\n\nIn that single actual Blender process: first reopen BOTH old materialised scenes without saving, prove the two exact stable-ID cube instances are one metre tall, units METRIC/1, original external texture decodes to 8x8 and hashes fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568, and retain every historical source hash unchanged. THEN explicitly adopt the existing 1.5-metre asset-cube-v3 into ONLY the working scenes/fixture/scene.blend, preserving scene instance IDs/transforms/animation/camera/timeline, with actual linked Red material and metre units. Save only that declared scene via a fresh temporary sibling and promote after successful validation. Preserve scenes/alternate/scene.blend and all asset/research/old report bytes. If anything unexpected blocks, report the exact limitation; do not fabricate completion or spend another process.\n\nIf the native process succeeds, use checkpoint_sources for ONLY scenes/fixture/scene.blend, tools/history_adopt_completion.py and reports/history-adoption-completion.json, with actual HEAD as expected_head. Then publish ONLY scene-main-v2 on item scene-main, expected_current_version_id scene-main-v1, with exact asset-cube/asset-cube-v3 source dependency, truthful description and preview_requests:[]. Build SourceClosure from actual scene/report/source hashes and the exact existing dependency origins from get_version(asset-cube-v3), correct project repository ID, returned source commit and canonical digest using installed proscenium.contracts. Validate before publish_outputs. No asset revision, no alternate scene publication and no new preview/proxy/still are needed. Do not call Git add/commit directly or include unrelated guard/dirty files.\n\nFinish with actual historical measurements/texture evidence, adoption readback, preserved-state checks and exact source/version/publication IDs. An explicit owner operation already authorises this main-only adoption, so do not impose an extra creative approval stage. The previous failure remains in history, unaltered.\n",
+      "type": "queue"
+    }
+  },
+  "elapsed_ms": 66864
+}
