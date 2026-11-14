@@ -58,3 +58,29 @@ def test_registry_settlement_reads_only_its_validated_bound_source(tmp_path):
     registry.assert_settled("project-fixture")
     with pytest.raises(ValueError, match="identity_mismatch"):
         registry.assert_settled("different-project")
+
+
+@pytest.mark.parametrize("empty_wal", [False, True])
+def test_quiescent_main_only_backup_never_deletes_or_creates_source_sidecars(tmp_path, empty_wal):
+    from proscenium.db import Store
+
+    source = Store(tmp_path / "source.sqlite3")
+    with source.transaction() as tx:
+        tx.put("fixture", "main", {"committed": True})
+    wal = source.path.with_name(source.path.name + "-wal")
+    assert not wal.exists()
+    if empty_wal:
+        wal.write_bytes(b"")  # A labelled zero-frame sidecar, as observed in M07.
+    before = {path.name: digest(path) for path in tmp_path.iterdir()}
+    reader = existing_store(source.path, read_only=True)
+    with reader.transaction(write=False) as tx:
+        assert tx.require("fixture", "main") == {"committed": True}
+    reader.backup(tmp_path / "backup.sqlite3")
+    after = {
+        path.name: digest(path) for path in tmp_path.iterdir() if path.name != "backup.sqlite3"
+    }
+    assert before == after
+    with closing(sqlite3.connect(tmp_path / "backup.sqlite3")) as db:
+        assert json.loads(db.execute("SELECT body FROM records WHERE id='main'").fetchone()[0]) == {
+            "committed": True
+        }

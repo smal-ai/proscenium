@@ -86,8 +86,10 @@ class BackupSource(Store):
 
     Ordinary read-only SQLite connections still modify WAL shared-memory marks.
     unix-none + EXCLUSIVE uses a private in-memory WAL index instead. External
-    registry/project flocks AND stopped external writers are mandatory. Never use
-    immutable=1: it can omit committed WAL pages. No raw database copy is made.
+    registry/project flocks AND stopped external writers are mandatory. A nonempty
+    WAL must never use immutable=1, which would omit its committed pages. With no
+    WAL payload, immutable mode also prevents SQLite deleting empty sidecars.
+    No raw database copy is made.
     """
 
     def __init__(self, path: Path, project_id: str | None = None):
@@ -95,8 +97,17 @@ class BackupSource(Store):
         self.write_barrier = self.write_guard = self.before_commit = self.after_commit = None
 
     def connect(self) -> sqlite3.Connection:
+        wal_name = self.path.name + "-wal"
+        try:
+            wal_bytes = safe_file(self.path.parent, wal_name).stat().st_size
+        except FileNotFoundError:
+            wal_bytes = 0
+        # An absent or zero-byte WAL contains no frames. Under the required
+        # quiescence locks, immutable reads cannot omit a committed transaction.
+        # unix-none may otherwise unlink a zero-byte WAL even with mode=ro.
+        parameters = "mode=ro&vfs=unix-none" if wal_bytes else "mode=ro&immutable=1"
         connection = sqlite3.connect(
-            self.path.as_uri() + "?mode=ro&vfs=unix-none",
+            self.path.as_uri() + "?" + parameters,
             uri=True,
             isolation_level=None,
             timeout=5,

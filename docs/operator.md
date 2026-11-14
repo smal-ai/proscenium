@@ -212,8 +212,9 @@ uv run python -m tools.operations.recovery verify \
 
 Use recovery's `--config /absolute/config.json` or `--data-directory /absolute/data`
 when inspecting an alternate stopped installation. Both SQLite stores use F00's
-`Store.backup()`, including committed WAL content. Read-only source handles use a
-private WAL index under the quiescence locks. Only the current known schema
+`Store.backup()`, including committed WAL content. Nonempty WALs use a private
+read-only index under the quiescence locks. Absent or zero-byte WALs use immutable
+source reads, preventing SQLite from deleting empty sidecars. Only the current known schema
 revision is accepted. Source databases are not migrated by this tool.
 
 The manifest records project/repository/native session IDs, DB revisions, Git HEAD
