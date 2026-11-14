@@ -51,7 +51,11 @@ def main(root):
                     cwd=REPO,
                     stdout=log,
                     stderr=subprocess.STDOUT,
-                    env={**os.environ, "M07_REVIEW_SOURCE": source},
+                    env={
+                        **os.environ,
+                        "M07_REVIEW_SOURCE": source,
+                        "M07_REVIEW_HOLD_FOR_INSPECTION": "1",
+                    },
                     start_new_session=True,
                 )
             children[name] = process

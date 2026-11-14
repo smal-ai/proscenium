@@ -100,5 +100,26 @@ try {
   result.error=String(error);process.exitCode=1;
   const page=browser?.contexts()[0]?.pages()[0];
   if(page)await page.screenshot({path:`${root}/failed-readback.png`}).catch(()=>{});
+  if(page&&process.env.M07_REVIEW_HOLD_FOR_INSPECTION==='1') {
+    result.failed_phases=[{error:String(error),at:new Date().toISOString()}];
+    await fs.writeFile(`${root}/unexpected-state.json`,JSON.stringify(result,null,2));
+    await fs.writeFile(`${root}/unexpected-state.private.html`,await page.content());
+    // Keep this exact browser and app alive for a bounded observer/selector
+    // repair. A continuation has no extra authority beyond the read-only guard.
+    const until=Date.now()+120000;
+    while(Date.now()<until) {
+      try {
+        const code=await fs.readFile(`${root}/continue.mjs`);
+        result.continuation_sha256=createHash('sha256').update(code).digest('hex');
+        const continuation=await import(`file://${root}/continue.mjs`);
+        await continuation.resume({browser,page,root,result});
+        if(result.pass){delete result.error;process.exitCode=0;}
+        break;
+      } catch(continuationError) {
+        if(continuationError.code!=='ENOENT'){result.continuation_error=String(continuationError);break;}
+      }
+      await new Promise(resolve=>setTimeout(resolve,200));
+    }
+  }
 }
 finally {if(browser)await browser.close();await fs.writeFile(`${root}/browser-result.json`,JSON.stringify(result,null,2)+'\n');}
