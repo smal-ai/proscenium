@@ -51,8 +51,16 @@ def process_identity(pid):
     return dict(pid=pid, start=row[19])
 
 
-def main(control):
+def main(control, *, continuation_seconds=300, process_seconds=1800, final=False):
     control.mkdir(mode=0o700, parents=True, exist_ok=False)
+    hooks = None
+    if final:
+        if TYPE_CHECKING:
+            from tests.native.unity.m11_final import FinalHooks, preflight
+        else:
+            from m11_final import FinalHooks, preflight
+
+        (control / "preflight.json").write_text(json.dumps(preflight(), indent=2))
     before = snapshot(ORIGINAL, control, "before")
     live = [
         row
@@ -61,7 +69,8 @@ def main(control):
     ]
     assert not live, f"Unresolved original invocations; no send authorised: {live}"
     work = next(w for w in before["work"] if w["work_id"] == WORK_ID)
-    assert work["state"] == "awaiting_resume" and work["native_session_id"] == SESSION_ID
+    assert work["state"] in ({"awaiting_resume", "awaiting_user"} if final else {"awaiting_resume"})
+    assert work["native_session_id"] == SESSION_ID
     shutil.copytree(INSTALLED / "apps/frontend/dist", control / "compiled-frontend")
     config = json.loads((ORIGINAL / "config.json").read_text())
     config.update(
@@ -75,6 +84,8 @@ def main(control):
     (control / "config.json").write_text(json.dumps(config, indent=2))
     (control / "config.json").chmod(0o600)
     services = Services.create(Settings.load(control / "config.json"))
+    if final:
+        hooks = FinalHooks(services, control)
     app = create_app(services.settings, services=services, manage_features=True)
     buffered = []
     lock = threading.Lock()
@@ -92,7 +103,9 @@ def main(control):
         settings["tools"] = [tool for tool in settings["tools"] if tool.name not in NO_NEW_WORK]
         message = dict(settings["system_message"])
         message["content"] += (
-            "\nPUBLICATION-ONLY ALLOCATION: Resume the ORIGINAL publication request/work. The original Unity specialist already completed inspection and verification. Its parent task was interrupted, not successful. The lead must directly finish the pending source checkpoint and unity_result publication under this existing work/session. No new task/delegation/children or new Queue. No Unity/Blender/export/authoring/render/provider/model-service/installation actions. Existing import validation remains not_run; only the separately registered operator F05 attestation supports passed PlayMode. Do not change saved scene, meta, Assets, Packages or ProjectSettings bytes just to publish. Verify the existing attestation and GUIDs, use production checkpoint_sources/publish_outputs and the original requested item/version/manifest. No private SQLite reads. One continuation only, finish within 290 seconds."
+            "\nPUBLICATION-ONLY ALLOCATION: Resume the ORIGINAL publication request/work. The original Unity specialist already completed inspection and verification. Its parent task was interrupted, not successful. The lead must directly finish the pending source checkpoint and unity_result publication under this existing work/session. No new task/delegation/children or new Queue. No Unity/Blender/export/authoring/render/provider/model-service/installation actions. Existing import validation remains not_run; only the separately registered operator F05 attestation supports passed PlayMode. Do not change saved scene, meta, Assets, Packages or ProjectSettings bytes just to publish. Verify the existing attestation and GUIDs, use production checkpoint_sources/publish_outputs and the original requested item/version/manifest. No private SQLite reads. One continuation only, finish within "
+            + str(continuation_seconds - 10)
+            + " seconds. Routine checkpoint paths including tool-install.json are not software installation. Canonical operation_id m11-unity-source-checkpoint, publication_id m11-unity-publication, item_id m11-playable, version_id m11-playable-v1. Use the actual registered PlayMode evidence, preserve original generic not_run result and the exact honest operator-versus-native validation notes from the original request."
         )
         settings["system_message"] = message
         event = settings["on_event"]
@@ -113,6 +126,10 @@ def main(control):
         assert send_count == 0, (
             "One SDK continuation send exhausted; never retry uncertain delivery"
         )
+        if final:
+            assert (control / "UI-PREFLIGHT-PASSED").is_file(), "UI preflight before send"
+            assert hooks is not None
+            hooks.headroom()
         send_count += 1
         started["at"] = time.monotonic()
         (control / "continuation-send.json").write_text(
@@ -172,7 +189,7 @@ def main(control):
     stopping = threading.Event()
 
     def monitor():
-        deadline = time.monotonic() + 1800
+        deadline = time.monotonic() + process_seconds
         while not stopping.wait(0.25):
             with lock:
                 pending = buffered[:]
@@ -181,11 +198,13 @@ def main(control):
                 with (control / "events.private.jsonl").open("a") as output:
                     for event in pending:
                         output.write(json.dumps(event, default=str) + "\n")
+            if hooks is not None:
+                hooks.tick()
             if (
                 (control / "STOP").exists()
                 or time.monotonic() > deadline
                 or started
-                and time.monotonic() - started["at"] > 300
+                and time.monotonic() - started["at"] > continuation_seconds
             ):
                 server.should_exit = True
                 return
@@ -197,6 +216,12 @@ def main(control):
     finally:
         stopping.set()
         thread.join()
+        with lock:
+            pending = buffered[:]
+        if pending:
+            with (control / "events.private.jsonl").open("a") as output:
+                for event in pending:
+                    output.write(json.dumps(event, default=str) + "\n")
         browser.terminate()
         try:
             browser.wait(15)
