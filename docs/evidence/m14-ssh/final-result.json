@@ -1,0 +1,844 @@
+{
+  "status": "incomplete",
+  "base": "c0cdf58c47d8b8a2a5157b11e4961d594786b7e3",
+  "driver_revision": "c89e32246b43ebe688add4dd394676636341aad9",
+  "retained_root": "/home/quintin/.cache/proscenium-development/s14b",
+  "transport": "actual fixture-key OpenSSH same-host loopback",
+  "available_ram_bytes_before_start": 33594343424,
+  "allocation_seconds": 600,
+  "sdk_send_limit": 1,
+  "sdk_send_seconds": 180,
+  "children_authoring_encodes_provider_calls": 0,
+  "commands": [
+    {
+      "argv_redacted": [
+        "/usr/sbin/sshd",
+        "-D",
+        "-e",
+        "-f",
+        "<PRIVATE_ROOT>/sshd_config"
+      ],
+      "redacted_sha256": "7661bc1b611ad54c0d791771ef890342ffc6f5b955254516b41a9e38ef7ac4fd"
+    },
+    {
+      "argv_redacted": [
+        "<CHECKOUT>/.venv/bin/python3",
+        "-u",
+        "<CHECKOUT>/tests/native/studio/m14_ssh_host.py",
+        "<PRIVATE_ROOT>",
+        "1"
+      ],
+      "redacted_sha256": "a1f1d2eafe2c0ed0d0404c9d950013a461de36cebdad7c8b579d0951823f3853"
+    },
+    {
+      "argv_redacted": [
+        "ssh",
+        "-F",
+        "/dev/null",
+        "-N",
+        "-T",
+        "-p",
+        "40023",
+        "-i",
+        "<PRIVATE_ROOT>/client_key",
+        "-o",
+        "IdentityAgent=none",
+        "-o",
+        "IdentitiesOnly=yes",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UserKnownHostsFile=<PRIVATE_ROOT>/known_hosts",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
+        "-o",
+        "ExitOnForwardFailure=yes",
+        "-o",
+        "ConnectTimeout=5",
+        "-o",
+        "ServerAliveInterval=5",
+        "-o",
+        "ServerAliveCountMax=2",
+        "-L",
+        "127.0.0.1:60049:127.0.0.1:39555",
+        "quintin@127.0.0.1"
+      ],
+      "redacted_sha256": "b8df9d5f182d1902c0abc34e816e7909f5998152f6a74f9ca01187af5360d854"
+    },
+    {
+      "argv_redacted": [
+        "node",
+        "<CHECKOUT>/tests/native/studio/m14_ssh_browser.mjs",
+        "<PRIVATE_ROOT>"
+      ],
+      "redacted_sha256": "43a91c6ecb7de8e7dfb3dd705d2c42c1dcd0af7471039ea61acac22304a3e8ed"
+    }
+  ],
+  "processes": [
+    {
+      "name": "sshd",
+      "pid": 4142074,
+      "start": "47304855"
+    },
+    {
+      "name": "host-1",
+      "pid": 4142076,
+      "start": "47304860"
+    },
+    {
+      "name": "ssh-1",
+      "pid": 4142127,
+      "start": "47304963"
+    },
+    {
+      "name": "browser",
+      "pid": 4142132,
+      "start": "47304980"
+    }
+  ],
+  "cleanup": [
+    {
+      "component": "browser",
+      "pid_start_checked": true,
+      "signalled_owned_group": false,
+      "exit_code": 2,
+      "original_identity_gone": true
+    },
+    {
+      "component": "ssh-1",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": 0,
+      "original_identity_gone": true
+    },
+    {
+      "component": "host-1",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": -15,
+      "original_identity_gone": true
+    },
+    {
+      "component": "sshd",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": 0,
+      "original_identity_gone": true
+    }
+  ],
+  "boundary": {
+    "normal": 200,
+    "wrong_host": 403,
+    "wrong_origin": 403
+  },
+  "failure": {
+    "type": "RuntimeError",
+    "detail": "browser_exited_before_admitted.json"
+  },
+  "owned_descendants_remaining": {},
+  "host_1": {
+    "generation": "1",
+    "sdk": "1.0.34",
+    "sends": 0,
+    "forbidden": [],
+    "native_processes": [],
+    "options": [],
+    "transport": [
+      {
+        "type": "http",
+        "path": "/health",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 40,
+        "request_headers": {
+          "host": "127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-length": "40",
+          "content-type": "application/json"
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "0f18bad1656d54bb1c62741a98235747ac36f52bc4be9736953f2bedec183528"
+      },
+      {
+        "type": "http",
+        "path": "/health",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 134,
+        "request_headers": {
+          "host": "wrong.invalid"
+        },
+        "status": 403,
+        "response_headers": {
+          "content-length": "134",
+          "content-type": "application/json"
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "88c3c603d4271ee72a20ba831937189e227effa269dbb1de5959d56cb51acad6"
+      },
+      {
+        "type": "http",
+        "path": "/health",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 134,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "origin": "http://wrong.invalid"
+        },
+        "status": 403,
+        "response_headers": {
+          "content-length": "134",
+          "content-type": "application/json"
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "88c3c603d4271ee72a20ba831937189e227effa269dbb1de5959d56cb51acad6"
+      },
+      {
+        "type": "http",
+        "path": "/",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 359,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "text/html; charset=utf-8",
+          "accept-ranges": "bytes",
+          "content-length": "359",
+          "etag": "\"7d36605a11d90187cfba76e2519c3103\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "cb2e7474016543997824f60b24b6a1f581c9e59b4b6cfab5fc4aaff92ac7d490"
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-VG5WV1Cp.css",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 37639,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "text/css; charset=utf-8",
+          "accept-ranges": "bytes",
+          "content-length": "37639",
+          "etag": "\"f84569213c256dbffecc92e1bc604cfc\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "8d68faf9412d4fb66e6eba2ff9831a78d7076648dbf12581b45d653eca41d517"
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-DtT6Yr5o.js",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 1354260,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "text/javascript; charset=utf-8",
+          "accept-ranges": "bytes",
+          "content-length": "1354260",
+          "etag": "\"2d74b141fca20a3f015a7c123f26b1a6\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "1a546f5b5601c2e6bda0e314ca2a1fe904ab2b1f08cd8b0c8b62a45dcf5c2221"
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 23664,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "font/woff2",
+          "accept-ranges": "bytes",
+          "content-length": "23664",
+          "etag": "\"c28b95288ada90cfb7a83d42f4961186\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc"
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 24272,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "font/woff2",
+          "accept-ranges": "bytes",
+          "content-length": "24272",
+          "etag": "\"6ce30496996e1128057eaada46689bce\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "f3779f1efccc4bdcdf9c0a02ab95bf6bd092ed09c48c08cedc725889edd1d19f"
+      },
+      {
+        "type": "http",
+        "path": "/",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 359,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "text/html; charset=utf-8",
+          "accept-ranges": "bytes",
+          "content-length": "359",
+          "etag": "\"7d36605a11d90187cfba76e2519c3103\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "cb2e7474016543997824f60b24b6a1f581c9e59b4b6cfab5fc4aaff92ac7d490"
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-VG5WV1Cp.css",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 37639,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "text/css; charset=utf-8",
+          "accept-ranges": "bytes",
+          "content-length": "37639",
+          "etag": "\"f84569213c256dbffecc92e1bc604cfc\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "8d68faf9412d4fb66e6eba2ff9831a78d7076648dbf12581b45d653eca41d517"
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-DtT6Yr5o.js",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 1354260,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "text/javascript; charset=utf-8",
+          "accept-ranges": "bytes",
+          "content-length": "1354260",
+          "etag": "\"2d74b141fca20a3f015a7c123f26b1a6\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "1a546f5b5601c2e6bda0e314ca2a1fe904ab2b1f08cd8b0c8b62a45dcf5c2221"
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 23664,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "font/woff2",
+          "accept-ranges": "bytes",
+          "content-length": "23664",
+          "etag": "\"c28b95288ada90cfb7a83d42f4961186\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc"
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 24452,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "font/woff2",
+          "accept-ranges": "bytes",
+          "content-length": "24452",
+          "etag": "\"b4d006e3e91914283d12c5e7867da7aa\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "f9a06e79cd3a2a20951c0f0e28f66dd0e6d3fda73911d640a2125c8fcb78f21a"
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 24272,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "font/woff2",
+          "accept-ranges": "bytes",
+          "content-length": "24272",
+          "etag": "\"6ce30496996e1128057eaada46689bce\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "f3779f1efccc4bdcdf9c0a02ab95bf6bd092ed09c48c08cedc725889edd1d19f"
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/owner/session",
+        "method": "POST",
+        "request_bytes": 214,
+        "response_bytes": 216,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "content-length": "214",
+          "cache-control": "no-cache",
+          "content-type": "application/json",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 201,
+        "response_headers": {
+          "content-length": "216",
+          "content-type": "application/json"
+        },
+        "request_sha256": "73bc82d129a6b4223de4dc2f3423b72aeaf469373aafc0f64a39f96220422c42",
+        "response_sha256": "e6ffe6165f9a3e8711ff7b51048a3d7cc2756b808b25a1e3b0a71f78e83552fc"
+      },
+      {
+        "type": "http",
+        "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 21168,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache",
+          "origin": "http://127.0.0.1:60049"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-type": "font/woff2",
+          "accept-ranges": "bytes",
+          "content-length": "21168",
+          "etag": "\"7ea314dabcaef0167266306c34dc1e26\""
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "14425ba9c695763c1547f48a206b7aa60350a33ae23de09f0407877f3fcd89eb"
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 305,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-length": "305",
+          "content-type": "application/json"
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "e5076fbfdfe463ab4203fd15615d7ca7a57623b1f49f2ec0903c12e6acf344ab"
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/configuration",
+        "method": "GET",
+        "request_bytes": 0,
+        "response_bytes": 238,
+        "request_headers": {
+          "host": "127.0.0.1:60049",
+          "cache-control": "no-cache"
+        },
+        "status": 200,
+        "response_headers": {
+          "content-length": "238",
+          "content-type": "application/json"
+        },
+        "request_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "response_sha256": "9698e54b4d45e0ab5ec9554f688d08c530020e522aeade0f0a12805e12c7746a"
+      }
+    ],
+    "records": {
+      "requests": [],
+      "contexts": [],
+      "copilot.session": [],
+      "work": [],
+      "annotations": [],
+      "invocations": []
+    },
+    "jobs": [
+      {
+        "job_id": "m13-encode-v1",
+        "state": "succeeded"
+      },
+      {
+        "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+        "state": "succeeded"
+      },
+      {
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "state": "succeeded"
+      }
+    ],
+    "gate_closed": true,
+    "native_identities_gone": []
+  },
+  "host_2_audit_missing": true,
+  "original_m13_byte_preserved": true,
+  "original_inventory_sha256": "9fd793e80d3b5d7401a829a69d698dda07f36256abf4305d8d309787ba0a60ae",
+  "import": {
+    "label": "IMPORTED ACTUAL M13 HISTORY, NOT NEW RENDERS",
+    "source": "/home/quintin/.cache/proscenium-development/c13c",
+    "preserved_project_id_for_immutable_media": "m13-cinematic",
+    "fresh_native_association": true,
+    "native_history_imported": false,
+    "original_annotation_imported": false,
+    "records": [
+      {
+        "namespace": "attempts",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "body_sha256": "67b680785d41c4533fede743eaa7ff3be1d0660759b93b255834611dc74c4b1d"
+      },
+      {
+        "namespace": "attempts",
+        "id": "attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198",
+        "body_sha256": "7f10816e34d12f70dd863ab828d279c4633a580d51f4c088107a68f9df4b04fb"
+      },
+      {
+        "namespace": "attempts",
+        "id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107",
+        "body_sha256": "e7242f336f8f2e1200f039bd93b3b7274f82c8066bbccdd7b3ba5882669176de"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f1",
+        "body_sha256": "ef0b468d23637882712e435fca5b1b6904ab04f09fd41dae42aaa74499c127bd"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f10",
+        "body_sha256": "a28a840d1de82dde8de0df80202a0ee37e7dec335a64d8e3d16c0bb98a19f1d3"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f11",
+        "body_sha256": "13af59651633f8aa079b5a1bfed51617cebf59ef9e0153fbd5cff51b95381387"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f12",
+        "body_sha256": "2fd2b73f541420d05fa2c9849443cb252a3c9bc279f28946f131fb54cadb3256"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f2",
+        "body_sha256": "c43e43e57dab3c5299c5a8616f8c312dc2ab683f9d72d03c5cc26b5a0ba982fa"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f3",
+        "body_sha256": "e4f11d2c1a7d01338ef2fefc75490354dd36b43bec27e181c6115a9f4886b31b"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f4",
+        "body_sha256": "ae756a5390be793ae253676dc6a581c4c2688b34ad3ba078c624ee7abdf6d647"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f5",
+        "body_sha256": "08a929cbe1ae9de31ab2ea5d6835bc3e1c05834d780aa73a0bf2dae3c4247a94"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f6",
+        "body_sha256": "79dc6eb0945787de1b4c4ad84e30845184ff4938a199e620cb057ff51e1c1363"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f7",
+        "body_sha256": "4eab96dc4921c6786c5ef271b2a54971e9c538d67c20a29022f9af1e4b2cb84d"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f8",
+        "body_sha256": "db599f428cf3eae344cf685af203ee57f94ac1b66138b6964e1e9a5529fdfcd2"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f9",
+        "body_sha256": "5b6fcd467b8f0060bb535889d16e47da8495a1a7a9e9a183a172f51e5e181804"
+      },
+      {
+        "namespace": "frames",
+        "id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107-f1",
+        "body_sha256": "13d2d0abe6f86c7ae84fbfa1bcf316e92264937954b450eea34df8687413927b"
+      },
+      {
+        "namespace": "items",
+        "id": "fixture-scene",
+        "body_sha256": "5240022f82149dbe7f0d8d455b499d9100e8f85724810b7461a6260830a4fab2"
+      },
+      {
+        "namespace": "items",
+        "id": "m13-film",
+        "body_sha256": "a048fed000295d8d48671ec872c5892af5a7b5e157a91f2136297c99d2c6205f"
+      },
+      {
+        "namespace": "jobs",
+        "id": "m13-encode-v1",
+        "body_sha256": "a26834faae8e9d080295580816e135d13a9c76ab5943ae23ca0fa880c773193f"
+      },
+      {
+        "namespace": "jobs",
+        "id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+        "body_sha256": "8221c58ea8abec4d9e65ad8b42b5c5ed021067604645890bcace24e959c6fc10"
+      },
+      {
+        "namespace": "jobs",
+        "id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "body_sha256": "17e095d18af7d034d7ac5e5359536d8cacbb8697fbf9280ae897b7962c1f1f2c"
+      },
+      {
+        "namespace": "segments",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s1-4",
+        "body_sha256": "eb1cb2d96680eb2bd174eb857184cb520d469bc14e7f03b756816b62654f8745"
+      },
+      {
+        "namespace": "segments",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s5-8",
+        "body_sha256": "7f818b35c2ed722300d64cc8e4558fe36335302b1805a759af65cc8c3a8dea76"
+      },
+      {
+        "namespace": "segments",
+        "id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s9-12",
+        "body_sha256": "f51d6be29afa44ef19afc790ec68bf6ac8c85ec4089166084f8b9a8a783d1408"
+      },
+      {
+        "namespace": "segments",
+        "id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107-s1-1",
+        "body_sha256": "c046a4a4a6d507cd41d5bbbc77afb9da2cf90a9125b6852abdbb58cc9f8bd9a7"
+      },
+      {
+        "namespace": "selections",
+        "id": "16e01d5c-7a23-4369-877b-697b40ae28f7",
+        "body_sha256": "6ca92c0c4e53f213b113a903ae4a82933fdf563c1e2e69b11f2b36a83f81755d"
+      },
+      {
+        "namespace": "version_links",
+        "id": "m13-film-v1",
+        "body_sha256": "bf9ea17638a25789aaf830beca1d384add15a0e5e6adacb5b4283070cc2afd5d"
+      },
+      {
+        "namespace": "versions",
+        "id": "fixture-v1",
+        "body_sha256": "a332464c7d98447e4f7b3bbcaad3d3f64f93f5a8cc0b5fdd2d49a0f7ea59b605"
+      },
+      {
+        "namespace": "versions",
+        "id": "m13-film-v1",
+        "body_sha256": "e24ffd901425c9c89f8992fbf5362f4378b87c15b430cf8820a543a901c0a953"
+      }
+    ],
+    "video": {
+      "artifact_id": "m13-encode-v1-delivery",
+      "bytes": 64876,
+      "derived_from": [
+        {
+          "input_artifact_ids": [
+            "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6"
+          ],
+          "kind": "encode",
+          "parameters": {
+            "blend_space": "linear_rgb",
+            "frame_map_sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b"
+          }
+        }
+      ],
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 10,
+      "kind": "video",
+      "media_type": "video/mp4",
+      "project_id": "m13-cinematic",
+      "purpose": "final",
+      "schema_version": "1.0",
+      "sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e",
+      "source_version_id": "m13-film-v1",
+      "state": "ready"
+    }
+  },
+  "versions": {
+    "ssh": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026",
+    "node": "v24.18.0",
+    "cli_package": "1.0.112",
+    "cli_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69"
+  },
+  "browser": {
+    "status": "incomplete",
+    "off_origin": [],
+    "websockets": [],
+    "responses": [
+      {
+        "path": "/",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/index-VG5WV1Cp.css",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/index-DtT6Yr5o.js",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/index-VG5WV1Cp.css",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/index-DtT6Yr5o.js",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/owner/session",
+        "status": 201,
+        "method": "POST"
+      },
+      {
+        "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/projects",
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/configuration",
+        "status": 200,
+        "method": "GET"
+      }
+    ],
+    "phases": [],
+    "observer_failures": [],
+    "browser": "159.0.8154.6",
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    },
+    "error": "TimeoutError: locator.waitFor: Timeout 15000ms exceeded.",
+    "browser_closed": true
+  },
+  "source_hashes": {
+    "tests/native/studio/m14_ssh_prepare.py": "fb6fdcd54cc660cda805f351ec4b3f5e9df0c15d5263a3dd28543f8e25461fe2",
+    "tests/native/studio/m14_ssh_browser.mjs": "3ba86db354f5ba5ecfc4b87be8a3cca870903e9d1dfdee9895f3b884201e50ac",
+    "tests/native/studio/m14_ssh_preflight.py": "25a37a10dc96286bc8e4d75c646ae0a3e316ae67e17cf170b8e5df0244a8f279",
+    "tests/native/studio/m14_ssh_host.py": "ffbc5911b3719ef6dc4f03f2a3c7fc55f0426af39ba6a4e54a2b2d3be6de907c",
+    "tests/native/studio/m14_ssh_run.py": "8897bc24c6058aad80f11bb8188561404934a3ca74b05ad44cb26b2fb8cfc681"
+  },
+  "frontend_index_sha256": "cb2e7474016543997824f60b24b6a1f581c9e59b4b6cfab5fc4aaff92ac7d490",
+  "elapsed_seconds": 19.425,
+  "limits": [
+    "Same-host actual SSH, not physical remote-client acceptance.",
+    "Imported real selected M13 film, no new rendering or authoring.",
+    "Configured unavailable Copilot and closed owned endpoint ports, not stopped shared services.",
+    "Cumulative M12/M14 and release acceptance remain coordinator-owned."
+  ]
+}

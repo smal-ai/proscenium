@@ -30,7 +30,45 @@ of the same frame without falsely inventing a missing frame. A read/review asser
 failure can pause the same living browser for a narrow observer correction. Queue is
 outside that retry path, with the exclusive per-run reservation still enforced.
 
-Final live result: pending the one authorised execution.
+### Final live result: blocked at the initial project chooser
+
+The single renewed allocation at `c89e322` lasted **19.425 seconds**. Actual OpenSSH
+authenticated with the fixture keys, the compiled Full-HD Chromium UI loaded through
+the fixed forward, and owner pairing returned **201**. Wrong Host/Origin were rejected.
+The browser then showed **No active workstation folder**, with its ordinary **Choose a
+project** control. The driver incorrectly waited for the project composer without
+opening and activating the saved imported project. Its 15-second locator wait expired.
+This is a proof-harness omission, not a product defect or missing Copilot capability.
+
+The [unaltered final driver receipt](../evidence/m14-ssh/final-result.json) and
+[actual chooser screenshot](../evidence/m14-ssh/final-project-chooser.png) preserve that
+failure. The earlier `s14a` report, guard and original source inventory remain unchanged.
+
+- Exactly one renewed sshd, one forwarding client, one API and one Chromium profile
+  were started. All four numeric PID/start receipts exist. Cleanup observed their
+  original identities gone and zero remaining owned descendants.
+- The actual API lifespan wrote its final audit. It observed **zero SDK sends,
+  zero native processes, zero forbidden attempts**, a closed gate and no requests,
+  contexts, work, annotations or native associations. No missing audit is inferred.
+- All **195 original M13 files** remain byte-identical. No original session was resumed.
+- The browser closed before a message was admitted. Therefore the after-completion,
+  same-living-fixture observer continuation allowance could not be used. No new daemon,
+  profile, model turn or whole-test retry was attempted.
+
+The opening helper now uses the accepted M13 owner's normal **Choose a project → Saved
+project → Activate selected project → composer** flow. A Node spy regression executes
+that exact exported helper and verifies ordering without starting another browser. This
+fix is **not live-verified** under the consumed allocation.
+
+Final affected offline verification: **16 passed**, with the existing Starlette/httpx
+deprecation warning. Python Ruff check/format and Node syntax checks passed. The JUnit
+observation is `docs/evidence/m14-ssh/final-offline-junit.xml`. Historical executed source
+hashes are checked against `c89e322`, not silently replaced by the corrected browser helper.
+
+Remaining criteria are unchanged: model-message/tunnel continuity, ordered WS replay,
+all ten movie frames/boundaries, exact video range, upload/downloads, saved frame pin,
+and quiet unavailable-service review with durable feedback. They are unproved, not passed
+by the preflight or corrected observer source. Further live work needs explicit renewal.
 
 ## Allocation and preflight
 

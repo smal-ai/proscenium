@@ -3,6 +3,7 @@ import {chromium} from 'playwright';
 import fs from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
+import {activateImportedProject} from './m14_ssh_open.mjs';
 const root=process.argv[2];
 const spec=JSON.parse(await fs.readFile(`${root}/allocation.json`,'utf8'));
 const p=`/api/v1/projects/${spec.project_id}`;
@@ -97,8 +98,8 @@ try{
   await page.evaluate(code=>localStorage.setItem('proscenium.owner.pairing',JSON.stringify({schema_version:'1.0',operation_id:crypto.randomUUID(),client_nonce:crypto.randomUUID(),pairing_code:code})),pair.code);
   await page.reload({waitUntil:'networkidle'});
   await page.getByRole('button',{name:'Connect this browser',exact:true}).click();
-  await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
-  result.phases.push('forwarded UI pairing');
+  await activateImportedProject(page,spec.project_id);
+  result.phases.push('forwarded UI pairing and explicit saved-project activation');
   await view();result.initial=await get(`${p}/snapshot`);result.replay_before=await replay();
   if((await get(`${p}/requests`)).items.length)throw Error('Unexpected pre-existing request');
   await fs.writeFile(`${root}/ui-send-intent`,sha(spec.prompt),{flag:'wx',mode:0o600});
