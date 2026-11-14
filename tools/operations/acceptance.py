@@ -12,6 +12,7 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from .applicability import known_commit, validate_applicability
 from .recovery import CHECKOUT, write_json
 from .safety import RecoveryError, digest, safe_file
 
@@ -64,6 +65,7 @@ def inspect_receipts(root: Path, path: Path | None, application_commit: str | No
     evidence = json.loads(path.read_text())
     if not application_commit or not re.fullmatch("[0-9a-f]{40}", application_commit):
         raise RecoveryError("exact_application_commit_required_for_receipts")
+    validated = []
     for receipt in evidence.get("receipts", []) + evidence.get("journeys", []):
         required = {
             "case_id",
@@ -80,11 +82,14 @@ def inspect_receipts(root: Path, path: Path | None, application_commit: str | No
         }
         if not required <= receipt.keys():
             raise RecoveryError("incomplete_evidence_receipt")
-        if (
-            receipt["application_commit"] != application_commit
-            or receipt["contract_revision"] != "1.0.0"
-        ):
+        if receipt["contract_revision"] != "1.0.0":
             raise RecoveryError("evidence_revision_mismatch")
+        if receipt["application_commit"] != application_commit:
+            validated.append(
+                validate_applicability(
+                    root, receipt, application_commit, evidence.get("applicability", [])
+                )
+            )
         if receipt["layer"] not in LAYERS | {"journey", "ssh", "performance"}:
             raise RecoveryError("invalid_evidence_layer")
         if receipt["status"] not in {
@@ -120,6 +125,7 @@ def inspect_receipts(root: Path, path: Path | None, application_commit: str | No
             for artifact in receipt["artifacts"]:
                 if digest(safe_file(root, artifact["path"])) != artifact["sha256"]:
                     raise RecoveryError("evidence_hash_mismatch")
+        known_commit(root, receipt["application_commit"])
     # Scope decisions are never inferred from a failed image-to-3D run.
     m10 = evidence.get("m10", {})
     if m10.get("status") == "owner_scope_change":
@@ -132,7 +138,8 @@ def inspect_receipts(root: Path, path: Path | None, application_commit: str | No
         for artifact in m10["artifacts"]:
             if digest(safe_file(root, artifact["path"])) != artifact["sha256"]:
                 raise RecoveryError("scope_decision_hash_mismatch")
-    return evidence
+    known_commit(root, application_commit)
+    return {**evidence, "validated_applicability": validated}
 
 
 def report(root: Path, mapping: dict, outcomes: dict, evidence: dict) -> dict:
@@ -203,6 +210,7 @@ def report(root: Path, mapping: dict, outcomes: dict, evidence: dict) -> dict:
         "cases": cases,
         "gaps": gaps,
         "m10": m10,
+        "validated_applicability": evidence.get("validated_applicability", []),
         "limits": [
             "Function resolution is not execution.",
             "JUnit proves only offline checks.",

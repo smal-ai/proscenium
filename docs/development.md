@@ -1,5 +1,55 @@
 # Development and acceptance operations
 
+## Historical native evidence at a later integration revision
+
+Keep each receipt's `application_commit` at its **actual tested** full commit SHA.
+Do not rewrite native/model evidence identities after unrelated integration or
+documentation commits. `--application-commit` is the proposed integration revision.
+
+A differing tested revision requires an explicit top-level `applicability` record
+in the receipt document. The coordinator creates/reviews this after integration
+validation. No equivalence is inferred from ancestry alone. Shape example only:
+
+```json
+{
+  "applicability": [{
+    "format": "proscenium-applicability-1",
+    "receipt_sha256": "EXACT_CANONICAL_RECEIPT_SHA256",
+    "tested_commit": "ORIGINAL_TESTED_FULL_COMMIT_SHA",
+    "accepted_commit": "EXISTING_ACCEPTANCE_FULL_COMMIT_SHA",
+    "integration_commit": "PROPOSED_INTEGRATION_FULL_COMMIT_SHA",
+    "reviewer": "coordinator",
+    "decision": "applicable",
+    "reason": "Exact reviewed scope and why the recorded regression checks establish applicability",
+    "mode": "reviewed_ancestor",
+    "validation_artifacts": [{"path": "docs/evidence/actual-integration-regression.json", "sha256": "ACTUAL_REGRESSION_SHA256"}]
+  }]
+}
+```
+
+- `receipt_sha256` is produced by `tools.operations.applicability.receipt_digest`.
+  It binds the entire original receipt, including status, evidence hashes and limits.
+- All commit values must identify known **commit objects**, not branch aliases,
+  unknown hashes or unrelated roots. The tested commit must precede the accepted
+  commit, which must precede the target integration commit. Equality is allowed.
+- The coordinator's explicit reason and hash-verified regression artefacts are
+  mandatory. At least one validation artefact must differ from the original proof
+  artefacts. This is applicability validation, **not a fresh native execution**.
+- Alternatively set `mode: "source_hashes"` and add a non-empty `source_hashes`
+  object mapping each reviewed relevant source path to its SHA-256. Those exact
+  committed regular-file bytes must match at both tested and integration revisions.
+  The coordinator still owns the file/dependency coverage and regression judgement.
+  The validator reads Git objects, never other worktrees' uncommitted source.
+- Unknown fields such as `limits_override` are rejected. Receipt limits/status are
+  never changed. Changing merely `live_pass`, command or any receipt field invalidates
+  the bound applicability record. Unproved native/browser/M10 requirements stay open.
+- These are explicit review records, not signed identity attestations. The parent
+  remains responsible for creating/reviewing them under its actual authority.
+
+The generated report includes `validated_applicability`, separately from execution
+observations. No release-ready receipts or applicability claims for unfinished
+milestones have been populated by W10.
+
 Use the frozen root locks and maintained tools from this checkout. See
 [operator guidance](operator.md) for private stores, service ownership and recovery.
 W10 changes no shared service, schema, lock or application composition.
@@ -82,8 +132,8 @@ Every receipt requires these fields:
 
 This is a **shape example**, not an executable/passing receipt. Passing receipts
 require actual artefacts as `{"path":"repo/relative/evidence","sha256":"64_HEX"}`.
-The validator verifies those bytes. It rejects a different application/contract
-revision and rejects `offline_fixture` / TCP transport doubles as live product
+The validator verifies those bytes. It rejects unknown or unvalidated application
+revisions, a different contract revision, and `offline_fixture` / TCP transport doubles as live product
 evidence. Source commit identity refers to the tested application revision, not
 the later commit adding its evidence. Native receipts use `native_runtime_capture`.
 Browser release receipts use `browser_product_capture`, not component harnesses.
