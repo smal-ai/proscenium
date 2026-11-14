@@ -1,0 +1,54 @@
+{
+  "format": "proscenium-m12-selective-checks-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "base": "2f1281e",
+  "executed_driver_commit": "63898fe9f036f72575faf5ad5727144a4090a02a",
+  "post_run_offline_helper_fix_commit": "6bb776fe239fa60dd8114997cf1b70ee1cf2e2de",
+  "status": "failed_explicit_cut_no_rerun",
+  "allocation": {"actual_sdk_send_limit": 1, "actual_sdk_send_reservations": 1, "remaining_sends": 0, "second_gate_variant_live": false},
+  "commands": [
+    {"command": "uv sync --frozen", "exit_code": 0, "result": "Pinned SDK/application dependencies installed only in owned worktree."},
+    {"command": "npm ci --ignore-scripts", "exit_code": 0, "result": "Accepted pinned Node dependencies. Existing ESLint deprecation warning, no root manifest/lock edits."},
+    {"command": "npm run build", "exit_code": 0, "result": "Compiled real production UI. Existing Lucide directive and large-bundle warnings."},
+    {"command": "uv run pytest -xq tests/acceptance/m12_selective_filter_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-selective-offline-01", "exit_code": 0, "result": "Four offline ACK-before-hook/framing/EOF and negative classifier checks passed before native execution."},
+    {"command": "uv run pytest -xq tests/acceptance/m12_selective_filter_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-selective-offline-02", "exit_code": 0, "result": "Five checks, including standalone composition import, passed before the sole actual send."},
+    {"command": "uv run python tests/native/studio/m12_selective_prepare.py /home/quintin/.cache/psack-a", "exit_code": 0, "result": "Fresh independent short private disk/temp root. Zero sends at preparation."},
+    {
+      "command": "uv run python tests/native/studio/m12_selective_run.py /home/quintin/.cache/psack-a",
+      "exit_code": 2,
+      "result": "One real owner Queue/SDK send. Native accepted user message matches original request and safe prompt. SDK ACK did not return. Explicit cut helper raised AttributeError on unbuffered FileIO.raw before closing descriptor. No quiet restart/reconciliation executed. No second send or variant. All recorded processes gone, no child remains."
+    },
+    {"command": "uv run pytest -q tests/acceptance/m12_selective_filter_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-selective-offline-03", "exit_code": 0, "result": "Six offline tests passed after supporting both buffered and actual SDK unbuffered pipe handles. Not a live rerun."},
+    {"command": "uv run python tests/native/studio/m12_selective_export.py /home/quintin/.cache/psack-a docs/evidence/m12-selective-ack/result.json", "exit_code": 0, "result": "Allowlisted failed-slice export. Native matches 1, send reservations 1, explicit-cut criterion false, all recorded identities gone."},
+    {"command": "uv run pytest -q tests/acceptance/m12_selective_filter_test.py tests/acceptance/m12_selective_evidence_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-selective-final-offline-04 --junitxml docs/evidence/m12-selective-ack/offline-junit.xml", "exit_code": 0, "result": "Nine focused framing/gate/classification/retained-evidence/privacy checks passed. No native recertification. Existing Starlette/httpx warning retained."},
+    {"command": "uv run ruff check tests/native/studio/m12_selective*.py tests/acceptance/m12_selective*.py", "exit_code": 0, "result": "Passed"},
+    {"command": "uv run ruff format --check tests/native/studio/m12_selective*.py tests/acceptance/m12_selective*.py", "exit_code": 0, "result": "Seven files already formatted"},
+    {"command": "make spec-check", "exit_code": 0, "result": "Specification, ownership, local links and Python/TypeScript generated bindings passed. No native recertification."},
+    {"command": "node --check tests/native/studio/m12_selective_browser.mjs", "exit_code": 0, "result": "Passed"}
+  ],
+  "observed_identity": {
+    "project_id": "project-384437a8-7a5f-42f2-9f6a-8f99636b26ed",
+    "native_session_id": "b373f09d-f483-42be-b1b8-ed1712fd32d9",
+    "request_id": "14cc9daf-79a8-4907-a164-fe4ac52e70ce",
+    "native_message_id": "a631f9c9-b43a-4082-aa2c-0ff6dd1e029f",
+    "native_user_event_id": "f8d8c7c1-6257-4a18-aa99-106529a3ee3f",
+    "native_user_timestamp": "2026-11-14T17:18:44.583Z",
+    "sdk_ack_returned_to_application": false,
+    "after_cleanup_request_state": "outcome_uncertain",
+    "send_rpc_id_and_withheld_response_hash": "Not durably persisted before helper failure; not reconstructed or fabricated."
+  },
+  "fault_label": "injected_selective_rpc_response_loss, not spontaneous network loss",
+  "cleanup": {"all_recorded_server_sdk_browser_kernel_identities_gone": true, "remaining_children": 0, "controller_reaped_by_supervisor": true, "browser_process_pid_start_capture": "live CDP SystemInfo plus kernel parentage/root association", "unrelated_process_signals": 0},
+  "artifacts": [
+    {"path": "docs/evidence/m12-selective-ack/result.json", "sha256": "38519160c325cb18dde9d3e4b3484c24bf3e0c30bc2f7faa7dab7ff3a55763b8"},
+    {"path": "docs/evidence/m12-selective-ack/offline-junit.xml", "sha256": "315dd2fe7a80966cc4bfa658c8032b4e6739d8b0fd17011000ea78bc6c7adcd5"}
+  ],
+  "limits": [
+    "The strict requested slice failed: no explicit live descriptor-cut/pending-future/EOF receipt, quiet restart or owner reconciliation after that cut.",
+    "Actual native acceptance and absence of an SDK ACK return do not substitute for the missing per-drop RPC/hash and physical-cut receipts.",
+    "The offline helper correction was not run live again. One send exhausted; no old uncertain request or prior M12 directory retried or modified.",
+    "Only the exact selected response is filtered by the test strategy; production SDK/hooks/service/state files are unchanged. Existing committed test-host preparation/orchestration is reused read-only from this checkout.",
+    "No child agents, local providers, Blender, Unity, GPU authoring, SSH or extra inference. No full C02/C20, M12 or M14 completion claim."
+  ]
+}
