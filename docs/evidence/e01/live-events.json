@@ -1,0 +1,314 @@
+{
+  "evidence_kind": "allowlisted real native events for synthetic project only",
+  "note": "Initial run completed two root requests, then evidence JSON formatting failed. No native request was retried. Callback argument objects were not recovered. Source event archive retained in private temporary runtime.",
+  "events": [
+    {
+      "id": "5524f7c5-879b-441c-9d79-bcc2f08ffd94",
+      "type": "user.message",
+      "timestamp": "2026-11-14T10:42:57.833000+00:00",
+      "parentId": "1210cb38-d6c2-41e3-aeb1-06816ef1b3fc",
+      "data": {
+        "content": "Tiny SDK test. Read the attached Turn context and image. Call report_probe with its context_sentinel and the image colour, other_project_sentinel unknown, notes root. Then delegate once to the e01-reader native specialist to report which Turn context it can actually see. Do not supply the sentinel value in the delegation prompt. No other tools or file reads. Finish in one sentence.",
+        "delivery": "idle",
+        "messageId": "a858788c-a13c-432f-bbc9-62918a98d49b",
+        "turnId": "0",
+        "clientTurnId": "e01-context-image-child"
+      }
+    },
+    {
+      "id": "af72d18c-7848-4f10-b97f-6714dbcf14e7",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T10:43:02.042000+00:00",
+      "parentId": "5f52ffe4-17f6-4704-876a-079440791e6d",
+      "data": {
+        "content": "",
+        "messageId": "3f6c00d6-417a-44b5-bfc9-7880a3c24911",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "a858788c-a13c-432f-bbc9-62918a98d49b",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "bfa8b1d5-c3eb-4de0-b447-37a8f136e8d0",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T10:43:02.043000+00:00",
+      "parentId": "af72d18c-7848-4f10-b97f-6714dbcf14e7",
+      "data": {
+        "toolCallId": "call_LtcazkE1xbfPV0nsBTHAmj5a",
+        "toolName": "report_probe",
+        "arguments": {
+          "context_sentinel": "E01_A_d78a985a257144829aabc25a1f846ac7",
+          "image_colour": "red",
+          "other_project_sentinel": "unknown",
+          "notes": "root"
+        },
+        "model": "gpt-6.1-sol",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "f4e9c441-d760-42cd-871b-86146f6893a6",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T10:43:02.048000+00:00",
+      "parentId": "e2e02f5d-47f0-41f7-8bd3-ae224b5a0595",
+      "data": {
+        "success": true,
+        "toolCallId": "call_LtcazkE1xbfPV0nsBTHAmj5a",
+        "model": "gpt-6.1-sol",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "b2463369-f39e-40d7-86d0-f06c61021ad6",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T10:43:04.671000+00:00",
+      "parentId": "31781c6b-9e09-4a2c-99cf-fed73c414b14",
+      "data": {
+        "content": "",
+        "messageId": "3e63e11a-36f8-4bfd-9eb8-1cfa98d5b573",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "a858788c-a13c-432f-bbc9-62918a98d49b",
+        "turnId": "1"
+      }
+    },
+    {
+      "id": "9fb09fb8-85e3-4501-b67d-1b05f2ddf082",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T10:43:04.672000+00:00",
+      "parentId": "b2463369-f39e-40d7-86d0-f06c61021ad6",
+      "data": {
+        "toolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "toolName": "task",
+        "arguments": {
+          "description": "Report visible Turn context",
+          "prompt": "Report which attached Turn context you can actually see in your own context for this tiny SDK test. Do not read files or use other tools; report only what is visible to you, and explicitly say if no Turn context is visible.",
+          "agent_type": "e01-reader",
+          "name": "e01-reader",
+          "mode": "sync"
+        },
+        "model": "gpt-6.1-sol",
+        "turnId": "1"
+      }
+    },
+    {
+      "id": "bf3d58a0-1dea-4506-9a23-c1b51ef6487f",
+      "type": "subagent.started",
+      "timestamp": "2026-11-14T10:43:04.675000+00:00",
+      "agentId": "bd7fc7df-03ef-4d2b-93c7-c326ea85ba3f",
+      "parentId": "f6aed61a-f94c-4a09-ab03-7d1fef0c657a",
+      "data": {
+        "agentName": "e01-reader",
+        "toolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "agentType": "e01-reader",
+        "model": "gpt-6.1-sol",
+        "modelSelectionSource": "configured_required"
+      }
+    },
+    {
+      "id": "b394e7e9-9135-490b-9894-3ea4d407c260",
+      "type": "user.message",
+      "timestamp": "2026-11-14T10:43:04.700000+00:00",
+      "agentId": "bd7fc7df-03ef-4d2b-93c7-c326ea85ba3f",
+      "parentId": "573157e2-e60d-4515-98e0-8b20fa2a866e",
+      "data": {
+        "content": "Report which attached Turn context you can actually see in your own context for this tiny SDK test. Do not read files or use other tools; report only what is visible to you, and explicitly say if no Turn context is visible.",
+        "delivery": "idle",
+        "messageId": "7f69f6da-c893-485a-ad1d-efb6ac093982",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "de5fc96d-e589-4b59-b664-8d35db393794",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T10:43:07.493000+00:00",
+      "agentId": "bd7fc7df-03ef-4d2b-93c7-c326ea85ba3f",
+      "parentId": "cd5ea30d-d5b3-4680-b3c3-2fa348519327",
+      "data": {
+        "content": "",
+        "messageId": "7c8eb971-6ab6-436a-8250-96b84a2d6e57",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "7f69f6da-c893-485a-ad1d-efb6ac093982",
+        "parentToolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "6450ffe6-3bbc-440d-858a-63319b2e992f",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T10:43:07.494000+00:00",
+      "agentId": "bd7fc7df-03ef-4d2b-93c7-c326ea85ba3f",
+      "parentId": "de5fc96d-e589-4b59-b664-8d35db393794",
+      "data": {
+        "toolCallId": "call_ESoSepMkNzG56AoftyanAezb",
+        "toolName": "report_probe",
+        "arguments": {
+          "context_sentinel": "unknown",
+          "image_colour": "unknown",
+          "other_project_sentinel": "unknown",
+          "notes": "child"
+        },
+        "model": "gpt-6.1-sol",
+        "parentToolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "0dc878ad-f1de-417c-a1c8-ae33e0168aa6",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T10:43:07.498000+00:00",
+      "agentId": "bd7fc7df-03ef-4d2b-93c7-c326ea85ba3f",
+      "parentId": "ea091f91-4e0f-44b8-af4f-92c08ccb712a",
+      "data": {
+        "success": true,
+        "toolCallId": "call_ESoSepMkNzG56AoftyanAezb",
+        "model": "gpt-6.1-sol",
+        "parentToolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "75adc170-e007-4702-b6d5-0506ebcf2cb1",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T10:43:09.215000+00:00",
+      "agentId": "bd7fc7df-03ef-4d2b-93c7-c326ea85ba3f",
+      "parentId": "69d0c287-e052-4a7d-a554-ce789cb1fb78",
+      "data": {
+        "content": "No attached Turn context is visible to me. No image or context sentinel is visible.",
+        "messageId": "2df500ae-3424-4e59-80e9-a460c97c05a8",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "7f69f6da-c893-485a-ad1d-efb6ac093982",
+        "parentToolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "turnId": "1"
+      }
+    },
+    {
+      "id": "d07a24ac-1376-44e5-93cf-27433d91c060",
+      "type": "subagent.completed",
+      "timestamp": "2026-11-14T10:43:09.217000+00:00",
+      "agentId": "bd7fc7df-03ef-4d2b-93c7-c326ea85ba3f",
+      "parentId": "10af43b8-43be-43d4-b98a-77e156f11389",
+      "data": {
+        "agentName": "e01-reader",
+        "toolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "firstDispatchedModel": "gpt-6.1-sol",
+        "model": "gpt-6.1-sol",
+        "modelSelectionSource": "configured_required"
+      }
+    },
+    {
+      "id": "38ae1faf-ede1-40b3-a2b6-b54727a40b9a",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T10:43:09.220000+00:00",
+      "parentId": "b847176d-3ae5-4cdf-ac11-f40009af918c",
+      "data": {
+        "success": true,
+        "toolCallId": "call_90nHo0dbrKebkq8BqjS2OD8M",
+        "model": "gpt-6.1-sol",
+        "turnId": "1"
+      }
+    },
+    {
+      "id": "19dd3d82-c85e-4505-8a45-09719946eea4",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T10:43:11.284000+00:00",
+      "parentId": "e80581eb-2f56-4eca-a0e7-2862988b9ba0",
+      "data": {
+        "content": "Recorded the context sentinel and red image colour; the e01-reader specialist reported no visible Turn context, image, or sentinel.",
+        "messageId": "b37f7544-35eb-4833-abd5-4c4de5bb8c74",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "a858788c-a13c-432f-bbc9-62918a98d49b",
+        "turnId": "2"
+      }
+    },
+    {
+      "id": "a71d4acf-83ed-4da3-8aad-71d2bb9c23f5",
+      "type": "session.idle",
+      "timestamp": "2026-11-14T10:43:11.289000+00:00",
+      "parentId": "7b0ea790-c327-4743-be83-6363428ac46c",
+      "data": {}
+    },
+    {
+      "id": "d6072ad3-f925-4ba9-aead-d108257748b4",
+      "type": "user.message",
+      "timestamp": "2026-11-14T10:43:12.814000+00:00",
+      "parentId": "cb546757-6bf6-41a1-9e6f-c68b94e4edf3",
+      "data": {
+        "content": "Tiny SDK isolation test. Without reading files or searching anything, call report_probe once: context_sentinel unknown, image_colour unknown, other_project_sentinel the exact E01_A_ value from a different project's history only if it was already supplied to you, otherwise unknown, notes isolation. Finish.",
+        "delivery": "idle",
+        "messageId": "6b369336-1751-44cb-8870-4bbfecd614db",
+        "turnId": "0",
+        "clientTurnId": "e01-history-isolation"
+      }
+    },
+    {
+      "id": "4957135b-19bd-4296-bb8f-23654dc0ff17",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T10:43:16.399000+00:00",
+      "parentId": "88678539-6c34-4cc9-919e-981065a0d9b0",
+      "data": {
+        "content": "",
+        "messageId": "c7f1153f-ec84-491c-8016-39373e22b60d",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "6b369336-1751-44cb-8870-4bbfecd614db",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "f7c133fb-c0cf-48c1-a03d-8a2a518ba5b8",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T10:43:16.400000+00:00",
+      "parentId": "4957135b-19bd-4296-bb8f-23654dc0ff17",
+      "data": {
+        "toolCallId": "call_SNFzpn8ZGkVrAaOI8YRAegDq",
+        "toolName": "report_probe",
+        "arguments": {
+          "context_sentinel": "unknown",
+          "image_colour": "unknown",
+          "other_project_sentinel": "unknown",
+          "notes": "isolation"
+        },
+        "model": "gpt-6.1-sol",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "df9576e6-9e02-43ba-9310-03de828de8e0",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T10:43:16.404000+00:00",
+      "parentId": "8d558216-8e9e-408e-af2b-136bb99f2094",
+      "data": {
+        "success": true,
+        "toolCallId": "call_SNFzpn8ZGkVrAaOI8YRAegDq",
+        "model": "gpt-6.1-sol",
+        "turnId": "0"
+      }
+    },
+    {
+      "id": "33d7c386-4c1c-49e6-9d1e-6d87dfb37291",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T10:43:19.838000+00:00",
+      "parentId": "d0e798ad-27f6-4757-9df2-d2df85633447",
+      "data": {
+        "content": "Done.",
+        "messageId": "01506a7f-bc5f-4530-b9d7-d4130c9d54ee",
+        "model": "gpt-6.1-sol",
+        "originatingMessageId": "6b369336-1751-44cb-8870-4bbfecd614db",
+        "turnId": "1"
+      }
+    },
+    {
+      "id": "02dc5c51-4205-4d71-bfdd-93f14c7d711e",
+      "type": "session.idle",
+      "timestamp": "2026-11-14T10:43:19.842000+00:00",
+      "parentId": "69756324-220f-4c61-94d6-3243cbe68117",
+      "data": {}
+    },
+    {
+      "id": "63051606-0be2-484f-b134-09dd4cf87aca",
+      "type": "session.resume",
+      "timestamp": "2026-11-14T10:43:19.906000+00:00",
+      "parentId": "f89031e8-8551-42b6-affa-0c6c4ed75915",
+      "data": {}
+    }
+  ]
+}

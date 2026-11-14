@@ -1,0 +1,22 @@
+{
+  "evidence_kind": "post-capture SQLite replay of real native evidence, not live persistence acceptance",
+  "replayed_twice_without_duplication": true,
+  "counts": {
+    "events": 16,
+    "messages": 2,
+    "agents": 1,
+    "invocations": 3
+  },
+  "callbacks": [
+    {
+      "tool_call_id": "call_Z5b8mk0Gr3WIu4hW6coDZ4AH",
+      "request_id": "e01-hook-child",
+      "agent_id": "root"
+    },
+    {
+      "tool_call_id": "call_staEgDnJIc6sOqLfXkSCK9ii",
+      "request_id": "e01-hook-child",
+      "agent_id": "dff6a59f-8d22-41b5-8fd2-d0157258d80c"
+    }
+  ]
+}

@@ -1,0 +1,436 @@
+{
+  "recorded_at": "2026-11-14T10:46:15.336992+00:00",
+  "evidence_kind": "installed SDK inspection and real local runtime, not model proof",
+  "python": "3.12.13",
+  "sdk_version": "1.0.34",
+  "cli_version_output": "GitHub Copilot CLI 1.0.112.\nRun 'copilot update' to check for updates.",
+  "cli_path": "/tmp/opencode/proscenium-e01-runtime/cli/node_modules/.bin/copilot",
+  "runtime_dir": "/tmp/opencode/proscenium-e01-runtime/proof",
+  "surface": {
+    "signatures": {
+      "CopilotClient": "(*, entra: 'EntraAuthConfig | None' = None, _test_options: '_InternalTestOptions | None' = None, connection: 'RuntimeConnection | None' = None, working_directory: 'str | None' = None, log_level: 'LogLevel' = 'info', env: 'dict[str, str] | None' = None, github_token: 'str | None' = None, base_directory: 'str | None' = None, builtin_plugin_directories: 'Sequence[str] | None' = None, extension_launch_provider: 'ExtensionLaunchProviderHandler | None' = None, installation_confirmation_handler: 'InstallationConfirmationHandler | None' = None, network: 'NetworkConfig | None' = None, use_logged_in_user: 'bool | None' = None, telemetry: 'TelemetryConfig | None' = None, session_fs: 'SessionFsConfig | None' = None, request_handler: 'CopilotRequestHandler | None' = None, session_idle_timeout_seconds: 'int | None' = None, client_info: 'ClientInfo | None' = None, on_list_models: 'Callable[[], list[ModelInfo] | Awaitable[list[ModelInfo]]] | None' = None, on_github_telemetry: 'Callable[[GitHubTelemetryNotification], None | Awaitable[None]] | None' = None, mode: 'CopilotClientMode' = 'copilot-cli')",
+      "RuntimeConnection.for_stdio": "(*, path: 'str | None' = None, args: 'Sequence[str]' = ()) -> 'StdioRuntimeConnection'",
+      "create_session": "(self, *, on_permission_request: '_PermissionHandlerFn | None' = None, model: 'str | None' = None, session_id: 'str | None' = None, name: 'str | None' = None, client_name: 'str | None' = None, reasoning_effort: 'ReasoningEffort | None' = None, allow_multiple_tool_calls: 'bool | None' = None, reasoning_summary: 'ReasoningSummary | None' = None, enable_experimental_mode: 'bool | None' = None, context_tier: 'ContextTier | None' = None, tools: 'list[Tool] | None' = None, system_message: 'SystemMessageConfig | None' = None, tool_search: 'ToolSearchConfig | None' = None, image_generation: 'ImageGenerationConfig | None' = None, available_tools: 'list[str] | ToolSet | None' = None, excluded_tools: 'list[str] | ToolSet | None' = None, on_user_input_request: 'UserInputHandler | None' = None, on_shell_authentication_request: 'ShellAuthenticationHandler | None' = None, ask_user_variant: 'AskUserVariant | None' = None, hooks: 'SessionHooks | None' = None, working_directory: 'str | None' = None, additional_directories: 'list[str] | None' = None, provider: 'ProviderConfig | None' = None, capi: 'CapiSessionOptions | None' = None, providers: 'list[NamedProviderConfig] | None' = None, models: 'list[ProviderModelConfig] | None' = None, enable_session_telemetry: 'bool | None' = None, enable_citations: 'bool | None' = None, enable_file_change_tracking: 'bool | None' = None, excluded_builtin_agents: 'list[str] | None' = None, included_builtin_agents: 'list[str] | None' = None, session_limits: 'SessionLimitsConfig | None' = None, autopilot: 'AutopilotOptions | None' = None, skip_custom_instructions: 'bool | None' = None, refresh_custom_instructions: 'bool | None' = None, trust_working_directory: \"Literal['session', 'user'] | None\" = None, custom_agents_local_only: 'bool | None' = None, coauthor_enabled: 'bool | None' = None, manage_schedule_enabled: 'bool | None' = None, model_capabilities: 'ModelCapabilitiesOverride | None' = None, streaming: 'bool | None' = None, include_sub_agent_streaming_events: 'bool | None' = None, mcp_servers: 'dict[str, MCPServerConfig] | None' = None, diagnostics: 'DiagnosticsConfiguration | None' = None, mcp_oauth_token_storage: \"Literal['persistent', 'in-memory'] | None\" = None, auth_client_id_metadata_url: 'str | None' = None, embedding_cache_storage: \"Literal['persistent', 'in-memory'] | None\" = None, custom_agents: 'list[CustomAgentConfig] | None' = None, default_agent: 'DefaultAgentConfig | dict[str, Any] | None' = None, agent: 'str | None' = None, config_directory: 'str | None' = None, enable_config_discovery: 'bool | None' = None, skip_embedding_retrieval: 'bool | None' = None, organization_custom_instructions: 'str | None' = None, enable_on_demand_instruction_discovery: 'bool | None' = None, enable_file_hooks: 'bool | None' = None, enable_host_git_operations: 'bool | None' = None, enable_session_store: 'bool | None' = None, enable_skills: 'bool | None' = None, included_builtin_skills: 'list[str] | None' = None, skill_directories: 'list[str] | None' = None, skill_provider: 'SkillProvider | None' = None, agent_directories: 'list[str] | None' = None, hook_directories: 'list[str] | None' = None, plugin_directories: 'list[str] | None' = None, instruction_directories: 'list[str] | None' = None, disabled_skills: 'list[str] | None' = None, disabled_mcp_servers: 'list[str] | None' = None, sandbox_config: 'SandboxConfig | None' = None, infinite_sessions: 'InfiniteSessionConfig | None' = None, large_output: 'LargeToolOutputConfig | None' = None, memory: 'MemoryConfiguration | None' = None, on_event: 'Callable[[SessionEvent], None] | None' = None, commands: 'list[CommandDefinition] | None' = None, on_elicitation_request: 'ElicitationHandler | None' = None, on_mcp_auth_request: 'McpAuthHandler | None' = None, enable_mcp_apps: 'bool' = False, on_exit_plan_mode_request: 'ExitPlanModeHandler | None' = None, on_auto_mode_switch_request: 'AutoModeSwitchHandler | None' = None, auto_mode_recovery: 'bool' = False, create_session_fs_handler: 'CreateSessionFsHandler | None' = None, github_token: 'str | None' = None, github_token_provider: 'GitHubTokenProvider | None' = None, cloud: 'CloudSessionOptions | None' = None, canvases: 'list[CanvasDeclaration] | None' = None, request_canvas_renderer: 'bool | None' = None, request_extensions: 'bool | None' = None, extension_sdk_path: 'str | None' = None, extension_info: 'ExtensionInfo | None' = None, canvas_provider: 'CanvasProviderIdentity | None' = None, canvas_handler: 'CanvasHandler | None' = None, feature_flags: 'dict[str, bool] | None' = None, exp_assignments: 'CopilotExpAssignmentResponse | None' = None, enable_managed_settings: 'bool | None' = None, excluded_managed_settings: 'list[str] | None' = None, enforce_managed_model_defaults: 'bool | None' = None, interactive_user: 'bool | None' = None, permission_mode: 'PermissionMode | None' = None, github_mcp_tool_config: 'GitHubMcpToolConfig | None' = None, managed_settings: 'ManagedSettings | None' = None) -> 'CopilotSession'",
+      "resume_session": "(self, session_id: 'str', *, on_permission_request: '_PermissionHandlerFn | None' = None, model: 'str | None' = None, client_name: 'str | None' = None, reasoning_effort: 'ReasoningEffort | None' = None, allow_multiple_tool_calls: 'bool | None' = None, reasoning_summary: 'ReasoningSummary | None' = None, enable_experimental_mode: 'bool | None' = None, context_tier: 'ContextTier | None' = None, tools: 'list[Tool] | None' = None, system_message: 'SystemMessageConfig | None' = None, tool_search: 'ToolSearchConfig | None' = None, image_generation: 'ImageGenerationConfig | None' = None, available_tools: 'list[str] | ToolSet | None' = None, excluded_tools: 'list[str] | ToolSet | None' = None, on_user_input_request: 'UserInputHandler | None' = None, on_shell_authentication_request: 'ShellAuthenticationHandler | None' = None, ask_user_variant: 'AskUserVariant | None' = None, hooks: 'SessionHooks | None' = None, working_directory: 'str | None' = None, additional_directories: 'list[str] | None' = None, provider: 'ProviderConfig | None' = None, capi: 'CapiSessionOptions | None' = None, providers: 'list[NamedProviderConfig] | None' = None, models: 'list[ProviderModelConfig] | None' = None, enable_session_telemetry: 'bool | None' = None, enable_citations: 'bool | None' = None, enable_file_change_tracking: 'bool | None' = None, excluded_builtin_agents: 'list[str] | None' = None, included_builtin_agents: 'list[str] | None' = None, session_limits: 'SessionLimitsConfig | None' = None, autopilot: 'AutopilotOptions | None' = None, skip_custom_instructions: 'bool | None' = None, custom_agents_local_only: 'bool | None' = None, coauthor_enabled: 'bool | None' = None, manage_schedule_enabled: 'bool | None' = None, model_capabilities: 'ModelCapabilitiesOverride | None' = None, streaming: 'bool | None' = None, include_sub_agent_streaming_events: 'bool | None' = None, mcp_servers: 'dict[str, MCPServerConfig] | None' = None, diagnostics: 'DiagnosticsConfiguration | None' = None, mcp_oauth_token_storage: \"Literal['persistent', 'in-memory'] | None\" = None, auth_client_id_metadata_url: 'str | None' = None, embedding_cache_storage: \"Literal['persistent', 'in-memory'] | None\" = None, custom_agents: 'list[CustomAgentConfig] | None' = None, default_agent: 'DefaultAgentConfig | dict[str, Any] | None' = None, agent: 'str | None' = None, config_directory: 'str | None' = None, enable_config_discovery: 'bool | None' = None, skip_embedding_retrieval: 'bool | None' = None, organization_custom_instructions: 'str | None' = None, enable_on_demand_instruction_discovery: 'bool | None' = None, enable_file_hooks: 'bool | None' = None, enable_host_git_operations: 'bool | None' = None, enable_session_store: 'bool | None' = None, enable_skills: 'bool | None' = None, included_builtin_skills: 'list[str] | None' = None, skill_directories: 'list[str] | None' = None, skill_provider: 'SkillProvider | None' = None, agent_directories: 'list[str] | None' = None, hook_directories: 'list[str] | None' = None, plugin_directories: 'list[str] | None' = None, instruction_directories: 'list[str] | None' = None, disabled_skills: 'list[str] | None' = None, disabled_mcp_servers: 'list[str] | None' = None, sandbox_config: 'SandboxConfig | None' = None, infinite_sessions: 'InfiniteSessionConfig | None' = None, large_output: 'LargeToolOutputConfig | None' = None, memory: 'MemoryConfiguration | None' = None, on_event: 'Callable[[SessionEvent], None] | None' = None, commands: 'list[CommandDefinition] | None' = None, on_elicitation_request: 'ElicitationHandler | None' = None, on_mcp_auth_request: 'McpAuthHandler | None' = None, enable_mcp_apps: 'bool' = False, on_exit_plan_mode_request: 'ExitPlanModeHandler | None' = None, on_auto_mode_switch_request: 'AutoModeSwitchHandler | None' = None, auto_mode_recovery: 'bool' = False, create_session_fs_handler: 'CreateSessionFsHandler | None' = None, github_token: 'str | None' = None, github_token_provider: 'GitHubTokenProvider | None' = None, continue_pending_work: 'bool | None' = None, suppress_resume_event: 'bool | None' = None, allow_transcript_recovery: 'bool | None' = None, canvases: 'list[CanvasDeclaration] | None' = None, request_canvas_renderer: 'bool | None' = None, request_extensions: 'bool | None' = None, extension_sdk_path: 'str | None' = None, extension_info: 'ExtensionInfo | None' = None, canvas_provider: 'CanvasProviderIdentity | None' = None, canvas_handler: 'CanvasHandler | None' = None, open_canvases: 'list[OpenCanvasInstance] | None' = None, feature_flags: 'dict[str, bool] | None' = None, exp_assignments: 'CopilotExpAssignmentResponse | None' = None, enable_managed_settings: 'bool | None' = None, excluded_managed_settings: 'list[str] | None' = None, enforce_managed_model_defaults: 'bool | None' = None, interactive_user: 'bool | None' = None, permission_mode: 'PermissionMode | None' = None, github_mcp_tool_config: 'GitHubMcpToolConfig | None' = None, managed_settings: 'ManagedSettings | None' = None) -> 'CopilotSession'",
+      "send": "(self, prompt: 'str', *, attachments: 'list[Attachment] | None' = None, source: 'MessageSource | None' = None, mode: \"Literal['enqueue', 'immediate'] | None\" = None, agent_mode: \"Literal['interactive', 'plan', 'autopilot', 'shell'] | None\" = None, request_headers: 'dict[str, str] | None' = None, display_prompt: 'str | None' = None, client_turn_id: 'str | None' = None, response_schema: 'dict[str, Any] | type[BaseModel] | None' = None) -> 'str'",
+      "abort": "(self) -> 'None'",
+      "disconnect": "(self) -> 'None'",
+      "stop": "(self) -> 'None'",
+      "force_stop": "(self) -> 'None'",
+      "queue.set_drain_paused": "(self, params: 'QueueSetDrainPausedRequest', *, timeout: 'float | None' = None) -> 'None'",
+      "queue.pending_items": "(self, *, timeout: 'float | None' = None) -> 'QueuePendingItemsResult'",
+      "queue.withdraw_message": "(self, params: 'QueueWithdrawMessageRequest', *, timeout: 'float | None' = None) -> 'QueueWithdrawMessageResult'",
+      "queue.remove_at": "(self, params: 'QueueRemoveAtRequest', *, timeout: 'float | None' = None) -> 'QueueRemoveAtResult'"
+    },
+    "custom_agent_fields": [
+      "description",
+      "display_name",
+      "hooks",
+      "infer",
+      "mcp_servers",
+      "model",
+      "model_policy",
+      "name",
+      "prompt",
+      "reasoning_effort",
+      "skills",
+      "tools"
+    ],
+    "extension_context_fields": [
+      "canvasId",
+      "capturedAt",
+      "extensionId",
+      "instanceId",
+      "payload",
+      "title",
+      "type"
+    ],
+    "queue_api_stability": "experimental, explicitly labelled in released generated RPC"
+  },
+  "cloud_root_sends": 3,
+  "max_cloud_root_sends": 8,
+  "live_capabilities": "not_run",
+  "followup": {
+    "cloud_root_sends": 3,
+    "status": "bounded_followup_observed",
+    "reports": [
+      {
+        "session_id": "5dfb12b7-706a-4776-aa16-7994957efa26",
+        "tool_call_id": "call_h0NJ1JnSzBVCIRp7EEFlKS0K",
+        "agent_id": null,
+        "request_id": "f957f534-8751-446b-8d91-6f84bc4b03fe",
+        "arguments": {
+          "context_sentinel": "E01_B_03d253fdfe4e4190b9de16b4056b8b04",
+          "other_project_sentinel": "unknown"
+        }
+      },
+      {
+        "session_id": "69f57dd0-7208-4809-aaa2-6d8e346e8bc5",
+        "tool_call_id": "call_6VLzCdlBxayGzcPr9RkxwnKI",
+        "agent_id": null,
+        "request_id": "aad99732-a4dc-406f-8512-120dc5b08d11",
+        "arguments": {
+          "context_sentinel": "E01_A_d78a985a257144829aabc25a1f846ac7",
+          "other_project_sentinel": "unknown"
+        }
+      }
+    ],
+    "user_input": [
+      {
+        "request": {
+          "question": "E01 test?",
+          "choices": [
+            "probe"
+          ],
+          "allowFreeform": true,
+          "requestId": "00699050-13ae-4809-a3c9-e6c89119d74b"
+        },
+        "invocation": {
+          "session_id": "5739c4c7-bce5-4c4d-ade8-f98235ea9ae2"
+        }
+      }
+    ],
+    "permissions": [
+      {
+        "session_id": "5dfb12b7-706a-4776-aa16-7994957efa26",
+        "tool_call_id": "call_h0NJ1JnSzBVCIRp7EEFlKS0K",
+        "kind": "custom-tool"
+      },
+      {
+        "session_id": "69f57dd0-7208-4809-aaa2-6d8e346e8bc5",
+        "tool_call_id": "call_6VLzCdlBxayGzcPr9RkxwnKI",
+        "kind": "custom-tool"
+      }
+    ],
+    "b_sentinel": "E01_B_03d253fdfe4e4190b9de16b4056b8b04",
+    "b_message_id": "cd3a9b7a-fbe5-47e5-9542-39bded946a40",
+    "a_message_id": "cabbdd0b-1e8b-4645-819c-2135a26ed940",
+    "callbacks_session_id": "5739c4c7-bce5-4c4d-ade8-f98235ea9ae2",
+    "callbacks_message_id": "88c7148b-4425-4598-9758-a3a7156cc7fd",
+    "owned_runtime_closed": true,
+    "events": [
+      {
+        "id": "53038e8a-87ff-470d-9e9a-fab69ae57cd4",
+        "type": "session.resume",
+        "timestamp": "2026-11-14T10:46:15.735000+00:00",
+        "parentId": "abec6d3c-14c2-4cd1-93b6-038f9b7199b4",
+        "data": {}
+      },
+      {
+        "id": "772e513e-b704-48f6-9963-3142194fa1b6",
+        "type": "user.message",
+        "timestamp": "2026-11-14T10:46:19.399000+00:00",
+        "parentId": "53038e8a-87ff-470d-9e9a-fab69ae57cd4",
+        "data": {
+          "content": "Tiny isolation test. Read the attached Turn context. Do not search or read files. Call report_probe once with the context_sentinel in this attachment and other_project_sentinel the exact E01_A_ value only if another project history has supplied it, otherwise unknown. Finish.",
+          "delivery": "idle",
+          "messageId": "cd3a9b7a-fbe5-47e5-9542-39bded946a40",
+          "turnId": "0",
+          "clientTurnId": "e01-b-resumed"
+        }
+      },
+      {
+        "id": "d2eff26c-41e3-4f78-a9a5-abf7617acef0",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:23.082000+00:00",
+        "parentId": "30222a32-ce4e-47fb-aa0b-2661ef9dc1bb",
+        "data": {
+          "content": "",
+          "messageId": "f0168db2-bbd9-4491-8013-1d0edeefe32c",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "cd3a9b7a-fbe5-47e5-9542-39bded946a40",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "35abe760-1d30-4271-b9cb-611089a274c4",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T10:46:23.082000+00:00",
+        "parentId": "d2eff26c-41e3-4f78-a9a5-abf7617acef0",
+        "data": {
+          "toolCallId": "call_h0NJ1JnSzBVCIRp7EEFlKS0K",
+          "toolName": "report_probe",
+          "arguments": {
+            "context_sentinel": "E01_B_03d253fdfe4e4190b9de16b4056b8b04",
+            "other_project_sentinel": "unknown"
+          },
+          "model": "gpt-6.1-sol",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "90953f9a-7205-4b9e-a84a-cb296c2681a6",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T10:46:23.086000+00:00",
+        "parentId": "2d535326-e5b0-4a86-b70b-9b6532f86897",
+        "data": {
+          "success": true,
+          "toolCallId": "call_h0NJ1JnSzBVCIRp7EEFlKS0K",
+          "model": "gpt-6.1-sol",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "59e5b55d-46a7-495d-994a-b01c8380a3b7",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:24.808000+00:00",
+        "parentId": "5a30c16e-2262-475d-a1d8-40df7c9dbf8c",
+        "data": {
+          "content": "Done.",
+          "messageId": "55a8fded-f918-4e3a-953f-71c3090a7f89",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "cd3a9b7a-fbe5-47e5-9542-39bded946a40",
+          "turnId": "1"
+        }
+      },
+      {
+        "id": "35144f7b-04e3-4d50-aef1-f42f59b3d6e4",
+        "type": "session.idle",
+        "timestamp": "2026-11-14T10:46:24.812000+00:00",
+        "parentId": "f82be566-bdde-46b8-9f17-8768ca57efb8",
+        "data": {}
+      },
+      {
+        "id": "6a108c2f-6b1f-4aeb-bf7b-23874c4a04a9",
+        "type": "session.resume",
+        "timestamp": "2026-11-14T10:46:24.862000+00:00",
+        "parentId": "f89031e8-8551-42b6-affa-0c6c4ed75915",
+        "data": {}
+      },
+      {
+        "id": "410740a0-ff76-420a-a410-530bb572bfcc",
+        "type": "user.message",
+        "timestamp": "2026-11-14T10:46:26.396000+00:00",
+        "parentId": "6a108c2f-6b1f-4aeb-bf7b-23874c4a04a9",
+        "data": {
+          "content": "Tiny isolation test. Do not search or read files. Call report_probe once with context_sentinel the exact E01_A_ value in this conversation and other_project_sentinel the exact E01_B_ value only if another project history has supplied it, otherwise unknown. Finish.",
+          "delivery": "idle",
+          "messageId": "cabbdd0b-1e8b-4645-819c-2135a26ed940",
+          "turnId": "0",
+          "clientTurnId": "e01-a-resumed"
+        }
+      },
+      {
+        "id": "a409a400-f909-4a15-91ac-f20b3102fddf",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:30.457000+00:00",
+        "parentId": "27070787-a94b-4d66-ae9b-2a76a36ae59e",
+        "data": {
+          "content": "",
+          "messageId": "45739fdd-13d1-4d22-9a9a-2ceb64b53d38",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "cabbdd0b-1e8b-4645-819c-2135a26ed940",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "fe9314e4-9aec-4f92-bdb7-e61ccf332a02",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T10:46:30.457000+00:00",
+        "parentId": "a409a400-f909-4a15-91ac-f20b3102fddf",
+        "data": {
+          "toolCallId": "call_6VLzCdlBxayGzcPr9RkxwnKI",
+          "toolName": "report_probe",
+          "arguments": {
+            "context_sentinel": "E01_A_d78a985a257144829aabc25a1f846ac7",
+            "other_project_sentinel": "unknown"
+          },
+          "model": "gpt-6.1-sol",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "dfeeccf7-2b49-469e-86c9-3acdc4b3dbab",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T10:46:30.461000+00:00",
+        "parentId": "23b5776b-8d52-4c5b-8d87-45b666640ee7",
+        "data": {
+          "success": true,
+          "toolCallId": "call_6VLzCdlBxayGzcPr9RkxwnKI",
+          "model": "gpt-6.1-sol",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "75a2a390-be49-4bcc-9b47-015d6ab5cc22",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:32.436000+00:00",
+        "parentId": "2b6636f2-6eb0-4fea-b8e3-a4de2381607c",
+        "data": {
+          "content": "Recorded.",
+          "messageId": "256b0937-2436-4199-b3da-588a3aeb992d",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "cabbdd0b-1e8b-4645-819c-2135a26ed940",
+          "turnId": "1"
+        }
+      },
+      {
+        "id": "f91ffe4a-f7a8-4ee6-bde1-b9f4a4755269",
+        "type": "session.idle",
+        "timestamp": "2026-11-14T10:46:32.440000+00:00",
+        "parentId": "c389caab-8cb5-4871-94dc-20dfe377265b",
+        "data": {}
+      },
+      {
+        "id": "f10629c8-49ea-4337-8b76-b454212874fa",
+        "type": "user.message",
+        "timestamp": "2026-11-14T10:46:35.149000+00:00",
+        "parentId": "4e693fc0-1387-4e7a-8cbd-d6df99c52d34",
+        "data": {
+          "content": "Tiny SDK test, no file reads or writes. First call ask_user exactly once with question 'E01 test?' and single choice 'probe'. Then run the shell command pwd only. Finally delegate once to e01-unavailable. Its model is deliberately unavailable, so report its failure without retrying, substituting a model or doing its work yourself. Finish.",
+          "delivery": "idle",
+          "messageId": "88c7148b-4425-4598-9758-a3a7156cc7fd",
+          "turnId": "0",
+          "clientTurnId": "e01-callbacks-required-model"
+        }
+      },
+      {
+        "id": "4650fc3b-1a18-408d-b784-bc4bfc3294d1",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:38.580000+00:00",
+        "parentId": "6b09ea53-0f58-4539-86fb-176743a6fb35",
+        "data": {
+          "content": "",
+          "messageId": "671b1a99-efda-4bc7-8e38-46d16c91f8c0",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "88c7148b-4425-4598-9758-a3a7156cc7fd",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "c9ea4ca5-627c-4c6a-9945-e48f96e4f333",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T10:46:38.580000+00:00",
+        "parentId": "4650fc3b-1a18-408d-b784-bc4bfc3294d1",
+        "data": {
+          "toolCallId": "call_vzesR3ArahlrWPUbBstOFwuP",
+          "toolName": "ask_user",
+          "arguments": {
+            "question": "E01 test?",
+            "choices": [
+              "probe"
+            ]
+          },
+          "model": "gpt-6.1-sol",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "767bd7bd-8dee-4ac8-9e69-9c4777e8c905",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T10:46:38.582000+00:00",
+        "parentId": "c9ea4ca5-627c-4c6a-9945-e48f96e4f333",
+        "data": {
+          "success": true,
+          "toolCallId": "call_vzesR3ArahlrWPUbBstOFwuP",
+          "model": "gpt-6.1-sol",
+          "turnId": "0"
+        }
+      },
+      {
+        "id": "aa4a80e1-3f44-4679-afbd-21f2795d0d07",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:40.440000+00:00",
+        "parentId": "766337ca-0cfa-4dd2-8412-9e68f1935fe2",
+        "data": {
+          "content": "",
+          "messageId": "f92997df-21cf-4e87-81c1-ae63383ae40e",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "88c7148b-4425-4598-9758-a3a7156cc7fd",
+          "turnId": "1"
+        }
+      },
+      {
+        "id": "d6214e06-28ea-403f-806a-4039435b7d9b",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T10:46:40.441000+00:00",
+        "parentId": "aa4a80e1-3f44-4679-afbd-21f2795d0d07",
+        "data": {
+          "toolCallId": "call_jcpAMiczzFolaE8r6fdlBNV6",
+          "toolName": "bash",
+          "arguments": {
+            "command": "pwd",
+            "description": "Print current working directory"
+          },
+          "model": "gpt-6.1-sol",
+          "turnId": "1"
+        }
+      },
+      {
+        "id": "cb9c5e25-44bf-4f14-900b-e6afac8b2bf2",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T10:46:40.453000+00:00",
+        "parentId": "d6214e06-28ea-403f-806a-4039435b7d9b",
+        "data": {
+          "success": true,
+          "toolCallId": "call_jcpAMiczzFolaE8r6fdlBNV6",
+          "model": "gpt-6.1-sol",
+          "turnId": "1"
+        }
+      },
+      {
+        "id": "59492094-ecee-4239-a28f-360d749391a9",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:42.865000+00:00",
+        "parentId": "c16dc263-ea28-48c3-b4fb-1f2217347ea3",
+        "data": {
+          "content": "",
+          "messageId": "3a75d8e4-805e-4490-95c2-d985c0d46ec9",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "88c7148b-4425-4598-9758-a3a7156cc7fd",
+          "turnId": "2"
+        }
+      },
+      {
+        "id": "722a44e6-e98b-4a0e-a200-6123e83a090a",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T10:46:42.866000+00:00",
+        "parentId": "59492094-ecee-4239-a28f-360d749391a9",
+        "data": {
+          "toolCallId": "call_9nf0oiMsjfX9wKnEv28WleL6",
+          "toolName": "task",
+          "arguments": {
+            "description": "Run unavailable model probe",
+            "prompt": "Tiny SDK availability probe. Do not read or write files or run tools. Reply briefly if invoked successfully.",
+            "agent_type": "e01-unavailable",
+            "name": "e01-probe"
+          },
+          "model": "gpt-6.1-sol",
+          "turnId": "2"
+        }
+      },
+      {
+        "id": "141debd6-0289-4598-a9b5-4609d2c895b6",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T10:46:42.867000+00:00",
+        "parentId": "722a44e6-e98b-4a0e-a200-6123e83a090a",
+        "data": {
+          "success": false,
+          "toolCallId": "call_9nf0oiMsjfX9wKnEv28WleL6",
+          "model": "gpt-6.1-sol",
+          "turnId": "2"
+        }
+      },
+      {
+        "id": "489512c9-492d-4e9b-955c-55a9f4b81adc",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T10:46:44.919000+00:00",
+        "parentId": "78b856a6-982d-4a2e-aa52-c9d08160ed61",
+        "data": {
+          "content": "Delegation failed as expected: model `e01-deliberately-unavailable-model` is unavailable. No retry or model substitution was attempted.",
+          "messageId": "f7e8df4e-1f2d-4859-ba2c-8f750cd12e4d",
+          "model": "gpt-6.1-sol",
+          "originatingMessageId": "88c7148b-4425-4598-9758-a3a7156cc7fd",
+          "turnId": "3"
+        }
+      },
+      {
+        "id": "674c3937-40ee-4993-a110-5f9a7688fbd6",
+        "type": "session.idle",
+        "timestamp": "2026-11-14T10:46:44.923000+00:00",
+        "parentId": "4f49fecc-253e-4241-bc0d-97b76bebd2b0",
+        "data": {}
+      }
+    ]
+  }
+}

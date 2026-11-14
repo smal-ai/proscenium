@@ -1,0 +1,22 @@
+{
+  "evidence_kind": "allowlisted real native result fields, not model assertions",
+  "session_id": "5739c4c7-bce5-4c4d-ade8-f98235ea9ae2",
+  "shell": {
+    "event_id": "cb9c5e25-44bf-4f14-900b-e6afac8b2bf2",
+    "tool_call_id": "call_jcpAMiczzFolaE8r6fdlBNV6",
+    "success": true,
+    "exit_code": 0,
+    "content": "/tmp/opencode/proscenium-e01-runtime/proof/project-callbacks\n<shellId: 0 completed with exit code 0>",
+    "sandbox_applied": "false"
+  },
+  "required_model": {
+    "event_id": "141debd6-0289-4598-a9b5-4609d2c895b6",
+    "tool_call_id": "call_9nf0oiMsjfX9wKnEv28WleL6",
+    "success": false,
+    "requested_model": "e01-deliberately-unavailable-model",
+    "error_code": "failure",
+    "telemetry_error": "invalid_model",
+    "error_message_prefix": "Model 'e01-deliberately-unavailable-model' is not available.",
+    "subagent_started_events": 0
+  }
+}

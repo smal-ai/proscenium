@@ -1,0 +1,40 @@
+{
+  "recorded_at": "2026-11-14",
+  "application_baseline": "2f00ebece9c5274ebda553df4c1558d5572669e0",
+  "offline_tests": {
+    "command": "/tmp/opencode/proscenium-e01-runtime/venv/bin/python -m unittest discover -s tests/native/copilot -v",
+    "passed": 14,
+    "failed": 0,
+    "evidence_kind": "wire doubles, safety checks and assertions over previously captured real evidence; no new native/cloud requests"
+  },
+  "lint": {
+    "tool": "ruff==0.17.3",
+    "paths": ["tools/proofs/copilot", "tests/native/copilot"],
+    "check": "passed",
+    "format_check": "passed"
+  },
+  "specification_validation": {
+    "command": "/tmp/opencode/proscenium-e01-runtime/validation-venv/bin/python docs/validate_spec.py",
+    "validation_dependencies": ["jsonschema==4.26.0", "PyYAML==6.0.3"],
+    "status": "passed",
+    "note": "Documentation validation only; not execution of future application scenarios"
+  },
+  "native_and_cloud": {
+    "cloud_send_reservations": 8,
+    "allocation_exhausted": true,
+    "native_children_executed": 2,
+    "native_required_model_rejected_before_start": 1,
+    "running_allocated_native_or_launcher_processes_at_cleanup": 0,
+    "unrelated_processes_terminated": 0,
+    "model_services_modified": false
+  },
+  "remaining_acceptance_gaps": [
+    "Live-child Stop and recovery",
+    "Genuinely lost transport acknowledgements",
+    "Child user-input attribution",
+    "Interrupted-model/tool cold resume",
+    "Live application SQLite persistence before callback reply",
+    "Adapted skill discovery, large-output spill and Autopilot stress",
+    "Application path validation and caller-channel capability separation"
+  ]
+}

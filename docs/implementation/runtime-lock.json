@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-14",
+  "status": "e01_runtime_pair_proven_with_explicit_limits_pending_f00_acceptance",
+  "application_baseline": "2f00ebece9c5274ebda553df4c1558d5572669e0",
+  "research_commit": "cf045793958ce674259c557f7769788f94ee20c9",
+  "released_sdk": {
+    "distribution": "github-copilot-sdk",
+    "version": "1.0.34",
+    "python_requires": ">=3.11",
+    "tested_python": "3.12.13",
+    "tag": "v1.0.34",
+    "source_commit": "adf1da2c6db766f96ae6be36f3224e61ede010c4",
+    "wheel_sha256": "0d9cffccdb59f5d90512e9b94a70d482859a5fc9e0d2d0926e1bb138a1e593c4",
+    "tested_interpreter": "/tmp/opencode/proscenium-e01-runtime/venv/bin/python",
+    "proof_dependency_lock": "tools/proofs/copilot/requirements.lock"
+  },
+  "released_cli": {
+    "package": "@github/copilot",
+    "platform_package": "@github/copilot-linux-x64",
+    "version": "1.0.112",
+    "platform": "linux-x86_64-glibc",
+    "protocol_version": 3,
+    "npm_integrity": "sha512-OieokPh6qDlniqP4LqTSSuw+y87b3g0CPgFOVB3w6U523aEAfruniP/DWca7IaFq5FMtgwTi6JdfOBCBEtNsew==",
+    "platform_npm_integrity": "sha512-uvlB+3hFwrcg2Il+i/amD9jlrDqN1nG0MKRAsXkTCXaVNuW38QS1LLbzN2jNj6CVfuU/dGtulqU93qJzbcJXBQ==",
+    "binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "native_binary": "/tmp/opencode/proscenium-e01-runtime/cli/node_modules/@github/copilot-linux-x64/copilot",
+    "npm_launcher": "/tmp/opencode/proscenium-e01-runtime/cli/node_modules/.bin/copilot",
+    "launch_policy": "SDK-owned stdio process using the direct native binary, no external server or npm launcher for process fencing",
+    "cli_args": ["--no-auto-update", "--disable-builtin-mcps", "--no-custom-instructions"],
+    "args_scope": "Proof isolation. F00 must explicitly configure production MCPs and adapted skills. Do not copy disabled tools as the product profile."
+  },
+  "authentication": {
+    "sdk_option": "use_logged_in_user=True",
+    "observed_auth_type": "gh-cli",
+    "mechanism": "Official runtime resolves its existing supported login. No token extraction, explicit token, login flow or forwarded token environment variables.",
+    "base_directory": "/tmp/opencode/proscenium-e01-runtime/proof/copilot-home",
+    "login_shell_imports_disabled": true
+  },
+  "models": {
+    "lead": "gpt-6.1-sol",
+    "native_worker": "gpt-6.1-sol",
+    "worker_model_policy": "required",
+    "unavailable_required_model_test": "e01-deliberately-unavailable-model rejected as invalid_model without child start or fallback"
+  },
+  "create_and_resume": {
+    "working_directory": "canonical active-project root",
+    "memory": {"enabled": false},
+    "enable_session_store": false,
+    "sandbox_config": {"enabled": false},
+    "infinite_sessions": {"enabled": true},
+    "autopilot": "Leave default enabled; do not lower max_continues below five. No Autopilot continuation stress proof was performed.",
+    "large_output": "F00 must configure the released LargeToolOutputConfig with active-project .proscenium/tool-output/ directory. Spill behaviour not exercised.",
+    "skill_directories": "Explicit Proscenium-adapted skill roots. Skill discovery/preloading not exercised.",
+    "continue_pending_work_on_load": false
+  },
+  "context": {
+    "prompt": "Original human text unchanged",
+    "display_prompt": "Original human text unchanged",
+    "source": "unset",
+    "client_turn_id": "Application request ID, correlation only, not deduplication",
+    "attachments": "Image file attachments in role order followed by extension_context",
+    "extension_context_lead_visible": true,
+    "extension_context_automatically_inherited_by_native_child": false,
+    "selected_child_context_delivery": "on_user_prompt_submitted -> additionalContext with immutable trusted context JSON, including for agentId/parentAgentId-attributed child hooks"
+  },
+  "stop_barrier": {
+    "api_stability": "experimental queue RPC, exact-version compatibility test required",
+    "pause": "session.rpc.queue.set_drain_paused(QueueSetDrainPausedRequest(paused=True))",
+    "pause_semantics": "Queued lane only, exclusive non-idempotent acquisition, no automatic release, not evidence that immediate steering or live children are stopped",
+    "cancel_active": "session.abort() exactly once for the durable Stop control",
+    "owned_message_withdrawal": "session.rpc.queue.withdraw_message(QueueWithdrawMessageRequest(expected_prompt=original_text, message_id=native_message_id))",
+    "read_pending": "session.rpc.queue.pending_items()",
+    "verified_race": "Immediate Steer held at completed root hook moved into paused native queue, native idle observed, abort acknowledged, queue empty before barrier, no later deferred turn, cold non-continuing resume stayed empty",
+    "race_withdrawal_result": {"removed": false, "interrupted": false},
+    "race_withdrawal_note": "Abort had already emptied the paused queue. Do not relabel withdrawal false as removal success.",
+    "force_fence": "Public CopilotClient.force_stop() kills/reaps only its directly spawned native process; wait for confirmed process exit. Never use a shared or unrelated runtime.",
+    "cold_resume": "Only on explicit Resume, register callbacks/tools/context first, use continue_pending_work=False and inspect pending items before admission",
+    "unhandled_first_message_crash": "A newly created session containing only a paused, unconsumed first message was missing after forced runtime exit. Preserve native_session_missing, never recreate or resend automatically.",
+    "limit": "No live-child Stop, genuinely lost transport ACK or pending external-tool resume proof in this allocation"
+  },
+  "evidence_directory": "docs/evidence/e01",
+  "cloud_allocation": {"deliberate_root_sends": 8, "maximum": 8, "executed_native_children": 2, "unavailable_child_rejected_before_start": 1},
+  "not_product_completion": [
+    "No backend route, caller-capability or publication path-validator implementation",
+    "SQLite evidence replay is not live application persistence or restart acceptance",
+    "No live-child stop/recovery, actual lost transport acknowledgement, Autopilot continuation or large-output stress proof",
+    "No Blender, Unity, GPU, external publishing or model-service changes"
+  ]
+}
