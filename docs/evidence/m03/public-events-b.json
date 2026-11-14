@@ -1,0 +1,1289 @@
+[
+  {
+    "proof": "b",
+    "actor": {
+      "id": "m03-scripted-test-owner",
+      "kind": "user"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:15.032109+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": null,
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-b/project",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "repository_id": "repository-60ccb7b4-6252-4882-8cd2-93363036d696",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 1
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 1,
+    "work_id": null
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "m03-fixture",
+      "kind": "tool"
+    },
+    "event_type": "publication.created",
+    "native_event_id": null,
+    "native_session_id": "fixture-not-native",
+    "occurred_at": "2026-11-14T14:19:15.110830+00:00",
+    "payload": {
+      "event_sequence": 2,
+      "job_ids": [],
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "publication_id": "m03-publication-A",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "m03-item-A",
+          "version_id": "m03-version-A"
+        }
+      ]
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "m03-fixture-command",
+    "schema_version": "1.0",
+    "sequence": 2,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "m03-fixture",
+      "kind": "tool"
+    },
+    "event_type": "publication.created",
+    "native_event_id": null,
+    "native_session_id": "fixture-not-native",
+    "occurred_at": "2026-11-14T14:19:15.161818+00:00",
+    "payload": {
+      "event_sequence": 3,
+      "job_ids": [],
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "publication_id": "m03-publication-B",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "m03-item-B",
+          "version_id": "m03-version-B"
+        }
+      ]
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "m03-fixture-command",
+    "schema_version": "1.0",
+    "sequence": 3,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "m03-fixture",
+      "kind": "tool"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:15.166289+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-c4387ab2-ded0-4c08-a4bb-b5f4522443a1",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "72f078688f94bd9e868931034084679d328398ec1dcf582713e450675dc5c0c7",
+      "job_id": "m03-independent-encode",
+      "kind": "encode",
+      "owner_epoch": "epoch-ec6efc7a-f422-4bc6-82fd-0eb70f387692",
+      "owner_operation_id": null,
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "m03-item-B",
+        "version": {
+          "item_id": "m03-item-B",
+          "version_id": "m03-version-B"
+        }
+      },
+      "work_id": "m03-fixture-work"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 4,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:43.392830+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:19:43.391955+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "state": "held",
+        "state_revision": 0,
+        "type": "queue",
+        "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+      },
+      "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d19dc7f4-b925-4532-b9ba-0c084dbf514a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "text": "M03 independent bounded owner-card test. Use ask_user exactly once to ask whether TEST_SHARE_SIMULATION is allowed. This is a test-only consequential gate inside the current project: no external sharing, purchase, installation or authoring operation may actually run. Offer DENY_TEST_SHARE_SIMULATION and ALLOW_LOCAL_TEST_ONLY. Wait for the owner's exact answer. If denied, explicitly report that nothing was executed and finish. Do not inspect files, use other tools or delegate.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 5,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "project-host",
+      "kind": "system"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:47.346497+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-b/project",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "repository_id": "repository-60ccb7b4-6252-4882-8cd2-93363036d696",
+      "schema_version": "1.0",
+      "state": "active",
+      "state_revision": 2
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 6,
+    "work_id": null
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:47.356497+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:19:43.391955+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "queue",
+        "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+      },
+      "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d19dc7f4-b925-4532-b9ba-0c084dbf514a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "text": "M03 independent bounded owner-card test. Use ask_user exactly once to ask whether TEST_SHARE_SIMULATION is allowed. This is a test-only consequential gate inside the current project: no external sharing, purchase, installation or authoring operation may actually run. Offer DENY_TEST_SHARE_SIMULATION and ALLOW_LOCAL_TEST_ONLY. Wait for the owner's exact answer. If denied, explicitly report that nothing was executed and finish. Do not inspect files, use other tools or delegate.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 7,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:47.357370+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "job_ids": [],
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "originating_request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 1,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 8,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:47.390206+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:19:43.391955+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "native_message_id": "893e9ade-ae19-4de0-9c10-6cdf5b290797",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+      },
+      "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d19dc7f4-b925-4532-b9ba-0c084dbf514a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "text": "M03 independent bounded owner-card test. Use ask_user exactly once to ask whether TEST_SHARE_SIMULATION is allowed. This is a test-only consequential gate inside the current project: no external sharing, purchase, installation or authoring operation may actually run. Offer DENY_TEST_SHARE_SIMULATION and ALLOW_LOCAL_TEST_ONLY. Wait for the owner's exact answer. If denied, explicitly report that nothing was executed and finish. Do not inspect files, use other tools or delegate.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 9,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "247de54d-ea92-403c-920b-aa2f725b1dbe",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:53.713719+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 15645,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 61,
+      "reported_cost": 1
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 10,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "35da0d54-490f-449a-a9a9-7990852f2a55",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:53.738922+00:00",
+    "payload": {
+      "message_id": "acd2ba24-5a9a-4e1f-9f10-23479ecc8f33",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 11,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.started",
+    "native_event_id": "8aea847a-312e-420a-8085-297fb98dece0",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:53.745320+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+      "model_id": "gpt-6.1-sol",
+      "name": "ask_user",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 12,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "decision.requested",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:53.790370+00:00",
+    "payload": {
+      "decision_id": "decision-7eee821715d655f6c01fa81c815afdff746542863a65e473d5f07b2b7b1aca42",
+      "delivery_state": "not_sent",
+      "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+      "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+      "kind": "user_input",
+      "native_decision_id": "effebdb2-dda6-44cd-b093-d0e0e05c075e",
+      "options": [
+        "DENY_TEST_SHARE_SIMULATION",
+        "ALLOW_LOCAL_TEST_ONLY"
+      ],
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "prompt": "Is TEST_SHARE_SIMULATION allowed? This is a local test-only gate; no external sharing, purchase, installation, or authoring operation will run.",
+      "resolved_by": null,
+      "response": null,
+      "schema_version": "1.0",
+      "state": "pending",
+      "state_revision": 0,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 13,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:53.791359+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "job_ids": [],
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "originating_request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "schema_version": "1.0",
+      "state": "awaiting_user",
+      "state_revision": 2,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 14,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+      "kind": "user"
+    },
+    "event_type": "decision.resolved",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:56.016485+00:00",
+    "payload": {
+      "decision_id": "decision-7eee821715d655f6c01fa81c815afdff746542863a65e473d5f07b2b7b1aca42",
+      "delivery_state": "pending",
+      "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+      "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+      "kind": "user_input",
+      "native_decision_id": "effebdb2-dda6-44cd-b093-d0e0e05c075e",
+      "options": [
+        "DENY_TEST_SHARE_SIMULATION",
+        "ALLOW_LOCAL_TEST_ONLY"
+      ],
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "prompt": "Is TEST_SHARE_SIMULATION allowed? This is a local test-only gate; no external sharing, purchase, installation, or authoring operation will run.",
+      "resolved_by": {
+        "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+        "kind": "user"
+      },
+      "response": {
+        "action": "answer",
+        "answer": "DENY_TEST_SHARE_SIMULATION",
+        "expected_revision": 0,
+        "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+        "operation_id": "cf424067-0cd2-4b7b-88d6-f2b9bce8ac0b",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0"
+      },
+      "schema_version": "1.0",
+      "state": "answered",
+      "state_revision": 1,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 15,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "decision.resolved",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:56.035384+00:00",
+    "payload": {
+      "decision_id": "decision-7eee821715d655f6c01fa81c815afdff746542863a65e473d5f07b2b7b1aca42",
+      "delivery_state": "outcome_uncertain",
+      "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+      "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+      "kind": "user_input",
+      "native_decision_id": "effebdb2-dda6-44cd-b093-d0e0e05c075e",
+      "options": [
+        "DENY_TEST_SHARE_SIMULATION",
+        "ALLOW_LOCAL_TEST_ONLY"
+      ],
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "prompt": "Is TEST_SHARE_SIMULATION allowed? This is a local test-only gate; no external sharing, purchase, installation, or authoring operation will run.",
+      "resolved_by": {
+        "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+        "kind": "user"
+      },
+      "response": {
+        "action": "answer",
+        "answer": "DENY_TEST_SHARE_SIMULATION",
+        "expected_revision": 0,
+        "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+        "operation_id": "cf424067-0cd2-4b7b-88d6-f2b9bce8ac0b",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0"
+      },
+      "schema_version": "1.0",
+      "state": "answered",
+      "state_revision": 2,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 16,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "decision.resolved",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:56.045033+00:00",
+    "payload": {
+      "decision_id": "decision-7eee821715d655f6c01fa81c815afdff746542863a65e473d5f07b2b7b1aca42",
+      "delivery_state": "acknowledged",
+      "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+      "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+      "kind": "user_input",
+      "native_decision_id": "effebdb2-dda6-44cd-b093-d0e0e05c075e",
+      "options": [
+        "DENY_TEST_SHARE_SIMULATION",
+        "ALLOW_LOCAL_TEST_ONLY"
+      ],
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "prompt": "Is TEST_SHARE_SIMULATION allowed? This is a local test-only gate; no external sharing, purchase, installation, or authoring operation will run.",
+      "resolved_by": {
+        "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+        "kind": "user"
+      },
+      "response": {
+        "action": "answer",
+        "answer": "DENY_TEST_SHARE_SIMULATION",
+        "expected_revision": 0,
+        "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+        "operation_id": "cf424067-0cd2-4b7b-88d6-f2b9bce8ac0b",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0"
+      },
+      "schema_version": "1.0",
+      "state": "answered",
+      "state_revision": 3,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 17,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:56.046367+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "job_ids": [],
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "originating_request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 3,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 18,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.completed",
+    "native_event_id": "0c3ee24c-f36d-4b3d-8620-b2c9adec37aa",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:56.074321+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+      "model_id": "gpt-6.1-sol",
+      "name": "ask_user",
+      "state": "completed",
+      "summary": ""
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 19,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "6c7e34c7-38d9-488b-abaf-70c225ed02dc",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.138213+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": "TEST"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 20,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "d1b72d28-2fa7-4ff3-82b4-a80e849d002a",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.207698+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": "_SHARE"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 21,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "b6dd6a5e-11a4-4eec-a25f-ad10239f7d5a",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.218051+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": "_SIM"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 22,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "190f9525-8d68-43dc-b991-7eb7d5612c51",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.225770+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": "ULATION"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 23,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "4a94769f-07b6-49f6-86b9-be9e35e5023b",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.236858+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": " denied"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 24,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "a7db8c5d-0fe5-492b-b766-2b86e9bb14fd",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.245202+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": "."
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 25,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "054d2949-5e0b-4e2c-bc09-9adff7718d48",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.253635+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": " Nothing"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 26,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "3025677e-a40f-416d-b973-05c3ebcf4786",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.261927+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": " was"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 27,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "7bc0300a-4e53-477c-9ab7-800d50f8b31c",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.269464+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": " executed"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 28,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.delta",
+    "native_event_id": "32360e8e-7394-445b-a391-466d44099732",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.280152+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": "."
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 29,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "84c9ec4e-f47f-4e81-a947-cc525dad9146",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.442259+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 15726,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 14,
+      "reported_cost": 1
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 30,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "31795dba-0d75-4c87-b27e-030aaff2fd6d",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:19:58.463786+00:00",
+    "payload": {
+      "message_id": "d03bcaf4-060a-4db2-ac3f-f4e549405416",
+      "native_agent_id": null,
+      "text": "TEST_SHARE_SIMULATION denied. Nothing was executed."
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 31,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:58.521713+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:19:43.391955+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "native_message_id": "893e9ade-ae19-4de0-9c10-6cdf5b290797",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+      },
+      "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d19dc7f4-b925-4532-b9ba-0c084dbf514a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "schema_version": "1.0",
+        "text": "M03 independent bounded owner-card test. Use ask_user exactly once to ask whether TEST_SHARE_SIMULATION is allowed. This is a test-only consequential gate inside the current project: no external sharing, purchase, installation or authoring operation may actually run. Offer DENY_TEST_SHARE_SIMULATION and ALLOW_LOCAL_TEST_ONLY. Wait for the owner's exact answer. If denied, explicitly report that nothing was executed and finish. Do not inspect files, use other tools or delegate.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 32,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:19:58.522783+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+      "job_ids": [],
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "originating_request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 4,
+      "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+    "schema_version": "1.0",
+    "sequence": 33,
+    "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:20:52.155788+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "state": "held",
+        "state_revision": 0,
+        "type": "queue",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      },
+      "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 34,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:20:52.165808+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "queue",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      },
+      "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 35,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:20:52.166907+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "job_ids": [],
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "originating_request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 1,
+      "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 36,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:20:52.195737+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "native_message_id": "2fa74a64-fda2-49c9-abef-710a8cffb705",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      },
+      "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 37,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "a3e062e5-a634-463c-affd-6e0a063542a8",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:20:55.369416+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 16410,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 37,
+      "reported_cost": 1
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 38,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "a680a478-5252-4c9d-9647-221384bd9821",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:20:55.388956+00:00",
+    "payload": {
+      "message_id": "f56eef35-35e3-43a3-90ef-480d4d42f916",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 39,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.started",
+    "native_event_id": "64f84b30-b87c-4232-b929-0f71e52a8ecd",
+    "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+    "occurred_at": "2026-11-14T14:20:55.393887+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "276193492ef46e08939a9eaacb31ad540bb624a365e589eab4477f35bf0ce8f3",
+      "model_id": "gpt-6.1-sol",
+      "name": "bash",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 40,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:20:56.270590+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:20:52.155187+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "receipt": {
+        "detail_code": "provider_unavailable",
+        "native_message_id": "2fa74a64-fda2-49c9-abef-710a8cffb705",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "replayed": false,
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "state": "outcome_uncertain",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      },
+      "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "d681772b-fb25-4675-88b6-28568120d20a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "schema_version": "1.0",
+        "text": "M03 owned native transport test. Run exactly `python3 m03_transport.py` using bash once. It is an in-project harmless 35-second helper. Do not delegate, run other commands or retry the operation. Report only an actually observed outcome.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 41,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:20:56.271317+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+      "job_ids": [],
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "originating_request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 2,
+      "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+    "schema_version": "1.0",
+    "sequence": 42,
+    "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+  },
+  {
+    "proof": "b",
+    "actor": {
+      "id": "project-host",
+      "kind": "system"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:20:56.279055+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-b/project",
+      "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+      "repository_id": "repository-60ccb7b4-6252-4882-8cd2-93363036d696",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 3
+    },
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 43,
+    "work_id": null
+  }
+]

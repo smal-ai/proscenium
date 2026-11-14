@@ -1,0 +1,1701 @@
+[
+  {
+    "proof": "a",
+    "actor": {
+      "id": "m03-scripted-test-owner",
+      "kind": "user"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:07:40.746943+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": null,
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-a/project",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "repository_id": "repository-41ac4d6a-01cc-478e-830e-d673f1abc0ef",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 1
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 1,
+    "work_id": null
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "m03-fixture",
+      "kind": "tool"
+    },
+    "event_type": "publication.created",
+    "native_event_id": null,
+    "native_session_id": "fixture-not-native",
+    "occurred_at": "2026-11-14T14:07:40.814119+00:00",
+    "payload": {
+      "event_sequence": 2,
+      "job_ids": [],
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "publication_id": "m03-publication-A",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "m03-item-A",
+          "version_id": "m03-version-A"
+        }
+      ]
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "m03-fixture-command",
+    "schema_version": "1.0",
+    "sequence": 2,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "m03-fixture",
+      "kind": "tool"
+    },
+    "event_type": "publication.created",
+    "native_event_id": null,
+    "native_session_id": "fixture-not-native",
+    "occurred_at": "2026-11-14T14:07:40.866154+00:00",
+    "payload": {
+      "event_sequence": 3,
+      "job_ids": [],
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "publication_id": "m03-publication-B",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "m03-item-B",
+          "version_id": "m03-version-B"
+        }
+      ]
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "m03-fixture-command",
+    "schema_version": "1.0",
+    "sequence": 3,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "m03-fixture",
+      "kind": "tool"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:07:40.870634+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1ad9dc5-8ff8-43eb-9ad3-fdf7fd2c9a72",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "72f078688f94bd9e868931034084679d328398ec1dcf582713e450675dc5c0c7",
+      "job_id": "m03-independent-encode",
+      "kind": "encode",
+      "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+      "owner_operation_id": null,
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "m03-item-B",
+        "version": {
+          "item_id": "m03-item-B",
+          "version_id": "m03-version-B"
+        }
+      },
+      "work_id": "m03-fixture-work"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 4,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "owner-11869685-9ab8-4d18-9554-bce098487bd3",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:17.962053+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:17.961579+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "state": "held",
+        "state_revision": 0,
+        "type": "queue",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "23409722-0736-43d9-827d-903d3427feee",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "text": "M03 bounded runtime test for scene A. First do the small direct lead task by running exactly `python3 m03_direct.py` with bash once. Then delegate exactly once to authoring-specialist. Ask that specialist to run exactly `python3 m03_hold.py` with bash in this active project; it is a harmless project-local heartbeat helper with a hard 70-second self-timeout. It must remain on that task until completion or native Stop, not start other work. Do not inspect other files, install anything, render, or use external services. Do not answer an owner question yourself. Report actual outcomes only.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 5,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "project-host",
+      "kind": "system"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:21.818788+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-a/project",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "repository_id": "repository-41ac4d6a-01cc-478e-830e-d673f1abc0ef",
+      "schema_version": "1.0",
+      "state": "active",
+      "state_revision": 2
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 6,
+    "work_id": null
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:21.825958+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:17.961579+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "queue",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "23409722-0736-43d9-827d-903d3427feee",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "text": "M03 bounded runtime test for scene A. First do the small direct lead task by running exactly `python3 m03_direct.py` with bash once. Then delegate exactly once to authoring-specialist. Ask that specialist to run exactly `python3 m03_hold.py` with bash in this active project; it is a harmless project-local heartbeat helper with a hard 70-second self-timeout. It must remain on that task until completion or native Stop, not start other work. Do not inspect other files, install anything, render, or use external services. Do not answer an owner question yourself. Report actual outcomes only.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 7,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:21.826713+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 1,
+      "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 8,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:21.852447+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:17.961579+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": "a19c1703-fe1a-4164-94d5-2f32cff8e6b8",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "23409722-0736-43d9-827d-903d3427feee",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "text": "M03 bounded runtime test for scene A. First do the small direct lead task by running exactly `python3 m03_direct.py` with bash once. Then delegate exactly once to authoring-specialist. Ask that specialist to run exactly `python3 m03_hold.py` with bash in this active project; it is a harmless project-local heartbeat helper with a hard 70-second self-timeout. It must remain on that task until completion or native Stop, not start other work. Do not inspect other files, install anything, render, or use external services. Do not answer an owner question yourself. Report actual outcomes only.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 9,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "5d345b17-c07e-45a9-a227-9325a8599f0e",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:28.377874+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 15712,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 36,
+      "reported_cost": 1
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 10,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "96d870bf-f7bd-4b99-b652-899c1332a203",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:28.396843+00:00",
+    "payload": {
+      "message_id": "2a9b2bc3-e868-4245-b32b-1e0185f35a1b",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 11,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.started",
+    "native_event_id": "ba119632-4ed0-4885-a794-10b65a6931c3",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:28.401041+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "f23fcf92ec5b6596432b97f8162c9d9e0b6c883e8354b1485cb5ba35d3d5d731",
+      "model_id": "gpt-6.1-sol",
+      "name": "bash",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 12,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.completed",
+    "native_event_id": "8701ce9f-ffb5-4b95-ab14-9a967d0a13d8",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:28.480368+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "f23fcf92ec5b6596432b97f8162c9d9e0b6c883e8354b1485cb5ba35d3d5d731",
+      "model_id": "gpt-6.1-sol",
+      "name": "bash",
+      "state": "completed",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 13,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "6cf847cd-6ff3-448c-b935-3e28de5d1cbf",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:34.758411+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 15779,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 418,
+      "reported_cost": 1
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 14,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "1e1769f5-8cd0-4fd6-b689-c017c946f889",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:34.776963+00:00",
+    "payload": {
+      "message_id": "d1a9f207-7e84-4dfc-8ead-ccbb502336fe",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 15,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.started",
+    "native_event_id": "3fd7ddf1-2f2e-4e83-bf40-4d7f5882dd68",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:34.780899+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "dcc035b8ebf34a7c57c65295aa48b9c4c6eb3bdc6459d4e423756f4c769d8d60",
+      "model_id": "gpt-6.1-sol",
+      "name": "task",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 16,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "320cfe72-96ba-4a71-bd27-7f126ebb1ee4",
+      "kind": "subagent"
+    },
+    "event_type": "subagent.started",
+    "native_event_id": "92d0e6ef-ab71-4520-a3c7-fda03a32dbac",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:34.807255+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "c0467831f027146dafe660a3da9f2ba379e28b34b29016579f3b00974c829cba",
+      "model_id": "gpt-6-luna",
+      "name": "authoring-specialist",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 17,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "owner-11869685-9ab8-4d18-9554-bce098487bd3",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:35.109199+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:35.108751+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "state": "held",
+        "state_revision": 0,
+        "type": "queue",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      },
+      "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b41b621a-9dd8-457e-a0c3-3407230049fb",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "text": "M03 queued request B. Read get_version for the version in THIS request's captured selection and report its actual labelled name. Do not use whichever item is now visible in the browser. Then use ask_user exactly once: ask whether TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation, is approved. Explain that no actual sharing, purchase, installation or external action occurs. Wait for the owner's exact decision. If declined, do nothing further and finish. Never perform real sharing, authoring, rendering or delegation for this request.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 18,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "320cfe72-96ba-4a71-bd27-7f126ebb1ee4",
+      "kind": "subagent"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "f53d1eda-91b0-4abf-ba5e-f75bf660831b",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:37.643787+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 3897,
+      "model_id": "gpt-6-luna",
+      "output_tokens": 42,
+      "reported_cost": 1
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 19,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "320cfe72-96ba-4a71-bd27-7f126ebb1ee4",
+      "kind": "subagent"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "79a06770-2d13-43c0-b8c9-4fb9b0816cdc",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:37.654841+00:00",
+    "payload": {
+      "message_id": "4de98117-c54d-4625-88b5-d3e2c08479d3",
+      "native_agent_id": "320cfe72-96ba-4a71-bd27-7f126ebb1ee4",
+      "text": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 20,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "320cfe72-96ba-4a71-bd27-7f126ebb1ee4",
+      "kind": "subagent"
+    },
+    "event_type": "tool.started",
+    "native_event_id": "913fa5c0-445f-4935-9201-d19da593adc2",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:37.658943+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "9bd0f2240da548f968ea383c00790e20a07a6a4b4b536a3143ddce0916e46228",
+      "model_id": "gpt-6-luna",
+      "name": "bash",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 21,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "m03-owned-ffmpeg",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.473037+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1ad9dc5-8ff8-43eb-9ad3-fdf7fd2c9a72",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "72f078688f94bd9e868931034084679d328398ec1dcf582713e450675dc5c0c7",
+      "job_id": "m03-independent-encode",
+      "kind": "encode",
+      "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+      "owner_operation_id": null,
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "starting",
+      "state_revision": 1,
+      "target": {
+        "shot_id": null,
+        "target_id": "m03-item-B",
+        "version": {
+          "item_id": "m03-item-B",
+          "version_id": "m03-version-B"
+        }
+      },
+      "work_id": "m03-fixture-work"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 22,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "m03-owned-ffmpeg",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.482134+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1ad9dc5-8ff8-43eb-9ad3-fdf7fd2c9a72",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "72f078688f94bd9e868931034084679d328398ec1dcf582713e450675dc5c0c7",
+      "job_id": "m03-independent-encode",
+      "kind": "encode",
+      "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+      "owner_operation_id": null,
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 2,
+      "target": {
+        "shot_id": null,
+        "target_id": "m03-item-B",
+        "version": {
+          "item_id": "m03-item-B",
+          "version_id": "m03-version-B"
+        }
+      },
+      "work_id": "m03-fixture-work"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 23,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.750490+00:00",
+    "payload": {
+      "directive_request_ids": [
+        "af380f55-58ae-470c-b238-e39be8a42ac3"
+      ],
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 2,
+      "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 24,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "owner-11869685-9ab8-4d18-9554-bce098487bd3",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.750941+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:45.749799+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "state": "accepted",
+        "state_revision": 0,
+        "type": "steer",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "78188733-78ab-40eb-975f-9cf730ab9f73",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "text": "M03 Steer correction for this active work: report the actual bounded-helper outcome and preserve the original source/work identities. A native Stop must not be described as natural helper completion. This correction does not undo already executed actions. Do not delegate again.",
+        "type": "steer"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+    "schema_version": "1.0",
+    "sequence": 25,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.760257+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:45.749799+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "steer",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "78188733-78ab-40eb-975f-9cf730ab9f73",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "text": "M03 Steer correction for this active work: report the actual bounded-helper outcome and preserve the original source/work identities. A native Stop must not be described as natural helper completion. This correction does not undo already executed actions. Do not delegate again.",
+        "type": "steer"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+    "schema_version": "1.0",
+    "sequence": 26,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.810112+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:45.749799+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": "23a48149-31e4-4f4a-9bc1-7ce6798999ac",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "steer",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "78188733-78ab-40eb-975f-9cf730ab9f73",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "text": "M03 Steer correction for this active work: report the actual bounded-helper outcome and preserve the original source/work identities. A native Stop must not be described as natural helper completion. This correction does not undo already executed actions. Do not delegate again.",
+        "type": "steer"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+    "schema_version": "1.0",
+    "sequence": 27,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.completed",
+    "native_event_id": "3440246d-6e18-4b53-84ee-8a83da22ee43",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:45.832786+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "dcc035b8ebf34a7c57c65295aa48b9c4c6eb3bdc6459d4e423756f4c769d8d60",
+      "model_id": "gpt-6.1-sol",
+      "name": "task",
+      "state": "completed",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 28,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "320cfe72-96ba-4a71-bd27-7f126ebb1ee4",
+      "kind": "subagent"
+    },
+    "event_type": "tool.completed",
+    "native_event_id": "7224380e-6262-4822-bae8-a2bd436ed80f",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:45.841118+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "9bd0f2240da548f968ea383c00790e20a07a6a4b4b536a3143ddce0916e46228",
+      "model_id": "gpt-6-luna",
+      "name": "bash",
+      "state": "completed",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 29,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.917856+00:00",
+    "payload": {
+      "directive_request_ids": [
+        "af380f55-58ae-470c-b238-e39be8a42ac3"
+      ],
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "stop_requested",
+      "state_revision": 3,
+      "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 30,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "owner-11869685-9ab8-4d18-9554-bce098487bd3",
+      "kind": "user"
+    },
+    "event_type": "request.accepted",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.918883+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:45.916914+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+        "schema_version": "1.0",
+        "state": "stop_requested",
+        "state_revision": 0,
+        "type": "stop",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+      "schema_version": "1.0",
+      "submission": {
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+        "schema_version": "1.0",
+        "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "type": "stop"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+    "schema_version": "1.0",
+    "sequence": 31,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "project-host",
+      "kind": "system"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:45.925333+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-a/project",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "repository_id": "repository-41ac4d6a-01cc-478e-830e-d673f1abc0ef",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 3
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 32,
+    "work_id": null
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "320cfe72-96ba-4a71-bd27-7f126ebb1ee4",
+      "kind": "subagent"
+    },
+    "event_type": "subagent.completed",
+    "native_event_id": "05b61974-8138-41e1-8d98-816c087fc341",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:08:45.986974+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "c0467831f027146dafe660a3da9f2ba379e28b34b29016579f3b00974c829cba",
+      "model_id": "gpt-6-luna",
+      "name": "authoring-specialist",
+      "state": "completed",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 33,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:46.083072+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:17.961579+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": "a19c1703-fe1a-4164-94d5-2f32cff8e6b8",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "23409722-0736-43d9-827d-903d3427feee",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "schema_version": "1.0",
+        "text": "M03 bounded runtime test for scene A. First do the small direct lead task by running exactly `python3 m03_direct.py` with bash once. Then delegate exactly once to authoring-specialist. Ask that specialist to run exactly `python3 m03_hold.py` with bash in this active project; it is a harmless project-local heartbeat helper with a hard 70-second self-timeout. It must remain on that task until completion or native Stop, not start other work. Do not inspect other files, install anything, render, or use external services. Do not answer an owner question yourself. Report actual outcomes only.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 34,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:46.084237+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:45.749799+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": "23a48149-31e4-4f4a-9bc1-7ce6798999ac",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 3,
+        "type": "steer",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "78188733-78ab-40eb-975f-9cf730ab9f73",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+        "schema_version": "1.0",
+        "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "text": "M03 Steer correction for this active work: report the actual bounded-helper outcome and preserve the original source/work identities. A native Stop must not be described as natural helper completion. This correction does not undo already executed actions. Do not delegate again.",
+        "type": "steer"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "af380f55-58ae-470c-b238-e39be8a42ac3",
+    "schema_version": "1.0",
+    "sequence": 35,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:46.085024+00:00",
+    "payload": {
+      "directive_request_ids": [
+        "af380f55-58ae-470c-b238-e39be8a42ac3"
+      ],
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "stopped",
+      "state_revision": 4,
+      "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+    "schema_version": "1.0",
+    "sequence": 36,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:08:46.085806+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:45.916914+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "detail_code": null,
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "type": "stop",
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+      "schema_version": "1.0",
+      "submission": {
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+        "schema_version": "1.0",
+        "target_work_id": "work-6361ef13fbeb4f4884ff382bf96d8815",
+        "type": "stop"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "84232ed6-d620-4811-8db9-eb802a9f0135",
+    "schema_version": "1.0",
+    "sequence": 37,
+    "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "m03-owned-ffmpeg",
+      "kind": "worker"
+    },
+    "event_type": "job.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:10:21.342734+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-f1ad9dc5-8ff8-43eb-9ad3-fdf7fd2c9a72",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "72f078688f94bd9e868931034084679d328398ec1dcf582713e450675dc5c0c7",
+      "job_id": "m03-independent-encode",
+      "kind": "encode",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+      "owner_operation_id": null,
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "m03-item-B",
+        "version": {
+          "item_id": "m03-item-B",
+          "version_id": "m03-version-B"
+        }
+      },
+      "work_id": "m03-fixture-work"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 38,
+    "work_id": "m03-fixture-work"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "project-host",
+      "kind": "system"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:10:37.337297+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-a/project",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "repository_id": "repository-41ac4d6a-01cc-478e-830e-d673f1abc0ef",
+      "schema_version": "1.0",
+      "state": "active",
+      "state_revision": 4
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 39,
+    "work_id": null
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:10:37.350044+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:35.108751+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": null,
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 1,
+        "type": "queue",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      },
+      "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b41b621a-9dd8-457e-a0c3-3407230049fb",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "text": "M03 queued request B. Read get_version for the version in THIS request's captured selection and report its actual labelled name. Do not use whichever item is now visible in the browser. Then use ask_user exactly once: ask whether TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation, is approved. Explain that no actual sharing, purchase, installation or external action occurs. Wait for the owner's exact decision. If declined, do nothing further and finish. Never perform real sharing, authoring, rendering or delegation for this request.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 40,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:10:37.351000+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "running",
+      "state_revision": 1,
+      "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 41,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:10:37.372400+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:35.108751+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "native_message_id": "f01329f2-ea39-4e37-9bf8-e8972d199c1d",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      },
+      "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b41b621a-9dd8-457e-a0c3-3407230049fb",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "text": "M03 queued request B. Read get_version for the version in THIS request's captured selection and report its actual labelled name. Do not use whichever item is now visible in the browser. Then use ask_user exactly once: ask whether TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation, is approved. Explain that no actual sharing, purchase, installation or external action occurs. Wait for the owner's exact decision. If declined, do nothing further and finish. Never perform real sharing, authoring, rendering or delegation for this request.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 42,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "39fd1b38-9da6-45ab-9482-13f780ae6ea2",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:10:45.666455+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 17802,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 42,
+      "reported_cost": 1
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 43,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "1535f578-a40b-44f4-bcba-b4ece33de0d4",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:10:45.687639+00:00",
+    "payload": {
+      "message_id": "c67ccaf1-873d-4c94-8ea2-58f687e9fbe1",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 44,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.started",
+    "native_event_id": "d02c21b6-9a33-4e38-ac7e-010b55669404",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:10:45.692558+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "70f2463151de12ed2eb5d329df6b70dee71c761d9347bbc6b4d9aab6f910dbbe",
+      "model_id": "gpt-6.1-sol",
+      "name": "get_version",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 45,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.completed",
+    "native_event_id": "9108b664-a6b1-4bfd-8cff-a86a14315233",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:10:45.751344+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "70f2463151de12ed2eb5d329df6b70dee71c761d9347bbc6b4d9aab6f910dbbe",
+      "model_id": "gpt-6.1-sol",
+      "name": "get_version",
+      "state": "completed",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 46,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "usage.recorded",
+    "native_event_id": "7d8ee2a3-6140-467a-8d04-f6783771e498",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:10:48.581222+00:00",
+    "payload": {
+      "cost_unit": null,
+      "input_tokens": 18479,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 78,
+      "reported_cost": 1
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 47,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "assistant.completed",
+    "native_event_id": "e8827f72-da3b-4f00-86c6-32fc882fada5",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:10:48.600036+00:00",
+    "payload": {
+      "message_id": "2fc985ee-9330-4774-a361-cc04b47e4d7f",
+      "native_agent_id": null,
+      "text": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 48,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-lead",
+      "kind": "lead"
+    },
+    "event_type": "tool.started",
+    "native_event_id": "6b27b7e1-5ea1-4a4c-ab6c-eceae8d32067",
+    "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+    "occurred_at": "2026-11-14T14:10:48.604307+00:00",
+    "payload": {
+      "artifact_ids": [],
+      "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+      "model_id": "gpt-6.1-sol",
+      "name": "ask_user",
+      "state": "running",
+      "summary": ""
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 49,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "decision.requested",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:10:48.633983+00:00",
+    "payload": {
+      "decision_id": "decision-c8518db7f6ae26fbeeb9d6260eaa45d25e91d9633e36beb0bc0a29424eb8df12",
+      "delivery_state": "not_sent",
+      "fingerprint": "946cdc04be28b6581de350a5ad5e892ae3b0023b7165db5a0aa3be9f0206fd3c",
+      "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+      "kind": "user_input",
+      "native_decision_id": "09fd488d-94b3-490e-bd02-d61eb21cb974",
+      "options": [
+        "Approve TEST_SHARE_SIMULATION",
+        "Decline TEST_SHARE_SIMULATION"
+      ],
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "prompt": "The captured version m03-version-B is labelled \"M03 labelled asset B\". Do you approve TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation? No actual sharing, purchase, installation or external action occurs.",
+      "resolved_by": null,
+      "response": null,
+      "schema_version": "1.0",
+      "state": "pending",
+      "state_revision": 0,
+      "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 50,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:10:48.634677+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "awaiting_user",
+      "state_revision": 2,
+      "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 51,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "request.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:13:07.473639+00:00",
+    "payload": {
+      "accepted_at": "2026-11-14T14:08:35.108751+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "receipt": {
+        "detail_code": "m03_test_deadline",
+        "native_message_id": "f01329f2-ea39-4e37-9bf8-e8972d199c1d",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "replayed": false,
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "state": "outcome_uncertain",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      },
+      "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "b41b621a-9dd8-457e-a0c3-3407230049fb",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "text": "M03 queued request B. Read get_version for the version in THIS request's captured selection and report its actual labelled name. Do not use whichever item is now visible in the browser. Then use ask_user exactly once: ask whether TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation, is approved. Explain that no actual sharing, purchase, installation or external action occurs. Wait for the owner's exact decision. If declined, do nothing further and finish. Never perform real sharing, authoring, rendering or delegation for this request.",
+        "type": "queue"
+      }
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 52,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "copilot-host",
+      "kind": "system"
+    },
+    "event_type": "work.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:13:07.474898+00:00",
+    "payload": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+      "job_ids": [],
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 3,
+      "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+    "schema_version": "1.0",
+    "sequence": 53,
+    "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+  },
+  {
+    "proof": "a",
+    "actor": {
+      "id": "project-host",
+      "kind": "system"
+    },
+    "event_type": "project.state_changed",
+    "native_event_id": null,
+    "native_session_id": null,
+    "occurred_at": "2026-11-14T14:13:07.482079+00:00",
+    "payload": {
+      "name": "M03 real discussion fixture",
+      "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+      "path": "/home/quintin/.cache/proscenium-development/m03-runtime-proof-a/project",
+      "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+      "repository_id": "repository-41ac4d6a-01cc-478e-830e-d673f1abc0ef",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 5
+    },
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "request_id": null,
+    "schema_version": "1.0",
+    "sequence": 54,
+    "work_id": null
+  }
+]
