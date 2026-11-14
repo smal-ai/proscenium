@@ -1,0 +1,82 @@
+{
+  "format": "proscenium-reviewed-transfer-inputs-1",
+  "reviewer": "coordinator",
+  "meaning": "Exact edit transfers inspected and compared. Per-receipt applicability also requires the final regression and explicit scope review.",
+  "pairs": [
+    {
+      "tested_commit": "a530cbd1e7df78ccdfbd30a7e632e1bd98ddb7a0",
+      "integrated_commit": "98911b7bc133d61a42f5a1be7f8c6d8a648feecc",
+      "patch_sha256": "d2bc3e4fcf252dafc06b2d08df2abaad36e99928d8167b5ae7161de923a9be07"
+    },
+    {
+      "tested_commit": "970040b8a22a3298b653924b2ce033e1b8ffba86",
+      "integrated_commit": "087dc17fe46e7b6e830c8f3f9e3ae606c7d62f16",
+      "patch_sha256": "c6fb66a8198ecb71f0595cac8c7d3aa9a3661a5e1fa08368611cba626128641a"
+    },
+    {
+      "tested_commit": "e5787dc50e6ca3afd053e6cff83e6f69abf7ca0e",
+      "integrated_commit": "2570f2152864e84563c3f53586c4cc260e75368b",
+      "patch_sha256": "211a8951810ccff0e2de2cfcb7bea4d8a18a2c0dfdbfa2a0eaf8b00e5d97a68d"
+    },
+    {
+      "tested_commit": "38844c1325899e49f07d860b7605936ee115c502",
+      "integrated_commit": "2ea26dd1e47e77d65a554775278d77c557c8f97d",
+      "patch_sha256": "4b81b4157c78c72dbd1ed07d7dd81234adb64f242f211e42225cc26278e8f0af"
+    },
+    {
+      "tested_commit": "ce62098002a0a84fe4e5e2f457ab4c52a164ba75",
+      "integrated_commit": "924ff4e254a222fcefc0af4c0ae12ab23cd3b781",
+      "patch_sha256": "3a5e458f1584fe6e5b3d1cc86042e2ffb601c20fbb32a00b0990b110b57fa65f"
+    },
+    {
+      "tested_commit": "a6200494130b2802837ce0465dd67466729f05a3",
+      "integrated_commit": "ed09f5a5f00f61e075d8b18e938975d6f9587666",
+      "patch_sha256": "7bb95b924223887d9a2d14434124dc58fe0e172827f748d44b9b7192c731cbda"
+    },
+    {
+      "tested_commit": "41a08ba64d53f77e9a50f41fc93112a259af1c4c",
+      "integrated_commit": "1aa9dd00a4c9f22b8b7cef75555234913291f210",
+      "patch_sha256": "bf8c8e252553a2f8f39c255009e3a9b51c839b610c84459882afd64f11c297a2"
+    },
+    {
+      "tested_commit": "f33debac990e1fa6b7054bc62350a9626f35b178",
+      "integrated_commit": "005ffc5bd49d930e33202db3abf6ca3453825e5d",
+      "patch_sha256": "bc712fbaf345744dd88d16ec4e65ba164979ff2a9e365a8d570763d87eecd9e3"
+    },
+    {
+      "tested_commit": "80630a4f48f5fcb3600ec32f5f00fa9bacfaa5dd",
+      "integrated_commit": "d2a27f4625b7531294b0c92d21d7bf117a274ece",
+      "patch_sha256": "88a5d7cd51cdf96d41ef5260c6fedbad242b87b38475516ff8b0efbbf8eca1b7"
+    },
+    {
+      "tested_commit": "c517823de2249bcc21911fdbe92a943efb0cd535",
+      "integrated_commit": "d6e6ecfc60054fd070a1097a965689e181e9c381",
+      "patch_sha256": "8930b707d80c6b210e68d61cccbed11d14384a503381c35e3a85e9aef4814726"
+    },
+    {
+      "tested_commit": "aa034c911ea996697ea97f1f95feaace5f7070e3",
+      "integrated_commit": "725e0685b20891130350c0f78193a618297f3728",
+      "patch_sha256": "9f6d9938f6a36c64fe4c925c2baa2dc87d1cb3c5a5f8263a7078222c0febc07e"
+    },
+    {
+      "tested_commit": "9e01f876c1902455647b5626b7196c665934593a",
+      "integrated_commit": "e8485fecb9a910f37c96d1abada8ed7fe8d64460",
+      "patch_sha256": "9ec9c4fc7d016fb469d9833a9f1515be4caa4ab455e1232099d07d7495a10467"
+    },
+    {
+      "tested_commit": "1f0ca24472eef037c04ca1d7fca009b1f8628a66",
+      "integrated_commit": "9746643019b4daeb4463ce7e71d697821aa36b90",
+      "patch_sha256": "0f9b560e8ce096babdabf111d1498e67032b67e1c42fe81c3b2d8b9b7a91f59f"
+    },
+    {
+      "tested_commit": "79acf89fd6874130631bb3db816b7445f69ab9c1",
+      "integrated_commit": "5d06ec71c296ae6bea1ec24d0486d69ac3ad326c",
+      "patch_sha256": "b5ea7898d02950316381c2496d7e423f59b1aff6e03d20ccaa1e073304ec8b42"
+    },
+    {
+      "tested_commit": "38d5aa1fe31f66cef83bc0c627f3f2e37e2879f4",
+      "integrated_commit": "1bb505d23b3dedbc2089dbfe4de8efd6bf17f60f",
+      "patch_sha256": "178ee6b7e27f9783b7f975721caefc9cf3da0dadd4a529f6c4af5b659f2f6191"
+    }
+  ]
+}
