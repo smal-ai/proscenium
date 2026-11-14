@@ -1,0 +1,747 @@
+{
+  "project": {
+    "name": "M06 paper kite silent planning acceptance",
+    "native_session_id": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m06-20261114T161211/project",
+    "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+    "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+    "schema_version": "1.0",
+    "state": "active",
+    "state_revision": 2
+  },
+  "snapshot": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "M06 paper kite silent planning acceptance",
+      "native_session_id": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m06-20261114T161211/project",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+      "schema_version": "1.0",
+      "state": "active",
+      "state_revision": 2
+    },
+    "settings": {
+      "default_profile_id": null,
+      "generation_attempt_limit": 3,
+      "state_revision": 0
+    },
+    "event_sequence": 608,
+    "active_work": null,
+    "held_requests": [],
+    "items": [
+      {
+        "current_version_id": "m06-kite-asset-v1",
+        "description": "Unchanged owner fixture MATERIAL BRIEF only; geometry missing. No geometry claims.",
+        "item_id": "m06-kite-asset",
+        "kind": "asset",
+        "name": "Paper kite - material brief",
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0
+      },
+      {
+        "current_version_id": "m06-kite-board-v2",
+        "description": "Planning-only revision: proposed kite-rise camera arc is counterclockwise. kite-rest, IDs, timing, states, pinned material brief and reference bytes preserved. Dependency impact report included; no production jobs.",
+        "item_id": "m06-kite-board",
+        "kind": "storyboard",
+        "name": "A small lift - storyboard",
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 1
+      }
+    ],
+    "jobs": [],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T14:22:50.995609+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-406eda4d33574896933901756d22317a",
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "receipt": {
+          "native_message_id": "0abcdb55-a0df-4544-a37c-f21663fed449",
+          "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+          "replayed": false,
+          "request_id": "a8e35e02-dbd7-4e5e-a806-ca5f524eee75",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-726838fdea64462aa75fe4b2632d81a8"
+        },
+        "request_id": "a8e35e02-dbd7-4e5e-a806-ca5f524eee75",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "a4a89dcd-5caa-4fdb-9ee7-2dcd7a050f24",
+          "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+          "request_id": "a8e35e02-dbd7-4e5e-a806-ca5f524eee75",
+          "schema_version": "1.0",
+          "text": "Revise only storyboard kite-flight, shot kite-rise, frame kite-rise-middle. Preserve unrelated IDs and report dependency impact. Planning only: no image generation or scene execution.\n\nOwner planning instructions: Change only shot kite-rise's proposed camera arc from clockwise to COUNTERCLOCKWISE. Reflect that change in its camera_intent, relevant motion beats and kite-rise-middle composition. Keep every shot/frame ID, array order and artifact_id unchanged. Keep shot kite-rest byte-equivalent as a JSON value, and preserve the asset dependency, treatment, timing intentions, missing frame states and unresolved inputs. Update only the corresponding first-shot direction in the canonical brief if needed. No creative question is missing. This is planning-only, no children, no Blender/Unity/native authoring, no generation/render/VLM jobs, no service lifecycle, installs or remote effects. Complete this root within 170 seconds.\n\nUse the accepted storyboard skill. Read get_version('m06-kite-board-v1') for immutable metadata and use git show on its source_commit for the old plan and brief. Do not query SQLite or edit .proscenium records. Preserve old sources, owner selections, annotations and the owner material fixture bytes. Use the existing accepted tools/storyboard/plan_tools.py validate and compare helper. Write the deterministic downstream-impact report to reports/kite-flight-impact.json, identifying only kite-rise and its affected frame/image IDs; no existing scene/render IDs exist to regenerate. Do not treat the shared reference bytes as stale geometry or regenerate them.\n\nCheckpoint only the changed plan, corresponding brief and impact report through checkpoint_sources with actual git HEAD. Publish only storyboard version m06-kite-board-v2 on the same item m06-kite-board with expected_current_version_id m06-kite-board-v1, same asset dependency m06-kite-asset/m06-kite-asset-v1 and reference artefact association, and preview_requests []. Use the new checkpoint's exact source_commit/hash receipt and the existing shared contract SourceClosure digest procedure, validate PublicationSubmit before publish_outputs. No asset revision. Report old/new source commit, version/publication IDs, unchanged kite-rest IDs/references, affected downstream identities and explicit zero production job requests. No mandatory stage approval is needed.",
+          "type": "queue"
+        }
+      },
+      {
+        "accepted_at": "2026-11-14T14:15:33.269933+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-a7258531ed7c40d3975c3f969a423aa9",
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "receipt": {
+          "native_message_id": "9148d34e-ddb1-4060-87e9-06f57fa00eb7",
+          "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+          "replayed": false,
+          "request_id": "b199a624-7c77-40a9-bdfd-f0f3ee2cb3cb",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-ed1fa73a697642f38bd180c705ac6a0e"
+        },
+        "request_id": "b199a624-7c77-40a9-bdfd-f0f3ee2cb3cb",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "6009d3d6-5b74-4806-aea7-8994d905cd92",
+          "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+          "request_id": "b199a624-7c77-40a9-bdfd-f0f3ee2cb3cb",
+          "schema_version": "1.0",
+          "text": "Scripted M06 owner brief. Use the accepted storyboard skill and its maintained resources. This is a PLANNING-ONLY request, not production execution. No children, Blender, Unity, rendering, image generation, VLM, model/service lifecycle, installation, purchases, remote push or public uploads. All operations stay inside this active project. Do not query SQLite. Complete this root within 170 seconds; do not ask me for creative input because all material choices below are fixed.\n\nCreate a silent TWO-SHOT paper-kite concept named 'A small lift'. Audience: a quiet 6-second desktop storyboard, warm-paper/soft-sky treatment. No people, dialogue, cast or industrial subjects. Shot IDs are kite-rise and kite-rest. kite-rise proposes a clockwise camera arc during ascent, kite-rest proposes a locked camera while the kite settles. Proposed production duration is 3 seconds per shot at 24 fps, NOT review-card pacing and NOT an already-authored timeline. No scene exists: use null scene_version/source_range/fps and explicitly explain proposed timing in each shot's intent/motion beats and the canonical brief, and list timeline/scene geometry/camera binding as unresolved.\n\nAuthor the canonical brief/treatment in brief/film.md and an EXACT AuthoredShotPlan in storyboards/kite-flight/plan.json with stable plan_id kite-flight and this project's actual project_id from project.json. Both shots require ordered start/intermediate/end frames with IDs <shot_id>-start, <shot_id>-middle, <shot_id>-end. The first shot's three roles may reference the SAME actual owner-uploaded image 34bef859-a4a1-48e3-8749-834aeb958fa7 as an explicitly labelled reference, NOT a generated concept/render; compositions describe desired changes, not claims that new images exist. The second shot's start also references that image, while middle/end remain honestly missing with null artefact IDs. The image is a labelled synthetic owner-supplied reference, 640x360. Get its metadata through get_artifact. No need to create or register an image. Explicitly list all missing concept images, geometry, scene/timeline binding and no unresolved creative decisions. Never add owner_selected or source_commit to authored plan JSON.\n\nThe existing assets/kite/palette.json is an owner fixture MATERIAL BRIEF, not geometry. Keep its exact bytes. Publish it as asset item m06-kite-asset/version m06-kite-asset-v1, with source entry that JSON, empty previews and no geometry claims. Pin it in plan.asset_dependencies and storyboard source.dependencies. Publish the storyboard item m06-kite-board/version m06-kite-board-v1 with name 'A small lift - storyboard'. Both are new heads (expected_current_version_id null). Include the actual uploaded reference in storyboard artifact_ids. This is a source-only publication with preview_requests [] throughout.\n\nUse the installed proscenium.contracts SCHEMA/validate/canonical for exact wire shapes and tools/storyboard/plan_tools.py to validate the authored plan. Build the two SourceClosure objects from actual checkpoint file hashes. Their digest is sha256(canonical(closure_without_digest)), with files sorted by destination and dependencies sorted by item/version. Each Git origin uses this project's repository_id, the actual checkpoint source_commit, real relative path and hash. Validate PublicationSubmit before calling publish_outputs. Do not hand-commit authored outputs: use checkpoint_sources for ONLY brief/film.md, storyboards/kite-flight/plan.json and (unchanged) assets/kite/palette.json, with actual git HEAD as expected_head, then use its exact receipt and publish_outputs. Persist model-facing publication input/receipts into ordinary project reports only if useful; do not edit .proscenium stores. Finish with plan/shot/frame IDs, exact source commit, publication/version IDs, missing inputs and an explicit statement that no production jobs were requested. Proceed autonomously through planning/checkpoint/source publication without stage approvals.\n",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "items": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "current_version_id": "m06-kite-asset-v1",
+        "description": "Unchanged owner fixture MATERIAL BRIEF only; geometry missing. No geometry claims.",
+        "item_id": "m06-kite-asset",
+        "kind": "asset",
+        "name": "Paper kite - material brief",
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0
+      },
+      {
+        "current_version_id": "m06-kite-board-v2",
+        "description": "Planning-only revision: proposed kite-rise camera arc is counterclockwise. kite-rest, IDs, timing, states, pinned material brief and reference bytes preserved. Dependency impact report included; no production jobs.",
+        "item_id": "m06-kite-board",
+        "kind": "storyboard",
+        "name": "A small lift - storyboard",
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 1
+      }
+    ],
+    "next_cursor": null
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  },
+  "selections": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "actor": {
+          "id": "owner-68bc3349-22e5-48e9-9ad0-3b47605c8162",
+          "kind": "user"
+        },
+        "choice": {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "kind": "artifact"
+        },
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "schema_version": "1.0",
+        "selection_id": "59c34c33-a4ec-4095-b7a0-10a901538571",
+        "slot": {
+          "frame_id": "kite-rise-start",
+          "kind": "storyboard_frame",
+          "shot_id": "kite-rise",
+          "storyboard_version": {
+            "item_id": "m06-kite-board",
+            "version_id": "m06-kite-board-v1"
+          }
+        },
+        "state": "selected",
+        "state_revision": 4
+      }
+    ],
+    "next_cursor": null
+  },
+  "annotations": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "annotation_id": "831b81a6-b623-4754-8c64-cfbf39775718",
+        "camera": null,
+        "markup_artifact_id": "37a99dd6-51ce-48ee-9974-eec51e53ffa2",
+        "markups": [
+          {
+            "colour": "#ff5555",
+            "id": "9e21369e-eea7-4a02-8314-5afcaff29ba2",
+            "kind": "pin",
+            "points": [
+              [
+                0.5312500215729102,
+                0.402777796953698
+              ]
+            ],
+            "text": "M06 kite-rise start reference",
+            "width_px": 4
+          }
+        ],
+        "range": null,
+        "saved_revision": 1,
+        "spatial_hits": [],
+        "spatial_status": "unavailable",
+        "target": {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+          "item_id": "m06-kite-board",
+          "media_artifact_id": null,
+          "origin": "reference",
+          "render_job_id": null,
+          "shot_id": "kite-rise",
+          "source_frame": null,
+          "version_id": "m06-kite-board-v1"
+        },
+        "text": "M06 kite-rise / kite-rise-start / start reference. Keep this paper silhouette, plan only; no generation or authored scene is requested."
+      }
+    ],
+    "next_cursor": null
+  },
+  "versions": {
+    "m06-kite-asset": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "call_wFbYlB4gjjrT5bB9x8ITuNTx",
+            "kind": "tool"
+          },
+          "artifact_ids": [],
+          "created_at": "2026-11-14T14:16:48.997369+00:00",
+          "description": "Unchanged owner fixture MATERIAL BRIEF only; geometry missing. No geometry claims.",
+          "item_id": "m06-kite-asset",
+          "kind": "asset",
+          "name": "Paper kite - material brief",
+          "preview_job_ids": [],
+          "preview_requests": [],
+          "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+          "publication_id": "m06-kite-publication-b199a624",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [],
+            "digest": "e21cae08983397300e550c89c6410b6c0f3b433960ed763720b3b1ccd02c2f22",
+            "entry_path": "assets/kite/palette.json",
+            "files": [
+              {
+                "destination": "assets/kite/palette.json",
+                "origin": {
+                  "commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+                  "kind": "git",
+                  "path": "assets/kite/palette.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "68046565f5f8624f945922d459f58acaa17341e0f163672292473ada51083a5a"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "proscenium",
+              "features": [],
+              "version": "1.0"
+            }
+          },
+          "source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+          "version_id": "m06-kite-asset-v1"
+        }
+      ],
+      "next_cursor": null
+    },
+    "m06-kite-board": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "call_wFbYlB4gjjrT5bB9x8ITuNTx",
+            "kind": "tool"
+          },
+          "artifact_ids": [
+            "34bef859-a4a1-48e3-8749-834aeb958fa7"
+          ],
+          "created_at": "2026-11-14T14:16:48.998048+00:00",
+          "description": "Planning-only two-shot storyboard; uploaded synthetic owner reference only, no generated concepts, scene or authored timeline.",
+          "item_id": "m06-kite-board",
+          "kind": "storyboard",
+          "name": "A small lift - storyboard",
+          "preview_job_ids": [],
+          "preview_requests": [],
+          "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+          "publication_id": "m06-kite-publication-b199a624",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [
+              {
+                "item_id": "m06-kite-asset",
+                "version_id": "m06-kite-asset-v1"
+              }
+            ],
+            "digest": "a326201101c79b52e0c6c56580f81875b88539fe021f8c4d34e700990d5608db",
+            "entry_path": "storyboards/kite-flight/plan.json",
+            "files": [
+              {
+                "destination": "brief/film.md",
+                "origin": {
+                  "commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+                  "kind": "git",
+                  "path": "brief/film.md",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "cee1072979a78a100250f7b810243d6eb5927ffbc01bcc84bfdd193dce953233"
+                }
+              },
+              {
+                "destination": "storyboards/kite-flight/plan.json",
+                "origin": {
+                  "commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+                  "kind": "git",
+                  "path": "storyboards/kite-flight/plan.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "bd644f3d0f79e31d8a8c071b9eca250acc13968b7babb2da27318e1b45b52036"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "proscenium",
+              "features": [],
+              "version": "1.0"
+            }
+          },
+          "source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+          "version_id": "m06-kite-board-v1"
+        },
+        {
+          "actor": {
+            "id": "call_HriIkbFr1ADnukPgVb3862gt",
+            "kind": "tool"
+          },
+          "artifact_ids": [
+            "34bef859-a4a1-48e3-8749-834aeb958fa7"
+          ],
+          "created_at": "2026-11-14T14:23:46.651935+00:00",
+          "description": "Planning-only revision: proposed kite-rise camera arc is counterclockwise. kite-rest, IDs, timing, states, pinned material brief and reference bytes preserved. Dependency impact report included; no production jobs.",
+          "item_id": "m06-kite-board",
+          "kind": "storyboard",
+          "name": "A small lift - storyboard",
+          "preview_job_ids": [],
+          "preview_requests": [],
+          "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+          "publication_id": "m06-kite-publication-a8e35e02",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [
+              {
+                "item_id": "m06-kite-asset",
+                "version_id": "m06-kite-asset-v1"
+              }
+            ],
+            "digest": "5533564046367ad5fb118097d2ad4f4d3ac3bf38988be85a6819ff945dcdb727",
+            "entry_path": "storyboards/kite-flight/plan.json",
+            "files": [
+              {
+                "destination": "brief/film.md",
+                "origin": {
+                  "commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+                  "kind": "git",
+                  "path": "brief/film.md",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "fb76c01fcebde95adb6da4ea815d93c848e4acf59b5a3844e1c206387fb3e205"
+                }
+              },
+              {
+                "destination": "reports/kite-flight-impact.json",
+                "origin": {
+                  "commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+                  "kind": "git",
+                  "path": "reports/kite-flight-impact.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "f61b0de6de630fc60640a1cd3e4dfc47428341dd2e30aefb788342d31bd78e12"
+                }
+              },
+              {
+                "destination": "storyboards/kite-flight/plan.json",
+                "origin": {
+                  "commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+                  "kind": "git",
+                  "path": "storyboards/kite-flight/plan.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "4f94264b4454d3bf9f01f73c3861277589ba84f4f45e869e335b32922f39bf8e"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "proscenium",
+              "features": [],
+              "version": "1.0"
+            }
+          },
+          "source_commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+          "version_id": "m06-kite-board-v2"
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  "plans": {
+    "m06-kite-board-v1": {
+      "schema_version": "1.0",
+      "plan_id": "kite-flight",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "treatment": "A small lift: silent two-shot paper-kite concept for a quiet 6-second desktop storyboard; warm-paper/soft-sky treatment, warm ochre paper and slate string. No people, dialogue, cast or industrial subjects. Proposed production timing is 3 seconds per shot at 24 fps, not review-card pacing or an authored timeline. Canonical brief: brief/film.md. The 640x360 labelled synthetic owner-supplied image is reference only, never a new concept, render or geometry.",
+      "brief_artifact_ids": [],
+      "asset_dependencies": [
+        {
+          "item_id": "m06-kite-asset",
+          "version_id": "m06-kite-asset-v1"
+        }
+      ],
+      "shots": [
+        {
+          "shot_id": "kite-rise",
+          "intent": "Let the paper kite gain a small, gentle lift. Propose 3 seconds at 24 fps (72 production frames), not review-card pacing or an authored timeline; no scene exists, so scene_version, source_range and fps remain null.",
+          "camera_intent": "Propose a gentle clockwise camera arc, viewed from above the subject, during ascent. No camera object or scene binding exists.",
+          "motion_beats": [
+            "Proposed 0-1 second at a proposed 24 fps: begin low with a lightly tilted kite and a slack curved string.",
+            "Proposed 1-2 seconds: rise into open sky while the proposed clockwise camera arc reveals a slightly changed paper plane.",
+            "Proposed 2-3 seconds: ease the ascent into a higher pose. These 3 seconds at 24 fps are production intentions only, not source-frame ranges or review-card pacing."
+          ],
+          "frames": [
+            {
+              "frame_id": "kite-rise-start",
+              "role": "start",
+              "composition": "REFERENCE ONLY: reuse the labelled synthetic owner-supplied 640x360 image. Desired start composition: a warm ochre paper kite low in soft sky, slate string curving below, generous negative space above. This is a proposed change, not a newly created concept or render.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": true
+            },
+            {
+              "frame_id": "kite-rise-middle",
+              "role": "intermediate",
+              "composition": "REFERENCE ONLY: the same labelled synthetic owner-supplied 640x360 image, not another image. Desired intermediate composition: kite lifted toward centre, a subtle changed paper angle suggesting the proposed clockwise arc. No changed image, concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rise-end",
+              "role": "end",
+              "composition": "REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired end composition: kite higher with ample soft sky, string gently extended, proposed clockwise arc eased out. No new concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            }
+          ],
+          "scene_version": null,
+          "source_range": null,
+          "fps": null
+        },
+        {
+          "shot_id": "kite-rest",
+          "intent": "Let the lifted kite settle into a quiet hover. Propose 3 seconds at 24 fps (72 production frames), not review-card pacing or an authored timeline; no scene exists, so scene_version, source_range and fps remain null.",
+          "camera_intent": "Propose a locked camera throughout settling, holding the lifted kite against soft sky. No camera object or binding exists.",
+          "motion_beats": [
+            "Proposed 0-1 second at a proposed 24 fps: begin at the lifted pose with a locked camera.",
+            "Proposed 1-2 seconds: let the kite ease slightly downward and the slate string sway softly within the fixed composition.",
+            "Proposed 2-3 seconds: let the motion decay toward stillness. These 3 seconds at 24 fps are production intentions only, not source-frame ranges or review-card pacing."
+          ],
+          "frames": [
+            {
+              "frame_id": "kite-rest-start",
+              "role": "start",
+              "composition": "REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired start composition: lifted warm ochre kite in a locked soft-sky view, continuous in pose with kite-rise-end. No shot-specific concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rest-middle",
+              "role": "intermediate",
+              "composition": "MISSING IMAGE: desired intermediate composition is a slightly lower kite with a small slate-string sway; preserve the proposed locked framing. This describes an unmade concept, not an existing image.",
+              "artifact_id": null,
+              "state": "missing",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rest-end",
+              "role": "end",
+              "composition": "MISSING IMAGE: desired end composition is the kite almost still in a quiet hover against soft sky; preserve the proposed locked framing. No concept image or render exists.",
+              "artifact_id": null,
+              "state": "missing",
+              "owner_selected": false
+            }
+          ],
+          "scene_version": null,
+          "source_range": null,
+          "fps": null
+        }
+      ],
+      "unresolved": [
+        "Missing shot-specific concept images: kite-rise-start, kite-rise-middle, kite-rise-end, kite-rest-start, kite-rest-middle, kite-rest-end. The first four roles have coverage by one reused owner reference only; kite-rest-middle and kite-rest-end have no image and null artifact IDs.",
+        "Missing kite, string and scene geometry. assets/kite/palette.json is an unchanged owner fixture material brief only, not geometry; dependency m06-kite-asset/m06-kite-asset-v1 pins that brief.",
+        "Unresolved scene/timeline binding: no scene version, authored timeline, source ranges or scene fps exist. Proposed duration is 3 seconds per shot at 24 fps, 6 seconds overall, not review-card pacing or an already-authored timeline.",
+        "Unresolved camera binding: neither the proposed clockwise ascent arc nor the proposed locked settling camera is bound to scene cameras.",
+        "No unresolved creative decisions. No additional reference is requested. No production jobs or preview requests are authorised by this planning-only plan."
+      ],
+      "source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6"
+    },
+    "m06-kite-board-v2": {
+      "schema_version": "1.0",
+      "plan_id": "kite-flight",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "treatment": "A small lift: silent two-shot paper-kite concept for a quiet 6-second desktop storyboard; warm-paper/soft-sky treatment, warm ochre paper and slate string. No people, dialogue, cast or industrial subjects. Proposed production timing is 3 seconds per shot at 24 fps, not review-card pacing or an authored timeline. Canonical brief: brief/film.md. The 640x360 labelled synthetic owner-supplied image is reference only, never a new concept, render or geometry.",
+      "brief_artifact_ids": [],
+      "asset_dependencies": [
+        {
+          "item_id": "m06-kite-asset",
+          "version_id": "m06-kite-asset-v1"
+        }
+      ],
+      "shots": [
+        {
+          "shot_id": "kite-rise",
+          "intent": "Let the paper kite gain a small, gentle lift. Propose 3 seconds at 24 fps (72 production frames), not review-card pacing or an authored timeline; no scene exists, so scene_version, source_range and fps remain null.",
+          "camera_intent": "Propose a gentle counterclockwise camera arc, viewed from above the subject, during ascent. No camera object or scene binding exists.",
+          "motion_beats": [
+            "Proposed 0-1 second at a proposed 24 fps: begin low with a lightly tilted kite and a slack curved string.",
+            "Proposed 1-2 seconds: rise into open sky while the proposed counterclockwise camera arc reveals a slightly changed paper plane.",
+            "Proposed 2-3 seconds: ease the ascent into a higher pose. These 3 seconds at 24 fps are production intentions only, not source-frame ranges or review-card pacing."
+          ],
+          "frames": [
+            {
+              "frame_id": "kite-rise-start",
+              "role": "start",
+              "composition": "REFERENCE ONLY: reuse the labelled synthetic owner-supplied 640x360 image. Desired start composition: a warm ochre paper kite low in soft sky, slate string curving below, generous negative space above. This is a proposed change, not a newly created concept or render.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rise-middle",
+              "role": "intermediate",
+              "composition": "REFERENCE ONLY: the same labelled synthetic owner-supplied 640x360 image, not another image. Desired intermediate composition: kite lifted toward centre, a subtle changed paper angle suggesting the proposed counterclockwise arc. No changed image, concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rise-end",
+              "role": "end",
+              "composition": "REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired end composition: kite higher with ample soft sky, string gently extended, proposed counterclockwise arc eased out. No new concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            }
+          ],
+          "scene_version": null,
+          "source_range": null,
+          "fps": null
+        },
+        {
+          "shot_id": "kite-rest",
+          "intent": "Let the lifted kite settle into a quiet hover. Propose 3 seconds at 24 fps (72 production frames), not review-card pacing or an authored timeline; no scene exists, so scene_version, source_range and fps remain null.",
+          "camera_intent": "Propose a locked camera throughout settling, holding the lifted kite against soft sky. No camera object or binding exists.",
+          "motion_beats": [
+            "Proposed 0-1 second at a proposed 24 fps: begin at the lifted pose with a locked camera.",
+            "Proposed 1-2 seconds: let the kite ease slightly downward and the slate string sway softly within the fixed composition.",
+            "Proposed 2-3 seconds: let the motion decay toward stillness. These 3 seconds at 24 fps are production intentions only, not source-frame ranges or review-card pacing."
+          ],
+          "frames": [
+            {
+              "frame_id": "kite-rest-start",
+              "role": "start",
+              "composition": "REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired start composition: lifted warm ochre kite in a locked soft-sky view, continuous in pose with kite-rise-end. No shot-specific concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rest-middle",
+              "role": "intermediate",
+              "composition": "MISSING IMAGE: desired intermediate composition is a slightly lower kite with a small slate-string sway; preserve the proposed locked framing. This describes an unmade concept, not an existing image.",
+              "artifact_id": null,
+              "state": "missing",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rest-end",
+              "role": "end",
+              "composition": "MISSING IMAGE: desired end composition is the kite almost still in a quiet hover against soft sky; preserve the proposed locked framing. No concept image or render exists.",
+              "artifact_id": null,
+              "state": "missing",
+              "owner_selected": false
+            }
+          ],
+          "scene_version": null,
+          "source_range": null,
+          "fps": null
+        }
+      ],
+      "unresolved": [
+        "Missing shot-specific concept images: kite-rise-start, kite-rise-middle, kite-rise-end, kite-rest-start, kite-rest-middle, kite-rest-end. The first four roles have coverage by one reused owner reference only; kite-rest-middle and kite-rest-end have no image and null artifact IDs.",
+        "Missing kite, string and scene geometry. assets/kite/palette.json is an unchanged owner fixture material brief only, not geometry; dependency m06-kite-asset/m06-kite-asset-v1 pins that brief.",
+        "Unresolved scene/timeline binding: no scene version, authored timeline, source ranges or scene fps exist. Proposed duration is 3 seconds per shot at 24 fps, 6 seconds overall, not review-card pacing or an already-authored timeline.",
+        "Unresolved camera binding: neither the proposed counterclockwise ascent arc nor the proposed locked settling camera is bound to scene cameras.",
+        "No unresolved creative decisions. No additional reference is requested. No production jobs or preview requests are authorised by this planning-only plan."
+      ],
+      "source_commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d"
+    }
+  },
+  "contexts": {
+    "a4a89dcd-5caa-4fdb-9ee7-2dcd7a050f24": {
+      "annotations": [],
+      "approved_findings": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference",
+          "use": "kite-rise / kite-rise-middle / intermediate: REFERENCE ONLY: the same labelled synthetic owner-supplied 640x360 image, not another image. Desired intermediate composition: kite lifted toward centre, a subtle changed paper angle suggesting the proposed clockwise arc. No changed image, concept or render exists."
+        }
+      ],
+      "camera": null,
+      "captured_at": "2026-11-14T14:22:50.968Z",
+      "context_id": "a4a89dcd-5caa-4fdb-9ee7-2dcd7a050f24",
+      "item_id": "m06-kite-board",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "range": null,
+      "schema_version": "1.0",
+      "selected_objects": [],
+      "target": {
+        "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+        "item_id": "m06-kite-board",
+        "media_artifact_id": null,
+        "origin": "reference",
+        "render_job_id": null,
+        "shot_id": "kite-rise",
+        "source_frame": null,
+        "version_id": "m06-kite-board-v1"
+      },
+      "version_id": "m06-kite-board-v1",
+      "view_mode": "keyframes"
+    },
+    "6009d3d6-5b74-4806-aea7-8994d905cd92": {
+      "annotations": [],
+      "approved_findings": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference"
+        }
+      ],
+      "camera": null,
+      "captured_at": "2026-11-14T14:15:33.236Z",
+      "context_id": "6009d3d6-5b74-4806-aea7-8994d905cd92",
+      "item_id": null,
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "range": null,
+      "schema_version": "1.0",
+      "selected_objects": [],
+      "target": null,
+      "version_id": null,
+      "view_mode": "keyframes"
+    }
+  },
+  "artifacts": {
+    "34bef859-a4a1-48e3-8749-834aeb958fa7": {
+      "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+      "bytes": 5327,
+      "derived_from": [],
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "kind": "image",
+      "media_type": "image/png",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "purpose": "reference",
+      "schema_version": "1.0",
+      "sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+      "state": "ready"
+    },
+    "37a99dd6-51ce-48ee-9974-eec51e53ffa2": {
+      "artifact_id": "37a99dd6-51ce-48ee-9974-eec51e53ffa2",
+      "bytes": 16208,
+      "derived_from": [],
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "kind": "image",
+      "media_type": "image/png",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "purpose": "reference",
+      "schema_version": "1.0",
+      "sha256": "ea43fc1e2ff636bb1043cc374d89e5a8dfa99d359b7d2c314233e2eae2ff220f",
+      "state": "ready"
+    }
+  },
+  "view": {
+    "context": {
+      "item_id": "m06-kite-board",
+      "version_id": "m06-kite-board-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+        "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "shot_id": "kite-rise",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference",
+          "use": "kite-rise / kite-rise-start / start: REFERENCE ONLY: reuse the labelled synthetic owner-supplied 640x360 image. Desired start composition: a warm ochre paper kite low in soft sky, slate string curving below, generous negative space above. This is a proposed change, not a newly created concept or render."
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "browser": "159.0.8154.6"
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "native_event_id": "9bbf065c-2d7c-427d-9042-4597691e3423",
+    "type": "user.message",
+    "timestamp": "2026-11-14T14:15:39.336Z",
+    "content": "Scripted M06 owner brief. Use the accepted storyboard skill and its maintained resources. This is a PLANNING-ONLY request, not production execution. No children, Blender, Unity, rendering, image generation, VLM, model/service lifecycle, installation, purchases, remote push or public uploads. All operations stay inside this active project. Do not query SQLite. Complete this root within 170 seconds; do not ask me for creative input because all material choices below are fixed.\n\nCreate a silent TWO-SHOT paper-kite concept named 'A small lift'. Audience: a quiet 6-second desktop storyboard, warm-paper/soft-sky treatment. No people, dialogue, cast or industrial subjects. Shot IDs are kite-rise and kite-rest. kite-rise proposes a clockwise camera arc during ascent, kite-rest proposes a locked camera while the kite settles. Proposed production duration is 3 seconds per shot at 24 fps, NOT review-card pacing and NOT an already-authored timeline. No scene exists: use null scene_version/source_range/fps and explicitly explain proposed timing in each shot's intent/motion beats and the canonical brief, and list timeline/scene geometry/camera binding as unresolved.\n\nAuthor the canonical brief/treatment in brief/film.md and an EXACT AuthoredShotPlan in storyboards/kite-flight/plan.json with stable plan_id kite-flight and this project's actual project_id from project.json. Both shots require ordered start/intermediate/end frames with IDs <shot_id>-start, <shot_id>-middle, <shot_id>-end. The first shot's three roles may reference the SAME actual owner-uploaded image 34bef859-a4a1-48e3-8749-834aeb958fa7 as an explicitly labelled reference, NOT a generated concept/render; compositions describe desired changes, not claims that new images exist. The second shot's start also references that image, while middle/end remain honestly missing with null artefact IDs. The image is a labelled synthetic owner-supplied reference, 640x360. Get its metadata through get_artifact. No need to create or register an image. Explicitly list all missing concept images, geometry, scene/timeline binding and no unresolved creative decisions. Never add owner_selected or source_commit to authored plan JSON.\n\nThe existing assets/kite/palette.json is an owner fixture MATERIAL BRIEF, not geometry. Keep its exact bytes. Publish it as asset item m06-kite-asset/version m06-kite-asset-v1, with source entry that JSON, empty previews and no geometry claims. Pin it in plan.asset_dependencies and storyboard source.dependencies. Publish the storyboard item m06-kite-board/version m06-kite-board-v1 with name 'A small lift - storyboard'. Both are new heads (expected_current_version_id null). Include the actual uploaded reference in storyboard artifact_ids. This is a source-only publication with preview_requests [] throughout.\n\nUse the installed proscenium.contracts SCHEMA/validate/canonical for exact wire shapes and tools/storyboard/plan_tools.py to validate the authored plan. Build the two SourceClosure objects from actual checkpoint file hashes. Their digest is sha256(canonical(closure_without_digest)), with files sorted by destination and dependencies sorted by item/version. Each Git origin uses this project's repository_id, the actual checkpoint source_commit, real relative path and hash. Validate PublicationSubmit before calling publish_outputs. Do not hand-commit authored outputs: use checkpoint_sources for ONLY brief/film.md, storyboards/kite-flight/plan.json and (unchanged) assets/kite/palette.json, with actual git HEAD as expected_head, then use its exact receipt and publish_outputs. Persist model-facing publication input/receipts into ordinary project reports only if useful; do not edit .proscenium stores. Finish with plan/shot/frame IDs, exact source commit, publication/version IDs, missing inputs and an explicit statement that no production jobs were requested. Proceed autonomously through planning/checkpoint/source publication without stage approvals.\n"
+  },
+  {
+    "native_event_id": "b30acb48-ee10-4eb9-9894-15d15403af52",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:15:42.671Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "a6fbb512-f0fe-4a70-8c9e-7c70b50b7751",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:15:48.388Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "49ed334c-e3c3-4ba3-8199-ce2008f3d7e2",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:15:51.168Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "bae92b46-66d7-40c3-926c-458ddd742ad4",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:15:55.679Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "d965ddbb-0de9-48b4-93d4-c3cead3d1196",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:16:23.439Z",
+    "content": "I\u2019ll keep all timing and camera motion explicitly proposed, preserve the material fixture unchanged, and publish only the planning sources and uploaded reference association.\n"
+  },
+  {
+    "native_event_id": "f0684919-42b4-433f-ae60-77efd4f00937",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:16:26.231Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "d4214c8e-5e5c-402c-a606-454432c4a5b8",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:16:29.766Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "702820d5-f222-46f9-b22a-939d5f73e1d1",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:16:37.260Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "561ddad4-2498-4fd9-be09-94b101d9151a",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:16:46.467Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "cc6c4d9e-95cf-4b66-bc40-a20db55d1583",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:16:53.441Z",
+    "content": "Published **A small lift - storyboard**, with canonical brief `brief/film.md` and plan `storyboards/kite-flight/plan.json`.\n\n- **Plan:** `kite-flight`\n- **Shots:** `kite-rise`, `kite-rest`\n- **Frames:** `kite-rise-start`, `kite-rise-middle`, `kite-rise-end`, `kite-rest-start`, `kite-rest-middle`, `kite-rest-end`\n- **Source commit:** `6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6`\n- **Publication:** `m06-kite-publication-b199a624`\n- **Versions:** `m06-kite-asset-v1`, `m06-kite-board-v1`\n\nThe material fixture is unchanged. Missing: all six shot-specific concepts, geometry, scene/timeline and camera bindings; two frames have no image at all. No unresolved creative decisions. Timing remains proposed.\n\n**No production jobs were requested; preview requests are empty.**"
+  },
+  {
+    "native_event_id": "015d0825-f123-4da9-8477-dfaf587a5d49",
+    "type": "user.message",
+    "timestamp": "2026-11-14T14:22:51.128Z",
+    "content": "Revise only storyboard kite-flight, shot kite-rise, frame kite-rise-middle. Preserve unrelated IDs and report dependency impact. Planning only: no image generation or scene execution.\n\nOwner planning instructions: Change only shot kite-rise's proposed camera arc from clockwise to COUNTERCLOCKWISE. Reflect that change in its camera_intent, relevant motion beats and kite-rise-middle composition. Keep every shot/frame ID, array order and artifact_id unchanged. Keep shot kite-rest byte-equivalent as a JSON value, and preserve the asset dependency, treatment, timing intentions, missing frame states and unresolved inputs. Update only the corresponding first-shot direction in the canonical brief if needed. No creative question is missing. This is planning-only, no children, no Blender/Unity/native authoring, no generation/render/VLM jobs, no service lifecycle, installs or remote effects. Complete this root within 170 seconds.\n\nUse the accepted storyboard skill. Read get_version('m06-kite-board-v1') for immutable metadata and use git show on its source_commit for the old plan and brief. Do not query SQLite or edit .proscenium records. Preserve old sources, owner selections, annotations and the owner material fixture bytes. Use the existing accepted tools/storyboard/plan_tools.py validate and compare helper. Write the deterministic downstream-impact report to reports/kite-flight-impact.json, identifying only kite-rise and its affected frame/image IDs; no existing scene/render IDs exist to regenerate. Do not treat the shared reference bytes as stale geometry or regenerate them.\n\nCheckpoint only the changed plan, corresponding brief and impact report through checkpoint_sources with actual git HEAD. Publish only storyboard version m06-kite-board-v2 on the same item m06-kite-board with expected_current_version_id m06-kite-board-v1, same asset dependency m06-kite-asset/m06-kite-asset-v1 and reference artefact association, and preview_requests []. Use the new checkpoint's exact source_commit/hash receipt and the existing shared contract SourceClosure digest procedure, validate PublicationSubmit before publish_outputs. No asset revision. Report old/new source commit, version/publication IDs, unchanged kite-rest IDs/references, affected downstream identities and explicit zero production job requests. No mandatory stage approval is needed."
+  },
+  {
+    "native_event_id": "48e71107-310a-46e1-a0bc-d560a0b14aa6",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:22:56.265Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "fd562426-1079-4146-be40-d070174e606e",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:05.515Z",
+    "content": "I\u2019ll revise the ascent arc to counterclockwise, preserve the pinned reference and resting shot, and publish a source-only revision with a dependency-impact report.\n"
+  },
+  {
+    "native_event_id": "1082c741-7e99-4422-b935-e98d2484b3d7",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:11.040Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "bd725d7a-4c9b-4126-9800-6deaa75ed431",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:21.097Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "5c4ead5e-10c8-4410-b2cd-9116ee606440",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:28.545Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "40cc6a33-5e2c-45b8-bf6e-7c8316df2630",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:32.376Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "62c10e2f-2aca-4320-826b-e0024f1b4af7",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:38.793Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "5554aa12-58cb-4e4e-80a1-cd050ddb3603",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:45.541Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "ff326070-ae23-4878-bc2e-e343b2ae0532",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T14:23:51.026Z",
+    "content": "Published **`m06-kite-board-v2`** with the proposed `kite-rise` arc changed to **counterclockwise**.\n\n- **Publication:** `m06-kite-publication-a8e35e02`\n- **Old commit:** `6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6`\n- **New commit:** `97f983056b06a3692a40ce2db8fe24e2eeb26e3d`\n- **Impact report:** `reports/kite-flight-impact.json`\n\nImpact is limited to `kite-rise` and its `start`, `middle`, and `end` frame IDs. Shared reference `34bef859-a4a1-48e3-8749-834aeb958fa7` remains unchanged\u2014not invalidated or regenerated.\n\n`kite-rest` is unchanged as a JSON value, including `kite-rest-start/middle/end` and their reference/null associations. All IDs, ordering, timing, missing states and the pinned asset version remain preserved.\n\n**Zero production job requests; no previews or asset revision.**"
+  }
+]

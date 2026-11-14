@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+  "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+  "kind": "image",
+  "purpose": "reference",
+  "sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+  "bytes": 5327,
+  "media_type": "image/png",
+  "state": "ready",
+  "derived_from": [],
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  }
+}

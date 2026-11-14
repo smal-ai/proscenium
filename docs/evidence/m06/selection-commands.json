@@ -1,0 +1,83 @@
+[
+  {
+    "schema_version": "1.0",
+    "operation_id": "133dce6c-e35f-4f80-8ae1-99c583ba90d0",
+    "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+    "selection_id": "59c34c33-a4ec-4095-b7a0-10a901538571",
+    "expected_revision": 0,
+    "slot": {
+      "kind": "storyboard_frame",
+      "storyboard_version": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1"
+      },
+      "shot_id": "kite-rise",
+      "frame_id": "kite-rise-start"
+    },
+    "choice": {
+      "kind": "artifact",
+      "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7"
+    },
+    "action": "select"
+  },
+  {
+    "schema_version": "1.0",
+    "operation_id": "f1b7abe7-d3df-49f3-a7df-acff512d78e3",
+    "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+    "selection_id": "59c34c33-a4ec-4095-b7a0-10a901538571",
+    "expected_revision": 1,
+    "slot": {
+      "kind": "storyboard_frame",
+      "storyboard_version": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1"
+      },
+      "shot_id": "kite-rise",
+      "frame_id": "kite-rise-start"
+    },
+    "choice": {
+      "kind": "artifact",
+      "artifact_id": "7f5a2f7f-e09e-4a29-9987-e17d38f4addc"
+    },
+    "action": "select"
+  },
+  {
+    "schema_version": "1.0",
+    "operation_id": "9ea08f8f-63b4-4ed6-aa4e-66173d48b39b",
+    "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+    "selection_id": "59c34c33-a4ec-4095-b7a0-10a901538571",
+    "expected_revision": 2,
+    "slot": {
+      "kind": "storyboard_frame",
+      "storyboard_version": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1"
+      },
+      "shot_id": "kite-rise",
+      "frame_id": "kite-rise-start"
+    },
+    "choice": null,
+    "action": "withdraw"
+  },
+  {
+    "schema_version": "1.0",
+    "operation_id": "a566c3c7-67dc-4b33-bc96-16b7310e303d",
+    "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+    "selection_id": "59c34c33-a4ec-4095-b7a0-10a901538571",
+    "expected_revision": 3,
+    "slot": {
+      "kind": "storyboard_frame",
+      "storyboard_version": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1"
+      },
+      "shot_id": "kite-rise",
+      "frame_id": "kite-rise-start"
+    },
+    "choice": {
+      "kind": "artifact",
+      "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7"
+    },
+    "action": "select"
+  }
+]

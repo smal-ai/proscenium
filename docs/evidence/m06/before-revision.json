@@ -1,0 +1,186 @@
+{
+  "selections": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "actor": {
+          "id": "owner-68bc3349-22e5-48e9-9ad0-3b47605c8162",
+          "kind": "user"
+        },
+        "choice": {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "kind": "artifact"
+        },
+        "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+        "schema_version": "1.0",
+        "selection_id": "59c34c33-a4ec-4095-b7a0-10a901538571",
+        "slot": {
+          "frame_id": "kite-rise-start",
+          "kind": "storyboard_frame",
+          "shot_id": "kite-rise",
+          "storyboard_version": {
+            "item_id": "m06-kite-board",
+            "version_id": "m06-kite-board-v1"
+          }
+        },
+        "state": "selected",
+        "state_revision": 4
+      }
+    ],
+    "next_cursor": null
+  },
+  "annotations": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "annotation_id": "831b81a6-b623-4754-8c64-cfbf39775718",
+        "camera": null,
+        "markup_artifact_id": "37a99dd6-51ce-48ee-9974-eec51e53ffa2",
+        "markups": [
+          {
+            "colour": "#ff5555",
+            "id": "9e21369e-eea7-4a02-8314-5afcaff29ba2",
+            "kind": "pin",
+            "points": [
+              [
+                0.5312500215729102,
+                0.402777796953698
+              ]
+            ],
+            "text": "M06 kite-rise start reference",
+            "width_px": 4
+          }
+        ],
+        "range": null,
+        "saved_revision": 1,
+        "spatial_hits": [],
+        "spatial_status": "unavailable",
+        "target": {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+          "item_id": "m06-kite-board",
+          "media_artifact_id": null,
+          "origin": "reference",
+          "render_job_id": null,
+          "shot_id": "kite-rise",
+          "source_frame": null,
+          "version_id": "m06-kite-board-v1"
+        },
+        "text": "M06 kite-rise / kite-rise-start / start reference. Keep this paper silhouette, plan only; no generation or authored scene is requested."
+      }
+    ],
+    "next_cursor": null
+  },
+  "plans": {
+    "m06-kite-board-v1": {
+      "schema_version": "1.0",
+      "plan_id": "kite-flight",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "treatment": "A small lift: silent two-shot paper-kite concept for a quiet 6-second desktop storyboard; warm-paper/soft-sky treatment, warm ochre paper and slate string. No people, dialogue, cast or industrial subjects. Proposed production timing is 3 seconds per shot at 24 fps, not review-card pacing or an authored timeline. Canonical brief: brief/film.md. The 640x360 labelled synthetic owner-supplied image is reference only, never a new concept, render or geometry.",
+      "brief_artifact_ids": [],
+      "asset_dependencies": [
+        {
+          "item_id": "m06-kite-asset",
+          "version_id": "m06-kite-asset-v1"
+        }
+      ],
+      "shots": [
+        {
+          "shot_id": "kite-rise",
+          "intent": "Let the paper kite gain a small, gentle lift. Propose 3 seconds at 24 fps (72 production frames), not review-card pacing or an authored timeline; no scene exists, so scene_version, source_range and fps remain null.",
+          "camera_intent": "Propose a gentle clockwise camera arc, viewed from above the subject, during ascent. No camera object or scene binding exists.",
+          "motion_beats": [
+            "Proposed 0-1 second at a proposed 24 fps: begin low with a lightly tilted kite and a slack curved string.",
+            "Proposed 1-2 seconds: rise into open sky while the proposed clockwise camera arc reveals a slightly changed paper plane.",
+            "Proposed 2-3 seconds: ease the ascent into a higher pose. These 3 seconds at 24 fps are production intentions only, not source-frame ranges or review-card pacing."
+          ],
+          "frames": [
+            {
+              "frame_id": "kite-rise-start",
+              "role": "start",
+              "composition": "REFERENCE ONLY: reuse the labelled synthetic owner-supplied 640x360 image. Desired start composition: a warm ochre paper kite low in soft sky, slate string curving below, generous negative space above. This is a proposed change, not a newly created concept or render.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": true
+            },
+            {
+              "frame_id": "kite-rise-middle",
+              "role": "intermediate",
+              "composition": "REFERENCE ONLY: the same labelled synthetic owner-supplied 640x360 image, not another image. Desired intermediate composition: kite lifted toward centre, a subtle changed paper angle suggesting the proposed clockwise arc. No changed image, concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rise-end",
+              "role": "end",
+              "composition": "REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired end composition: kite higher with ample soft sky, string gently extended, proposed clockwise arc eased out. No new concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            }
+          ],
+          "scene_version": null,
+          "source_range": null,
+          "fps": null
+        },
+        {
+          "shot_id": "kite-rest",
+          "intent": "Let the lifted kite settle into a quiet hover. Propose 3 seconds at 24 fps (72 production frames), not review-card pacing or an authored timeline; no scene exists, so scene_version, source_range and fps remain null.",
+          "camera_intent": "Propose a locked camera throughout settling, holding the lifted kite against soft sky. No camera object or binding exists.",
+          "motion_beats": [
+            "Proposed 0-1 second at a proposed 24 fps: begin at the lifted pose with a locked camera.",
+            "Proposed 1-2 seconds: let the kite ease slightly downward and the slate string sway softly within the fixed composition.",
+            "Proposed 2-3 seconds: let the motion decay toward stillness. These 3 seconds at 24 fps are production intentions only, not source-frame ranges or review-card pacing."
+          ],
+          "frames": [
+            {
+              "frame_id": "kite-rest-start",
+              "role": "start",
+              "composition": "REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired start composition: lifted warm ochre kite in a locked soft-sky view, continuous in pose with kite-rise-end. No shot-specific concept or render exists.",
+              "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+              "state": "available",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rest-middle",
+              "role": "intermediate",
+              "composition": "MISSING IMAGE: desired intermediate composition is a slightly lower kite with a small slate-string sway; preserve the proposed locked framing. This describes an unmade concept, not an existing image.",
+              "artifact_id": null,
+              "state": "missing",
+              "owner_selected": false
+            },
+            {
+              "frame_id": "kite-rest-end",
+              "role": "end",
+              "composition": "MISSING IMAGE: desired end composition is the kite almost still in a quiet hover against soft sky; preserve the proposed locked framing. No concept image or render exists.",
+              "artifact_id": null,
+              "state": "missing",
+              "owner_selected": false
+            }
+          ],
+          "scene_version": null,
+          "source_range": null,
+          "fps": null
+        }
+      ],
+      "unresolved": [
+        "Missing shot-specific concept images: kite-rise-start, kite-rise-middle, kite-rise-end, kite-rest-start, kite-rest-middle, kite-rest-end. The first four roles have coverage by one reused owner reference only; kite-rest-middle and kite-rest-end have no image and null artifact IDs.",
+        "Missing kite, string and scene geometry. assets/kite/palette.json is an unchanged owner fixture material brief only, not geometry; dependency m06-kite-asset/m06-kite-asset-v1 pins that brief.",
+        "Unresolved scene/timeline binding: no scene version, authored timeline, source ranges or scene fps exist. Proposed duration is 3 seconds per shot at 24 fps, 6 seconds overall, not review-card pacing or an already-authored timeline.",
+        "Unresolved camera binding: neither the proposed clockwise ascent arc nor the proposed locked settling camera is bound to scene cameras.",
+        "No unresolved creative decisions. No additional reference is requested. No production jobs or preview requests are authorised by this planning-only plan."
+      ],
+      "source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6"
+    }
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  }
+}

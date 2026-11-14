@@ -1,0 +1,203 @@
+[
+  {
+    "invocation_id": "7d3dec2267a639466aabc8b6a341bea3b8633bd3d148270b75c4b97b06d5d635",
+    "native_session_id": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+    "receipt": {
+      "event_sequence": 368,
+      "job_ids": [],
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "publication_id": "m06-kite-publication-a8e35e02",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "m06-kite-board",
+          "version_id": "m06-kite-board-v2"
+        }
+      ]
+    },
+    "request_id": "a8e35e02-dbd7-4e5e-a806-ca5f524eee75",
+    "submission": {
+      "items": [
+        {
+          "artifact_ids": [
+            "34bef859-a4a1-48e3-8749-834aeb958fa7"
+          ],
+          "description": "Planning-only revision: proposed kite-rise camera arc is counterclockwise. kite-rest, IDs, timing, states, pinned material brief and reference bytes preserved. Dependency impact report included; no production jobs.",
+          "expected_current_version_id": "m06-kite-board-v1",
+          "item_id": "m06-kite-board",
+          "kind": "storyboard",
+          "name": "A small lift - storyboard",
+          "preview_requests": [],
+          "source": {
+            "dependencies": [
+              {
+                "item_id": "m06-kite-asset",
+                "version_id": "m06-kite-asset-v1"
+              }
+            ],
+            "digest": "5533564046367ad5fb118097d2ad4f4d3ac3bf38988be85a6819ff945dcdb727",
+            "entry_path": "storyboards/kite-flight/plan.json",
+            "files": [
+              {
+                "destination": "brief/film.md",
+                "origin": {
+                  "commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+                  "kind": "git",
+                  "path": "brief/film.md",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "fb76c01fcebde95adb6da4ea815d93c848e4acf59b5a3844e1c206387fb3e205"
+                }
+              },
+              {
+                "destination": "reports/kite-flight-impact.json",
+                "origin": {
+                  "commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+                  "kind": "git",
+                  "path": "reports/kite-flight-impact.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "f61b0de6de630fc60640a1cd3e4dfc47428341dd2e30aefb788342d31bd78e12"
+                }
+              },
+              {
+                "destination": "storyboards/kite-flight/plan.json",
+                "origin": {
+                  "commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+                  "kind": "git",
+                  "path": "storyboards/kite-flight/plan.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "4f94264b4454d3bf9f01f73c3861277589ba84f4f45e869e335b32922f39bf8e"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "proscenium",
+              "features": [],
+              "version": "1.0"
+            }
+          },
+          "source_commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+          "version_id": "m06-kite-board-v2"
+        }
+      ],
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "publication_id": "m06-kite-publication-a8e35e02",
+      "schema_version": "1.0"
+    },
+    "work_id": "work-726838fdea64462aa75fe4b2632d81a8"
+  },
+  {
+    "invocation_id": "ef9e1837ceb693d35869dcd9e1f8e236f181d1f43df4478fbf7dec7b35bd1245",
+    "native_session_id": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+    "receipt": {
+      "event_sequence": 80,
+      "job_ids": [],
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "publication_id": "m06-kite-publication-b199a624",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "m06-kite-asset",
+          "version_id": "m06-kite-asset-v1"
+        },
+        {
+          "item_id": "m06-kite-board",
+          "version_id": "m06-kite-board-v1"
+        }
+      ]
+    },
+    "request_id": "b199a624-7c77-40a9-bdfd-f0f3ee2cb3cb",
+    "submission": {
+      "items": [
+        {
+          "artifact_ids": [],
+          "description": "Unchanged owner fixture MATERIAL BRIEF only; geometry missing. No geometry claims.",
+          "expected_current_version_id": null,
+          "item_id": "m06-kite-asset",
+          "kind": "asset",
+          "name": "Paper kite - material brief",
+          "preview_requests": [],
+          "source": {
+            "dependencies": [],
+            "digest": "e21cae08983397300e550c89c6410b6c0f3b433960ed763720b3b1ccd02c2f22",
+            "entry_path": "assets/kite/palette.json",
+            "files": [
+              {
+                "destination": "assets/kite/palette.json",
+                "origin": {
+                  "commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+                  "kind": "git",
+                  "path": "assets/kite/palette.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "68046565f5f8624f945922d459f58acaa17341e0f163672292473ada51083a5a"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "proscenium",
+              "features": [],
+              "version": "1.0"
+            }
+          },
+          "source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+          "version_id": "m06-kite-asset-v1"
+        },
+        {
+          "artifact_ids": [
+            "34bef859-a4a1-48e3-8749-834aeb958fa7"
+          ],
+          "description": "Planning-only two-shot storyboard; uploaded synthetic owner reference only, no generated concepts, scene or authored timeline.",
+          "expected_current_version_id": null,
+          "item_id": "m06-kite-board",
+          "kind": "storyboard",
+          "name": "A small lift - storyboard",
+          "preview_requests": [],
+          "source": {
+            "dependencies": [
+              {
+                "item_id": "m06-kite-asset",
+                "version_id": "m06-kite-asset-v1"
+              }
+            ],
+            "digest": "a326201101c79b52e0c6c56580f81875b88539fe021f8c4d34e700990d5608db",
+            "entry_path": "storyboards/kite-flight/plan.json",
+            "files": [
+              {
+                "destination": "brief/film.md",
+                "origin": {
+                  "commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+                  "kind": "git",
+                  "path": "brief/film.md",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "cee1072979a78a100250f7b810243d6eb5927ffbc01bcc84bfdd193dce953233"
+                }
+              },
+              {
+                "destination": "storyboards/kite-flight/plan.json",
+                "origin": {
+                  "commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+                  "kind": "git",
+                  "path": "storyboards/kite-flight/plan.json",
+                  "repository_id": "repository-4a2f37fb-e407-4dfc-9db0-ecd60be49698",
+                  "sha256": "bd644f3d0f79e31d8a8c071b9eca250acc13968b7babb2da27318e1b45b52036"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "proscenium",
+              "features": [],
+              "version": "1.0"
+            }
+          },
+          "source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+          "version_id": "m06-kite-board-v1"
+        }
+      ],
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "publication_id": "m06-kite-publication-b199a624",
+      "schema_version": "1.0"
+    },
+    "work_id": "work-ed1fa73a697642f38bd180c705ac6a0e"
+  }
+]

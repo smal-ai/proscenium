@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+
+export async function finalReview({page,root,save,collect,get}){
+  const project=(await get('/api/v1/projects')).items[0];
+  const p=`/api/v1/projects/${project.project_id}`;
+  const before=await collect('published-v2-pinned-v1');
+  assert.equal(before.view.context.version_id,'m06-kite-board-v1');
+  assert.equal(before.selections.items[0].slot.storyboard_version.version_id,'m06-kite-board-v1');
+  assert.equal(before.annotations.items.length,1);
+  assert.equal(before.jobs.items.length,0);
+  await page.getByLabel('Storyboard version',{exact:true}).selectOption('m06-kite-board-v2');
+  await page.locator('.sb-frame').first().waitFor();
+  assert.match(await page.locator('.sb-frame').first().innerText(),/owner_selected: no/);
+  await page.locator('.sb-frame').nth(1).click();
+  await page.waitForTimeout(300);
+  const after=await collect('v2-review');
+  assert.equal(after.view.context.version_id,'m06-kite-board-v2');
+  assert.ok(after.contexts[after.requests.items.find(r=>r.submission.text.includes('Owner planning instructions:')).submission.context_id].attachments.some(a=>a.use?.includes('kite-rise-middle / intermediate')));
+  await page.screenshot({path:`${root}/revised-plan.png`});
+  await page.locator('.sb-frame').nth(5).scrollIntoViewIfNeeded();
+  assert.match(await page.locator('.sb-frame').nth(5).innerText(),/Image missing/);
+  await page.screenshot({path:`${root}/missing-frames.png`});
+  await page.getByLabel('Storyboard version',{exact:true}).selectOption('m06-kite-board-v1');
+  await page.locator('.sb-frame').first().waitFor();
+  assert.match(await page.locator('.sb-frame').first().innerText(),/owner_selected: yes/);
+  await page.locator('.sb-frame').first().click();
+  await page.getByText('Saved annotations and local drafts',{exact:true}).click();
+  await page.getByRole('button',{name:/M06 kite-rise \/ kite-rise-start \/ start reference.*saved/}).click();
+  await page.getByLabel('Feedback',{exact:true}).waitFor();
+  await page.screenshot({path:`${root}/retained-annotation-v1.png`});
+  await page.getByRole('button',{name:'Close draft',exact:true}).click();
+  const count=(await get(`${p}/requests`)).items.length;
+  await page.reload();await page.getByRole('button',{name:'Shots',exact:true}).click();
+  await page.locator('.sb-frame').first().waitFor();
+  await page.locator('.sb-frame').first().click();
+  const final=await collect('final');
+  assert.equal((await get(`${p}/requests`)).items.length,count);
+  assert.equal(count,2);assert.equal(final.jobs.items.length,0);
+  assert.deepEqual(final.selections.items,before.selections.items);
+  assert.deepEqual(final.annotations.items,before.annotations.items);
+  await save('reopen-observation',{requests_before:count,requests_after:final.requests.items.length,jobs:final.jobs.items.length,automatic_resume_sent:false,viewport:final.view.viewport});
+  await page.screenshot({path:`${root}/final-full-hd.png`});
+}

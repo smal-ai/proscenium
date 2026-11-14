@@ -1,0 +1,30 @@
+{
+  "status": "remaining",
+  "scope_owner": "W05/integration",
+  "reproduction": "Click kite-rise-start then kite-rest-start, both using the same real reference artefact. The image remains displayed but captureReady is cleared without a new img load, and parent context.target becomes null.",
+  "observed": {
+    "context": {
+      "item_id": "m06-kite-board",
+      "version_id": "m06-kite-board-v1",
+      "view_mode": "keyframes",
+      "target": null,
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "workaround": "Explicitly open the material asset version before returning to the other storyboard shot. This is not a passed direct transition."
+}

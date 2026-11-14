@@ -1,0 +1,150 @@
+[
+  {
+    "shotId": "kite-rise",
+    "frameId": "kite-rise-start",
+    "role": "start",
+    "context": {
+      "item_id": "m06-kite-board",
+      "version_id": "m06-kite-board-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+        "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "shot_id": "kite-rise",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference",
+          "use": "kite-rise / kite-rise-start / start: REFERENCE ONLY: reuse the labelled synthetic owner-supplied 640x360 image. Desired start composition: a warm ochre paper kite low in soft sky, slate string curving below, generous negative space above. This is a proposed change, not a newly created concept or render."
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    }
+  },
+  {
+    "shotId": "kite-rise",
+    "frameId": "kite-rise-middle",
+    "role": "intermediate",
+    "context": {
+      "item_id": "m06-kite-board",
+      "version_id": "m06-kite-board-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+        "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "shot_id": "kite-rise",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference",
+          "use": "kite-rise / kite-rise-middle / intermediate: REFERENCE ONLY: the same labelled synthetic owner-supplied 640x360 image, not another image. Desired intermediate composition: kite lifted toward centre, a subtle changed paper angle suggesting the proposed clockwise arc. No changed image, concept or render exists."
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    }
+  },
+  {
+    "shotId": "kite-rise",
+    "frameId": "kite-rise-end",
+    "role": "end",
+    "context": {
+      "item_id": "m06-kite-board",
+      "version_id": "m06-kite-board-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+        "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "shot_id": "kite-rise",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference",
+          "use": "kite-rise / kite-rise-end / end: REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired end composition: kite higher with ample soft sky, string gently extended, proposed clockwise arc eased out. No new concept or render exists."
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    }
+  },
+  {
+    "shotId": "kite-rest",
+    "frameId": "kite-rest-start",
+    "role": "start",
+    "context": {
+      "item_id": "m06-kite-board",
+      "version_id": "m06-kite-board-v1",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+        "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "shot_id": "kite-rest",
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "role": "reference",
+          "use": "kite-rest / kite-rest-start / start: REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired start composition: lifted warm ochre kite in a locked soft-sky view, continuous in pose with kite-rise-end. No shot-specific concept or render exists."
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    }
+  }
+]

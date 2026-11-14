@@ -1,0 +1,84 @@
+[
+  {
+    "state": "completed",
+    "parent": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+    "receipt": {
+      "files": [
+        {
+          "path": "brief/film.md",
+          "sha256": "fb76c01fcebde95adb6da4ea815d93c848e4acf59b5a3844e1c206387fb3e205"
+        },
+        {
+          "path": "reports/kite-flight-impact.json",
+          "sha256": "f61b0de6de630fc60640a1cd3e4dfc47428341dd2e30aefb788342d31bd78e12"
+        },
+        {
+          "path": "storyboards/kite-flight/plan.json",
+          "sha256": "4f94264b4454d3bf9f01f73c3861277589ba84f4f45e869e335b32922f39bf8e"
+        }
+      ],
+      "operation_id": "m06-kite-checkpoint-a8e35e02",
+      "parent_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "replayed": false,
+      "schema_version": "1.0",
+      "source_commit": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+      "state": "completed"
+    },
+    "files": [
+      {
+        "path": "brief/film.md",
+        "sha256": "fb76c01fcebde95adb6da4ea815d93c848e4acf59b5a3844e1c206387fb3e205"
+      },
+      {
+        "path": "reports/kite-flight-impact.json",
+        "sha256": "f61b0de6de630fc60640a1cd3e4dfc47428341dd2e30aefb788342d31bd78e12"
+      },
+      {
+        "path": "storyboards/kite-flight/plan.json",
+        "sha256": "4f94264b4454d3bf9f01f73c3861277589ba84f4f45e869e335b32922f39bf8e"
+      }
+    ]
+  },
+  {
+    "state": "completed",
+    "parent": "a288d68b7054a4a7d224f4f4bd93e2188577e5df",
+    "receipt": {
+      "files": [
+        {
+          "path": "assets/kite/palette.json",
+          "sha256": "68046565f5f8624f945922d459f58acaa17341e0f163672292473ada51083a5a"
+        },
+        {
+          "path": "brief/film.md",
+          "sha256": "cee1072979a78a100250f7b810243d6eb5927ffbc01bcc84bfdd193dce953233"
+        },
+        {
+          "path": "storyboards/kite-flight/plan.json",
+          "sha256": "bd644f3d0f79e31d8a8c071b9eca250acc13968b7babb2da27318e1b45b52036"
+        }
+      ],
+      "operation_id": "m06-kite-checkpoint-b199a624",
+      "parent_commit": "a288d68b7054a4a7d224f4f4bd93e2188577e5df",
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "replayed": false,
+      "schema_version": "1.0",
+      "source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+      "state": "completed"
+    },
+    "files": [
+      {
+        "path": "assets/kite/palette.json",
+        "sha256": "68046565f5f8624f945922d459f58acaa17341e0f163672292473ada51083a5a"
+      },
+      {
+        "path": "brief/film.md",
+        "sha256": "cee1072979a78a100250f7b810243d6eb5927ffbc01bcc84bfdd193dce953233"
+      },
+      {
+        "path": "storyboards/kite-flight/plan.json",
+        "sha256": "bd644f3d0f79e31d8a8c071b9eca250acc13968b7babb2da27318e1b45b52036"
+      }
+    ]
+  }
+]

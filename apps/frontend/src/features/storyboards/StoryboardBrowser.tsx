@@ -26,7 +26,7 @@ export function StoryboardBrowser(props: ReviewSurfaceProps) {
   return <ProjectStoryboardBrowser key={props.projectId} {...props} />;
 }
 
-function ProjectStoryboardBrowser({ api, projectId, version, jobs, refreshRevision, onContextChange, onNavigate, onQueue }: ReviewSurfaceProps) {
+function ProjectStoryboardBrowser({ api, projectId, version, selection: external, jobs, refreshRevision, onContextChange, onNavigate, onQueue }: ReviewSurfaceProps) {
   const [items, setItems] = useState<ItemRecord[]>([]);
   const [versions, setVersions] = useState<VersionRecord[]>([]);
   const [versionId, setVersionId] = useState<string>(version?.kind === "storyboard" ? version.version_id : "");
@@ -45,6 +45,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, jobs, refreshRevisi
   const [pending, setPending] = useState<SelectionSave | null>(null);
   const [receipts, setReceipts] = useState<FrameReceipt[]>([]);
   const [receiptError, setReceiptError] = useState("");
+  const [planningEdit, setPlanningEdit] = useState("");
   const loadEpoch = useRef(0);
   const currentVersion = versions.find(value => value.version_id === versionId);
   const shot = plan?.shots.find(value => value.shot_id === active?.shotId);
@@ -59,7 +60,23 @@ function ProjectStoryboardBrowser({ api, projectId, version, jobs, refreshRevisi
     setActive(null);
     setCandidate(undefined);
     setCandidateId("");
+    setPlanningEdit("");
   }, [versionId]);
+
+  // The reviewer owns decoding/annotations. Retain the storyboard role when it
+  // reports that same target without Attachment.use after decoding the image.
+  useEffect(() => {
+    if (!external?.target || !currentVersion || !shot || !frame
+      || external.version_id !== currentVersion.version_id || external.target.shot_id !== shot.shot_id) return;
+    const use = `${shot.shot_id} / ${frame.frame_id} / ${frame.role}: ${frame.composition}`;
+    let changed = false;
+    const attachments = external.attachments.map(attachment => {
+      if (attachment.artifact_id !== external.target!.artifact_id || !["reference", "concept", "render"].includes(attachment.role) || attachment.use === use) return attachment;
+      changed = true;
+      return { ...attachment, use };
+    });
+    if (changed) onContextChange({ ...external, attachments });
+  }, [external, currentVersion, shot, frame, onContextChange]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -144,6 +161,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, jobs, refreshRevisi
     setActive({ shotId: planShot.shot_id, frameId: planFrame.frame_id });
     setCandidate(undefined);
     setCandidateId("");
+    setPlanningEdit("");
     const selection = context(planShot, planFrame);
     if (onNavigate) onNavigate(currentVersion, selection);
     else onContextChange(selection);
@@ -185,7 +203,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, jobs, refreshRevisi
   async function queue(stage: "planning" | "concepts" | "scene") {
     if (!shot || !frame) return;
     const text = {
-      planning: `Revise only storyboard ${plan?.plan_id}, shot ${shot.shot_id}, frame ${frame.frame_id}. Preserve unrelated IDs and report dependency impact. Planning only: no image generation or scene execution.`,
+      planning: `Revise only storyboard ${plan?.plan_id}, shot ${shot.shot_id}, frame ${frame.frame_id}. Preserve unrelated IDs and report dependency impact. Planning only: no image generation or scene execution.${planningEdit.trim() ? `\n\nOwner planning instructions: ${planningEdit.trim()}` : ""}`,
       concepts: `Generate or revise the concept for storyboard ${plan?.plan_id}, shot ${shot.shot_id}, frame ${frame.frame_id}, using its pinned references and the configured budgeted generation adapter.`,
       scene: `Author the scene and actual camera/timeline bindings for storyboard ${plan?.plan_id}, shot ${shot.shot_id}, preserving pinned dependencies and unrelated work.`,
     }[stage];
@@ -261,6 +279,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, jobs, refreshRevisi
       {candidate && <p className="sb-meta">Ready {candidate.purpose}: {candidate.artifact_id}</p>}
       <div className="sb-buttons"><button disabled={busy || Boolean(pending) || !canSave} onClick={() => void save(selectionCommand(projectId, currentVersion, shot.shot_id, frame.frame_id, chosenArtifact!.artifact_id, record))}>{record?.state === "selected" ? "Supersede selection" : "Select image"}</button>
         <button disabled={busy || Boolean(pending) || record?.state !== "selected"} onClick={() => void save(selectionCommand(projectId, currentVersion, shot.shot_id, frame.frame_id, null, record))}>Withdraw</button></div>
+      <label className="sb-label">Planning edit instructions<textarea value={planningEdit} disabled={busy || Boolean(pending)} onChange={event => setPlanningEdit(event.target.value)} placeholder="Describe this shot's planning-only change" /></label>
       <div className="sb-buttons"><button disabled={busy || Boolean(pending)} onClick={() => void queue("planning")}>Queue plan edit</button><button disabled={busy || Boolean(pending)} onClick={() => void queue("concepts")}>Queue concept</button><button disabled={busy || Boolean(pending)} onClick={() => void queue("scene")}>Queue scene</button></div>
     </footer>}
   </section>;

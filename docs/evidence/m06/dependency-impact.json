@@ -1,0 +1,54 @@
+{
+  "plan_id": "kite-flight",
+  "old_version_id": "m06-kite-board-v1",
+  "proposed_version_id": "m06-kite-board-v2",
+  "old_source_commit": "6ddbe55c33268e2ae0ead1e0aba1eeadf8a62be6",
+  "change": "Only the proposed kite-rise camera arc changes from clockwise to counterclockwise; direction mentions in the end composition, unresolved camera binding and canonical brief remain consistent. No timing, availability, IDs, ordering or reference bytes change.",
+  "comparison": {
+    "changed_shot_ids": [
+      "kite-rise"
+    ],
+    "removed_shot_ids": [],
+    "removed_frame_ids": [],
+    "shot_order_changed": false,
+    "stable_plan_id": true,
+    "affected_shot_ids": [
+      "kite-rise"
+    ],
+    "affected_frame_ids": [
+      "kite-rise-end",
+      "kite-rise-middle",
+      "kite-rise-start"
+    ],
+    "downstream_artifact_ids": [
+      "34bef859-a4a1-48e3-8749-834aeb958fa7"
+    ],
+    "downstream_scene_version_ids": []
+  },
+  "dependency_impact": {
+    "scope": "Conservative shot-level planning impact, not image invalidation or regeneration.",
+    "reference_artifact_ids": [
+      "34bef859-a4a1-48e3-8749-834aeb958fa7"
+    ],
+    "reference_status": "Unchanged labelled synthetic owner-supplied reference, shared with kite-rest-start; not stale geometry or a generated shot concept.",
+    "scene_version_ids_to_regenerate": [],
+    "render_job_ids_to_regenerate": [],
+    "artifact_ids_to_regenerate": [],
+    "asset_dependencies": [
+      {
+        "item_id": "m06-kite-asset",
+        "version_id": "m06-kite-asset-v1"
+      }
+    ]
+  },
+  "unchanged_shot_ids": [
+    "kite-rest"
+  ],
+  "unchanged_kite_rest_frame_ids": [
+    "kite-rest-start",
+    "kite-rest-middle",
+    "kite-rest-end"
+  ],
+  "production_job_requests": 0,
+  "preview_requests": []
+}

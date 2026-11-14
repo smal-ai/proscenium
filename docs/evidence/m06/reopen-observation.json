@@ -1,0 +1,11 @@
+{
+  "requests_before": 2,
+  "requests_after": 2,
+  "jobs": 0,
+  "automatic_resume_sent": false,
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  }
+}

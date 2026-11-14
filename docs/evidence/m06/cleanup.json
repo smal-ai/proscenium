@@ -1,0 +1,18 @@
+{
+  "server": {
+    "pid": 3472432,
+    "returncode": -15,
+    "reaped": true
+  },
+  "browser": {
+    "pid": 3472433,
+    "returncode": 0,
+    "reaped": true
+  },
+  "native": {
+    "pid": 3482966,
+    "original_start": "45844498",
+    "live_original": false
+  },
+  "independent_services_touched": false
+}
