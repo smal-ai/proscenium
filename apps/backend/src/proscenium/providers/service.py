@@ -22,6 +22,7 @@ from proscenium.db.paths import project_path
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
 from proscenium.providers.comfy import ComfyClient, bind_graph, endpoint, preflight
+from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.providers.vlm import VLMClient, findings
 from proscenium.services import Services
 
@@ -34,11 +35,7 @@ def sha(data: bytes) -> str:
 
 
 def bind_generation_task(tx: Transaction, task_id: str, limit: int, targets: list[str]) -> None:
-    """Trusted Queue/host callback, never a native tool. Freeze effective allowance/target IDs.
-
-    Alias resolution belongs to the host planner: all aliases must resolve to one canonical
-    target before admission. This function accepts only canonical target IDs.
-    """
+    """Explicit host binding retained for existing integrations. Production can bind lazily."""
     if type(limit) is not int or limit < 1 or not targets or len(set(targets)) != len(targets):
         raise DomainError("invalid_request")
     policy = {"task_id": task_id, "limit": limit, "targets": sorted(targets)}
@@ -191,10 +188,6 @@ class ProviderService:
             raise DomainError("scope_denied", 403)
         if request["capability"] != "image":
             raise DomainError("capability_unavailable", 501, "Mesh execution requires E04 adapter")
-        if request["settings"]:
-            raise DomainError(
-                "invalid_request", message="Use exact graph inputs, not opaque settings"
-            )
         store = self.services.registry.project_store(project_id)
         # Replay before reading changed defaults or contacting a service. Fingerprint includes work.
         with store.transaction() as tx:
@@ -203,6 +196,7 @@ class ProviderService:
                 if existing != {"request": request, "work_id": caller.work_id}:
                     raise DomainError("idempotency_conflict", 409)
                 return tx.require("jobs", request["job_id"]), True
+        resolved = resolve_target(self.services, caller, request)
         provider = self.provider(request["provider_id"], "image")
         workflow, data = self.artifact_bytes(project_id, request["workflow_artifact_id"])
         prompt_artifact, prompt_bytes = self.artifact_bytes(
@@ -233,6 +227,7 @@ class ProviderService:
             "workflow_sha256": workflow["sha256"],
             "prompt_sha256": prompt_artifact["sha256"],
             "references": references,
+            "target_resolution": resolved,
             "minimum_free_vram_bytes": self.options.get("minimum_free_vram_bytes", 256 * 1024**2),
         }
         with store.transaction() as tx:
@@ -243,27 +238,16 @@ class ProviderService:
                 task_id = work["generation_task_id"]
                 if request["generation_task_id"] != task_id:
                     raise DomainError("scope_denied", 403)
-                policy = tx.get("providers.tasks", task_id, required=False)
-                if not policy:
-                    raise DomainError(
-                        "capability_unavailable", 501, "Host task policy is not bound"
-                    )
-                if request["target_id"] not in policy["targets"]:
-                    raise DomainError("scope_denied", 403, "Target is not admitted for this task")
+                policy = admit_target(tx, work, resolved)
                 check_storage(store.path.parent, self.services.settings.free_space_reserve_bytes)
                 reserve_generation(
-                    tx, request["job_id"], task_id, request["target_id"], policy["limit"]
+                    tx, request["job_id"], task_id, resolved["target"]["target_id"], policy["limit"]
                 )
-                # Resolve an existing item head, but never move its authoring/selection state.
-                item = tx.get("items", request["target_id"], required=False)
-                version = None
-                if item and item.get("current_version_id"):
-                    version = {"item_id": item["item_id"], "version_id": item["current_version_id"]}
                 job = self.services.jobs.create(
                     tx,
                     job_id=request["job_id"],
                     kind="image_generation",
-                    target={"target_id": request["target_id"], "version": version, "shot_id": None},
+                    target=resolved["target"],
                     input_digest=sha(canonical(inputs)),
                     operation_id=request["job_id"],
                     work_id=caller.work_id,

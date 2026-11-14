@@ -5,8 +5,18 @@ description: Generate or correct project concept images with the configured, bud
 
 # Project image generation
 
-- Work only in the active project and current human task. Use the host's canonical target
-  and generation-task identities. Steer, delegation and Resume retain that task's allowance.
+- Work only in the active project and current human task. Use its host-assigned
+  generation-task identity. Steer, delegation and Resume retain that task's allowance.
+- For one standalone concept without a published source, use empty `settings` and
+  `target_id == generation_task_id`. Do not invent a fake source item or a new target ID
+  for every correction. Other empty-settings targets must be existing real item IDs or
+  explicitly pre-bound targets.
+- For multiple concepts/frames, publish the storyboard first and use
+  `settings.target_slot` with the normative SelectionSlot: `storyboard_frame` names its
+  exact storyboard VersionRef, shot and frame IDs. An `assembly_shot` names its exact
+  sequence VersionRef and entry ID. An `item` slot names a real project item.
+  With a slot, `target_id` is only a caller alias. The host resolves the actual budget key.
+  Renaming aliases or publishing a later version does not reset that frame/entry's budget.
 - Discover relevant project references and identify composition, style and identity roles.
   Inspect the actual bytes. Do not copy a previous project's treatment or ask for approval
   of routine creative progression. Missing essential input is reported explicitly.
@@ -18,8 +28,9 @@ description: Generate or correct project concept images with the configured, bud
   `tools/comfy/graph.py` builds this FLUX.2 Klein path. Specify dimensions and installed models.
 - Submit through the host's `submit_generation_job` tool, which calls
   `extensions['providers'].submit(caller, GenerationSubmit JSON)`. Do not POST inference
-  directly or try `retry_job` to bypass the ledger. Keep `settings` empty, because the exact
-  graph is the execution specification. Image-to-3D is unavailable until E04 is integrated.
+  directly or try `retry_job` to bypass the ledger. `settings` may contain only the target
+  slot above. The exact graph is the execution specification, not opaque settings.
+  Image-to-3D is unavailable until E04 is integrated.
 - The host preflights actual node schemas/model choices, checks queues/memory and obtains
   its shared GPU claim. Busy/unavailable means waiting or an actionable failure. Never
   start/stop services, unload models, clear a global queue or substitute another endpoint.

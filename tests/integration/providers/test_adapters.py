@@ -461,6 +461,7 @@ def test_missing_host_policy_cannot_fall_back_to_agent_claim(rig, generation):
         work["state_revision"] += 1
         tx.put("work", caller.work_id, work, schema="WorkRecord", expected_revision=0)
     generation["generation_task_id"] = "host-task-with-no-policy"
+    generation["target_id"] = "host-task-with-no-policy"
     with pytest.raises(DomainError) as error:
         adapter.submit(caller, generation)
     assert error.value.code == "capability_unavailable"
