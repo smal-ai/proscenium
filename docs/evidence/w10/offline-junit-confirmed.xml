@@ -1,0 +1,1508 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="18" skipped="0" tests="33" time="9.870" timestamp="2026-11-14T15:25:22.255498+02:00" hostname="Gerard-EVO-X2"><testcase classname="tests.acceptance.test_evidence" name="test_all_31_scenarios_resolve_real_functions_without_claiming_execution" time="0.336" /><testcase classname="tests.acceptance.test_evidence" name="test_invalid_coverage_or_missing_function_is_not_accepted" time="0.002" /><testcase classname="tests.acceptance.test_evidence" name="test_junit_pass_skips_and_failures_are_offline_only" time="0.247" /><testcase classname="tests.acceptance.test_evidence" name="test_synthetic_native_pass_and_implicit_m10_removal_refused" time="0.199" /><testcase classname="tests.acceptance.test_evidence" name="test_receipt_hashes_and_exact_application_revision_required" time="0.199" /><testcase classname="tests.acceptance.test_evidence" name="test_release_cli_refuses_incomplete_evidence" time="0.417" /><testcase classname="tests.acceptance.test_recovery" name="test_private_backup_restores_composed_records_sources_and_closed_startup" time="0.389"><failure message="tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_private_backup_restores_c0/restored'), ...}
+
+    def test_private_backup_restores_composed_records_sources_and_closed_startup(saved):
+        root = saved["root"]
+        # Unrelated staging and dirty files must remain untouched, not reset/stashed.
+        (root / "unrelated.txt").write_text("staged unrelated work\n")
+        git(root, "add", "--", "unrelated.txt")
+        (root / "assets/reference.png").write_bytes(saved["image"] + b"dirty-working-only")
+        before_index = (root / ".git/index").read_bytes()
+&gt;       manifest = take(saved)
+                   ^^^^^^^^^^^
+
+tests/acceptance/test_recovery.py:183: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_private_backup_restores_c0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_private_backup_restores_c0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[missing-artefacts/sha256]" time="0.340"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'media_unavailable'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi0/restored'), ...}
+category = 'artefacts/sha256', fault = 'missing'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+            with pytest.raises(RecoveryError, match=code):
+&gt;               take(saved)
+
+tests/acceptance/test_recovery.py:246: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi0/restored'), ...}
+category = 'artefacts/sha256', fault = 'missing'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+&gt;           with pytest.raises(RecoveryError, match=code):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E            Regex: 'media_unavailable'
+E            Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:245: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[missing-retained]" time="0.339"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'retained_source_missing'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi1/restored'), ...}
+category = 'retained', fault = 'missing'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+            with pytest.raises(RecoveryError, match=code):
+&gt;               take(saved)
+
+tests/acceptance/test_recovery.py:246: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi1/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi1/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi1/restored'), ...}
+category = 'retained', fault = 'missing'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+&gt;           with pytest.raises(RecoveryError, match=code):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E            Regex: 'retained_source_missing'
+E            Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:245: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[corrupt-artefacts/sha256]" time="0.314"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'hash_mismatch'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi2/restored'), ...}
+category = 'artefacts/sha256', fault = 'corrupt'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+            with pytest.raises(RecoveryError, match=code):
+                take(saved)
+            manifest = take(saved, allow_incomplete=True)
+            assert manifest["limits"][0]["code"] == code
+            with pytest.raises(RecoveryError, match="acknowledgement"):
+                restore(saved["bundle"], saved["destination"], rebind=True)
+            report = restore(saved["bundle"], saved["destination"], rebind=True, allow_incomplete=True)
+            assert report["limits"][0]["code"] == code
+        else:
+            path.chmod(0o600)  # Deliberately corrupt only this disposable immutable fixture.
+            path.write_bytes(b"not the retained image")
+            with pytest.raises(RecoveryError, match="hash_mismatch"):
+&gt;               take(saved, allow_incomplete=True)
+
+tests/acceptance/test_recovery.py:257: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi2/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi2/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi2/restored'), ...}
+category = 'artefacts/sha256', fault = 'corrupt'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+            with pytest.raises(RecoveryError, match=code):
+                take(saved)
+            manifest = take(saved, allow_incomplete=True)
+            assert manifest["limits"][0]["code"] == code
+            with pytest.raises(RecoveryError, match="acknowledgement"):
+                restore(saved["bundle"], saved["destination"], rebind=True)
+            report = restore(saved["bundle"], saved["destination"], rebind=True, allow_incomplete=True)
+            assert report["limits"][0]["code"] == code
+        else:
+            path.chmod(0o600)  # Deliberately corrupt only this disposable immutable fixture.
+            path.write_bytes(b"not the retained image")
+&gt;           with pytest.raises(RecoveryError, match="hash_mismatch"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E            Regex: 'hash_mismatch'
+E            Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:256: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[corrupt-retained]" time="0.300"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'hash_mismatch'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi3/restored'), ...}
+category = 'retained', fault = 'corrupt'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+            with pytest.raises(RecoveryError, match=code):
+                take(saved)
+            manifest = take(saved, allow_incomplete=True)
+            assert manifest["limits"][0]["code"] == code
+            with pytest.raises(RecoveryError, match="acknowledgement"):
+                restore(saved["bundle"], saved["destination"], rebind=True)
+            report = restore(saved["bundle"], saved["destination"], rebind=True, allow_incomplete=True)
+            assert report["limits"][0]["code"] == code
+        else:
+            path.chmod(0o600)  # Deliberately corrupt only this disposable immutable fixture.
+            path.write_bytes(b"not the retained image")
+            with pytest.raises(RecoveryError, match="hash_mismatch"):
+&gt;               take(saved, allow_incomplete=True)
+
+tests/acceptance/test_recovery.py:257: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi3/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi3/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_and_corrupt_requi3/restored'), ...}
+category = 'retained', fault = 'corrupt'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+            with pytest.raises(RecoveryError, match=code):
+                take(saved)
+            manifest = take(saved, allow_incomplete=True)
+            assert manifest["limits"][0]["code"] == code
+            with pytest.raises(RecoveryError, match="acknowledgement"):
+                restore(saved["bundle"], saved["destination"], rebind=True)
+            report = restore(saved["bundle"], saved["destination"], rebind=True, allow_incomplete=True)
+            assert report["limits"][0]["code"] == code
+        else:
+            path.chmod(0o600)  # Deliberately corrupt only this disposable immutable fixture.
+            path.write_bytes(b"not the retained image")
+&gt;           with pytest.raises(RecoveryError, match="hash_mismatch"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E            Regex: 'hash_mismatch'
+E            Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:256: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_native_history_is_distinct_and_never_replaced" time="0.316"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'native_session_missing'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_native_history_is0/restored'), ...}
+
+    def test_missing_native_history_is_distinct_and_never_replaced(saved):
+        (saved["native"] / "events.jsonl").unlink()
+        with pytest.raises(RecoveryError, match="native_session_missing"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_native_history_is0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_native_history_is0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_native_history_is0/restored'), ...}
+
+    def test_missing_native_history_is_distinct_and_never_replaced(saved):
+        (saved["native"] / "events.jsonl").unlink()
+&gt;       with pytest.raises(RecoveryError, match="native_session_missing"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'native_session_missing'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:262: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_or_corrupt_lfs_refuses_offline_without_fetch" time="0.307"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'hash_mismatch:lfs'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_or_corrupt_lfs_re0/restored'), ...}
+
+    def test_missing_or_corrupt_lfs_refuses_offline_without_fetch(saved):
+        objects = list((saved["root"] / ".git/lfs/objects").glob("*/*/*"))
+        assert objects
+        objects[0].write_bytes(b"corrupt-lfs")
+        with pytest.raises(RecoveryError, match="hash_mismatch:lfs"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_or_corrupt_lfs_re0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_or_corrupt_lfs_re0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_or_corrupt_lfs_re0/restored'), ...}
+
+    def test_missing_or_corrupt_lfs_refuses_offline_without_fetch(saved):
+        objects = list((saved["root"] / ".git/lfs/objects").glob("*/*/*"))
+        assert objects
+        objects[0].write_bytes(b"corrupt-lfs")
+&gt;       with pytest.raises(RecoveryError, match="hash_mismatch:lfs"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'hash_mismatch:lfs'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:278: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_hash_inventory_traversal_symlinks_and_overwrite_refused" time="0.308"><failure message="tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_hash_inventory_traversal_0/restored'), ...}
+
+    def test_hash_inventory_traversal_symlinks_and_overwrite_refused(saved):
+&gt;       take(saved)
+
+tests/acceptance/test_recovery.py:289: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_hash_inventory_traversal_0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_hash_inventory_traversal_0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_service_locks_processes_and_unsettled_work_refused" time="0.392"><failure message="tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_service_locks_processes_a0/restored'), ...}
+
+    def test_service_locks_processes_and_unsettled_work_refused(saved):
+        services = Services.create(saved["settings"])
+        try:
+            with pytest.raises(RecoveryError, match="owned"):
+                take(saved)
+        finally:
+            services.close()
+        process = subprocess.Popen(["sleep", "30"], cwd=saved["native"])
+        try:
+            with pytest.raises(RecoveryError, match="active_or_ambiguous"):
+                take(saved)
+            assert process.poll() is None
+        finally:
+            process.terminate()  # Test owns this harmless sleep, not a product service.
+            process.wait()
+        with saved["store"].transaction() as tx:
+            tx.enqueue("uncertain", "synthetic", {})
+            tx.claim_intent("uncertain")
+        with pytest.raises(DomainError) as error:
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:333: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_service_locks_processes_a0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_service_locks_processes_a0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_secret_and_symlink_source_paths_refused" time="0.309"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'symlink'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_and_symlink_source0/restored'), ...}
+
+    def test_secret_and_symlink_source_paths_refused(saved):
+        (saved["root"] / "leak").symlink_to(saved["native"] / "events.jsonl")
+        with pytest.raises(RecoveryError, match="symlink"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:340: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_and_symlink_source0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_and_symlink_source0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_and_symlink_source0/restored'), ...}
+
+    def test_secret_and_symlink_source_paths_refused(saved):
+        (saved["root"] / "leak").symlink_to(saved["native"] / "events.jsonl")
+&gt;       with pytest.raises(RecoveryError, match="symlink"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'symlink'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:339: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_secret_path_anywhere_in_git_history_is_refused" time="0.396"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'secret_path_in_git_history'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_path_anywhere_in_g0/restored'), ...}
+
+    def test_secret_path_anywhere_in_git_history_is_refused(saved):
+        root = saved["root"]
+        (root / ".env").write_text("SYNTHETIC_SECRET_DO_NOT_BACK_UP=true\n")
+        git(root, "add", "--force", "--", ".env")
+        git(root, "commit", "-m", "Disposable secret-path rejection fixture")
+        (root / ".env").unlink()
+        git(root, "add", "--update", "--", ".env")
+        git(root, "commit", "-m", "Removal must not hide a historical secret path")
+        with pytest.raises(RecoveryError, match="secret_path_in_git_history"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:352: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_path_anywhere_in_g0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_path_anywhere_in_g0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_secret_path_anywhere_in_g0/restored'), ...}
+
+    def test_secret_path_anywhere_in_git_history_is_refused(saved):
+        root = saved["root"]
+        (root / ".env").write_text("SYNTHETIC_SECRET_DO_NOT_BACK_UP=true\n")
+        git(root, "add", "--force", "--", ".env")
+        git(root, "commit", "-m", "Disposable secret-path rejection fixture")
+        (root / ".env").unlink()
+        git(root, "add", "--update", "--", ".env")
+        git(root, "commit", "-m", "Removal must not hide a historical secret path")
+&gt;       with pytest.raises(RecoveryError, match="secret_path_in_git_history"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'secret_path_in_git_history'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:351: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_sqlite_backup_includes_committed_wal_not_only_main_file" time="0.313"><failure message="tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_sqlite_backup_includes_co0/restored'), ...}
+
+    def test_sqlite_backup_includes_committed_wal_not_only_main_file(saved):
+        store = saved["store"]
+        reader = store.connect()
+        try:
+            reader.execute("BEGIN")
+            reader.execute("SELECT count(*) FROM records").fetchone()
+            with store.transaction() as tx:
+                tx.put("recovery.fixture", "wal-only", {"saved": "committed after reader began"})
+            assert store.path.with_name(store.path.name + "-wal").stat().st_size &gt; 0
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:364: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_sqlite_backup_includes_co0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_sqlite_backup_includes_co0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_native_session_directory_cannot_escape_through_parent_symlink" time="0.307"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'native_storage_symlink_refused'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_native_session_directory_0/restored'), ...}
+
+    def test_native_session_directory_cannot_escape_through_parent_symlink(saved):
+        native = saved["native"]
+        original = native.parent
+        moved = original.with_name("moved-native")
+        original.rename(moved)
+        original.symlink_to(moved, target_is_directory=True)
+        with pytest.raises(RecoveryError, match="native_storage_symlink_refused"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_native_session_directory_0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_native_session_directory_0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_native_session_directory_0/restored'), ...}
+
+    def test_native_session_directory_cannot_escape_through_parent_symlink(saved):
+        native = saved["native"]
+        original = native.parent
+        moved = original.with_name("moved-native")
+        original.rename(moved)
+        original.symlink_to(moved, target_is_directory=True)
+&gt;       with pytest.raises(RecoveryError, match="native_storage_symlink_refused"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'native_storage_symlink_refused'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:381: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_all_git_refs_survive_restore_without_branch_name_collision" time="0.354"><failure message="tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_all_git_refs_survive_rest0/restored'), ...}
+
+    def test_all_git_refs_survive_restore_without_branch_name_collision(saved):
+        root = saved["root"]
+        git(root, "branch", "recovery", "HEAD")
+        git(root, "tag", "source-v1", "HEAD")
+        git(root, "symbolic-ref", "refs/remotes/offline/HEAD", "refs/heads/main")
+        commit(root, "brief/later.txt", b"Later source, old publication stays pinned\n")
+&gt;       manifest = take(saved)
+                   ^^^^^^^^^^^
+
+tests/acceptance/test_recovery.py:391: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_all_git_refs_survive_rest0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_all_git_refs_survive_rest0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_git_object_refused_without_substituting_working_source" time="0.305"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'git_failed:fsck'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_git_object_refuse0/restored'), ...}
+
+    def test_missing_git_object_refused_without_substituting_working_source(saved):
+        root = saved["root"]
+        pointer = git(root, "rev-parse", "HEAD:assets/reference.png").decode().strip()
+        (root / ".git/objects" / pointer[:2] / pointer[2:]).unlink()
+        with pytest.raises(RecoveryError, match="git_failed:fsck"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:412: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_git_object_refuse0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_git_object_refuse0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_missing_git_object_refuse0/restored'), ...}
+
+    def test_missing_git_object_refused_without_substituting_working_source(saved):
+        root = saved["root"]
+        pointer = git(root, "rev-parse", "HEAD:assets/reference.png").decode().strip()
+        (root / ".git/objects" / pointer[:2] / pointer[2:]).unlink()
+&gt;       with pytest.raises(RecoveryError, match="git_failed:fsck"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'git_failed:fsck'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:411: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_future_database_refused_without_migration" time="0.320"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'unsupported_or_corrupt_database'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_future_database_refused_w0/restored'), ...}
+
+    def test_future_database_refused_without_migration(saved):
+        with closing(saved["store"].connect()) as db:
+            db.execute("PRAGMA user_version=999")
+        before = digest(saved["store"].path)
+        with pytest.raises(RecoveryError, match="unsupported_or_corrupt_database"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:420: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_future_database_refused_w0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_future_database_refused_w0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_future_database_refused_w0/restored'), ...}
+
+    def test_future_database_refused_without_migration(saved):
+        with closing(saved["store"].connect()) as db:
+            db.execute("PRAGMA user_version=999")
+        before = digest(saved["store"].path)
+&gt;       with pytest.raises(RecoveryError, match="unsupported_or_corrupt_database"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'unsupported_or_corrupt_database'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:419: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_git_object_directory_symlink_refused_before_git_reads_it" time="0.294"><failure message="AssertionError: Regex pattern did not match.&#10; Regex: 'git_metadata_symlink_refused'&#10; Input: 'active_or_ambiguous_process:3286228'">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_git_object_directory_syml0/restored'), ...}
+
+    def test_git_object_directory_symlink_refused_before_git_reads_it(saved):
+        objects = saved["root"] / ".git/objects"
+        relocated = objects.with_name("relocated-objects")
+        objects.rename(relocated)
+        objects.symlink_to(relocated, target_is_directory=True)
+        with pytest.raises(RecoveryError, match="git_metadata_symlink_refused"):
+&gt;           take(saved)
+
+tests/acceptance/test_recovery.py:430: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:258: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_git_object_directory_syml0/project...osixPath('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_git_object_directory_syml0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+&gt;                   raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+E                   tools.operations.safety.RecoveryError: active_or_ambiguous_process:3286228
+
+tools/operations/safety.py:174: RecoveryError
+
+During handling of the above exception, another exception occurred:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_git_object_directory_syml0/restored'), ...}
+
+    def test_git_object_directory_symlink_refused_before_git_reads_it(saved):
+        objects = saved["root"] / ".git/objects"
+        relocated = objects.with_name("relocated-objects")
+        objects.rename(relocated)
+        objects.symlink_to(relocated, target_is_directory=True)
+&gt;       with pytest.raises(RecoveryError, match="git_metadata_symlink_refused"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'git_metadata_symlink_refused'
+E        Input: 'active_or_ambiguous_process:3286228'
+
+tests/acceptance/test_recovery.py:429: AssertionError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_lock_parent_directory_symlink_never_opens_external_lock" time="0.001" /><testcase classname="tests.acceptance.test_recovery" name="test_process_exit_race_only_ignores_observed_terminal_kernel_state" time="0.001" /><testcase classname="tests.acceptance.test_recovery" name="test_cli_round_trip_and_refusal_exit_codes" time="0.515"><failure message="AssertionError: Recovery refused: active_or_ambiguous_process:3286228&#10;  &#10;assert 2 == 0&#10; +  where 2 = CompletedProcess(args=['uv', 'run', 'python', '-m', 'tools.operations.recovery', 'backup', '--data-directory', '/home/...d_trip_and_refusa0/backup'], returncode=2, stdout='', stderr='Recovery refused: active_or_ambiguous_process:3286228\n').returncode">saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...th('/home/quintin/.cache/proscenium-development/w10-confirmed-20261114/test_cli_round_trip_and_refusa0/restored'), ...}
+
+    def test_cli_round_trip_and_refusal_exit_codes(saved):
+        command = ["uv", "run", "python", "-m", "tools.operations.recovery"]
+        result = subprocess.run(
+            command
+            + [
+                "backup",
+                "--data-directory",
+                str(saved["settings"].data_directory),
+                "--project-id",
+                "project-test",
+                "--target",
+                str(saved["bundle"]),
+            ],
+            capture_output=True,
+            text=True,
+        )
+&gt;       assert result.returncode == 0, result.stderr
+E       AssertionError: Recovery refused: active_or_ambiguous_process:3286228
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['uv', 'run', 'python', '-m', 'tools.operations.recovery', 'backup', '--data-directory', '/home/...d_trip_and_refusa0/backup'], returncode=2, stdout='', stderr='Recovery refused: active_or_ambiguous_process:3286228\n').returncode
+
+tests/acceptance/test_recovery.py:475: AssertionError</failure></testcase><testcase classname="tests.unit.test_store" name="test_migration_rollback_and_backup" time="0.023" /><testcase classname="tests.unit.test_store" name="test_os_lock_not_timestamp_lease" time="0.001" /><testcase classname="tests.integration.sources.test_projects" name="test_duplicate_project_location_requires_explicit_rebind" time="0.116" /><testcase classname="tests.integration.sources.test_projects" name="test_rebind_consistent_backup_without_copying_runtime_lock" time="0.134" /><testcase classname="tests.integration.copilot.test_delivery" name="test_restart_is_quiet_and_existing_work_awaits_resume" time="0.098" /><testcase classname="tests.integration.providers.test_adapters" name="test_no_startup_or_read_execution_and_reset_gate" time="0.140" /><testcase classname="tests.integration.sources.test_checkpoint" name="test_lost_git_ack_recovers_exact_commit_after_head_advance" time="0.196" /></testsuite></testsuites>

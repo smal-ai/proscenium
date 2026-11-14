@@ -1,0 +1,4 @@
+# Preserve raw pytest failure payloads, including their original whitespace.
+offline-junit-hardening.xml -diff -text
+offline-junit-final.xml -diff -text
+offline-junit-confirmed.xml -diff -text

@@ -1,0 +1,67 @@
+{
+  "format": "proscenium-w10-offline-evidence-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "application_commit": "0b384ce0e4e42e991bcfe3764522ef636dcad1c5",
+  "accepted_base": "d068ed9f0433723e52253a8bd4b19a5bb1a1dee7",
+  "contract_revision": "1.0.0",
+  "status": "synthetic_verified",
+  "evidence_type": "offline_composed_services_not_native_acceptance",
+  "runtime_identity": {
+    "python": "3.12.13",
+    "platform": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+    "sdk_installed_not_started": "1.0.34",
+    "git": "2.53.0",
+    "git_lfs": "3.8.0 (linux amd64; go 1.27.0; git aece9221)",
+    "pytest": "8.4.2",
+    "ruff": "0.17.5",
+    "mypy": "1.20.2",
+    "node_observed_for_blocked_generated_check": "24.18.0"
+  },
+  "checks": [
+    {
+      "command": "uv run pytest -q tests/acceptance tests/unit/test_store.py::test_migration_rollback_and_backup tests/unit/test_store.py::test_os_lock_not_timestamp_lease tests/integration/sources/test_projects.py::test_duplicate_project_location_requires_explicit_rebind tests/integration/sources/test_projects.py::test_rebind_consistent_backup_without_copying_runtime_lock tests/integration/copilot/test_delivery.py::test_restart_is_quiet_and_existing_work_awaits_resume tests/integration/providers/test_adapters.py::test_no_startup_or_read_execution_and_reset_gate tests/integration/sources/test_checkpoint.py::test_lost_git_ack_recovers_exact_commit_after_head_advance --basetemp /home/quintin/.cache/proscenium-development/w10-final-20261114 --junitxml docs/evidence/w10/offline-junit.xml",
+      "exit_code": 0,
+      "result": "30 passed, 0 skipped, 0 failed. 23 W10 cases and 7 selected accepted-interface regressions.",
+      "warning": "Existing Starlette/httpx deprecation warning. No dependency change made."
+    },
+    {"command": "uv run ruff check tools/operations tests/acceptance", "exit_code": 0, "result": "All checks passed"},
+    {"command": "uv run ruff format --check tools/operations tests/acceptance", "exit_code": 0, "result": "7 files already formatted"},
+    {"command": "uv run mypy apps/backend/src tools/operations", "exit_code": 0, "result": "No issues in 71 source files"},
+    {"command": "uv run python scripts/generate_contracts.py --check", "exit_code": 0, "result": "Python generated bindings unchanged"},
+    {"command": "uv run python docs/validate_spec.py", "exit_code": 0, "result": "124 JSON/YAML documents, 119 schema definitions, 53 operations, schema/semantic/ownership/link checks passed. Application fault scenarios remain separately specified."},
+    {
+      "command": "uv run python -m tools.operations.acceptance --junit docs/evidence/w10/offline-junit.xml --output docs/evidence/w10/coverage-report.json --release",
+      "exit_code": 1,
+      "result": "Expected refusal. 31 case maps resolve. C15/C20 have all mapped offline checks observed. 107 case-layer/cumulative requirements remain unexecuted or incomplete in this submitted evidence set. release_ready=false.",
+      "meaning": "Prior feature evidence is not erased or reclassified. It was not supplied as compatible composed release receipts to this invocation."
+    }
+  ],
+  "blocked_non_package_check": {
+    "command": "make spec-check",
+    "exit_code": 2,
+    "result": "Specification validation and Python binding parity passed. scripts/check_generated.py could not resolve the absent local Node package json-schema-to-typescript. No Node dependency installation or frontend parity pass is claimed."
+  },
+  "source_hashes": {
+    "tools/operations/acceptance.py": "a4ce6d66ce1bb741bac76dd0774412569d87ecc3edcbe12981f9a646ea4868ee",
+    "tools/operations/__init__.py": "9bb8cad1c588d2a81f5b2f24db038aef56b87e7333f70b839d37bb69f620c8ab",
+    "tools/operations/recovery.py": "be39f4851e0c7b5a4359958322f75939fe240afbad8dbf923fb0ba8f410b48ac",
+    "tools/operations/safety.py": "f0971535b994b6f623c266f2e4042874c8dafb119cfb412dece698e302609ff3",
+    "tests/acceptance/conftest.py": "1b558c9c8207243001d37991fa5de6a9c82e8ea5ca73727e2bfa2cea93018dbd",
+    "tests/acceptance/test_evidence.py": "63d724d3bff0b544ce45ea4dcf7783cb9a294f86419d8ce6680f9b139de94eec",
+    "tests/acceptance/test_recovery.py": "d2aa59d973e3ccd9d9042364ec951386849e56ed28955bb3207d2c51de1a7891",
+    "tests/acceptance/coverage.json": "a70942fc8721ab67fa6341cefdbca15bd2a32a5b70b332288ee1d7e88030a4a8"
+  },
+  "artifacts": [
+    {"path": "docs/evidence/w10/offline-junit.xml", "sha256": "3eb537ea25a6026115be837204fd28a5f76195f9f4f0ed3d410b3c3c8dfcf1e0"},
+    {"path": "docs/evidence/w10/coverage-report.json", "sha256": "e337704fd66919e8f812643fbe1e9e2a7c554ccc99cda083f6951d71c25650bd"},
+    {"path": "docs/evidence/w10/native-layout.json", "sha256": "ac8b35e7a6a42777143c482822d047d768ad6c27559584a3a8b6c11c6c3e165d"}
+  ],
+  "limits": [
+    "Native history fixture bytes and SDK transport are synthetic. No real native history read, relocated session load or inference continuation was executed.",
+    "No browser, SSH authentication/crypto, GPU, model, Blender or Unity proof was run by W10.",
+    "No representative RAM/VRAM or performance acceptance was run.",
+    "M10 remains blocked without real mesh proof or an explicit human-owner scope decision.",
+    "Original application composition and all cumulative user journeys remain parent-owned."
+  ]
+}

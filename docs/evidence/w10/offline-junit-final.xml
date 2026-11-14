@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="32" time="9.704" timestamp="2026-11-14T15:23:55.309702+02:00" hostname="Gerard-EVO-X2"><testcase classname="tests.acceptance.test_evidence" name="test_all_31_scenarios_resolve_real_functions_without_claiming_execution" time="0.461" /><testcase classname="tests.acceptance.test_evidence" name="test_invalid_coverage_or_missing_function_is_not_accepted" time="0.002" /><testcase classname="tests.acceptance.test_evidence" name="test_junit_pass_skips_and_failures_are_offline_only" time="0.300" /><testcase classname="tests.acceptance.test_evidence" name="test_synthetic_native_pass_and_implicit_m10_removal_refused" time="0.177" /><testcase classname="tests.acceptance.test_evidence" name="test_receipt_hashes_and_exact_application_revision_required" time="0.162" /><testcase classname="tests.acceptance.test_evidence" name="test_release_cli_refuses_incomplete_evidence" time="0.376" /><testcase classname="tests.acceptance.test_recovery" name="test_private_backup_restores_composed_records_sources_and_closed_startup" time="0.688" /><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[missing-artefacts/sha256]" time="0.467"><failure message="tools.operations.safety.RecoveryError: process_inspection_denied:3277060">roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-final2-20261114/test_missing_and_corrupt_requi0/project'), PosixPath('/home/quintin/.cache/proscenium-development/w10-final2-20261114/test_missing_and_corrupt_requi0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+&gt;               paths.append(os.readlink(process / "cwd"))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               PermissionError: [Errno 13] Permission denied: '/proc/3277060/cwd'
+
+tools/operations/safety.py:147: PermissionError
+
+The above exception was the direct cause of the following exception:
+
+saved = {'artifact': {'artifact_id': 'image-private', 'bytes': 77, 'derived_from': [], 'dimensions': {'height': 8, 'width': 8}...xPath('/home/quintin/.cache/proscenium-development/w10-final2-20261114/test_missing_and_corrupt_requi0/restored'), ...}
+category = 'artefacts/sha256', fault = 'missing'
+
+    @pytest.mark.parametrize("category", ["artefacts/sha256", "retained"])
+    @pytest.mark.parametrize("fault", ["missing", "corrupt"])
+    def test_missing_and_corrupt_required_media_are_not_substituted(saved, category, fault):
+        path = saved["root"] / ".proscenium" / category / saved["artifact"]["sha256"] / "content"
+        if fault == "missing":
+            path.unlink()
+            code = "retained_source_missing" if category == "retained" else "media_unavailable"
+            with pytest.raises(RecoveryError, match=code):
+                take(saved)
+&gt;           manifest = take(saved, allow_incomplete=True)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/acceptance/test_recovery.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/acceptance/test_recovery.py:173: in take
+    return backup(saved["settings"], "project-test", saved["bundle"], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/operations/recovery.py:365: in backup
+    assert_stopped([root, data])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roots = [PosixPath('/home/quintin/.cache/proscenium-development/w10-final2-20261114/test_missing_and_corrupt_requi0/project'), PosixPath('/home/quintin/.cache/proscenium-development/w10-final2-20261114/test_missing_and_corrupt_requi0/machine')]
+
+    def assert_stopped(roots: list[Path]) -&gt; None:
+        """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
+    
+        /proc races with exited processes are harmless. Unreadable living same-user
+        processes are not proof of quiescence. Independent model services are untouched.
+        """
+        own = os.getpid()
+        for process in Path("/proc").iterdir():
+            if not process.name.isdigit() or int(process.name) == own:
+                continue
+            try:
+                if process.stat().st_uid != os.getuid():
+                    continue
+                argv = (process / "cmdline").read_bytes().split(b"\0")
+                if not argv[0]:  # Kernel thread or zombie, no writes possible.
+                    continue
+                executable = Path(os.fsdecode(argv[0])).name
+                if (
+                    int(process.name) == os.getppid()
+                    and executable == "uv"
+                    and [os.fsdecode(a) for a in argv[1:5]]
+                    == ["run", "python", "-m", "tools.operations.recovery"]
+                ):
+                    continue  # This command's own waiting launcher, not another writer.
+                # These OS session/auth daemons deliberately disable ptrace. They
+                # cannot be Proscenium/native authoring workers. Do not inspect their
+                # private descriptors (or turn their presence into a global outage).
+                if os.fsdecode(argv[0]) in {
+                    "/usr/lib/systemd/systemd",
+                    "(sd-pam)",
+                    "/usr/bin/ssh-agent",
+                    "ssh-agent",
+                }:
+                    continue
+                paths = [os.fsdecode(arg) for arg in argv]
+                paths.append(os.readlink(process / "cwd"))
+                for fd in (process / "fd").iterdir():
+                    try:
+                        paths.append(os.readlink(fd))
+                    except FileNotFoundError:
+                        pass
+                scoped = any(
+                    value == str(root) or value.startswith(str(root) + "/")
+                    for value in paths
+                    for root in roots
+                )
+                if scoped or executable == "copilot":
+                    raise RecoveryError(f"active_or_ambiguous_process:{process.name}")
+            except (FileNotFoundError, ProcessLookupError):
+                continue
+            except PermissionError as exc:
+                if process.exists():
+&gt;                   raise RecoveryError(f"process_inspection_denied:{process.name}") from exc
+E                   tools.operations.safety.RecoveryError: process_inspection_denied:3277060
+
+tools/operations/safety.py:164: RecoveryError</failure></testcase><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[missing-retained]" time="0.394" /><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[corrupt-artefacts/sha256]" time="0.196" /><testcase classname="tests.acceptance.test_recovery" name="test_missing_and_corrupt_required_media_are_not_substituted[corrupt-retained]" time="0.192" /><testcase classname="tests.acceptance.test_recovery" name="test_missing_native_history_is_distinct_and_never_replaced" time="0.408" /><testcase classname="tests.acceptance.test_recovery" name="test_missing_or_corrupt_lfs_refuses_offline_without_fetch" time="0.358" /><testcase classname="tests.acceptance.test_recovery" name="test_hash_inventory_traversal_symlinks_and_overwrite_refused" time="0.474" /><testcase classname="tests.acceptance.test_recovery" name="test_service_locks_processes_and_unsettled_work_refused" time="0.335" /><testcase classname="tests.acceptance.test_recovery" name="test_secret_and_symlink_source_paths_refused" time="0.424" /><testcase classname="tests.acceptance.test_recovery" name="test_secret_path_anywhere_in_git_history_is_refused" time="0.319" /><testcase classname="tests.acceptance.test_recovery" name="test_sqlite_backup_includes_committed_wal_not_only_main_file" time="0.403" /><testcase classname="tests.acceptance.test_recovery" name="test_native_session_directory_cannot_escape_through_parent_symlink" time="0.206" /><testcase classname="tests.acceptance.test_recovery" name="test_all_git_refs_survive_restore_without_branch_name_collision" time="0.410" /><testcase classname="tests.acceptance.test_recovery" name="test_missing_git_object_refused_without_substituting_working_source" time="0.223" /><testcase classname="tests.acceptance.test_recovery" name="test_future_database_refused_without_migration" time="0.187" /><testcase classname="tests.acceptance.test_recovery" name="test_git_object_directory_symlink_refused_before_git_reads_it" time="0.195" /><testcase classname="tests.acceptance.test_recovery" name="test_lock_parent_directory_symlink_never_opens_external_lock" time="0.001" /><testcase classname="tests.acceptance.test_recovery" name="test_cli_round_trip_and_refusal_exit_codes" time="0.819" /><testcase classname="tests.unit.test_store" name="test_migration_rollback_and_backup" time="0.010" /><testcase classname="tests.unit.test_store" name="test_os_lock_not_timestamp_lease" time="0.001" /><testcase classname="tests.integration.sources.test_projects" name="test_duplicate_project_location_requires_explicit_rebind" time="0.077" /><testcase classname="tests.integration.sources.test_projects" name="test_rebind_consistent_backup_without_copying_runtime_lock" time="0.080" /><testcase classname="tests.integration.copilot.test_delivery" name="test_restart_is_quiet_and_existing_work_awaits_resume" time="0.076" /><testcase classname="tests.integration.providers.test_adapters" name="test_no_startup_or_read_execution_and_reset_gate" time="0.090" /><testcase classname="tests.integration.sources.test_checkpoint" name="test_lost_git_ack_recovers_exact_commit_after_head_advance" time="0.104" /></testsuite></testsuites>

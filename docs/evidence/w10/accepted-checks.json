@@ -1,0 +1,98 @@
+{
+  "format": "proscenium-w10-offline-evidence-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "application_commit": "727cb2ff663e669970b2ef79e6d19227cb392459",
+  "accepted_base": "d068ed9f0433723e52253a8bd4b19a5bb1a1dee7",
+  "contract_revision": "1.0.0",
+  "status": "synthetic_verified",
+  "evidence_type": "offline_composed_services_not_native_acceptance",
+  "runtime_identity_reference": "docs/evidence/w10/checks.json#runtime_identity",
+  "checks": [
+    {
+      "command": "uv run pytest -q tests/acceptance tests/unit/test_store.py::test_migration_rollback_and_backup tests/unit/test_store.py::test_os_lock_not_timestamp_lease tests/integration/sources/test_projects.py::test_duplicate_project_location_requires_explicit_rebind tests/integration/sources/test_projects.py::test_rebind_consistent_backup_without_copying_runtime_lock tests/integration/copilot/test_delivery.py::test_restart_is_quiet_and_existing_work_awaits_resume tests/integration/providers/test_adapters.py::test_no_startup_or_read_execution_and_reset_gate tests/integration/sources/test_checkpoint.py::test_lost_git_ack_recovers_exact_commit_after_head_advance --basetemp /home/quintin/.cache/proscenium-development/w10-accepted-20261114 --junitxml docs/evidence/w10/offline-junit-accepted.xml",
+      "exit_code": 0,
+      "result": "35 passed, 0 skipped, 0 failed. 28 W10 cases and 7 selected accepted-interface regressions.",
+      "warning": "Existing Starlette/httpx deprecation warning remains."
+    },
+    {"command": "uv run ruff check tools/operations tests/acceptance", "exit_code": 0, "result": "All checks passed"},
+    {"command": "uv run ruff format --check tools/operations tests/acceptance", "exit_code": 0, "result": "7 files already formatted"},
+    {"command": "uv run mypy apps/backend/src tools/operations", "exit_code": 0, "result": "No issues in 71 source files"},
+    {"command": "uv run python docs/validate_spec.py", "exit_code": 0, "result": "128 JSON/YAML documents, 119 schema definitions, 53 operations and 164 local links. Schema/semantic/ownership/link checks passed. Native/browser acceptance remains separately specified."},
+    {"command": "uv run python scripts/generate_contracts.py --check", "exit_code": 0, "result": "Python generated bindings unchanged"},
+    {
+      "command": "uv run python -m tools.operations.acceptance --junit docs/evidence/w10/offline-junit-accepted.xml --output docs/evidence/w10/coverage-accepted.json --release",
+      "exit_code": 1,
+      "result": "Expected refusal. 31 case maps resolve. C15/C20 have all mapped offline checks observed. 107 case-layer/cumulative requirements remain unexecuted or incomplete in this submitted evidence set. release_ready=false."
+    },
+    {
+      "command": "uv run python -m tools.operations.recovery backup --data-directory /home/quintin/.cache/proscenium-development/w10-accepted-20261114/test_cli_round_trip_and_refusa0/machine --project-id project-test --target /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup-accepted",
+      "exit_code": 0,
+      "result": {"status": "backup_created", "files": 14, "limits": []}
+    },
+    {
+      "command": "uv run python -m tools.operations.recovery verify /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup-accepted",
+      "exit_code": 0,
+      "result": {"status": "verified", "files": 14, "limits": []}
+    },
+    {
+      "command": "uv run python -m tools.operations.recovery restore /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup-accepted --target /home/quintin/.cache/proscenium-development/w10-cli-20261114/restored-accepted --rebind-fresh-registry",
+      "exit_code": 0,
+      "result": {
+        "project_id": "project-test",
+        "path": "/home/quintin/.cache/proscenium-development/w10-cli-20261114/restored-accepted/project",
+        "data_directory": "/home/quintin/.cache/proscenium-development/w10-cli-20261114/restored-accepted/machine",
+        "original_path": "/home/quintin/.cache/proscenium-development/w10-accepted-20261114/test_cli_round_trip_and_refusa0/project",
+        "execution": "closed_awaiting_explicit_resume",
+        "limits": [],
+        "native_resume_tested": false,
+        "authentication": "not_restored_repair_separately_via_supported_login_and_owner_pairing",
+        "location_reconciliation": "fresh_registry_only_original_must_remain_offline"
+      }
+    },
+    {
+      "command": "uv run python -m tools.operations.recovery restore /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup-accepted --target /home/quintin/.cache/proscenium-development/w10-cli-20261114/restored-accepted --rebind-fresh-registry",
+      "exit_code": 2,
+      "result": "Expected refusal: destination_exists"
+    }
+  ],
+  "preserved_prior_runs": [
+    {"path": "docs/evidence/w10/offline-junit.xml", "application_commit": "0b384ce0e4e42e991bcfe3764522ef636dcad1c5", "result": "30 passed before additional safety regressions"},
+    {"path": "docs/evidence/w10/offline-junit-hardening.xml", "application_commit": "6ea5c90", "result": "31 passed, 1 failed. Uninspectable short-lived same-user process refused backup."},
+    {"path": "docs/evidence/w10/offline-junit-final.xml", "application_commit": "6ea5c90", "result": "31 passed, 1 failed. Same process-inspection refusal before the terminal-state/host-initialiser corrections."},
+    {"path": "docs/evidence/w10/offline-junit-confirmed.xml", "application_commit": "142177b", "result": "15 passed, 18 failed. Unrelated real native proof process was conservatively ambiguous before the SDK COPILOT_HOME scope check was implemented. It was never signalled."}
+  ],
+  "safety_followups": [
+    "Reject symlinked Git metadata before invoking Git, including object/config directory links. Reject lock parent aliases before opening any lock file.",
+    "Only a vanished process or observed Z/X/x kernel state can resolve an exit-time /proc permission race. This does not settle a job or infer exit code zero.",
+    "Pinned SDK source client.py passes base_directory as COPILOT_HOME. The tool uses only that canonical scope value, never exports or logs process environments, and permits explicit unrelated native homes. Missing/relative/uninspectable/overlapping homes still block backup.",
+    "A bounded metadata-only diagnostic identified privileged runc:[N:INIT] namespace helpers as unrelated host infrastructure. Only that exact executable/title pattern is exempted, alongside known systemd/SSH-agent daemons. A regression proves an unknown living uninspectable process still blocks backup.",
+    "No independent runtime, editor, container or model service was stopped, reconfigured or used as W10 inference evidence."
+  ],
+  "official_sdk_scope_reference": "https://github.com/github/copilot-sdk/blob/v1.0.34/python/copilot/client.py",
+  "source_hashes": {
+    "tools/operations/acceptance.py": "a4ce6d66ce1bb741bac76dd0774412569d87ecc3edcbe12981f9a646ea4868ee",
+    "tools/operations/__init__.py": "9bb8cad1c588d2a81f5b2f24db038aef56b87e7333f70b839d37bb69f620c8ab",
+    "tools/operations/recovery.py": "ea0375b5408844e3c408b17af2d637471e05f298da3b37b27e6f1e21466f76ce",
+    "tools/operations/safety.py": "10d85a1f526f604aee79792c56e1f22a2c3967433d59261cd0cdfbb095fe90d6",
+    "tests/acceptance/conftest.py": "1b558c9c8207243001d37991fa5de6a9c82e8ea5ca73727e2bfa2cea93018dbd",
+    "tests/acceptance/test_evidence.py": "63d724d3bff0b544ce45ea4dcf7783cb9a294f86419d8ce6680f9b139de94eec",
+    "tests/acceptance/test_recovery.py": "505fb3b7b56b4f877505062d478ce406328ac3937229c023dbfb7d534c7ba345",
+    "tests/acceptance/coverage.json": "a70942fc8721ab67fa6341cefdbca15bd2a32a5b70b332288ee1d7e88030a4a8"
+  },
+  "artifacts": [
+    {"path": "docs/evidence/w10/offline-junit-accepted.xml", "sha256": "dc6cad3f5e16ee6e3759b85b738c098cdc17bb3b5a4afcd8daadeec59c9fa888"},
+    {"path": "docs/evidence/w10/coverage-accepted.json", "sha256": "e337704fd66919e8f812643fbe1e9e2a7c554ccc99cda083f6951d71c25650bd"},
+    {"path": "docs/evidence/w10/offline-junit-hardening.xml", "sha256": "aec029a48d3106a1d83007634ddb9d56d10ebb0c374c661de8b7a36b7b77449e"},
+    {"path": "docs/evidence/w10/offline-junit-final.xml", "sha256": "f8bae0aa0603f5494c2eb22d598c5fff4083791fe02d4a899c469fa6ea31a3b7"},
+    {"path": "docs/evidence/w10/offline-junit-confirmed.xml", "sha256": "8b732f99c18f232545babdf53760e4d71ffbe78136bb735ffd1ca8476bac0831"}
+  ],
+  "limits": [
+    "Native history fixture bytes and SDK transport are synthetic. No real native history read, relocation load or inference continuation was executed by W10.",
+    "No browser, SSH authentication/crypto, GPU/model/native-authoring or representative performance proof was executed by W10.",
+    "M10 remains blocked without real mesh proof or an explicit human-owner scope decision.",
+    "Private backups are not encrypted/signed/shareable exports or generic content secret scanners.",
+    "External source writers, including manually launched containers, must remain stopped. Advisory locks/process observations are not an OS sandbox.",
+    "Full make spec-check remains blocked at absent local Node json-schema-to-typescript. Specification/Python binding checks pass separately."
+  ]
+}

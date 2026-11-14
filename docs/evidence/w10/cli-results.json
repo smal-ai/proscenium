@@ -1,0 +1,47 @@
+{
+  "format": "proscenium-w10-cli-evidence-1",
+  "application_commit": "0b384ce0e4e42e991bcfe3764522ef636dcad1c5",
+  "recorded_date": "2026-11-14",
+  "evidence_type": "offline_composed_disposable_fixture",
+  "fixture": "Final pytest accepted-service fixture test_cli_round_trip_and_refusal_exit_codes, actual Git LFS/PNG/SQLite with synthetic native history bytes",
+  "steps": [
+    {
+      "command": "uv run python -m tools.operations.recovery backup --data-directory /home/quintin/.cache/proscenium-development/w10-final-20261114/test_cli_round_trip_and_refusa0/machine --project-id project-test --target /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup",
+      "exit_code": 0,
+      "result": {"status": "backup_created", "files": 14, "limits": []}
+    },
+    {
+      "command": "uv run python -m tools.operations.recovery verify /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup",
+      "exit_code": 0,
+      "result": {"status": "verified", "files": 14, "limits": []}
+    },
+    {
+      "command": "uv run python -m tools.operations.recovery restore /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup --target /home/quintin/.cache/proscenium-development/w10-cli-20261114/restored --rebind-fresh-registry",
+      "exit_code": 0,
+      "result": {
+        "project_id": "project-test",
+        "path": "/home/quintin/.cache/proscenium-development/w10-cli-20261114/restored/project",
+        "data_directory": "/home/quintin/.cache/proscenium-development/w10-cli-20261114/restored/machine",
+        "original_path": "/home/quintin/.cache/proscenium-development/w10-final-20261114/test_cli_round_trip_and_refusa0/project",
+        "execution": "closed_awaiting_explicit_resume",
+        "limits": [],
+        "native_resume_tested": false,
+        "authentication": "not_restored_repair_separately_via_supported_login_and_owner_pairing",
+        "location_reconciliation": "fresh_registry_only_original_must_remain_offline"
+      }
+    },
+    {
+      "command": "uv run python -m tools.operations.recovery restore /home/quintin/.cache/proscenium-development/w10-cli-20261114/backup --target /home/quintin/.cache/proscenium-development/w10-cli-20261114/restored --rebind-fresh-registry",
+      "exit_code": 2,
+      "stderr": "Recovery refused: destination_exists",
+      "result": "Expected overwrite refusal, original restored target retained"
+    }
+  ],
+  "lifecycle_preconditions": [
+    "Disposable source services closed and all admitted work/invocations settled before CLI use.",
+    "Registry/project flock locks held by backup. No active scoped or ambiguous native processes.",
+    "Original index, unrelated staging, independent applications and credentials not modified.",
+    "Private backups remain on persistent home disk, not Git or a shared archive."
+  ],
+  "limits": ["No real native Copilot runtime was started or resumed. These CLI commands do not certify M12/M14."]
+}
