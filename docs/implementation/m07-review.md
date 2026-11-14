@@ -15,7 +15,7 @@ Specification 3.2.0 and contract 1.0.0 are unchanged. Parent owns M07 acceptance
 - Frontend typecheck, ESLint and production build passed.
 - Twelve focused checks passed across actual Chromium, Brave and Edge, comprising nine browser scenarios and three repetitions of the pure identity check.
 - Existing recorded-M04 frame-camera/save/restore regression passed in Chromium.
-- Private browser results: `/tmp/opencode/m07-review-browser-20261114-c/`. Screenshots use per-test directories. Previous attempt `-b` retains three test-selector ambiguity failures, corrected without a product change.
+- Private browser results: `/tmp/opencode/m07-review-browser-20261114-d/`. Screenshots use per-test directories. Previous attempt `-b` retains three test-selector ambiguity failures, corrected without a product change. The final focused run additionally locks the existing sequence playback job-control semantics.
 - Build retains existing Lucide `use client` and large-chunk warnings.
 
 Actual retained-image composed-app readback is recorded separately under `docs/evidence/m07-review/`. No fresh generation is authorised or required. The earlier cobalt-blue correction was not achieved and is not changed by this UI fix.

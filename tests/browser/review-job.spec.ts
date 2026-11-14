@@ -74,4 +74,8 @@ test("membership requires an exact output identity and never resolves ambiguous 
   expect(targetJobId({...target,displayed_sha256:"b".repeat(64)},[job],images)).toBeNull();
   expect(targetJobId(target,[job,{...job,job_id:"duplicate"}],images)).toBeNull();
   expect(targetJobId({...target,artifact_id:"conditioning"},[job],images)).toBeNull();
+  const composite={...target,origin:"sequence_render" as const};
+  expect(targetJobId(composite,[job],images)).toBe(job.job_id);
+  expect(targetJobId(composite,[job],images,"explicit-sequence-job")).toBe("explicit-sequence-job");
+  expect(targetJobId({...target,origin:"reference"},[job],images,"explicit-sequence-job")).toBeNull();
 });

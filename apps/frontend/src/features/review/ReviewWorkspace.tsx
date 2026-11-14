@@ -39,6 +39,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const [mapping, setMapping] = useState<ProxyMapping | null>(null);
   const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap} | null>(null);
   const [availabilityByJob, setAvailabilityByJob] = useState<Record<string,FrameAvailability>>({});
+  const [sequenceJobId, setSequenceJobId] = useState<string | null>(null);
   const [target, setTarget] = useState<FrameTarget | null>(null);
   const [captureReady, setCaptureReady] = useState(false);
   const [decodedImage, setDecodedImage] = useState<string | null>(null);
@@ -71,7 +72,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const draft = drafts.find(d => d.key === draftId);
   const editorPreparer = useRef<ContextPreparer | null>(null);
   const registerEditorPreparer = useCallback((prepare: ContextPreparer | null) => {editorPreparer.current = prepare;}, []);
-  const reviewJobId=targetJobId(draft?.annotation.target ?? target, versionJobs, artifacts);
+  const reviewJobId=targetJobId(draft?.annotation.target ?? target, versionJobs, artifacts, sequenceJobId);
   const activeJob = jobs.find(j => j.job_id === reviewJobId);
   const currentFrames=useMemo(()=>frames.filter(f=>!reviewJobId||f.job_id===reviewJobId),[frames,reviewJobId]);
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
@@ -99,6 +100,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   useEffect(() => {
     if (!external?.target || externalPrimary === emittedPrimary.current) return;
     initialised.current = true; setPlaying(false); setCaptureReady(false);
+    setSequenceJobId(null);
     const annotation = external.annotations.find(a => a.target.artifact_id === external.target?.artifact_id);
     setTarget(structuredClone(external.target));
     setTargetCamera(annotation ? structuredClone(annotation.camera) : external.target.render_job_id ? frameCamera(external.target, jobs) : structuredClone(external.camera));
@@ -276,6 +278,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     const job=versionJobs.find(j=>j.job_id===identity);
     const image=job ? generationOutputs(job,artifacts)[0] : undefined;
     if (!version || (!first && !image)) {setError(`No ready review output for ${identity}. Current image and job retained.`);return;}
+    setSequenceJobId(first && version.kind === "sequence" ? identity : null);
     setPlaying(false);setCaptureReady(false);setRange(null);setTargetCamera(null);setError("");
     if(first){const frame=frameTarget(first,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));setRequestedFrame(first.source_frame);}
     else if(image){setMode("keyframes");setTarget(imageTarget(image,version));setRequestedFrame(1);}
@@ -351,6 +354,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   }
 
   async function restore(annotation: AnnotationSnapshot) {
+    setSequenceJobId(null);
     setPlaying(false); setTarget(annotation.target); setMode(annotation.target.media_artifact_id ? "animation" : "keyframes");
     setRequestedFrame(annotation.target.sequence_frame ?? annotation.target.source_frame ?? 1);
     const local = drafts.find(d => d.key === annotation.annotation_id);

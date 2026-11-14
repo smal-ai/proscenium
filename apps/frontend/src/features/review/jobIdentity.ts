@@ -11,9 +11,12 @@ export function generationOutputs(job: JobRecord, artifacts: Artifact[]): Artifa
   });
 }
 
-export function targetJobId(target: FrameTarget | null, jobs: JobRecord[], artifacts: Artifact[]): string | null {
+export function targetJobId(target: FrameTarget | null, jobs: JobRecord[], artifacts: Artifact[], sequenceJobId: string | null = null): string | null {
   if (!target) return null;
   if (target.render_job_id) return target.render_job_id;
+  // Preserve the sequence playback control's existing job selection. Composite
+  // targets deliberately have no single render job, unlike ordinary frame targets.
+  if (target.origin === "sequence_render") return sequenceJobId ?? jobs[0]?.job_id ?? null;
   if (target.origin !== "concept") return null;
   const matches = jobs.filter(job => generationOutputs(job, artifacts).some(image =>
     image.artifact_id === target.artifact_id && image.sha256 === target.displayed_sha256 &&
