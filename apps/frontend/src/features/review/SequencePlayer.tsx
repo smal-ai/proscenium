@@ -17,7 +17,9 @@ export function SequencePlayer({projectId, artifact, mapping, requestedFrame = 1
     const element = video.current; if (!element) return;
     const seek = () => {
       element.pause(); capture.current = null; setPresented(null);
-      element.currentTime = (Math.min(mapping.frame_count, Math.max(1, requestedFrame)) - 1) * mapping.fps.denominator / mapping.fps.numerator;
+      // Seek inside the frame interval. Rounded MP4 PTS can put its exact
+      // mathematical left boundary a fraction before the intended sample.
+      element.currentTime = (Math.min(mapping.frame_count, Math.max(1, requestedFrame)) - 0.5) * mapping.fps.denominator / mapping.fps.numerator;
     };
     if (element.readyState >= 1) seek();
     else element.addEventListener("loadedmetadata", seek, {once:true});

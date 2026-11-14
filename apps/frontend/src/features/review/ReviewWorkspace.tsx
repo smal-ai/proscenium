@@ -157,7 +157,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
           if (active) setRefreshedVersion(current);
         }
       } catch (e) {captureError(e);}
-      await Promise.all(versionJobs.map(async job => {
+      await Promise.all(versionJobs.filter(job => job.render_spec !== null).map(async job => {
         await Promise.all([
           allPages(cursor => api.call("listFrameReceipts", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}})).then(page => receipts.push(...page)).catch(captureError),
           allPages(cursor => api.call("listPreviewSegments", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}})).then(page => clips.push(...page)).catch(captureError),
