@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M06 and M09 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M06, M08 and M09 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -34,7 +34,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M05](#m05-research-find-import-and-reuse-assets) | Research and reuse local/online assets | M02, M03, M04 | Accepted, `milestone/m05` |
 | [M06](#m06-brief-to-reviewable-storyboard) | Develop a complete narrative and shotboard | M02, M03, M05 | Accepted, `milestone/m06` |
 | [M07](#m07-generate-and-revise-concept-images) | Generate/revise selected storyboard and reference images through ComfyUI | M04, M06 | Planned |
-| [M08](#m08-author-and-review-animation-progressively) | Review animation and annotate available frames before rendering finishes | M04, M06. M07 when generated concepts are used | Planned |
+| [M08](#m08-author-and-review-animation-progressively) | Review animation and annotate available frames before rendering finishes | M04, M06. M07 when generated concepts are used | Accepted, `milestone/m08` |
 | [M09](#m09-request-and-approve-vlm-critique) | Request local critique and send approved findings with images to Copilot | M03, M04. M08 for motion-review inputs | Accepted, `milestone/m09` |
 | [M10](#m10-image-to-3d-asset-generation) | Generate and publish a usable Blender mesh from an image | Early feasibility proof, M04, M05. M07 for generated inputs | Planned, unproven capability |
 | [M11](#m11-playable-unity-scene) | Ask the Unity specialist for a playable scene and test it in Unity | M03, M04, M05. M10 is not required for authored/imported assets | Planned |
@@ -344,6 +344,10 @@ and the corrected shared-reference annotation journey.
 **Reuse:** `smal/tools/comfy/comfy`, `check.py`, `still_batch.py`, `image-generation` and their graph/reference/job-recovery tests. Extract general behaviour, not archived numbered-take assumptions.
 
 ## M08: Author and review animation progressively
+
+**Accepted:** 14 November 2026. [Actual application evidence](implementation/m08.md)
+records annotation and segment playback more than four seconds before the final
+frame, immutable source isolation and final movie/frame-map correspondence.
 
 **User journey:** “I ask Copilot to realise the shots, inspect lighting keyframes, then review and annotate motion while the rest is still rendering.”
 

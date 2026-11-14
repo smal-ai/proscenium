@@ -128,7 +128,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M05 Asset research and reuse | Completed on 2026-11-14 | `milestone/m05` | [Actual discovery, import, revision and explicit adoption](m05.md) |
 | M06 Storyboards | Completed on 2026-11-14 | `milestone/m06` | [Model-authored planning and corrected direct review](m06.md) |
 | M07 Concept generation | Original-job continuation running under resource guard | — | — |
-| M08 Progressive animation | Targeted journey passed; dependencies pending | — | [Progressive and worker-recovery proof](m08.md) |
+| M08 Progressive animation | Completed on 2026-11-14 | `milestone/m08` | [Pre-completion review, pinned inputs and final lineage](m08.md) |
 | M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
 | M10 Image-to-3D | Hardware/inspection passed; original revision awaits continuation | — | [E04](../evidence/w09/live-b/README.md), [M10](m10.md) |
 | M11 Playable Unity scene | Native import/PlayMode passed; original publication blocked | — | [Exact criteria and blocker](m11.md) |
