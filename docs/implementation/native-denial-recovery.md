@@ -91,3 +91,19 @@ prepared host rejection only when its real native completion is observed.
 **54 focused denial/custom-tool/permission-stage checks pass**, with production
 mypy and Ruff clean. Metadata-only application to the retained projects follows
 separately after before-copies. No publication continuation is authorised here.
+
+## Actual metadata outcome
+
+Both one-pass, before-snapshotted cold reconciliations passed with **zero SDK
+sends** and zero live invocations afterwards. M10's original invocation failed on
+its exact native commands denial while its orphaned stage stayed byte-identical,
+including null reply/authority and not_sent delivery. M11's unentered checkpoint
+wrapper and unanswered decision were cancelled. Its decision still has null
+response/resolver and not_sent delivery; the separate prepared host rejection
+was acknowledged only by the already-existing strict native completion matcher.
+
+Both original work records remain unchanged/awaiting Resume. No script, checkpoint,
+publication, provider or native authoring job ran. Before-copy hashes, actual
+source event IDs, preservation assertions and exact closed process identities are
+retained in [the metadata evidence](../evidence/native-denial-recovery/README.md).
+Parent/W09 owns any later original-work continuation under a new allocation.

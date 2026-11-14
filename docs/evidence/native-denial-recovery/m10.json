@@ -1,0 +1,390 @@
+{
+  "label": "m10",
+  "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+  "sends": 0,
+  "continue_commands": 0,
+  "snapshot_files": 10,
+  "before_manifest_sha256": "5c9a23d9425e32306689eb4b4a777b75b9df613e758d05992e5ce1e8e0b20abe",
+  "head_before": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+  "reconciliation": {
+    "pending_empty": true,
+    "uncertain_request_ids": [],
+    "live_invocations": 0,
+    "uncertain_stops": 0,
+    "uncertain_continuations": 0,
+    "duplicate_correlations": 0
+  },
+  "native_process": {
+    "pid": 4028103,
+    "start": "47068664",
+    "parent_pid": 4028081,
+    "parent_start": "47068526",
+    "same_identity_alive": false,
+    "parent_same_identity_alive": false
+  },
+  "source_scene_meta_bytes_unchanged": true,
+  "old_reports_unchanged": true,
+  "original_bindings_unchanged": true,
+  "git_refs_unchanged": true,
+  "contexts_unchanged": true,
+  "source_job_counter_records_unchanged": true,
+  "submissions_unchanged": true,
+  "work_before": [
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "m10-import-no-inference",
+      "job_ids": [],
+      "native_session_id": "fixture-import-not-an-sdk-session",
+      "originating_request_id": "m10-owner-import",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 1,
+      "work_id": "m10-import-fixture"
+    },
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+      "job_ids": [],
+      "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "originating_request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 3,
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "work_after": [
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "m10-import-no-inference",
+      "job_ids": [],
+      "native_session_id": "fixture-import-not-an-sdk-session",
+      "originating_request_id": "m10-owner-import",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 1,
+      "work_id": "m10-import-fixture"
+    },
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+      "job_ids": [],
+      "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "originating_request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 3,
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "live_before": [
+    {
+      "agent_id": null,
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "bash",
+      "native_id": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+      "owner_epoch": "epoch-baf233f8-52b8-43e7-a489-293350676465",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "state": "running",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "live_after": [],
+  "outcomes": [
+    {
+      "at": "2026-11-14T17:39:35.993056+00:00",
+      "authority": null,
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "departed_process": {
+        "current_send": false,
+        "invocation_ids": [
+          "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5"
+        ],
+        "observed_identity": null,
+        "parent_pid": 3901342,
+        "parent_start": "46777681",
+        "pending_empty": true,
+        "permission_fingerprints": {
+          "01ec62fb-3aa3-49e0-ae42-f9b2720bb48d": "f8367e60aed7c1990976ffeb013490623ff615dbca0aaf7010978f6c56ca9192",
+          "3818051f-850b-42bb-8473-9afc37419dbd": "97dc437c99da7c4b1ab6923290361872cc49930c1be40322affcdb520164a197",
+          "97b33b9c-83cc-4fbc-91cf-4fc26dcf8831": "5a331ff0f4833692b7db4788112ecfbb91361c20cb3190b4600245c35384ddf6",
+          "9e487b19-3def-4423-880d-842e161aa010": "f2273c54a309412e3a8e63db3daf41422c7eeb23e46588b1d8b19220ab66f2db",
+          "ab6e6d75-5400-4467-949b-8bcc42fdfc6f": "5b44b781c8264fe1452d3454d8b542a6a1d253aa97157242fd24b5ab9bcd1fc3",
+          "b754dbd7-f799-42a1-b81c-9f33aa407c66": "2da3d5a2ef62d7878e16690ca083a32e1cea2319e266c45755a22dd603578caa",
+          "b7b621cd-416f-4201-8041-16b76092e17b": "40000cd4e8f3a3ffba87ed808ba0304204679ee39cce5aa532a7242cd2f794df",
+          "bb450951-94f5-4409-876b-eb138a8d0a5c": "fb3086abc9b10b1d2506aa004841ee2cad26facc7b40dba9931117763ef5bf2e",
+          "efa0bc52-3da5-4074-8f5c-a7e2bc94c7fa": "f8367e60aed7c1990976ffeb013490623ff615dbca0aaf7010978f6c56ca9192"
+        },
+        "pid": 3902206,
+        "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+        "start": "46779638"
+      },
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "kind": "native_authorization_denied",
+      "native_exit_code": null,
+      "native_id": "1fbd60bd-5e63-4553-af72-8b6d50648dc1",
+      "native_return_observed": false,
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "runtime": "1.0.112",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "source_event_ids": [
+        "dbfcd230-d244-4c69-8a2a-cfd39e1d10fc",
+        "01ec62fb-3aa3-49e0-ae42-f9b2720bb48d",
+        "43d539c1-3a3a-4173-abc4-8e09db265c51"
+      ],
+      "tool_call_id": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "permission_stages_before": [
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "f8367e60aed7c1990976ffeb013490623ff615dbca0aaf7010978f6c56ca9192",
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "native_id": "3a0d372b-ecef-4790-b6f4-7c74048a30ee",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "97dc437c99da7c4b1ab6923290361872cc49930c1be40322affcdb520164a197",
+      "invocation_id": "d63f48c4f2ad307dc856b24d8a022c3aef553d74ec716b54d4f56c776e660e76",
+      "native_id": "53fde28c-0a61-4ea7-93c2-11134873cdf5",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "f2273c54a309412e3a8e63db3daf41422c7eeb23e46588b1d8b19220ab66f2db",
+      "invocation_id": "d048cc69e3ad774423ff79129d42417de8bf3e87d2e38ed285888f36218339ab",
+      "native_id": "6d670219-b618-4603-b250-aac058954316",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "5b44b781c8264fe1452d3454d8b542a6a1d253aa97157242fd24b5ab9bcd1fc3",
+      "invocation_id": "b51706d59959e885a5667683e5cde1ddfc91d60d6e1d67f3999f94410988f2ab",
+      "native_id": "9938b4b1-7de1-47c0-98ed-21fcfe41d4d1",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "authority": null,
+      "completions": [
+        {
+          "matches": false,
+          "native_event_id": "43d539c1-3a3a-4173-abc4-8e09db265c51",
+          "result": "denied-interactively-by-user"
+        }
+      ],
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "not_sent",
+      "fingerprint": "f8367e60aed7c1990976ffeb013490623ff615dbca0aaf7010978f6c56ca9192",
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "native_id": "1fbd60bd-5e63-4553-af72-8b6d50648dc1",
+      "native_result": "denied-interactively-by-user",
+      "phase": "outcome_uncertain",
+      "reply": null,
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "tool_call_id": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "5a331ff0f4833692b7db4788112ecfbb91361c20cb3190b4600245c35384ddf6",
+      "invocation_id": "3f82fcc4a86c00c0724d76540c916f623343aa79a64d28eb1862321f1c0361b8",
+      "native_id": "b0f5085c-c3a8-4179-aa29-825335e5583e",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "2da3d5a2ef62d7878e16690ca083a32e1cea2319e266c45755a22dd603578caa",
+      "invocation_id": "dd8d5f63a9471d4b0e7e6f9ead16ae147a60cd23aa5a61cb1b33a857f163ece5",
+      "native_id": "c4b69ae5-1aae-4cf5-8bc1-68d4f5899be8",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "40000cd4e8f3a3ffba87ed808ba0304204679ee39cce5aa532a7242cd2f794df",
+      "invocation_id": "5fc0f3784052b09281ae176ce3fa4dda190a8b88f60b56bb6866f96abc5363fc",
+      "native_id": "dde94987-0638-4f60-83af-09f620e139aa",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "fb3086abc9b10b1d2506aa004841ee2cad26facc7b40dba9931117763ef5bf2e",
+      "invocation_id": "ff3bd95eb9ed16b5c98d6f4ab22a7ff27010f52fe6086b4008f222c5011de3b6",
+      "native_id": "f631a597-9336-4daa-8198-f4b4976cd7fd",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "permission_stages_after": [
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "f8367e60aed7c1990976ffeb013490623ff615dbca0aaf7010978f6c56ca9192",
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "native_id": "3a0d372b-ecef-4790-b6f4-7c74048a30ee",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "97dc437c99da7c4b1ab6923290361872cc49930c1be40322affcdb520164a197",
+      "invocation_id": "d63f48c4f2ad307dc856b24d8a022c3aef553d74ec716b54d4f56c776e660e76",
+      "native_id": "53fde28c-0a61-4ea7-93c2-11134873cdf5",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "f2273c54a309412e3a8e63db3daf41422c7eeb23e46588b1d8b19220ab66f2db",
+      "invocation_id": "d048cc69e3ad774423ff79129d42417de8bf3e87d2e38ed285888f36218339ab",
+      "native_id": "6d670219-b618-4603-b250-aac058954316",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "5b44b781c8264fe1452d3454d8b542a6a1d253aa97157242fd24b5ab9bcd1fc3",
+      "invocation_id": "b51706d59959e885a5667683e5cde1ddfc91d60d6e1d67f3999f94410988f2ab",
+      "native_id": "9938b4b1-7de1-47c0-98ed-21fcfe41d4d1",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "authority": null,
+      "completions": [
+        {
+          "matches": false,
+          "native_event_id": "43d539c1-3a3a-4173-abc4-8e09db265c51",
+          "result": "denied-interactively-by-user"
+        }
+      ],
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "not_sent",
+      "fingerprint": "f8367e60aed7c1990976ffeb013490623ff615dbca0aaf7010978f6c56ca9192",
+      "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+      "native_id": "1fbd60bd-5e63-4553-af72-8b6d50648dc1",
+      "native_result": "denied-interactively-by-user",
+      "phase": "outcome_uncertain",
+      "reply": null,
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "tool_call_id": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "5a331ff0f4833692b7db4788112ecfbb91361c20cb3190b4600245c35384ddf6",
+      "invocation_id": "3f82fcc4a86c00c0724d76540c916f623343aa79a64d28eb1862321f1c0361b8",
+      "native_id": "b0f5085c-c3a8-4179-aa29-825335e5583e",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "2da3d5a2ef62d7878e16690ca083a32e1cea2319e266c45755a22dd603578caa",
+      "invocation_id": "dd8d5f63a9471d4b0e7e6f9ead16ae147a60cd23aa5a61cb1b33a857f163ece5",
+      "native_id": "c4b69ae5-1aae-4cf5-8bc1-68d4f5899be8",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "40000cd4e8f3a3ffba87ed808ba0304204679ee39cce5aa532a7242cd2f794df",
+      "invocation_id": "5fc0f3784052b09281ae176ce3fa4dda190a8b88f60b56bb6866f96abc5363fc",
+      "native_id": "dde94987-0638-4f60-83af-09f620e139aa",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    {
+      "delivery_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "delivery_state": "acknowledged",
+      "fingerprint": "fb3086abc9b10b1d2506aa004841ee2cad26facc7b40dba9931117763ef5bf2e",
+      "invocation_id": "ff3bd95eb9ed16b5c98d6f4ab22a7ff27010f52fe6086b4008f222c5011de3b6",
+      "native_id": "f631a597-9336-4daa-8198-f4b4976cd7fd",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "decisions_before": [],
+  "decisions_after": [],
+  "new_public_events": [
+    {
+      "actor": {
+        "id": "copilot-host",
+        "kind": "system"
+      },
+      "event_type": "tool.completed",
+      "native_event_id": null,
+      "native_session_id": null,
+      "occurred_at": "2026-11-14T17:39:35.993284+00:00",
+      "payload": {
+        "artifact_ids": [],
+        "invocation_id": "3b55ae7e5f095af132fa663e93619f02d176c412b5d5fada875b69e7f18c23b5",
+        "model_id": "gpt-6.1-sol",
+        "name": "bash",
+        "state": "failed",
+        "summary": "Native commands authorisation denied before execution; callback delivery and decision authority remain unproven."
+      },
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "schema_version": "1.0",
+      "sequence": 80,
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    }
+  ],
+  "work_states_unchanged": true,
+  "send_records_unchanged": true,
+  "native_user_messages_before": 1,
+  "native_user_messages_after": 1,
+  "native_history_prefix_preserved": true,
+  "revision_script_executed_by_this_proof": false,
+  "new_authoring_outputs_exist": false,
+  "new_checkpoint_intent_exists": false
+}
