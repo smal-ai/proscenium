@@ -429,9 +429,7 @@ class Copilot:
                 return
             holder["session_id"] = sid
             try:
-                self.state.reduce(project_id, sid, value)
-                self.state.drain_pending(project_id, sid)
-                if (
+                progress_candidate = (
                     value["type"]
                     in {
                         "assistant.message_delta",
@@ -444,7 +442,16 @@ class Copilot:
                         "assistant.usage",
                     }
                     and time.monotonic() - owner.progress_at >= 0.25
-                ):
+                )
+                previous = None
+                if progress_candidate:
+                    with self.services.registry.project_store(project_id).transaction(
+                        write=False
+                    ) as tx:
+                        previous = tx.get("copilot.native", key(sid, value["id"]), required=False)
+                self.state.reduce(project_id, sid, value)
+                self.state.drain_pending(project_id, sid)
+                if progress_candidate and previous is None:
                     with self.services.registry.project_store(project_id).transaction(
                         write=False
                     ) as tx:

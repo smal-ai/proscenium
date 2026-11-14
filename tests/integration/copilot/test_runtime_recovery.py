@@ -28,6 +28,7 @@ async def setup(runtime):
         ("closed", 1),
         ("unattributed", 1),
         ("twice", 2),
+        ("duplicate", 1),
     ],
 )
 def test_bounded_heartbeat_retry_requires_verified_progress_and_live_transport(
@@ -35,13 +36,27 @@ def test_bounded_heartbeat_retry_requires_verified_progress_and_live_transport(
 ):
     async def run():
         session = await setup(runtime)
+        duplicate = dict(
+            id="old-progress",
+            type="assistant.message_delta",
+            data=dict(
+                messageId="probe-message",
+                originatingMessageId="native-request-one",
+                deltaContent="Already received",
+            ),
+        )
+        if case == "duplicate":
+            session.callbacks["on_event"](duplicate)
+            runtime.callback_owners[PROJECT].progress_at = 0
         count = 0
 
         async def health():
             nonlocal count
             count += 1
             if count == 1:
-                if case not in {"no_progress"}:
+                if case == "duplicate":
+                    session.callbacks["on_event"](duplicate)
+                elif case not in {"no_progress"}:
                     session.event(
                         "assistant.message_delta",
                         dict(
