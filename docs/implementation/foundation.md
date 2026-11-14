@@ -120,6 +120,13 @@ Public container members:
 `artifacts`, `sources`, `reviews` and `contexts`. These protocols contain no pretend handlers.
 Feature packages may propose interface additions to the parent without editing shared files.
 
+The integration-owned frontend seams are `apps/frontend/src/api/studio.ts`. W04 exports
+`StudioApp({components}: {components?: StudioComponents})`. W05 supplies `ReviewWorkspace`,
+`Outliner`, `CatalogueBrowser` and `CriticPanel` matching those component props. W06 supplies
+`StoryboardBrowser`. The parent composes those accepted components in `main.tsx`. `TurnSelection`
+is an omission of the generated `ContextSnapshot`, not a new wire DTO. Queue handlers add
+fresh request/context IDs and capture time, retaining every supplied target and attachment.
+
 ## Storage, migrations and transactions
 
 - Machine registry: `<Settings.data_directory>/registry.sqlite3`, default
