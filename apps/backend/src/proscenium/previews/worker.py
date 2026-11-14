@@ -185,8 +185,18 @@ def supervise(root: Path) -> None:
                     if (root / "native-error.json").exists():
                         terminal["error_code"] = read(root / "native-error.json")["error_code"]
                     selector.close()
+                    optional_segment_errors = []
                     for future in futures:
-                        future.result()
+                        try:
+                            future.result()
+                        except Exception as error:
+                            if spec["purpose"] != "keyframe":
+                                raise
+                            optional_segment_errors.append(type(error).__name__)
+                    if optional_segment_errors:
+                        # The PNG contract is authoritative for keyframes. A failed
+                        # optional encode has no segment receipt and is never playable.
+                        terminal["optional_segment_errors"] = optional_segment_errors
                 complete = (
                     (root / "proxy-ready.json").exists()
                     if spec["purpose"] == "proxy"

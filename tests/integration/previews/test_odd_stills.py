@@ -33,13 +33,20 @@ def test_motion_still_requires_even_pixels(purpose, width, height):
 
 
 @pytest.mark.parametrize(
-    "width,height,expected_segments", [(1031, 569, 0), (2063, 1138, 0), (640, 360, 1)]
+    "width,height,expected_segments,purpose,encoder_fails",
+    [
+        (1031, 569, 0, "keyframe", False),
+        (2063, 1138, 0, "keyframe", False),
+        (640, 360, 1, "keyframe", False),
+        (640, 360, 1, "keyframe", True),
+        (640, 360, 1, "draft_motion", True),
+    ],
 )
 @pytest.mark.parametrize("complete", [True, False])
 def test_supervisor_eof_for_exact_png_stills(
-    tmp_path, monkeypatch, width, height, expected_segments, complete
+    tmp_path, monkeypatch, width, height, expected_segments, purpose, encoder_fails, complete
 ):
-    value = spec(first=1, last=1, purpose="keyframe")
+    value = spec(first=1, last=1, purpose=purpose)
     value["dimensions"] = {"width": width, "height": height}
     root = tmp_path / "owned-output"
     root.mkdir()
@@ -76,13 +83,18 @@ def test_supervisor_eof_for_exact_png_stills(
 
     def segment_double(root, task, first, last):
         encoded.append((first, last))
+        if encoder_fails:
+            raise RuntimeError("Explicit offline encoder failure")
         return {"explicit_offline_encoder_double": True}
 
     monkeypatch.setattr(worker.subprocess, "Popen", python_double)
     monkeypatch.setattr(worker, "segment", segment_double)
     worker.supervise(root)
     terminal = read(root / "terminal.json")
-    assert terminal["state"] == ("succeeded" if complete else "failed")
+    succeeded = complete and not (purpose != "keyframe" and encoder_fails)
+    assert terminal["state"] == ("succeeded" if succeeded else "failed")
+    if complete and encoder_fails and purpose == "keyframe":
+        assert terminal["optional_segment_errors"] == ["RuntimeError"]
     assert terminal["native_exit_code"] == 0  # Observed Python double exit, not Blender evidence.
     assert len(native_calls) == 1 and len(encoded) == (expected_segments if complete else 0)
     assert not list(root.glob("*.mp4"))
