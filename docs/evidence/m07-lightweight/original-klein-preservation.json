@@ -1,0 +1,45 @@
+{
+  "observed_epoch": 1794676378.644386,
+  "snapshot_kind": "Before any SD-Turbo native execution; read-only original fixture check",
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-70a06bf9-1fbb-4188-8162-bddc030e7cd4",
+    "attempt_number": 1,
+    "availability": "pending",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": null,
+    "input_digest": "ab6c1b4bf2ab8d097f0b8550c08a3a60faebb20d78a909e47a88a19fdef04a8e",
+    "job_id": "w07-live-initial",
+    "kind": "image_generation",
+    "owner_epoch": "epoch-fb3d33c0-48a7-441b-9b15-ed735c226cd3",
+    "owner_operation_id": null,
+    "project_id": "w07-live-proof",
+    "provider_id": "live-comfy",
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "planned",
+    "state_revision": 0,
+    "target": {
+      "shot_id": null,
+      "target_id": "w07-live-task",
+      "version": null
+    },
+    "work_id": "w07-live-work"
+  },
+  "frozen_inputs_equal_original_report": true,
+  "reservations": [
+    [
+      "w07-live-initial",
+      "w07-live-task",
+      "w07-live-task",
+      "reserved"
+    ]
+  ],
+  "execution_records": [],
+  "database_sha256_before_read": "3ca79e931930e13482957f0c8b9c060d5403276f433a437ae8ead9979d2c6485",
+  "database_sha256_after_read": "3ca79e931930e13482957f0c8b9c060d5403276f433a437ae8ead9979d2c6485",
+  "original_report_sha256": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+  "original_timing_sha256": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe",
+  "no_original_services_opened_or_model_calls": true
+}

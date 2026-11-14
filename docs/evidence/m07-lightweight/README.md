@@ -8,6 +8,10 @@ The selected single candidate is official public [SD-Turbo](model-source.json), 
 The model API reported public/not gated and its pinned model card explicitly documents
 img2img. No token, purchase or second candidate is used.
 
+Validated profile/source commit: `fc65e72802691d2998d0c41bc2881ac2c6d3dbd1`.
+The original download completed successfully before that commit. No temporary Comfy
+process, native SDK request, inference job or image selection has been started yet.
+
 ## Code and real isolation plan
 
 - New additive plugin revision: `comfy-sd-turbo-img2img-1`.
@@ -45,11 +49,12 @@ retained. Signed redirect URLs were never logged or saved.
 Those two third-party files retain upstream bytes, including upstream trailing whitespace;
 maintained-source whitespace checks exclude only those verbatim snapshots.
 
-1. Consume that original download's completion, not a second candidate or blind re-download.
-   Preserve the official licence/model card and record actual verified checkpoint metadata
-   from `tools/comfy/sd_turbo_candidate.py` before inference.
+1. **Completed:** original download consumed, actual bytes/hash verified, official
+   licence/model card retained. Do not fetch a second candidate or blindly re-download.
 2. Record unchanged original W07 job/attempt/task/reservation/report/database identity and
    protected Qwen/profile baseline. No operation uses that old admission for this profile.
+   [Read-only original snapshot](original-klein-preservation.json) already confirms its
+   job, frozen inputs, ledger and main DB bytes are unchanged. Recheck after real execution.
 3. Use a fresh run directory:
    `/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-lightweight-20261114/`.
    Check host MemAvailable against **13804495920 bytes**, the larger of 12 GiB and actual
