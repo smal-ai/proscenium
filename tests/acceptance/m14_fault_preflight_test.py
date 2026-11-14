@@ -171,3 +171,17 @@ def test_record_paths_and_helper_imports_are_production_owned(tmp_path):
         < launcher.index("O_EXCL")
         < launcher.index("subprocess.Popen")
     )
+
+
+def test_operator_reporting_keeps_revisions_without_overwriting_worker_journals(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(driver, "ROOT", tmp_path)
+    journal.atomic(tmp_path / "result.json", {"historical": "initial failed driver report"})
+    original = (tmp_path / "result.json").read_bytes()
+    driver.report({"stage": 1})
+    driver.report({"stage": 2})
+    assert journal.read(tmp_path / "operator-reports/0001.json") == {"stage": 1}
+    assert journal.read(tmp_path / "operator-reports/0002.json") == {"stage": 2}
+    assert journal.read(tmp_path / "report-latest.json") == {"stage": 2}
+    assert (tmp_path / "result.json").read_bytes() == original

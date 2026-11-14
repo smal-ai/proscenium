@@ -297,7 +297,7 @@ def admit():
         services.close()
 
 
-def reopen():
+def reopen(expected_state="planned"):
     services = container()
     catalogue_install(services)
     previews, reviews = install(services), reviews_install(services)
@@ -315,7 +315,7 @@ def reopen():
         invocation_id=INVOCATION,
     )
     job = services.jobs.get(PROJECT, read(ROOT / "admission-preflight.json")["job"]["job_id"])
-    assert job["state"] == "planned" and job["attempt_number"] == 1
+    assert job["state"] == expected_state and job["attempt_number"] == 1
     return services, previews, reviews, caller, job
 
 
@@ -415,17 +415,29 @@ def served_media(services, artifact_id):
         }
 
 
-def run():
+def report(evidence):
+    """Operator reports are revisioned separately from immutable worker journals."""
+    directory = ROOT / "operator-reports"
+    directory.mkdir(exist_ok=True)
+    number = len(list(directory.glob("*.json"))) + 1
+    atomic(directory / f"{number:04d}.json", evidence)
+    temporary = ROOT / ".report-latest.pending"
+    temporary.write_text(json.dumps(evidence, indent=2) + "\n")
+    temporary.replace(ROOT / "report-latest.json")
+
+
+def run(recover=False):
     prepared = read(ROOT / "prepared.json")
     assert prepared["plan"] == plan(), "Sealed preflight changed"
     marker = ROOT / "allocation.json"
-    with marker.open("x") as output:
+    with (ROOT / "reporting-repair-allocation.json" if recover else marker).open("x") as output:
         json.dump(
             {
                 "driver_commit": git(REPO, "rev-parse", "HEAD"),
                 "max_workers": 2,
                 "max_actual_frames": 4,
                 "no_implicit_relaunch": True,
+                "recover_verified_first_failure_only": recover,
             },
             output,
         )
@@ -437,12 +449,30 @@ def run():
     }
     services = None
     try:
-        services, previews, reviews, caller, job = reopen()
+        services, previews, reviews, caller, job = reopen("failed" if recover else "planned")
         first_root = previews.root(job)
         injection = first_root / "frames/00000002.png"
-        injection.parent.mkdir(parents=True)
-        with injection.open("xb") as output:
-            output.write(INJECTED)
+        if not recover:
+            injection.parent.mkdir(parents=True)
+            with injection.open("xb") as output:
+                output.write(INJECTED)
+        else:
+            original_report = read(ROOT / "result.json")
+            assert original_report["status"] == "in_progress" and not original_report["attempts"]
+            assert injection.read_bytes() == INJECTED
+            terminal = read(first_root / "terminal.json")
+            assert terminal["state"] == "failed" and terminal["native_exit_code"] == 1
+            assert not alive(read(first_root / "process.json"))
+            assert not alive(read(first_root / "native-process.json"))
+            assert len(snapshot(services)["attempts"]) == 1
+            evidence["reporting_repair"] = {
+                "original_report_sha256": sha((ROOT / "result.json").read_bytes()),
+                "defect": "Driver incorrectly used immutable journal writer for a changing operator report after verified worker-1 failure",
+                "scope": "Owned driver reporting and continuation guard only, no product/state/journal edits",
+                "first_live_observations": "Not durably saved before report failure. Actual positive PID/start identities remain in supervisor/native journals.",
+                "first_worker_relaunched": False,
+                "extra_workers_allocated": 0,
+            }
         evidence["injection"] = {
             "path": str(injection),
             "hex": INJECTED.hex(),
@@ -452,13 +482,14 @@ def run():
             "native_generated": False,
             "disk_exhaustion": False,
         }
-        atomic(ROOT / "result.json", evidence)
+        report(evidence)
         memory()
-        evidence["first_pump"] = previews.pump(PROJECT)
+        if not recover:
+            evidence["first_pump"] = previews.pump(PROJECT)
         failed, observations = wait(previews, job)
         first = attempt_evidence(previews, failed, observations)
         evidence["attempts"].append(first)
-        atomic(ROOT / "result.json", evidence)
+        report(evidence)
         assert failed["state"] == "failed" and failed["native_exit_code"] == 1
         assert failed["error_code"] == "render_failed"
         assert GUARD in first["blender_log"]
@@ -529,9 +560,8 @@ def run():
         try:
             previews.state(
                 failed,
-                "succeeded",
-                exit_code=0,
-                evidence="Explicit stale state rejection probe, not a native exit assertion",
+                "running",
+                evidence="Explicit stale state rejection probe, no exit code supplied",
             )
         except DomainError as exc:
             evidence["old_state_rejection"] = exc.code
@@ -539,7 +569,7 @@ def run():
             raise AssertionError("Stale attempt state accepted")
         assert snapshot(services) == before_probes
         evidence["stale_probes_no_mutation"] = True
-        atomic(ROOT / "result.json", evidence)
+        report(evidence)
         memory()
         evidence["second_pump"] = previews.pump(PROJECT)
         second_root = previews.root(retried)
@@ -551,7 +581,7 @@ def run():
         complete, observations = wait(previews, retried)
         second = attempt_evidence(previews, complete, observations)
         evidence["attempts"].append(second)
-        atomic(ROOT / "result.json", evidence)
+        report(evidence)
         assert complete["state"] == "succeeded" and complete["native_exit_code"] == 0
         assert second["availability"]["available_ranges"] == [{"start": 1, "end": 3}]
         assert second["availability"]["playable_ranges"] == [{"start": 1, "end": 3}]
@@ -593,7 +623,7 @@ def run():
             str(path): {"identity": read(path), "alive": alive(read(path))}
             for path in ROOT.glob("project/.proscenium/jobs/previews/**/*process.json")
         }
-        atomic(ROOT / "result.json", evidence)
+        report(evidence)
         if services:
             services.close()
         print(
@@ -609,4 +639,10 @@ def run():
 
 
 if __name__ == "__main__":
-    {"prepare": prepare, "resume-import": resume_import, "admit": admit, "run": run}[sys.argv[1]]()
+    {
+        "prepare": prepare,
+        "resume-import": resume_import,
+        "admit": admit,
+        "run": run,
+        "resume-verified-failure": lambda: run(recover=True),
+    }[sys.argv[1]]()

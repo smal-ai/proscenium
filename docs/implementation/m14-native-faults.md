@@ -53,3 +53,22 @@ stops the allocation rather than buying a third worker or a replacement logical 
   spawns. Runtime bounds, claim path, exact source hash and absence of launch claim verified.
 - Driver and pure preflight are committed before workers. Actual outcomes are recorded
   separately after the bounded run. No cumulative M12/M14 completion claim is made.
+
+## First actual failure and owned reporting correction
+
+Driver `80630a4` launched exactly one actual worker. It rendered and registered frame 1,
+then failed at the intended frame-2 output guard, with native exit `1`, `render_failed`,
+partial availability and verified terminal job evidence. No segment was encoded.
+
+After observing this terminal failure, the driver itself failed to update its operator
+report because it incorrectly used the immutable worker-journal writer. The original
+`result.json` remains unchanged. Actual worker journals, injected bytes, registered frame,
+terminal job/attempt and source were unaffected. Live driver observations were not durably
+saved, so they are not reconstructed or claimed. Actual positive PID/start identities
+remain retained in production supervisor/native process journals.
+
+The reporting-only correction saves numbered immutable report revisions plus a separate
+latest pointer. Its explicit continuation requires the original sole attempt to be verified
+failed, both original processes dead, no second attempt and unchanged injected bytes.
+It does not rerun worker 1, create another job, flip runtime states or change any worker
+journal. The remaining allocation is still one worker for the normal same-job retry.
