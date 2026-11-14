@@ -1,5 +1,35 @@
 # M07 lightweight Comfy image family: preparation
 
+## Execution attempt: immediate pre-start resource blocker
+
+**M07 remains incomplete.** On the instruction to execute the accepted plan, the first
+`free -b` readiness observation reported **13516251136 bytes available**, below the fixed
+**13804495920-byte** floor by **288244784 bytes**. The attempt stopped at that first failure.
+It did not resample until green, wait for RAM, start Comfy/browser/SDK, or send inference.
+
+- Admission recorder committed before the receipt: `7e19b142d2857aa8062698565a7741d0efead9bb`.
+- [Actual admission receipt](execution-admission.json), private original at
+  `/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-lightweight-20261114/admission.json`.
+- [Original Klein preservation check](execution-original-preservation.json): job/frozen
+  inputs/reservation and main DB bytes match the preparation anchor. No original services
+  were opened. The old job is still planned, revision 0, with its one reserved ledger row.
+- The run root contains only `admission.json`. No server clock, GPU claim, native request,
+  generation admission, selection or permission decision was created. No background shell
+  was started for execution, and there is no provider ID to reconcile.
+- The receipt transparently records the already-observed tool value. The initial command
+  did not capture an observation epoch; `recorded_epoch` is receipt creation, not a fabricated
+  measurement timestamp. The recorder accepts failed values only and has no execution path.
+- The checkpoint was not rehashed after this failed guard. Its successful preparation
+  verification remains retained, but is not presented as a new startup/POST check.
+
+This is not a model or API failure and is not positive M07 evidence. No model/profile/floor
+change, alternate candidate, independent service mutation or permission bypass occurred.
+The known native custom-tool permission classifier issue was not reached: zero native
+calls means zero owner decisions. A future coordinator-authorised continuation must retain
+this admission receipt rather than delete evidence or silently retry under it.
+
+---
+
 **Preparation only. No SD-Turbo inference or M07 positive journey is claimed yet.**
 The selected single candidate is official public [SD-Turbo](model-source.json), pinned to
 `b261bac6fd2cf515557d5d0707481eafa0485ec2`, filename `sd_turbo.safetensors`, expected
