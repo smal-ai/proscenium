@@ -79,7 +79,7 @@ async function mockApi(page: Page, options: { failPlan?: boolean; uncertain?: bo
   return { mutations, reads, records };
 }
 
-test("paginated ordered frames, readable 280px panel and exact central context without execution", async ({ page }) => {
+test("paginated ordered frames, readable 280px panel and exact central context without execution", async ({ page }, testInfo) => {
   const state = await mockApi(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Plan garden-plan" })).toBeVisible();
@@ -105,7 +105,7 @@ test("paginated ordered frames, readable 280px panel and exact central context w
   expect(state.reads.some(value => value.includes("items-page-2"))).toBe(true);
   expect(state.reads.some(value => value.includes("versions-page-2"))).toBe(true);
   expect(state.reads.some(value => value.includes("selections-page-2"))).toBe(true);
-  await page.screenshot({ path: "docs/evidence/w06/storyboard-1920x1080.png" });
+  await page.screenshot({ path: testInfo.outputPath("storyboard-1920x1080.png") });
 });
 
 test("select, supersede and withdraw preserve exact version slot and revisions", async ({ page }) => {

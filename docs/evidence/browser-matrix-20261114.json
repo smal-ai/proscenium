@@ -1,0 +1,51 @@
+{
+  "format": "proscenium-browser-matrix-1",
+  "date": "2026-11-14",
+  "application_base": "3cdefb240cc241560a948a3b41767766bd78875a",
+  "frontend_source_tree": "c9e5e8c673e41431e99bf70006d2644663180e96",
+  "scope": "Real installed browsers against controlled API fixtures and retained native media/GLB. Not fresh cloud/native generation.",
+  "viewport": {"width": 1920, "height": 1080},
+  "rendering": "Explicit SwiftShader software WebGL",
+  "first_run": {
+    "command": "PROSCENIUM_BROWSER_REPORT=/home/quintin/.cache/proscenium-development/browser-matrix-20261114-integrated.json npx playwright test --config playwright.config.ts --max-failures=1",
+    "report_sha256": "2174c8ba38de2aeb5e5ecdd4d21a3b9ea8b05cbc86577a2a48bcc2b339efea21",
+    "passed": 109,
+    "failed": 1,
+    "not_run": 63,
+    "failure": "Edge's camera oracle read an intermediate React context immediately after the completed pointer drag. Actual capture matched the final renderer camera."
+  },
+  "correction": {
+    "file": "tests/browser/review-camera.spec.ts",
+    "change": "Wait three animation frames for the renderer camera observer and React context to settle before comparing the pre-click camera. Equality and pixel assertions remain unchanged.",
+    "production_change": false
+  },
+  "remainder_run": {
+    "command": "PROSCENIUM_BROWSER_REPORT=/home/quintin/.cache/proscenium-development/browser-matrix-20261114-remainder.json npx playwright test --config playwright.config.ts --project=edge-review --project=edge-storyboards --project=chromium-review-dpr2 --max-failures=1",
+    "report_sha256": "e015aceacc1dc02574b519a69f0c99913b0f21b92c2b1c7eb9fa5c39f10a2435",
+    "passed": 64,
+    "failed": 0,
+    "not_run": 0
+  },
+  "latest_result_by_project": {
+    "chromium-shell": 13,
+    "chromium-review": 29,
+    "chromium-storyboards": 6,
+    "brave-shell": 13,
+    "brave-review": 29,
+    "brave-storyboards": 6,
+    "edge-shell": 13,
+    "edge-review": 29,
+    "edge-storyboards": 6,
+    "chromium-review-dpr2": 29
+  },
+  "combined_unique_cases_passed": 173,
+  "remaining_failures": 0,
+  "interpretation": "109 passing cases retained from the first run plus 64 passing remainder cases. This is not described as one uninterrupted clean run.",
+  "historical_evidence": "Ordinary browser tests now write per-test outputs, not over the committed native/browser proof files. Historical W05/W06 captures remain unchanged.",
+  "test_source_hashes": {
+    "playwright.config.ts": "8461b12bfbc7694620579217718de5ae61dbce5e6edd1e5f3447a39475769c18",
+    "tests/browser/review-camera.spec.ts": "f52801ae9b838555151965a92f16bbf45e96f3fe7658cf9823d7f6076709239f",
+    "tests/browser/storyboards.spec.ts": "73a96c8a3410581d920001e41ce8d391c6dc80c8733e91eb11b5adde68f6ebcb",
+    "tests/browser/review.spec.ts": "3f0e3ab1ca1326fc4d4082aa50771fd4aa2468408224e2ba87fdffaee307f79d"
+  }
+}

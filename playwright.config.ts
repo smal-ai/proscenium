@@ -1,9 +1,11 @@
 import { defineConfig } from "@playwright/test";
 
+// Browser compatibility uses software WebGL, leaving native inference allocations independent.
+const softwareWebGL = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"];
 const browsers = [
-  { name: "chromium", launchOptions: {} },
-  { name: "brave", launchOptions: { executablePath: "/usr/bin/brave-browser" } },
-  { name: "edge", launchOptions: { executablePath: "/usr/bin/microsoft-edge" } },
+  { name: "chromium", launchOptions: { args: softwareWebGL } },
+  { name: "brave", launchOptions: { executablePath: "/usr/bin/brave-browser", args: softwareWebGL } },
+  { name: "edge", launchOptions: { executablePath: "/usr/bin/microsoft-edge", args: softwareWebGL } },
 ];
 const suites = [
   { name: "shell", testMatch: "shell.spec.ts", baseURL: "http://127.0.0.1:4174" },
@@ -16,7 +18,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  reporter: "list",
+  reporter: [["list"], ["json", {outputFile: process.env.PROSCENIUM_BROWSER_REPORT ?? "/tmp/opencode/proscenium-browser-report.json"}]],
   outputDir: "/tmp/opencode/proscenium-browser-results",
   use: {
     baseURL: "http://127.0.0.1:4174",
@@ -31,7 +33,7 @@ export default defineConfig({
       testMatch: suite.testMatch,
       use: { browserName: "chromium" as const, baseURL: suite.baseURL, launchOptions: browser.launchOptions },
     }))),
-    { name: "chromium-review-dpr2", testMatch: "review*.spec.ts", use: { browserName: "chromium", baseURL: "http://127.0.0.1:5186", deviceScaleFactor: 2 } },
+    { name: "chromium-review-dpr2", testMatch: "review*.spec.ts", use: { browserName: "chromium", baseURL: "http://127.0.0.1:5186", deviceScaleFactor: 2, launchOptions: {args: softwareWebGL} } },
   ],
   webServer: [{
     command: "npm run build --workspace apps/frontend && npm exec --workspace apps/frontend -- vite preview --host 127.0.0.1 --port 4174 --strictPort",

@@ -63,7 +63,7 @@ test("one mode, exact outliner pairs, form keyboard isolation and no provider si
   await expect(page.getByRole("button",{name:"3 Animation"})).toHaveAttribute("aria-pressed","true");
   await page.keyboard.press("2");
   expect(calls.filter(c => c.method==="POST")).toEqual([]);
-  if(testInfo.project.name==="chromium") await page.screenshot({path:"docs/evidence/w05/synthetic-surfaces-1920x1080.png"});
+  await page.screenshot({path:testInfo.outputPath("synthetic-surfaces-1920x1080.png")});
 });
 
 test("durable original-operation retry after reload and exact annotation Queue attachments", async ({page}) => {

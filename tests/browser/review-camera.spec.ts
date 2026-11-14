@@ -91,6 +91,12 @@ test("real W03 GLB cube picks, camera basis and durable intrinsic PNG capture",a
   initial.camera!.camera_to_world.forEach((value,i)=>expect(value).toBeCloseTo(expected[i],8));
   await page.mouse.move(rect.x+rect.width*.8,rect.y+rect.height*.5);await page.mouse.down();
   await page.mouse.move(rect.x+rect.width*.8+65,rect.y+rect.height*.5+25,{steps:5});await page.mouse.up();
+  // The renderer camera updates in the pointer handler; the displayed React
+  // context follows useFrame and a passive effect. Observe the completed drag,
+  // not an intermediate frame which slower installed browsers may still show.
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  }));
   await expect.poll(async()=> (await selection(page)).camera!.camera_to_world).not.toEqual(initial.camera!.camera_to_world);
   const before=await selection(page);
   const intrinsic=await canvas.evaluate(element=>{if(!(element instanceof HTMLCanvasElement))throw new Error("Missing canvas");return {width:element.width,height:element.height};});
@@ -125,9 +131,9 @@ test("real W03 GLB cube picks, camera basis and durable intrinsic PNG capture",a
   expect(runtime.renderer).toContain("SwiftShader");
   const evidence={glbPath,glbSha256:proxy.sha256,mapping:proof.proxy_mapping,runtime,intrinsic,pixels,uploadSha256:uploaded.sha,selection:captured};
   await info.attach("camera-capture-proof",{contentType:"application/json",body:JSON.stringify(evidence,null,2)});
-  writeFileSync(`docs/evidence/w05/camera-capture-dpr${runtime.dpr}.png`,uploaded.bytes);
-  writeFileSync(`docs/evidence/w05/camera-selection-dpr${runtime.dpr}.json`,JSON.stringify(evidence,null,2)+"\n");
-  if(info.project.name==="chromium")await page.screenshot({path:"docs/evidence/w05/camera-proxy.png"});
+  writeFileSync(info.outputPath(`camera-capture-dpr${runtime.dpr}.png`),uploaded.bytes);
+  writeFileSync(info.outputPath(`camera-selection-dpr${runtime.dpr}.json`),JSON.stringify(evidence,null,2)+"\n");
+  await page.screenshot({path:info.outputPath("camera-proxy.png")});
 });
 
 test("capture acknowledgement mismatch blocks Queue, then awaits a confirmed submission",async({page})=>{
