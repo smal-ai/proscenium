@@ -25,7 +25,9 @@ from proscenium.services import Services
 from .context import Contexts
 from .native import Native
 from .state import SYSTEM, TERMINAL, State, key, receipt, save
-from .tools import Tools
+from .tools import DISCOVERY_READS, READ_TOOLS, TOOLS, Tools, read_arguments
+from .workflows import WORKFLOW_TOOLS
+from .workflows import arguments as workflow_arguments
 
 CONTINUATION_TEXT = "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
 
@@ -1408,6 +1410,23 @@ class Copilot:
             await asyncio.sleep(0.05)
         return None
 
+    def custom_tool_arguments(self, project_id: str, request: dict[str, Any]) -> bool:
+        """Classify registered operation semantics, never prose/path words as shell commands."""
+        name, arguments = request.get("toolName"), request.get("args")
+        if not isinstance(name, str) or not isinstance(arguments, dict):
+            raise DomainError("invalid_request")
+        if name in TOOLS:
+            validate(TOOLS[name][2], arguments)
+            if arguments.get("project_id") != project_id:
+                raise DomainError("scope_denied", 403)
+        elif name in READ_TOOLS or name in DISCOVERY_READS:
+            read_arguments(name, arguments)
+        elif name in WORKFLOW_TOOLS:
+            workflow_arguments(name, arguments)
+        else:
+            return False
+        return True
+
     async def permission(self, project_id: str, request: dict[str, Any], invocation: Any) -> Any:
         try:
             self.services.gate.require(project_id)
@@ -1496,6 +1515,37 @@ class Copilot:
                 )
             return PermissionDecisionApproveOnce() if approve else PermissionDecisionReject()
 
+        known_custom = False
+        if request.get("kind") == "custom-tool":
+            try:
+                known_custom = self.custom_tool_arguments(project_id, request)
+                if known_custom:
+                    with self.services.registry.project_store(project_id).transaction(
+                        write=False
+                    ) as tx:
+                        original = tx.require("invocations", binding["invocation_id"])
+                        work = tx.require("work", original["work_id"])
+                        if (
+                            original.get("name") != request.get("toolName")
+                            or original.get("native_id") != tool_id
+                            or original.get("session_id") != sid
+                            or original.get("owner_epoch") != self.services.ownership.epoch
+                            or original.get("state") not in {"admitted", "running"}
+                            or work["native_session_id"] != sid
+                            or any(
+                                original.get(k) != binding.get(k)
+                                for k in ("work_id", "request_id", "delivery_id")
+                            )
+                            or original.get("arguments_sha256")
+                            != hashlib.sha256(canonical(request["args"])).hexdigest()
+                        ):
+                            raise DomainError("attribution_unavailable", 409)
+            except DomainError:
+                return reply(False, "host")
+            if known_custom:
+                # This grants entry only. The handler retains path/source/job/budget/caller guards.
+                return reply(True, "automatic_policy")
+
         text = canonical(request).decode()
         # This is the owner's pragmatic tool policy, not an OS/network sandbox. Shell remains enabled.
         denied = re.search(
@@ -1527,7 +1577,6 @@ class Copilot:
             "read",
             "write",
             "shell",
-            "custom-tool",
             "mcp",
             "url",
         }:

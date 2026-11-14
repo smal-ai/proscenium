@@ -49,3 +49,23 @@ denial/permission/departed-runtime tests pass**, including wrong bindings, later
 approval/pending stages, live owner, duplicate observation and generic Bash.
 Targeted Ruff and mypy pass. Metadata execution and the distinct custom-tool
 classification fix are separate follow-ups, not claimed by this code handover.
+
+## Registered custom-tool operation classification
+
+The actual M11 request from `7855b46` exposed a false install classification in
+`checkpoint_sources` path data. Known native Proscenium names now use the existing
+normative schemas or native read/workflow argument validators. A match also requires
+the original live tool name, native ID, session/work/request/delivery binding,
+current owner epoch and a hash of the arguments captured at tool start. Descriptions,
+filenames and checkpoint messages cannot act as shell instructions or owner consent.
+
+Approval grants entry to the bounded handler only. Existing source/path, job,
+generation-budget and caller guards remain authoritative. Unknown custom tools
+require an owner decision, and malformed/spoofed known calls reject. Real shell
+install/pip/npm/sudo/Git push/upload approval handling is unchanged.
+
+The original filename regression failed before implementation. **34 focused
+custom-tool/permission/accepted-service checks pass**, including the actual M11
+argument list and a real checkpoint-handler rejection of excluded `.env` input.
+Ruff and mypy pass. This does not execute the original M11 checkpoint or answer
+its retained decision.

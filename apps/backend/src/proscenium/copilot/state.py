@@ -845,6 +845,9 @@ class State:
                         data.get("toolName", (old_invocation or {}).get("name", "tool")),
                     ),
                     "model_id": data.get("model", (old_invocation or {}).get("model_id")),
+                    "arguments_sha256": hashlib.sha256(canonical(data["arguments"])).hexdigest()
+                    if starting and isinstance(data.get("arguments"), dict)
+                    else (old_invocation or {}).get("arguments_sha256"),
                 }
                 if old_invocation and old_invocation["state"] in TERMINAL and starting:
                     return
