@@ -1,0 +1,132 @@
+{
+  "A": {
+    "session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+    "cloud_execution_seconds": 7.133,
+    "events": [
+      {
+        "id": "7bac3354-c39d-4813-9c4c-2dca23669ff2",
+        "type": "session.start",
+        "timestamp": "2026-11-14T15:55:13.373Z",
+        "data": {
+          "sessionId": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+          "copilotVersion": "1.0.112",
+          "selectedModel": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "2582065d-01c9-4404-b061-01285bfc68cd",
+        "type": "user.message",
+        "timestamp": "2026-11-14T15:55:17.181Z",
+        "data": {
+          "messageId": "d6a56063-8ea2-47fc-8306-08fd9e1143d7",
+          "clientTurnId": "080dc869-1512-475f-9463-863e661a0bde"
+        }
+      },
+      {
+        "id": "3991b4dc-6b0f-4b25-8079-62f6b72a843a",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T15:55:21.166Z",
+        "data": {
+          "toolCallId": "call_OALpmxC4uQBL2Xx9F9zvtKmu",
+          "toolName": "view",
+          "model": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "45c1d4d4-9fc3-47ad-a9ef-f6dc57a22c6e",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T15:55:21.253Z",
+        "data": {
+          "toolCallId": "call_OALpmxC4uQBL2Xx9F9zvtKmu",
+          "model": "gpt-6.1-sol",
+          "success": true
+        }
+      },
+      {
+        "id": "65cdc58a-6912-4de9-8a37-c0b881f1c407",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T15:55:21.257Z",
+        "data": {}
+      },
+      {
+        "id": "158675ed-7eae-43ad-b3c2-80eeb1e69022",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T15:55:24.314Z",
+        "data": {}
+      },
+      {
+        "id": "b71fc33d-b47c-4988-b852-a82580d3b1b3",
+        "type": "session.shutdown",
+        "timestamp": "2026-11-14T15:55:24.823Z",
+        "data": {}
+      }
+    ],
+    "private_history_sha256": "81073738ff7083c855cce0f207484226bb1f8be183114f65ead93758ff975a01",
+    "brief_sha256": "277d938ec4b5779deec2a8fcaf40225de83e763002c7e3080e60dee881198672"
+  },
+  "B": {
+    "session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+    "cloud_execution_seconds": 5.329,
+    "events": [
+      {
+        "id": "a97391b7-11cc-4f7c-90e3-5604584767e5",
+        "type": "session.start",
+        "timestamp": "2026-11-14T15:55:25.496Z",
+        "data": {
+          "sessionId": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+          "copilotVersion": "1.0.112",
+          "selectedModel": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "eb0a39f0-3432-4a59-b61d-f0f295bb3e19",
+        "type": "user.message",
+        "timestamp": "2026-11-14T15:55:27.140Z",
+        "data": {
+          "messageId": "20243dd3-efe3-4c78-9247-3b86ba2f5841",
+          "clientTurnId": "3553de05-1e7c-4099-9a77-59ace9b39073"
+        }
+      },
+      {
+        "id": "6342708b-60aa-436d-bec1-865a2d4c2bae",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T15:55:30.459Z",
+        "data": {
+          "toolCallId": "call_6Vf3JuXAM77splV22HV2gVGv",
+          "toolName": "view",
+          "model": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "e440d845-809c-4e55-93cb-628798adfa64",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T15:55:30.569Z",
+        "data": {
+          "toolCallId": "call_6Vf3JuXAM77splV22HV2gVGv",
+          "model": "gpt-6.1-sol",
+          "success": true
+        }
+      },
+      {
+        "id": "be40c1a3-70b3-41a0-85ee-7db649869c12",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T15:55:30.573Z",
+        "data": {}
+      },
+      {
+        "id": "2e7ce797-0e69-4eaa-a9f0-154b661bc207",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T15:55:32.469Z",
+        "data": {}
+      },
+      {
+        "id": "8f9dd284-89f0-4708-9d20-8088a1e60211",
+        "type": "session.shutdown",
+        "timestamp": "2026-11-14T15:55:33.402Z",
+        "data": {}
+      }
+    ],
+    "private_history_sha256": "4dc18cffee2442a64d46af85b30c552451eaf928d6e754d5a1936ab42632bf85",
+    "brief_sha256": "831a985ab5a46974e1a7353e2b14fe1db66ea15d4bf88df39edf025fde9229e5"
+  }
+}

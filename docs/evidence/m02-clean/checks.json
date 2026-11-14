@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-14",
+  "test_base": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+  "R1": "PASS",
+  "strict_M02": "PASS using explicitly accepted earlier criteria and R2",
+  "checks": [
+    {"command": "uv sync --frozen", "result": "passed; no lock change"},
+    {"command": "cmp package-lock.json /home/quintin/play/proscenium/package-lock.json", "result": "byte-identical installed dependency lock"},
+    {"command": "npm run build", "result": "passed; actual production bundle used"},
+    {"command": ".venv/bin/python -m proscenium --help", "result": "passed before live run"},
+    {"command": ".venv/bin/python tests/native/studio/m02_clean_run.py", "result": "PASS, one fresh uninterrupted run, no retry"},
+    {"command": ".venv/bin/python tests/native/studio/m02_clean_evidence.py /home/quintin/.cache/m2c-20261114T155508Z", "result": "all actual correlations, attribution, bounds and preserved hashes verified"},
+    {"command": ".venv/bin/pytest -q tests/acceptance/m02_clean_evidence_test.py", "result": "4 passed; retained-evidence integrity only, no extra cloud execution"},
+    {"command": "Ruff check/format, Node syntax, staged Git whitespace and exported JSON redaction audit", "result": "passed"}
+  ],
+  "bounds": {"cloud_roots": 2, "native_children": 0, "resumes": 0, "jobs": 0, "renders_or_native_inspections": 0, "whole_proof_seconds": 26.570809969038237},
+  "warnings": ["Existing Vite bundle-size/Lucide directive warnings; existing Starlette/httpx TestClient deprecation warning."],
+  "not_repeated": ["R2", "original source/history/Blender/media proof", "full browser matrix", "unrelated permission/Resume controls"]
+}

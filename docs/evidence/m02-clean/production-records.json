@@ -1,0 +1,1010 @@
+{
+  "A": {
+    "requests": [
+      {
+        "accepted_at": "2026-11-14T15:55:10.769661+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "receipt": {
+          "native_message_id": "d6a56063-8ea2-47fc-8306-08fd9e1143d7",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "replayed": false,
+          "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+        },
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "c17c1430-710f-446d-90d5-0a0d9b49d2a6",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "schema_version": "1.0",
+          "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+          "type": "queue"
+        }
+      }
+    ],
+    "contexts": [
+      {
+        "annotations": [],
+        "approved_findings": [],
+        "attachments": [],
+        "camera": null,
+        "captured_at": "2026-11-14T15:55:10.747Z",
+        "context_id": "c17c1430-710f-446d-90d5-0a0d9b49d2a6",
+        "item_id": null,
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "range": null,
+        "schema_version": "1.0",
+        "selected_objects": [],
+        "target": null,
+        "version_id": null,
+        "view_mode": "keyframes"
+      }
+    ],
+    "work": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+        "job_ids": [],
+        "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "originating_request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 2,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      }
+    ],
+    "invocations": [
+      {
+        "agent_id": null,
+        "delivery_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "invocation_id": "79ab358eb96592b120cda99b2ff4adfb62db1a6cdb27999e57beef66c3ae97d4",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "view",
+        "native_id": "call_OALpmxC4uQBL2Xx9F9zvtKmu",
+        "owner_epoch": "epoch-6bd0672f-5914-4695-a0a9-ff97cbff5d24",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "state": "completed",
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      }
+    ],
+    "copilot.sends": [
+      {
+        "message_id": "d6a56063-8ea2-47fc-8306-08fd9e1143d7",
+        "session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "state": "acknowledged"
+      }
+    ],
+    "copilot.session": [
+      {
+        "created_at": "2026-11-14T15:55:14.641072+00:00",
+        "owner_epoch": "epoch-6bd0672f-5914-4695-a0a9-ff97cbff5d24",
+        "session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e"
+      }
+    ],
+    "copilot.resumes": [],
+    "copilot.control": [
+      {
+        "activation_revision": 2,
+        "epoch": "epoch-6bd0672f-5914-4695-a0a9-ff97cbff5d24",
+        "fenced": false,
+        "revision": 0
+      }
+    ],
+    "jobs": [],
+    "items": [],
+    "all_public_native_event_ids": [
+      "0a6e84da-42fc-40e5-8cdd-1fc2c4265955",
+      "11524815-0ccb-44a6-afc3-e1bb9c8dcec7",
+      "142da421-948a-45cd-9ecf-ad9f6aa98943",
+      "2741cd26-23a9-45c1-8cfb-014a3e82faca",
+      "2915904f-7478-4ee1-ba10-582e9593f03e",
+      "3991b4dc-6b0f-4b25-8079-62f6b72a843a",
+      "3f30a71b-cf44-4ce0-aa6c-8721a2927aee",
+      "40b3716f-ea90-425d-83a3-56813c601010",
+      "45c1d4d4-9fc3-47ad-a9ef-f6dc57a22c6e",
+      "559d8829-b52f-4e7a-b55f-79a00e74d6c1",
+      "5ba87899-835e-43ce-93ec-52c36dc8dd48",
+      "601e506f-78b7-4375-b729-a905f61b2840",
+      "881e76f4-1ee0-45d6-a153-f8dfe6259899",
+      "9c15738a-4cb0-43fd-8d61-71de0b385fd6",
+      "a84ba823-8611-4622-93e1-cf1ecbfd3054",
+      "c4705738-71ab-4e32-a4a4-d36b294eab7d",
+      "c4bd3577-af27-4534-b1b3-34868e5cee56",
+      "ca794dae-2ab2-4ec5-b71f-99d0c2fa6e2f",
+      "d212185c-17b1-41bc-ab1f-e0c5dc5724b0",
+      "d4216eaf-858d-474a-bbff-76086ca091d6",
+      "d53b4094-6c88-4723-92d2-5f17ee0f2d9f",
+      "dbe969f8-6161-4c9a-907e-c10b649a6394",
+      "e2da8289-cd81-4bbe-a50f-dc18e23abdf5",
+      "f3b74b3b-240a-4f32-8f83-6868abf6f395",
+      "fabd0f27-aa6d-47ab-ac86-e797f731c9bb"
+    ],
+    "events": [
+      {
+        "actor": {
+          "id": "owner-a6d04fe6-238c-409b-946a-a0c6cf68666f",
+          "kind": "user"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:10.445679+00:00",
+        "payload": {
+          "name": "Clean R1 A",
+          "native_session_id": null,
+          "path": "/home/quintin/.cache/m2c-20261114T155508Z/a",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "repository_id": "repository-af99e5f2-311d-46f6-8175-64057be5ae3e",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 1
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 1,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "owner-a6d04fe6-238c-409b-946a-a0c6cf68666f",
+          "kind": "user"
+        },
+        "event_type": "request.accepted",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:10.770087+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:10.769661+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "replayed": false,
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "state": "held",
+            "state_revision": 0,
+            "type": "queue",
+            "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+          },
+          "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "c17c1430-710f-446d-90d5-0a0d9b49d2a6",
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 2,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "project-host",
+          "kind": "system"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:14.647318+00:00",
+        "payload": {
+          "name": "Clean R1 A",
+          "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+          "path": "/home/quintin/.cache/m2c-20261114T155508Z/a",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "repository_id": "repository-af99e5f2-311d-46f6-8175-64057be5ae3e",
+          "schema_version": "1.0",
+          "state": "active",
+          "state_revision": 2
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 3,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:14.654870+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:10.769661+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "replayed": false,
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "state": "dispatching",
+            "state_revision": 1,
+            "type": "queue",
+            "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+          },
+          "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "c17c1430-710f-446d-90d5-0a0d9b49d2a6",
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 4,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:14.655845+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+          "job_ids": [],
+          "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+          "originating_request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "schema_version": "1.0",
+          "state": "running",
+          "state_revision": 1,
+          "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 5,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:14.683009+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:10.769661+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "receipt": {
+            "native_message_id": "d6a56063-8ea2-47fc-8306-08fd9e1143d7",
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "replayed": false,
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "state": "acknowledged",
+            "state_revision": 2,
+            "type": "queue",
+            "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+          },
+          "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "c17c1430-710f-446d-90d5-0a0d9b49d2a6",
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 6,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "c4705738-71ab-4e32-a4a4-d36b294eab7d",
+        "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "occurred_at": "2026-11-14T15:55:21.193015+00:00",
+        "payload": {
+          "message_id": "fa2790d5-b370-44c8-a23b-47fb51cee3f5",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 8,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "3991b4dc-6b0f-4b25-8079-62f6b72a843a",
+        "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "occurred_at": "2026-11-14T15:55:21.197052+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "79ab358eb96592b120cda99b2ff4adfb62db1a6cdb27999e57beef66c3ae97d4",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 9,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "45c1d4d4-9fc3-47ad-a9ef-f6dc57a22c6e",
+        "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "occurred_at": "2026-11-14T15:55:21.264392+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "79ab358eb96592b120cda99b2ff4adfb62db1a6cdb27999e57beef66c3ae97d4",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 10,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "e2da8289-cd81-4bbe-a50f-dc18e23abdf5",
+        "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "occurred_at": "2026-11-14T15:55:24.342837+00:00",
+        "payload": {
+          "message_id": "5d058136-3288-4409-bd92-bebe5f59200c",
+          "native_agent_id": null,
+          "text": "Title: Clean R1 A  \nSentinel: M02-CLEAN-A-20261114"
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 31,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:24.393291+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:10.769661+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "receipt": {
+            "native_message_id": "d6a56063-8ea2-47fc-8306-08fd9e1143d7",
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "replayed": false,
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+          },
+          "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "c17c1430-710f-446d-90d5-0a0d9b49d2a6",
+            "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+            "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 32,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:24.394036+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-f417bed382e74e6099e226fc640460b8",
+          "job_ids": [],
+          "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+          "originating_request_id": "080dc869-1512-475f-9463-863e661a0bde",
+          "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 2,
+          "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+        },
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "request_id": "080dc869-1512-475f-9463-863e661a0bde",
+        "schema_version": "1.0",
+        "sequence": 33,
+        "work_id": "work-99e04fca7064458f8abeebdc288637f5"
+      }
+    ]
+  },
+  "B": {
+    "requests": [
+      {
+        "accepted_at": "2026-11-14T15:55:25.318681+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "receipt": {
+          "native_message_id": "20243dd3-efe3-4c78-9247-3b86ba2f5841",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "replayed": false,
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+        },
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "a6c389de-e24a-4204-9dee-f2e82daf1d7f",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+          "type": "queue"
+        }
+      }
+    ],
+    "contexts": [
+      {
+        "annotations": [],
+        "approved_findings": [],
+        "attachments": [],
+        "camera": null,
+        "captured_at": "2026-11-14T15:55:25.294Z",
+        "context_id": "a6c389de-e24a-4204-9dee-f2e82daf1d7f",
+        "item_id": null,
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "range": null,
+        "schema_version": "1.0",
+        "selected_objects": [],
+        "target": null,
+        "version_id": null,
+        "view_mode": "keyframes"
+      }
+    ],
+    "work": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+        "job_ids": [],
+        "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "originating_request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 2,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      }
+    ],
+    "invocations": [
+      {
+        "agent_id": null,
+        "delivery_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "invocation_id": "8efd0318197102e16498857343b7a9e0c866bd2634f8fb5362a7cf8d789481a6",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "view",
+        "native_id": "call_6Vf3JuXAM77splV22HV2gVGv",
+        "owner_epoch": "epoch-6bd0672f-5914-4695-a0a9-ff97cbff5d24",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "state": "completed",
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      }
+    ],
+    "copilot.sends": [
+      {
+        "message_id": "20243dd3-efe3-4c78-9247-3b86ba2f5841",
+        "session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "state": "acknowledged"
+      }
+    ],
+    "copilot.session": [
+      {
+        "created_at": "2026-11-14T15:55:25.572783+00:00",
+        "owner_epoch": "epoch-6bd0672f-5914-4695-a0a9-ff97cbff5d24",
+        "session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb"
+      }
+    ],
+    "copilot.resumes": [],
+    "copilot.control": [
+      {
+        "activation_revision": 3,
+        "epoch": "epoch-6bd0672f-5914-4695-a0a9-ff97cbff5d24",
+        "fenced": true,
+        "reason": "awaiting_resume",
+        "revision": 1
+      }
+    ],
+    "jobs": [],
+    "items": [],
+    "all_public_native_event_ids": [
+      "0d4a0548-ee38-4b2c-8740-29b3b8c6aacf",
+      "178b77de-75ce-4719-a243-a0a9e131fe4a",
+      "1cc81208-c8e7-425e-bf4b-39bdc01a54ec",
+      "28e041b9-d344-4e15-b78d-476f74904e06",
+      "2edfbd07-a1f5-4041-90df-706bec32c185",
+      "34b03f4b-0640-4520-aea6-505546bcf9a0",
+      "376f2fd9-f13a-49c5-8b4b-5765d564ef21",
+      "3b34b1e4-b201-4315-ac41-01c275ba7bbe",
+      "444f9fac-ae3d-425e-a133-9eb770293975",
+      "6342708b-60aa-436d-bec1-865a2d4c2bae",
+      "63e14921-83e3-4126-a185-cc648b1c5f27",
+      "73e57a69-a9c4-4db6-a6d2-1ef03562f5f7",
+      "793d1ba0-c2d9-4b5b-a611-8ff399ad17fc",
+      "8a2254c3-7fdc-45cf-87f5-1b2834391e8f",
+      "917f9999-f71d-4533-af63-2f3f91826a1a",
+      "9e3f949c-8c28-4e86-9e03-8838e096288f",
+      "a927b04c-3595-48b4-ae0b-8a95be345e94",
+      "aea9a220-8182-40c5-b654-41d64b1d39ab",
+      "c47637bb-48b4-49a1-9fc8-4043cf5a97ee",
+      "dc5cdea1-b768-46ea-ab80-d3b7e240f52e",
+      "e0f39af7-2d71-4478-b38f-8bb2b9eff2b6",
+      "e440d845-809c-4e55-93cb-628798adfa64",
+      "e5b34c6b-009c-43ba-9ca1-3ecf60611c70",
+      "ebb8d5f6-d0f0-415a-9d29-a1bebea301d2",
+      "f27cbf8f-558c-4599-a02e-043c90fda600"
+    ],
+    "events": [
+      {
+        "actor": {
+          "id": "owner-a6d04fe6-238c-409b-946a-a0c6cf68666f",
+          "kind": "user"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:24.733789+00:00",
+        "payload": {
+          "name": "Clean R1 B",
+          "native_session_id": null,
+          "path": "/home/quintin/.cache/m2c-20261114T155508Z/b",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "repository_id": "repository-82dad4b7-3210-4783-864c-55b66c5201ab",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 1
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 1,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "owner-a6d04fe6-238c-409b-946a-a0c6cf68666f",
+          "kind": "user"
+        },
+        "event_type": "request.accepted",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:25.319128+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:25.318681+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "replayed": false,
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "state": "held",
+            "state_revision": 0,
+            "type": "queue",
+            "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+          },
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "a6c389de-e24a-4204-9dee-f2e82daf1d7f",
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 2,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "project-host",
+          "kind": "system"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:25.578534+00:00",
+        "payload": {
+          "name": "Clean R1 B",
+          "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+          "path": "/home/quintin/.cache/m2c-20261114T155508Z/b",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "repository_id": "repository-82dad4b7-3210-4783-864c-55b66c5201ab",
+          "schema_version": "1.0",
+          "state": "active",
+          "state_revision": 2
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 3,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:25.584783+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:25.318681+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "replayed": false,
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "state": "dispatching",
+            "state_revision": 1,
+            "type": "queue",
+            "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+          },
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "a6c389de-e24a-4204-9dee-f2e82daf1d7f",
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 4,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:25.585675+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+          "job_ids": [],
+          "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+          "originating_request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "schema_version": "1.0",
+          "state": "running",
+          "state_revision": 1,
+          "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 5,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:25.609671+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:25.318681+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "receipt": {
+            "native_message_id": "20243dd3-efe3-4c78-9247-3b86ba2f5841",
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "replayed": false,
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "state": "acknowledged",
+            "state_revision": 2,
+            "type": "queue",
+            "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+          },
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "a6c389de-e24a-4204-9dee-f2e82daf1d7f",
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 6,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "8a2254c3-7fdc-45cf-87f5-1b2834391e8f",
+        "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "occurred_at": "2026-11-14T15:55:30.497124+00:00",
+        "payload": {
+          "message_id": "af169bd2-9d08-42d8-b2f5-15d4f8e02be7",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 8,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "6342708b-60aa-436d-bec1-865a2d4c2bae",
+        "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "occurred_at": "2026-11-14T15:55:30.504161+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "8efd0318197102e16498857343b7a9e0c866bd2634f8fb5362a7cf8d789481a6",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 9,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "e440d845-809c-4e55-93cb-628798adfa64",
+        "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "occurred_at": "2026-11-14T15:55:30.582448+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "8efd0318197102e16498857343b7a9e0c866bd2634f8fb5362a7cf8d789481a6",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 10,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "73e57a69-a9c4-4db6-a6d2-1ef03562f5f7",
+        "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "occurred_at": "2026-11-14T15:55:32.511939+00:00",
+        "payload": {
+          "message_id": "827ec487-de5e-4809-ba9c-51ea303764d2",
+          "native_agent_id": null,
+          "text": "Title: Clean R1 B  \nSentinel: M02-CLEAN-B-20261114"
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 31,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:32.584637+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T15:55:25.318681+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "receipt": {
+            "native_message_id": "20243dd3-efe3-4c78-9247-3b86ba2f5841",
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "replayed": false,
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+          },
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "a6c389de-e24a-4204-9dee-f2e82daf1d7f",
+            "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+            "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+            "schema_version": "1.0",
+            "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 32,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:32.585490+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+          "job_ids": [],
+          "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+          "originating_request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 2,
+          "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "sequence": 33,
+        "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+      },
+      {
+        "actor": {
+          "id": "project-host",
+          "kind": "system"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T15:55:33.389768+00:00",
+        "payload": {
+          "name": "Clean R1 B",
+          "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+          "path": "/home/quintin/.cache/m2c-20261114T155508Z/b",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "repository_id": "repository-82dad4b7-3210-4783-864c-55b66c5201ab",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 3
+        },
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 34,
+        "work_id": null
+      }
+    ]
+  }
+}

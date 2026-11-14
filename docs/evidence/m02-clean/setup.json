@@ -1,0 +1,25 @@
+{
+  "fixture": "Authenticated project API and explicit local brief files, not model authoring",
+  "projects": [
+    {
+      "name": "Clean R1 A",
+      "native_session_id": null,
+      "path": "/home/quintin/.cache/m2c-20261114T155508Z/a",
+      "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+      "repository_id": "repository-af99e5f2-311d-46f6-8175-64057be5ae3e",
+      "schema_version": "1.0",
+      "state": "inactive",
+      "state_revision": 0
+    },
+    {
+      "name": "Clean R1 B",
+      "native_session_id": null,
+      "path": "/home/quintin/.cache/m2c-20261114T155508Z/b",
+      "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+      "repository_id": "repository-82dad4b7-3210-4783-864c-55b66c5201ab",
+      "schema_version": "1.0",
+      "state": "inactive",
+      "state_revision": 0
+    }
+  ]
+}

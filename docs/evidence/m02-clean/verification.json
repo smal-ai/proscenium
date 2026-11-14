@@ -1,0 +1,27 @@
+{
+  "R1": "PASS",
+  "strict_M02": "PASS",
+  "native_session_ids": {
+    "A": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+    "B": "5195061a-7a26-4f75-af53-f99d8e2ae7cb"
+  },
+  "original_requests": {
+    "A": "080dc869-1512-475f-9463-863e661a0bde",
+    "B": "3553de05-1e7c-4099-9a77-59ace9b39073"
+  },
+  "cloud_roots": 2,
+  "native_children": 0,
+  "resumes": 0,
+  "jobs": 0,
+  "renders_or_native_inspections": 0,
+  "actual_shutdown_before_B_request": true,
+  "cross_project_event_attribution": false,
+  "quiet_reopen_unchanged": true,
+  "prior_evidence_unchanged": true,
+  "whole_proof_seconds": 26.570809969038237,
+  "inherited": [
+    "M01 accepted",
+    "original M02 criteria 2/3/4/6 and atomic publication",
+    "R2 accepted from a0c15ba7d95193095718a730aabf6b833b77c496; not rerun"
+  ]
+}

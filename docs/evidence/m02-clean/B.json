@@ -1,0 +1,93 @@
+{
+  "projects": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "name": "Clean R1 A",
+        "native_session_id": "311cbadf-b334-47d1-8ffd-24d5c7e07d4e",
+        "path": "/home/quintin/.cache/m2c-20261114T155508Z/a",
+        "project_id": "project-39843fc3-7eab-4b1d-853e-e9107f5e2b04",
+        "repository_id": "repository-af99e5f2-311d-46f6-8175-64057be5ae3e",
+        "schema_version": "1.0",
+        "state": "inactive",
+        "state_revision": 3
+      },
+      {
+        "name": "Clean R1 B",
+        "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+        "path": "/home/quintin/.cache/m2c-20261114T155508Z/b",
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "repository_id": "repository-82dad4b7-3210-4783-864c-55b66c5201ab",
+        "schema_version": "1.0",
+        "state": "active",
+        "state_revision": 2
+      }
+    ],
+    "next_cursor": null
+  },
+  "snapshot": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "Clean R1 B",
+      "native_session_id": "5195061a-7a26-4f75-af53-f99d8e2ae7cb",
+      "path": "/home/quintin/.cache/m2c-20261114T155508Z/b",
+      "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+      "repository_id": "repository-82dad4b7-3210-4783-864c-55b66c5201ab",
+      "schema_version": "1.0",
+      "state": "active",
+      "state_revision": 2
+    },
+    "settings": {
+      "default_profile_id": null,
+      "generation_attempt_limit": 3,
+      "state_revision": 0
+    },
+    "event_sequence": 33,
+    "active_work": null,
+    "held_requests": [],
+    "items": [],
+    "jobs": [],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T15:55:25.318681+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-ac6e035eee0d465c8da09a6cdaaaecdb",
+        "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+        "receipt": {
+          "native_message_id": "20243dd3-efe3-4c78-9247-3b86ba2f5841",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "replayed": false,
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-08c6ec3469af41a390b91cdc10da7e83"
+        },
+        "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "a6c389de-e24a-4204-9dee-f2e82daf1d7f",
+          "project_id": "project-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9",
+          "request_id": "3553de05-1e7c-4099-9a77-59ace9b39073",
+          "schema_version": "1.0",
+          "text": "SCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "text": "P\nPROSCENIUM\nClean R1 B\n/home/quintin/.cache/m2c-20261114T155508Z/b\nConnected\nServices & models\nShots\nOutliner\nAssets\nSearch assets\nReconcile selection status\nActive-project scope\nproject-7fc8bcb2-9af1-4d11-9644-bcc53f1d9fd9\nREVIEW WORKSPACE\nStart with a project. Make something worth reviewing.\n\nSelect a published version to review.\n\nNo published version selected\nGit-backed sources · Immutable publications\nCopilot\nCritic\nProject Copilot\nNo active work\nYou\nqueue · completed\n\nSCRIPTED READ-ONLY TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit, delegate, use providers, or inspect other projects.\n\nOriginal captured context\nObserved usage · lead: copilot-lead\nCopilot\ncopilot-lead\n\nTool: view\ncompleted\nCopilot\ncopilot-lead\n\nTitle: Clean R1 B  \nSentinel: M02-CLEAN-B-20261114\n\nObserved usage · lead: copilot-lead\nIndependent jobs\n0\nUsage is shown only when reported by the runtime. Missing usage is unavailable, not zero.\nNext request context · 0 images\nMessage Copilot\nAttach images\nQueue\nSteer\nStop\nCtrl+Enter to queue · Context is captured on submit"
+}
