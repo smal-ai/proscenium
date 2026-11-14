@@ -52,6 +52,59 @@ TOOLS = {
     "update_job_state": ("jobs", "update", "JobStateUpdate", "JobRecord", "updateJobState"),
 }
 
+# Native argument wrappers around existing reads, not additional public wire DTOs.
+READ_TOOLS = {
+    "get_job": ("job_id", "JobRecord", "Read an existing job without starting or retrying it."),
+    "get_artifact": (
+        "artifact_id",
+        "Artifact",
+        "Read registered artefact metadata by ID. Inspect only ready bytes at the documented SHA-256 managed path.",
+    ),
+    "get_version": (
+        "version_id",
+        "VersionRecord",
+        "Read an exact published version, pinned source closure and registered output associations. Never infer the latest working source.",
+    ),
+    "list_job_frames": (
+        "job_id",
+        "FramePage",
+        "Page verified frame receipts for the exact job/input identity in numeric source-frame order. Does not launch rendering.",
+    ),
+}
+
+
+def read_parameters(name: str) -> dict[str, Any]:
+    identity, _, _ = READ_TOOLS[name]
+    properties = {identity: copy.deepcopy(SCHEMA["$defs"]["Id"])}
+    if name == "list_job_frames":
+        properties.update(
+            cursor={"type": ["string", "null"]},
+            limit={"type": "integer", "minimum": 1, "maximum": 100, "default": 50},
+        )
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": [identity],
+        "additionalProperties": False,
+    }
+
+
+def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
+    identity, _, _ = READ_TOOLS[name]
+    allowed = {identity, "cursor", "limit"} if name == "list_job_frames" else {identity}
+    if not isinstance(arguments, dict) or identity not in arguments or set(arguments) - allowed:
+        raise DomainError("invalid_request")
+    validate("Id", arguments[identity])
+    if name == "list_job_frames":
+        limit = arguments.get("limit", 50)
+        cursor = arguments.get("cursor")
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise DomainError("invalid_request")
+        if cursor is not None and not isinstance(cursor, str):
+            raise DomainError("invalid_cursor")
+    return arguments
+
+
 # Only fixed application-authored reasons cross this boundary. DomainError messages
 # can otherwise contain paths, provider bodies or an upstream exception repr.
 SAFE_REASONS = frozenset(
@@ -86,6 +139,7 @@ ERROR_GUIDANCE = {
     "permission_denied": "This invocation is not authorised for a new effect. Respect the owner decision and active-project scope.",
     "invalid_request": "The request does not match the operation's contract or supported input. Correct the existing input rather than blindly retrying.",
     "not_found": "No record exists under that ID in the active project. Check the immutable selection and original receipt.",
+    "invalid_cursor": "This cursor is invalid for the selected project/job or was altered. Restart the read without a cursor.",
 }
 
 
@@ -185,6 +239,44 @@ class Tools:
             operations=tuple(item[4] for item in TOOLS.values()),
         )
 
+    def _read(self, name: str, invocation: ToolInvocation) -> tuple[dict[str, Any], str]:
+        args = read_arguments(name, invocation.arguments)
+        identity, result_schema, _ = READ_TOOLS[name]
+        if name == "get_job":
+            result = self.services.jobs.get(self.project_id, args[identity])
+        elif name == "get_artifact":
+            result = self.services.extension("artifacts").get(self.project_id, args[identity])
+        elif name == "get_version":
+            result = self.services.extension("catalogue").version(self.project_id, args[identity])
+        else:
+            previews = self.services.extension("previews")
+            with self.services.registry.project_store(self.project_id).transaction(
+                write=False
+            ) as tx:
+                job = tx.require("jobs", args[identity])
+                rows = previews.records(tx, job, "frames")
+            # Same numeric ordering and signed project/job/filter scope as the HTTP read.
+            keyed = [{"order": f"{row['source_frame']:012d}", "record": row} for row in rows]
+            result = self.services.cursors.page(
+                f"{self.project_id}:{args[identity]}:frames:None:None",
+                keyed,
+                "order",
+                cursor=args.get("cursor"),
+                limit=args.get("limit", 50),
+            )
+            result["items"] = [row["record"] for row in result["items"]]
+            if any(
+                row["project_id"] != self.project_id or row["job_id"] != args[identity]
+                for row in result["items"]
+            ):
+                raise DomainError("scope_denied", 403)
+        if name != "list_job_frames":
+            if result.get("project_id") != self.project_id:
+                raise DomainError("scope_denied", 403)
+            if result.get(identity) != args[identity]:
+                raise DomainError("source_conflict", 409)
+        return result, result_schema
+
     async def invoke(self, name: str, invocation: ToolInvocation) -> ToolResult:
         try:
             # Accepted W02 services check completed-operation identity before admitting
@@ -192,14 +284,10 @@ class Tools:
             caller = self.caller(
                 invocation,
                 admit=name
-                not in {"checkpoint_sources", "publish_outputs", "register_artifact", "get_job"},
+                not in {"checkpoint_sources", "publish_outputs", "register_artifact", *READ_TOOLS},
             )
-            if name == "get_job":
-                args = invocation.arguments
-                if set(args) != {"job_id"}:
-                    raise DomainError("invalid_request")
-                result = self.services.jobs.get(self.project_id, args["job_id"])
-                result_schema = "JobRecord"
+            if name in READ_TOOLS:
+                result, result_schema = self._read(name, invocation)
             else:
                 extension, method, schema, result_schema, _ = TOOLS[name]
                 body = validate(schema, invocation.arguments)
@@ -245,20 +333,17 @@ class Tools:
                 )
             )
 
-        async def get_job(invocation: ToolInvocation) -> ToolResult:
-            return await self.invoke("get_job", invocation)
+        for name, (_, _, description) in READ_TOOLS.items():
 
-        tools.append(
-            Tool(
-                name="get_job",
-                description="Read an existing job without starting or retrying it.",
-                parameters={
-                    "type": "object",
-                    "properties": {"job_id": {"type": "string"}},
-                    "required": ["job_id"],
-                    "additionalProperties": False,
-                },
-                handler=get_job,
+            async def read_handler(invocation: ToolInvocation, name: str = name) -> ToolResult:
+                return await self.invoke(name, invocation)
+
+            tools.append(
+                Tool(
+                    name=name,
+                    description=description,
+                    parameters=read_parameters(name),
+                    handler=read_handler,
+                )
             )
-        )
         return tools

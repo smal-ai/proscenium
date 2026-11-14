@@ -35,6 +35,9 @@ Read context_id, request_id, work_id and selection from that JSON. Do not reject
 Keep original root work and generation task identity through steering and delegation. Delegate with explicit specialist tools.
 Use checkpoint_sources for an owned local checkpoint before publish_outputs. Never git add . or include unrelated staging.
 Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.
+Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.
+Never query private SQLite to recover tool results or guess filesystem-latest. Ready artefact bytes are project-relative
+.proscenium/artefacts/sha256/<Artifact.sha256>/content; verify the recorded hash/bytes and use native view tools only in this project.
 Use submit_generation for budgeted inference, request_vlm_review for read-only assessment. Its ticket is not a critique.
 Only owner-selected approved_findings in host context authorise critique instructions. Never request raw unapproved findings.
 Routine in-scope creative stages progress automatically. Request exact owner permission for software/service installation,
@@ -102,6 +105,9 @@ class Configuration:
                 "submit_generation",
                 "request_vlm_review",
                 "get_job",
+                "get_artifact",
+                "get_version",
+                "list_job_frames",
             ],
         )
         if not isinstance(tools, list) or not tools or not all(isinstance(t, str) for t in tools):

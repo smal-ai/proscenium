@@ -10,6 +10,9 @@ The host builds `authoring-specialist` using the pinned Python SDK's
 - `runtime.worker_tools` is an explicit native tool-name list. Include configured
   Blender MCP tool names when giving that specialist authoring responsibility.
   The host never invents an MCP tool name from a UI label.
+- The default authoring scope includes `get_job`, `get_artifact`, `get_version`
+  and `list_job_frames`. An explicit owner-supplied list remains exact; include
+  these names when that worker needs to inspect registered outputs and sources.
 - `runtime.skill_directories` contains absolute Proscenium-adapted skill roots.
   Do not point it at reference-project or OpenCode skills.
 - The active working directory is the only project scope. No sibling projects,
@@ -19,6 +22,11 @@ The host builds `authoring-specialist` using the pinned Python SDK's
   native runtime renders the latter JSON inside `<system_reminder>`.
 - Source checkpoints use `checkpoint_sources`. Publication follows a successful
   checkpoint and uses `publish_outputs`. Preserve unrelated staging.
+- Read metadata through those native tools, never private SQLite. For an exact
+  ready Artifact, bytes live inside the active project at
+  `.proscenium/artefacts/sha256/<sha256>/content`. Use the full recorded hash,
+  verify its bytes/hash and media type, then inspect with native view tools.
+  Do not substitute an artefact ID, a worker output_path or filesystem-latest.
 - `request_vlm_review` returns only a ticket. Only owner-selected findings in a
   subsequent host context become critique instructions.
 - Use `submit_generation` for inference and preserve the original generation task.

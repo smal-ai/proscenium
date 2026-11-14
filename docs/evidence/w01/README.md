@@ -6,6 +6,10 @@ planned job and production service call, not context echoing. The earlier failed
 cases below remain historical evidence. Original `checks.json` and source-hash
 manifest describe the original W01 acceptance; the follow-up pins its own bytes.
 
+The subsequent [read-only metadata wrapper slice](native-reads.md) adds get_artifact,
+get_version and list_job_frames with **offline tests only**. It consumes no additional
+cloud allocation and does not change the earlier live proof's recorded source bytes.
+
 **14 November 2026, SAST. Partial live proof, not full product acceptance.**
 
 Foundation base: `2bc3d5c2c0afe38bf43507d499e8e960855ee3ee`. Tests ran against the

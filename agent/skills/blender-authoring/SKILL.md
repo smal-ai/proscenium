@@ -45,6 +45,15 @@ description: Author and inspect Blender content inside the active Proscenium pro
 7. Call `request_preview` against the pinned published source. Pass the exact host
    camera for “Render this view”. A preview receipt admits a job, not a finished
    render. Observe its real state and registered outputs.
+   Use `get_version(version_id)` for the pinned publication/source record and
+   `list_job_frames(job_id, cursor?, limit?)` for ready frame receipts, following
+   `next_cursor` until null. Call `get_artifact(artifact_id)` for each desired
+   output's metadata. For `state: ready`, the canonical project-relative byte path
+   is `.proscenium/artefacts/sha256/<Artifact.sha256>/content`. The full hash and
+   `bytes` identify the expected content, not the artefact ID or latest filename.
+   Verify that identity before native image/file inspection. Missing/changed bytes
+   are a known failure, not permission to guess another file. These reads neither
+   launch a job nor change its state. Never inspect private SQLite/runtime stores.
    The accepted preview recipe is `renderer_revision: proscenium-blender-1`,
    `engine: CYCLES`, `device: CPU`, explicit samples and even image dimensions.
    Respect configured host bounds. `camera: null` uses the authored camera; do not
