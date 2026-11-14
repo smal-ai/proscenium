@@ -1,4 +1,5 @@
 """Fresh composed host, one real send, observational callback-aware pipe cut."""
+# ruff: noqa: E402 -- standalone host must expose maintained tools before app composition imports
 
 import asyncio
 import json
@@ -10,6 +11,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from unittest.mock import patch
 
+REPO = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO))
+
 import uvicorn
 from copilot import CopilotClient
 from copilot.session import CopilotSession
@@ -19,8 +23,6 @@ from proscenium.configuration import Settings
 from proscenium.copilot import install
 from proscenium.services import Services
 
-REPO = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(REPO))
 from tools.operations.recovery import write_json  # noqa: E402 -- maintained repository tool
 
 

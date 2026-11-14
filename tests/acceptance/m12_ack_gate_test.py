@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,18 @@ from copilot._jsonrpc import JsonRpcClient, ProcessExitedError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "native/studio"))
 from m12_ack_gate import CallbackPipeGate, accepted_ack_loss
+
+
+def test_standalone_host_imports_real_composition_without_starting_runtime(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "native/studio"
+    subprocess.run(
+        [sys.executable, "-c", 'import m12_ack_host; print("composed-import-only")'],
+        env={**os.environ, "PYTHONPATH": str(script)},
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        timeout=10,
+    )
 
 
 def test_real_hook_reply_admits_before_pending_send_pipe_is_closed(tmp_path):
