@@ -141,6 +141,7 @@ def main():
     original_send = CopilotSession.send
     original_resume = CopilotClient.resume_session
     deadlines = []
+    loss = {}
 
     async def enforce_deadline(request, client):
         await asyncio.sleep(174)
@@ -165,6 +166,12 @@ def main():
     async def send(session, prompt, **kwargs):
         request = kwargs.get("client_turn_id")
         reserve_send(root, plan, request, session.session_id, prompt)
+        if loss.get("arm_at_send") == request:
+            loss.update(await pause_actual_stdout(runtime.native.client))
+            atomic(
+                root / "reader-paused-at-send-private.json",
+                {"request_id": request, "actual_sdk_send_boundary": True},
+            )
         deadlines.append(asyncio.create_task(enforce_deadline(request, runtime.native.client)))
         return await original_send(session, prompt, **kwargs)
 
@@ -235,6 +242,22 @@ def main():
                 "sends": json.loads((root / "sends-private.json").read_text())
                 if (root / "sends-private.json").exists()
                 else [],
+                "delivery_states": {
+                    identity: tx.get("copilot.sends", identity, required=False)
+                    for identity in plan["request_ids"]
+                },
+                "outbox_states": {
+                    identity: (
+                        row[0]
+                        if (
+                            row := tx.connection.execute(
+                                "SELECT state FROM outbox WHERE id=?", (identity,)
+                            ).fetchone()
+                        )
+                        else None
+                    )
+                    for identity in plan["request_ids"]
+                },
             }
 
     async def history(_command):
@@ -277,12 +300,9 @@ def main():
             "audit": audit,
         }
 
-    loss = {}
-
     async def arm_loss(_command):
-        client = runtime.native.client
-        loss.update(await pause_actual_stdout(client))
-        return {"reader_paused": True, "real_stdout_is_pipe": True, "session_id": SID}
+        loss["arm_at_send"] = plan["request_ids"][1]
+        return {"armed_at_actual_send": True, "session_id": SID}
 
     async def cut_loss(command):
         target = command["request_id"]
@@ -290,6 +310,9 @@ def main():
         observed = []
         until = time.monotonic() + 8
         while time.monotonic() < until:
+            if "stdout" not in loss:
+                await asyncio.sleep(0.05)
+                continue
             observed = []
             with source.open() as stream:
                 for line in stream:
@@ -322,11 +345,21 @@ def main():
             "native_pid_before_cut": loss["native_pid"],
             "native_start_before_cut": loss["start"],
             "sdk_transport_closed": loss["rpc"]._transport_closed,
+            "observed_after_actual_send_ns": time.monotonic_ns(),
         }
         atomic(root / "transport-cut-private.json", result)
         return result
 
-    actions = {"inspect": inspect, "history": history, "arm_loss": arm_loss, "cut_loss": cut_loss}
+    async def pairing(_command):
+        return {"code": services.auth.issue_pairing()}  # Private mailbox only. Never exported.
+
+    actions = {
+        "inspect": inspect,
+        "history": history,
+        "arm_loss": arm_loss,
+        "cut_loss": cut_loss,
+        "pairing": pairing,
+    }
     for folder in ("commands", "receipts"):
         (root / folder).mkdir(mode=0o700, exist_ok=True)
 
@@ -372,7 +405,8 @@ def main():
                 task.cancel()
                 await asyncio.gather(task, return_exceptions=True)
             if loss:
-                loss["release"].set()
+                if "release" in loss:
+                    loss["release"].set()
             for deadline in deadlines:
                 deadline.cancel()
             await asyncio.gather(*deadlines, return_exceptions=True)
