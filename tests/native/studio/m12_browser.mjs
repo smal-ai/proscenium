@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { commandIdentity } from './m12_client.mjs';
 
 const root = process.argv[2];
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -56,12 +57,14 @@ async function inspect() {
   return receipt.result;
 }
 async function api(route, body, method = 'POST') {
-  return page.evaluate(async ({ route, body, method }) => {
+  const result = await page.evaluate(async ({ route, body, method, key }) => {
     const csrf = JSON.parse(localStorage.getItem('proscenium.owner.session')).csrf_token;
     const response = await fetch(route, { method, headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf,
-      'Idempotency-Key': body.operation_id ?? body.context_id ?? body.request_id }, body: JSON.stringify(body) });
+      'Idempotency-Key': key }, body: JSON.stringify(body) });
     return { status: response.status, body: await response.json() };
-  }, { route, body, method });
+  }, { route, body, method, key: commandIdentity(body) });
+  (report.api_statuses ??= []).push({ route, status: result.status, code: result.body.error?.code ?? null });
+  return result;
 }
 const base = `/api/v1/projects/${plan.project_id}`;
 async function resume(mode) {

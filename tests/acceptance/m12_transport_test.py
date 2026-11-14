@@ -14,6 +14,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "native/studio"))
 from m12_host import SID, close_actual_stdout, pause_actual_stdout, reserve_send
 
 
+def test_browser_request_id_precedes_its_context_id():
+    helper = Path(__file__).resolve().parents[1] / "native/studio/m12_client.mjs"
+    result = subprocess.check_output(
+        [
+            "node",
+            "--input-type=module",
+            "-e",
+            f"import {{ commandIdentity }} from '{helper.as_uri()}'; console.log(commandIdentity({{request_id:'request',context_id:'context'}}));",
+        ],
+        text=True,
+        timeout=5,
+    )
+    assert result.strip() == "request"
+
+
 def test_send_budget_is_durable_and_never_retries_an_unknown_send(tmp_path):
     plan = {"request_ids": ["one", "two", "third"]}
     reserve_send(tmp_path, plan, "one", SID, "Readonly first request")
