@@ -1,0 +1,146 @@
+{
+  "version": {
+    "actor": {
+      "id": "m11-operator-seed",
+      "kind": "tool"
+    },
+    "artifact_ids": [],
+    "created_at": "2026-11-14T15:08:35.300487+00:00",
+    "description": "Scripted native F01 input fixture, not Copilot authoring. Metres: floor top 0, wall near face Blender Y=2.4, two 1m cubes.",
+    "item_id": "m11-source",
+    "kind": "scene",
+    "name": "M11 operator F01 floor wall two cubes",
+    "preview_job_ids": [],
+    "preview_requests": [],
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "publication_id": "m11-fixture-source-publication",
+    "schema_version": "1.0",
+    "source": {
+      "dependencies": [],
+      "digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8",
+      "entry_path": "scenes/fixture/scene.blend",
+      "files": [
+        {
+          "destination": "assets/cube/asset.blend",
+          "origin": {
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "kind": "git",
+            "path": "assets/cube/asset.blend",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          }
+        },
+        {
+          "destination": "assets/cube/colour.png",
+          "origin": {
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "kind": "git",
+            "path": "assets/cube/colour.png",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+          }
+        },
+        {
+          "destination": "scenes/fixture/scene.blend",
+          "origin": {
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "kind": "git",
+            "path": "scenes/fixture/scene.blend",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+          }
+        }
+      ],
+      "required_runtime": {
+        "application": "Blender",
+        "features": [],
+        "version": "4.5.14 LTS"
+      }
+    },
+    "source_commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+    "tags": [
+      "M11",
+      "operator-fixture"
+    ],
+    "version_id": "m11-source-v1"
+  },
+  "source_unchanged": {
+    "assets/cube/asset.blend": true,
+    "assets/cube/colour.png": true,
+    "scenes/fixture/scene.blend": true
+  },
+  "export_sha256": "f1917544d6ca37e92f64cb086ab51ef27f0b3d4c703dba1a373d96965c37a8b8",
+  "blender_version": "4.5.14 LTS",
+  "units": "metres",
+  "axes": "XZY",
+  "objects": [
+    {
+      "name": "Blue cube",
+      "object_id": "object-cube-source",
+      "instance_id": "instance-blue",
+      "vertices": 8,
+      "triangles": 12,
+      "bounds_min": [
+        0.5,
+        0.0,
+        -0.5
+      ],
+      "bounds_max": [
+        1.5,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "name": "Floor",
+      "object_id": "object-floor",
+      "instance_id": "instance-floor",
+      "vertices": 8,
+      "triangles": 12,
+      "bounds_min": [
+        -3.0,
+        -0.20000000298023224,
+        -3.0
+      ],
+      "bounds_max": [
+        3.0,
+        0.0,
+        3.0
+      ]
+    },
+    {
+      "name": "Renamed cube",
+      "object_id": "object-cube-source",
+      "instance_id": "instance-renamed",
+      "vertices": 8,
+      "triangles": 12,
+      "bounds_min": [
+        -1.5,
+        0.0,
+        -0.5
+      ],
+      "bounds_max": [
+        -0.5,
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "name": "Wall",
+      "object_id": "object-wall",
+      "instance_id": "instance-wall",
+      "vertices": 8,
+      "triangles": 12,
+      "bounds_min": [
+        -3.0,
+        0.0,
+        2.4000000953674316
+      ],
+      "bounds_max": [
+        3.0,
+        2.5,
+        2.5999999046325684
+      ]
+    }
+  ]
+}

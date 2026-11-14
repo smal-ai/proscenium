@@ -1,0 +1,19 @@
+{
+  "job_id": "m11-import-job",
+  "attempt_id": "attempt-ca32d643-7017-417e-857b-195d202e4f7a",
+  "input_digest": "ea096877024393535f15d62d970de51b3f6ae5aad9519a3cc5ba5b34e33ce13c",
+  "request_digest": "4cc1b271cbbeb0974de5cd62013c87fd0a6831058a92089d0cd7c12db51e277e",
+  "source_digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8",
+  "state": "complete",
+  "supervisor": {
+    "pid": 3641920,
+    "start_ticks": "46188250",
+    "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+  },
+  "native_exit_code": 0,
+  "process": {
+    "pid": 3641921,
+    "start_ticks": "46188254",
+    "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+  }
+}

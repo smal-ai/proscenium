@@ -1,0 +1,19 @@
+{
+  "status": 202,
+  "body": {
+    "schema_version": "1.0",
+    "operation_id": "4103f408-a9a5-47e2-9a5f-b9a8152ca481",
+    "resource_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "state": "accepted",
+    "state_revision": 4,
+    "replayed": false
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation_id": "4103f408-a9a5-47e2-9a5f-b9a8152ca481",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "work_id": null,
+    "expected_revision": 4,
+    "mode": "reconcile_only"
+  }
+}

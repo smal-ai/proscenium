@@ -1,0 +1,25 @@
+{
+  "status": "partial_blocked",
+  "milestone": "M11",
+  "application_base": "a2a2097725bb18bb95b64f1a7ab82b63e0fb301e",
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a",
+  "cloud_roots": 2,
+  "native_children": 2,
+  "unity_invocations": 3,
+  "blender_exports": 1,
+  "generic_import_validation": "not_run",
+  "operator_playmode_validation": "passed",
+  "unity_publication": false,
+  "requests": [
+    "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "3182279d-bae6-4228-a11d-741694769de0"
+  ],
+  "scene_path": "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity",
+  "scene_sha256": "2d8e139c878c2ad4c6734f5616d1412e91b4bcf06f7c5e3fb9c604199c84d834",
+  "controller_sha256": "ddad62009d7cf8979ca520f8fcc7b70b07c3d720d1f2aba3957526026ab39bfa",
+  "test_sha256": "0616357329be3770268340f93331cb89758d7ca36f00b29653554576d6f7ed29",
+  "remaining_cloud_roots": 1,
+  "remaining_native_children": 0,
+  "remaining_unity_invocations": 0,
+  "remaining_blender_exports": 0
+}

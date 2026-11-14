@@ -1,0 +1,130 @@
+{
+  "work": [
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "m11-operator-attest-task",
+      "job_ids": [],
+      "native_session_id": "m11-operator-fixture-not-a-native-session",
+      "originating_request_id": "m11-operator-attest-fixture-request",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 1,
+      "work_id": "m11-operator-attest"
+    },
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "m11-operator-playmode-task",
+      "job_ids": [],
+      "native_session_id": "m11-operator-fixture-not-a-native-session",
+      "originating_request_id": "m11-operator-playmode-fixture-request",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 1,
+      "work_id": "m11-operator-playmode"
+    },
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "m11-operator-repeat-proof-task",
+      "job_ids": [],
+      "native_session_id": "m11-operator-fixture-not-a-native-session",
+      "originating_request_id": "m11-operator-repeat-proof-fixture-request",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 1,
+      "work_id": "m11-operator-repeat-proof"
+    },
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "m11-operator-seed-task",
+      "job_ids": [],
+      "native_session_id": "m11-operator-fixture-not-a-native-session",
+      "originating_request_id": "m11-operator-seed-fixture-request",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 1,
+      "work_id": "m11-operator-seed"
+    },
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+      "job_ids": [],
+      "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+      "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 2,
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    },
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "task-2f90411fa5a34c7d9aa29e067916e579",
+      "job_ids": [],
+      "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+      "originating_request_id": "3182279d-bae6-4228-a11d-741694769de0",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 2,
+      "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+    }
+  ],
+  "copilot.resumes": [
+    {
+      "body": {
+        "expected_revision": 4,
+        "mode": "reconcile_only",
+        "operation_id": "4103f408-a9a5-47e2-9a5f-b9a8152ca481",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "work_id": null
+      },
+      "detail_code": "attribution_unavailable",
+      "state": "outcome_uncertain"
+    },
+    {
+      "body": {
+        "expected_revision": 1,
+        "mode": "release_held_queue",
+        "operation_id": "94449270-bd56-4944-8e3b-dec297798337",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "work_id": null
+      },
+      "state": "completed"
+    }
+  ],
+  "copilot.control": [
+    {
+      "activation_revision": 4,
+      "epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+      "fenced": true,
+      "queue_released": true,
+      "reason": "attribution_unavailable",
+      "reconciled_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+      "revision": 3
+    }
+  ],
+  "copilot.hooks": [
+    {
+      "agent_id": "a7e23121-6fa1-4221-84d7-483c72693158",
+      "context_id": "470e86e3-bce0-40a5-bd39-1901a7e03ecd",
+      "delivery_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "payload_sha256": "79bc5f38e6779baad692b7ceb07bb0f5f7ea1cd65fdfe214f883d2e35a5edb0a",
+      "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    },
+    {
+      "agent_id": "48131525-e543-4f0d-bb35-2701ce506366",
+      "context_id": "3993efe1-aeb5-4a51-98eb-749de7ca9203",
+      "delivery_id": "3182279d-bae6-4228-a11d-741694769de0",
+      "payload_sha256": "2d5385684f1ff0e200dbaac60008811da62401b43202ba3630a120c16d8bcbae",
+      "request_id": "3182279d-bae6-4228-a11d-741694769de0",
+      "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+    }
+  ]
+}

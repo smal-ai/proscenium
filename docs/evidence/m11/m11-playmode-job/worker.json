@@ -1,0 +1,19 @@
+{
+  "job_id": "m11-playmode-job",
+  "attempt_id": "attempt-531c5055-ba05-47ea-b03f-ddba7c634875",
+  "input_digest": "bfe959bcedc1bc364e89e2baf9ad87000a00944dc595944a8bcfc4eeb800c37b",
+  "request_digest": "10d5be966db2dac96dfe6a18a221378e164df0a95cb8b50a1f02fb91621f584c",
+  "source_digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8",
+  "state": "complete",
+  "supervisor": {
+    "pid": 3658756,
+    "start_ticks": "46216122",
+    "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+  },
+  "native_exit_code": 0,
+  "process": {
+    "pid": 3658759,
+    "start_ticks": "46216126",
+    "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+  }
+}

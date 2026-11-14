@@ -1,0 +1,162 @@
+{
+  "admission": {
+    "execution_profile_id": "unity-local",
+    "input_artifact_ids": [],
+    "input_digest": "ea096877024393535f15d62d970de51b3f6ae5aad9519a3cc5ba5b34e33ce13c",
+    "job_id": "m11-import-job",
+    "kind": "unity",
+    "operation_id": "m11-import-operation",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "schema_version": "1.0",
+    "target": {
+      "shot_id": null,
+      "target_id": "m11-source",
+      "version": {
+        "item_id": "m11-source",
+        "version_id": "m11-source-v1"
+      }
+    }
+  },
+  "authoring_started": true,
+  "binding": {
+    "body": {
+      "action": "import",
+      "camera": "perspective",
+      "execution_profile_id": "unity-local",
+      "job_id": "m11-import-job",
+      "operation_id": "m11-import-operation",
+      "pipeline": "urp",
+      "project": "unity/M11",
+      "spawn": [
+        0,
+        0.92,
+        -2
+      ],
+      "version": {
+        "item_id": "m11-source",
+        "version_id": "m11-source-v1"
+      }
+    },
+    "invocation_id": "f7a4ee0ca3cc3cfad6c96dffe0ccc1f42b52d156015f08535f8813e1bdb48a43",
+    "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+  },
+  "directory": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/native-workflows/fe2df5ea8207b92639e07b6a8bb60838a42e15475e6206029edc6b3140ac9212",
+  "editor": "/home/quintin/Unity/Hub/Editor/6000.3.27f1/Editor/Unity",
+  "export_path": "unity/exports/fe2df5ea8207b92639e07b6a8bb60838a42e15475e6206029edc6b3140ac9212/environment.json",
+  "job_id": "m11-import-job",
+  "kind": "unity",
+  "phase": "launched",
+  "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+  "recipe": {
+    "camera": "perspective",
+    "export_path": "unity/exports/fe2df5ea8207b92639e07b6a8bb60838a42e15475e6206029edc6b3140ac9212/environment.json",
+    "export_sha256": "f1917544d6ca37e92f64cb086ab51ef27f0b3d4c703dba1a373d96965c37a8b8",
+    "pipeline": "urp",
+    "scene_path": "Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity",
+    "source": {
+      "dependencies": [],
+      "digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8",
+      "entry_path": "scenes/fixture/scene.blend",
+      "files": [
+        {
+          "destination": "assets/cube/asset.blend",
+          "origin": {
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "kind": "git",
+            "path": "assets/cube/asset.blend",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          }
+        },
+        {
+          "destination": "assets/cube/colour.png",
+          "origin": {
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "kind": "git",
+            "path": "assets/cube/colour.png",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+          }
+        },
+        {
+          "destination": "scenes/fixture/scene.blend",
+          "origin": {
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "kind": "git",
+            "path": "scenes/fixture/scene.blend",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+          }
+        }
+      ],
+      "required_runtime": {
+        "application": "Blender",
+        "features": [],
+        "version": "4.5.14 LTS"
+      }
+    },
+    "source_id": "m11-source",
+    "source_key": "f4ecf3b8541adc9031e22d92",
+    "source_version": {
+      "item_id": "m11-source",
+      "version_id": "m11-source-v1"
+    },
+    "spawn": {
+      "x": 0,
+      "y": 0.92,
+      "z": -2
+    }
+  },
+  "request": {
+    "binding": "bd30192cc7451fa77db6beaafd86fa12898518bf46966b9df750cf594bf11d69",
+    "blender": "/home/quintin/.local/bin/blender",
+    "claim_path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/owned-blender.lock",
+    "entry": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/snapshots/b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8/482231da-3aae-41b1-92dc-fd0806d4b055/scenes/fixture/scene.blend",
+    "materialised": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/snapshots/b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8/482231da-3aae-41b1-92dc-fd0806d4b055",
+    "output": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/unity/exports/fe2df5ea8207b92639e07b6a8bb60838a42e15475e6206029edc6b3140ac9212/environment.json",
+    "source_digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8"
+  },
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project",
+  "source": {
+    "dependencies": [],
+    "digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8",
+    "entry_path": "scenes/fixture/scene.blend",
+    "files": [
+      {
+        "destination": "assets/cube/asset.blend",
+        "origin": {
+          "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+          "kind": "git",
+          "path": "assets/cube/asset.blend",
+          "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+          "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+        }
+      },
+      {
+        "destination": "assets/cube/colour.png",
+        "origin": {
+          "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+          "kind": "git",
+          "path": "assets/cube/colour.png",
+          "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+          "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+        }
+      },
+      {
+        "destination": "scenes/fixture/scene.blend",
+        "origin": {
+          "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+          "kind": "git",
+          "path": "scenes/fixture/scene.blend",
+          "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+          "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+        }
+      }
+    ],
+    "required_runtime": {
+      "application": "Blender",
+      "features": [],
+      "version": "4.5.14 LTS"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "fixture": "Read-only observation of terminal JobRecord updated by the actual production workflow watcher while SPA disconnected",
+  "at": 1794669247.2728584,
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-ca32d643-7017-417e-857b-195d202e4f7a",
+    "attempt_number": 1,
+    "availability": "complete",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": "unity-supervisor:3641920:46188250",
+    "input_digest": "ea096877024393535f15d62d970de51b3f6ae5aad9519a3cc5ba5b34e33ce13c",
+    "job_id": "m11-import-job",
+    "kind": "unity",
+    "native_exit_code": 0,
+    "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+    "owner_operation_id": null,
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "provider_id": null,
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "succeeded",
+    "state_revision": 3,
+    "target": {
+      "shot_id": null,
+      "target_id": "m11-source",
+      "version": {
+        "item_id": "m11-source",
+        "version_id": "m11-source-v1"
+      }
+    },
+    "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+  },
+  "unity": {
+    "editor_version": "6000.3.27f1",
+    "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+    "scene_path": "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity",
+    "player_script": "unity/M11/Assets/Proscenium/Runtime/WalkthroughPlayer.cs",
+    "validation": {
+      "status": "not_run",
+      "notes": "Saved with finite metre-scale meshes, colliders and supported spawn. PlayMode not yet run."
+    }
+  },
+  "evidence": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/73bc7f321f794a6fc61738cd77fa81c7ed298f48fc144b7de200cb053b666d96"
+}

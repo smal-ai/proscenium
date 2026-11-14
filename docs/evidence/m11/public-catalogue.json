@@ -1,0 +1,130 @@
+{
+  "items": [
+    {
+      "current_version_id": "m11-source-v1",
+      "description": "Scripted native F01 input fixture, not Copilot authoring. Metres: floor top 0, wall near face Blender Y=2.4, two 1m cubes.",
+      "item_id": "m11-source",
+      "kind": "scene",
+      "name": "M11 operator F01 floor wall two cubes",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "schema_version": "1.0",
+      "selected_version_id": null,
+      "state_revision": 0,
+      "tags": [
+        "M11",
+        "operator-fixture"
+      ]
+    }
+  ],
+  "versions": [
+    {
+      "actor": {
+        "id": "m11-operator-seed",
+        "kind": "tool"
+      },
+      "artifact_ids": [],
+      "created_at": "2026-11-14T15:08:35.300487+00:00",
+      "description": "Scripted native F01 input fixture, not Copilot authoring. Metres: floor top 0, wall near face Blender Y=2.4, two 1m cubes.",
+      "item_id": "m11-source",
+      "kind": "scene",
+      "name": "M11 operator F01 floor wall two cubes",
+      "preview_job_ids": [],
+      "preview_requests": [],
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "publication_id": "m11-fixture-source-publication",
+      "schema_version": "1.0",
+      "source": {
+        "dependencies": [],
+        "digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8",
+        "entry_path": "scenes/fixture/scene.blend",
+        "files": [
+          {
+            "destination": "assets/cube/asset.blend",
+            "origin": {
+              "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+              "kind": "git",
+              "path": "assets/cube/asset.blend",
+              "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+              "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+            }
+          },
+          {
+            "destination": "assets/cube/colour.png",
+            "origin": {
+              "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+              "kind": "git",
+              "path": "assets/cube/colour.png",
+              "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+              "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+            }
+          },
+          {
+            "destination": "scenes/fixture/scene.blend",
+            "origin": {
+              "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+              "kind": "git",
+              "path": "scenes/fixture/scene.blend",
+              "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+              "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "Blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "source_commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+      "tags": [
+        "M11",
+        "operator-fixture"
+      ],
+      "version_id": "m11-source-v1"
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "m11-playmode-attestation",
+      "bytes": 3997,
+      "derived_from": [],
+      "kind": "document",
+      "media_type": "application/json",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "purpose": "metadata",
+      "schema_version": "1.0",
+      "sha256": "8a796fca07746fd079f721e83d497a6820d4627803d45b289705062638f20b4b",
+      "state": "ready"
+    },
+    {
+      "artifact_id": "m11-playmode-metrics",
+      "bytes": 2248,
+      "derived_from": [],
+      "kind": "log",
+      "media_type": "text/plain",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "purpose": "log",
+      "schema_version": "1.0",
+      "sha256": "65f23981462d025ef6e416182d20c36b1bd49cc39993172c8e0b645ad279d5a2",
+      "state": "ready"
+    },
+    {
+      "artifact_id": "m11-playmode-xml",
+      "bytes": 3834,
+      "derived_from": [],
+      "kind": "log",
+      "media_type": "application/xml",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "purpose": "log",
+      "schema_version": "1.0",
+      "sha256": "3b0c7fe7b7f6a9b1351038abd885244dc70a3637ab9cb95b0a02cb95e6cccb38",
+      "state": "ready"
+    }
+  ],
+  "checkpoint_intents": [
+    {
+      "operation_id": null,
+      "state": "completed"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "editor_version": "6000.3.27f1",
+  "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+  "scene_path": "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity",
+  "player_script": "unity/M11/Assets/Proscenium/Runtime/WalkthroughPlayer.cs",
+  "validation": {
+    "status": "passed",
+    "notes": "Actual Editor PlayMode test runner. See attempt XML/metrics; no physical OS input proof."
+  }
+}

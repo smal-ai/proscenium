@@ -1,0 +1,87 @@
+{
+  "status": "completed",
+  "command": {
+    "action": "seed"
+  },
+  "result": {
+    "checkpoint": {
+      "schema_version": "1.0",
+      "operation_id": "m11-fixture-source-checkpoint",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "state": "completed",
+      "source_commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+      "parent_commit": null,
+      "files": [
+        {
+          "path": "assets/cube/asset.blend",
+          "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+        },
+        {
+          "path": "assets/cube/colour.png",
+          "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+        },
+        {
+          "path": "scenes/fixture/scene.blend",
+          "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+        }
+      ],
+      "replayed": false
+    },
+    "publication": {
+      "schema_version": "1.0",
+      "publication_id": "m11-fixture-source-publication",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "versions": [
+        {
+          "item_id": "m11-source",
+          "version_id": "m11-source-v1"
+        }
+      ],
+      "job_ids": [],
+      "event_sequence": 2,
+      "replayed": false
+    },
+    "source": {
+      "entry_path": "scenes/fixture/scene.blend",
+      "files": [
+        {
+          "destination": "assets/cube/asset.blend",
+          "origin": {
+            "kind": "git",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "path": "assets/cube/asset.blend",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          }
+        },
+        {
+          "destination": "assets/cube/colour.png",
+          "origin": {
+            "kind": "git",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "path": "assets/cube/colour.png",
+            "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+          }
+        },
+        {
+          "destination": "scenes/fixture/scene.blend",
+          "origin": {
+            "kind": "git",
+            "repository_id": "repository-740447ce-b062-4962-86f5-902be842450a",
+            "commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+            "path": "scenes/fixture/scene.blend",
+            "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+          }
+        }
+      ],
+      "dependencies": [],
+      "required_runtime": {
+        "application": "Blender",
+        "version": "4.5.14 LTS",
+        "features": []
+      },
+      "digest": "b8f45a5e046a78b5e28de72db20893ec0a2b4620379225d87f67713c65af49f8"
+    }
+  }
+}

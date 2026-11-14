@@ -1,0 +1,10 @@
+{
+  "editor_version": "6000.3.27f1",
+  "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+  "scene_path": "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity",
+  "player_script": "unity/M11/Assets/Proscenium/Runtime/WalkthroughPlayer.cs",
+  "validation": {
+    "status": "not_run",
+    "notes": "Saved with finite metre-scale meshes, colliders and supported spawn. PlayMode not yet run."
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "status": "completed",
+  "command": {
+    "action": "replay"
+  },
+  "result": {
+    "fixture": "Actual original persisted authority replay, no extra root/child",
+    "job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-ca32d643-7017-417e-857b-195d202e4f7a",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": "unity-supervisor:3641920:46188250",
+      "input_digest": "ea096877024393535f15d62d970de51b3f6ae5aad9519a3cc5ba5b34e33ce13c",
+      "job_id": "m11-import-job",
+      "kind": "unity",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+      "owner_operation_id": null,
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "m11-source",
+        "version": {
+          "item_id": "m11-source",
+          "version_id": "m11-source-v1"
+        }
+      },
+      "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+    },
+    "before": {
+      "ids": {
+        "jobs": [
+          "m11-import-job"
+        ],
+        "attempts": [
+          "attempt-ca32d643-7017-417e-857b-195d202e4f7a"
+        ]
+      },
+      "unity_claims": 1,
+      "exports": 1,
+      "meta": {
+        "unity/M11/Assets/UniversalRenderPipelineGlobalSettings.asset.meta": "af9f74c83d791c254b997a85059052afcbe6f7295ddd2075ca77a7f7e02e0bec",
+        "unity/M11/Assets/DefaultVolumeProfile.asset.meta": "cc04e9922d0d0bc3ce24416cf61b1738f07a9547338d4369a4162db2cb01ac56",
+        "unity/M11/Assets/Proscenium.meta": "45164fc28a258f9c3f855099baf4aa6cf7f2241d83e46a4b78a19643e4539a1b",
+        "unity/M11/Assets/Proscenium/Editor.meta": "5670af01d490eefc89df9d294c03c3ca6a9fad2d254a76715e16d627357bf22b",
+        "unity/M11/Assets/Proscenium/Generated.meta": "9677f6305cd99fdb312846eba934831249e56bad87083a77afe06050d325609f",
+        "unity/M11/Assets/Proscenium/Runtime.meta": "ca325868bb34c2334f064b052d673a84f00316b2ec398ea9f3a77630576603cd",
+        "unity/M11/Assets/Proscenium/tool-install.json.meta": "b83628bd39a2d7bdf565435de191e0b19d493ae168905fecf6b72228b88b693b",
+        "unity/M11/Assets/Proscenium/Runtime/SourceIdentity.cs.meta": "96d4a7707856a945b81409baec9cea0cc798e6dbf9b33ff6db847c30e7e34abc",
+        "unity/M11/Assets/Proscenium/Runtime/WalkthroughPlayer.cs.meta": "44697a0eba14bafa9f650655277247089aefe65c2255609eeda5c2db5a614d41",
+        "unity/M11/Assets/Proscenium/Runtime/Proscenium.Unity.Runtime.asmdef.meta": "520e15582f62198b0aeac5a3957e733314fe64102aea39f2e14b9cfd95ddbee8",
+        "unity/M11/Assets/Proscenium/Editor/Proscenium.Unity.Editor.asmdef.meta": "3861aa7ec0d54da63e6ff9cd7e15704deeb5d021c8ba9a9dcbb261af7f718caa",
+        "unity/M11/Assets/Proscenium/Editor/UnityWorkflow.cs.meta": "43f8266c62c8a06cfdb5ece421476fecd3da35704ec9fe411e44bdea822ce2bc",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92.meta": "3f7e1a15425c5213f412c8f1c3c1132dc8eb410df37d63b4c17d2af840cfaa01",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/4b478ffbea4dbf1d284325cd.mat.meta": "6e998ffbaf957540ff872d09510c70da38e74a89fe145e3bf5acff3899e4283e",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/1dc7755934c90eb11cb22977.asset.meta": "bddb00ea47d4aef61ca734bf0163fecde54fa560f6c1301da0e25d9a96e24bed",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity.meta": "da9185ebf8f3690e547f11908904bff52abfe734f9219e21f975607cf38592d9",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/4b478ffbea4dbf1d284325cd.asset.meta": "3cccee8c3f2ce76db2cd563a0be65b3123eaa12e5fca2d9bf99f807f950ba2e6",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Pipeline.asset.meta": "ac5f13ac7a147c7ffc9cb654194a623d349919ff63425576063c813ffac81061",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/ad8f72b65846187d4f16b6b1.mat.meta": "8d3c6d278dbeb443d3a037ab6dbee8d348dfcec078d7f6874c04005cab194148",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/50168b3987335ac5b5c54085.mat.meta": "eb0e6c08f249d2ae1c058deafdb8583dc74ba5af385e79ed838508cdd4bc7871",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Renderer.asset.meta": "ade75ec50702ecc1ea7171454331a2a6d132c6db226bb29cf66eec74cbada3fd",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/1dc7755934c90eb11cb22977.mat.meta": "2dd271abf71215316235d93e8e677d7d494c34b70be0564555bcf7dd60443dbf",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/source-manifest.json.meta": "1d3f1b4b32000467a9ead7f748ea7f762593c8bec7fc602a5e3c627e5e237473",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/50168b3987335ac5b5c54085.asset.meta": "9ae7559a4788e76376ab88aa7bb4cf0fdefcb46a9b50bc95e05e651e058ec064",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/ad8f72b65846187d4f16b6b1.asset.meta": "35b8ce575585de3d6d8dfcd9c69475c3f06aafc3d84e4f884eb206bcbb219d81"
+      },
+      "scenes": {
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity": "6d2b7a8a6d101aadd6e7fbad9c9386ee93afda1b8fbdb9a1784c1f7d981818a4"
+      }
+    },
+    "after": {
+      "ids": {
+        "jobs": [
+          "m11-import-job"
+        ],
+        "attempts": [
+          "attempt-ca32d643-7017-417e-857b-195d202e4f7a"
+        ]
+      },
+      "unity_claims": 1,
+      "exports": 1,
+      "meta": {
+        "unity/M11/Assets/UniversalRenderPipelineGlobalSettings.asset.meta": "af9f74c83d791c254b997a85059052afcbe6f7295ddd2075ca77a7f7e02e0bec",
+        "unity/M11/Assets/DefaultVolumeProfile.asset.meta": "cc04e9922d0d0bc3ce24416cf61b1738f07a9547338d4369a4162db2cb01ac56",
+        "unity/M11/Assets/Proscenium.meta": "45164fc28a258f9c3f855099baf4aa6cf7f2241d83e46a4b78a19643e4539a1b",
+        "unity/M11/Assets/Proscenium/Editor.meta": "5670af01d490eefc89df9d294c03c3ca6a9fad2d254a76715e16d627357bf22b",
+        "unity/M11/Assets/Proscenium/Generated.meta": "9677f6305cd99fdb312846eba934831249e56bad87083a77afe06050d325609f",
+        "unity/M11/Assets/Proscenium/Runtime.meta": "ca325868bb34c2334f064b052d673a84f00316b2ec398ea9f3a77630576603cd",
+        "unity/M11/Assets/Proscenium/tool-install.json.meta": "b83628bd39a2d7bdf565435de191e0b19d493ae168905fecf6b72228b88b693b",
+        "unity/M11/Assets/Proscenium/Runtime/SourceIdentity.cs.meta": "96d4a7707856a945b81409baec9cea0cc798e6dbf9b33ff6db847c30e7e34abc",
+        "unity/M11/Assets/Proscenium/Runtime/WalkthroughPlayer.cs.meta": "44697a0eba14bafa9f650655277247089aefe65c2255609eeda5c2db5a614d41",
+        "unity/M11/Assets/Proscenium/Runtime/Proscenium.Unity.Runtime.asmdef.meta": "520e15582f62198b0aeac5a3957e733314fe64102aea39f2e14b9cfd95ddbee8",
+        "unity/M11/Assets/Proscenium/Editor/Proscenium.Unity.Editor.asmdef.meta": "3861aa7ec0d54da63e6ff9cd7e15704deeb5d021c8ba9a9dcbb261af7f718caa",
+        "unity/M11/Assets/Proscenium/Editor/UnityWorkflow.cs.meta": "43f8266c62c8a06cfdb5ece421476fecd3da35704ec9fe411e44bdea822ce2bc",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92.meta": "3f7e1a15425c5213f412c8f1c3c1132dc8eb410df37d63b4c17d2af840cfaa01",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/4b478ffbea4dbf1d284325cd.mat.meta": "6e998ffbaf957540ff872d09510c70da38e74a89fe145e3bf5acff3899e4283e",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/1dc7755934c90eb11cb22977.asset.meta": "bddb00ea47d4aef61ca734bf0163fecde54fa560f6c1301da0e25d9a96e24bed",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity.meta": "da9185ebf8f3690e547f11908904bff52abfe734f9219e21f975607cf38592d9",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/4b478ffbea4dbf1d284325cd.asset.meta": "3cccee8c3f2ce76db2cd563a0be65b3123eaa12e5fca2d9bf99f807f950ba2e6",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Pipeline.asset.meta": "ac5f13ac7a147c7ffc9cb654194a623d349919ff63425576063c813ffac81061",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/ad8f72b65846187d4f16b6b1.mat.meta": "8d3c6d278dbeb443d3a037ab6dbee8d348dfcec078d7f6874c04005cab194148",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/50168b3987335ac5b5c54085.mat.meta": "eb0e6c08f249d2ae1c058deafdb8583dc74ba5af385e79ed838508cdd4bc7871",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Renderer.asset.meta": "ade75ec50702ecc1ea7171454331a2a6d132c6db226bb29cf66eec74cbada3fd",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/1dc7755934c90eb11cb22977.mat.meta": "2dd271abf71215316235d93e8e677d7d494c34b70be0564555bcf7dd60443dbf",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/source-manifest.json.meta": "1d3f1b4b32000467a9ead7f748ea7f762593c8bec7fc602a5e3c627e5e237473",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/50168b3987335ac5b5c54085.asset.meta": "9ae7559a4788e76376ab88aa7bb4cf0fdefcb46a9b50bc95e05e651e058ec064",
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/ad8f72b65846187d4f16b6b1.asset.meta": "35b8ce575585de3d6d8dfcd9c69475c3f06aafc3d84e4f884eb206bcbb219d81"
+      },
+      "scenes": {
+        "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity": "6d2b7a8a6d101aadd6e7fbad9c9386ee93afda1b8fbdb9a1784c1f7d981818a4"
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "status": "blocked",
+  "requests": [
+    {
+      "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "receipt": {
+        "detail_code": "provider_unavailable",
+        "native_message_id": "655ebd77-d120-497f-9e0f-4c0c7ac57755",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "replayed": false,
+        "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "schema_version": "1.0",
+        "state": "acknowledged",
+        "state_revision": 4,
+        "type": "queue",
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      }
+    },
+    {
+      "request_id": "3182279d-bae6-4228-a11d-741694769de0",
+      "receipt": {
+        "native_message_id": "a0b00ce5-a8b9-44fe-9f2a-ffa6dc70011b",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "replayed": false,
+        "request_id": "3182279d-bae6-4228-a11d-741694769de0",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+      }
+    }
+  ],
+  "checkpoint_commit": "3297ae647200270ebdc102630e7cfbfce2f4bfd1",
+  "unity_publication_present": false,
+  "runtime_errors": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/machine/copilot-runtime/home/logs/process-1794669147650-3640449.log",
+      "line": "2026-11-14T15:22:04.960Z [ERROR] [rust:hooks] Error in preToolUse hook from \"SDK\" (fail-closed): hooks.invoke request failed: unknown session 0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/machine/copilot-runtime/home/logs/process-1794669147650-3640449.log",
+      "line": "2026-11-14T15:22:05.017Z [ERROR] Failed to dispatch task transition: Error: The original session binding is no longer active"
+    }
+  ],
+  "observations": [
+    "Second root fenced provider_unavailable at checkpoint_sources pre-tool hook",
+    "No Unity checkpoint intent or commit was created",
+    "Fresh owner reconcile_only accepted but retained outcome_uncertain/attribution_unavailable",
+    "Per-token fsync observation may have delayed SDK reader; cause is not established",
+    "No M03/F00/shared/UI state was patched or forced complete"
+  ]
+}

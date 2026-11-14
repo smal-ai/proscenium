@@ -1,0 +1,60 @@
+{
+  "at": 1794669171473,
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-ca32d643-7017-417e-857b-195d202e4f7a",
+    "attempt_number": 1,
+    "availability": "pending",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": "unity-supervisor:3641920:46188250",
+    "input_digest": "ea096877024393535f15d62d970de51b3f6ae5aad9519a3cc5ba5b34e33ce13c",
+    "job_id": "m11-import-job",
+    "kind": "unity",
+    "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+    "owner_operation_id": null,
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "provider_id": null,
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "running",
+    "state_revision": 2,
+    "target": {
+      "shot_id": null,
+      "target_id": "m11-source",
+      "version": {
+        "item_id": "m11-source",
+        "version_id": "m11-source-v1"
+      }
+    },
+    "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+  },
+  "request": {
+    "accepted_at": "2026-11-14T15:12:26.088784+00:00",
+    "effective_profile_id": "authoring",
+    "generation_task_id": "task-2f90411fa5a34c7d9aa29e067916e579",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "receipt": {
+      "native_message_id": "a0b00ce5-a8b9-44fe-9f2a-ffa6dc70011b",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "replayed": false,
+      "request_id": "3182279d-bae6-4228-a11d-741694769de0",
+      "schema_version": "1.0",
+      "state": "acknowledged",
+      "state_revision": 2,
+      "type": "queue",
+      "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+    },
+    "request_id": "3182279d-bae6-4228-a11d-741694769de0",
+    "schema_version": "1.0",
+    "submission": {
+      "context_id": "3993efe1-aeb5-4a51-98eb-749de7ca9203",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "request_id": "3182279d-bae6-4228-a11d-741694769de0",
+      "schema_version": "1.0",
+      "text": "SCRIPTED M11 TEST-USER REQUEST, not a human creative-selection claim. Make the already-published Blender environment playable as a minimal saved Unity scene. This real application journey is bounded: complete this root within 290 seconds. No questions or extra planning cycles.\n\nUse the frontier lead and delegate EXACTLY ONE native task to agent_type unity-specialist (its required configured model is gpt-6.1-sol). Do not use authoring-specialist or any other child. The native child's authoritative host additionalContext is wrapped in system_reminder; consume it rather than rejecting that wrapper. The pinned source is {\"item_id\": \"m11-source\", \"version_id\": \"m11-source-v1\"}. It is an explicitly labelled operator-imported native F01 fixture, not content you authored. It has a 6m floor at Unity Y=0, a wall near Unity Z=2.4 and two 1m cubes. The source closure/materialisation is supplied by the accepted W02 tools. Do not edit Blender geometry.\n\nTell the Unity child to inspect get_version for the exact source, then call run_unity_workflow ONCE with this exact envelope, with no extra fields:\n{\"operation_id\": \"m11-import-operation\", \"job_id\": \"m11-import-job\", \"version\": {\"item_id\": \"m11-source\", \"version_id\": \"m11-source-v1\"}, \"execution_profile_id\": \"unity-local\", \"project\": \"unity/M11\", \"spawn\": [0, 0.92, -2], \"camera\": \"perspective\", \"pipeline\": \"urp\", \"action\": \"import\"}\n\nThis uses the real fixed Blender export and tracked Unity Editor import. Installed Editor is configured privately by the host. Do not shell-launch Blender, Unity, any player, renderer, GPU work, model/provider/service, installation or download. No Linux build, web player, characters, HUD, camera cinematics or look-dev parity. The generic import's honest PlayMode validation is not_run. A separate operator acceptance job will playtest later. Do not pretend you performed it.\n\nThe tool returns an independent admitted JobRecord, NOT a completed scene. As soon as job m11-import-job is admitted, the child should report its exact job/attempt/source identity and finish without polling to wait for the Editor. The lead should then finish this root with the job ID and honest pending/not_run status. Do not call get_unity_result repeatedly while running. Do NOT checkpoint or publish Unity yet because the Editor may still be writing. A later explicit request will inspect the actual completion, perform source checkpoint and publish. Do not create a second operation/job, re-export, or spend another native child. Existing shell/read tools remain available for scoped metadata, but all native launch must go through the facade.\n",
+      "type": "queue"
+    }
+  },
+  "kind": "Navigated actual SPA away; closes owner WebSocket while independent Editor job runs"
+}

@@ -1,0 +1,97 @@
+{
+  "owned_host_browser_processes": [
+    {
+      "kind": "server",
+      "pid": 3629809,
+      "start": "46161590",
+      "original_alive": false
+    },
+    {
+      "kind": "browser",
+      "pid": 3629810,
+      "start": "46161590",
+      "original_alive": false
+    },
+    {
+      "kind": "supervisor",
+      "pid": 3629807,
+      "start": "46161587",
+      "original_alive": false
+    },
+    {
+      "kind": "server",
+      "pid": 3625852,
+      "start": "46153620",
+      "original_alive": false
+    },
+    {
+      "kind": "browser",
+      "pid": 3625853,
+      "start": "46153620",
+      "original_alive": false
+    },
+    {
+      "kind": "supervisor",
+      "pid": 3625839,
+      "start": "46153617",
+      "original_alive": false
+    },
+    {
+      "kind": "server",
+      "pid": 3613518,
+      "start": "46126229",
+      "original_alive": false
+    },
+    {
+      "kind": "browser",
+      "pid": 3613519,
+      "start": "46126229",
+      "original_alive": false
+    },
+    {
+      "kind": "supervisor",
+      "pid": 3613517,
+      "start": "46126224",
+      "original_alive": false
+    }
+  ],
+  "latest_sdk_runtime": {
+    "pid": 3696956,
+    "original_alive": false
+  },
+  "native_workers": [
+    {
+      "job_id": "m11-import-job",
+      "supervisor_alive": false,
+      "editor_alive": false
+    },
+    {
+      "job_id": "m11-repeat-proof-job",
+      "supervisor_alive": false,
+      "editor_alive": false
+    },
+    {
+      "job_id": "m11-playmode-job",
+      "supervisor_alive": false,
+      "editor_alive": false
+    },
+    {
+      "kind": "blender-export",
+      "supervisor_alive": false,
+      "blender_alive": false
+    }
+  ],
+  "reaped": {
+    "server": {
+      "pid": 3629809,
+      "returncode": -15,
+      "reaped": true
+    },
+    "browser": {
+      "pid": 3629810,
+      "returncode": 0,
+      "reaped": true
+    }
+  },
+  "independent_services_touched": false
+}

@@ -1,0 +1,155 @@
+{
+  "m11-import-job": {
+    "job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-ca32d643-7017-417e-857b-195d202e4f7a",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": "unity-supervisor:3641920:46188250",
+      "input_digest": "ea096877024393535f15d62d970de51b3f6ae5aad9519a3cc5ba5b34e33ce13c",
+      "job_id": "m11-import-job",
+      "kind": "unity",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+      "owner_operation_id": null,
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "m11-source",
+        "version": {
+          "item_id": "m11-source",
+          "version_id": "m11-source-v1"
+        }
+      },
+      "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+    },
+    "root": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/73bc7f321f794a6fc61738cd77fa81c7ed298f48fc144b7de200cb053b666d96",
+    "logs": {
+      "supervisor.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/73bc7f321f794a6fc61738cd77fa81c7ed298f48fc144b7de200cb053b666d96/supervisor.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "editor.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/73bc7f321f794a6fc61738cd77fa81c7ed298f48fc144b7de200cb053b666d96/editor.log",
+        "sha256": "522adb86ca198bf5d85375cbe0b5abc3a080f6236a62c19725b0c6dfccb1c9c4",
+        "bytes": 752045
+      },
+      "console.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/73bc7f321f794a6fc61738cd77fa81c7ed298f48fc144b7de200cb053b666d96/console.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    "remaining_processes": false
+  },
+  "m11-playmode-job": {
+    "job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-531c5055-ba05-47ea-b03f-ddba7c634875",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": "unity-supervisor:3658756:46216122",
+      "input_digest": "bfe959bcedc1bc364e89e2baf9ad87000a00944dc595944a8bcfc4eeb800c37b",
+      "job_id": "m11-playmode-job",
+      "kind": "unity",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+      "owner_operation_id": null,
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "m11-operator-verified-fixture",
+        "version": {
+          "item_id": "m11-source",
+          "version_id": "m11-source-v1"
+        }
+      },
+      "work_id": "m11-operator-playmode"
+    },
+    "root": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/6011e28284e18f5c9237edf296537f539d029bcf1989945a85ce24492a4c57b4",
+    "logs": {
+      "supervisor.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/6011e28284e18f5c9237edf296537f539d029bcf1989945a85ce24492a4c57b4/supervisor.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "editor.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/6011e28284e18f5c9237edf296537f539d029bcf1989945a85ce24492a4c57b4/editor.log",
+        "sha256": "e16acc4bec55e07723e8190f25b95f546a5de0996517c9873a8d5772c6c4e733",
+        "bytes": 72876
+      },
+      "console.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/6011e28284e18f5c9237edf296537f539d029bcf1989945a85ce24492a4c57b4/console.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    "remaining_processes": false
+  },
+  "m11-repeat-proof-job": {
+    "job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-204e6fa9-d7f2-4f21-9d7e-0194bac2ae1c",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": "unity-supervisor:3653392:46208141",
+      "input_digest": "7d5ec9ebb42b3be91d0578d131f6168f4c99f3ca033b7ab5bfc8e265aa893cae",
+      "job_id": "m11-repeat-proof-job",
+      "kind": "unity",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+      "owner_operation_id": null,
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 3,
+      "target": {
+        "shot_id": null,
+        "target_id": "m11-operator-verified-fixture",
+        "version": {
+          "item_id": "m11-source",
+          "version_id": "m11-source-v1"
+        }
+      },
+      "work_id": "m11-operator-repeat-proof"
+    },
+    "root": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/07a47a01eb22bad242287860ab768dc105cf6eae9e4a782d3ea473540f062329",
+    "logs": {
+      "supervisor.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/07a47a01eb22bad242287860ab768dc105cf6eae9e4a782d3ea473540f062329/supervisor.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "editor.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/07a47a01eb22bad242287860ab768dc105cf6eae9e4a782d3ea473540f062329/editor.log",
+        "sha256": "7ab6edd2aabf170510ee80d85f27faf293dde92c1fd3856ae639ffe7b85146b6",
+        "bytes": 139482
+      },
+      "console.log": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/.proscenium/jobs/unity/07a47a01eb22bad242287860ab768dc105cf6eae9e4a782d3ea473540f062329/console.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    "remaining_processes": false
+  }
+}

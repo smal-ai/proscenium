@@ -1,0 +1,95 @@
+{
+  "status": "completed",
+  "command": {
+    "action": "attest"
+  },
+  "result": {
+    "attestation": {
+      "fixture": "Actual separate operator F05 PlayMode job, not generic import validation",
+      "job": {
+        "artifact_ids": [],
+        "attempt_id": "attempt-531c5055-ba05-47ea-b03f-ddba7c634875",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": null,
+        "expected_frames": null,
+        "external_job_id": "unity-supervisor:3658756:46216122",
+        "input_digest": "bfe959bcedc1bc364e89e2baf9ad87000a00944dc595944a8bcfc4eeb800c37b",
+        "job_id": "m11-playmode-job",
+        "kind": "unity",
+        "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+        "owner_operation_id": null,
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "provider_id": null,
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 3,
+        "target": {
+          "shot_id": null,
+          "target_id": "m11-operator-verified-fixture",
+          "version": {
+            "item_id": "m11-source",
+            "version_id": "m11-source-v1"
+          }
+        },
+        "work_id": "m11-operator-playmode",
+        "native_exit_code": 0
+      },
+      "unity": {
+        "editor_version": "6000.3.27f1",
+        "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+        "scene_path": "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity",
+        "player_script": "unity/M11/Assets/Proscenium/Runtime/WalkthroughPlayer.cs",
+        "validation": {
+          "status": "passed",
+          "notes": "Actual Editor PlayMode test runner. See attempt XML/metrics; no physical OS input proof."
+        }
+      },
+      "metrics": "path=Keyboard.current/Mouse.current->WalkthroughPlayer.Update->CharacterController.Move/Camera virtual_keyboard=3 virtual_mouse=4 focus=False update_mode=ProcessEventsManually background=IgnoreFocus editor_routing=AllDeviceInputAlwaysGoesToGameView physical_OS_input=not_tested\nprojection=perspective key=W movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=555 phase=Manual polled_move=(0.00, 1.00)\nprojection=perspective key=A movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=577 phase=Manual polled_move=(-1.00, 0.00)\nprojection=perspective key=S movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=599 phase=Manual polled_move=(0.00, -1.00)\nprojection=perspective key=D movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=621 phase=Manual polled_move=(1.00, 0.00)\nprojection=perspective mouse_delta=(80.00, -40.00) current_mouse=4 polled_mouse=4 camera_rotation_deg=8.94275 yaw_deg=8 pitch_deg=4\nprojection=perspective input=Keyboard.current/Mouse.current->Update injected=False movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0 camera_rotation_deg=8.94275\nprojection=orthographic key=W movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=1119 phase=Manual polled_move=(0.00, 1.00)\nprojection=orthographic key=A movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=1141 phase=Manual polled_move=(-1.00, 0.00)\nprojection=orthographic key=S movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=1163 phase=Manual polled_move=(0.00, -1.00)\nprojection=orthographic key=D movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=1185 phase=Manual polled_move=(1.00, 0.00)\nprojection=orthographic mouse_delta=(80.00, -40.00) current_mouse=4 polled_mouse=4 camera_rotation_deg=8.94275 yaw_deg=8 pitch_deg=4\nprojection=orthographic input=Keyboard.current/Mouse.current->Update injected=False movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0 camera_rotation_deg=8.94275\ntest_settings_restored=True update_mode=ProcessEventsInDynamicUpdate background=ResetAndDisableNonBackgroundDevices editor_routing=PointersAndKeyboardsRespectGameViewFocus capture_delta=0\n",
+      "xml_sha256": "3b0c7fe7b7f6a9b1351038abd885244dc70a3637ab9cb95b0a02cb95e6cccb38",
+      "source_version": {
+        "item_id": "m11-source",
+        "version_id": "m11-source-v1"
+      }
+    },
+    "artifacts": [
+      {
+        "schema_version": "1.0",
+        "artifact_id": "m11-playmode-attestation",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "kind": "document",
+        "purpose": "metadata",
+        "sha256": "8a796fca07746fd079f721e83d497a6820d4627803d45b289705062638f20b4b",
+        "bytes": 3997,
+        "media_type": "application/json",
+        "state": "ready",
+        "derived_from": []
+      },
+      {
+        "schema_version": "1.0",
+        "artifact_id": "m11-playmode-xml",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "kind": "log",
+        "purpose": "log",
+        "sha256": "3b0c7fe7b7f6a9b1351038abd885244dc70a3637ab9cb95b0a02cb95e6cccb38",
+        "bytes": 3834,
+        "media_type": "application/xml",
+        "state": "ready",
+        "derived_from": []
+      },
+      {
+        "schema_version": "1.0",
+        "artifact_id": "m11-playmode-metrics",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "kind": "log",
+        "purpose": "log",
+        "sha256": "65f23981462d025ef6e416182d20c36b1bd49cc39993172c8e0b645ad279d5a2",
+        "bytes": 2248,
+        "media_type": "text/plain",
+        "state": "ready",
+        "derived_from": []
+      }
+    ]
+  }
+}
