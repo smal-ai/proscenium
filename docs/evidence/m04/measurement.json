@@ -1,0 +1,135 @@
+{
+  "status": "targeted_native_path_pass_milestone_pending",
+  "base_commit": "7b1f837e5186c18f28dbae3f860c261f15961b80",
+  "native_execution_commit": "a530cbd1e7df78ccdfbd30a7e632e1bd98ddb7a0",
+  "optional_even_segment_fix_commit": "cff617750e4ad2139b2f873bfa8f7aa343b3e8be",
+  "harness_source_identity_note": "Local candidate drivers executed against committed production code a530cbd. Post-proof formatting/type annotations and read-only analyser failure assertions were finalised afterwards. Exact pre-format driver hashes were not captured; no native rerun is claimed for that finalisation.",
+  "specification": "3.2.0",
+  "contract": "1.0.0",
+  "recorded_date_sast": "2026-11-14",
+  "owner_input": "Scripted test-owner fixture, not a human creative selection",
+  "retained_root": "/home/quintin/.cache/proscenium-development/milestones/m04-camera-20261114-d",
+  "raw_report_sha256": {
+    "public-final.json": "015dc87729f69225a68c1275c232ea96a8568402a9ad1fbaf48a693480d2ec98",
+    "browser-result.json": "285fceded9797b361cf67980bffca8f04a4347098cba4cfce666eb8826537456",
+    "captured-context.json": "572f7aa28172408afd9950c05c9ac2c38a2dbcee0c07ba4dec2ee1ed304ce138",
+    "fixture-import.json": "06885addb1e8547867d1d27d7104f12d23d5522d6d65978b50afcbff4cfb55cf",
+    "source-after.json": "ef780b1dc852b8baf867c1b98cf312ed226e968fe3a1598735f1f88c04fe22ef",
+    "framing-measurements.json": "07c034ab04ed9425fc8b477db08abb7cd9ddddbcda0cd4f8335236178dcb72b2",
+    "annotation-before-dpr2.json": "8479c4b52d0331210313e50e444865c0f5399802b0ae722d7efb26a99d8b16e8",
+    "cleanup.json": "e4544d7e40295b58f4616e69065e7ed0de10c3ba39d620e2d5e7b877c7e29497"
+  },
+  "accepted_reference_sha256": {
+    "docs/evidence/w05/camera-capture-dpr1.png": "b253e157b1279b614af15d0d595a8d0cada0847205043b7a7f88a39dbfb8b2e7",
+    "docs/evidence/w05/camera-selection-dpr1.json": "65c68da4b1077479cd435c718e6ef611ed63eab5ff1375a613d52af60906c83e",
+    "docs/evidence/w05/camera-capture-dpr2.png": "2a97e0f7fd8ad1939c04eeb4ac4e42d2aab43e8fa09d08d843214348e5e3cef6",
+    "docs/evidence/w05/camera-selection-dpr2.json": "1e980938bf35ae94cbcc1df5a0e60d81483c0455e8264bc167bccca21ac714d2"
+  },
+  "runtime": {
+    "sdk": "1.0.34",
+    "cli": "1.0.112",
+    "cli_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "observed_selected_model": "gpt-6.1-sol",
+    "native_session_id": "40980c44-83c2-4ef1-b52d-0f76e9a076ed",
+    "chromium_revision": 1255,
+    "chromium_engine": "159.0.8154.6",
+    "browser_graphics": "Explicit --use-angle=swiftshader; live capture is byte-identical to accepted W05 inspection PNG",
+    "playwright": "1.65.1",
+    "python": "3.12.13",
+    "blender": "4.5.14 LTS",
+    "blender_build": "62c1db4208e8",
+    "engine": "CYCLES",
+    "device": "CPU",
+    "threads": 4,
+    "samples": 8,
+    "review_output": "view_transformed_srgb PNG RGB8, Standard/None/0/1",
+    "native_timeout_seconds": 300,
+    "free_space_reserve_bytes": 5368709120,
+    "render_claim": "/tmp/opencode/proscenium-native-claims/blender-render.lock"
+  },
+  "compiled_frontend_sha256": {
+    "index-DmwFdBzW.js": "15e6d5a925b7435e216db16998f96bf67fae06b65cec4d731a2a4a00e6092495",
+    "index-BLEqH2u5.css": "d083a6392661c9778eac118639d61216ec38512528a9fdc1d96c79168699b43f"
+  },
+  "allocation_used": {"cloud_roots": 1, "root_seconds": 36.221, "native_children": 0, "cpu_keyframe_frames": 2, "proxy_exports": 0, "gpu_provider_calls": 0},
+  "request": {
+    "id": "5d540993-b693-4b07-8fae-ca26f1d0ddf2",
+    "context_id": "b90f873c-4e94-4332-b755-d212db32b445",
+    "work_id": "work-9e0b4d135c614ae98c6f95ad382adeba",
+    "text": "Render this view",
+    "state": "completed",
+    "camera_rfc8785_sha256": "b86d2d4f26a85bfad325743c6ed9f850e33959059f390053e6b74b7d2c4b4f8d",
+    "live_capture_bytes_equal_accepted_w05": true,
+    "live_capture_camera_equal_accepted_w05": true,
+    "model_preview_camera_equal_captured_context": true,
+    "selected_objects": [{"object_id": "object-cube-source", "instance_id": "instance-renamed"}],
+    "browser_viewport_css": [1920, 1080],
+    "controlled_proxy_rectangle_css": [1031.5, 569.25],
+    "live_browser_dpr": 1,
+    "normal_queue_and_sdk": true,
+    "dpr2_path": "Authenticated explicit test-owner harness call with exact accepted W05 DPR2 capture/camera, NOT another cloud root or a new DPR2 browser run"
+  },
+  "source": {
+    "label": "Explicitly imported accepted W03 geometry and proxy fixture, not model authored",
+    "version_id": "fixture-v1",
+    "source_commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+    "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7",
+    "proxy_sha256": "7dc028503fea1b4d7b18b9ac922322940da212ed340430997e76affbdfc1ce6b",
+    "working_head_before_and_after": "9d850afc99b72c1570222acdd16b848fe3d0a692",
+    "working_hashes_and_index_unchanged": true,
+    "materialised_native_hashes_verified": true,
+    "original_w03_fixture_unchanged": true,
+    "model_checkpoint_or_publication_calls": 0
+  },
+  "renders": [
+    {
+      "dpr_reference": 1,
+      "dimensions": {"width": 1031, "height": 569},
+      "job_id": "preview-87a00e30a18115684b0dd3ee2770c9d532cbce24f4854f9e6e86693959f6907c",
+      "attempt_id": "attempt-d67ab3de-32b9-46cb-abc2-02ce67005523",
+      "input_digest": "7f180ddc546fb0a94919b910b55dbf30589a16d7f46005415ba8d845dd72153d",
+      "png_sha256": "a33c4bfc54c4012231c7a3a1c4c1edc3909353ceecf5e4db0d04bf6ed6271f98",
+      "frame_seconds_including_png_receipt": 1.058292175,
+      "state": "succeeded", "availability": "complete", "native_exit_code": 0, "completed_frames": 1, "segments": 0,
+      "edge_fits": [
+        {"instance_id": "instance-blue", "inspection_offset_pixels": 0.0011677475277751426, "native_offset_pixels": -0.13465489572552605, "difference_pixels": 0.1358226432533012, "native_lane_max_abs_pixels": 0.43530741492523983},
+        {"instance_id": "instance-renamed", "inspection_offset_pixels": 0.004446808846765942, "native_offset_pixels": -0.1323337227610019, "difference_pixels": 0.13678053160776782, "native_lane_max_abs_pixels": 0.252036710692624}
+      ]
+    },
+    {
+      "dpr_reference": 2,
+      "dimensions": {"width": 2063, "height": 1138},
+      "job_id": "preview-c0c5181fc21645b8e7bd48766c46c1540e570b555e04032af4eefd2918a0ea66",
+      "attempt_id": "attempt-9319cb5b-89b2-4c77-b646-06b37930f44c",
+      "input_digest": "c15a2f147c25a7482c3b5177fa07a1bee16f5dd96526a80a53dbf2234b3434eb",
+      "png_sha256": "0259a49f673f955185f7ae0782c6d14a02d3bdf51e89cbd96254c3e74236cfaa",
+      "frame_seconds_including_png_receipt": 3.804024906,
+      "state": "succeeded", "availability": "complete", "native_exit_code": 0, "completed_frames": 1, "segments": 0,
+      "edge_fits": [
+        {"instance_id": "instance-blue", "inspection_offset_pixels": -0.07013721108110604, "native_offset_pixels": -0.17697774206750796, "difference_pixels": 0.10684053098640192, "native_lane_max_abs_pixels": 0.25723815391210525},
+        {"instance_id": "instance-renamed", "inspection_offset_pixels": -0.007213845013116824, "native_offset_pixels": -0.1518781117987712, "difference_pixels": 0.14466426678565436, "native_lane_max_abs_pixels": 0.30750768526652666}
+      ]
+    }
+  ],
+  "framing_oracle": {"tolerance_image_pixels": 0.5, "lanes_per_edge": 17, "definition": "Actual GLB far top edges of both cube instances. Bilinear B-minus-R half-step crossings, 17 fixed lanes at edge fractions 0.2 through 0.8. Compare median normal offsets in inspection and Cycles PNG. Not whole-image colour equality.", "maximum_correspondence_error_pixels": 0.14466426678565436},
+  "annotation": {
+    "annotation_id": "93978327-bf5d-49bb-86b0-9132f3c2537f",
+    "revision": 1,
+    "origin": "blender_render",
+    "image_sha256": "a33c4bfc54c4012231c7a3a1c4c1edc3909353ceecf5e4db0d04bf6ed6271f98",
+    "source_version": "fixture-v1", "source_frame": 1,
+    "unchanged_after_dpr2": true,
+    "restored_in_actual_browser_after_reload": true,
+    "camera": null,
+    "spatial_status": "unavailable",
+    "spatial_hits": [],
+    "camera_limit": "Image-space pin retains exact first-job/image/source target; job RenderSpec retains camera. AnnotationSnapshot.camera is null. Do not claim non-null saved-camera restoration."
+  },
+  "cleanup": {"browser_closed": true, "server_exited": true, "sdk_exited": true, "both_owned_native_supervisors_and_blender_processes_exited": true, "authoring_mcp_configured": false, "independent_blender_9876": "Never queried, started, stopped or reconfigured"},
+  "remaining": [
+    "M02 and M03 dependency acceptance remains coordinator-owned and was pending at assignment.",
+    "Copilot context adds a duplicate render-role attachment for the proxy capture that W05 supplied as reference. Pixel origin remains proxy_capture. Parent-owned forwarding semantics need correction.",
+    "Saved native image annotation has camera:null. Source/job/pixels remain pinned. Parent must resolve saved-camera restoration scope.",
+    "Accepted generic Blender skill and request-preview error guidance still advise even image dimensions. Test-owner AGENTS clarified odd PNG support. Updating that out-of-scope advice remains parent-owned."
+  ]
+}
