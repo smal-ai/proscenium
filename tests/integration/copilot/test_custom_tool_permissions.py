@@ -16,9 +16,10 @@ from test_delivery import PROJECT, context, submit
 from test_delivery import runtime as runtime
 
 CAPTURE = json.loads(
-    subprocess.check_output(
-        ["git", "show", "7855b46:docs/evidence/m11-publication/permission-blocker.json"]
-    )
+    (
+        Path(__file__).resolve().parents[3]
+        / "docs/evidence/m11-publication/permission-blocker.json"
+    ).read_text()
 )["request"]
 
 

@@ -2,21 +2,15 @@
 
 import asyncio
 import json
-import subprocess
+from pathlib import Path
 
 import pytest
 from test_delivery import PROJECT, context, record, submit
 from test_delivery import runtime as runtime
 
-CAPTURE = json.loads(
-    subprocess.check_output(
-        [
-            "git",
-            "show",
-            "e18310c6872c166a6a7b3989730d5f3f23e85ca1:docs/evidence/m10-continuation/final/native-delta-redacted.json",
-        ]
-    )
-)["events"]
+CAPTURE = json.loads((Path(__file__).parent / "fixtures/m10-empty-batch.json").read_text())[
+    "events"
+]
 
 
 @pytest.mark.parametrize("terminal", ["none", "public_final", "task_complete"])
