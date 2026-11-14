@@ -1,0 +1,20 @@
+{
+  "host": {
+    "pid": 3918953,
+    "start": "46819892",
+    "original_alive": false
+  },
+  "browser": {
+    "pid": 3919023,
+    "start": "46819999",
+    "original_alive": false
+  },
+  "sdk": {
+    "pid": 3923107,
+    "start": "46825164",
+    "parent_pid": 3918953,
+    "parent_start": "46819892",
+    "binary": "/home/quintin/play/proscenium/node_modules/@github/copilot-linux-x64/copilot",
+    "original_alive": false
+  }
+}

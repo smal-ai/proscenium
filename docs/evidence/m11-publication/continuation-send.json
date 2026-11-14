@@ -1,0 +1,43 @@
+{
+  "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+  "args": [
+    "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
+  ],
+  "kwargs": {
+    "mode": "enqueue",
+    "client_turn_id": "d4792ac7-549c-4c3b-9f88-bd023d24cb2e",
+    "attachments": [
+      {
+        "type": "extension_context",
+        "extensionId": "proscenium",
+        "title": "Turn context",
+        "capturedAt": "2026-11-14T15:21:03.826Z",
+        "payload": {
+          "annotations": [],
+          "approved_findings": [],
+          "attached_files": [],
+          "context_id": "470e86e3-bce0-40a5-bd39-1901a7e03ecd",
+          "delivery_mode": "queue",
+          "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+          "project": {
+            "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project",
+            "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224"
+          },
+          "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+          "schema_version": "1.0",
+          "selection": {
+            "camera": null,
+            "item_id": null,
+            "range": null,
+            "selected_objects": [],
+            "target": null,
+            "version_id": null,
+            "view_mode": "keyframes"
+          },
+          "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+        }
+      }
+    ]
+  },
+  "at": 1794675580.4067574
+}

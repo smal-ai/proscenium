@@ -1,0 +1,38 @@
+{
+  "status": "blocked_permission_false_positive",
+  "application_base": "3cdefb240cc241560a948a3b41767766bd78875a",
+  "control_root": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/publication-20261114-b",
+  "original_project": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project",
+  "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+  "work_id": "work-4a7e644e78514109b4a5232316e3aacc",
+  "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+  "sdk_continuation_sends": 1,
+  "new_queue_requests": 0,
+  "new_product_children": 0,
+  "new_unity": 0,
+  "new_blender": 0,
+  "new_renderers": 0,
+  "scene_meta_all_source_bytes_unchanged": true,
+  "old_reports_unchanged": true,
+  "source_git_refs_unchanged": true,
+  "unity_publication": false,
+  "checkpoint_effect": false,
+  "decision_id": "decision-35e4534552dc528a97a1ae5035496f83af51d8cc430f11ae95cdef3efebb90e3",
+  "blocking_tool_call": "call_3lXVbcqdh8mlhzt3otQ4C6Fb",
+  "matched_path_data": "tool-install.json",
+  "private_snapshots": {
+    "before_private_path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/publication-20261114-b/private-before",
+    "before_copy_hashes": {
+      "project.sqlite3": "26f6c78c15c5af9684ddfbf1941753bf7350d863284158fef37c0fbfaaa35ba9",
+      "registry.sqlite3": "4cfa655578a54ebad24631967bfc72178b6398626936ed196e531ad702b7a60e",
+      "native-events.jsonl": "265e6074716423ec186367ba2e7d44cab3570f861de099d4f1a62c5c65dc2346"
+    },
+    "after_private_path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/publication-20261114-b/private-after",
+    "after_copy_hashes": {
+      "project.sqlite3": "573f031de2901a0aaa9f5943389cce68df34a024fcdd5756c124ded553b0b17d",
+      "registry.sqlite3": "7e4d45422f337c01e4da16fdaa88529e974fb3dcc20eaa12366e395681f553da",
+      "native-events.jsonl": "f6090d70d89f1662b1cc41fd6c2b6637768e9c5b2bb2f6bd257893acb7f65510"
+    }
+  },
+  "cleanup_complete": true
+}
