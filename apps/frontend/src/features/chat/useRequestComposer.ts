@@ -40,7 +40,15 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       const record = await api.call("getRequest", { path });
       onAccepted(record); persist(null, stop); return true;
     } catch (e) {
-      setError(`${describeError(e)} The original request and captured context are retained. Reconcile before retrying. No prompt is replayed automatically.`);
+      const rejected = !command.acknowledged && e instanceof ApiError &&
+        e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429 &&
+        e.envelope.error.code !== "idempotency_conflict";
+      if (rejected) {
+        persist(null, stop);
+        setError(`${describeError(e)} This request was not admitted. Correct the input and submit again.`);
+      } else {
+        setError(`${describeError(e)} The original request and captured context are retained. Reconcile before retrying. No prompt is replayed automatically.`);
+      }
       return false;
     } finally { (stop ? setStopping : setBusy)(false); }
   }

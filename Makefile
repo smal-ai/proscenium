@@ -24,6 +24,7 @@ lint:
 typecheck:
 	uv run mypy apps/backend/src
 	npm run typecheck
+	npx tsc --project tsconfig.tests.json
 
 build:
 	npm run build

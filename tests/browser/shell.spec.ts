@@ -91,6 +91,29 @@ test.describe("W04 shell · synthetic HTTP/socket evidence", () => {
     expect(studio.pageReads.some(p => p.endsWith(`/requests/${queues[0].body.request_id}`))).toBe(true);
   });
 
+  test("a definitive admission rejection permits a corrected request without an endless retry", async ({ page }) => {
+    const studio = new SyntheticStudio();
+    await studio.install(page);
+    let reject = true;
+    await page.route("**/api/v1/projects/*/requests", async route => {
+      if (route.request().method() === "POST" && reject) {
+        reject = false;
+        await route.fulfill({ status: 422, contentType: "application/json", body: JSON.stringify({
+          schema_version: "1.0", error: { code: "media_unavailable", message: "The selected image is unavailable.", operation_id: null, retryable: false, details: {} },
+        }) });
+      } else await route.fallback();
+    });
+    await page.goto("/");
+    await page.getByLabel("Message Copilot").fill("Request with rejected context");
+    await page.getByRole("button", { name: "Queue message" }).click();
+    await expect(page.getByRole("alert")).toContainText("not admitted");
+    await expect(page.getByText("Request awaiting confirmation", { exact: true })).toHaveCount(0);
+    await page.getByLabel("Message Copilot").fill("Corrected explicit request");
+    await page.getByRole("button", { name: "Queue message" }).click();
+    await expect(page.locator(".user-message")).toHaveCount(1);
+    expect(studio.requests[0].submission).toMatchObject({ text: "Corrected explicit request" });
+  });
+
   test("requires explicit Steer target and durable exact decision, held cancellation and Resume", async ({ page }) => {
     const studio = new SyntheticStudio(); studio.snapshot.pending_decisions = [structuredClone(permission)];
     studio.record({ schema_version: "1.0", request_id: "request-held", project_id: project.project_id, type: "queue", text: "Held request", context_id: "context-held" });

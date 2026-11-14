@@ -8,9 +8,12 @@
     "generate": "node scripts/generate-types.mjs",
     "build": "npm run build --workspace apps/frontend",
     "typecheck": "npm run typecheck --workspace apps/frontend",
+    "test:browser": "playwright test --config playwright.config.ts --project=chromium",
+    "test:browser-installed": "playwright test --config playwright.config.ts",
     "lint": "eslint apps/frontend/src scripts/*.mjs"
   },
   "devDependencies": {
+    "@types/node": "24.19.2",
     "@github/copilot": "1.0.112",
     "@playwright/test": "1.65.1",
     "@eslint/js": "9.39.1",

@@ -58,11 +58,26 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
     writePrivate(`view.version.${projectId}`, next);
     onContextChange({ ...emptySelection(), item_id: next.item_id, version_id: next.version_id, view_mode: "keyframes" });
   }
-  function onQueue(text: string, context: TurnSelection) {
-    setRightTab("Copilot");
-    if (projectId) void composer.submit(text, context, "queue", null, data.snapshot?.settings.default_profile_id ?? null);
+  function onNavigate(next: VersionRecord, context: TurnSelection) {
+    setVersion(next);
+    writePrivate(`view.version.${projectId}`, next);
+    onContextChange(context);
   }
-  const reviewProps: ReviewSurfaceProps = { api, projectId: projectId ?? "", version, jobs: data.jobs, refreshRevision: data.revision, onContextChange, onQueue };
+  async function onQueue(text: string, context: TurnSelection) {
+    setRightTab("Copilot");
+    if (!projectId || !await composer.submit(text, context, "queue", null, data.snapshot?.settings.default_profile_id ?? null)) {
+      throw new Error("Submission is not confirmed. Inspect the retained request in Copilot before retrying.");
+    }
+  }
+  const activeWork = data.snapshot?.active_work;
+  const canSteer = !!activeWork && ["running", "awaiting_user"].includes(activeWork.state);
+  async function onSteer(text: string, context: TurnSelection) {
+    setRightTab("Copilot");
+    if (!projectId || !canSteer || !await composer.submit(text, context, "steer", activeWork!.work_id, data.snapshot?.settings.default_profile_id ?? null)) {
+      throw new Error("Steer is not confirmed. Inspect the retained request in Copilot before retrying.");
+    }
+  }
+  const reviewProps: ReviewSurfaceProps = { api, projectId: projectId ?? "", version, selection, jobs: data.jobs, refreshRevision: data.revision, onContextChange, onNavigate, onQueue };
   const Review = components.review;
   const Outliner = components.outliner;
   const Catalogue = components.catalogue ?? CatalogueFallback;
@@ -85,7 +100,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
       </main>
       <aside className="right-panel" aria-label="Project assistant"><nav className="panel-tabs" aria-label="Assistant tabs"><button aria-selected={rightTab === "Copilot"} onClick={() => setRightTab("Copilot")}><Sparkles size={13} />Copilot{data.snapshot?.pending_decisions.length ? <span className="tab-count">{data.snapshot.pending_decisions.length}</span> : null}</button><button aria-selected={rightTab === "Critic"} onClick={() => setRightTab("Critic")}>Critic</button></nav>
         <div className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} composer={composer} onRefresh={data.refresh} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
-        {rightTab === "Critic" && <div className="critic-content">{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.revision} onQueue={onQueue} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>}
+        {rightTab === "Critic" && <div className="critic-content">{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.revision} onQueue={onQueue} onSteer={canSteer ? onSteer : undefined} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>}
       </aside>
     </div>
   </div>;
