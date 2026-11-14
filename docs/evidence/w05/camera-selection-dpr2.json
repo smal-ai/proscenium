@@ -1,0 +1,221 @@
+{
+  "glbPath": "/tmp/opencode/proscenium-w03-native-a/test_real_progressive_camera_a0/project/.proscenium/jobs/previews/preview-6be3d89dd019bf626d1380280e4545b61f6a977776aa55e42a3516bc26b8d76b/attempt-002ed60f-1e29-45e6-9892-2c43a1432274/proxy.glb",
+  "glbSha256": "7dc028503fea1b4d7b18b9ac922322940da212ed340430997e76affbdfc1ce6b",
+  "mapping": {
+    "nodes": [
+      {
+        "display_name": "Blue cube",
+        "instance_id": "instance-blue",
+        "node_path": [
+          0
+        ],
+        "object_id": "object-cube-source",
+        "world_matrix": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "display_name": "Renamed cube",
+        "instance_id": "instance-renamed",
+        "node_path": [
+          1
+        ],
+        "object_id": "object-cube-source",
+        "world_matrix": [
+          1,
+          0,
+          0,
+          -1,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "display_name": "Floor",
+        "instance_id": "instance-floor",
+        "node_path": [
+          2
+        ],
+        "object_id": "object-floor",
+        "world_matrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.10000000149011612,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "display_name": "Wall",
+        "instance_id": "instance-wall",
+        "node_path": [
+          3
+        ],
+        "object_id": "object-wall",
+        "world_matrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1.25,
+          0,
+          0,
+          1,
+          -2.5,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    ],
+    "project_id": "w03-native",
+    "proxy_artifact_id": "preview-6be3d89dd019bf626d1380280e4545b61f6a977776aa55e42a3516bc26b8d76b-proxy",
+    "sample_frame": 1,
+    "schema_version": "1.0",
+    "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7",
+    "space": "proxy_world_m",
+    "version_id": "fixture-v1"
+  },
+  "runtime": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "dpr": 2
+  },
+  "intrinsic": {
+    "width": 2063,
+    "height": 1138
+  },
+  "pixels": {
+    "width": 2063,
+    "height": 1138,
+    "opaque": 927372,
+    "colours": 66
+  },
+  "uploadSha256": "2a97e0f7fd8ad1939c04eeb4ac4e42d2aab43e8fa09d08d843214348e5e3cef6",
+  "selection": {
+    "item_id": "fixture-scene",
+    "version_id": "fixture-v1",
+    "view_mode": "3d_inspection",
+    "target": {
+      "origin": "proxy_capture",
+      "artifact_id": "capture-6ddf8004-5cc9-4a6b-aef0-afd6a68ca5a5",
+      "displayed_sha256": "2a97e0f7fd8ad1939c04eeb4ac4e42d2aab43e8fa09d08d843214348e5e3cef6",
+      "dimensions": {
+        "width": 2063,
+        "height": 1138
+      },
+      "item_id": "fixture-scene",
+      "version_id": "fixture-v1",
+      "source_frame": 1,
+      "shot_id": "fixture-shot",
+      "render_job_id": null,
+      "media_artifact_id": null
+    },
+    "camera": {
+      "space": "blender_world_m",
+      "camera_to_world": [
+        0.9977136020086221,
+        -0.04804966368030899,
+        0.047526815453910284,
+        0.3861096739976131,
+        0.0675837877525435,
+        0.7093388018042792,
+        -0.7016201934721438,
+        -5.699989397235808,
+        6.938893903907228e-18,
+        0.7032280526792702,
+        0.7109643492643787,
+        5.775901677750828,
+        0,
+        0,
+        0,
+        1
+      ],
+      "projection": [
+        1.182961161192379,
+        0,
+        0,
+        0,
+        0,
+        2.1445069205095586,
+        0,
+        0,
+        0,
+        0,
+        -1.000002000002,
+        -0.02000002000002,
+        0,
+        0,
+        -1,
+        0
+      ],
+      "aspect": 1.812829525483304,
+      "near_m": 0.01,
+      "far_m": 10000,
+      "source_camera_id": null,
+      "shift": [
+        0,
+        0
+      ],
+      "kind": "perspective",
+      "vertical_fov_degrees": 50
+    },
+    "range": {
+      "start": 1,
+      "end": 1
+    },
+    "selected_objects": [
+      {
+        "object_id": "object-cube-source",
+        "instance_id": "instance-renamed"
+      }
+    ],
+    "attachments": [
+      {
+        "artifact_id": "capture-6ddf8004-5cc9-4a6b-aef0-afd6a68ca5a5",
+        "role": "reference"
+      }
+    ],
+    "annotations": [],
+    "approved_findings": []
+  }
+}

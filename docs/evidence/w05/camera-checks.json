@@ -1,0 +1,102 @@
+{
+  "base": "b907972",
+  "branch": "impl/review-camera",
+  "recorded_at": "2026-11-14T13:50:18.006Z",
+  "node": "v24.18.0",
+  "platform": {
+    "platform": "linux",
+    "release": "7.0.0-43-generic",
+    "arch": "x64"
+  },
+  "scope": "Actual published W03 GLB loaded/picked/captured by feature UI in isolated Chromium software WebGL. Owner API/Queue/catalogue/late-image fixtures are synthetic. No native/GPU inference or model execution.",
+  "source_sha256": {
+    "apps/frontend/src/features/catalogue/CatalogueBrowser.tsx": "9aa08603eebaa3dd9a61b3e6e694b9ea229653e41817000627a4be3d58d619a0",
+    "apps/frontend/src/features/review/ProxyView.tsx": "d9ae950603098a0c8b34823b3b989b059b8692103310055967dbaa3c2cc52d24",
+    "apps/frontend/src/features/review/ReviewWorkspace.tsx": "017c6e271a81e924a6405d12d755e9fc4dcdfa2519fe8c033016b959b0f05974",
+    "apps/frontend/src/features/review/proxyCaptureStore.ts": "66e7a4dd35a48c5db5a05528464bf8aef9a3071fecf0142875c88264937ef84f",
+    "apps/frontend/src/features/review/review.css": "de54160a2eeef2b2aa30be5006f94da85ee71e593f8db2ffaee982e63debf23d",
+    "tests/browser/review-camera-harness.html": "13db8801198e5fe656db014f6b29a8b5db10c767058db677a3a825384e58b121",
+    "tests/browser/review-camera-harness.tsx": "4fbf92744836906d08935efb7b8b106895304df53097cb654a84bae15dbe5f3b",
+    "tests/browser/review-camera.config.ts": "3aad5e6fdf60efad15cf5d8c05933378243714ac28fc55d53d77a054692ac2c0",
+    "tests/browser/review-camera.spec.ts": "fbab9dc35244351d445f9dd64c996a5c8a508971dbf87badea2a65a338edbcd2"
+  },
+  "package_lock_sha256": "7294b9cc1f45f96ec5a6ba58b1c24f2659d30ab7578fd65788acaa2fa54d4d0c",
+  "inputs": [
+    {
+      "path": "/tmp/opencode/proscenium-w03-native-a.json",
+      "sha256": "1dde814137051a6373fc2da9c6c27ec76cee40a897830189c868b67d66240528"
+    },
+    {
+      "path": "/tmp/opencode/proscenium-w03-native-analysis.json",
+      "sha256": "9afb89aeb430653c79d5f0b865f19b0712965cb7b34525aad7d19beaf50bd914"
+    },
+    {
+      "path": "/tmp/opencode/proscenium-w03-native-a/test_real_progressive_camera_a0/project/.proscenium/jobs/previews/preview-6be3d89dd019bf626d1380280e4545b61f6a977776aa55e42a3516bc26b8d76b/attempt-002ed60f-1e29-45e6-9892-2c43a1432274/proxy.glb",
+      "bytes": 5908,
+      "sha256": "7dc028503fea1b4d7b18b9ac922322940da212ed340430997e76affbdfc1ce6b"
+    }
+  ],
+  "captures": [
+    {
+      "dpr": 1,
+      "path": "docs/evidence/w05/camera-capture-dpr1.png",
+      "sha256": "b253e157b1279b614af15d0d595a8d0cada0847205043b7a7f88a39dbfb8b2e7",
+      "dimensions": {
+        "width": 1031,
+        "height": 569
+      },
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "dpr": 2,
+      "path": "docs/evidence/w05/camera-capture-dpr2.png",
+      "sha256": "2a97e0f7fd8ad1939c04eeb4ac4e42d2aab43e8fa09d08d843214348e5e3cef6",
+      "dimensions": {
+        "width": 2063,
+        "height": 1138
+      },
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    }
+  ],
+  "commands": [
+    {
+      "command": "npm ci --cache /home/quintin/.cache/proscenium-development/npm --ignore-scripts --loglevel=error",
+      "result": "passed, zero audit vulnerabilities"
+    },
+    {
+      "command": "npx tsc --project tsconfig.tests.json",
+      "result": "passed"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed; existing Lucide use-client and >500kB bundle warnings"
+    },
+    {
+      "command": "npx playwright test --config tests/browser/review-camera.config.ts --reporter=json > docs/evidence/w05/camera-browser-result.json",
+      "result": "8 passed, no skipped/flaky/unexpected tests; DPR1 and DPR2, Chromium 159.0.8154.6, SwiftShader"
+    },
+    {
+      "command": "TMPDIR=/home/quintin/.cache/proscenium-development/evidence/review-camera/profiles npx playwright test --config tests/browser/review-context.config.ts --project chromium --output /home/quintin/.cache/proscenium-development/evidence/review-camera/regressions -g 'registered preparer saves|draft and chat snapshots|catalogue lost ACK' --reporter=json > docs/evidence/w05/camera-context-regressions.json",
+      "result": "3 passed, no skipped/flaky/unexpected tests"
+    }
+  ],
+  "warnings": [
+    "Playwright CommonJS runner emits a Three require deprecation warning.",
+    "Build retains existing Lucide use-client and large-bundle warnings."
+  ],
+  "limits": [
+    "Parent still owns actual Queue-to-Blender camera/framing comparison.",
+    "No hardware performance claim.",
+    "Synthetic owner HTTP and Queue are not backend/provider acceptance.",
+    "Normalised intrinsic dimensions may be odd. Do not silently resize them for a video encoder."
+  ],
+  "exports": "ReviewWorkspace, Outliner, CriticPanel, CatalogueBrowser public seams unchanged."
+}

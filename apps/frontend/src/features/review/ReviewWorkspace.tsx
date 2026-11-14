@@ -1,12 +1,13 @@
 import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, PreviewSegment, ProxyMapping } from "../../api/generated/contracts";
+import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, PreviewSegment, ProxyMapping, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { AnnotationEditor } from "./AnnotationEditor";
 import { frameTarget, mediaUrl, sequenceTarget, typingTarget } from "./media";
 import { flushDraft, readDrafts, saveDraft, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
 import { SequencePlayer } from "./SequencePlayer";
-import { ProxyView } from "./ProxyView";
+import { ProxyView, type ProxyCapture } from "./ProxyView";
+import { readProxyCapture, writeProxyCapture, type PendingProxyCapture } from "./proxyCaptureStore";
 import { allPages } from "./records";
 import { annotationContext } from "./context";
 import { useReviewSelection } from "./state";
@@ -25,7 +26,9 @@ export function ReviewWorkspace(props: ReviewSurfaceProps) {
   return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props}/>;
 }
 
-function Workspace({api, projectId, version, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+  const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
+  const version = refreshedVersion ?? suppliedVersion;
   const [mode, setMode] = useState<Mode>("keyframes");
   const [frames, setFrames] = useState<FrameReceipt[]>([]);
   const [segments, setSegments] = useState<PreviewSegment[]>([]);
@@ -46,6 +49,14 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
   const [saved, setSaved] = useState<AnnotationSnapshot[]>([]);
   const [error, setError] = useState("");
   const [queueingView,setQueueingView]=useState(false);
+  const [pendingCapture, setPendingCapture] = useState<PendingProxyCapture | null>(null);
+  const pendingCaptureRef = useRef<PendingProxyCapture | null>(null);
+  const captureHandler = useRef<ProxyCapture | null>(null);
+  const [proxyReady, setProxyReady] = useState(false);
+  const [captureStoreReady, setCaptureStoreReady] = useState(false);
+  const captureLatch = useRef(false);
+  const bindCapture = useCallback((capture: ProxyCapture | null) => {captureHandler.current = capture; setProxyReady(!!capture);}, []);
+  const captureKey = `${projectId}:${version?.version_id}`;
   const initialised = useRef(false);
   const emittedPrimary = useRef("");
   const externalPrimary = JSON.stringify({target: external?.target ?? null, annotation: external?.annotations.map(a => [a.annotation_id,a.saved_revision]) ?? []});
@@ -53,7 +64,7 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
   const scope = `${projectId}:${version?.version_id}`;
   const selected = choice.scope === scope ? choice.selected : [];
   const versionJobs = jobs.filter(j => j.target.version?.version_id === version?.version_id);
-  const jobsKey = versionJobs.map(j => `${j.job_id}:${j.state_revision}`).join("|");
+  const jobsKey = versionJobs.map(j => `${j.job_id}:${j.state_revision}:${j.artifact_ids.join(",")}`).join("|");
   const draft = drafts.find(d => d.key === draftId);
   const editorPreparer = useRef<ContextPreparer | null>(null);
   const registerEditorPreparer = useCallback((prepare: ContextPreparer | null) => {editorPreparer.current = prepare;}, []);
@@ -63,6 +74,13 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
   const availability=availabilityByJob[reviewJobId ?? ""] ?? null;
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
+
+  useEffect(() => {
+    let active = true;
+    readProxyCapture(captureKey).then(capture => {if (active) {pendingCaptureRef.current = capture; setPendingCapture(capture); setCaptureStoreReady(true);}})
+      .catch(e => {if (active) setError(`Capture recovery unavailable: ${String(e)}`);});
+    return () => {active = false;};
+  }, [captureKey]);
 
   useEffect(() => {
     if (version?.kind === "sequence" && frameMap && target && target.origin !== "sequence_render" && target.source_frame) {
@@ -120,6 +138,16 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
     async function read() {
       const receipts: FrameReceipt[] = []; const clips: PreviewSegment[] = [];
       const media: Artifact[] = [];
+      let pinned = version!;
+      try {
+        const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version!.item_id}, query: {cursor, limit: 100}}));
+        const current = versions.find(v => v.version_id === version!.version_id);
+        if (current) {
+          if (current.project_id !== projectId || current.item_id !== version!.item_id || current.source.digest !== version!.source.digest || current.source_commit !== version!.source_commit) throw new Error("Pinned source version identity changed");
+          pinned = current;
+          if (active) setRefreshedVersion(current);
+        }
+      } catch (e) {captureError(e);}
       await Promise.all(versionJobs.map(async job => {
         await Promise.all([
           allPages(cursor => api.call("listFrameReceipts", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}})).then(page => receipts.push(...page)).catch(captureError),
@@ -127,7 +155,8 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
           api.call("getFrameAvailability", {path: {project_id: projectId, job_id: job.job_id}}).then(value => {if (active) setAvailabilityByJob(previous=>({...previous,[job.job_id]:value}));}).catch(captureError),
         ]);
       }));
-      await Promise.all(version!.artifact_ids.map(async artifact_id => {
+      const artifactIds = [...new Set([...pinned.artifact_ids, ...versionJobs.flatMap(job => job.artifact_ids)])];
+      await Promise.all(artifactIds.map(async artifact_id => {
         try { media.push(await api.call("getArtifact", {path: {project_id: projectId, artifact_id}})); } catch (e) {captureError(e);}
       }));
       const mapArtifact = media.find(a => a.kind === "frame_map" && a.state === "ready");
@@ -142,11 +171,11 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
       if (active) {
         receipts.sort((a,b) => a.source_frame - b.source_frame);
         setFrames(receipts); setSegments(clips); setArtifacts(media);
-        if (!initialised.current && (receipts.length || media.some(a => a.kind === "image"))) {
+        if (!initialised.current && (receipts.length || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
           initialised.current = true;
           if (receipts[0]) {setTarget(frameTarget(receipts[0], version!)); setRequestedFrame(receipts[0].source_frame);}
           else {
-            const image = media.find(a => a.kind === "image" && a.dimensions)!;
+            const image = media.find(a => a.kind === "image" && a.state === "ready" && a.dimensions)!;
             setTarget({origin: image.purpose === "concept" ? "concept" : "reference", artifact_id: image.artifact_id,
               displayed_sha256: image.sha256, dimensions: image.dimensions!, item_id: version!.item_id, version_id: version!.version_id,
               shot_id: null, render_job_id: null, source_frame: null, media_artifact_id: null});
@@ -158,15 +187,17 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
     void read();
     return () => {active = false;};
     // The fingerprint represents pinned version jobs, not array object identity.
-  }, [api, projectId, version?.version_id, jobsKey, refreshRevision]);
+  }, [api, projectId, suppliedVersion?.version_id, suppliedVersion?.artifact_ids.join("|"), jobsKey, refreshRevision]);
 
   useEffect(() => {
     if (!version) return;
     let active = true;
     api.call("getVersionProxyMapping", {path: {project_id: projectId, version_id: version.version_id}}).then(result => {
       if (result.version_id !== version.version_id || result.project_id !== projectId || result.source_closure_digest !== version.source.digest) throw new Error("Proxy mapping does not match pinned source");
-      if (active) setMapping(result);
-    }).catch(() => {if (active) setMapping(null);});
+      // The visible static proxy/sample is pinned too. A refresh must not replace
+      // its GLB, reset orbit, or erase a working view because a read went offline.
+      if (active) setMapping(previous => previous ?? result);
+    }).catch(() => { /* Keep an already validated mapping available offline. */ });
     allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100, version_id: version.version_id}})).then(result => {if (active) setSaved(result);}).catch(e => {if (active) setError(String(e));});
     return () => {active = false;};
   }, [api, projectId, version, refreshRevision]);
@@ -246,6 +277,46 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
 
   function changeDraft(next: Draft) { setDrafts(previous => [...previous.filter(d => d.key !== next.key), next]); }
 
+  async function renderThisView() {
+    if (captureLatch.current || !version || !mapping || !captureStoreReady) return;
+    captureLatch.current = true; setQueueingView(true); setError("");
+    try {
+      let pending = pendingCaptureRef.current;
+      if (pending && pending.phase !== "upload") throw new Error("Resolve the retained Copilot request before dismissing this capture. It will not be queued again automatically.");
+      if (!pending) {
+        const capture = captureHandler.current;
+        if (!capture) throw new Error("The published inspection proxy is not ready to capture");
+        // All source identities, camera, selected pairs and actual pixels freeze
+        // before any await. The upload is not a request to render/generate.
+        const frozen = capture();
+        const uploadId = crypto.randomUUID();
+        const selection = structuredClone({...context, target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
+        const sampleFrame = mapping.sample_frame;
+        const shotId = versionJobs.find(job => job.artifact_ids.includes(mapping.proxy_artifact_id))?.target.shot_id ?? null;
+        const png = await frozen.png;
+        const sha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", await png.arrayBuffer()))].map(byte => byte.toString(16).padStart(2, "0")).join("");
+        pending = {key: captureKey, uploadId, png, sha256, dimensions: frozen.dimensions, selection, sampleFrame, shotId, phase: "upload"};
+        pendingCaptureRef.current = pending; setPendingCapture(pending);
+      }
+      await writeProxyCapture(pending.key, pending, pending.uploadId);
+      const artifact = await api.call("uploadImage", {path: {project_id: projectId, upload_id: pending.uploadId}, body: pending.png, idempotencyKey: pending.uploadId});
+      if (artifact.project_id !== projectId || artifact.state !== "ready" || artifact.kind !== "image" || artifact.media_type !== "image/png" || artifact.sha256 !== pending.sha256 || artifact.bytes !== pending.png.size || artifact.dimensions?.width !== pending.dimensions.width || artifact.dimensions.height !== pending.dimensions.height) throw new Error("Capture upload acknowledgement does not match the frozen PNG hash/dimensions");
+      const selection: TurnSelection = {...pending.selection, target: {origin: "proxy_capture", artifact_id: artifact.artifact_id, displayed_sha256: pending.sha256, dimensions: pending.dimensions, item_id: pending.selection.item_id, version_id: pending.selection.version_id, source_frame: pending.sampleFrame, shot_id: pending.shotId, render_job_id: null, media_artifact_id: null}, attachments: [{artifact_id: artifact.artifact_id, role: "reference"}]};
+      pending = {...pending, selection, phase: "handoff"};
+      await writeProxyCapture(pending.key, pending, pending.uploadId);
+      pendingCaptureRef.current = pending; setPendingCapture(pending);
+      try {await onQueue("Render this view", structuredClone(selection));}
+      catch (e) {
+        pending = {...pending, phase: "uncertain"}; pendingCaptureRef.current = pending; setPendingCapture(pending);
+        await writeProxyCapture(pending.key, pending, pending.uploadId);
+        throw e;
+      }
+      await writeProxyCapture(pending.key, null, pending.uploadId);
+      pendingCaptureRef.current = null; setPendingCapture(null);
+    } catch (e) {setError(String(e));}
+    finally {captureLatch.current = false; setQueueingView(false);}
+  }
+
   async function annotate() {
     setPlaying(false);
     if (!target || !captureReady || mode === "3d_inspection") return;
@@ -281,10 +352,10 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
   return <section className="review-workspace" aria-label="Review workspace">
     <nav className="review-toolbar" aria-label="Review mode">{([['3d_inspection','3D Inspection'],['keyframes','Keyframes'],['animation','Animation']] as const).map(([id,label], index) => <button key={id} disabled={!!draft} aria-pressed={mode === id} onClick={() => changeMode(id)}>{index+1} {label}</button>)}
       <button disabled={!target || !captureReady || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
-      {mode === "3d_inspection" && <button disabled={!camera || queueingView} onClick={async () => {setQueueingView(true);try {await onQueue("Render this view",structuredClone(context));}catch(e){setError(String(e));}finally{setQueueingView(false);}}}>Render this view</button>}
+      {mode === "3d_inspection" && <button disabled={!proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>}
     </nav>
     {draft ? <AnnotationEditor key={draft.key} api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onContextPreparer={registerEditorPreparer} onClose={() => setDraftId(null)}/>
-      : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
+      : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
         : mode === "animation" ? assembly && frameMap ? <SequencePlayer projectId={projectId} artifact={assembly} mapping={frameMap.map} onCapture={async (blob,frame,width,height) => {
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
@@ -301,7 +372,9 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
       {drafts.map(d => <button key={d.key} onClick={() => restore(d.annotation)}>{d.annotation.text || d.annotation.annotation_id} · {d.state} · {d.annotation.target.version_id}</button>)}
       {saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).map(a => <button key={a.annotation_id} onClick={() => restore(a)}>{a.text || a.annotation_id} · revision {a.saved_revision}</button>)}
     </details>
+    <p>Pinned version: {version.name} · {version.version_id} · {version.artifact_ids.length} version artefacts</p>
     <details><summary>Published image artefacts</summary>{artifacts.filter(a => a.kind === "image").map(a => <span key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose} </span>)}</details>
+    {pendingCapture && <section aria-label="Retained inspection capture"><p>Capture {pendingCapture.uploadId} · {pendingCapture.dimensions.width} × {pendingCapture.dimensions.height} · {pendingCapture.phase}</p>{pendingCapture.phase !== "upload" && <><p>Inspect and resolve the retained request in Copilot. This capture is not automatically queued again.</p><button disabled={queueingView} onClick={async () => {try {await writeProxyCapture(pendingCapture.key, null, pendingCapture.uploadId); pendingCaptureRef.current = null; setPendingCapture(null);} catch (e) {setError(String(e));}}}>Dismiss capture after resolving Copilot request</button></>}</section>}
     {error && <p role="status">{error}</p>}
   </section>;
 }

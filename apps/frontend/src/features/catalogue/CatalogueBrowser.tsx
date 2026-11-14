@@ -1,9 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import type { SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
+import type { Provenance, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
 import { ApiError } from "../../api/client";
 import type { CatalogueSurfaceProps } from "../../api/studio";
 import { allPages } from "../review/records";
 import { readPendingSelection, writePendingSelection, type PendingSelection } from "./pendingSelection";
+
+function ProvenanceDetails({provenance}: {provenance: Provenance | undefined}) {
+  const source = provenance?.source_url?.trim();
+  let link: string | null = null;
+  try {const url = new URL(source ?? ""); if (url.protocol === "http:" || url.protocol === "https:") link = url.href;} catch { /* Unknown or unsafe source remains plain text. */ }
+  return <dl className="catalogue-provenance">
+    <dt>Source</dt><dd>{link ? <a href={link} target="_blank" rel="noopener noreferrer">{source}</a> : source || "Unknown"}</dd>
+    <dt>Creator</dt><dd>{provenance?.creator?.trim() || "Unknown"}</dd>
+    <dt>Licence</dt><dd>{provenance?.licence?.trim() || "Unknown"}</dd>
+    {provenance?.note && <><dt>Provenance note</dt><dd>{provenance.note}</dd></>}
+  </dl>;
+}
 
 export function CatalogueBrowser(props: CatalogueSurfaceProps) {
   return <Catalogue key={props.projectId} {...props}/>;
@@ -16,6 +28,7 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState<PendingSelection | null>(null);
+  const [query, setQuery] = useState("");
   const locked = useRef(false);
 
   async function authoritativeChoices() {
@@ -107,19 +120,25 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
   }
 
   return <section className="review-catalogue" aria-label="Version catalogue">
+    <label>Search assets<input aria-label="Search assets" type="search" value={query} onChange={event => setQuery(event.target.value)}/></label>
     {pending && <div role="status">Selection {pending.state}. Original operation {pending.command.operation_id}, selection {pending.command.selection_id}, expected revision {pending.command.expected_revision}.
       <button disabled={busy} onClick={() => void retry()}>{pending.state === "acknowledged" ? "Reload acknowledged selection" : "Retry original selection"}</button>
     </div>}
     <button disabled={busy} onClick={() => void reconcile()}>Reconcile selection status</button>
-    {items.map(item => {
+    {items.filter(item => [item.name, item.description, ...(item.tags ?? []), item.provenance?.source_url, item.provenance?.creator, item.provenance?.licence, item.provenance?.note].filter(Boolean).join(" ").toLowerCase().includes(query.trim().toLowerCase())).map(item => {
     const selected = selections.find(s => s.slot.kind === "item" && s.slot.item_id === item.item_id && s.state === "selected");
     const ownerVersion = selected?.choice?.kind === "version" ? selected.choice.version.version_id : null;
     return <details key={item.item_id} open><summary>{item.name}</summary>
+      {item.description && <p>{item.description}</p>}
+      {!!item.tags?.length && <p>Tags: {item.tags.join(", ")}</p>}
+      <ProvenanceDetails provenance={item.provenance}/>
       {versions.filter(v => v.item_id === item.item_id).sort((a,b) => b.created_at.localeCompare(a.created_at)).map(version => <article key={version.version_id}>
         <button aria-pressed={version.version_id === selectedVersionId} onClick={() => onSelect(version)}>{version.name} <small>{version.version_id}</small></button>
         <p>{item.current_version_id === version.version_id ? "Current published" : "Historical"}{ownerVersion === version.version_id ? " · Owner selected" : ""}{selectedVersionId === version.version_id ? " · Viewing (pinned)" : ""}</p>
         {selectedVersionId === version.version_id && item.current_version_id !== version.version_id && <p>Newer published version available. Your view has not moved.</p>}
         <p>Technical assessment: not recorded. Source published · {version.artifact_ids.length} registered artefacts</p>
+        {version.description && <p>{version.description}</p>}
+        <ProvenanceDetails provenance={version.provenance}/>
         <button disabled={busy || !ready || !!pending || ownerVersion === version.version_id} onClick={() => void select(version)}>Select for item</button>
         {ownerVersion === version.version_id && <button disabled={busy || !ready || !!pending} onClick={() => void select(version, true)}>Withdraw selection</button>}
       </article>)}

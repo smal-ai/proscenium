@@ -1,0 +1,286 @@
+{
+  "config": {
+    "argv": [
+      "/home/quintin/.nvm/versions/node/v24.18.0/bin/node",
+      "/home/quintin/.cache/proscenium-development/fleet/review-camera/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "tests/browser/review-context.config.ts",
+      "--project",
+      "chromium",
+      "--output",
+      "/home/quintin/.cache/proscenium-development/evidence/review-camera/regressions",
+      "-g",
+      "registered preparer saves|draft and chat snapshots|catalogue lost ACK",
+      "--reporter=json"
+    ],
+    "configFile": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser/review-context.config.ts",
+    "rootDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/regressions",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-context.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/regressions",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "brave",
+        "name": "brave",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-context.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/regressions",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "edge",
+        "name": "edge",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-context.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/regressions",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "snapshotDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-context.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5187",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "browserName": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npx vite --host 127.0.0.1 --port 5187 --strictPort",
+      "cwd": "/home/quintin/.cache/proscenium-development/fleet/review-camera",
+      "url": "http://127.0.0.1:5187/tests/browser/review-context-harness.html",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "review-context.spec.ts",
+      "file": "review-context.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "registered preparer saves unsaved marks and canonical masks before actual main-chat Send",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 801,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:46:13.907Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-f63f0718057313177fa0",
+          "file": "review-context.spec.ts",
+          "line": 69,
+          "column": 1
+        },
+        {
+          "title": "draft and chat snapshots remain pinned when navigation unmounts the editor during upload",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 705,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:46:14.767Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-a346d1683bfccf88738a",
+          "file": "review-context.spec.ts",
+          "line": 102,
+          "column": 1
+        },
+        {
+          "title": "catalogue lost ACK survives reload and repeats identical SelectionSave without guessing owner choice",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 629,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:46:15.479Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-327d81bdcb493bb3e5af",
+          "file": "review-context.spec.ts",
+          "line": 154,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-14T13:46:13.229Z",
+    "duration": 2947.23,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

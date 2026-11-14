@@ -1,0 +1,501 @@
+{
+  "config": {
+    "argv": [
+      "/home/quintin/.nvm/versions/node/v24.18.0/bin/node",
+      "/home/quintin/.cache/proscenium-development/fleet/review-camera/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "tests/browser/review-camera.config.ts",
+      "--reporter=json"
+    ],
+    "configFile": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser/review-camera.config.ts",
+    "rootDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-camera.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-dpr2",
+        "name": "chromium-dpr2",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-camera.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "snapshotDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-camera.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5189",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "launchOptions": {
+            "args": [
+              "--use-angle=swiftshader",
+              "--enable-unsafe-swiftshader"
+            ]
+          },
+          "browserName": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/home/quintin/.cache/proscenium-development/evidence/review-camera/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium-dpr2",
+        "testDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "snapshotDir": "/home/quintin/.cache/proscenium-development/fleet/review-camera/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-camera.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5189",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "launchOptions": {
+            "args": [
+              "--use-angle=swiftshader",
+              "--enable-unsafe-swiftshader"
+            ]
+          },
+          "browserName": "chromium",
+          "deviceScaleFactor": 2
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium-dpr2"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npx vite --host 127.0.0.1 --port 5189 --strictPort",
+      "cwd": "/home/quintin/.cache/proscenium-development/fleet/review-camera",
+      "url": "http://127.0.0.1:5189/tests/browser/review-camera-harness.html",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "review-camera.spec.ts",
+      "file": "review-camera.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real W03 GLB cube picks, camera basis and durable intrinsic PNG capture",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2754,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "(node:3360399) [THREE_CJS_DEPRECATED] DeprecationWarning: `require(\"three\")` is deprecated and will be removed.\nReplace `const THREE = require(\"three\")` with `import * as THREE from \"three\"`.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:45:52.026Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "camera-capture-proof",
+                      "contentType": "application/json",
+                      "body": "ewogICJnbGJQYXRoIjogIi90bXAvb3BlbmNvZGUvcHJvc2Nlbml1bS13MDMtbmF0aXZlLWEvdGVzdF9yZWFsX3Byb2dyZXNzaXZlX2NhbWVyYV9hMC9wcm9qZWN0Ly5wcm9zY2VuaXVtL2pvYnMvcHJldmlld3MvcHJldmlldy02YmUzZDg5ZGQwMTliZjYyNmQxMzgwMjgwZTQ1NDViNjFmNmE5Nzc3NzZhYTU1ZTQyYTM1MTZiYzI2YjhkNzZiL2F0dGVtcHQtMDAyZWQ2MGYtMWUyOS00NWU2LTk4OTItMmM0M2ExNDMyMjc0L3Byb3h5LmdsYiIsCiAgImdsYlNoYTI1NiI6ICI3ZGMwMjg1MDNmZWExYjRkN2IxOGI5YWM5MjIzMjI5NDBkYTIxMmVkMzQwNDMwOTk3ZTc2YWZmYmRmYzFjZTZiIiwKICAibWFwcGluZyI6IHsKICAgICJub2RlcyI6IFsKICAgICAgewogICAgICAgICJkaXNwbGF5X25hbWUiOiAiQmx1ZSBjdWJlIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2UtYmx1ZSIsCiAgICAgICAgIm5vZGVfcGF0aCI6IFsKICAgICAgICAgIDAKICAgICAgICBdLAogICAgICAgICJvYmplY3RfaWQiOiAib2JqZWN0LWN1YmUtc291cmNlIiwKICAgICAgICAid29ybGRfbWF0cml4IjogWwogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAxLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDEsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMQogICAgICAgIF0KICAgICAgfSwKICAgICAgewogICAgICAgICJkaXNwbGF5X25hbWUiOiAiUmVuYW1lZCBjdWJlIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2UtcmVuYW1lZCIsCiAgICAgICAgIm5vZGVfcGF0aCI6IFsKICAgICAgICAgIDEKICAgICAgICBdLAogICAgICAgICJvYmplY3RfaWQiOiAib2JqZWN0LWN1YmUtc291cmNlIiwKICAgICAgICAid29ybGRfbWF0cml4IjogWwogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgLTEsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAxLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDEKICAgICAgICBdCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiZGlzcGxheV9uYW1lIjogIkZsb29yIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2UtZmxvb3IiLAogICAgICAgICJub2RlX3BhdGgiOiBbCiAgICAgICAgICAyCiAgICAgICAgXSwKICAgICAgICAib2JqZWN0X2lkIjogIm9iamVjdC1mbG9vciIsCiAgICAgICAgIndvcmxkX21hdHJpeCI6IFsKICAgICAgICAgIDEsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAtMC4xMDAwMDAwMDE0OTAxMTYxMiwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAxCiAgICAgICAgXQogICAgICB9LAogICAgICB7CiAgICAgICAgImRpc3BsYXlfbmFtZSI6ICJXYWxsIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2Utd2FsbCIsCiAgICAgICAgIm5vZGVfcGF0aCI6IFsKICAgICAgICAgIDMKICAgICAgICBdLAogICAgICAgICJvYmplY3RfaWQiOiAib2JqZWN0LXdhbGwiLAogICAgICAgICJ3b3JsZF9tYXRyaXgiOiBbCiAgICAgICAgICAxLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDEsCiAgICAgICAgICAwLAogICAgICAgICAgMS4yNSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIC0yLjUsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAxCiAgICAgICAgXQogICAgICB9CiAgICBdLAogICAgInByb2plY3RfaWQiOiAidzAzLW5hdGl2ZSIsCiAgICAicHJveHlfYXJ0aWZhY3RfaWQiOiAicHJldmlldy02YmUzZDg5ZGQwMTliZjYyNmQxMzgwMjgwZTQ1NDViNjFmNmE5Nzc3NzZhYTU1ZTQyYTM1MTZiYzI2YjhkNzZiLXByb3h5IiwKICAgICJzYW1wbGVfZnJhbWUiOiAxLAogICAgInNjaGVtYV92ZXJzaW9uIjogIjEuMCIsCiAgICAic291cmNlX2Nsb3N1cmVfZGlnZXN0IjogIjI4MTdiZTY4OTRhODU4YjY1ZDE4ODBiZWRiYzhiZmE3MWNiMGRlYzM3OGEyMDZlMTE5ZGRhZTgwZGZmMzgyYTciLAogICAgInNwYWNlIjogInByb3h5X3dvcmxkX20iLAogICAgInZlcnNpb25faWQiOiAiZml4dHVyZS12MSIKICB9LAogICJydW50aW1lIjogewogICAgInJlbmRlcmVyIjogIkFOR0xFIChHb29nbGUsIFZ1bGthbiAxLjMuMCAoU3dpZnRTaGFkZXIgRGV2aWNlIChTdWJ6ZXJvKSAoMHgwMDAwQzBERSkpLCBTd2lmdFNoYWRlciBkcml2ZXIpIiwKICAgICJkcHIiOiAxCiAgfSwKICAiaW50cmluc2ljIjogewogICAgIndpZHRoIjogMTAzMSwKICAgICJoZWlnaHQiOiA1NjkKICB9LAogICJwaXhlbHMiOiB7CiAgICAid2lkdGgiOiAxMDMxLAogICAgImhlaWdodCI6IDU2OSwKICAgICJvcGFxdWUiOiAyMzIyMjQsCiAgICAiY29sb3VycyI6IDU1CiAgfSwKICAidXBsb2FkU2hhMjU2IjogImIyNTNlMTU3YjEyNzliNjE0YWYxNWQwZDU5NWE4ZDBjYWRhMDg0NzIwNTA0M2I3YTdmODhhMzlkYmZiOGIyZTciLAogICJzZWxlY3Rpb24iOiB7CiAgICAiaXRlbV9pZCI6ICJmaXh0dXJlLXNjZW5lIiwKICAgICJ2ZXJzaW9uX2lkIjogImZpeHR1cmUtdjEiLAogICAgInZpZXdfbW9kZSI6ICIzZF9pbnNwZWN0aW9uIiwKICAgICJ0YXJnZXQiOiB7CiAgICAgICJvcmlnaW4iOiAicHJveHlfY2FwdHVyZSIsCiAgICAgICJhcnRpZmFjdF9pZCI6ICJjYXB0dXJlLWQ3OWY3MThhLTllZjctNDQwZi1iODhlLTU0MGQ5MzQ1MDhiZiIsCiAgICAgICJkaXNwbGF5ZWRfc2hhMjU2IjogImIyNTNlMTU3YjEyNzliNjE0YWYxNWQwZDU5NWE4ZDBjYWRhMDg0NzIwNTA0M2I3YTdmODhhMzlkYmZiOGIyZTciLAogICAgICAiZGltZW5zaW9ucyI6IHsKICAgICAgICAid2lkdGgiOiAxMDMxLAogICAgICAgICJoZWlnaHQiOiA1NjkKICAgICAgfSwKICAgICAgIml0ZW1faWQiOiAiZml4dHVyZS1zY2VuZSIsCiAgICAgICJ2ZXJzaW9uX2lkIjogImZpeHR1cmUtdjEiLAogICAgICAic291cmNlX2ZyYW1lIjogMSwKICAgICAgInNob3RfaWQiOiAiZml4dHVyZS1zaG90IiwKICAgICAgInJlbmRlcl9qb2JfaWQiOiBudWxsLAogICAgICAibWVkaWFfYXJ0aWZhY3RfaWQiOiBudWxsCiAgICB9LAogICAgImNhbWVyYSI6IHsKICAgICAgInNwYWNlIjogImJsZW5kZXJfd29ybGRfbSIsCiAgICAgICJjYW1lcmFfdG9fd29ybGQiOiBbCiAgICAgICAgMC45OTc3MTM2MDIwMDg2MjIxLAogICAgICAgIC0wLjA0ODA0OTY2MzY4MDMwODk5LAogICAgICAgIDAuMDQ3NTI2ODE1NDUzOTEwMjg0LAogICAgICAgIDAuMzg2MTA5NjczOTk3NjEzMSwKICAgICAgICAwLjA2NzU4Mzc4Nzc1MjU0MzUsCiAgICAgICAgMC43MDkzMzg4MDE4MDQyNzkyLAogICAgICAgIC0wLjcwMTYyMDE5MzQ3MjE0MzgsCiAgICAgICAgLTUuNjk5OTg5Mzk3MjM1ODA4LAogICAgICAgIDYuOTM4ODkzOTAzOTA3MjI4ZS0xOCwKICAgICAgICAwLjcwMzIyODA1MjY3OTI3MDIsCiAgICAgICAgMC43MTA5NjQzNDkyNjQzNzg3LAogICAgICAgIDUuNzc1OTAxNjc3NzUwODI4LAogICAgICAgIDAsCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIDEKICAgICAgXSwKICAgICAgInByb2plY3Rpb24iOiBbCiAgICAgICAgMS4xODM1MzQ4NTcxOTY4MzcsCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIDAsCiAgICAgICAgMCwKICAgICAgICAyLjE0NDUwNjkyMDUwOTU1ODYsCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIDAsCiAgICAgICAgMCwKICAgICAgICAtMS4wMDAwMDIwMDAwMDIsCiAgICAgICAgLTAuMDIwMDAwMDIwMDAwMDIsCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIC0xLAogICAgICAgIDAKICAgICAgXSwKICAgICAgImFzcGVjdCI6IDEuODExOTUwNzkwODYxMTU5OCwKICAgICAgIm5lYXJfbSI6IDAuMDEsCiAgICAgICJmYXJfbSI6IDEwMDAwLAogICAgICAic291cmNlX2NhbWVyYV9pZCI6IG51bGwsCiAgICAgICJzaGlmdCI6IFsKICAgICAgICAwLAogICAgICAgIDAKICAgICAgXSwKICAgICAgImtpbmQiOiAicGVyc3BlY3RpdmUiLAogICAgICAidmVydGljYWxfZm92X2RlZ3JlZXMiOiA1MAogICAgfSwKICAgICJyYW5nZSI6IHsKICAgICAgInN0YXJ0IjogMSwKICAgICAgImVuZCI6IDEKICAgIH0sCiAgICAic2VsZWN0ZWRfb2JqZWN0cyI6IFsKICAgICAgewogICAgICAgICJvYmplY3RfaWQiOiAib2JqZWN0LWN1YmUtc291cmNlIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2UtcmVuYW1lZCIKICAgICAgfQogICAgXSwKICAgICJhdHRhY2htZW50cyI6IFsKICAgICAgewogICAgICAgICJhcnRpZmFjdF9pZCI6ICJjYXB0dXJlLWQ3OWY3MThhLTllZjctNDQwZi1iODhlLTU0MGQ5MzQ1MDhiZiIsCiAgICAgICAgInJvbGUiOiAicmVmZXJlbmNlIgogICAgICB9CiAgICBdLAogICAgImFubm90YXRpb25zIjogW10sCiAgICAiYXBwcm92ZWRfZmluZGluZ3MiOiBbXQogIH0KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium-dpr2",
+              "projectName": "chromium-dpr2",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3748,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "(node:3360866) [THREE_CJS_DEPRECATED] DeprecationWarning: `require(\"three\")` is deprecated and will be removed.\nReplace `const THREE = require(\"three\")` with `import * as THREE from \"three\"`.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:45:57.529Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "camera-capture-proof",
+                      "contentType": "application/json",
+                      "body": "ewogICJnbGJQYXRoIjogIi90bXAvb3BlbmNvZGUvcHJvc2Nlbml1bS13MDMtbmF0aXZlLWEvdGVzdF9yZWFsX3Byb2dyZXNzaXZlX2NhbWVyYV9hMC9wcm9qZWN0Ly5wcm9zY2VuaXVtL2pvYnMvcHJldmlld3MvcHJldmlldy02YmUzZDg5ZGQwMTliZjYyNmQxMzgwMjgwZTQ1NDViNjFmNmE5Nzc3NzZhYTU1ZTQyYTM1MTZiYzI2YjhkNzZiL2F0dGVtcHQtMDAyZWQ2MGYtMWUyOS00NWU2LTk4OTItMmM0M2ExNDMyMjc0L3Byb3h5LmdsYiIsCiAgImdsYlNoYTI1NiI6ICI3ZGMwMjg1MDNmZWExYjRkN2IxOGI5YWM5MjIzMjI5NDBkYTIxMmVkMzQwNDMwOTk3ZTc2YWZmYmRmYzFjZTZiIiwKICAibWFwcGluZyI6IHsKICAgICJub2RlcyI6IFsKICAgICAgewogICAgICAgICJkaXNwbGF5X25hbWUiOiAiQmx1ZSBjdWJlIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2UtYmx1ZSIsCiAgICAgICAgIm5vZGVfcGF0aCI6IFsKICAgICAgICAgIDAKICAgICAgICBdLAogICAgICAgICJvYmplY3RfaWQiOiAib2JqZWN0LWN1YmUtc291cmNlIiwKICAgICAgICAid29ybGRfbWF0cml4IjogWwogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAxLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDEsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMQogICAgICAgIF0KICAgICAgfSwKICAgICAgewogICAgICAgICJkaXNwbGF5X25hbWUiOiAiUmVuYW1lZCBjdWJlIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2UtcmVuYW1lZCIsCiAgICAgICAgIm5vZGVfcGF0aCI6IFsKICAgICAgICAgIDEKICAgICAgICBdLAogICAgICAgICJvYmplY3RfaWQiOiAib2JqZWN0LWN1YmUtc291cmNlIiwKICAgICAgICAid29ybGRfbWF0cml4IjogWwogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgLTEsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAxLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDEKICAgICAgICBdCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiZGlzcGxheV9uYW1lIjogIkZsb29yIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2UtZmxvb3IiLAogICAgICAgICJub2RlX3BhdGgiOiBbCiAgICAgICAgICAyCiAgICAgICAgXSwKICAgICAgICAib2JqZWN0X2lkIjogIm9iamVjdC1mbG9vciIsCiAgICAgICAgIndvcmxkX21hdHJpeCI6IFsKICAgICAgICAgIDEsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAtMC4xMDAwMDAwMDE0OTAxMTYxMiwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAxCiAgICAgICAgXQogICAgICB9LAogICAgICB7CiAgICAgICAgImRpc3BsYXlfbmFtZSI6ICJXYWxsIiwKICAgICAgICAiaW5zdGFuY2VfaWQiOiAiaW5zdGFuY2Utd2FsbCIsCiAgICAgICAgIm5vZGVfcGF0aCI6IFsKICAgICAgICAgIDMKICAgICAgICBdLAogICAgICAgICJvYmplY3RfaWQiOiAib2JqZWN0LXdhbGwiLAogICAgICAgICJ3b3JsZF9tYXRyaXgiOiBbCiAgICAgICAgICAxLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDEsCiAgICAgICAgICAwLAogICAgICAgICAgMS4yNSwKICAgICAgICAgIDAsCiAgICAgICAgICAwLAogICAgICAgICAgMSwKICAgICAgICAgIC0yLjUsCiAgICAgICAgICAwLAogICAgICAgICAgMCwKICAgICAgICAgIDAsCiAgICAgICAgICAxCiAgICAgICAgXQogICAgICB9CiAgICBdLAogICAgInByb2plY3RfaWQiOiAidzAzLW5hdGl2ZSIsCiAgICAicHJveHlfYXJ0aWZhY3RfaWQiOiAicHJldmlldy02YmUzZDg5ZGQwMTliZjYyNmQxMzgwMjgwZTQ1NDViNjFmNmE5Nzc3NzZhYTU1ZTQyYTM1MTZiYzI2YjhkNzZiLXByb3h5IiwKICAgICJzYW1wbGVfZnJhbWUiOiAxLAogICAgInNjaGVtYV92ZXJzaW9uIjogIjEuMCIsCiAgICAic291cmNlX2Nsb3N1cmVfZGlnZXN0IjogIjI4MTdiZTY4OTRhODU4YjY1ZDE4ODBiZWRiYzhiZmE3MWNiMGRlYzM3OGEyMDZlMTE5ZGRhZTgwZGZmMzgyYTciLAogICAgInNwYWNlIjogInByb3h5X3dvcmxkX20iLAogICAgInZlcnNpb25faWQiOiAiZml4dHVyZS12MSIKICB9LAogICJydW50aW1lIjogewogICAgInJlbmRlcmVyIjogIkFOR0xFIChHb29nbGUsIFZ1bGthbiAxLjMuMCAoU3dpZnRTaGFkZXIgRGV2aWNlIChTdWJ6ZXJvKSAoMHgwMDAwQzBERSkpLCBTd2lmdFNoYWRlciBkcml2ZXIpIiwKICAgICJkcHIiOiAyCiAgfSwKICAiaW50cmluc2ljIjogewogICAgIndpZHRoIjogMjA2MywKICAgICJoZWlnaHQiOiAxMTM4CiAgfSwKICAicGl4ZWxzIjogewogICAgIndpZHRoIjogMjA2MywKICAgICJoZWlnaHQiOiAxMTM4LAogICAgIm9wYXF1ZSI6IDkyNzM3MiwKICAgICJjb2xvdXJzIjogNjYKICB9LAogICJ1cGxvYWRTaGEyNTYiOiAiMmE5N2UwZjdmZDhhZDE5MzljMDRlZWI0YWM0ZTQyZDJhYWI0M2U4ZmEwOWQwOGQ4NDMyMTQzNDhlNWUzY2VmNiIsCiAgInNlbGVjdGlvbiI6IHsKICAgICJpdGVtX2lkIjogImZpeHR1cmUtc2NlbmUiLAogICAgInZlcnNpb25faWQiOiAiZml4dHVyZS12MSIsCiAgICAidmlld19tb2RlIjogIjNkX2luc3BlY3Rpb24iLAogICAgInRhcmdldCI6IHsKICAgICAgIm9yaWdpbiI6ICJwcm94eV9jYXB0dXJlIiwKICAgICAgImFydGlmYWN0X2lkIjogImNhcHR1cmUtNmRkZjgwMDQtNWNjOS00YTZiLWFlZjAtYWZkNmE2OGNhNWE1IiwKICAgICAgImRpc3BsYXllZF9zaGEyNTYiOiAiMmE5N2UwZjdmZDhhZDE5MzljMDRlZWI0YWM0ZTQyZDJhYWI0M2U4ZmEwOWQwOGQ4NDMyMTQzNDhlNWUzY2VmNiIsCiAgICAgICJkaW1lbnNpb25zIjogewogICAgICAgICJ3aWR0aCI6IDIwNjMsCiAgICAgICAgImhlaWdodCI6IDExMzgKICAgICAgfSwKICAgICAgIml0ZW1faWQiOiAiZml4dHVyZS1zY2VuZSIsCiAgICAgICJ2ZXJzaW9uX2lkIjogImZpeHR1cmUtdjEiLAogICAgICAic291cmNlX2ZyYW1lIjogMSwKICAgICAgInNob3RfaWQiOiAiZml4dHVyZS1zaG90IiwKICAgICAgInJlbmRlcl9qb2JfaWQiOiBudWxsLAogICAgICAibWVkaWFfYXJ0aWZhY3RfaWQiOiBudWxsCiAgICB9LAogICAgImNhbWVyYSI6IHsKICAgICAgInNwYWNlIjogImJsZW5kZXJfd29ybGRfbSIsCiAgICAgICJjYW1lcmFfdG9fd29ybGQiOiBbCiAgICAgICAgMC45OTc3MTM2MDIwMDg2MjIxLAogICAgICAgIC0wLjA0ODA0OTY2MzY4MDMwODk5LAogICAgICAgIDAuMDQ3NTI2ODE1NDUzOTEwMjg0LAogICAgICAgIDAuMzg2MTA5NjczOTk3NjEzMSwKICAgICAgICAwLjA2NzU4Mzc4Nzc1MjU0MzUsCiAgICAgICAgMC43MDkzMzg4MDE4MDQyNzkyLAogICAgICAgIC0wLjcwMTYyMDE5MzQ3MjE0MzgsCiAgICAgICAgLTUuNjk5OTg5Mzk3MjM1ODA4LAogICAgICAgIDYuOTM4ODkzOTAzOTA3MjI4ZS0xOCwKICAgICAgICAwLjcwMzIyODA1MjY3OTI3MDIsCiAgICAgICAgMC43MTA5NjQzNDkyNjQzNzg3LAogICAgICAgIDUuNzc1OTAxNjc3NzUwODI4LAogICAgICAgIDAsCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIDEKICAgICAgXSwKICAgICAgInByb2plY3Rpb24iOiBbCiAgICAgICAgMS4xODI5NjExNjExOTIzNzksCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIDAsCiAgICAgICAgMCwKICAgICAgICAyLjE0NDUwNjkyMDUwOTU1ODYsCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIDAsCiAgICAgICAgMCwKICAgICAgICAtMS4wMDAwMDIwMDAwMDIsCiAgICAgICAgLTAuMDIwMDAwMDIwMDAwMDIsCiAgICAgICAgMCwKICAgICAgICAwLAogICAgICAgIC0xLAogICAgICAgIDAKICAgICAgXSwKICAgICAgImFzcGVjdCI6IDEuODEyODI5NTI1NDgzMzA0LAogICAgICAibmVhcl9tIjogMC4wMSwKICAgICAgImZhcl9tIjogMTAwMDAsCiAgICAgICJzb3VyY2VfY2FtZXJhX2lkIjogbnVsbCwKICAgICAgInNoaWZ0IjogWwogICAgICAgIDAsCiAgICAgICAgMAogICAgICBdLAogICAgICAia2luZCI6ICJwZXJzcGVjdGl2ZSIsCiAgICAgICJ2ZXJ0aWNhbF9mb3ZfZGVncmVlcyI6IDUwCiAgICB9LAogICAgInJhbmdlIjogewogICAgICAic3RhcnQiOiAxLAogICAgICAiZW5kIjogMQogICAgfSwKICAgICJzZWxlY3RlZF9vYmplY3RzIjogWwogICAgICB7CiAgICAgICAgIm9iamVjdF9pZCI6ICJvYmplY3QtY3ViZS1zb3VyY2UiLAogICAgICAgICJpbnN0YW5jZV9pZCI6ICJpbnN0YW5jZS1yZW5hbWVkIgogICAgICB9CiAgICBdLAogICAgImF0dGFjaG1lbnRzIjogWwogICAgICB7CiAgICAgICAgImFydGlmYWN0X2lkIjogImNhcHR1cmUtNmRkZjgwMDQtNWNjOS00YTZiLWFlZjAtYWZkNmE2OGNhNWE1IiwKICAgICAgICAicm9sZSI6ICJyZWZlcmVuY2UiCiAgICAgIH0KICAgIF0sCiAgICAiYW5ub3RhdGlvbnMiOiBbXSwKICAgICJhcHByb3ZlZF9maW5kaW5ncyI6IFtdCiAgfQp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "baff73dbab564fa83a70-7bd489b1518090863837",
+          "file": "review-camera.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "capture acknowledgement mismatch blocks Queue, then awaits a confirmed submission",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1377,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:45:54.833Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium-dpr2",
+              "projectName": "chromium-dpr2",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1682,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:46:01.329Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "baff73dbab564fa83a70-0a664e3be32610214c8c",
+          "file": "review-camera.spec.ts",
+          "line": 133,
+          "column": 1
+        },
+        {
+          "title": "same pinned metadata and late job artefacts refresh without retargeting a draft",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 507,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:45:56.218Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium-dpr2",
+              "projectName": "chromium-dpr2",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 714,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:46:03.018Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "baff73dbab564fa83a70-03d55e0a3c10a39e88e4",
+          "file": "review-camera.spec.ts",
+          "line": 142,
+          "column": 1
+        },
+        {
+          "title": "catalogue search uses loaded metadata and exposes provenance without rights gates or unsafe links",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 443,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:45:56.734Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium-dpr2",
+              "projectName": "chromium-dpr2",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 470,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T13:46:03.740Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "baff73dbab564fa83a70-91c7e1e134e501cf43bb",
+          "file": "review-camera.spec.ts",
+          "line": 155,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-14T13:45:51.215Z",
+    "duration": 13090.625,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
