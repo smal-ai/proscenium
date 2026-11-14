@@ -1,0 +1,1 @@
+{"name":"Proscenium.Unity.Editor","references":["Proscenium.Unity.Runtime"],"includePlatforms":["Editor"]}
