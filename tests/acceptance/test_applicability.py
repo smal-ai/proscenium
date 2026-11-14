@@ -7,7 +7,7 @@ import subprocess
 import pytest
 
 from tools.operations.acceptance import CHECKOUT, inspect_receipts, report
-from tools.operations.applicability import receipt_digest, source_hash
+from tools.operations.applicability import local_git_environment, receipt_digest, source_hash
 from tools.operations.safety import RecoveryError, digest
 
 
@@ -79,6 +79,13 @@ def test_explicit_ancestor_validation_keeps_exact_tested_revision(history):
         result["validated_applicability"][0]["meaning"]
         == "coordinator applicability, not fresh execution"
     )
+
+
+def test_git_identity_queries_cannot_lazy_fetch_or_prompt_for_credentials():
+    environment = local_git_environment()
+    assert environment["GIT_NO_LAZY_FETCH"] == "1"
+    assert environment["GIT_TERMINAL_PROMPT"] == "0"
+    assert environment["GIT_CONFIG_NOSYSTEM"] == "1"
 
 
 def test_source_hash_mode_checks_both_committed_revisions(history):

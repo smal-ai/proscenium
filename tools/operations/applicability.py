@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -17,12 +18,23 @@ def receipt_digest(receipt: dict) -> str:
     ).hexdigest()
 
 
+def local_git_environment() -> dict[str, str]:
+    return {
+        **os.environ,
+        "GIT_NO_LAZY_FETCH": "1",
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+    }
+
+
 def git(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", "--no-replace-objects", "-c", "core.hooksPath=/dev/null", *args],
         cwd=root,
         capture_output=True,
         timeout=10,
+        env=local_git_environment(),
     )
 
 
@@ -49,6 +61,7 @@ def source_hash(root: Path, commit: str, name: str) -> str:
         cwd=root,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
+        env=local_git_environment(),
     ) as process:
         assert process.stdout is not None
         hasher = hashlib.sha256()
