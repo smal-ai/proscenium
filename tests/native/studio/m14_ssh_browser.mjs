@@ -19,9 +19,10 @@ async function observeStage(name,operation){
     try{return await operation();}catch(error){
       const failure={stage:name,attempt,error:String(error).split('\n')[0],at:new Date().toISOString()};
       result.observer_failures.push(failure);await save(`observer-${name}-${attempt}`,failure);
+      await save(`observer-${name}-${attempt}-state`,result);
       await page.screenshot({path:`${root}/observer-${name}-${attempt}.png`}).catch(()=>{});
       await fs.writeFile(`${root}/observer-${name}-${attempt}-private.txt`,await page.locator('body').innerText().catch(()=>''),{mode:0o600});
-      await wait(`continue-${name}-${attempt}`,120000);
+      await wait(`continue-${name}-${attempt}`,400000);
       const continuation=await fs.readFile(`${root}/continue-${name}-${attempt}`,'utf8');
       if(continuation.trim().startsWith('{')){
         const command=JSON.parse(continuation);
@@ -98,26 +99,10 @@ try{
   await page.evaluate(code=>localStorage.setItem('proscenium.owner.pairing',JSON.stringify({schema_version:'1.0',operation_id:crypto.randomUUID(),client_nonce:crypto.randomUUID(),pairing_code:code})),pair.code);
   await page.reload({waitUntil:'networkidle'});
   await page.getByRole('button',{name:'Connect this browser',exact:true}).click();
-  await activateImportedProject(page,spec.project_id);
+  await observeStage('activation',async()=>activateImportedProject(page,spec.project_id));
   result.phases.push('forwarded UI pairing and explicit saved-project activation');
-  await view();result.initial=await get(`${p}/snapshot`);result.replay_before=await replay();
+  await observeStage('initial-view',async()=>{await view();result.initial=await get(`${p}/snapshot`);result.replay_before=await replay();});
   if((await get(`${p}/requests`)).items.length)throw Error('Unexpected pre-existing request');
-  await fs.writeFile(`${root}/ui-send-intent`,sha(spec.prompt),{flag:'wx',mode:0o600});
-  await page.getByRole('textbox',{name:'Message Copilot',exact:true}).fill(spec.prompt);
-  const accepted=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith('/requests'));
-  await page.getByRole('button',{name:'Queue message',exact:true}).click();
-  const response=await accepted;if(!response.ok())throw Error('Queue admission rejected');
-  result.ui_admission={status:response.status(),receipt:await response.json()};
-  await context.setOffline(true);
-  await fs.writeFile(`${root}/browser-offline`,'actual browser offline',{flag:'wx',mode:0o600});
-  await wait('reconnected');
-  await context.setOffline(false);await page.reload();
-  await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
-  result.after_reconnect={requests:await get(`${p}/requests`),snapshot:await get(`${p}/snapshot`)};
-  const requests=result.after_reconnect.requests.items;
-  if(requests.length!==1||requests[0].receipt.state!=='completed')throw Error('Original request did not complete exactly once');
-  result.replay_after=await replay();result.phases.push('original work completed with SSH/browser disconnected');
-  await save('message-completed',result);
   await observeStage('review',async()=>{
   await page.reload();await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
   await view();
@@ -167,6 +152,34 @@ try{
   await page.screenshot({path:`${root}/ssh-review.png`});
   await save('browser-progress',result);
   });
+  result.phases.push('ACTUAL browser UI/media preflight passed before any SDK send');
+  await save('ui-preflight',result);
+  await wait('authorised-send',400000);
+  await view();
+  // Upload validation is complete. Remove the test image from next-turn context.
+  const remove=page.getByRole('button',{name:'Remove image 1',exact:true});
+  if(await remove.count()){
+    if(!await remove.isVisible())await page.locator('details.capture-details > summary').click();
+    await remove.click();
+  }
+  await fs.writeFile(`${root}/ui-send-intent`,sha(spec.prompt),{flag:'wx',mode:0o600});
+  await page.getByRole('textbox',{name:'Message Copilot',exact:true}).fill(spec.prompt);
+  const accepted=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith('/requests'));
+  await page.getByRole('button',{name:'Queue message',exact:true}).click();
+  const response=await accepted;if(!response.ok())throw Error('Queue admission rejected');
+  result.ui_admission={status:response.status(),receipt:await response.json()};
+  await context.setOffline(true);
+  await fs.writeFile(`${root}/browser-offline`,'actual browser offline',{flag:'wx',mode:0o600});
+  await wait('reconnected');
+  await context.setOffline(false);await page.reload();
+  await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
+  result.after_reconnect={requests:await get(`${p}/requests`),snapshot:await get(`${p}/snapshot`)};
+  const requests=result.after_reconnect.requests.items;
+  if(requests.length!==1||requests[0].receipt.state!=='completed')throw Error('Original request did not complete exactly once');
+  result.replay_after=await replay();result.phases.push('original work completed with SSH/browser disconnected');
+  result.annotation_after_reconnect=(await get(`${p}/annotations`)).items.find(a=>a.annotation_id===result.annotation.annotation_id);
+  if(JSON.stringify(result.annotation_after_reconnect)!==JSON.stringify(result.annotation))throw Error('Annotation changed across SSH loss');
+  await save('message-completed',result);
   await fs.writeFile(`${root}/review-complete`,'ready for quiet restart',{flag:'wx',mode:0o600});
   await context.setOffline(true);await wait('restarted',60000);
   await observeStage('unavailable',async()=>{

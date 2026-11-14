@@ -17,6 +17,7 @@ REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO))
 
 import httpx
+from m14_ssh_oracle import assistant_projection
 from m14_ssh_prepare import preservation, sha
 from PIL import Image
 
@@ -73,6 +74,35 @@ def run(root, evidence):
     spec = json.loads((root / "allocation.json").read_text())
     assert not (root / "allocation-started.json").exists()
     assert not (root / "send-reservation.json").exists()
+    shared = Path(spec["guard_root"]) if spec.get("guard_root") else None
+    if shared:
+        assert not (shared / "sdk-send-reservation.json").exists(), (
+            "Never start a replacement native turn"
+        )
+        budget_path = shared / "complete-budget.json"
+        if not budget_path.exists():
+            write_json(
+                budget_path,
+                {
+                    "started_ns": time.monotonic_ns(),
+                    "deadline_ns": time.monotonic_ns() + 1200_000_000_000,
+                },
+            )
+        budget = json.loads(budget_path.read_text())
+        assert time.monotonic_ns() < budget["deadline_ns"]
+        startup = len(list(shared.glob("startup-*.json"))) + 1
+        assert startup <= 3
+        write_json(
+            shared / f"startup-{startup}.json",
+            {
+                "root": str(root),
+                "pid": os.getpid(),
+                "start": identity(os.getpid()),
+                "ns": time.monotonic_ns(),
+            },
+        )
+        spec["deadline_ns"] = budget["deadline_ns"]
+        (root / "allocation.json").write_text(json.dumps(spec, indent=2))
     available = (
         int(
             next(
@@ -140,14 +170,14 @@ def run(root, evidence):
     processes, closed = [], set()
     result = {
         "status": "incomplete",
-        "base": "c0cdf58c47d8b8a2a5157b11e4961d594786b7e3",
+        "base": "04ad1810b5abe1334364b5074fe4123a703c4c2f",
         "driver_revision": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
         ).strip(),
         "retained_root": str(root),
         "transport": "actual fixture-key OpenSSH same-host loopback",
         "available_ram_bytes_before_start": available,
-        "allocation_seconds": 600,
+        "allocation_seconds": 1200 if shared else 600,
         "sdk_send_limit": 1,
         "sdk_send_seconds": 180,
         "children_authoring_encodes_provider_calls": 0,
@@ -172,7 +202,9 @@ def run(root, evidence):
         raise TimeoutError("600_second_allocation")
 
     signal.signal(signal.SIGALRM, expired)
-    signal.alarm(580)  # Leave bounded cleanup inside the whole 600-second window.
+    signal.alarm(
+        max(1, int((spec["deadline_ns"] - time.monotonic_ns()) / 1e9) - 10) if shared else 580
+    )
     try:
         daemon = spawn("sshd", ["/usr/sbin/sshd", "-D", "-e", "-f", str(root / "sshd_config")])
         wait_ready(lambda: reachable(spec["ssh_port"]), daemon)
@@ -234,6 +266,9 @@ def run(root, evidence):
         browser = spawn(
             "browser", ["node", str(REPO / "tests/native/studio/m14_ssh_browser.mjs"), str(root)]
         )
+        if shared:
+            wait_file(root / "ui-preflight.json", browser, 450)
+            wait_file(root / "authorised-send", browser, 400)
         admission = wait_file(root / "admitted.json", browser, 80)
         wait_file(root / "browser-offline", browser, 15)
         prior = rows(root, "requests")
@@ -250,6 +285,7 @@ def run(root, evidence):
             "receipt_after": current["receipt"],
             "forward_closed": not reachable(spec["forward_port"]),
             "browser_offline_observed": True,
+            "contexts_before": rows(root, "contexts"),
             "active_at_cut": current["receipt"]["state"]
             in {"dispatching", "acknowledged", "running"},
         }
@@ -358,7 +394,11 @@ def run(root, evidence):
                                 "prompt_matches": data.get("content") == spec["prompt"],
                             }
                         )
-                    elif kind == "assistant.message" and data.get("content"):
+                    elif (
+                        kind == "assistant.message"
+                        and data.get("messageId")
+                        and data.get("content") is not None
+                    ):
                         facts["assistant_messages"].append(
                             {
                                 "event_id": event["id"],
@@ -384,7 +424,6 @@ def run(root, evidence):
                 "zero_forbidden_attempts": h1.get("forbidden") == [] and h2.get("forbidden") == [],
                 "one_native_user_message": len(result["native_facts"]["user_messages"]) == 1
                 and result["native_facts"]["user_messages"][0]["prompt_matches"],
-                "one_native_response": len(result["native_facts"]["assistant_messages"]) == 1,
                 "zero_children": not result["native_facts"]["children"],
                 "only_read_only_view": all(
                     r["name"] == "view" for r in result["native_facts"]["tool_calls"]
@@ -401,17 +440,29 @@ def run(root, evidence):
                 "owned_cleanup": not result["owned_descendants_remaining"],
             }
             context = h1["records"]["contexts"][0]
-            response_text = "\n".join(
-                m["content"] for m in result["native_facts"]["assistant_messages"]
-            )
-            checks["model_read_marker_and_context"] = all(
-                value in response_text
-                for value in (
-                    "M14_SSH_READ_ONLY_20261114",
-                    context["context_id"],
-                    "m13-film-v1",
-                    "animation",
+            checks.update(
+                assistant_projection(
+                    result["native_facts"]["assistant_messages"],
+                    result["browser"].get("replay_after", {}).get("events", []),
+                    (
+                        "M14_SSH_READ_ONLY_20261114",
+                        context["context_id"],
+                        "m13-film-v1",
+                        "animation",
+                    ),
                 )
+            )
+            checks["context_exact_through_tunnel_loss"] = (
+                result["cut"]["contexts_before"] == h1["records"]["contexts"]
+            )
+            checks["actual_ui_media_before_send"] = (root / "ui-preflight.json").exists()
+            checks["completion_after_cut"] = (
+                result["completion_disconnected"]["observed_ns"] > result["cut"]["after_cut_ns"]
+            )
+            checks["original_native_user_id_join"] = (
+                len(result["native_facts"]["user_messages"]) == 1
+                and result["native_facts"]["user_messages"][0]["message_id"]
+                == h1["records"]["requests"][0]["receipt"]["native_message_id"]
             )
             result["checks"] = checks
             if not all(checks.values()):

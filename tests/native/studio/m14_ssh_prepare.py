@@ -276,4 +276,15 @@ def prepare(root):
 
 
 if __name__ == "__main__":
-    print(json.dumps(prepare(Path(sys.argv[1]).absolute())))
+    root = Path(sys.argv[1]).absolute()
+    if "--complete" in sys.argv:
+        private_directory(root)
+        value = prepare(root / "a")
+        path = root / "a/allocation.json"
+        body = json.loads(path.read_text())
+        body["guard_root"] = str(root)
+        path.write_text(json.dumps(body, indent=2))
+        value["shared_one_send_guard"] = str(root / "sdk-send-reservation.json")
+        print(json.dumps(value))
+    else:
+        print(json.dumps(prepare(root)))

@@ -1,5 +1,27 @@
 # M14 bounded SSH message/media and unavailable-service proof
 
+## Completion allocation, accepted base `04ad181`
+
+The coordinator renewed up to three sequential owned startup sets within one
+1,200-second global budget. `s14c` owns the shared exclusive SDK-send reservation
+outside its phase folders. There is at most one actual SDK Queue across this entire
+allocation. Earlier `s14a` and `s14b` histories remain unchanged.
+
+The actual browser must first pair, explicitly activate the imported project, select
+the real M13 v1, play all ten frames using actual rVFC timestamps and map identities,
+save/reload/reopen its frame pin, download video/manifest, compare exact 206 bytes and
+upload an actual image. Only then does it write `ui-preflight.json` and wait for an
+explicit local `authorised-send` marker. No model turn is possible through that path
+before the actual browser preflight passes and the preflighted driver is committed.
+
+The assistant oracle now accepts several legitimate messages in one SDK turn. It
+requires unique native message/event identities, exactly one corresponding public
+completion event per message with the same ID/text, and a meaningful marker/context
+reply. Multi-message, duplicate, loss, text-mismatch and shared-send-guard regressions
+passed before live allocation. No production completion semantics were changed.
+
+Current completion result: pending actual UI/media preflight and the one-send journey.
+
 ## Renewed final allocation, accepted base `c0cdf58`
 
 The coordinator explicitly authorised one new allocation after the retained `s14a`

@@ -29,8 +29,12 @@ from tools.operations.ssh_proof import identity
 from tools.operations.ssh_service import witness_lifespan
 
 
-def reserve_send(root, value):
+def reserve_send(root, value, guard_root=None):
     # O_EXCL reservation across restart. Buffer flushing is irrelevant to its existence.
+    if guard_root is not None:
+        with (guard_root / "sdk-send-reservation.json").open("x") as output:
+            json.dump(value, output)
+        (guard_root / "sdk-send-reservation.json").chmod(0o600)
     with (root / "send-reservation.json").open("x") as output:
         json.dump(value, output)
     (root / "send-reservation.json").chmod(0o600)
@@ -94,8 +98,15 @@ class Audit:
 
 def main():
     root, generation = Path(sys.argv[1]), sys.argv[2]
-    signal.alarm(25 if generation == "preflight" else 580)
     spec = json.loads((root / "allocation.json").read_text())
+    remaining = max(
+        1,
+        int(
+            (spec.get("deadline_ns", time.monotonic_ns() + 580_000_000_000) - time.monotonic_ns())
+            / 1e9
+        ),
+    )
+    signal.alarm(25 if generation == "preflight" else remaining)
     settings = Settings.load(root / ("config.json" if generation == "1" else "unavailable.json"))
     services = Services.create(settings)
     runtime = install(services)
@@ -120,6 +131,8 @@ def main():
 
     async def create(client, **kwargs):
         assert generation == "1" and not (root / "send-reservation.json").exists()
+        if spec.get("guard_root"):
+            assert not (Path(spec["guard_root"]) / "sdk-send-reservation.json").exists()
         assert kwargs["memory"] == {"enabled": False} and kwargs["enable_session_store"] is False
         kwargs.update(available_tools=["view"], custom_agents=[], tools=[])
         audit["options"].append(
@@ -165,6 +178,7 @@ def main():
                 "before_send_ns": time.monotonic_ns(),
                 "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
             },
+            guard_root=Path(spec["guard_root"]) if spec.get("guard_root") else None,
         )
         audit["sends"] += 1
         tasks.append(asyncio.create_task(deadline()))
