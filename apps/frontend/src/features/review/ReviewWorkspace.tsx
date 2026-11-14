@@ -12,6 +12,7 @@ import { allPages } from "./records";
 import { annotationContext, cleanTargetRole } from "./context";
 import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
+import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
 import { useReviewSelection } from "./state";
 import "./review.css";
 
@@ -38,7 +39,6 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const [mapping, setMapping] = useState<ProxyMapping | null>(null);
   const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap} | null>(null);
   const [availabilityByJob, setAvailabilityByJob] = useState<Record<string,FrameAvailability>>({});
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [target, setTarget] = useState<FrameTarget | null>(null);
   const [captureReady, setCaptureReady] = useState(false);
   const [decodedImage, setDecodedImage] = useState<string | null>(null);
@@ -71,7 +71,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const draft = drafts.find(d => d.key === draftId);
   const editorPreparer = useRef<ContextPreparer | null>(null);
   const registerEditorPreparer = useCallback((prepare: ContextPreparer | null) => {editorPreparer.current = prepare;}, []);
-  const reviewJobId=selectedJobId ?? target?.render_job_id ?? versionJobs[0]?.job_id;
+  const reviewJobId=targetJobId(draft?.annotation.target ?? target, versionJobs, artifacts);
   const activeJob = jobs.find(j => j.job_id === reviewJobId);
   const currentFrames=useMemo(()=>frames.filter(f=>!reviewJobId||f.job_id===reviewJobId),[frames,reviewJobId]);
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
@@ -182,15 +182,18 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       }
       if (active) {
         receipts.sort((a,b) => a.source_frame - b.source_frame);
-        setFrames(receipts); setSegments(clips); setArtifacts(media);
+        // Keep admission order, not asynchronous HTTP completion order, for initial display.
+        const orderedMedia = artifactIds.flatMap(id => media.filter(a => a.artifact_id === id));
+        receipts.sort((a,b) => versionJobs.findIndex(j => j.job_id === a.job_id) - versionJobs.findIndex(j => j.job_id === b.job_id) || a.source_frame - b.source_frame);
+        setFrames(receipts); setSegments(clips); setArtifacts(orderedMedia);
         if (!initialised.current && (receipts.length || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
           initialised.current = true;
           if (receipts[0]) {const first=frameTarget(receipts[0],version!);setTarget(first);setTargetCamera(frameCamera(first,jobs));setRequestedFrame(receipts[0].source_frame);}
           else {
-            const image = media.find(a => a.kind === "image" && a.state === "ready" && a.dimensions)!;
-            setTarget({origin: image.purpose === "concept" ? "concept" : "reference", artifact_id: image.artifact_id,
-              displayed_sha256: image.sha256, dimensions: image.dimensions!, item_id: version!.item_id, version_id: version!.version_id,
-              shot_id: null, render_job_id: null, source_frame: null, media_artifact_id: null});
+            const image = orderedMedia.find(a => pinned.artifact_ids.includes(a.artifact_id) && a.kind === "image" && a.state === "ready" && a.dimensions)
+              ?? versionJobs.flatMap(job => generationOutputs(job, orderedMedia))[0];
+            if (image) setTarget(imageTarget(image, version!));
+            else initialised.current = false;
           }
         }
         if (errors.length) setError(`Some review data is unavailable: ${[...new Set(errors)].join(". ")}`);
@@ -269,10 +272,13 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   }
 
   function chooseJob(identity:string) {
-    setSelectedJobId(identity);setPlaying(false);setCaptureReady(false);setRange(null);setTargetCamera(null);
     const first=frames.find(f=>f.job_id===identity);
-    if(first && version){const frame=frameTarget(first,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));setRequestedFrame(first.source_frame);}
-    else setError(`No ready frames for ${identity}`);
+    const job=versionJobs.find(j=>j.job_id===identity);
+    const image=job ? generationOutputs(job,artifacts)[0] : undefined;
+    if (!version || (!first && !image)) {setError(`No ready review output for ${identity}. Current image and job retained.`);return;}
+    setPlaying(false);setCaptureReady(false);setRange(null);setTargetCamera(null);setError("");
+    if(first){const frame=frameTarget(first,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));setRequestedFrame(first.source_frame);}
+    else if(image){setMode("keyframes");setTarget(imageTarget(image,version));setRequestedFrame(1);}
   }
 
   function changeMode(next: Mode) {if (mode !== next) {setCaptureReady(false); setPlaying(false); setMode(next);}}
@@ -382,7 +388,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
         }}/> : <ProgressivePlayer key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
           : target ? <div className="review-image"><DecodedReviewImage projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
     <div className="review-toolbar"><button onClick={() => step(-1)}>Previous frame</button><button onClick={() => step(1)}>Next frame</button>
-      <label>Shot / render job<select aria-label="Shot / render job" disabled={!!draft} value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>
+      <label>Shot / render job<select aria-label="Shot / render job" disabled={!!draft} value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>
       <label>Frame<input type="number" min="1" value={requestedFrame} disabled={!!draft} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
       <span>{target ? `${target.dimensions.width} × ${target.dimensions.height} · ${target.origin} · frame ${target.sequence_frame ?? target.source_frame ?? "image"}` : "No presented target"}</span>
       <span>{activeJob?.render_spec ? `${activeJob.render_spec.engine} · ${activeJob.render_spec.purpose} · ${activeJob.render_spec.samples} samples` : "No render profile reported"}</span>
