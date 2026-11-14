@@ -20,7 +20,10 @@ Consumes parent recovery-Stop admission fix `ff8a32d` without changing contract 
   pre-existing internal coordinator invocations of its exact session after the
   previous recorded process is proven gone and native pending metadata is empty.
   `task` requires matching started/terminal child history and settled child records.
-  `ask_user` requires the exact native input event and one still-unanswered decision.
+  `ask_user` requires the original immutable native decision binding to that exact
+  tool/work/request and one still-unanswered decision. Its live input notification
+  is not guaranteed to appear in persisted SDK history; present source event IDs
+  are retained, absent terminal evidence is not fabricated.
   It cancels the wait with no response, human actor or delivery acknowledgement.
 - Interruption is appended as system recovery evidence with source native event
   IDs and exact departed PID/start. It is not a fabricated native return or child
@@ -34,6 +37,11 @@ Consumes parent recovery-Stop admission fix `ff8a32d` without changing contract 
 coordination cases and the existing delivery/fault/cancellation regressions.
 Targeted Ruff and mypy pass. The heartbeat tests model delayed RPC versus ongoing
 verified events without using real model calls or an expensive per-token observer.
+
+Actual metadata inspection exposed the SDK's non-persisted input notification.
+One additional regression covers that precise case. The corrected recovery plus
+delivery/fault selection passed **43 tests**, with mypy clean. The first M03
+metadata pass remained conservative and its evidence was preserved before correction.
 
 Actual follow-up observations and cumulative M03 assessment will be committed
 separately. M13 candidate `209448a9d10287b777b005cd8e03e888d5e15cc8` supplies

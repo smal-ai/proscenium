@@ -125,6 +125,7 @@ def test_transport_alive_checks_exact_process_and_closed_pipe(runtime):
         ("live_owner", False),
         ("missing_child_terminal", False),
         ("wrong_session", False),
+        ("ephemeral_input_event", True),
     ],
 )
 def test_only_exact_departed_coordinators_can_be_interrupted(runtime, kind, valid):
@@ -134,7 +135,7 @@ def test_only_exact_departed_coordinators_can_be_interrupted(runtime, kind, vali
             "task"
             if kind in {"task", "missing_child_terminal"}
             else "ask_user"
-            if kind in {"ask_user", "live_owner", "wrong_session"}
+            if kind in {"ask_user", "live_owner", "wrong_session", "ephemeral_input_event"}
             else kind
         )
         session.event(
@@ -169,6 +170,8 @@ def test_only_exact_departed_coordinators_can_be_interrupted(runtime, kind, vali
             )
             runtime.state.reduce(PROJECT, session.session_id, event)
             history.append(event)
+            if kind == "ephemeral_input_event":
+                history.clear()  # SDK history omits this actual live notification.
             callback = asyncio.create_task(
                 runtime.user_input(
                     PROJECT,

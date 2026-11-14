@@ -1017,7 +1017,16 @@ class State:
                     and e.get("data", {}).get("toolCallId") == native_id
                     and e["data"].get("requestId") == decision["native_decision_id"]
                 ]
-                if not events:
+                decision_binding = self.binding(
+                    tx, session_id, "decision", decision["native_decision_id"]
+                )
+                if (
+                    not decision_binding
+                    or decision_binding.get("invocation_id") != invocation["invocation_id"]
+                    or any(
+                        decision_binding.get(k) != invocation[k] for k in ("work_id", "request_id")
+                    )
+                ):
                     continue
                 evidence_ids = [e["id"] for e in events]
                 revision = tx.revision("decisions", decision["decision_id"])
@@ -1043,6 +1052,11 @@ class State:
                 "native_event_ids": evidence_ids,
                 "native_return_observed": False,
                 "at": now(),
+                "decision_binding_identity": key(
+                    session_id, "decision", decision["native_decision_id"]
+                )
+                if invocation["name"] == "ask_user"
+                else None,
             }
             save(tx, "copilot.recovery_evidence", invocation["invocation_id"], evidence)
             save(
