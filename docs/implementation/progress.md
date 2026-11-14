@@ -35,6 +35,7 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `a218a65` | Actual M01 browser/SDK/Blender visual-feedback journey, source correction and replay/restart evidence. |
 | `4e8b233`, `milestone/m01` | Coordinator acceptance of all M01 criteria with retained execution limitations. |
 | `7b1f837` | Actual proxy framebuffer/camera capture, GLB picking and catalogue search/provenance. |
+| `80ff7bf` | E04 actual Hunyuan mesh, Blender import and W02 checkpoint/publication. M10 user interaction remains separate. |
 
 ## Active assignments
 
@@ -44,7 +45,9 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | M02 history | `/home/quintin/.cache/proscenium-development/fleet/m02-history`, `impl/m02-history` | `4e8b233` | Two real native project associations, catalogue/history browsing and historical source reopening. | `ses_e25c79de3ffeZX0P1VpUbkumLC` |
 | M03 runtime | `/home/quintin/.cache/proscenium-development/fleet/m03-runtime`, `impl/m03-runtime` | `4e8b233` | Real Queue/Steer/live-child Stop/Resume and durable owner decisions. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
 | M04 camera | `/home/quintin/.cache/proscenium-development/fleet/m04-camera`, `impl/m04-camera` | `7b1f837` | Preserve odd-sized still captures and prove browser Queue-to-Blender framing correspondence. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
-| E04 live-b | `/home/quintin/.cache/proscenium-development/fleet/w09-live-b`, `impl/w09-live-b` | `9720285` | Renewed one-attempt mesh execution after reclaiming build-owned tmpfs caches. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
+| M06 storyboards | `/home/quintin/.cache/proscenium-development/fleet/m06-storyboards`, `impl/m06-storyboards` | `b1fa32c` | Actual SDK-authored plan, targeted planning-only revision and Full-HD shotboard review. | `ses_e263d813fffefNumtCvVqwR169` |
+| M09 critique | `/home/quintin/.cache/proscenium-development/fleet/m09-critique`, `impl/m09-critique` | `b1fa32c` | Configured vision-model load, requested owner/native reviews and approved-finding handoff. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
+| M10 asset | `/home/quintin/.cache/proscenium-development/fleet/m10-asset`, `impl/m10-asset` | `b1fa32c` | Static inspection and ordinary native revision of the actual E04 asset, with no new inference. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
 | Recovery/SSH | `/home/quintin/.cache/proscenium-development/fleet/w10-integration`, `impl/w10-integration` | `9720285` | Fix unrelated protected-process backup blocker and prove actual SSH-forwarded application traffic. | `ses_e25df843bffetn697vChzMs1dn` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
@@ -54,8 +57,8 @@ The later composed F00 baseline passed 26 unit, 45 contract and 292 offline inte
 ## Current acceptance blockers
 
 - W07's original `w07-live-initial` remains planned with one reservation and no prompt/client ID. Its 600-second allocation ended before inference because host RAM stayed below 20,427,268,612 bytes. Preserve that identity for a separately allocated continuation.
-- E04 `e04-live-a` created no project, job, reservation or native process. It recorded 10.46 GiB available against a 12 GiB fit floor. The distinct `e04-live-b` allocation retains those guards.
-- LM Studio's inspected resident model is non-vision. No VLM inference or approved-finding native journey has passed yet.
+- E04 `e04-live-a` created no project, job, reservation or native process. The distinct `e04-live-b` passed hardware execution under the unchanged guards. M10 still needs static inspection and normal revision/reuse acceptance.
+- LM Studio's original resident model is non-vision. M09 has a bounded allocation to load the existing vision-capable Gemma E4B through its saved profile, preserving Qwen. No VLM journey pass is claimed yet.
 - Parent integration found 18 W10 checks blocked by an unrelated protected `sshd-session` process. The 127 other checks in that affected run passed. Recovery/SSH owns the scoped-process correction.
 - Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
 
@@ -76,11 +79,14 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | W08 | W08 agent | Its own disposable Unity project. At most three Unity invocations, 600 seconds each, plus one Blender CPU export, four threads, 180 seconds. Existing official Editor/licence, isolated project dependencies, own Xvfb if needed. |
 | W03 | W03 agent | At most twenty CPU-rendered 640×360 frames, sixteen samples, four threads, 300 seconds per worker, plus three static proxies. One renderer at a time and bounded short encodes. No model/GPU/service changes. |
 | M01 | M01 agent, completed | Three cloud roots, no children, two rendered frames. All 18 observed owned processes exited. Independent Blender on 9876 preserved. |
-| E04 live-b | W09 agent, active exclusive GPU allocation | One temporary ComfyUI on free loopback 18588, one fixed Hunyuan attempt, 1800-second server bound, four CPU threads. Unchanged 12 GiB fit floor and four-GiB protected headroom. One Blender import, 180 seconds. Fresh disk-backed run directory. |
+| E04 live-b | W09 agent, completed | One Hunyuan attempt and one Blender import passed. No owned processes/claims remain, and port 18588 is free. Lowest sampled host available RAM was 5.89 GiB, above both guards. |
 | Recovery/SSH | W10 agent | One temporary unprivileged loopback sshd, one SSH client, one disposable application server and Chromium profile, 300-second process bounds. Fixture keys only. No native/model/GPU work. |
 | M02 | M02 agent | Two small cloud roots, no children, 120 seconds each. One historical Blender CPU inspection, four threads, 180 seconds. Disposable Full-HD browser and server. |
 | M03 | M03 agent | Six cloud roots and three native children maximum, 180 seconds per root. Harmless project-local native activity has a 90-second self-timeout. No Blender/Unity/provider/GPU work. |
 | M04 | M04 agent | Two cloud roots, no children, 180 seconds each. Three CPU stills maximum at the exact captured dimensions, eight samples/four threads, 300-second worker bounds, plus at most one static proxy. No GPU/model-service work. |
+| M06 | M06 agent | Two cloud roots, no children, 180 seconds each. Actual browser/SDK planning only; no rendering, provider or native editor execution. |
+| M09 | W07 agent, active exclusive GPU allocation | One saved-profile load of `google/gemma-4-e4b`, no settings override. Two VLM calls maximum, 512 output tokens and 120 seconds each. Two cloud roots maximum. Only the newly owned Gemma instance may be unloaded after settlement; original Qwen remains resident. |
+| M10 | W09 agent | No inference. Two cloud roots, one authoring process, one readback, two proxy exports and two 640×360 CPU keyframes maximum. Four threads/eight samples; preserve four-GiB host headroom and the original E04 project. |
 
 ## Milestones
 
@@ -91,11 +97,11 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M03 Discussion and delegation | Native control journey running | — | — |
 | M04 Inspection and markup | Exact camera/still integration running | — | [Accepted capture proof](../evidence/w05/camera-readme.md) |
 | M05 Asset research and reuse | Pending | — | — |
-| M06 Storyboards | Pending | — | — |
+| M06 Storyboards | Real planning/review journey running | — | — |
 | M07 Concept generation | Pending | — | — |
 | M08 Progressive animation | Pending | — | — |
-| M09 Requested VLM critique | Pending | — | — |
-| M10 Image-to-3D | Plugin implemented, hardware proof pending | — | [E04 resource blocker](../evidence/w09/execution/README.md) |
+| M09 Requested VLM critique | Real review/approval journey running | — | — |
+| M10 Image-to-3D | Hardware proof passed, inspection/revision journey running | — | [E04 live result](../evidence/w09/live-b/README.md) |
 | M11 Playable Unity scene | Pending | — | — |
 | M12 Recovery and backup | Pending | — | — |
 | M13 Silent cinematic delivery | Pending | — | — |
@@ -124,3 +130,7 @@ The integration-owned browser command now covers the composed shell, review/cont
 Resource inspection found `/tmp` is a 31 GiB tmpfs with about 8 GiB free, while the disk-backed home filesystem has about 348 GiB free. Larger subsequent native scratch work uses `/home/quintin/.cache/proscenium-development/` to avoid exhausting RAM-backed temporary storage. Existing evidence is retained.
 
 Seven completed-proof native package caches, totalling 2,058,885,576 bytes, were copied to disk, hash-verified and replaced by cache-path links. Native histories, databases and media stayed in place. The private relocation receipt is `/home/quintin/.cache/proscenium-development/retained-build-caches/2026-11-14-cache-moves.json`. The immediate post-move observation was 16,004,345,856 bytes of available RAM, enabling the renewed E04 allocation without lowering its threshold.
+
+E04 live-b produced a 19,860,948-byte GLB with 350,259 vertices and 1,304,618 triangles. Blender imported it and W02 published `e04-generated-asset` / `e04-asset-v1` from checkpoint `94a17bb13ab6669eb4096473038be8cc8349975a`. Shape is untextured, without UVs or calibrated physical scale. One generation reservation was consumed. No independent service changed.
+
+Nine completed tmpfs worktree virtual environments were subsequently removed as rebuildable dependency caches. All source, evidence, native history and active disk-backed environments remain. Available RAM immediately afterwards measured 22,411,755,520 bytes. Focused pytest commands now explicitly include the repository root so maintained `tools` imports do not depend on another suite's import side effects.

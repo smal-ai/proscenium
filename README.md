@@ -40,7 +40,7 @@ Start the private configuration from [`config.example.json`](config.example.json
 - Canonical source filenames with Git/Git LFS history and pinned asset dependencies.
 - Browser disconnections leave work running. Backend/workstation restarts require explicit Resume.
 
-Image-to-3D has a budgeted Hunyuan implementation but is **not yet hardware-proven**. Its first allocation stopped before inference on a host-memory guard. The proof and milestone remain open.
+Image-to-3D has a [real Hunyuan hardware proof](docs/evidence/w09/live-b/README.md): one image-conditioned mesh was imported into Blender and published. The generated-asset inspection/revision journey remains open for M10 acceptance. The earlier memory-blocked allocation is retained in the evidence.
 
 ## Architecture boundary
 
