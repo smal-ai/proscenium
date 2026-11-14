@@ -1,0 +1,143 @@
+{
+  "case": "E03",
+  "status": "bounded_native_progressive_and_browser_codec_pass",
+  "not_claimed": ["product_renderer", "product_player", "uninterrupted_segment_boundaries", "F03_behavioural_acceptance", "F04_product_coordinate_acceptance", "M08"],
+  "recorded_at": "2026-11-14T13:12:10.145779+02:00",
+  "base_commit": "148ad0fee19de17317fba46aece4b1c18f006ab5",
+  "specification": "3.2.0",
+  "contract": "1.0.0",
+  "output_root": "/tmp/opencode/proscenium-e03-20261114-a",
+  "raw_report_sha256": {
+    "result.json": "b87ae8cd57445a55545509caa2809f224ee683a047a96a993253bc739cc45843",
+    "native-result.json": "84acf611b707ab1e4553c40ed66682c180ed7122871601f4efa6a180da3e020f",
+    "browser-result.json": "5f4486ec395a0ad9e19ac2be1379fb4491559dbd43fffb7ca176e829324324c0",
+    "native/profile.json": "3c234141a0e30254dbaaec4aa492283c607843b33913d17c9313f16c788e0783",
+    "source-identity.json": "2178e8ddf5be045196e147a132da9b381bb5bbdd6f78f88428de77d4663a1c36",
+    "blender.log": "fcb2b4ebcabce5fe525b8ea580f69af5d6a0c575a51553e70017e81d34defb39"
+  },
+  "executed_code_sha256": {
+    "tools/proofs/media/proof.py": "fa8e967c8a3a9a8332eab1049de67c8bd6b1e1d58db8939f6a2de1c9b4264d38",
+    "tools/proofs/media/render_fixture.py": "364bd7302e7a11c3030c7af6154fad5d46bebdac907ade90332fd0fc96810079",
+    "tests/browser/media-proof.mjs": "9e2a75fecbd926fc7259eb9e5f83269f80ddbf11c13417e655b4c2e767d03580"
+  },
+  "source": {
+    "read_only_root": "/tmp/opencode/proscenium-f01-20261114-a/historical",
+    "fixture_git_commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+    "copied_to": "source/",
+    "unchanged_after_render": true,
+    "sha256": {
+      "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+      "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+      "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+    },
+    "total_bytes": 859890
+  },
+  "runtime": {
+    "os": "Linux x86_64 7.0.0-43-generic",
+    "host": "Gerard-EVO-X2",
+    "blender": "4.5.14 LTS",
+    "blender_build": "62c1db4208e8",
+    "ffmpeg_ffprobe": "8.0.1-3ubuntu2",
+    "python": "3.12.13",
+    "pillow": "12.3.0",
+    "playwright": "1.65.1"
+  },
+  "profile": {
+    "engine": "CYCLES", "device": "CPU", "samples": 8, "render_threads": 4,
+    "denoising": false, "seed": 0, "dimensions": [640, 360], "source_frames": [1, 12],
+    "fps": [24, 1], "camera": null, "authored_camera": "Fixture camera",
+    "review_output": "PNG RGB 8-bit, baked Standard view transform, sRGB display, look None, exposure 0, gamma 1",
+    "encode": "libx264 veryfast CRF18, yuv420p, no audio, closed GOP4, no B frames, faststart",
+    "claim": "/tmp/opencode/proscenium-native-claims/blender-render.lock",
+    "process_timeout_seconds": 300,
+    "encoder_timeout_seconds_each": 60,
+    "blender_processes": 1,
+    "native_frames_rendered": 12,
+    "synthetic_segments_encoded": 6,
+    "encoder_concurrency": 1,
+    "artificial_throttling": false
+  },
+  "performance": {
+    "clock": "time.monotonic_ns, host-wide comparable across worker and controller",
+    "origin_ns": 447432772871799,
+    "first_verified_frame_seconds": 0.933236949,
+    "first_ready_segment_seconds": 2.845272911,
+    "last_frame_seconds": 7.670633946,
+    "total_seconds_including_final_encode": 7.742645527,
+    "frame_seconds_median": 0.601463471,
+    "frame_seconds_p95_nearest_rank": 0.704954117,
+    "frames_per_second_including_startup_and_encode": 1.5498578564850785,
+    "native_segment_encode_seconds": [0.052409842, 0.046377245, 0.045403929],
+    "first_segment_interval_ns": [447435565734868, 447435618144710],
+    "frame5_render_interval_ns": [447435564955896, 447436269910013],
+    "frame12_existed_at_first_segment_ready": false,
+    "resource_observation": "Blender log reports maximum (Peak 27.13M). This is renderer-reported memory, not OS RSS. CPU utilisation, RSS and GPU counters were not sampled.",
+    "native_png_total_bytes": 4121266
+  },
+  "native_png_sha256_in_frame_order_1_to_12": [
+    "41118284663d33a9d7289bcfa54b049fe8ed3cbe7aafda8505366a6e9bb5c569",
+    "0a063f2dc0aeb8f1c3e24adcd1b76872d17149105eee69df7921d9328e0603fb",
+    "14bd06d106989f5a70e3395e7f9c2b7700c4ac7ae732f4dbd706406a75fbd733",
+    "cb87199451532f0256c6a54627271444c358ed472ec59717a651ab4279a83497",
+    "00a48ca889523614133cc6746271abef0f36ceafaf2e20c41c9dd6b7908c60e6",
+    "955aa3b1c9dc3e7a9165dfbcb6de000da9c770b13586ec50c5f9b300ebb166b0",
+    "1f9ae006da6112a3e7036ef35d84d7f3dafd44e386c87d155d51d3da5fde1df7",
+    "23406033d858008b1e67111e2e61034003880c0814c5507c4cbb10d266ca37b6",
+    "b4d7e7cf2fb13cc09775f0d68e2717ac37296b217816a4147cc01f7c404196d8",
+    "c2566ddff10f2357bc4fc136e40f3a063d752abe58dd5dcd5d47e69fa21faa24",
+    "5aa42d7a2a3393699f49cd9b0c83fa688a7c3792bdaaa83e103f2f7c9cf41945",
+    "1078fa1f1f61776913b6a76c21622a12239be8424e718dfef2f01b8c0ee727f6"
+  ],
+  "synthetic_png_sha256_in_frame_order_1_to_12_each_family": [
+    "6bab638b0104a33f0421d2b1a45288a691294c3a70c824866e78f4bcf96c5943",
+    "fe3669f34a1b380529966ed9209e59a6a0a123ea79422ee08bed75caa5b9a873",
+    "2355b4ccfb3ab9e8431ae6671639b30ac98b0e26df26025516d2f694cbc74544",
+    "5c0b97a88e70fd4a5f7a3dc39357a2e0eb5150dca95748916a29c2d00009485c",
+    "d47f0812bad401c521d6a6f25b12534d1732e97201cd58577753b1aae4628e84",
+    "53bf9669c5626551b9c9a8ba0b5e7fd0bc3a4d9601b6121ba2088bf0fe78f807",
+    "70f5cad127c763da886b826908bae245955a3f284fa56155547ccc9601a8d0ba",
+    "5501a92283ebe31bf89193052cbc35328ce2346d382887415f99014c91bcf377",
+    "6475947604023a64e2e07e7ea5b0f84124148f40ebee2f6d52d9b658ac7fb9d1",
+    "2996a8362226d361295473af14889d7154aaf43924d41c3c16c148526c4d5697",
+    "237b78d8e19973ad1893b8b80bcc6ad39d2f5ef0ee0f5a624eaeb50ed4b0c1cb",
+    "df8878d854b0d9f37437dd0699378a0d999fa875583b83ab9d5dfff5761e0c2f"
+  ],
+  "mp4_sha256": {
+    "native/segment-01-04.mp4": "3d6413ab9eb01f9eeabaccd346e4ca2f8816e071631b28697a4bfdf6e5f52335",
+    "native/segment-05-08.mp4": "56bb04cb3caffbf4dfe68c618d5a8275aed4de7ccdea6aa4ea6cf868b1c972ef",
+    "native/segment-09-12.mp4": "6dac1621e7b65bd0df94cc0f1af52ff5585379a1cfca05aeccdddaed29e330d8",
+    "f03/segment-01-04.mp4": "85fcecff7ea16f5239967708ab9e4cc2d48986a58c61806371f988659de14443",
+    "f03/segment-05-08.mp4": "feaffaaaad04ff9f0fadf471243f6c80b77304f21ed203b0c88ed5d0c1804e60",
+    "f03/segment-09-12.mp4": "340040c1ee04f8cc2e3321dd0d66f10478ad5c63da9e5713a4eef563a1f39ef7",
+    "f04/segment-01-04.mp4": "87491e8473f86c4356435085db8133a9f656b8be559243134f16950474b93fa3",
+    "f04/segment-05-08.mp4": "f424af9f78e6736f166cc03604278ee37df94d274937afc01afdd7cf34d35343",
+    "f04/segment-09-12.mp4": "4c26b1136d592efe3c668893b5de0bff2a0f214a3ada823105912295dec34e2e"
+  },
+  "browser_results": [
+    {"browser": "Chromium", "product_version": "159.0.8154.6", "engine_version": "159.0.8154.6", "revision": 1255, "status": "codec_and_paused_frame_correspondence_pass"},
+    {"browser": "Brave", "product_version": "157.1.99.55", "engine_version": "157.0.8103.39", "status": "codec_and_paused_frame_correspondence_pass"},
+    {"browser": "Edge", "product_version": "157.0.4341.42", "engine_version": "157.0.4341.42", "status": "codec_and_paused_frame_correspondence_pass"}
+  ],
+  "browser_oracle": {
+    "viewport_css": [1920, 1080],
+    "cases_each_browser": 10,
+    "presented_frame_captures_each_browser": 40,
+    "synthetic_ordinal_captures_each_browser": 36,
+    "dpr1": "native segment 1-4 plus all F03 and F04 segments",
+    "dpr2": "all F04 segments",
+    "letterboxed_element_css": [960, 640],
+    "content_css": [960, 540],
+    "source_ordinals_each_synthetic_family": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "rVFC_media_times_f03_each_segment": [0, 0.041667, 0.083333, 0.125],
+    "rVFC_media_times_f04_each_segment": [0, 0.041708, 0.083417, 0.125125],
+    "maximum_absolute_timestamp_error_seconds": 0.0000003333333333382926,
+    "checked": "Paused centre seeks, rVFC mediaTime, canvas ordinal cells and non-black pixels",
+    "not_checked": "Uninterrupted playback, hand-off blank/duplicate/skip detection, missing interval behaviour, annotation persistence, product coordinate transforms"
+  },
+  "validation": {
+    "all_9_segments": "ffprobe exact frame count/rational FPS/dimensions/pixel format/no audio/initial keyframe/exact PTS and FFmpeg full RGB decode",
+    "all_6_synthetic_segments": "Decoded source ordinals 1-4,5-8,9-12 at both rates",
+    "offline_unit_tests": "16 passed",
+    "ruff": "passed"
+  }
+}
