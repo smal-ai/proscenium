@@ -1,0 +1,95 @@
+{
+  "recorded_at": "2026-11-14T11:32:17.717837+00:00",
+  "scope": "W05 offline persistence and actual isolated feature-surface browser evidence, not integrated milestone acceptance",
+  "foundation": "f50a743",
+  "backend_commit": "1abc7c7",
+  "python": "3.12.13",
+  "node": "v24.18.0",
+  "source_sha256": {
+    "apps/backend/src/proscenium/reviews/__init__.py": "558e7130e3c3f2e0f76b1ad5931f8841730fe135b53613c78ae93be48c3727d9",
+    "apps/backend/src/proscenium/reviews/references.py": "d3cf824536b12101c3c4320be9467224c298759bccf99303782dfd7b188c5a58",
+    "apps/backend/src/proscenium/reviews/routes.py": "01cf33111ffdf68ba7bbbfc14d61620f101678037ea7028d885abb0ad3168796",
+    "apps/backend/src/proscenium/reviews/store.py": "f799aff024087d0465f75f245461e6a598c0e545cfb25b74563d67976972abbb",
+    "apps/frontend/src/features/review/AnnotationEditor.tsx": "dc00d61e759a2c66ce646419ebae768bcd70e52fea1c1ba482d11d89b6e0675d",
+    "apps/frontend/src/features/review/CriticPanel.tsx": "ac7eda615e79cbf3951c3f84652f1638257b0a8e09379c5ce7a216c0467a197b",
+    "apps/frontend/src/features/review/Outliner.tsx": "dc642b3f2415b49ef197dd0f518d0e987ccd81a19d15ebaef2d8703209b4ed11",
+    "apps/frontend/src/features/review/ProgressivePlayer.tsx": "56402c919f9f6b61fd936fcc7eeb948f7db40b0047502c05487e20dd7dae1393",
+    "apps/frontend/src/features/review/ProxyView.tsx": "9b969e2fcfa9c40139f12238828657fc8ee5badc1d14a1c39fa2597b9f8a489f",
+    "apps/frontend/src/features/review/ReviewWorkspace.tsx": "dbfb592365cfeef77bf2b3db60bd61caab8039911b21ebee9d21c3ccd25d3394",
+    "apps/frontend/src/features/review/SequencePlayer.tsx": "7d9fdc46e9ba4e4b9996603ba5c3b57e0ad61efc57be70ebd44aa4ecfd8b868e",
+    "apps/frontend/src/features/review/context.ts": "6e94e339e4b1450ead97b2601c888c6500850d7d2ac8aea665ca6eb7ed4df305",
+    "apps/frontend/src/features/review/index.ts": "7fbcb7c121d58767c9ea9c55f7fe7ca5b9079a1fb3c5939cd81b0868a4b3494b",
+    "apps/frontend/src/features/review/media.ts": "b210b66c3073fc64280fd4b4ebc68143ddb0c6dea897d18910db66572c5f4e91",
+    "apps/frontend/src/features/review/outbox.ts": "0b0817d32ee07e156a0764cd5acdfedd50c8ab0cfbbd9e2fe289e5ad3195e88e",
+    "apps/frontend/src/features/review/png.ts": "86af141e6a5d843067ce9a246e54cfbcac25c4188fd0d3d692c8e3ef589f46d0",
+    "apps/frontend/src/features/review/records.ts": "960cf1958c7f7c7b791a2e9c6d371eaf8deedf0516f30146d7bff21b0ae24bd2",
+    "apps/frontend/src/features/review/review.css": "c4aa11cb181955eb916268033b007ba88942798aefa3cd671c329fa2ce775e13",
+    "apps/frontend/src/features/review/state.ts": "57d8669c1883c1ebfaf9feaeac3e1df9abcdb921f7937001487660f672fb7681",
+    "apps/frontend/src/features/catalogue/CatalogueBrowser.tsx": "ec1b316d3a124f55a6079625b025a344690a6f9321eca8f326b0dbb8f5eaaddc",
+    "apps/frontend/src/features/catalogue/index.ts": "3893a84f2cf3d0fb3d1173e60b3d2476fb9cd907552cd899b259eea6d3da66e6",
+    "tests/integration/reviews/test_review_store.py": "c6e07d0ca6503a3ba3385c965c32efc8ca59da781cac997514bdc23964c5f280",
+    "tests/browser/review-harness.html": "d8579139c8183a64d67f7bc9db916a481150061ac60de9da33f691236c8bbb92",
+    "tests/browser/review-harness.tsx": "d83b5ef43ae834a61c5496b9b2e52c61922f3275dd7b3225408c9b6d6c1d9a6d",
+    "tests/browser/review-reporter.cjs": "4a6fedb9a674ca3e24baf21701d0b94b343898a05637be86cc4cad392f176486",
+    "tests/browser/review.config.ts": "6343e1c7e65b7138c77b004ed9b6259de3a57bf41bf91aec11e73f189f3eea0e",
+    "tests/browser/review.spec.ts": "f9c2c8a3f80a46cf97e27dd62536adfcf0aa3cb30264f2b85be8eb5b29b435d6"
+  },
+  "checks": [
+    {
+      "command": "uv sync --frozen",
+      "result": "passed"
+    },
+    {
+      "command": "npm ci",
+      "result": "passed, zero audit vulnerabilities"
+    },
+    {
+      "command": "make spec-check",
+      "result": "passed, schema/examples/ownership/semantic oracles/generated bindings unchanged"
+    },
+    {
+      "command": "uv run ruff check apps/backend/src/proscenium/reviews tests/integration/reviews",
+      "result": "passed"
+    },
+    {
+      "command": "uv run ruff format --check apps/backend/src/proscenium/reviews tests/integration/reviews",
+      "result": "passed, 5 files"
+    },
+    {
+      "command": "uv run mypy apps/backend/src/proscenium",
+      "result": "passed, 26 source files"
+    },
+    {
+      "command": "uv run pytest tests/unit tests/contracts tests/integration -q",
+      "result": "115 passed, including 23 W05 tests; one existing Starlette/httpx deprecation warning"
+    },
+    {
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed, foundation entry point; parent composes feature exports"
+    },
+    {
+      "command": "npx playwright test --config tests/browser/review.config.ts --reporter=line,./tests/browser/review-reporter.cjs",
+      "result": "48 passed, 12 cases in Chromium/Brave/Edge/Chromium DPR2"
+    }
+  ],
+  "browser_product_versions": {
+    "chromium": "159.0.8154.6",
+    "brave": "157.1.99.55",
+    "edge": "157.0.4341.42"
+  },
+  "limitations": [
+    "Synthetic HTTP records, disposable SQLite and accepted service stubs are not integrated producer/provider acceptance.",
+    "No live GLB picking/camera-to-render proof.",
+    "Complete sequence-video capture lineage and imported soft raster mask editing need integrated fixtures.",
+    "W04 composition, W02 catalogue state and W01 native attachment delivery require parent integration.",
+    "Boundary callback gaps are recorded; no zero-latency or desktop performance guarantee."
+  ]
+}

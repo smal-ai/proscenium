@@ -1,0 +1,1115 @@
+{
+  "scope": "Actual W05 React surfaces in an isolated synthetic-HTTP harness. E03 numbered MP4 media. Not integrated application acceptance.",
+  "recorded_at": "2026-11-14T11:32:04.858Z",
+  "status": "passed",
+  "playwright": "1.65.1",
+  "node": "v24.18.0",
+  "platform": {
+    "platform": "linux",
+    "release": "7.0.0-43-generic",
+    "arch": "x64"
+  },
+  "fixtures": [
+    {
+      "family": "f03",
+      "path": "/tmp/opencode/proscenium-e03-20261114-a/f03/fixture.json",
+      "sha256": "39dc85ec1574cfc1e61a71dfec2f145a1001110b669537c68c0720cc07468431"
+    },
+    {
+      "family": "f04",
+      "path": "/tmp/opencode/proscenium-e03-20261114-a/f04/fixture.json",
+      "sha256": "c1c18fa2d47a99ce07f59033f844687b0936f708084538286150d6ad06406532"
+    }
+  ],
+  "command": "npx playwright test --config tests/browser/review.config.ts --reporter=line,./tests/browser/review-reporter.cjs",
+  "tests": [
+    {
+      "project": "chromium",
+      "title": "one mode, exact outliner pairs, form keyboard isolation and no provider side effects",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "durable original-operation retry after reload and exact annotation Queue attachments",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "mask brush uploads a separate canonical greyscale PNG without modifying the target hash",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "revision conflict requires explicit comparison and rebases with a new operation",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "canonical mask PNG has greyscale type zero and no alpha",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "critic reads only on request, amends exact finding and queues once",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "normative letterbox/DPR and fractional temporal vectors",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "projection landmarks use Blender-world row-major cameras including shifted and rotated views",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "numbered fractional MP4 stops at first gap and paused annotation stays pinned on late receipts",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "explicit external target navigation is honoured and refresh never jumps back",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium",
+      "title": "continuous f03 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f03-actual-ordinal-cells",
+          "data": {
+            "browser": "159.0.8154.6",
+            "expected_frame_ms": 41.666666666666664,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 49.99999999999994
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 49.89999999999998
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 295.166,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 411.8,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 445.166,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 511.8,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 561.8,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 595.132,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 628.466,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 695.2,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 745.1,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 778.5,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 811.8,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 878.498,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "project": "chromium",
+      "title": "continuous f04 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f04-actual-ordinal-cells",
+          "data": {
+            "browser": "159.0.8154.6",
+            "expected_frame_ms": 41.70833333333333,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 50
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 50
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 304.066,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 420.7,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 454.1,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 520.7,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 570.7,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 604.066,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 637.366,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 704,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 754,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 787.4,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 820.766,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 887.4,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "project": "brave",
+      "title": "one mode, exact outliner pairs, form keyboard isolation and no provider side effects",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "durable original-operation retry after reload and exact annotation Queue attachments",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "mask brush uploads a separate canonical greyscale PNG without modifying the target hash",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "revision conflict requires explicit comparison and rebases with a new operation",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "canonical mask PNG has greyscale type zero and no alpha",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "critic reads only on request, amends exact finding and queues once",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "normative letterbox/DPR and fractional temporal vectors",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "projection landmarks use Blender-world row-major cameras including shifted and rotated views",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "numbered fractional MP4 stops at first gap and paused annotation stays pinned on late receipts",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "explicit external target navigation is honoured and refresh never jumps back",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "brave",
+      "title": "continuous f03 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f03-actual-ordinal-cells",
+          "data": {
+            "browser": "157.0.8103.39",
+            "expected_frame_ms": 41.666666666666664,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 50
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 49.89999999999998
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 304,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 420.7,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 454,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 520.7,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 570.7,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 604.032,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 637.3,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 704,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 753.9,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 787.366,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 820.7,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 887.3,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "project": "brave",
+      "title": "continuous f04 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f04-actual-ordinal-cells",
+          "data": {
+            "browser": "157.0.8103.39",
+            "expected_frame_ms": 41.70833333333333,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 50.10000000000002
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 50.10000000000002
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 327.5,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 444.1,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 477.466,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 544.1,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 594.2,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 627.566,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 660.8,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 727.4,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 777.5,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 810.832,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 844.166,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 910.8,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "project": "edge",
+      "title": "one mode, exact outliner pairs, form keyboard isolation and no provider side effects",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "durable original-operation retry after reload and exact annotation Queue attachments",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "mask brush uploads a separate canonical greyscale PNG without modifying the target hash",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "revision conflict requires explicit comparison and rebases with a new operation",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "canonical mask PNG has greyscale type zero and no alpha",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "critic reads only on request, amends exact finding and queues once",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "normative letterbox/DPR and fractional temporal vectors",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "projection landmarks use Blender-world row-major cameras including shifted and rotated views",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "numbered fractional MP4 stops at first gap and paused annotation stays pinned on late receipts",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "explicit external target navigation is honoured and refresh never jumps back",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "edge",
+      "title": "continuous f03 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f03-actual-ordinal-cells",
+          "data": {
+            "browser": "157.0.4341.42",
+            "expected_frame_ms": 41.666666666666664,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 50
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 49.902000000000044
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 323.832,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 440.4,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 473.8,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 540.4,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 590.4,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 623.8,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 657.166,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 723.798,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 773.7,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 807.1,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 840.4,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 907.1,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "project": "edge",
+      "title": "continuous f04 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f04-actual-ordinal-cells",
+          "data": {
+            "browser": "157.0.4341.42",
+            "expected_frame_ms": 41.70833333333333,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 50.00000000000006
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 50
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 337.066,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 403.7,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 437,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 503.7,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 553.7,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 587.032,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 620.4,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 687,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 737,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 770.332,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 803.7,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 870.3,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "one mode, exact outliner pairs, form keyboard isolation and no provider side effects",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "durable original-operation retry after reload and exact annotation Queue attachments",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "mask brush uploads a separate canonical greyscale PNG without modifying the target hash",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "revision conflict requires explicit comparison and rebases with a new operation",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "canonical mask PNG has greyscale type zero and no alpha",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "critic reads only on request, amends exact finding and queues once",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "normative letterbox/DPR and fractional temporal vectors",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "projection landmarks use Blender-world row-major cameras including shifted and rotated views",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "numbered fractional MP4 stops at first gap and paused annotation stays pinned on late receipts",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "explicit external target navigation is honoured and refresh never jumps back",
+      "status": "passed",
+      "errors": [],
+      "attachments": []
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "continuous f03 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f03-actual-ordinal-cells",
+          "data": {
+            "browser": "159.0.8154.6",
+            "expected_frame_ms": 41.666666666666664,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 50
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 50
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 311.9,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 428.6,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 461.966,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 528.6,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 578.6,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 611.932,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 645.266,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 711.9,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 761.9,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 795.266,
+                "mediaTime": 0.041667,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 828.566,
+                "mediaTime": 0.083333,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 895.2,
+                "mediaTime": 0.125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "project": "chromium-dpr2",
+      "title": "continuous f04 playback presents ordered ordinal cells across both boundaries",
+      "status": "passed",
+      "errors": [],
+      "attachments": [
+        {
+          "name": "f04-actual-ordinal-cells",
+          "data": {
+            "browser": "159.0.8154.6",
+            "expected_frame_ms": 41.70833333333333,
+            "boundary_gaps": [
+              {
+                "from": 4,
+                "to": 5,
+                "ms": 49.902000000000044
+              },
+              {
+                "from": 8,
+                "to": 9,
+                "ms": 50.00199999999995
+              }
+            ],
+            "rows": [
+              {
+                "ordinal": 1,
+                "time": 288.532,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 2,
+                "time": 405.2,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 3,
+                "time": 438.5,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 4,
+                "time": 505.198,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-1/content"
+              },
+              {
+                "ordinal": 5,
+                "time": 555.1,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 6,
+                "time": 588.566,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 7,
+                "time": 621.866,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 8,
+                "time": 688.498,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-5/content"
+              },
+              {
+                "ordinal": 9,
+                "time": 738.5,
+                "mediaTime": 0,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 10,
+                "time": 771.866,
+                "mediaTime": 0.041708,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 11,
+                "time": 805.166,
+                "mediaTime": 0.083417,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              },
+              {
+                "ordinal": 12,
+                "time": 871.9,
+                "mediaTime": 0.125125,
+                "src": "http://127.0.0.1:5185/api/v1/projects/synthetic/artifacts/segment-9/content"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
