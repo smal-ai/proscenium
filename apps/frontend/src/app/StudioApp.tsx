@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Film, Image, Layers, PanelLeft, RefreshCw, Sparkles } from "lucide-react";
 import { ApiClient, ApiError } from "../api";
 import type { ConfigurationView, ProjectRecord, VersionRecord } from "../api";
-import type { ReviewSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
+import type { ContextPreparer, ReviewSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
 import { emptySelection } from "../api/studio";
 import { ProjectMenu } from "../features/projects/ProjectMenu";
 import { CatalogueFallback } from "../features/projects/CatalogueFallback";
@@ -47,6 +47,10 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
   const [rightTab, setRightTab] = useState<"Copilot" | "Critic">("Copilot");
   const [version, setVersion] = useState<VersionRecord | null>(() => projectId ? readPrivate(`view.version.${projectId}`) : null);
   const [selection, setSelection] = useState<TurnSelection>(() => projectId ? readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection() : emptySelection());
+  const contextPreparer = useRef<ContextPreparer | null>(null);
+  const onContextPreparer = useCallback((prepare: ContextPreparer | null) => { contextPreparer.current = prepare; }, []);
+  const selectionRef = useRef(selection); selectionRef.current = selection;
+  const prepareContext = useCallback(async () => contextPreparer.current ? contextPreparer.current() : structuredClone(selectionRef.current), []);
   const composer = useRequestComposer(api, projectId ?? "none", () => { void data.refresh(); });
   const onContextChange = useCallback((next: TurnSelection) => {
     const captured = structuredClone(next);
@@ -77,7 +81,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
       throw new Error("Steer is not confirmed. Inspect the retained request in Copilot before retrying.");
     }
   }
-  const reviewProps: ReviewSurfaceProps = { api, projectId: projectId ?? "", version, selection, jobs: data.jobs, refreshRevision: data.revision, onContextChange, onNavigate, onQueue };
+  const reviewProps: ReviewSurfaceProps = { api, projectId: projectId ?? "", version, selection, jobs: data.jobs, refreshRevision: data.revision, onContextChange, onContextPreparer, onNavigate, onQueue };
   const Review = components.review;
   const Outliner = components.outliner;
   const Catalogue = components.catalogue ?? CatalogueFallback;
@@ -99,7 +103,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
         <footer className="review-footer"><span>{version ? `${version.kind} · ${version.version_id}` : "No published version selected"}</span><span>{version ? "New publications do not move this view" : "Git-backed sources · Immutable publications"}</span></footer>
       </main>
       <aside className="right-panel" aria-label="Project assistant"><nav className="panel-tabs" aria-label="Assistant tabs"><button aria-selected={rightTab === "Copilot"} onClick={() => setRightTab("Copilot")}><Sparkles size={13} />Copilot{data.snapshot?.pending_decisions.length ? <span className="tab-count">{data.snapshot.pending_decisions.length}</span> : null}</button><button aria-selected={rightTab === "Critic"} onClick={() => setRightTab("Critic")}>Critic</button></nav>
-        <div className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} composer={composer} onRefresh={data.refresh} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
+        <div className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} onRefresh={data.refresh} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
         {rightTab === "Critic" && <div className="critic-content">{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.revision} onQueue={onQueue} onSteer={canSteer ? onSteer : undefined} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>}
       </aside>
     </div>

@@ -4,6 +4,7 @@ import type { ApiClient } from "./client";
 import type { ContextSnapshot, ItemRecord, JobRecord, VersionRecord } from "./generated/contracts";
 
 export type TurnSelection = Omit<ContextSnapshot, "schema_version" | "context_id" | "project_id" | "captured_at">;
+export type ContextPreparer = () => Promise<TurnSelection>;
 
 export const emptySelection = (): TurnSelection => ({
   item_id: null,
@@ -26,6 +27,7 @@ export interface ReviewSurfaceProps {
   refreshRevision: number;
   selection?: TurnSelection;
   onContextChange: (selection: TurnSelection) => void;
+  onContextPreparer?: (prepare: ContextPreparer | null) => void;
   onNavigate?: (version: VersionRecord, selection: TurnSelection) => void;
   onQueue: (text: string, selection: TurnSelection) => void | Promise<void>;
 }

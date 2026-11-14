@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowUp, Paperclip, Square, X, MessageSquare } from "lucide-react";
 import type { ApiClient, Artifact, Attachment, Event, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RevisionCommand } from "../../api";
-import type { TurnSelection } from "../../api/studio";
+import type { ContextPreparer, TurnSelection } from "../../api/studio";
 import { describeError, durableCommand, id, readPrivate, writePrivate } from "../../app/storage";
 import { DecisionCard } from "./DecisionCard";
 import { ContextPreview } from "./ContextPreview";
@@ -9,9 +9,10 @@ import { Conversation } from "./Conversation";
 import type { useRequestComposer } from "./useRequestComposer";
 
 interface Upload { uploadId: string; name: string; file: File; artifact: Artifact | null; busy: boolean; error: string }
-export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, composer, onRefresh }: {
+export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, onRefresh }: {
   api: ApiClient; projectId: string; snapshot: ProjectSnapshot | null; requests: RequestRecord[]; events: Event[]; jobs: JobRecord[]; selection: TurnSelection;
   composer: ReturnType<typeof useRequestComposer>; onRefresh: () => Promise<void>;
+  prepareContext?: ContextPreparer;
 }) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
@@ -21,6 +22,8 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>("reconcile_only");
   const [error, setError] = useState("");
   const [resuming, setResuming] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const preparingLatch = useRef(false);
   const work = snapshot?.active_work;
   const active = work && !["completed", "failed", "stopped"].includes(work.state);
   const currentSelection = { ...selection, attachments: [...selection.attachments, ...attachments] };
@@ -36,13 +39,21 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     } catch (e) { setUploads(old => old.map(u => u.uploadId === value.uploadId ? { ...u, busy: false, error: describeError(e) } : u)); }
   }
   async function send() {
+    if (preparingLatch.current || composer.busy || composer.pending || uploads.length) return;
+    preparingLatch.current = true; setPreparing(true); setError("");
     const text = draft;
-    const submittedIds = new Set(attachments.map(a => a.artifact_id));
-    const ok = await composer.submit(text, currentSelection, mode, mode === "steer" ? targetWork : null, snapshot?.settings.default_profile_id ?? null);
-    if (ok) {
-      if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
-      setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
-    }
+    const capturedAttachments = structuredClone(attachments);
+    const submittedIds = new Set(capturedAttachments.map(a => a.artifact_id));
+    try {
+      const captured = prepareContext ? await prepareContext() : structuredClone(selection);
+      const context = { ...captured, attachments: [...captured.attachments, ...capturedAttachments] };
+      const ok = await composer.submit(text, context, mode, mode === "steer" ? targetWork : null, snapshot?.settings.default_profile_id ?? null);
+      if (ok) {
+        if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
+        setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
+      }
+    } catch (e) { setError(describeError(e)); }
+    finally { preparingLatch.current = false; setPreparing(false); }
   }
   async function resume() {
     if (!snapshot) return;
@@ -72,7 +83,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       <div className="composer-actions"><label className="attach-button" title="Attach PNG, JPEG or WebP"><Paperclip size={15} /><span className="sr-only">Attach images</span><input aria-label="Attach images" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e => { const next = [...(e.target.files ?? [])].map(file => ({ uploadId: id(), name: file.name, file, artifact: null, busy: true, error: "" })); setUploads(old => [...old, ...next]); next.forEach(u => void upload(u)); e.target.value = ""; }} /></label>
         <select aria-label="Request mode" value={mode} onChange={e => { setMode(e.target.value as "queue" | "steer"); setTargetWork(""); }}><option value="queue">Queue</option><option value="steer">Steer</option></select>
         <button className="stop" disabled={!active || composer.stopping || !!composer.pendingStop || work?.state === "stop_requested"} onClick={() => work && void composer.stop(work.work_id)}><Square size={11} fill="currentColor" />{composer.stopping || work?.state === "stop_requested" ? "Stop requested" : "Stop"}</button>
-        <button className="primary send" aria-label={mode === "queue" ? "Queue message" : "Steer active work"} disabled={!draft.trim() || !!uploads.length || composer.busy || !!composer.pending || (mode === "steer" && (!active || targetWork !== work.work_id))} onClick={() => void send()}><ArrowUp size={16} /></button>
+        <button className="primary send" aria-label={mode === "queue" ? "Queue message" : "Steer active work"} disabled={!draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || (mode === "steer" && (!active || targetWork !== work.work_id))} onClick={() => void send()}><ArrowUp size={16} /></button>
       </div><small className="composer-hint">Ctrl+Enter to {mode} · Context is captured on submit</small>
     </div>
   </div>;

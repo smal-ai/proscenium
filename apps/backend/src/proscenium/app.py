@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException
 from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from proscenium.api.composition import configure_services, feature_routers
 from proscenium.api.errors import DomainError
 from proscenium.api.router import router
 from proscenium.configuration import Settings
@@ -55,6 +56,7 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.services = services or Services.create(settings)
         try:
+            configure_services(app.state.services)
             yield
         finally:
             if services is None:
@@ -91,8 +93,11 @@ def create_app(
         return {"status": "ok", "component": "foundation"}
 
     app.include_router(router)
-    for extension in routers:
-        app.include_router(extension)
+    seen = set()
+    for extension in (*feature_routers(), *routers):
+        if id(extension) not in seen:
+            app.include_router(extension)
+            seen.add(id(extension))
     frontend = settings.frontend_directory
     if frontend and (frontend / "index.html").is_file():
         app.mount("/assets", StaticFiles(directory=frontend / "assets"), name="assets")

@@ -91,8 +91,9 @@ app = create_app(settings, routers=[feature_router])
 ```
 
 `create_app(settings: Settings | None = None, *, routers: Sequence[APIRouter] = (),
-services: Services | None = None) -> FastAPI` installs only F00 routes plus explicitly
-supplied feature routers. It does not import feature packages speculatively. The lifespan
+services: Services | None = None) -> FastAPI` installs F00 routes and the accepted feature
+routers listed in integration-owned `api/composition.py`, plus explicitly supplied routers.
+Duplicate router objects are included once. It does not import unaccepted packages. The lifespan
 creates and closes the container unless a caller supplied it. A supplied container remains
 the caller's responsibility. Missing feature routes return a contract error, never a fake
 successful response. `/health` reports only foundation-process health.
@@ -145,6 +146,12 @@ in the central reviewer. Ordinary reviewer `onContextChange` only updates captur
 The shell passes both callbacks and preserves a selected target instead of resetting it to
 the first image on each refresh. `CriticSurfaceProps.onSteer` is supplied only for eligible
 active work. Queue/Steer callbacks may return a promise so submission state is truthful.
+`onContextPreparer` registers a `ContextPreparer` while the central reviewer is mounted.
+The main chat invokes the registered function at Send to freeze and, where necessary,
+upload/save the active annotation before admitting context. It returns the exact captured
+`TurnSelection`, even if navigation changes while uploads settle. A failed/conflicting
+annotation save rejects preparation and prevents prompt submission. The reviewer clears
+the registration on unmount. This does not automatically attach every old project draft.
 
 ## Storage, migrations and transactions
 
