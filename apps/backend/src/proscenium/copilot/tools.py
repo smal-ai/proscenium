@@ -14,6 +14,9 @@ from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.services import Services
 
 from .state import State, key
+from .workflows import WORKFLOW_TOOLS
+from .workflows import arguments as workflow_arguments
+from .workflows import parameters as workflow_parameters
 
 # Extension, method, normative input, normative result, capability operation.
 TOOLS = {
@@ -71,10 +74,28 @@ READ_TOOLS = {
         "Page verified frame receipts for the exact job/input identity in numeric source-frame order. Does not launch rendering.",
     ),
 }
+DISCOVERY_READS = {
+    "list_items": (
+        "",
+        "ItemPage",
+        "Discover published catalogue items by name, description, tags or recorded provenance. Optional text query, scoped cursor and limit. Read-only; no vector search or source changes.",
+    ),
+}
 
 
 def read_parameters(name: str) -> dict[str, Any]:
+    if name == "list_items":
+        return dict(
+            type="object",
+            properties=dict(
+                query={"type": "string", "maxLength": 512},
+                cursor={"type": ["string", "null"]},
+                limit={"type": "integer", "minimum": 1, "maximum": 100, "default": 50},
+            ),
+            additionalProperties=False,
+        )
     identity, _, _ = READ_TOOLS[name]
+    assert identity is not None
     properties = {identity: copy.deepcopy(SCHEMA["$defs"]["Id"])}
     if name == "list_job_frames":
         properties.update(
@@ -90,7 +111,21 @@ def read_parameters(name: str) -> dict[str, Any]:
 
 
 def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
+    if name == "list_items":
+        if not isinstance(arguments, dict) or set(arguments) - {"query", "cursor", "limit"}:
+            raise DomainError("invalid_request")
+        if not isinstance(arguments.get("query", ""), str) or len(arguments.get("query", "")) > 512:
+            raise DomainError("invalid_request")
+        if (
+            type(arguments.get("limit", 50)) is not int
+            or not 1 <= arguments.get("limit", 50) <= 100
+        ):
+            raise DomainError("invalid_request")
+        if arguments.get("cursor") is not None and not isinstance(arguments["cursor"], str):
+            raise DomainError("invalid_cursor")
+        return arguments
     identity, _, _ = READ_TOOLS[name]
+    assert identity is not None
     allowed = {identity, "cursor", "limit"} if name == "list_job_frames" else {identity}
     if not isinstance(arguments, dict) or identity not in arguments or set(arguments) - allowed:
         raise DomainError("invalid_request")
@@ -153,6 +188,8 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
         )
     )
     details: dict[str, Any] = {}
+    if name == "get_unity_result" and error.code == "project_busy":
+        message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
     revision = error.details.get("current_revision")
     if type(revision) is int and revision >= 0:
         details["current_revision"] = revision
@@ -241,7 +278,45 @@ class Tools:
 
     def _read(self, name: str, invocation: ToolInvocation) -> tuple[dict[str, Any], str]:
         args = read_arguments(name, invocation.arguments)
+        if name == "list_items":
+            from proscenium.sources.common import fingerprint
+
+            query = args.get("query", "").casefold().strip()
+            catalogue = self.services.extension("catalogue")
+            with self.services.registry.project_store(self.project_id).transaction(
+                write=False
+            ) as tx:
+                rows = [catalogue.item_view(tx, item) for item in tx.all("items")]
+
+            def searchable(item):
+                provenance = item.get("provenance") or {}
+                return " ".join(
+                    str(value)
+                    for value in (
+                        item.get("name", ""),
+                        item.get("description", ""),
+                        *item.get("tags", []),
+                        *(
+                            provenance.get(field) or ""
+                            for field in ("source_url", "creator", "licence", "note")
+                        ),
+                    )
+                ).casefold()
+
+            for item in rows:
+                validate("ItemRecord", item)
+                if item["project_id"] != self.project_id:
+                    raise DomainError("scope_denied", 403)
+            result = self.services.cursors.page(
+                f"{self.project_id}:native-items:{fingerprint(query)}",
+                [item for item in rows if query in searchable(item)],
+                "item_id",
+                cursor=args.get("cursor"),
+                limit=args.get("limit", 50),
+            )
+            return result, "ItemPage"
         identity, result_schema, _ = READ_TOOLS[name]
+        assert identity is not None
         if name == "get_job":
             result = self.services.jobs.get(self.project_id, args[identity])
         elif name == "get_artifact":
@@ -284,10 +359,28 @@ class Tools:
             caller = self.caller(
                 invocation,
                 admit=name
-                not in {"checkpoint_sources", "publish_outputs", "register_artifact", *READ_TOOLS},
+                not in {
+                    "checkpoint_sources",
+                    "publish_outputs",
+                    "register_artifact",
+                    *READ_TOOLS,
+                    *DISCOVERY_READS,
+                    *WORKFLOW_TOOLS,
+                },
             )
-            if name in READ_TOOLS:
+            if name in READ_TOOLS or name in DISCOVERY_READS:
                 result, result_schema = self._read(name, invocation)
+            elif name in WORKFLOW_TOOLS:
+                method, result_schema, _ = WORKFLOW_TOOLS[name]
+                body = workflow_arguments(name, invocation.arguments)
+                service = self.services.extension("workflows")
+                if name != "get_unity_result" and not await service.replayable(
+                    caller, body, method
+                ):
+                    # Preserve W01's native fence as well as F00's gate. Only a proved
+                    # existing effect can be read/reconciled after a callback is held.
+                    self.caller(invocation, admit=True)
+                result = await getattr(service, method)(caller, body)
             else:
                 extension, method, schema, result_schema, _ = TOOLS[name]
                 body = validate(schema, invocation.arguments)
@@ -333,7 +426,7 @@ class Tools:
                 )
             )
 
-        for name, (_, _, description) in READ_TOOLS.items():
+        for name, (_, _, description) in {**READ_TOOLS, **DISCOVERY_READS}.items():
 
             async def read_handler(invocation: ToolInvocation, name: str = name) -> ToolResult:
                 return await self.invoke(name, invocation)
@@ -344,6 +437,27 @@ class Tools:
                     description=description,
                     parameters=read_parameters(name),
                     handler=read_handler,
+                )
+            )
+        for name, (_, _, description) in WORKFLOW_TOOLS.items():
+
+            async def workflow_handler(invocation: ToolInvocation, name: str = name) -> ToolResult:
+                return await self.invoke(name, invocation)
+
+            parameters = workflow_parameters(name)
+            if "execution_profile_id" in parameters["properties"]:
+                profiles = sorted(self.services.settings.execution_profiles)
+                previews = self.services.extensions.get("previews")
+                if name == "assemble_sequence" and previews is not None:
+                    profiles = [value for value in profiles if value == previews.config.profile_id]
+                if profiles:
+                    parameters["properties"]["execution_profile_id"]["enum"] = profiles
+            tools.append(
+                Tool(
+                    name=name,
+                    description=description,
+                    parameters=parameters,
+                    handler=workflow_handler,
                 )
             )
         return tools

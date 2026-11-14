@@ -1,6 +1,10 @@
 # Native profile registration proposal
 
-**For W01/integration owner. Not installed by W08.**
+**Implemented in the native workflow integration. Parent composition is still explicit.**
+`copilot.native.unity_agent` now registers the required-model specialist and includes the accepted
+skill prompt. See `docs/implementation/native-workflows.md` for the installed native tool names,
+private executable configuration and async lifecycle hooks. The table below records the original
+integration intent, not a second profile mechanism.
 
 | Setting | Proposal |
 | --- | --- |
@@ -28,6 +32,6 @@ consumer. After `cancel_requested` is committed, call `cancel_unity_job` with an
 caller and reconcile its receipt. Sending SIGTERM alone is not terminal proof. On restart, reconcile
 all admitted Unity attempts before reopening execution. Keep resource claims for uncertain attempts.
 
-**Acceptance still required:** native SDK delegation, real W02 source/publication integration,
-configured profile registration and the headless Input System test correction. W08's native suite
-reported `failed`, not complete M11 acceptance.
+**Acceptance still required:** parent-composed live SDK delegation and the cumulative M11 journey.
+The subsequent accepted input proof passed actual Keyboard/Mouse polling in both projections.
+This implementation-only integration does not rerun or relabel those native proofs.

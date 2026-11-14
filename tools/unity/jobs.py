@@ -35,6 +35,14 @@ ACTIONS = {
     "build": "Build",
     "playtest": None,
 }
+_SUPERVISORS: dict[str, subprocess.Popen] = {}
+
+
+def reap_unity_supervisors() -> None:
+    """Reap completed own supervisors without waiting for or stopping admitted jobs."""
+    for attempt_id, process in list(_SUPERVISORS.items()):
+        if process.poll() is not None:
+            _SUPERVISORS.pop(attempt_id, None)
 
 
 def check_attempt_caller(caller: Caller, job: dict[str, Any]) -> None:
@@ -90,15 +98,24 @@ def run_unity_job(
     editor: Path,
     action: str = "import",
     timeout: int = 600,
+    wait: bool = True,
 ) -> dict[str, Any]:
-    """Admit before launch, synchronously supervise, retain evidence, never repeat an attempt.
+    """Admit before launch, retain exact evidence and never repeat an attempt.
+
+    wait=True retains CLI behaviour. wait=False returns after tracked supervisor
+    launch/job update; the caller must reconcile receipts and reap completed handles.
 
     `recipe` is private tool configuration, `admission` is the unchanged contract JSON.
     `services.extension('sources')` must implement accepted F00 SourceService. The caller
     comes from the trusted host, not model arguments. The configured host selects editor.
     """
     validate("JobAdmission", admission)
-    if admission["kind"] != "unity" or action not in ACTIONS or not 1 <= timeout <= 600:
+    if (
+        admission["kind"] != "unity"
+        or action not in ACTIONS
+        or not 1 <= timeout <= 600
+        or type(wait) is not bool
+    ):
         raise DomainError("invalid_request")
     project_id = admission["project_id"]
     if services.registry.active_id() != project_id:
@@ -139,6 +156,7 @@ def run_unity_job(
     exported = json.loads(export.read_text())
     if exported["closure_digest"] != recipe["source"]["digest"]:
         raise DomainError("source_conflict", 409, "Export source identity differs")
+    services.gate.require(project_id)
     if not editor.is_file() or editor_running(destination):
         return dict(job=job, blocked="Editor missing or this project is already open/locked")
     resource = "unity-project:" + str(destination)
@@ -210,6 +228,7 @@ def run_unity_job(
                 stdout=output,
                 stderr=subprocess.STDOUT,
             )
+            _SUPERVISORS[job["attempt_id"]] = supervisor
             write_json(attempt / "supervisor.json", process_identity(supervisor.pid))
             observed = json.loads((attempt / "supervisor.json").read_text())
             external = f"unity-supervisor:{observed['pid']}:{observed['start_ticks']}"
@@ -221,6 +240,8 @@ def run_unity_job(
                 evidence=sha256(attempt / "supervisor.json"),
                 external_job_id=external,
             )
+            if not wait:
+                return dict(job=job, unity=None, evidence=str(attempt))
             try:
                 supervisor.wait(timeout=timeout + 30)
             except (subprocess.TimeoutExpired, KeyboardInterrupt):
@@ -234,6 +255,7 @@ def run_unity_job(
 
 
 def reconcile_unity_job(services: Services, caller: Caller, job_id: str) -> dict[str, Any]:
+    reap_unity_supervisors()
     project_id = str(caller.project_id)
     services.jobs.check_caller(caller, "updateJobState", project_id)
     job = services.jobs.get(project_id, job_id)

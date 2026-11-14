@@ -36,6 +36,9 @@ Keep original root work and generation task identity through steering and delega
 Use checkpoint_sources for an owned local checkpoint before publish_outputs. Never git add . or include unrelated staging.
 Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.
 Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.
+Use list_items to discover catalogue names, descriptions, tags and known provenance without private SQLite.
+Delegate Unity work to unity-specialist. Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
+Use assemble_sequence for an exact already-published sequence. The host resolves frame receipts and computes admission hashes.
 Never query private SQLite to recover tool results or guess filesystem-latest. Ready artefact bytes are project-relative
 .proscenium/artefacts/sha256/<Artifact.sha256>/content; verify the recorded hash/bytes and use native view tools only in this project.
 Use submit_generation for budgeted inference, request_vlm_review for read-only assessment. Its ticket is not a critique.
@@ -56,6 +59,8 @@ class Configuration:
     mcp_servers: dict[str, Any]
     max_continues: int
     worker_tools: list[str]
+    unity_worker_model: str | None = None
+    unity_editor: Path | None = None
 
     @classmethod
     def load(cls, settings: dict[str, Any]) -> Configuration:
@@ -68,6 +73,8 @@ class Configuration:
             "max_continues",
             "worker_tools",
             "profile_id",
+            "unity_worker_model",
+            "unity_editor",
         }
         if set(settings) - allowed:
             raise ValueError("Unknown private Copilot runtime setting")
@@ -108,6 +115,10 @@ class Configuration:
                 "get_artifact",
                 "get_version",
                 "list_job_frames",
+                "list_items",
+                "assemble_sequence",
+                "run_unity_workflow",
+                "get_unity_result",
             ],
         )
         if not isinstance(tools, list) or not tools or not all(isinstance(t, str) for t in tools):
@@ -115,6 +126,16 @@ class Configuration:
         mcps = settings.get("mcp_servers", {})
         if not isinstance(mcps, dict):
             raise ValueError("mcp_servers must be an SDK MCP configuration object")
+        unity_worker = settings.get("unity_worker_model", worker)
+        if not isinstance(unity_worker, str) or not unity_worker.strip():
+            raise ValueError(
+                "unity_worker_model must explicitly select an available required model"
+            )
+        editor = settings.get("unity_editor")
+        if editor is not None and (
+            not isinstance(editor, str) or not editor.strip() or not Path(editor).is_absolute()
+        ):
+            raise ValueError("unity_editor must be a configured absolute executable path")
         return cls(
             cli,
             lead,
@@ -123,7 +144,37 @@ class Configuration:
             mcps,
             continues,
             tools,
+            unity_worker,
+            Path(editor) if editor is not None else None,
         )
+
+
+UNITY_TOOLS = [
+    "view",
+    "bash",
+    "run_unity_workflow",
+    "get_unity_result",
+    "get_job",
+    "get_version",
+    "get_artifact",
+    "list_items",
+    "list_job_frames",
+    "checkpoint_sources",
+    "publish_outputs",
+    "register_artifact",
+]
+
+
+def unity_agent(config: Configuration) -> dict[str, Any]:
+    skill = Path(__file__).resolve().parents[5] / "agent/skills/unity/SKILL.md"
+    return dict(
+        name="unity-specialist",
+        description="Scoped pinned-source Unity scene import, controls and validation",
+        model=config.unity_worker_model or config.worker_model,
+        model_policy="required",
+        tools=list(UNITY_TOOLS),
+        prompt=INSTRUCTIONS + "\n" + skill.read_text(),
+    )
 
 
 class Native:
@@ -247,7 +298,8 @@ class Native:
                     model_policy="required",
                     tools=config.worker_tools,
                     prompt=INSTRUCTIONS,
-                )
+                ),
+                unity_agent(config),
             ],
             **callbacks,
         )
