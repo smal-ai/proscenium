@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="1.263" timestamp="2026-11-14T19:54:24.865331+02:00" hostname="Gerard-EVO-X2"><testcase classname="tests.acceptance.m12_selective_final_preflight_test" name="test_complete_helper_on_actual_buffered_and_fileio_pipes[-1]" time="0.043" /><testcase classname="tests.acceptance.m12_selective_final_preflight_test" name="test_complete_helper_on_actual_buffered_and_fileio_pipes[0]" time="0.045" /><testcase classname="tests.acceptance.m12_selective_final_preflight_test" name="test_standalone_import_and_atomic_output_paths" time="1.111" /><testcase classname="tests.acceptance.m12_selective_final_evidence_test" name="test_durable_exact_response_acceptance_and_physical_cut_order" time="0.000"><failure message="KeyError: 'accepted_ack_loss'">def test_durable_exact_response_acceptance_and_physical_cut_order():
+        value = evidence()
+        stages = value["durable_checkpoints"]
+        cut = value["actual_cut"]
+        assert value["status"] == "selective_accepted_ack_recovery_pass"
+        assert value["send_reservations"] == 1 and len(value["matching_native_user_messages"]) == 1
+        held = stages["01-target-response-withheld"]
+        assert held["rpc_future_pending"] and held["facts"]["withheld_response_count"] == 1
+        assert (
+            held["send_rpc_id"] == cut["send_rpc_id"]
+            and held["request_id"] == value["original_request_id"]
+        )
+        assert held["session_id"] == value["native_session_id"]
+        assert held["facts"]["withheld_response_sha256"] == cut["withheld_response_sha256"]
+        accepted = stages["03-native-acceptance-before-cut"]
+        assert accepted["rpc_future_pending"] and accepted["facts"]["send_await_pending_before_cut"]
+        assert accepted["facts"]["native_user_message_id"] == cut["withheld_native_message_id"]
+        assert (
+            cut["withheld_response_ns"]
+            &lt; cut["hook_received_ns"]
+            &lt; cut["genuine_reply_written_ns"]
+            &lt; cut["native_observed_before_cut_ns"]
+            &lt; cut["cut_ns"]
+            &lt; cut["closed_ns"]
+            &lt; cut["owned_writer_fence_ns"]
+        )
+        assert cut["withheld_response_count"] == cut["hook_matches"] == cut["genuine_reply_writes"] == 1
+        assert (
+            cut["other_responses_forwarded"] &gt; 0
+            and cut["events_forwarded"] &gt; 0
+            and cut["server_requests_forwarded"] &gt; 0
+        )
+        assert not cut["application_send_ack_delivered"]
+        assert (
+            cut["send_rpc_pending"]
+            and cut["sdk_transport_closed"]
+            and cut["os_descriptor_closed"]
+            and cut["raw_file_closed"]
+        )
+        assert (
+            stages["00-actual-sdk-transport-preflight"]["transport_preflight"]["stdout_type"]
+            == "FileIO"
+        )
+        assert stages["05-real-descriptor-closed"]["facts"]["os_descriptor_closed"]
+&gt;       assert stages["08-sdk-transport-result"]["accepted_ack_loss"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'accepted_ack_loss'
+
+tests/acceptance/m12_selective_final_evidence_test.py:57: KeyError</failure></testcase><testcase classname="tests.acceptance.m12_selective_final_evidence_test" name="test_quiet_restart_reconciles_original_without_second_send_or_work_completion_claim" time="0.000" /><testcase classname="tests.acceptance.m12_selective_final_evidence_test" name="test_browser_sdk_host_pid_start_cleanup_and_export_privacy" time="0.000"><failure message="assert False&#10; +  where False = all(&lt;generator object test_browser_sdk_host_pid_start_cleanup_and_export_privacy.&lt;locals&gt;.&lt;genexpr&gt; at 0x74e1767e50e0&gt;)">def test_browser_sdk_host_pid_start_cleanup_and_export_privacy():
+        value = evidence()
+        cleanup = value["cleanup"]
+        known = {(p["pid"], p["start"]) for p in cleanup["recorded_processes"]}
+        assert cleanup["all_recorded_kernel_identities_gone"] and not cleanup["remaining_children"]
+        assert cleanup["controller_exit_code"] == 0 and cleanup["browser_context_close_awaited"]
+        assert any(p["kind"].startswith("chromium:") for p in cleanup["recorded_processes"])
+        for audit in value["host_audits"]:
+&gt;           assert all((p["pid"], p["start"]) in known for p in audit["native_processes"])
+E           assert False
+E            +  where False = all(&lt;generator object test_browser_sdk_host_pid_start_cleanup_and_export_privacy.&lt;locals&gt;.&lt;genexpr&gt; at 0x74e1767e50e0&gt;)
+
+tests/acceptance/m12_selective_final_evidence_test.py:102: AssertionError</failure></testcase></testsuite></testsuites>

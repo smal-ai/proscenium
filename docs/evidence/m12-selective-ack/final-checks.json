@@ -1,0 +1,78 @@
+{
+  "format": "proscenium-m12-final-accepted-ack-checks-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "base": "03dbad1",
+  "preflighted_and_executed_commit": "41a08ba64d53f77e9a50f41fc93112a259af1c4c",
+  "initial_export_commit": "f33c779ab0d7392ddd85fbbbe53a01f490a8def3",
+  "verified_metadata_export_commit": "7f0b6ab2d02f92a8fcfa01049a67973dcbea1ca1",
+  "status": "pass_bounded_original_admission_recovery_not_whole_m12",
+  "fault_type": "injected_selective_rpc_response_loss_not_spontaneous_network_loss",
+  "allocation": {"actual_sdk_send_limit": 1, "actual_sdk_send_reservations": 1, "remaining_sends": 0, "additional_live_variants": 0},
+  "commands": [
+    {"command": "uv sync --frozen", "exit_code": 0, "result": "Pinned SDK/application dependencies installed only in owned worktree."},
+    {"command": "npm ci --ignore-scripts", "exit_code": 0, "result": "Pinned Node dependencies, no root manifest/lock edits. Existing ESLint deprecation warning."},
+    {"command": "npm run build", "exit_code": 0, "result": "Actual compiled production frontend. Existing Lucide directive and large-bundle warnings."},
+    {"command": "uv run pytest -xq tests/acceptance/m12_selective_final_preflight_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-final-preflight-01", "exit_code": 0, "result": "Three preflight checks BEFORE any send: complete helper on actual buffered and bufsize=0 FileIO pipes, durable checkpoint timing, real callbacks/EOF, standalone imports and private atomic output paths."},
+    {"command": "uv run python tests/native/studio/m12_selective_prepare.py /home/quintin/.cache/pafack-a", "exit_code": 0, "result": "Fresh independent short private disk/temp root. Zero SDK sends."},
+    {
+      "command": "uv run python tests/native/studio/m12_selective_run.py /home/quintin/.cache/pafack-a",
+      "exit_code": 0,
+      "result": "One actual send. One exact real response withheld; native user accepted while original await and RPC future pending; genuine hooks/replies flowed. Actual FileIO FD closed, writer fenced, real SDK transport closure. Quiet restart, explicit owner reconcile_only completed, original request acknowledged against same native ID, no second send, gate closed. All recorded processes gone and no children remain."
+    },
+    {"command": "uv run python tests/native/studio/m12_selective_final_export.py /home/quintin/.cache/pafack-a docs/evidence/m12-selective-ack/final-result.json", "exit_code": 0, "result": "Initial allowlisted export. Actual observations correct, but Node snapshot-only cleanup inventory did not yet include all short-lived SDK producer entries."},
+    {"command": "uv run pytest -q tests/acceptance/m12_selective_final_preflight_test.py tests/acceptance/m12_selective_final_evidence_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-final-offline-02 --junitxml docs/evidence/m12-selective-ack/final-offline-junit.xml", "exit_code": 1, "result": "Four passed, two metadata-consumer failures: checkpoint 08 intentionally contains raw facts before the caller verdict; SDK producer PID receipts need joining with Node/CDP inventory. Neither failure required new inference or changed the actual run."},
+    {"command": "uv run python tests/native/studio/m12_selective_final_export.py /home/quintin/.cache/pafack-a docs/evidence/m12-selective-ack/final-verified-result.json", "exit_code": 0, "result": "Joined pre-existing SDK producer PID/start receipts and observed their absence. Same actual run, one send, one matching native user, final work awaiting_resume. No native startup or new inference."},
+    {"command": "uv run pytest -q tests/acceptance/m12_selective_final_preflight_test.py tests/acceptance/m12_selective_final_evidence_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-final-offline-03 --junitxml docs/evidence/m12-selective-ack/final-verified-offline-junit.xml", "exit_code": 0, "result": "Six focused helper/evidence tests passed. No native recertification. Existing Starlette/httpx warning retained."},
+    {"command": "uv run ruff check tests/native/studio/m12_selective_host.py tests/native/studio/m12_selective_final*.py tests/acceptance/m12_selective_final*.py", "exit_code": 0, "result": "Passed"},
+    {"command": "uv run ruff format --check tests/native/studio/m12_selective_host.py tests/native/studio/m12_selective_final*.py tests/acceptance/m12_selective_final*.py", "exit_code": 0, "result": "Four files already formatted"},
+    {"command": "make spec-check", "exit_code": 0, "result": "Specification, ownership, local links and Python/TypeScript generated bindings passed. Documentation checks do not recertify native execution."}
+  ],
+  "exact_identity": {
+    "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+    "native_session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+    "original_request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+    "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+    "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+    "actual_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+    "native_user_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+    "native_user_timestamp": "2026-11-14T17:50:13.103Z",
+    "owner_reconcile_operation_id": "6dd10cb4-216d-42d9-89ee-9826c6279a14"
+  },
+  "observations": {
+    "real_sdk_stdout": "FileIO, FIFO fstat and live fileno verified without close before original send",
+    "withheld_responses": 1,
+    "other_responses_forwarded": 31,
+    "events_forwarded": 33,
+    "server_requests_forwarded": 3,
+    "selected_genuine_hook_and_reply": 1,
+    "native_identity_already_projected_from_forwarded_event_before_cut": true,
+    "send_await_and_rpc_future_pending_at_native_acceptance_and_cut": true,
+    "sdk_ack_returned_to_application": false,
+    "real_descriptor_closed_and_raw_closed": true,
+    "owned_writer_fenced_only_after_checkpointed_descriptor_close": true,
+    "sdk_transport_closed_after_real_pipe_eof": true,
+    "quiet_restart_sdk_constructed": false,
+    "explicit_reconcile_state": "completed",
+    "final_request_state": "acknowledged",
+    "final_work_state": "awaiting_resume",
+    "final_gate_open": false,
+    "model_or_tool_completion_claimed": false,
+    "recorded_kernel_process_identities_gone": 10,
+    "adopted_helpers_reaped": 2,
+    "remaining_children": 0
+  },
+  "artifacts": [
+    {"path": "docs/evidence/m12-selective-ack/final-verified-result.json", "sha256": "3ec42188d0b8ae1d9ca08b2adfa61aef70a87ef954d960f0a08de59f1eaf33fa"},
+    {"path": "docs/evidence/m12-selective-ack/final-verified-offline-junit.xml", "sha256": "42d2c7aced11fa810cf6081b5fc76ac0fa2b402fe3d5da83d4f566dfbbbe5752"},
+    {"path": "docs/evidence/m12-selective-ack/final-result.json", "sha256": "5e86d6c2659ee96729497b34eead21f9d2d5429b566b0177406fee680e584020"},
+    {"path": "docs/evidence/m12-selective-ack/final-offline-junit.xml", "sha256": "bc3f9f36c729ab7629cef1c9673a5ae47ca632c5f514784ce2e612e29eaca190"}
+  ],
+  "limits": [
+    "Injected selective loss of one actual parsed response, not spontaneous network loss or an SDK-local exception-only substitute.",
+    "Native identity was already supplied by a forwarded user event before cut. Original admission reconciliation is proved, not exclusive recovery of identity from the ACK.",
+    "Request acknowledged, work awaiting_resume, gate closed. No model/tool/work completion or fake native exit is inferred.",
+    "No second SDK send, no old attempt/root/uncertain call retry, no production SDK/service/state/hook/schema changes, no private reasoning/auth export.",
+    "No child agents, tools, local providers, GPU/native authoring/editors or SSH work. Whole C02/C20, M12 and M14 remain separate coordinator decisions."
+  ]
+}

@@ -1,0 +1,2 @@
+# Preserve raw generated failed-check traceback whitespace byte-for-byte.
+final-offline-junit.xml -diff -text

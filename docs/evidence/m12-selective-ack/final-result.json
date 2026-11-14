@@ -1,0 +1,818 @@
+{
+  "format": "proscenium-m12-final-accepted-ack-evidence-1",
+  "status": "selective_accepted_ack_recovery_pass",
+  "fault_type": "injected_selective_rpc_response_loss",
+  "m12_complete": false,
+  "m14_complete": false,
+  "model_or_work_completion_claimed": false,
+  "base": "03dbad1",
+  "executed_commit": "41a08ba",
+  "export_commit": "f33c779ab0d7392ddd85fbbbe53a01f490a8def3",
+  "private_disk_root": "/home/quintin/.cache/pafack-a",
+  "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+  "native_session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+  "original_request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+  "send_reservations": 1,
+  "safe_public_input": "Read-only transport probe. Do not use tools, delegate, edit files or alter services. Reply exactly ACK_BOUNDARY_OK and stop.",
+  "actual_owner_api": [
+    {
+      "url": "/api/v1/projects",
+      "status": 201,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24/activate",
+      "status": 200,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24/contexts",
+      "status": 201,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24/requests",
+      "status": 202,
+      "code": null
+    },
+    {
+      "url": "/api/v1/projects/project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24/resume",
+      "status": 202,
+      "code": null
+    }
+  ],
+  "quiet_initial": {
+    "sdk_constructed": false,
+    "gate_open": false,
+    "send_reservations": 0
+  },
+  "actual_cut": {
+    "native_observed_before_cut_ns": 471324744233842,
+    "send_await_pending_before_cut": true,
+    "native_user_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+    "native_client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+    "native_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+    "native_timestamp": "2026-11-14T17:50:13.103Z",
+    "withheld_response_count": 1,
+    "other_responses_forwarded": 31,
+    "events_forwarded": 33,
+    "server_requests_forwarded": 3,
+    "hook_matches": 1,
+    "genuine_reply_writes": 1,
+    "fault_type": "injected_selective_rpc_response_loss",
+    "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+    "send_write_started_ns": 471322014074961,
+    "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+    "withheld_response_ns": 471322016534255,
+    "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+    "withheld_response_is_error": false,
+    "hook_rpc_id": 2,
+    "hook_received_ns": 471324606641526,
+    "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+    "genuine_reply_written_ns": 471324622052026,
+    "hook_reply_error": false,
+    "application_receipt_before_pipe_close": {
+      "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+      "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+      "replayed": false,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "schema_version": "1.0",
+      "state": "dispatching",
+      "state_revision": 2,
+      "type": "queue",
+      "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+    },
+    "send_rpc_pending": true,
+    "cut_ns": 471324747689341,
+    "pending_rpc_count": 1,
+    "real_stdout_is_pipe": true,
+    "os_descriptor_closed": true,
+    "raw_file_closed": true,
+    "closed_ns": 471324750205312,
+    "owned_writer_pid": 4040228,
+    "owned_writer_start": "47131770",
+    "owned_writer_fence_ns": 471324752656336,
+    "sdk_transport_closed": true,
+    "application_send_ack_delivered": false,
+    "accepted_ack_loss": true
+  },
+  "request_before_restart": {
+    "detail_code": "provider_unavailable",
+    "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+    "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+    "replayed": false,
+    "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+    "schema_version": "1.0",
+    "state": "outcome_uncertain",
+    "state_revision": 3,
+    "type": "queue",
+    "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+  },
+  "quiet_restart": {
+    "sdk_constructed": false,
+    "gate_open": false,
+    "send_reservations": 1,
+    "request_receipt": {
+      "detail_code": "provider_unavailable",
+      "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+      "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+      "replayed": false,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "schema_version": "1.0",
+      "state": "outcome_uncertain",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+    },
+    "resumes": [],
+    "jobs": 0,
+    "invocations": 0
+  },
+  "explicit_owner_reconcile": {
+    "operation_id": "6dd10cb4-216d-42d9-89ee-9826c6279a14",
+    "state": "completed",
+    "detail_code": null
+  },
+  "final_request_receipt": {
+    "detail_code": "provider_unavailable",
+    "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+    "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+    "replayed": false,
+    "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+    "schema_version": "1.0",
+    "state": "acknowledged",
+    "state_revision": 4,
+    "type": "queue",
+    "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+  },
+  "final_work_state": "awaiting_resume",
+  "execution_gate_remains_closed": true,
+  "joined_original": true,
+  "matching_native_user_messages": [
+    {
+      "event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+      "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+      "client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "timestamp": "2026-11-14T17:50:13.103Z",
+      "safe_content_matches": true
+    }
+  ],
+  "identity_was_already_projected_from_forwarded_events_before_cut": true,
+  "durable_checkpoints": {
+    "00-actual-sdk-transport-preflight": {
+      "stage": "00-actual-sdk-transport-preflight",
+      "observed_ns": 471322011775342,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": null,
+      "rpc_future_pending": false,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 0,
+        "other_responses_forwarded": 0,
+        "events_forwarded": 0,
+        "server_requests_forwarded": 0,
+        "hook_matches": 0,
+        "genuine_reply_writes": 0,
+        "fault_type": "injected_selective_rpc_response_loss"
+      }
+    },
+    "01-target-response-withheld": {
+      "stage": "01-target-response-withheld",
+      "observed_ns": 471322016539165,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "rpc_future_pending": true,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 1,
+        "other_responses_forwarded": 0,
+        "events_forwarded": 1,
+        "server_requests_forwarded": 0,
+        "hook_matches": 0,
+        "genuine_reply_writes": 0,
+        "fault_type": "injected_selective_rpc_response_loss",
+        "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+        "send_write_started_ns": 471322014074961,
+        "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+        "withheld_response_ns": 471322016534255,
+        "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "withheld_response_is_error": false
+      }
+    },
+    "02-genuine-hook-reply-forwarded": {
+      "stage": "02-genuine-hook-reply-forwarded",
+      "observed_ns": 471324622064585,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "rpc_future_pending": true,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 1,
+        "other_responses_forwarded": 27,
+        "events_forwarded": 15,
+        "server_requests_forwarded": 2,
+        "hook_matches": 1,
+        "genuine_reply_writes": 1,
+        "fault_type": "injected_selective_rpc_response_loss",
+        "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+        "send_write_started_ns": 471322014074961,
+        "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+        "withheld_response_ns": 471322016534255,
+        "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "withheld_response_is_error": false,
+        "hook_rpc_id": 2,
+        "hook_received_ns": 471324606641526,
+        "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+        "genuine_reply_written_ns": 471324622052026,
+        "hook_reply_error": false
+      }
+    },
+    "03-native-acceptance-before-cut": {
+      "stage": "03-native-acceptance-before-cut",
+      "observed_ns": 471324744801262,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "rpc_future_pending": true,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 1,
+        "other_responses_forwarded": 31,
+        "events_forwarded": 33,
+        "server_requests_forwarded": 3,
+        "hook_matches": 1,
+        "genuine_reply_writes": 1,
+        "fault_type": "injected_selective_rpc_response_loss",
+        "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+        "send_write_started_ns": 471322014074961,
+        "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+        "withheld_response_ns": 471322016534255,
+        "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "withheld_response_is_error": false,
+        "hook_rpc_id": 2,
+        "hook_received_ns": 471324606641526,
+        "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+        "genuine_reply_written_ns": 471324622052026,
+        "hook_reply_error": false,
+        "native_user_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "native_client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+        "native_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+        "native_timestamp": "2026-11-14T17:50:13.103Z",
+        "native_observed_before_cut_ns": 471324744233842,
+        "send_await_pending_before_cut": true,
+        "application_receipt_before_pipe_close": {
+          "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+          "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+          "replayed": false,
+          "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+          "schema_version": "1.0",
+          "state": "dispatching",
+          "state_revision": 2,
+          "type": "queue",
+          "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+        },
+        "send_rpc_pending": true
+      }
+    },
+    "04-cut-intent": {
+      "stage": "04-cut-intent",
+      "observed_ns": 471324747702410,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "rpc_future_pending": true,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 1,
+        "other_responses_forwarded": 31,
+        "events_forwarded": 33,
+        "server_requests_forwarded": 3,
+        "hook_matches": 1,
+        "genuine_reply_writes": 1,
+        "fault_type": "injected_selective_rpc_response_loss",
+        "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+        "send_write_started_ns": 471322014074961,
+        "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+        "withheld_response_ns": 471322016534255,
+        "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "withheld_response_is_error": false,
+        "hook_rpc_id": 2,
+        "hook_received_ns": 471324606641526,
+        "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+        "genuine_reply_written_ns": 471324622052026,
+        "hook_reply_error": false,
+        "native_user_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "native_client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+        "native_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+        "native_timestamp": "2026-11-14T17:50:13.103Z",
+        "native_observed_before_cut_ns": 471324744233842,
+        "send_await_pending_before_cut": true,
+        "application_receipt_before_pipe_close": {
+          "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+          "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+          "replayed": false,
+          "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+          "schema_version": "1.0",
+          "state": "dispatching",
+          "state_revision": 2,
+          "type": "queue",
+          "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+        },
+        "send_rpc_pending": true,
+        "cut_ns": 471324747689341,
+        "pending_rpc_count": 1,
+        "real_stdout_is_pipe": true
+      }
+    },
+    "05-real-descriptor-closed": {
+      "stage": "05-real-descriptor-closed",
+      "observed_ns": 471324750210612,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "rpc_future_pending": true,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 1,
+        "other_responses_forwarded": 31,
+        "events_forwarded": 33,
+        "server_requests_forwarded": 3,
+        "hook_matches": 1,
+        "genuine_reply_writes": 1,
+        "fault_type": "injected_selective_rpc_response_loss",
+        "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+        "send_write_started_ns": 471322014074961,
+        "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+        "withheld_response_ns": 471322016534255,
+        "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "withheld_response_is_error": false,
+        "hook_rpc_id": 2,
+        "hook_received_ns": 471324606641526,
+        "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+        "genuine_reply_written_ns": 471324622052026,
+        "hook_reply_error": false,
+        "native_user_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "native_client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+        "native_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+        "native_timestamp": "2026-11-14T17:50:13.103Z",
+        "native_observed_before_cut_ns": 471324744233842,
+        "send_await_pending_before_cut": true,
+        "application_receipt_before_pipe_close": {
+          "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+          "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+          "replayed": false,
+          "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+          "schema_version": "1.0",
+          "state": "dispatching",
+          "state_revision": 2,
+          "type": "queue",
+          "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+        },
+        "send_rpc_pending": true,
+        "cut_ns": 471324747689341,
+        "pending_rpc_count": 1,
+        "real_stdout_is_pipe": true,
+        "os_descriptor_closed": true,
+        "raw_file_closed": true,
+        "closed_ns": 471324750205312
+      }
+    },
+    "06-owned-writer-fence-intent": {
+      "stage": "06-owned-writer-fence-intent",
+      "observed_ns": 471324752660426,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "rpc_future_pending": true,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 1,
+        "other_responses_forwarded": 31,
+        "events_forwarded": 33,
+        "server_requests_forwarded": 3,
+        "hook_matches": 1,
+        "genuine_reply_writes": 1,
+        "fault_type": "injected_selective_rpc_response_loss",
+        "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+        "send_write_started_ns": 471322014074961,
+        "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+        "withheld_response_ns": 471322016534255,
+        "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "withheld_response_is_error": false,
+        "hook_rpc_id": 2,
+        "hook_received_ns": 471324606641526,
+        "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+        "genuine_reply_written_ns": 471324622052026,
+        "hook_reply_error": false,
+        "native_user_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "native_client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+        "native_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+        "native_timestamp": "2026-11-14T17:50:13.103Z",
+        "native_observed_before_cut_ns": 471324744233842,
+        "send_await_pending_before_cut": true,
+        "application_receipt_before_pipe_close": {
+          "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+          "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+          "replayed": false,
+          "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+          "schema_version": "1.0",
+          "state": "dispatching",
+          "state_revision": 2,
+          "type": "queue",
+          "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+        },
+        "send_rpc_pending": true,
+        "cut_ns": 471324747689341,
+        "pending_rpc_count": 1,
+        "real_stdout_is_pipe": true,
+        "os_descriptor_closed": true,
+        "raw_file_closed": true,
+        "closed_ns": 471324750205312,
+        "owned_writer_pid": 4040228,
+        "owned_writer_start": "47131770",
+        "owned_writer_fence_ns": 471324752656336
+      }
+    },
+    "07-owned-writer-fence-sent": {
+      "stage": "07-owned-writer-fence-sent",
+      "observed_ns": 471324754913317,
+      "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "session_id": "5d945a0c-8e93-4712-ba64-245bde1b31e9",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "rpc_future_pending": true,
+      "transport_preflight": {
+        "stdout_type": "FileIO",
+        "raw_type": "FileIO",
+        "fileno": 16,
+        "fstat_mode": 4480,
+        "pipe_inode": 109646091,
+        "is_fifo": true,
+        "closed": false
+      },
+      "facts": {
+        "withheld_response_count": 1,
+        "other_responses_forwarded": 31,
+        "events_forwarded": 33,
+        "server_requests_forwarded": 3,
+        "hook_matches": 1,
+        "genuine_reply_writes": 1,
+        "fault_type": "injected_selective_rpc_response_loss",
+        "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+        "send_write_started_ns": 471322014074961,
+        "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+        "withheld_response_ns": 471322016534255,
+        "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "withheld_response_is_error": false,
+        "hook_rpc_id": 2,
+        "hook_received_ns": 471324606641526,
+        "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+        "genuine_reply_written_ns": 471324622052026,
+        "hook_reply_error": false,
+        "native_user_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "native_client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+        "native_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+        "native_timestamp": "2026-11-14T17:50:13.103Z",
+        "native_observed_before_cut_ns": 471324744233842,
+        "send_await_pending_before_cut": true,
+        "application_receipt_before_pipe_close": {
+          "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+          "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+          "replayed": false,
+          "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+          "schema_version": "1.0",
+          "state": "dispatching",
+          "state_revision": 2,
+          "type": "queue",
+          "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+        },
+        "send_rpc_pending": true,
+        "cut_ns": 471324747689341,
+        "pending_rpc_count": 1,
+        "real_stdout_is_pipe": true,
+        "os_descriptor_closed": true,
+        "raw_file_closed": true,
+        "closed_ns": 471324750205312,
+        "owned_writer_pid": 4040228,
+        "owned_writer_start": "47131770",
+        "owned_writer_fence_ns": 471324752656336
+      }
+    },
+    "08-sdk-transport-result": {
+      "native_observed_before_cut_ns": 471324744233842,
+      "send_await_pending_before_cut": true,
+      "native_user_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+      "native_client_turn_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+      "native_event_id": "e8ac5516-0fa7-4e62-b67d-e07f7f0ade9e",
+      "native_timestamp": "2026-11-14T17:50:13.103Z",
+      "withheld_response_count": 1,
+      "other_responses_forwarded": 31,
+      "events_forwarded": 33,
+      "server_requests_forwarded": 3,
+      "hook_matches": 1,
+      "genuine_reply_writes": 1,
+      "fault_type": "injected_selective_rpc_response_loss",
+      "send_rpc_id": "4b0a8640-363e-491e-82c3-a7235dbc9253",
+      "send_write_started_ns": 471322014074961,
+      "withheld_response_sha256": "77ae0dffe1efc869d79200d77a18a94ab8c47f4a2c5444fe9288616051775cd4",
+      "withheld_response_ns": 471322016534255,
+      "withheld_native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+      "withheld_response_is_error": false,
+      "hook_rpc_id": 2,
+      "hook_received_ns": 471324606641526,
+      "genuine_reply_sha256": "c4f269de68b90278813eb932a2d18fda769d8130ff075c6709f8d45278791e3a",
+      "genuine_reply_written_ns": 471324622052026,
+      "hook_reply_error": false,
+      "application_receipt_before_pipe_close": {
+        "native_message_id": "1ffc3d63-01df-43fa-8bea-e47f0e58c694",
+        "project_id": "project-004b1851-b1d0-4c30-8c3c-08bdafa5ef24",
+        "replayed": false,
+        "request_id": "f60cc02e-6c81-4c12-a4b4-124bbb58c807",
+        "schema_version": "1.0",
+        "state": "dispatching",
+        "state_revision": 2,
+        "type": "queue",
+        "work_id": "work-739fa7b19f1e47b1ba5cd6d75883ed1a"
+      },
+      "send_rpc_pending": true,
+      "cut_ns": 471324747689341,
+      "pending_rpc_count": 1,
+      "real_stdout_is_pipe": true,
+      "os_descriptor_closed": true,
+      "raw_file_closed": true,
+      "closed_ns": 471324750205312,
+      "owned_writer_pid": 4040228,
+      "owned_writer_start": "47131770",
+      "owned_writer_fence_ns": 471324752656336,
+      "sdk_transport_closed": true,
+      "application_send_ack_delivered": false
+    }
+  },
+  "checkpoint_file_hashes": {
+    "checkpoints/00-actual-sdk-transport-preflight.json": "930c2deb9d0184fdef930305b5598fe28b8fd95fd22b671b9c4ccb637db4a74a",
+    "checkpoints/01-target-response-withheld.json": "41dda1053e2acfc672d06edf0e505458df13d539ce12f36a2aacf75ff596fad1",
+    "checkpoints/02-genuine-hook-reply-forwarded.json": "0652e6a11161909eb193c18b866acebb9740bc6d03ea7be2eda313271a91d78a",
+    "checkpoints/03-native-acceptance-before-cut.json": "30df4f393aff89f97d32a157f2a3618c1f8b085016022f61a2a11404b1ccd7e7",
+    "checkpoints/04-cut-intent.json": "a6ee2d7cb0793ff0e4c415e70fd828773af39fac897598c2f57c058dfc51f562",
+    "checkpoints/05-real-descriptor-closed.json": "1435013d7da2e4def9ca5d272d72531c1aad760b7a0f7847708e3ef922717225",
+    "checkpoints/06-owned-writer-fence-intent.json": "33061128ef89f9ea7582957f3bff0eb702f5207f035513cf50d13e869dfe2e42",
+    "checkpoints/07-owned-writer-fence-sent.json": "1287492769712711b8b3551a4206ae7ef7530fecfc3355d9f546e184fec902fa",
+    "checkpoints/08-sdk-transport-result.json": "39322cb3b27cc74124f8d0c2b1180a98adabf7559c0a73e50b43db4f3646fa1a"
+  },
+  "runtime": {
+    "sdk": "1.0.34",
+    "sdk_jsonrpc_source_sha256": "d1133b6a35f90875885156862617db59ffb920630c8727c5437bc6ebaa3d6af2",
+    "cli_package": "1.0.112",
+    "direct_cli_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "browser": "159.0.8154.6",
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "host_audits": [
+    {
+      "generation": "1",
+      "options": [
+        {
+          "working_directory": "/home/quintin/.cache/pafack-a/p",
+          "memory": {
+            "enabled": false
+          },
+          "enable_session_store": false,
+          "available_tools": [],
+          "custom_agents": []
+        }
+      ],
+      "session_ids": [
+        "5d945a0c-8e93-4712-ba64-245bde1b31e9"
+      ],
+      "continue_pending_work": null,
+      "native_processes": [
+        {
+          "pid": 4040228,
+          "start": "47131770",
+          "direct_verified_binary": true
+        }
+      ],
+      "native_identities_gone": [
+        true
+      ],
+      "provider_http_attempts": 0
+    },
+    {
+      "generation": "2",
+      "options": [
+        {
+          "working_directory": "/home/quintin/.cache/pafack-a/p",
+          "memory": {
+            "enabled": false
+          },
+          "enable_session_store": false,
+          "available_tools": [],
+          "custom_agents": []
+        }
+      ],
+      "session_ids": [
+        "5d945a0c-8e93-4712-ba64-245bde1b31e9"
+      ],
+      "continue_pending_work": false,
+      "native_processes": [
+        {
+          "pid": 4040602,
+          "start": "47132840",
+          "direct_verified_binary": true
+        }
+      ],
+      "native_identities_gone": [
+        true
+      ],
+      "provider_http_attempts": 0
+    }
+  ],
+  "jobs": 0,
+  "tool_invocations": 0,
+  "cleanup": {
+    "supervisor": {
+      "pid": 4040053,
+      "parent": 4040050,
+      "state": "R",
+      "start": "47131513"
+    },
+    "controller": {
+      "pid": 4040054,
+      "parent": 4040053,
+      "state": "R",
+      "start": "47131515"
+    },
+    "controller_exit_code": 0,
+    "recorded_processes": [
+      {
+        "pid": 4040067,
+        "state": "R",
+        "parent": 4040054,
+        "start": "47131539",
+        "kind": "product-host",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040095,
+        "state": "S",
+        "parent": 4040054,
+        "start": "47131660",
+        "kind": "chromium:browser",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040152,
+        "state": "S",
+        "parent": 4040099,
+        "start": "47131680",
+        "kind": "chromium:renderer",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040116,
+        "state": "S",
+        "parent": 4040098,
+        "start": "47131675",
+        "kind": "chromium:GPU",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040119,
+        "state": "S",
+        "parent": 4040095,
+        "start": "47131677",
+        "kind": "chromium:network.mojom.NetworkService",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040098,
+        "state": "S",
+        "parent": 4040095,
+        "start": "47131670",
+        "kind": "owned-descendant",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040099,
+        "state": "S",
+        "parent": 4040095,
+        "start": "47131670",
+        "kind": "owned-descendant",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040585,
+        "state": "R",
+        "parent": 4040054,
+        "start": "47132712",
+        "kind": "product-host",
+        "original_kernel_identity_gone": true
+      },
+      {
+        "pid": 4040602,
+        "state": "S",
+        "parent": 4040585,
+        "start": "47132840",
+        "kind": "owned-descendant",
+        "original_kernel_identity_gone": true
+      }
+    ],
+    "reaped_adopted_children": [
+      {
+        "pid": 4040098,
+        "exit_code": 0
+      },
+      {
+        "pid": 4040099,
+        "exit_code": 0
+      }
+    ],
+    "remaining_children": [],
+    "signals_to_owned_children": [],
+    "browser_context_close_awaited": true,
+    "all_recorded_kernel_identities_gone": true
+  },
+  "source_hashes_at_export": {
+    "tests/native/studio/m12_selective_browser.mjs": "6ced403412dc7b3d5131733fa9d019bb6accc2a72897950ae816f4e6082bd33c",
+    "tests/native/studio/m12_selective_export.py": "6b7a4a690c77ca136ae199becca0f4f5e0596cdd39a6c813001806cfd0c5cc2d",
+    "tests/native/studio/m12_selective_filter.py": "d37d69c563e072b34c883ec38b34a9148e4edf8ef55a048bd2765aa174fdfadb",
+    "tests/native/studio/m12_selective_final_export.py": "76ccb8790e1a13ce06deece2c7f4288bf31fe73a265c04adab98defbc9bb2064",
+    "tests/native/studio/m12_selective_host.py": "a08b024949ba81417c5fa4dd389420e311eae445053141a2dc965b75cc28cabf",
+    "tests/native/studio/m12_selective_prepare.py": "394e5c217e08b4c9f758042b057e4bf1e56ebb4c686911b75f40b1bf19917564",
+    "tests/native/studio/m12_selective_run.py": "7860740beac3fdb9e31bb49da3243066b8d819fad5cf271d06be79e9388000e2"
+  },
+  "accepted_fixture_sources_used_read_only": {
+    "tests/native/studio/m12_ack_host.py": "b745552594242709c71f2b2a5d08aff592633e78788e5641319dfccdea56445a",
+    "tests/native/studio/m12_ack_prepare.py": "5149ee13a1e95b1a66016d725d42385dbe417e7c1357b3d8cbb0208161054444",
+    "tests/native/studio/m12_ack_run.py": "671b5d9cbb316ccc042210e769feedcfa0a413c8ea66afb90dc8590f225f9388"
+  },
+  "limits": [
+    "This is injected selective loss of one actual parsed RPC response, not spontaneous network loss. All non-target traffic/genuine hook replies flowed unchanged.",
+    "Native identity was already projected from a forwarded user event before the cut. The test does not claim that the ACK was the only possible identity source.",
+    "Final request acknowledgement is admission recovery, not proof of completed model/tool/work execution. No continue_work or second send was issued.",
+    "No previous attempt/root/uncertain request was modified or retried. No production SDK/service/state/hook file changed; no auth traffic or private native content was exported.",
+    "No child agents, tools, local providers, editor/native authoring, GPU or SSH operation. Remaining M12/M14 criteria stay separate."
+  ]
+}
