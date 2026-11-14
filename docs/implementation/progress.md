@@ -76,6 +76,7 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `milestone/m07` | Actual reference-conditioned generation, targeted revision, provider recovery, native shared reservation limits and corrected seven-view image/job/shot readback accepted. The colour instruction remains unachieved. |
 | `9746643`, `17c0a59` | M11's original cold Stop confirmed from actual inactive-main-loop RPC, typed Abort success, empty paused queues and no background/external calls. Original work stopped at revision 10 with zero live invocations. Parent passed 265 Copilot checks. |
 | `7210315`, `milestone/m11` | Original-work native publication and actual Unity catalogue/readback accepted. All 77 files pin the existing checkpoint; actual operator PlayMode evidence stays distinct from generic import not_run. |
+| `milestone/m12` | Cumulative browser/SSH continuity, quiet restart, original-session restoration, accepted-send/provider recovery, detached workers and verified local retry accepted with original unknown outcomes retained. |
 
 ## Active assignments
 
@@ -128,7 +129,7 @@ and `release-browser-20261114.json`. These preserve their tested revision.
 - M10 is accepted. Its explicit new same-session follow-up saved/published `m10-asset-v2`, measured 0.120000004768 m high with base Z zero and blue material. The old premature completion, all original source/provenance and the one E04 inference remain unchanged.
 - W10's protected-process blocker is fixed. The final SSH audit passed. Same-host transport/API traffic does not itself close full model-message/video playback or cumulative M12/M14.
 - M11 is accepted. One actual original-work Continue published `m11-playable-v1` from the existing verified checkpoint. Work completed at revision 12 with real final-response/turn-end/idle evidence. All old questions, unknown native read delivery and failed attempts remain retained.
-- M12's accepted-send ACK-loss, same-session backup/continuation, detached renderer, provider-response recovery, partial-output retry and SSH continuity evidence now pass within their recorded scopes. M11's cold Stop/publication and cumulative integration remain open. Original unknown returns and failed recovery attempts are preserved.
+- M12 is accepted after M07/M08/M11. Browser/SSH continuity, original-session backup/continuation, accepted-send/provider recovery, detached renderer and local retry are covered. Original unknown returns and failed recovery attempts remain preserved.
 - Earlier M07 windows were constrained by independent SQL Server/Blender workloads. Later FP16 conversion observed at least 35,388,723,200 bytes available. No independent workload was stopped or evicted by this programme. Every new allocation still checks its own unchanged admission threshold.
 - Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
 - Geometry Nodes, complete SSH message/video use and proxy measurements passed. M14 still needs final cumulative milestone integration, browser/offline checks and release validation. Earlier SSH/palette/selector harness failures remain retained. The heavy SwiftShader workload is measurably sluggish; no unmeasured hardware-accelerated performance claim is made.
@@ -203,7 +204,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
 | M10 Image-to-3D | Completed on 2026-11-14 | `milestone/m10` | [Actual mesh, native revision and publication](m10.md) |
 | M11 Playable Unity scene | Completed on 2026-11-14 | `milestone/m11` | [Native specialist, PlayMode, source and publication acceptance](m11.md) |
-| M12 Recovery and backup | Required recovery observations substantially complete; M11/cumulative integration pending | — | [Native recovery](m12.md), [worker recovery](m08.md) |
+| M12 Recovery and backup | Completed on 2026-11-14 | `milestone/m12` | [Cumulative native, provider, worker and backup acceptance](m12.md) |
 | M13 Silent cinematic delivery | All seven targeted criteria passed; dependencies pending | — | [Native edit/review/download proof](m13.md) |
 | M14 Consolidated acceptance | Geometry Nodes, SSH, performance and native-fault slices passed; final consolidation pending | — | [SSH](m14-ssh.md), [performance](performance.md), [native faults](m14-native-faults.md) |
 
