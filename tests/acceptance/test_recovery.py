@@ -26,7 +26,7 @@ from proscenium.services import Services
 from proscenium.sources.common import git
 
 from tools.operations.recovery import backup, restore, verify
-from tools.operations.safety import RecoveryError, digest, locks
+from tools.operations.safety import RecoveryError, digest, locks, still_live
 
 OWNER = Caller("owner", "owner-test")
 
@@ -439,6 +439,21 @@ def test_lock_parent_directory_symlink_never_opens_external_lock(tmp_path):
         with locks([alias / "owner.lock"]):
             pytest.fail("Lock through symlink must not be acquired")
     assert not (real / "owner.lock").exists()
+
+
+def test_process_exit_race_only_ignores_observed_terminal_kernel_state(tmp_path):
+    process = tmp_path / "123"
+    process.mkdir()
+    stat = process / "stat"
+    for state in ("Z", "X", "x"):
+        stat.write_text(f"123 (process name with ) parentheses) {state} 0 0\n")
+        assert not still_live(process)
+    stat.write_text("123 (uninspectable living worker) S 0 0\n")
+    assert still_live(process)
+    stat.write_text("malformed status is not proof of exit")
+    assert still_live(process)
+    stat.unlink()
+    assert not still_live(process)
 
 
 def test_cli_round_trip_and_refusal_exit_codes(saved):

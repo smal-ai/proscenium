@@ -109,6 +109,21 @@ def locks(paths: list[Path]):
             os.close(fd)
 
 
+def still_live(process: Path) -> bool:
+    """An exited/zombie process can briefly deny /proc links before reaping.
+
+    Only observed terminal kernel state is safe to ignore. This does not infer a
+    successful job exit or settle any application record.
+    """
+    try:
+        state = (process / "stat").read_text().rsplit(") ", 1)[1].split()[0]
+        return state not in {"Z", "X", "x"}
+    except (FileNotFoundError, ProcessLookupError):
+        return False
+    except (PermissionError, IndexError):
+        return True
+
+
 def assert_stopped(roots: list[Path]) -> None:
     """No signals. Refuse scoped users of files and ambiguous native Copilot processes.
 
@@ -160,5 +175,5 @@ def assert_stopped(roots: list[Path]) -> None:
         except (FileNotFoundError, ProcessLookupError):
             continue
         except PermissionError as exc:
-            if process.exists():
+            if still_live(process):
                 raise RecoveryError(f"process_inspection_denied:{process.name}") from exc
