@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "operation_id": "select-scene-v1",
+  "project_id": "fixture-project",
+  "selection_id": "selection-main-scene",
+  "expected_revision": 0,
+  "slot_id": "main-scene",
+  "version": {"item_id": "scene-fixture", "version_id": "scene-fixture-v1"},
+  "action": "select"
+}

@@ -1,0 +1,58 @@
+{
+  "fixture_version": "1.0",
+  "status": "synthetic_normalised_traces_not_vendor_captures_or_test_results",
+  "usage": "F00's offline harness translates these driver steps into its fake runtime/provider. E01 separately captures and maps the pinned vendor protocol.",
+  "traces": [
+    {
+      "id": "F06-A",
+      "scenarios": ["C01", "C02"],
+      "steps": [
+        {"input": "owner_queue", "request_fixture": "../contracts/examples/queue.json", "context_fixture": "../contracts/examples/context.json"},
+        {"expect": "request_persisted", "request_id": "req-create-scene", "state": "dispatching", "native_send_count": 1},
+        {"observe": "native_message", "native_session_id": "native-fixture", "native_message_id": "native-message-a", "client_request_id": "req-create-scene", "before_rpc_ack": true},
+        {"observe": "native_tool_started", "invocation_id": "tool-a", "native_message_id": "native-message-a"},
+        {"fault": "drop_send_rpc_ack"},
+        {"input": "retry_identical_owner_queue", "request_id": "req-create-scene"},
+        {"expect": "same_request_identity", "native_message_id": "native-message-a", "native_send_count": 1},
+        {"observe": "native_work_quiescent", "native_message_id": "native-message-a"},
+        {"expect": "request_completed_once", "request_id": "req-create-scene"}
+      ]
+    },
+    {
+      "id": "F06-B",
+      "scenarios": ["C04", "C05", "C20"],
+      "steps": [
+        {"given": "work_a_running_with_held_request_b", "project_id": "fixture-project", "work_id": "work-create-scene", "request_b": "req-next-asset"},
+        {"input": "owner_steer", "request_fixture": "../contracts/examples/steer.json"},
+        {"observe": "native_steer_accepted", "request_id": "req-steer-colour"},
+        {"input": "owner_stop", "request_fixture": "../contracts/examples/stop.json"},
+        {"expect": "native_abort_called", "abort_count": 1, "stop_request_id": "req-stop-scene", "request_b_state": "held"},
+        {"observe": "late_native_tool_result", "invocation_id": "tool-a", "originating_work_id": "work-create-scene"},
+        {"observe": "native_abort_confirmed_and_quiescent", "work_id": "work-create-scene"},
+        {"expect": "work_stopped", "external_job_id": "job-draft-1", "external_job_state": "running", "request_b_state": "held"},
+        {"fault": "backend_restart"},
+        {"expect": "awaiting_explicit_resume", "new_native_sends": 0, "new_provider_submissions": 0, "new_worker_launches": 0},
+        {"input": "owner_resume", "mode": "release_held_queue"},
+        {"expect": "request_b_delivered_once_after_reconciliation", "request_id": "req-next-asset", "late_tool_attribution": "work-create-scene"}
+      ]
+    },
+    {
+      "id": "F07-A",
+      "scenarios": ["C03", "C12", "C17"],
+      "steps": [
+        {"input": "generation_submit", "fixture": "../contracts/examples/generation.json", "admitted_endpoint": "http://provider-fixture-a.invalid", "attempt_limit": 3},
+        {"observe": "provider_accepts", "external_job_id": "provider-prompt-1", "provider_submission_count": 1, "reserved_attempts": 1},
+        {"fault": "wait_timeout"},
+        {"input": "change_default_provider_endpoint", "new_default": "http://provider-fixture-b.invalid"},
+        {"input": "resume_existing_generation", "job_id": "generate-concept-1"},
+        {"expect": "query_original_provider_history", "endpoint": "http://provider-fixture-a.invalid", "external_job_id": "provider-prompt-1", "provider_submission_count": 1},
+        {"observe": "provider_completed", "external_job_id": "provider-prompt-1"},
+        {"expect": "download_and_reuse", "charged_attempts": 1},
+        {"input": "two_new_corrections_same_task_target"},
+        {"expect": "three_attempts_consumed", "provider_submission_count": 3},
+        {"input": "fourth_attempt_new_internal_job_same_target"},
+        {"expect": "generation_budget_exhausted", "provider_submission_count": 3}
+      ]
+    }
+  ]
+}

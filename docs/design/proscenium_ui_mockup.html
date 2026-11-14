@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROSCENIUM // Multi-Theme Director Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       FOUR DISTINCT DESIGN SYSTEM THEMES (LIVE SWITCHABLE)
+       ========================================================================== */
+
+    /* THEME 1: INDUSTRIAL CINEMA HARDWARE (ARRI / Blackmagic DaVinci / RED OS) */
+    body[data-theme="arri"] {
+      --bg-app: #0d0d0e;
+      --bg-header: #141416;
+      --bg-panel: #161618;
+      --bg-elevated: #1f1f23;
+      --bg-input: #0a0a0c;
+      --border-hairline: #2a2a2e;
+      --border-strong: #3d3d44;
+      --text-main: #f2f2f3;
+      --text-secondary: #a0a0a8;
+      --text-muted: #686870;
+      --accent-primary: #f59e0b;      /* Kodak / ARRI Amber */
+      --accent-primary-bg: rgba(245, 158, 11, 0.14);
+      --accent-tally: #ef4444;        /* Broadcast Tally Red */
+      --accent-ok: #10b981;
+      --radius-ui: 2px;               /* Machined square corners */
+      --font-display: 'Space Grotesk', sans-serif;
+      --viewport-bg: #101012;
+      --grid-major: 0x383840;
+      --grid-minor: 0x1e1e22;
+      --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.65);
+    }
+
+    /* THEME 2: ULTRA-CLEAN MODERN CREATIVE (Linear / Figma / Framer Dark) */
+    body[data-theme="linear"] {
+      --bg-app: #09090b;
+      --bg-header: #09090b;
+      --bg-panel: #101013;
+      --bg-elevated: #18181c;
+      --bg-input: #141418;
+      --border-hairline: #222228;
+      --border-strong: #32323a;
+      --text-main: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #52525b;
+      --accent-primary: #e4e4e7;      /* Crisp Monochrome High-Contrast */
+      --accent-primary-bg: rgba(255, 255, 255, 0.09);
+      --accent-tally: #6366f1;        /* Subtle Indigo Accent */
+      --accent-ok: #22c55e;
+      --radius-ui: 8px;               /* Smooth modern pill/card radius */
+      --font-display: 'Inter', sans-serif;
+      --viewport-bg: #0c0c0f;
+      --grid-major: 0x27272a;
+      --grid-minor: 0x18181b;
+      --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    /* THEME 3: TACTILE PRO-3D WORKSTATION (Unreal 5 / Houdini / Substance) */
+    body[data-theme="houdini"] {
+      --bg-app: #191b1f;
+      --bg-header: #212429;
+      --bg-panel: #25282e;
+      --bg-elevated: #2f333b;
+      --bg-input: #15171a;
+      --border-hairline: #121316;
+      --border-strong: #3e4451;
+      --text-main: #e5e9f0;
+      --text-secondary: #9da5b4;
+      --text-muted: #636d83;
+      --accent-primary: #3b82f6;      /* Workstation Selection Blue */
+      --accent-primary-bg: rgba(59, 130, 246, 0.18);
+      --accent-tally: #f97316;        /* Houdini Procedural Orange */
+      --accent-ok: #2dd4bf;
+      --radius-ui: 3px;
+      --font-display: 'Inter', sans-serif;
+      --viewport-bg: #1d2025;
+      --grid-major: 0x4b5263;
+      --grid-minor: 0x2c313a;
+      --shadow-float: 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    /* THEME 4: ARCHITECTURAL DAYLIGHT / GALLERY STUDIO (Teenage Engineering / Lightbox) */
+    body[data-theme="daylight"] {
+      --bg-app: #e6e4dd;
+      --bg-header: #f4f2ec;
+      --bg-panel: #efede6;
+      --bg-elevated: #ffffff;
+      --bg-input: #ffffff;
+      --border-hairline: #d0cdc3;
+      --border-strong: #18181b;
+      --text-main: #141413;
+      --text-secondary: #52514c;
+      --text-muted: #85837b;
+      --accent-primary: #ea580c;      /* International Brazen Orange */
+      --accent-primary-bg: rgba(234, 88, 12, 0.12);
+      --accent-tally: #dc2626;
+      --accent-ok: #15803d;
+      --radius-ui: 4px;
+      --font-display: 'Space Grotesk', sans-serif;
+      --viewport-bg: #d8d5cc;
+      --grid-major: 0x8c8980;
+      --grid-minor: 0xc2bfb6;
+      --shadow-float: 0 6px 20px rgba(20, 20, 19, 0.12);
+    }
+
+    /* ==========================================================================
+       CORE SEMANTIC CLASSES CONSUMING THEME TOKENS
+       ========================================================================== */
+    * { box-sizing: border-box; user-select: none; }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      transition: background-color 0.18s ease, color 0.18s ease;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .font-display { font-family: var(--font-display); }
+
+    .surface-header { background-color: var(--bg-header); border-color: var(--border-hairline); }
+    .surface-panel { background-color: var(--bg-panel); border-color: var(--border-hairline); }
+    .surface-elevated {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-ui);
+    }
+    .surface-input {
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-ui);
+      color: var(--text-main);
+    }
+    .surface-float {
+      background-color: var(--bg-header);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-ui);
+      box-shadow: var(--shadow-float);
+    }
+
+    .text-main { color: var(--text-main); }
+    .text-sec { color: var(--text-secondary); }
+    .text-mut { color: var(--text-muted); }
+
+    .btn-ui {
+      border-radius: var(--radius-ui);
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+    }
+    .btn-ui:hover {
+      background-color: var(--bg-elevated);
+      border-color: var(--border-strong);
+    }
+    .btn-active {
+      background-color: var(--accent-primary-bg) !important;
+      border-color: var(--accent-primary) !important;
+      color: var(--accent-primary) !important;
+      font-weight: 600;
+    }
+    .btn-primary-cta {
+      background-color: var(--accent-primary);
+      color: #09090b;
+      border-radius: var(--radius-ui);
+      font-weight: 600;
+    }
+    body[data-theme="houdini"] .btn-primary-cta,
+    body[data-theme="daylight"] .btn-primary-cta {
+      color: #ffffff;
+    }
+
+    .tab-btn {
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      transition: all 0.12s ease;
+    }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-active {
+      border-bottom-color: var(--accent-primary);
+      color: var(--text-main);
+      background-color: var(--accent-primary-bg);
+    }
+
+    .shot-card {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-ui);
+      transition: all 0.12s ease;
+    }
+    .shot-card:hover { border-color: var(--border-strong); }
+    .shot-card.active {
+      border-color: var(--accent-primary);
+      box-shadow: inset 3px 0 0 var(--accent-primary);
+    }
+
+    .critic-card {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-left: 3px solid var(--accent-primary);
+      border-radius: var(--radius-ui);
+    }
+
+    /* XYZ Axis Badges for Houdini/Pro 3D Readability */
+    .axis-x { color: #ef4444; }
+    .axis-y { color: #22c55e; }
+    .axis-z { color: #3b82f6; }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+  </style>
+</head>
+<body data-theme="arri" class="flex flex-col h-screen w-screen overflow-hidden text-xs">
+
+  <!-- ==================== TOP GLOBAL BAR (WITH LIVE 4-THEME SWITCHER) ==================== -->
+  <header class="h-12 surface-header border-b flex items-center justify-between px-3 shrink-0 z-30">
+    
+    <!-- Left: Brand Identity + Canonical File + Transactional Stepper -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-6 h-6 flex items-center justify-center border border-current" style="border-radius: var(--radius-ui); color: var(--accent-primary);">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="4" width="18" height="16" rx="1"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="9" y1="20" x2="9" y2="9"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-display font-bold tracking-wider text-xs uppercase">PROSCENIUM</span>
+            <span class="mono text-[10px] px-1.5 py-0.2 surface-elevated text-sec">BLENDER 4.3 HEADLESS</span>
+          </div>
+          <div class="text-[10px] mono text-sec flex items-center space-x-1.5">
+            <span>alley_seq_04.blend</span>
+            <span style="color: var(--accent-ok);">● LOCKED</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="h-5 w-[1px]" style="background-color: var(--border-hairline);"></div>
+
+      <!-- Transactional Wrapper Undo/Redo -->
+      <div class="flex items-center surface-elevated px-2 py-1 space-x-1.5">
+        <button onclick="rollbackTx(-1)" class="btn-ui px-1.5 py-0.5 text-sec hover:text-main mono text-[10px]" title="Undo bpy Transaction">
+          ◀
+        </button>
+        <span id="txBadge" class="mono text-[10px] font-medium px-1.5" style="color: var(--accent-primary);">
+          TX_042 // GROUND_PASS
+        </span>
+        <button onclick="rollbackTx(1)" class="btn-ui px-1.5 py-0.5 text-sec hover:text-main mono text-[10px]" title="Redo bpy Transaction">
+          ▶
+        </button>
+      </div>
+    </div>
+
+    <!-- Center: THE 4 DESIGN AESTHETIC SWITCHER PILLS -->
+    <div class="flex items-center space-x-1 surface-elevated p-1">
+      <span class="mono text-[10px] text-mut px-2 uppercase tracking-wider hidden xl:inline">UI Theme:</span>
+      <button onclick="applyTheme('arri')" id="themeBtn-arri" class="btn-ui btn-active px-2.5 py-1 text-[11px] flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+        <span>1. ARRI Cinema</span>
+      </button>
+      <button onclick="applyTheme('linear')" id="themeBtn-linear" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-zinc-200"></span>
+        <span>2. Linear Minimal</span>
+      </button>
+      <button onclick="applyTheme('houdini')" id="themeBtn-houdini" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <span>3. Houdini Pro</span>
+      </button>
+      <button onclick="applyTheme('daylight')" id="themeBtn-daylight" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-orange-600"></span>
+        <span>4. Daylight Studio</span>
+      </button>
+    </div>
+
+    <!-- Right: Strix Halo Telemetry & Unity Export -->
+    <div class="flex items-center space-x-2.5">
+      <div class="hidden 2xl:flex items-center space-x-2 surface-elevated px-2.5 py-1 mono text-[10px]">
+        <span class="text-sec">STRIX HALO UMA:</span>
+        <span class="text-main font-semibold">68.4 / 128 GB</span>
+        <span class="text-mut">|</span>
+        <span style="color: var(--accent-ok);">ROCm 6.3</span>
+      </div>
+
+      <button onclick="openUnityModal()" class="btn-primary-cta px-3 py-1.5 text-[11px] flex items-center space-x-1.5 transition">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+        <span>Export Unity Handoff</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN 3-COLUMN STUDIO BODY ==================== -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- ==================== LEFT SIDEBAR: STORYBOARD, SCENE OUTLINER, RAG ASSETS ==================== -->
+    <aside class="w-80 surface-panel border-r flex flex-col shrink-0 z-20">
+      <!-- Clean Technical Tab Bar -->
+      <div class="grid grid-cols-3 border-b" style="border-color: var(--border-hairline);">
+        <button onclick="switchLeftTab('storyboard')" id="leftTab-storyboard" class="tab-btn tab-active py-2.5 text-[11px] font-medium uppercase tracking-wider mono">
+          Shots (04)
+        </button>
+        <button onclick="switchLeftTab('scene')" id="leftTab-scene" class="tab-btn py-2.5 text-[11px] font-medium uppercase tracking-wider mono">
+          Outliner
+        </button>
+        <button onclick="switchLeftTab('assets')" id="leftTab-assets" class="tab-btn py-2.5 text-[11px] font-medium uppercase tracking-wider mono">
+          Gen3D / RAG
+        </button>
+      </div>
+
+      <!-- TAB 1: STORYBOARD BEATS -->
+      <div id="leftPanel-storyboard" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="mono text-[10px] uppercase tracking-wider text-sec">Locked Camera Markers</span>
+          <button onclick="triggerNewStoryboardBeat()" class="btn-ui px-2 py-0.5 mono text-[10px] surface-elevated hover:text-main">
+            + New Beat
+          </button>
+        </div>
+
+        <!-- Shot 01 -->
+        <div onclick="selectShot(1)" id="shotCard-1" class="shot-card p-2.5 cursor-pointer space-y-2">
+          <div class="flex items-center justify-between mono text-[10px]">
+            <span class="font-semibold">SHOT_01 // F:001–060</span>
+            <span style="color: var(--accent-ok);">94% MATCH</span>
+          </div>
+          <!-- Architectural Wireframe Thumbnail -->
+          <div class="h-20 surface-input relative overflow-hidden flex items-center justify-center">
+            <svg class="w-full h-full opacity-25" viewBox="0 0 200 80" stroke="currentColor" fill="none" stroke-width="1">
+              <line x1="0" y1="65" x2="200" y2="65"/>
+              <line x1="100" y1="15" x2="20" y2="80"/>
+              <line x1="100" y1="15" x2="180" y2="80"/>
+              <rect x="65" y="15" width="70" height="50"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col justify-between p-2 mono text-[9px]">
+              <span class="text-sec">CAM_01_ESTABLISH • 24mm</span>
+              <span class="self-end px-1.5 py-0.5 surface-elevated">Cycles 128spp</span>
+            </div>
+          </div>
+          <p class="text-[11px] text-sec leading-snug">Wide crane dolly into rain alley; wet asphalt reflections.</p>
+        </div>
+
+        <!-- Shot 02 (Active) -->
+        <div onclick="selectShot(2)" id="shotCard-2" class="shot-card active p-2.5 cursor-pointer space-y-2">
+          <div class="flex items-center justify-between mono text-[10px]">
+            <span class="font-bold" style="color: var(--accent-primary);">SHOT_02 // F:061–145</span>
+            <span style="color: var(--accent-tally);">● 2 CRITIC FLAGS</span>
+          </div>
+          <div class="h-20 surface-input relative overflow-hidden flex items-center justify-center">
+            <svg class="w-full h-full opacity-35" viewBox="0 0 200 80" stroke="currentColor" fill="none" stroke-width="1.2">
+              <line x1="0" y1="62" x2="200" y2="62"/>
+              <rect x="45" y="10" width="110" height="52"/>
+              <circle cx="85" cy="40" r="10"/>
+              <rect x="112" y="38" width="24" height="20" stroke-dasharray="3 2"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col justify-between p-2 mono text-[9px]">
+              <span style="color: var(--accent-primary);">CAM_02_HERO_MID • 35mm</span>
+              <span class="self-end px-1.5 py-0.5 surface-elevated">ACTIVE VIEW</span>
+            </div>
+          </div>
+          <p class="text-[11px] text-main leading-snug">Medium tracking shot. Courier takes cover behind cargo crates.</p>
+        </div>
+
+        <!-- Shot 03 -->
+        <div onclick="selectShot(3)" id="shotCard-3" class="shot-card p-2.5 cursor-pointer space-y-2">
+          <div class="flex items-center justify-between mono text-[10px]">
+            <span class="font-semibold">SHOT_03 // F:146–210</span>
+            <span class="text-sec">BLOCKOUT</span>
+          </div>
+          <div class="h-16 surface-input relative overflow-hidden flex items-center justify-between p-2 mono text-[9px]">
+            <span class="text-sec">CAM_03_OTS_DRONE • 50mm</span>
+            <span class="px-1.5 py-0.5 surface-elevated">EEVEE Next</span>
+          </div>
+          <p class="text-[11px] text-sec leading-snug">Over-shoulder push in as patrol drone sweeps spotlight.</p>
+        </div>
+
+        <!-- Shot 04 (Unity Handoff) -->
+        <div onclick="selectShot(4)" id="shotCard-4" class="shot-card p-2.5 cursor-pointer space-y-2">
+          <div class="flex items-center justify-between mono text-[10px]">
+            <span class="font-semibold">SHOT_04 // F:211–240</span>
+            <span style="color: var(--accent-ok);">UNITY ANCHOR</span>
+          </div>
+          <div class="h-16 surface-input relative overflow-hidden flex items-center justify-between p-2 mono text-[9px]">
+            <span class="text-main">CAM_04_GAMEPLAY_LOCK • FOV 65°</span>
+            <span class="px-1.5 py-0.5 surface-elevated" style="color: var(--accent-ok);">Δ 0.0ms</span>
+          </div>
+          <p class="text-[11px] text-sec leading-snug">Settles behind player shoulder; frame 240 crossfades to Unity URP.</p>
+        </div>
+      </div>
+
+      <!-- TAB 2: SCENE OUTLINER (Tabular XYZ Telemetry) -->
+      <div id="leftPanel-scene" class="hidden flex-1 overflow-y-auto p-3 space-y-2">
+        <div class="flex items-center justify-between mono text-[10px] text-sec pb-1 border-b" style="border-color: var(--border-hairline);">
+          <span>OBJECT HIERARCHY</span>
+          <span>WORLD XYZ (m)</span>
+        </div>
+
+        <div class="space-y-1 mono text-[11px]">
+          <div class="py-1 text-sec font-semibold text-[10px] tracking-wider">COLLECTION // ENV_ALLEY</div>
+
+          <div onclick="select3DObject('Archway_Main')" class="p-1.5 surface-elevated cursor-pointer flex items-center justify-between hover:opacity-90">
+            <span>Archway_Main</span>
+            <span class="text-[10px] text-sec"><b class="axis-x">0.0</b> <b class="axis-y">4.2</b> <b class="axis-z">0.0</b></span>
+          </div>
+
+          <div onclick="select3DObject('Hero_Courier_Rig')" class="p-1.5 surface-elevated cursor-pointer flex items-center justify-between" style="border-color: var(--accent-primary);">
+            <span class="font-semibold">Hero_Courier_Rig</span>
+            <span class="text-[10px] text-sec"><b class="axis-x">-0.8</b> <b class="axis-y">0.0</b> <b class="axis-z">1.2</b></span>
+          </div>
+
+          <div onclick="select3DObject('Crate_Cluster_04')" class="p-1.5 surface-elevated cursor-pointer flex items-center justify-between" style="border-color: var(--accent-tally);">
+            <span style="color: var(--accent-tally);">Crate_Cluster_04</span>
+            <span class="text-[10px]" style="color: var(--accent-tally);">Z: +0.14m (FLOAT)</span>
+          </div>
+
+          <div onclick="select3DObject('Drone_Patrol_01')" class="p-1.5 surface-elevated cursor-pointer flex items-center justify-between">
+            <span>Drone_Patrol_01</span>
+            <span class="text-[10px] text-sec"><b class="axis-x">1.7</b> <b class="axis-y">2.8</b> <b class="axis-z">-1.2</b></span>
+          </div>
+
+          <div class="py-1 pt-3 text-sec font-semibold text-[10px] tracking-wider">COLLECTION // CAMERAS_LIGHTS</div>
+
+          <div class="p-1.5 surface-elevated flex items-center justify-between">
+            <span>CAM_02_HERO_MID</span>
+            <span class="text-[10px] text-sec">35mm • f/2.8</span>
+          </div>
+          <div class="p-1.5 surface-elevated flex items-center justify-between">
+            <span>KeyLight_Area_01</span>
+            <span class="text-[10px] text-sec">450W • Area</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: LOCAL GEN-3D & RAG LIBRARY -->
+      <div id="leftPanel-assets" class="hidden flex-1 overflow-y-auto p-3 space-y-3">
+        <div class="surface-elevated p-2.5 space-y-2">
+          <div class="flex items-center justify-between mono text-[10px]">
+            <span class="font-semibold">TRELLIS IMAGE-TO-3D</span>
+            <span class="text-sec">ROCm FP16</span>
+          </div>
+          <input id="gen3dPrompt" type="text" value="Weathered industrial generator unit" class="w-full surface-input px-2 py-1.5 text-[11px] focus:outline-none" />
+          <div class="flex justify-between mono text-[9px] text-sec">
+            <span>Retopo: 8k Quads</span>
+            <span>Origin: Bottom-Center</span>
+          </div>
+          <button onclick="spawnGen3DAsset()" class="w-full py-1.5 btn-primary-cta text-[11px]">
+            Synthesize & Import to .blend
+          </button>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="mono text-[10px] text-sec uppercase tracking-wider">Local Qdrant Kitbash RAG</div>
+          <div class="grid grid-cols-2 gap-2">
+            <div onclick="insertKitbash('HVAC_Unit_01')" class="surface-elevated p-2 cursor-pointer hover:opacity-80">
+              <div class="mono text-[10px] font-semibold truncate">HVAC_Unit_01</div>
+              <div class="mono text-[9px] text-sec mt-0.5">2.4k tris • 4K PBR</div>
+            </div>
+            <div onclick="insertKitbash('Vending_Kiosk')" class="surface-elevated p-2 cursor-pointer hover:opacity-80">
+              <div class="mono text-[10px] font-semibold truncate">Vending_Kiosk</div>
+              <div class="mono text-[9px] text-sec mt-0.5">4.1k tris • Emissive</div>
+            </div>
+            <div onclick="insertKitbash('Pipe_Modular_A')" class="surface-elevated p-2 cursor-pointer hover:opacity-80">
+              <div class="mono text-[10px] font-semibold truncate">Pipe_Modular_A</div>
+              <div class="mono text-[9px] text-sec mt-0.5">GeoNodes Spline</div>
+            </div>
+            <div onclick="insertKitbash('Barrier_Concrete')" class="surface-elevated p-2 cursor-pointer hover:opacity-80">
+              <div class="mono text-[10px] font-semibold truncate">Barrier_Concrete</div>
+              <div class="mono text-[9px] text-sec mt-0.5">1.1k tris • Convex</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left Sidebar Footer Telemetry -->
+      <div class="p-2.5 surface-header border-t mono text-[10px] text-sec flex items-center justify-between">
+        <span>SOCKET RPC: :9042</span>
+        <span id="glbSyncTime" style="color: var(--accent-ok);">GLB SYNC 120ms</span>
+      </div>
+    </aside>
+
+    <!-- ==================== CENTER STAGE: 3D VIEWPORT + 2D FRAME OVERLAY + TIMELINE ==================== -->
+    <main class="flex-1 flex flex-col relative overflow-hidden" style="background-color: var(--viewport-bg);">
+
+      <!-- Floating Top Viewport Controls (Clean SVG Iconography, Zero Emoji Clutter) -->
+      <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
+        
+        <!-- Left Pill: Camera Selection & Viewport Shading -->
+        <div class="surface-float p-1 flex items-center space-x-1 pointer-events-auto">
+          <select id="cameraSelect" onchange="switchCameraView(this.value)" class="surface-input mono text-[11px] px-2 py-1 focus:outline-none">
+            <option value="cam2">CAM_02_HERO_MID (35mm)</option>
+            <option value="cam1">CAM_01_ESTABLISH (24mm)</option>
+            <option value="cam4">CAM_04_UNITY_LOCK (65°)</option>
+            <option value="orbit">FREE DIRECTOR ORBIT</option>
+          </select>
+
+          <button onclick="setRenderStyle('eevee')" id="renderBtn-eevee" class="btn-ui btn-active px-2 py-1 mono text-[10px]">
+            SHADED
+          </button>
+          <button onclick="setRenderStyle('wire')" id="renderBtn-wire" class="btn-ui px-2 py-1 mono text-[10px] text-sec">
+            WIREFRAME
+          </button>
+          <button onclick="triggerCyclesSnapshot()" class="btn-ui px-2 py-1 mono text-[10px] text-sec hover:text-main">
+            RENDER CYCLES
+          </button>
+        </div>
+
+        <!-- Center Pill: 2D Frame Annotation & Masking Toolbar (Crisp Technical SVGs) -->
+        <div class="surface-float p-1 flex items-center space-x-1 pointer-events-auto">
+          <button onclick="setInteractionTool('orbit')" id="toolBtn-orbit" class="btn-ui btn-active px-2.5 py-1 text-[11px] flex items-center space-x-1.5" title="3D Orbit & Raycast Inspect">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="9" ry="3.5"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+            <span>Orbit</span>
+          </button>
+
+          <div class="h-4 w-[1px] mx-0.5" style="background-color: var(--border-hairline);"></div>
+
+          <button onclick="setInteractionTool('brush')" id="toolBtn-brush" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5" title="Draw Director Vector Guide on 2D Frame">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            <span>Sketch</span>
+          </button>
+
+          <button onclick="setInteractionTool('mask')" id="toolBtn-mask" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5" title="Paint Inpainting / Object Replacement Mask">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 2"/><circle cx="12" cy="12" r="4"/></svg>
+            <span>Mask</span>
+          </button>
+
+          <button onclick="setInteractionTool('eraser')" id="toolBtn-eraser" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5" title="Dual Eraser: Erase Ink or Mask 3D Object">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16C2 15 2 13 3 12L13 2L22 11L20 20Z"/><line x1="17" y1="17" x2="11" y2="11"/></svg>
+            <span>Eraser</span>
+          </button>
+
+          <button onclick="setInteractionTool('lasso')" id="toolBtn-lasso" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5" title="Select & Move Region">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+            <span>Move</span>
+          </button>
+
+          <button onclick="setInteractionTool('text')" id="toolBtn-text" class="btn-ui px-2.5 py-1 text-[11px] text-sec flex items-center space-x-1.5" title="Drop Spatial Text Note">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+            <span>Pin</span>
+          </button>
+
+          <div class="h-4 w-[1px] mx-0.5" style="background-color: var(--border-hairline);"></div>
+
+          <button onclick="clearAnnotations()" class="btn-ui px-2 py-1 mono text-[10px] text-sec hover:text-main">
+            CLR
+          </button>
+          <button onclick="sendAnnotatedFrameToAgent()" class="btn-primary-cta px-2.5 py-1 text-[11px]">
+            Commit Frame ↵
+          </button>
+        </div>
+
+        <!-- Right Pill: Unity Game HUD Toggle -->
+        <div class="surface-float px-2.5 py-1.5 flex items-center space-x-2 pointer-events-auto">
+          <label class="flex items-center space-x-1.5 cursor-pointer mono text-[10px]">
+            <input type="checkbox" id="hudToggle" onchange="toggleUnityHudOverlay(this.checked)" />
+            <span>UNITY HUD OVERLAY</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ==================== 3D WEBGL + 2D CANVAS VIEWPORT STACK ==================== -->
+      <div id="viewportContainer" class="flex-1 relative w-full h-full overflow-hidden flex items-center justify-center">
+        
+        <!-- Three.js WebGL Mount -->
+        <div id="threeMount" class="absolute inset-0 w-full h-full"></div>
+
+        <!-- Technical Cinema Safe-Area Aspect Ratio Frame & Readouts -->
+        <div class="absolute inset-7 border pointer-events-none flex flex-col justify-between p-3" style="border-color: rgba(160, 160, 168, 0.22);">
+          <!-- Top Camera Gate Telemetry -->
+          <div class="flex justify-between items-start mono text-[10px]">
+            <div class="flex items-center space-x-2 surface-float px-2 py-0.5">
+              <span class="w-2 h-2 rounded-full" style="background-color: var(--accent-tally);"></span>
+              <span>CAM_02_HERO_MID</span>
+              <span class="text-sec">|</span>
+              <span class="text-sec">24.00 FPS • 1.85:1 GATE</span>
+            </div>
+            <div id="raycastReadout" class="surface-float px-2 py-0.5 text-sec">
+              RAYCAST: Crate_Cluster_04 [0.55m, 0.14m, 0.90m]
+            </div>
+          </div>
+
+          <!-- Bottom Camera Gate Telemetry -->
+          <div class="flex justify-between items-end mono text-[10px]">
+            <div id="activeToolHint" class="surface-float px-2.5 py-1 text-sec">
+              MODE: 3D ORBIT — Drag to orbit proxy • Select Sketch/Mask to annotate 2D frame
+            </div>
+            <div class="surface-float px-2 py-0.5 text-sec">
+              LENS: 35mm PRIME • T2.8
+            </div>
+          </div>
+        </div>
+
+        <!-- 2D Interactive Annotation & Masking Canvas -->
+        <canvas id="annotationCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+
+        <!-- Spatial Callout Pin Layer -->
+        <div id="pinLayer" class="absolute inset-0 pointer-events-none z-10">
+          <div style="left: 57%; top: 53%;" class="absolute surface-float px-2 py-1 mono text-[10px] flex items-center space-x-1.5" style="border-left: 3px solid var(--accent-primary);">
+            <span style="color: var(--accent-primary);">01</span>
+            <span>Snap floating crates to Z=0.0m</span>
+          </div>
+        </div>
+
+        <!-- UNITY RUNTIME HUD OVERLAY -->
+        <div id="unityHudOverlay" class="hidden absolute inset-0 pointer-events-none z-15 p-10 flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <div class="surface-float px-4 py-2.5 border-l-4" style="border-left-color: var(--accent-ok);">
+              <div class="mono text-[10px]" style="color: var(--accent-ok);">UNITY 6 URP // HANDOFF VERIFICATION</div>
+              <div class="font-display font-bold text-sm mt-0.5">SECTOR 04: EVADE DRONE SWEEP</div>
+              <div class="mono text-[10px] text-sec">Cutscene Frame 240 → PlayerController Active</div>
+            </div>
+            <div class="surface-float px-3 py-2 mono text-[10px] text-right">
+              <div>CAMERA MATCH DELTA: <span style="color: var(--accent-ok);">0.000m / 0.00°</span></div>
+              <div class="text-sec">SHADER BAKE: 4K METAL-ROUGH</div>
+            </div>
+          </div>
+
+          <div class="self-center flex flex-col items-center">
+            <div class="w-6 h-6 border rounded-full flex items-center justify-center" style="border-color: var(--accent-ok);">
+              <div class="w-1 h-1 rounded-full" style="background-color: var(--accent-ok);"></div>
+            </div>
+            <span class="mono text-[10px] surface-float px-2 py-0.5 mt-1.5">[E] COVER // Crate_Cluster_04 (Convex Collider)</span>
+          </div>
+
+          <div class="flex justify-between items-end mono">
+            <div class="surface-float p-3 w-56 space-y-1.5">
+              <div class="flex justify-between text-[10px]">
+                <span class="text-sec">INTEGRITY</span>
+                <span class="font-bold">94%</span>
+              </div>
+              <div class="w-full h-1.5 surface-input overflow-hidden">
+                <div class="h-full" style="width: 94%; background-color: var(--accent-ok);"></div>
+              </div>
+            </div>
+            <div class="surface-float px-4 py-2 text-right">
+              <div class="text-[9px] text-sec">EMP CHARGES</div>
+              <div class="text-lg font-bold">03 / 03</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================== BOTTOM TIMELINE & CAMERA CUT TRACK ==================== -->
+      <div class="h-32 surface-header border-t flex flex-col shrink-0 z-20">
+        <!-- Transport Header -->
+        <div class="h-8 border-b px-3 flex items-center justify-between mono text-[10px]" style="border-color: var(--border-hairline);">
+          <div class="flex items-center space-x-2">
+            <button onclick="togglePlayback()" id="playBtn" class="btn-primary-cta px-2.5 py-0.5 text-[10px] flex items-center space-x-1">
+              <span id="playIcon">▶</span>
+              <span id="playLabel">PLAY</span>
+            </button>
+            <button onclick="scrubToFrame(1)" class="btn-ui surface-elevated px-2 py-0.5 text-sec">|◀ 001</button>
+            <button onclick="scrubToFrame(95)" class="btn-ui surface-elevated px-2 py-0.5">SHOT_02 (095)</button>
+            <button onclick="scrubToFrame(240)" class="btn-ui surface-elevated px-2 py-0.5" style="color: var(--accent-ok);">HANDOFF (240)</button>
+          </div>
+
+          <div class="flex items-center space-x-4">
+            <div>TC: <span id="currentTimeDisplay" class="font-semibold">00:00:03:23</span></div>
+            <div>FRAME: <span id="currentFrameDisplay" class="font-bold" style="color: var(--accent-primary);">095</span> <span class="text-mut">/ 240</span></div>
+          </div>
+
+          <div class="text-sec">
+            PIPELINE: <span class="text-main">CYCLES + EEVEE HYBRID</span>
+          </div>
+        </div>
+
+        <!-- Scrubber & Camera Blocks -->
+        <div class="flex-1 p-3 flex flex-col justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="mono text-[10px] text-sec w-20">TIMELINE:</span>
+            <input id="timelineSlider" type="range" min="1" max="240" value="95" oninput="scrubToFrame(this.value)" class="flex-1 cursor-pointer h-1" style="accent-color: var(--accent-primary);" />
+          </div>
+
+          <div class="grid grid-cols-12 gap-1.5 pt-1 mono text-[10px]">
+            <div onclick="selectShot(1); scrubToFrame(30)" class="col-span-3 surface-elevated px-2 py-1.5 cursor-pointer hover:opacity-80 flex justify-between">
+              <span class="truncate">SHOT_01 // ESTABLISH</span>
+              <span class="text-mut">001-060</span>
+            </div>
+            <div onclick="selectShot(2); scrubToFrame(95)" class="col-span-4 surface-elevated px-2 py-1.5 cursor-pointer flex justify-between" style="border-color: var(--accent-primary);">
+              <span class="font-semibold truncate" style="color: var(--accent-primary);">SHOT_02 // HERO_MID</span>
+              <span class="text-sec">061-145</span>
+            </div>
+            <div onclick="selectShot(3); scrubToFrame(175)" class="col-span-3 surface-elevated px-2 py-1.5 cursor-pointer hover:opacity-80 flex justify-between">
+              <span class="truncate">SHOT_03 // DRONE_OTS</span>
+              <span class="text-mut">146-210</span>
+            </div>
+            <div onclick="selectShot(4); scrubToFrame(240)" class="col-span-2 surface-elevated px-2 py-1.5 cursor-pointer hover:opacity-80 flex justify-between" style="border-color: var(--accent-ok);">
+              <span class="truncate" style="color: var(--accent-ok);">SHOT_04 // UNITY</span>
+              <span class="text-mut">240</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==================== RIGHT SIDEBAR: HUMAN-IN-THE-LOOP VLM CRITIC & BUILDER AGENT ==================== -->
+    <aside class="w-96 surface-panel border-l flex flex-col shrink-0 z-20">
+      
+      <!-- Right Sidebar Tabs -->
+      <div class="grid grid-cols-2 border-b" style="border-color: var(--border-hairline);">
+        <button onclick="switchRightTab('critic')" id="rightTab-critic" class="tab-btn tab-active py-2.5 text-[11px] font-medium uppercase tracking-wider mono flex items-center justify-center space-x-2">
+          <span>VLM Critic</span>
+          <span id="criticCountPill" class="px-1.5 py-0.2 text-[10px] surface-elevated" style="color: var(--accent-primary);">2</span>
+        </button>
+        <button onclick="switchRightTab('builder')" id="rightTab-builder" class="tab-btn py-2.5 text-[11px] font-medium uppercase tracking-wider mono">
+          Builder (bpy)
+        </button>
+      </div>
+
+      <!-- PANEL 1: VLM CRITIC AGENT -->
+      <div id="rightPanel-critic" class="flex-1 overflow-y-auto p-3 space-y-3">
+        <div class="surface-elevated p-2.5 flex items-center justify-between">
+          <div>
+            <div class="mono text-[10px] font-semibold">QWEN2.5-VL-32B // SPATIAL AUDIT</div>
+            <div class="mono text-[9px] text-sec">4x Orthographic Passes + Scene Graph JSON</div>
+          </div>
+          <button onclick="runFreshVlmAudit()" class="btn-ui surface-input px-2 py-1 mono text-[10px]">
+            Re-Audit
+          </button>
+        </div>
+
+        <!-- CRITIQUE CARD 1 -->
+        <div id="criticCard-1" class="critic-card p-3 space-y-2">
+          <div class="flex items-center justify-between mono text-[10px]">
+            <span class="font-bold" style="color: var(--accent-primary);">01 // GROUNDING VIOLATION</span>
+            <span class="text-sec">SHOT_02</span>
+          </div>
+          <div class="font-semibold text-xs">Crate_Cluster_04 floats +0.14m above floor</div>
+          <p class="text-[11px] text-sec leading-relaxed">
+            Raycasting down from bounding-box min-Z detects a 0.142m gap above <code class="mono">Alley_Ground</code>, breaking contact shadows in Cycles.
+          </p>
+          <div class="surface-input p-2 mono text-[10px] overflow-x-auto">
+            bpy.data.objects['Crate_Cluster_04'].location.z = 0.0
+          </div>
+          <div class="flex space-x-2 pt-1">
+            <button onclick="applyCriticFix(1, 'groundCrates')" class="flex-1 py-1.5 btn-primary-cta text-[11px]">
+              Approve & Ground
+            </button>
+            <button onclick="dismissCriticCard(1)" class="btn-ui surface-input px-3 py-1.5 text-[11px] text-sec">
+              Ignore
+            </button>
+          </div>
+        </div>
+
+        <!-- CRITIQUE CARD 2 -->
+        <div id="criticCard-2" class="critic-card p-3 space-y-2">
+          <div class="flex items-center justify-between mono text-[10px]">
+            <span class="font-bold" style="color: var(--accent-primary);">02 // EXPOSURE RATIO</span>
+            <span class="text-sec">SHOT_02</span>
+          </div>
+          <div class="font-semibold text-xs">Hero Courier silhouette (-3.2 EV vs Storyboard)</div>
+          <p class="text-[11px] text-sec leading-relaxed">
+            Subject face luminance is under-exposed relative to approved Storyboard Beat 02. Recommend adding 180W area fill at camera-left.
+          </p>
+          <div class="surface-input p-2 mono text-[10px] overflow-x-auto">
+            add_area_light('Fill_Left', watts=180, pos=(-2.1, -1.8, 2.2))
+          </div>
+          <div class="flex space-x-2 pt-1">
+            <button onclick="applyCriticFix(2, 'boostFillLight')" class="flex-1 py-1.5 btn-primary-cta text-[11px]">
+              Approve & Add Light
+            </button>
+            <button onclick="dismissCriticCard(2)" class="btn-ui surface-input px-3 py-1.5 text-[11px] text-sec">
+              Ignore
+            </button>
+          </div>
+        </div>
+
+        <!-- Scene Telemetry JSON -->
+        <div class="surface-elevated p-2.5 space-y-1.5">
+          <div class="flex justify-between mono text-[10px] text-sec">
+            <span>SCENE GRAPH TELEMETRY</span>
+            <span style="color: var(--accent-ok);">VALID</span>
+          </div>
+          <pre id="telemetryJsonBox" class="surface-input p-2 mono text-[10px] text-sec overflow-x-auto leading-relaxed">{
+  "shot": "SHOT_02",
+  "floating_meshes": ["Crate_Cluster_04"],
+  "unity_anchor_delta": 0.000,
+  "storyboard_ssim": 0.86
+}</pre>
+        </div>
+      </div>
+
+      <!-- PANEL 2: BUILDER COPILOT -->
+      <div id="rightPanel-builder" class="hidden flex-1 flex flex-col overflow-hidden">
+        <div id="chatStream" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+          <div class="surface-elevated p-2.5 space-y-1">
+            <div class="flex justify-between mono text-[10px] text-sec">
+              <span class="font-semibold text-main">QWEN2.5-CODER-32B</span>
+              <span>TX_041</span>
+            </div>
+            <p class="text-[11px] text-sec leading-relaxed">
+              Canonical scene <code class="mono">alley_seq_04.blend</code> active. Sketch on the viewport or enter a spatial command below.
+            </p>
+          </div>
+
+          <div class="surface-elevated p-2.5 space-y-1 ml-4" style="border-left: 2px solid var(--accent-primary);">
+            <div class="flex justify-between mono text-[10px] text-sec">
+              <span class="font-semibold text-main">DIRECTOR</span>
+              <span>FRAME_095 + MASK</span>
+            </div>
+            <p class="text-[11px]">Elevate patrol drone by 0.65m and angle spotlight toward cargo crates.</p>
+          </div>
+
+          <div class="surface-elevated p-2.5 space-y-1.5">
+            <div class="flex justify-between mono text-[10px]">
+              <span style="color: var(--accent-ok);">✓ BPY TRANSACTION COMMITTED</span>
+              <span class="text-sec">TX_042</span>
+            </div>
+            <pre class="surface-input p-2 mono text-[10px] overflow-x-auto">drone = bpy.data.objects['Drone_Patrol_01']
+drone.location.z += 0.65
+export_glb_proxy('shot_02')</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Prompt Input -->
+      <div class="p-3 surface-header border-t space-y-2">
+        <div class="flex justify-between mono text-[10px] text-sec">
+          <span>ATTACHMENT: FRAME_095 + RAYCAST</span>
+          <span>SAFE_WRAPPER: ON</span>
+        </div>
+        <div class="flex space-x-1.5">
+          <input id="directorPromptInput" type="text" placeholder="Direct scene or masked object..." onkeydown="if(event.key==='Enter') submitDirectorPrompt()" class="flex-1 surface-input px-2.5 py-1.5 text-xs focus:outline-none" />
+          <button onclick="submitDirectorPrompt()" class="btn-primary-cta px-3 py-1.5 text-xs">
+            Execute
+          </button>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ==================== UNITY EXPORT MANIFEST MODAL ==================== -->
+  <div id="unityModal" class="hidden fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-6">
+    <div class="surface-float max-w-xl w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b pb-3" style="border-color: var(--border-hairline);">
+        <div class="mono text-xs font-bold uppercase">Unity Cutscene → Gameplay Handoff Bundle</div>
+        <button onclick="closeUnityModal()" class="btn-ui px-2 py-0.5 text-sec">✕</button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2.5 mono text-[10px]">
+        <div class="surface-elevated p-2.5">
+          <div class="text-sec">01 // WORLD GEOMETRY</div>
+          <div class="font-bold mt-1">alley_seq_04.glb</div>
+          <div class="text-sec text-[9px] mt-1">4K Baked PBR + 18 Convex Colliders</div>
+        </div>
+        <div class="surface-elevated p-2.5">
+          <div class="text-sec">02 // CYCLES CUTSCENE</div>
+          <div class="font-bold mt-1">shots_01_04.mp4</div>
+          <div class="text-sec text-[9px] mt-1">Frames 001–240 Path-Traced</div>
+        </div>
+        <div class="surface-elevated p-2.5">
+          <div class="text-sec">03 // CAMERA CONTRACT</div>
+          <div class="font-bold mt-1">manifest.json</div>
+          <div class="text-sec text-[9px] mt-1">Frame 240 Pose Match</div>
+        </div>
+      </div>
+
+      <pre class="surface-input p-3 mono text-[10px] overflow-x-auto leading-relaxed">{
+  "project": "alley_seq_04.blend",
+  "transaction_head": "TX_042",
+  "handoff_frame": 240,
+  "unity_camera_anchor": {
+    "pos_m": [-0.82, 1.68, 3.45],
+    "rot_quat": [0.0, 0.991, -0.131, 0.0],
+    "fov_deg": 65.0
+  }
+}</pre>
+
+      <div class="flex items-center justify-between pt-1">
+        <span id="exportToast" class="mono text-[10px]" style="color: var(--accent-ok);">Target: /UnityProject/Assets/Proscenium/</span>
+        <div class="flex space-x-2">
+          <button onclick="closeUnityModal()" class="btn-ui surface-elevated px-3 py-1.5 text-xs">Cancel</button>
+          <button onclick="executeUnityExport()" class="btn-primary-cta px-4 py-1.5 text-xs">Bake PBR & Sync Unity</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT ENGINE ==================== -->
+  <script>
+    let scene, camera, renderer, gridHelper, floorMesh, crateGroup, heroMesh, droneGroup, fillLight, keyLight;
+    let isOrbitDragging = false;
+    let prevMouse = { x: 0, y: 0 };
+    let spherical = { theta: 0.35, phi: 1.22, radius: 6.8 };
+    let currentTool = 'orbit';
+    let isPlaying = false;
+    let playInterval = null;
+    let txCounter = 42;
+
+    const THEME_CONFIGS = {
+      arri:     { vpBg: 0x101012, gridMajor: 0x383840, gridMinor: 0x1e1e22, floor: 0x151518, stroke: '#f59e0b' },
+      linear:   { vpBg: 0x0c0c0f, gridMajor: 0x27272a, gridMinor: 0x18181b, floor: 0x121216, stroke: '#e4e4e7' },
+      houdini:  { vpBg: 0x1d2025, gridMajor: 0x4b5263, gridMinor: 0x2c313a, floor: 0x21252b, stroke: '#3b82f6' },
+      daylight: { vpBg: 0xd8d5cc, gridMajor: 0x8c8980, gridMinor: 0xc2bfb6, floor: 0xccc9c0, stroke: '#ea580c' }
+    };
+
+    function applyTheme(themeKey) {
+      document.body.setAttribute('data-theme', themeKey);
+      ['arri', 'linear', 'houdini', 'daylight'].forEach(k => {
+        const btn = document.getElementById(`themeBtn-${k}`);
+        if (btn) btn.classList.toggle('btn-active', k === themeKey);
+      });
+
+      // Sync Three.js Viewport Background & Grid to match the active UI theme
+      const cfg = THEME_CONFIGS[themeKey];
+      if (scene && cfg) {
+        scene.background = new THREE.Color(cfg.vpBg);
+        scene.fog = new THREE.FogExp2(cfg.vpBg, 0.045);
+        if (floorMesh) floorMesh.material.color.setHex(cfg.floor);
+        if (gridHelper) {
+          scene.remove(gridHelper);
+          gridHelper = new THREE.GridHelper(18, 18, cfg.gridMajor, cfg.gridMinor);
+          gridHelper.position.y = 0.01;
+          scene.add(gridHelper);
+        }
+      }
+      drawInitialDemoMarkup();
+    }
+
+    function initThreeStage() {
+      const container = document.getElementById('threeMount');
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 500;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x101012);
+      scene.fog = new THREE.FogExp2(0x101012, 0.045);
+
+      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+      updateCameraOrbit();
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      gridHelper = new THREE.GridHelper(18, 18, 0x383840, 0x1e1e22);
+      gridHelper.position.y = 0.01;
+      scene.add(gridHelper);
+
+      const floorGeo = new THREE.PlaneGeometry(18, 18);
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0x151518, roughness: 0.4, metalness: 0.3 });
+      floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      floorMesh.rotation.x = -Math.PI / 2;
+      scene.add(floorMesh);
+
+      // Architectural Blockout Archway
+      const archMat = new THREE.MeshStandardMaterial({ color: 0x2c2e33, roughness: 0.6 });
+      const leftPillar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4.2, 1.2), archMat);
+      leftPillar.position.set(-2.6, 2.1, -0.5);
+      const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4.2, 1.2), archMat);
+      rightPillar.position.set(2.6, 2.1, -0.5);
+      const topBeam = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.7, 1.4), archMat);
+      topBeam.position.set(0, 4.1, -0.5);
+      scene.add(leftPillar, rightPillar, topBeam);
+
+      // Hero Character Proxy
+      heroMesh = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x71717a, roughness: 0.35 });
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 1.35, 16), bodyMat);
+      torso.position.y = 0.68;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), bodyMat);
+      head.position.y = 1.55;
+      heroMesh.add(torso, head);
+      heroMesh.position.set(-0.8, 0, 1.2);
+      scene.add(heroMesh);
+
+      // Floating Cargo Crates (Flagged by VLM Critic)
+      crateGroup = new THREE.Group();
+      const crateMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.55 });
+      const crate1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.85, 0.95), crateMat);
+      crate1.position.set(0.55, 0.425, 0.9);
+      const crate2 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.65, 0.65), crateMat);
+      crate2.position.set(1.25, 0.325, 1.15);
+      crateGroup.add(crate1, crate2);
+      crateGroup.position.y = 0.38;
+      scene.add(crateGroup);
+
+      // Patrol Drone
+      droneGroup = new THREE.Group();
+      const droneMat = new THREE.MeshStandardMaterial({ color: 0xa1a1aa, roughness: 0.25, metalness: 0.7 });
+      const droneCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.38, 1), droneMat);
+      droneGroup.add(droneCore);
+      droneGroup.position.set(1.7, 2.75, -1.2);
+      scene.add(droneGroup);
+
+      // Lights
+      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+      keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      keyLight.position.set(3, 6, 2);
+      scene.add(keyLight);
+
+      fillLight = new THREE.PointLight(0xf59e0b, 0.3, 12);
+      fillLight.position.set(-2.5, 2.2, 2.8);
+      scene.add(fillLight);
+
+      const vp = document.getElementById('viewportContainer');
+      vp.addEventListener('mousedown', (e) => {
+        if (currentTool !== 'orbit') return;
+        isOrbitDragging = true;
+        prevMouse = { x: e.clientX, y: e.clientY };
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!isOrbitDragging || currentTool !== 'orbit') return;
+        spherical.theta -= (e.clientX - prevMouse.x) * 0.007;
+        spherical.phi = Math.max(0.25, Math.min(1.48, spherical.phi - (e.clientY - prevMouse.y) * 0.007));
+        prevMouse = { x: e.clientX, y: e.clientY };
+        updateCameraOrbit();
+      });
+      window.addEventListener('mouseup', () => { isOrbitDragging = false; });
+      window.addEventListener('resize', resizeViewport);
+
+      animateThree();
+      setTimeout(resizeViewport, 60);
+    }
+
+    function updateCameraOrbit() {
+      if (!camera) return;
+      camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+      camera.position.y = spherical.radius * Math.cos(spherical.phi);
+      camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+      camera.lookAt(0, 1.1, 0.3);
+    }
+
+    function animateThree() {
+      requestAnimationFrame(animateThree);
+      if (droneGroup) {
+        droneGroup.position.y = 2.75 + Math.sin(Date.now() * 0.0025) * 0.1;
+        droneGroup.rotation.y += 0.01;
+      }
+      if (renderer && scene && camera) renderer.render(scene, camera);
+    }
+
+    function resizeViewport() {
+      const container = document.getElementById('viewportContainer');
+      if (!container || !renderer) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+
+      const annotCanvas = document.getElementById('annotationCanvas');
+      annotCanvas.width = w;
+      annotCanvas.height = h;
+      drawInitialDemoMarkup();
+    }
+
+    // --- 2D ANNOTATION CANVAS ---
+    let isDrawing = false;
+    let lastPt = { x: 0, y: 0 };
+
+    function initAnnotationCanvas() {
+      const canvas = document.getElementById('annotationCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.addEventListener('mousedown', (e) => {
+        if (currentTool === 'orbit') return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (currentTool === 'text') {
+          const note = prompt('Director Callout Note:', 'Snap to ground Z=0');
+          if (note) addTextPin(x, y, note);
+          return;
+        }
+        isDrawing = true;
+        lastPt = { x, y };
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const wx = ((x / canvas.width) * 4 - 2).toFixed(2);
+        const wz = ((y / canvas.height) * 4 - 1).toFixed(2);
+        document.getElementById('raycastReadout').innerText = `RAYCAST: Crate_Cluster_04 [${wx}m, 0.14m, ${wz}m]`;
+
+        if (!isDrawing || currentTool === 'orbit') return;
+        const activeTheme = document.body.getAttribute('data-theme') || 'arri';
+        const strokeColor = THEME_CONFIGS[activeTheme].stroke;
+
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        if (currentTool === 'brush') {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 3;
+        } else if (currentTool === 'mask') {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.42)';
+          ctx.lineWidth = 24;
+        } else if (currentTool === 'eraser') {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.lineWidth = 26;
+        } else if (currentTool === 'lasso') {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 1.5;
+        }
+        ctx.beginPath();
+        ctx.moveTo(lastPt.x, lastPt.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.restore();
+        lastPt = { x, y };
+      });
+
+      window.addEventListener('mouseup', () => { isDrawing = false; });
+    }
+
+    function drawInitialDemoMarkup() {
+      const canvas = document.getElementById('annotationCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const activeTheme = document.body.getAttribute('data-theme') || 'arri';
+      ctx.save();
+      ctx.strokeStyle = THEME_CONFIGS[activeTheme].stroke;
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 4]);
+      ctx.strokeRect(w * 0.52, h * 0.56, 86, 68);
+      ctx.restore();
+    }
+
+    function addTextPin(x, y, text) {
+      const pinLayer = document.getElementById('pinLayer');
+      const div = document.createElement('div');
+      div.style.left = `${x}px`;
+      div.style.top = `${y}px`;
+      div.className = 'absolute surface-float px-2 py-1 mono text-[10px] -translate-x-1/2 -translate-y-full';
+      div.style.borderLeft = '3px solid var(--accent-primary)';
+      div.innerText = text;
+      pinLayer.appendChild(div);
+    }
+
+    function setInteractionTool(tool) {
+      currentTool = tool;
+      ['orbit', 'brush', 'mask', 'eraser', 'lasso', 'text'].forEach(t => {
+        const btn = document.getElementById(`toolBtn-${t}`);
+        if (btn) btn.classList.toggle('btn-active', t === tool);
+      });
+      const annotCanvas = document.getElementById('annotationCanvas');
+      annotCanvas.style.pointerEvents = (tool === 'orbit') ? 'none' : 'auto';
+      annotCanvas.style.cursor = (tool === 'orbit') ? 'default' : 'crosshair';
+    }
+
+    function clearAnnotations() {
+      const canvas = document.getElementById('annotationCanvas');
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('pinLayer').innerHTML = '';
+    }
+
+    function applyCriticFix(cardId, fixType) {
+      if (fixType === 'groundCrates' && crateGroup) {
+        crateGroup.position.y = 0.0;
+        clearAnnotations();
+      } else if (fixType === 'boostFillLight' && fillLight) {
+        fillLight.intensity = 1.8;
+      }
+      const card = document.getElementById(`criticCard-${cardId}`);
+      if (card) {
+        card.innerHTML = `<div class="mono text-[10px] flex justify-between" style="color: var(--accent-ok);">
+          <span>✓ COMMITTED TO HEADLESS BLENDER (TX_0${++txCounter})</span>
+          <span>GLB UPDATED</span>
+        </div>`;
+      }
+      document.getElementById('txBadge').innerText = `TX_0${txCounter} // CRITIC_FIX`;
+      updateCriticBadgeCount();
+    }
+
+    function dismissCriticCard(cardId) {
+      const card = document.getElementById(`criticCard-${cardId}`);
+      if (card) card.remove();
+      updateCriticBadgeCount();
+    }
+
+    function updateCriticBadgeCount() {
+      const remaining = document.querySelectorAll('[id^="criticCard-"]').length;
+      document.getElementById('criticCountPill').innerText = remaining;
+    }
+
+    function runFreshVlmAudit() {
+      document.getElementById('telemetryJsonBox').innerText = JSON.stringify({
+        shot: "SHOT_02",
+        floating_meshes: crateGroup.position.y > 0.05 ? ["Crate_Cluster_04"] : [],
+        unity_anchor_delta: 0.000,
+        storyboard_ssim: crateGroup.position.y === 0 ? 0.96 : 0.86
+      }, null, 2);
+    }
+
+    function sendAnnotatedFrameToAgent() {
+      switchRightTab('builder');
+      const input = document.getElementById('directorPromptInput');
+      if (!input.value.trim()) input.value = 'Ground highlighted crates to Z=0.0m and update proxy.';
+      submitDirectorPrompt();
+    }
+
+    function submitDirectorPrompt() {
+      const input = document.getElementById('directorPromptInput');
+      const text = input.value.trim();
+      if (!text) return;
+      switchRightTab('builder');
+      const stream = document.getElementById('chatStream');
+
+      const userDiv = document.createElement('div');
+      userDiv.className = 'surface-elevated p-2.5 space-y-1 ml-4';
+      userDiv.style.borderLeft = '2px solid var(--accent-primary)';
+      userDiv.innerHTML = `<div class="flex justify-between mono text-[10px] text-sec">
+        <span class="font-semibold text-main">DIRECTOR</span><span>FRAME + RAYCAST</span>
+      </div><p class="text-[11px]">${text}</p>`;
+      stream.appendChild(userDiv);
+
+      if (crateGroup) crateGroup.position.y = 0;
+      txCounter++;
+      document.getElementById('txBadge').innerText = `TX_0${txCounter} // BPY_MUTATION`;
+
+      const botDiv = document.createElement('div');
+      botDiv.className = 'surface-elevated p-2.5 space-y-1.5';
+      botDiv.innerHTML = `<div class="flex justify-between mono text-[10px]">
+        <span style="color: var(--accent-ok);">✓ BPY TRANSACTION COMMITTED</span>
+        <span class="text-sec">TX_0${txCounter}</span>
+      </div>
+      <pre class="surface-input p-2 mono text-[10px] overflow-x-auto">bpy.ops.ed.undo_push(message="TX_0${txCounter}")
+apply_raycast_delta(snap_ground=True)</pre>`;
+      stream.appendChild(botDiv);
+      stream.scrollTop = stream.scrollHeight;
+      input.value = '';
+    }
+
+    function switchLeftTab(tab) {
+      ['storyboard', 'scene', 'assets'].forEach(t => {
+        document.getElementById(`leftPanel-${t}`).classList.toggle('hidden', t !== tab);
+        document.getElementById(`leftTab-${t}`).classList.toggle('tab-active', t === tab);
+      });
+    }
+
+    function switchRightTab(tab) {
+      ['critic', 'builder'].forEach(t => {
+        document.getElementById(`rightPanel-${t}`).classList.toggle('hidden', t !== tab);
+        document.getElementById(`rightTab-${t}`).classList.toggle('tab-active', t === tab);
+      });
+    }
+
+    function selectShot(shotId) {
+      [1, 2, 3, 4].forEach(id => {
+        const el = document.getElementById(`shotCard-${id}`);
+        if (el) el.classList.toggle('active', id === shotId);
+      });
+      const presets = {
+        1: { theta: 0.05, phi: 1.38, radius: 9.2 },
+        2: { theta: 0.35, phi: 1.22, radius: 6.8 },
+        3: { theta: -0.55, phi: 1.15, radius: 5.4 },
+        4: { theta: 0.0, phi: 1.28, radius: 4.2 }
+      };
+      if (presets[shotId]) {
+        spherical = { ...presets[shotId] };
+        updateCameraOrbit();
+      }
+      toggleUnityHudOverlay(shotId === 4);
+      document.getElementById('hudToggle').checked = (shotId === 4);
+    }
+
+    function switchCameraView(val) {
+      const map = { cam1: 1, cam2: 2, cam4: 4, orbit: 2 };
+      selectShot(map[val] || 2);
+    }
+
+    function setRenderStyle(style) {
+      scene.traverse(obj => {
+        if (obj.isMesh && obj.material) obj.material.wireframe = (style === 'wire');
+      });
+      document.getElementById('renderBtn-eevee').classList.toggle('btn-active', style === 'eevee');
+      document.getElementById('renderBtn-wire').classList.toggle('btn-active', style === 'wire');
+    }
+
+    function triggerCyclesSnapshot() {
+      document.getElementById('activeToolHint').innerText = 'CYCLES HIP (Radeon 8060S): 128spp Frame Rendered in 1.4s';
+    }
+
+    function toggleUnityHudOverlay(show) {
+      document.getElementById('unityHudOverlay').classList.toggle('hidden', !show);
+    }
+
+    function scrubToFrame(frame) {
+      const f = parseInt(frame, 10);
+      document.getElementById('timelineSlider').value = f;
+      document.getElementById('currentFrameDisplay').innerText = String(f).padStart(3, '0');
+      const secs = Math.floor(f / 24);
+      const rem = f % 24;
+      document.getElementById('currentTimeDisplay').innerText = `00:00:0${secs}:${String(rem).padStart(2, '0')}`;
+      if (heroMesh) heroMesh.position.z = 1.2 - (f - 95) * 0.008;
+    }
+
+    function togglePlayback() {
+      isPlaying = !isPlaying;
+      document.getElementById('playIcon').innerText = isPlaying ? '⏸' : '▶';
+      document.getElementById('playLabel').innerText = isPlaying ? 'PAUSE' : 'PLAY';
+      if (isPlaying) {
+        playInterval = setInterval(() => {
+          let f = parseInt(document.getElementById('timelineSlider').value, 10);
+          f = f >= 240 ? 1 : f + 1;
+          scrubToFrame(f);
+        }, 42);
+      } else {
+        clearInterval(playInterval);
+      }
+    }
+
+    function rollbackTx(dir) {
+      txCounter = Math.max(1, txCounter + dir);
+      document.getElementById('txBadge').innerText = `TX_0${txCounter} // ROLLBACK`;
+    }
+
+    function spawnGen3DAsset() {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(1.0, 1.3, 0.9),
+        new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.4 })
+      );
+      mesh.position.set(-1.9, 0.65, -0.2);
+      scene.add(mesh);
+      txCounter++;
+      document.getElementById('txBadge').innerText = `TX_0${txCounter} // +TRELLIS_MESH`;
+    }
+
+    function insertKitbash(name) {
+      const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.35, 1.1, 16),
+        new THREE.MeshStandardMaterial({ color: 0x71717a, roughness: 0.5 })
+      );
+      mesh.position.set((Math.random() - 0.5) * 3, 0.55, (Math.random() - 0.5) * 2);
+      scene.add(mesh);
+      txCounter++;
+      document.getElementById('txBadge').innerText = `TX_0${txCounter} // +${name}`;
+    }
+
+    function select3DObject(objName) {
+      document.getElementById('raycastReadout').innerText = `SELECTED: ${objName}`;
+    }
+
+    function triggerNewStoryboardBeat() {
+      document.getElementById('activeToolHint').innerText = 'FLUX.1-schnell queued for SHOT_05 concept keyframe.';
+    }
+
+    function openUnityModal() {
+      document.getElementById('unityModal').classList.remove('hidden');
+    }
+
+    function closeUnityModal() {
+      document.getElementById('unityModal').classList.add('hidden');
+    }
+
+    function executeUnityExport() {
+      document.getElementById('exportToast').innerText = '✓ Exported .glb + 4K PBR Maps + manifest.json';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initThreeStage();
+      initAnnotationCanvas();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "receipt-frame-2",
+  "project_id": "fixture-project",
+  "job_id": "job-draft-1",
+  "version_id": "scene-fixture-v1",
+  "shot_id": "shot-fixture",
+  "source_frame": 2,
+  "artifact_id": "image-frame-2",
+  "output_path": "frames/00000002.png",
+  "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "dimensions": {"width": 640, "height": 360},
+  "input_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}

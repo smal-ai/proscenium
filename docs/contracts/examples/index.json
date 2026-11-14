@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "purpose": "Synthetic schema fixtures, not source/media existence or application execution evidence",
+  "examples": [
+    {"file": "queue.json", "definition": "MessageSubmit", "valid": true},
+    {"file": "steer.json", "definition": "MessageSubmit", "valid": true},
+    {"file": "stop.json", "definition": "MessageSubmit", "valid": true},
+    {"file": "context.json", "definition": "ContextSnapshot", "valid": true},
+    {"file": "publication.json", "definition": "PublicationSubmit", "valid": true},
+    {"file": "frame-receipt.json", "definition": "FrameReceipt", "valid": true},
+    {"file": "segment.json", "definition": "PreviewSegment", "valid": true},
+    {"file": "annotation.json", "definition": "AnnotationSave", "valid": true},
+    {"file": "event-before-ack.json", "definition": "Event", "valid": true},
+    {"file": "generation.json", "definition": "GenerationSubmit", "valid": true},
+    {"file": "review-ticket.json", "definition": "ReviewTicket", "valid": true},
+    {"file": "selection.json", "definition": "SelectionSave", "valid": true},
+    {"file": "resume.json", "definition": "ResumeCommand", "valid": true},
+    {"file": "error.json", "definition": "Error", "valid": true},
+    {"file": "invalid-stop-prompt.json", "definition": "MessageSubmit", "valid": false},
+    {"file": "invalid-path.json", "definition": "ClosureFile", "valid": false},
+    {"file": "invalid-review-ticket.json", "definition": "ReviewTicket", "valid": false},
+    {"file": "invalid-frame-event.json", "definition": "Event", "valid": false}
+  ]
+}

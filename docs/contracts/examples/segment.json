@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "segment_id": "segment-1-4",
+  "project_id": "fixture-project",
+  "job_id": "job-draft-1",
+  "shot_id": "shot-fixture",
+  "version_id": "scene-fixture-v1",
+  "source_frames": {"start": 1, "end": 4},
+  "fps": {"numerator": 24000, "denominator": 1001},
+  "frame_count": 4,
+  "artifact_id": "video-segment-1-4",
+  "output_path": "segments/00000001-00000004.mp4",
+  "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "input_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}

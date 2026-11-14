@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "error": {
+    "code": "publication_head_conflict",
+    "message": "The item has a different published head. Inspect its current version before publishing a new result.",
+    "operation_id": "pub-scene-v1",
+    "retryable": false,
+    "details": {"item_id": "scene-fixture", "current_version_id": "scene-fixture-v2"}
+  }
+}

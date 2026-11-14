@@ -1,0 +1,10 @@
+{
+  "destination": "../other-project/scene.blend",
+  "origin": {
+    "kind": "git",
+    "repository_id": "repo-fixture",
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "path": "scenes/fixture/scene.blend",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}

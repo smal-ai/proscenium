@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "request_id": "invalid-stop",
+  "project_id": "fixture-project",
+  "type": "stop",
+  "target_work_id": "work-create-scene",
+  "text": "This must not be forwarded as a model prompt.",
+  "context_id": "ctx-project-only"
+}

@@ -2,20 +2,28 @@
 
 A personal, desktop-browser studio for directing AI-authored Blender assets, scenes, storyboards and silent cinematics, with playable Unity scenes as a downstream output.
 
-**Status: planning baseline.** The V1 requirements, architecture and 14 journey-led milestones are documented. Application implementation has not started, and there is no runnable studio or installation procedure yet.
+**Status: specification baseline.** V1 requirements, architecture, normative contract 1.0, acceptance fixtures and a development-fleet handover are documented. Application implementation has not started, and there is no runnable studio or installation procedure yet.
 
 ## Start here
 
 | Document | Purpose |
 | --- | --- |
+| [Specification index](docs/specification.md) | Reading order, precedence, contract revision and confirmed owner decisions. |
 | [Requirements](docs/requirements.md) | Agreed V1 scope, ownership boundaries, functional requirements and exclusions. |
 | [Architecture](docs/architecture.md) | Components, integration contracts, source versions, progressive review, persistence and reusable tooling. |
 | [User journeys and milestones](docs/user-journeys.md) | Complete implementation plan, dependencies, acceptance criteria and failure/recovery checks. |
+| [Owner policy](docs/owner-policy.md) | Active-project privacy, autonomy, automatic operations, confirmations and generation budgets. |
+| [Contracts](docs/contracts/README.md) | JSON Schema, OpenAPI, events, examples and semantic invariants. |
+| [Execution and recovery](docs/execution.md) | Queue/Steer/Stop, session ownership, lost acknowledgements and explicit Resume. |
+| [Development fleet handover](docs/development-fleet.md) | Foundation gate, work packages, file ownership and integration criteria. |
+| [Acceptance pack](docs/acceptance/README.md) | Named fixtures, fault scenarios, browser matrix and documentation validation. |
 
 ## Planned V1 experience
 
 - One user, multiple saved projects and one active project at a time.
-- A persistent project-wide Copilot discussion, with selected items, versions, images and annotations captured for each message. Send queues work, while Steer corrects the current turn.
+- A persistent project-wide Copilot discussion with immutable Queue/Steer context. Stop is a native cancellation control and holds subsequent requests until explicit Resume.
+- Autonomous in-scope production, with relevant active-project content available to Copilot. Other projects and credentials stay excluded. Consequential operations require the confirmed owner authorisation.
+- Configurable image/3D-generation budgets, defaulting to three attempts per target/task.
 - A single central viewer toggled between **3D Inspection**, rendered **Keyframes** and rendered **Animation**. Completed frames and playable ranges become reviewable before an animation finishes rendering.
 - Story planning, reference research, local/online asset discovery and ComfyUI-generated concept images.
 - Requested local VLM critique, with user-approved findings and relevant images returned to Copilot.
@@ -41,9 +49,9 @@ The planned application uses:
 | Independent LM Studio / ComfyUI services | Configurable local VLM inference and generation workflows. |
 | Unity CLI and Editor APIs | Import, scene setup, player controls and validation through a Copilot specialist. |
 
-V1 runs **host-native on one workstation**, with remote browser access through SSH. The UI targets a **1920 × 1080 desktop viewport**. Mobile layouts, multi-user collaboration, public hosting and distributed execution are outside V1.
+V1 runs **host-native on this Linux workstation**, with remote browser access through SSH. The UI targets a **1920 × 1080 desktop viewport** in Chromium, Brave and Edge. Mobile layouts, multi-user collaboration, public hosting and distributed execution are outside V1.
 
-The project consolidates lessons from `smal-ai-blender`, `smal-ai-game` and `smal`. Their reusable components and required adaptations are recorded in the [reference implementation inventory](docs/architecture.md#15-reference-implementation-inventory). They are research sources, not intended runtime dependencies.
+The project consolidates lessons from `smal-ai-blender`, `smal-ai-game` and `smal`. Their reusable components and adaptations are recorded in the [reference inventory](docs/architecture.md#15-reference-implementation-inventory), with [committed source pins](docs/reference-pins.json). The approved [Linear Minimal mockup](docs/design/README.md) is preserved in this repository. These are research/design sources, not runtime dependencies.
 
 ## First implementation milestone
 
@@ -51,7 +59,17 @@ The project consolidates lessons from `smal-ai-blender`, `smal-ai-game` and `sma
 
 **Prompt → Copilot/Blender → Git checkpoint → published render → annotation → follow-up.**
 
-Start by proving Copilot SDK compatibility and the minimal source/publication/context contracts, then demonstrate that loop with the existing Blender tooling. The remaining milestones build out the full V1 experience.
+Start with the [F00 foundation gate](docs/development-fleet.md#f00-foundation-and-compatibility-gate): prove SDK/tool scope compatibility, generate the shared bindings and establish the offline harness. Then demonstrate M01 with the existing Blender tooling. The remaining milestones build out the full V1 experience against accepted contracts.
+
+## Validate the specification
+
+Using an existing Python environment with the [documentation dependencies](docs/requirements-validation.txt):
+
+```bash
+python3 -B docs/validate_spec.py
+```
+
+This checks schemas/examples, API references, document links, preserved design hashes and numerical fixture vectors. It does not run application/native/model tests. Details are in the [acceptance pack](docs/acceptance/README.md#documentation-validation).
 
 ## Local configuration
 

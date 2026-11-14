@@ -1,12 +1,12 @@
 # Proscenium: system architecture
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 
 **Updated:** 2026-11-14
 
-**Status:** V1 design baseline. Proposed contracts and implementation choices must be exercised by the milestones, not treated as an implemented system.
+**Status:** V1 design and normative contract 1.0 baseline. Compatibility proofs and application implementation remain outstanding.
 
-See [requirements](requirements.md) for scope and [user journeys and milestones](user-journeys.md) for the complete implementation plan.
+See the [specification index](specification.md) for precedence, [requirements](requirements.md) for scope and [user journeys](user-journeys.md) for cumulative acceptance. [Contracts](contracts/README.md), [execution](execution.md), [source publication](source-publication.md), [review/media](review-media.md) and [owner policy](owner-policy.md) define the implementation hand-offs.
 
 ## 1. Architectural decisions
 
@@ -29,6 +29,10 @@ See [requirements](requirements.md) for scope and [user journeys and milestones]
 | Cinematics | Silent in V1. |
 | Unity | Native specialist subagent delivers a playable scene with basic controls. Playtesting stays in Unity. |
 | Recovery | Browser disconnect does not cancel work. Backend/workstation restart requires explicit Resume. |
+| Control requests | Queue, Steer and Stop. Stop invokes runtime cancellation and holds queued requests. External-job cancellation is separate. |
+| Autonomy | Progress through requested creative stages automatically, with the confirmed permission policy and configurable three-attempt generation default. |
+| Content scope | Relevant active-project content may reach cloud reasoning. No cross-project or credential access. |
+| Browsers | Chromium, Brave and Edge on the Linux development/reference workstation. |
 
 These decisions replace the original headless-only daemon, application-owned transaction wrapper, local Builder model, LangGraph/AutoGen layer, Qdrant index and seamless cinematic-to-gameplay requirement.
 
@@ -109,23 +113,25 @@ Configuration supplies:
 - Explicit SDK permission handling and project working directory.
 - Public event subscriptions and supported usage reporting.
 
-The lead decides when to delegate. Economical worker profiles provide the model choices for suitable work. No assumption is made that default delegation automatically chooses the cheapest model or reduces total cost.
+The lead decides when to delegate and progresses autonomously through the requested stages. Economical worker profiles provide model choices for suitable work. Generation attempts use the shared task/target budget, default three. No assumption is made that default delegation automatically chooses the cheapest model or reduces total cost.
+
+Routine in-scope work is automatically permitted. Consequential operations and actual project-content boundaries follow [owner policy](owner-policy.md). Native user-input/permission callbacks become durable decision cards; an agent cannot manufacture owner approval. The interface exposes public tool access in addition to the initially attached UI context.
 
 The application does not need experimental fleet orchestration to implement the initial native-subagent workflow. Any experimental SDK/RPC surface introduced later needs an explicit compatibility test against the pinned versions.
 
 ### 4.2 Messages and context snapshots
 
-On Send or Steer:
+For Queue or Steer:
 
 1. Capture the user's text and UI context, including exact media and source versions.
 2. Save an immutable request ID and the attachment/context records before forwarding.
-3. Use native `enqueue` for ordinary Send and `immediate` for explicit Steer.
+3. Persist ordinary Queue requests in the application's delivery FIFO and submit one eligible root request with native `enqueue`. Use native `immediate` for an admitted Steer. This delivery queue does not plan agent work.
 4. Record the runtime acknowledgement/message ID separately from execution and completion.
 5. Append public runtime/application events and stream them to connected browsers.
 
 The saved UI snapshot is authoritative for that message. Later navigation does not change it. A queued request concerning an older source remains a request about that source. Copilot can inspect the difference when it runs, but the application must not silently retarget it.
 
-Steering is best-effort at a model boundary. It neither undoes a completed edit nor guarantees cancellation of an in-flight tool call. Any future Stop control must distinguish aborting the agent turn from stopping independently running Blender/Unity/ComfyUI processes.
+Steering is best-effort at a model boundary. Stop is a first-class control request which bypasses the delivery queue, calls native cancellation and holds subsequent requests until explicit Resume. It is never a model text prompt. Already-admitted external jobs retain separate state and cancellation controls. The exact races, acknowledgements and transitions are in [execution](execution.md).
 
 ### 4.3 Reconnectable event stream
 
@@ -137,17 +143,17 @@ Copilot's native session store owns resumable inference history. SQLite owns the
 
 ## 5. Contracts and identities
 
-The following are logical records, not implemented schema files. M01 defines the smallest working contract. Later milestones extend it with versioned schema migrations and fixture tests.
+The following overview is implemented as a normative specification in [contract 1.0](contracts/README.md), including closed JSON schemas, HTTP operations, events and examples. These are not application implementations. F00 owns generated bindings and compatibility proofs; later schema changes follow the specification change policy rather than independent agent inventions.
 
 | Record | Essential fields and invariants |
 | --- | --- |
-| Project | Stable ID, chosen workspace, repository identity, configured Unity project/location, native session ID and active state. No inherited creative brief. |
+| Project | Stable ID, chosen dedicated working-tree root, repository identity, project-relative Unity location, native session ID and active state. No inherited creative brief. |
 | Item | Stable project-scoped ID, kind, descriptive metadata and current explicitly published version ID. Kinds include asset, scene, storyboard and sequence. |
 | Source reference | Repository ID, full commit SHA, canonical path, actual file SHA-256 and explicitly pinned dependency references. A Git LFS pointer is not the file content. |
 | Published version | Immutable version ID, item ID, source/dependency closure, creation/request attribution, available artefacts and preview requests. |
 | Publication request | Schema version, immutable publication ID, project/request context and one or more completed item versions. Same ID plus same payload is retry-safe. |
 | Artefact | Stable artefact ID, kind, local managed location, hash, dimensions and media metadata as applicable. URLs resolve by ID, not arbitrary supplied paths. |
-| UI context | Target item/version, selected mode, camera/frame/range, selection IDs, reference/media IDs, annotations and approved findings captured at send time. |
+| UI context | Target item/version, selected mode, camera/frame/range, selection IDs, reference/media IDs and immutable annotation/finding snapshots captured for Queue/Steer. Stop identifies its active work instead. |
 | Annotation | Immutable target reference, actual displayed frame/media hash, vector/pin/mask data, image dimensions/coordinates, optional valid spatial hits, text and save revision. |
 | Render job | Job ID, pinned source closure, profile/engine/device, camera, sample or inclusive frame range, rational frame rate, expected outputs, process identity and frame receipts. |
 | Preview segment | Job/shot ID, inclusive source-frame interval, frame count, frame-to-video-time mapping and encoded artefact hash. |
@@ -179,18 +185,22 @@ A scene published against food-cart version A continues to use A after food-cart
 
 For previews of historical or still-rendering versions, materialise the declared source/dependency closure into an isolated ignored cache or equivalent read-only job workspace. Hydrate and verify the referenced LFS content. This is runtime materialisation of a revision, not a new numbered authored source or a checkout over the artist's live working tree.
 
+[Source resolution](source-publication.md) specifies destination-path binding, cross-commit dependencies, local-only retained blobs, collision rejection, exact hydration and clean-workspace reopening. A hash list alone does not cause Blender to use the correct linked bytes.
+
 ### 6.2 Publication protocol
 
 1. Copilot saves and checks the requested source outputs through its tools.
 2. Copilot creates the required source checkpoint and calls `publish_outputs` for completed items.
 3. Proscenium validates the project association, schema, version/hash references and representable file locations.
-4. It records the publication atomically and updates the item catalogue's current-published reference.
+4. It atomically records completed source items, compare-and-swap head updates, preview-job intents and durable events.
 5. It exposes available artefacts and schedules only the explicitly declared presentation renders/encodes.
 6. It emits catalogue/preview events without waiting for the entire Copilot turn to end.
 
 The publication tool must be available to the appropriate lead/subagent profiles, with request/project attribution derived from the session integration rather than trusted solely from model-supplied text.
 
 A completed source may have a queued, partial or failed preview. The UI shows those separate states and keeps the previous available media accessible. A publication retry reuses its original ID. A changed payload requires a new publication identity.
+
+Every item in one publication batch is source-complete. Unfinished source items use later publications. A pending preview is permitted. Expected-head comparisons prevent late publications from replacing newer heads, and persisted preview intents survive the commit-to-worker-launch failure window. See the [publication protocol](source-publication.md#4-publication-transaction).
 
 The current-published pointer is application metadata. It is not a declaration of creative approval and does not change any Blender dependency.
 
@@ -202,7 +212,7 @@ Reuse the pinned MCP bridge and desktop/virtual-display launcher patterns. Agent
 
 The existing virtual-display reference starts a real Blender UI under Xvfb because the MCP add-on needs its event loop. This does not imply that every GPU render mode is supported by that display setup. Verify viewport capture and the selected renderer/device separately.
 
-There is no new Proscenium authoring daemon or transaction-manager class. Arbitrary agent Python and shell commands execute with the permissions of their tools/processes. An `exec` namespace or project working directory is not a sandbox.
+There is no new Proscenium authoring daemon or transaction-manager class. Arbitrary agent Python and shell commands have their tool/process permissions. An `exec` namespace or working directory is not a sandbox. The project-only access policy therefore requires a proven execution boundary for each enabled code path; an unproven path remains unavailable for scoped automatic operation. Authoring writers and Git checkpoints use the tool-owned coordination policy in [execution](execution.md#2-process-and-resource-ownership).
 
 ### 7.2 Presentation rendering
 
@@ -246,6 +256,8 @@ The application must not wait for a whole-movie hash to offer review.
 
 Segment length is an implementation parameter to choose by measuring time to first playable output, encoder overhead and playback behaviour. Do not impose an untested latency claim.
 
+The initial segment profile is silent H.264/MP4 with exact rational-FPS mappings and independently decodable segment starts. [Review/media](review-media.md#4-progressive-animation) defines boundary, buffering, missing-range and annotation behaviour. E03 verifies it in Chromium, Brave and Edge.
+
 Before frames exist, Animation shows Rendering and actual progress. It may keep the previous version accessible, but must label that version explicitly rather than display it as the new render.
 
 Review records bind to source version + render job + shot/frame/range + displayed frame/segment hash. A later source revision or changed frame does not overwrite that identity. Render failure leaves already published frames reviewable with an incomplete/failed status.
@@ -254,12 +266,7 @@ Review records bind to source version + render job + shot/frame/range + displaye
 
 ### 9.1 Visual baseline
 
-Reference files supplied by the owner:
-
-- `/home/quintin/Downloads/proscenium_ui_mockup.html`
-- `/home/quintin/Downloads/proscenium_mockup.png`
-
-Use only the Linear Minimal treatment. These files are local design references, not runtime dependencies or a request for four themes.
+The owner's PNG and original HTML are preserved byte-for-byte under [docs/design](design/README.md), with hashes and a fixed-desktop layout specification. Use only the Linear Minimal treatment. The archived HTML is a visual research artefact, not production code or a request for four themes.
 
 Preserve these selected design tokens so the styling decision is not dependent on the Downloads files remaining in place:
 
@@ -279,11 +286,13 @@ Preserve these selected design tokens so the styling decision is not dependent o
 | Central area | One selected review mode: 3D Inspection, Keyframes or Animation. |
 | Central controls | Mode-appropriate camera, annotation, frame/range and render controls. |
 | Timeline | Shot/frame navigation and progressive availability when relevant. |
-| Right panel | Project discussion and requested VLM review, with visible context attachments and Send/Steer. |
+| Right panel | Project discussion, VLM review and native decision cards, with visible context attachments and Queue/Steer/Stop. |
 
 Remove obsolete mockup behaviour: direct UI `bpy` fixes, fake transaction undo/redo, Qdrant labels, automatic Unity HUD/transition verification, hardcoded local Builder models and fabricated telemetry. Historical version actions submit explicit requests to Copilot rather than resetting files.
 
 The page is desktop-only at a 1920 × 1080 reference viewport. Fit and scroll panels without introducing mobile layouts. Bundle the frontend and fonts instead of shipping the mockup's CDN scripts. Review media keeps its own declared aspect ratio and resolution. Keyframes is the initial review mode when rendered stills are available.
+
+Chromium supplies the automated browser baseline; installed Brave and Edge also receive actual acceptance runs on the Linux reference host. The [design](design/README.md) and [acceptance](acceptance/README.md) documents define geometry, target capture and browser evidence.
 
 ### 9.2 Static inspection and camera transfer
 
@@ -301,6 +310,8 @@ Render this view captures the inspection camera, including projection type, pose
 - A spatial hit is valid only for the matching proxy version, sample frame and camera. Most animation annotations can remain image-space instructions. Do not project moving objects onto a stale static proxy and report the result as measured geometry.
 
 Starting markup on video freezes/captures the actual displayed frame. Frame numbering is one-based and ranges are inclusive. Preserve native/source-to-sequence mapping and rational frame rates rather than relying on rounded timestamp strings.
+
+[Review/media](review-media.md#3-frame-and-coordinate-convention) fixes matrix storage/multiplication, basis conversions, projection semantics and normalised image coordinates. A range annotation has one drawn anchor frame plus a temporal range; automatic mask tracking is outside V1.
 
 ### 9.4 Feedback persistence
 
@@ -321,7 +332,7 @@ Retain independently invocable stages:
 5. Rendered keyframes and draft motion review.
 6. Selected silent assembly/delivery.
 
-Copilot decides what to do within the user's request and can delegate through native subagents. Proscenium displays the resulting plans and artefacts. Merely opening a gallery, changing a selected reference or discovering stale dependencies does not submit a new generation job.
+Copilot progresses autonomously within the user's request and can delegate through native subagents. It pauses for material unknowns, requested checkpoints, consequential permissions or exhausted generation budgets. Proscenium displays plans and artefacts. Merely opening a gallery, changing a selected reference or discovering stale dependencies does not submit a new generation job.
 
 Plans distinguish reusable assets, shots, storyboard frames, scene bindings, reference roles, motion beats, timing and unresolved inputs. Shared style text contains treatment, not a previous project's industrial subjects or cast. Concept images remain design references until actual geometry is authored.
 
@@ -341,9 +352,11 @@ Required changes to the references include:
 
 The tool layer can inspect queue and memory availability and serialise its own writes. It must not clear unrelated jobs, terminate applications or upgrade the shared ROCm environment.
 
+Generation reserves an attempt against the host-bound human task/target before submission. The configurable default is three. Polling, downloading and reconciliation do not consume attempts; ambiguous submissions retain their reservations. The common resource claim and external-queue policy are in [storage/operations](storage-operations.md#5-resource-admission).
+
 ### 10.3 Requested VLM review
 
-User or Copilot requests a review of specified images/source versions. A local adapter calls the configured VLM endpoint with its analysis prompt and available telemetry. Findings are delivered to Proscenium as review records, not executed tool actions.
+User or Copilot requests a review of specified images/source versions. A local adapter calls the configured VLM endpoint with its analysis prompt and available telemetry. The model-facing tool returns only a review ticket/status. Findings are stored for the owner UI and are not returned as unapproved repair instructions.
 
 The user can select/amend findings and submit them as a batch. The next Copilot input contains approved findings, the associated images and captured UI context. Findings not approved by the user do not become instructions to repair the scene. The VLM service is not an automatic publication gate.
 
@@ -361,6 +374,8 @@ Reuse the tested FBX/export and Editor-method approach before selecting an unver
 
 The output includes basic movement, camera control, collision/floor support and a safe spawn. Publish the Unity project/scene revision and source-input mapping. The user playtests in Unity Editor Play mode. No cinematic transition, additional game mechanics, Web build or browser player is required.
 
+The Unity workspace must be inside the active project folder. An external location from an older draft is not automatically authorised under the confirmed project-only access policy.
+
 The reference CLI expects the project's Editor closed for batch operations and has some broad Blender-process checks. Do not copy those checks as a studio-wide prohibition on live authoring. Target the actual project/instance, respect unsaved work and report when a batch action needs the user/agent to settle the Editor. Never force-close unrelated instances.
 
 ## 12. Storage and runtime lifecycle
@@ -375,7 +390,7 @@ The reference CLI expects the project's Editor closed for batch operations and h
 | Copilot native storage | Native conversation/session state required by the runtime for resume. |
 | External tool/service records | Blender worker receipts, ComfyUI job history and Unity logs/results referenced by their stable IDs. |
 
-The proposed project-local runtime directory is `.proscenium/`, ignored by Git. It can contain caches, job records, draft/outbox support and materialised source snapshots. Keep machine configuration/credentials out of tracked project content.
+The project-local runtime directory is `.proscenium/`, ignored by Git. Project SQLite lives at `.proscenium/state.sqlite3`; the machine's XDG application registry maps project IDs/locations and owns activation. Immutable artefacts, retained local-only sources, job outputs and snapshots have distinct roots. Exact locations and relocation/backup behaviour are in [storage/operations](storage-operations.md).
 
 Generated frame sequences are not automatically committed to LFS. Preserve submitted annotation targets and explicitly selected/published deliverables under a documented retention policy. Runtime SQLite and Copilot session state need backup independently of source Git history. Do not introduce automatic destructive cleanup in V1.
 
@@ -391,7 +406,7 @@ Generated frame sequences are not automatically committed to LFS. Preserve submi
 
 ### 12.3 One active project
 
-Persist inactive projects and their native session IDs. Only the active project accepts new work. If it is busy, a switch request must offer an explicit wait/settle/stop choice rather than quietly run a second project or discard active operations. Stopping an agent turn does not prove that all external jobs stopped.
+Persist inactive projects and their native session IDs. Only the active project accepts new work. If it is busy, expose wait, Stop Copilot and supported individual job cancellation. Project switching requires the settled state defined in [execution](execution.md#9-project-switching). Stopping an agent turn does not prove that external jobs stopped. Hold queued requests until an explicit Resume choice releases them.
 
 ## 13. Deployment, access and resource policy
 
@@ -399,8 +414,8 @@ Persist inactive projects and their native session IDs. Only the active project 
 - Bind to loopback by default. Use a configured local port through the existing SSH tunnel. Do not replace an unknown listener or the reference projects' live review servers.
 - The browser talks only to Proscenium. Copilot tools/backend adapters resolve LM Studio/ComfyUI URLs from the execution workstation, not the user's remote browser.
 - Use artefact-ID routes with permitted roots and content checks, HTTP byte ranges and explicit origins/hosts. Do not serve arbitrary workspace paths, `.git`, `.env`, databases or secret configuration.
-- Configure native tool permissions explicitly. Avoid an accidental blanket approval policy. This is not a replacement application-level scene-authoring gate.
-- Selected reference/render images can be sent to cloud reasoning, as agreed. Keep attachment roles visible and do not attach every file in the project.
+- Automatically permit routine in-scope operations and require the exact consequential confirmations in [owner policy](owner-policy.md). Keep owner-browser, native-tool and worker capabilities distinct. This is not an application-level scene-authoring gate.
+- Relevant active-project images/files can reach cloud reasoning through visible tool access. Automatic attachment capture stays explicit. Credentials, environment files and other projects are excluded through every enabled tool path.
 - Discover actual memory, service queues, models, device capabilities and runtime versions. Do not statically allocate the nominal 128 GB or assume historical ROCm/GPU figures still apply.
 - Benchmark first-frame availability, proxy load, local generation and render throughput using representative scenes. Report actual resource constraints rather than unsupported universal latency promises.
 
@@ -414,6 +429,9 @@ proscenium/
     requirements.md
     architecture.md
     user-journeys.md
+    contracts/                Normative schema, API, events and examples
+    acceptance/               Named fixtures and fault scenarios
+    design/                   Preserved mockup and desktop layout
   apps/
     frontend/                 React desktop workspace and review modes
     backend/                  FastAPI API, sessions, events, catalogue and previews
@@ -440,7 +458,7 @@ chosen-project/
   scenes/                     Canonical Blender scene files
   storyboards/                Canonical plan and reference-selection records
   sequences/                  Shot order, timing and explicit source bindings
-  unity/                      Optional project or configured external project path
+  unity/                      Optional Unity project inside the active workspace
   .proscenium/                Ignored runtime state, source snapshots and media cache
 ```
 
@@ -448,7 +466,7 @@ These are shared tools operating on an explicit project, not copied per-project 
 
 ## 15. Reference implementation inventory
 
-These links point to local research sources outside this repository. They are not runtime imports. Extract/adapt the useful code and full skill resources with their licences/notices when implementation reaches the relevant milestone.
+These links point to local research sources outside this repository. They are not runtime imports. [reference-pins.json](reference-pins.json) fixes the committed research revisions and selected file hashes. Extraction must use those revisions, not whichever working tree happens to be newest. Adapt useful code/full skill resources with their licences/notices at the relevant milestone.
 
 | Reference | Useful evidence and adaptation |
 | --- | --- |
@@ -465,12 +483,12 @@ Historical verification is documented in the references. This documentation pass
 
 ## 16. External API references and implementation proofs
 
-- [Copilot SDK runtime architecture](https://github.com/github/copilot-sdk#architecture): default local runtime/JSON-RPC relationship.
-- [Python SDK](https://github.com/github/copilot-sdk/tree/main/python): tools, images, permissions, streaming and session configuration.
-- [Native custom agents](https://github.com/github/copilot-sdk/blob/main/docs/features/custom-agents.md): scoped tools, model overrides and delegation.
-- [Steering and queueing](https://github.com/github/copilot-sdk/blob/main/docs/features/steering-and-queueing.md): delivery semantics and best-effort steering.
-- [Usage reporting](https://github.com/github/copilot-sdk/blob/main/docs/features/usage-and-billing.md): parent/subagent usage and version-sensitive metrics.
-- [Session persistence](https://github.com/github/copilot-sdk/blob/main/docs/features/session-persistence.md): native resume contract.
+- [Copilot SDK runtime architecture](https://github.com/github/copilot-sdk/blob/cf045793958ce674259c557f7769788f94ee20c9/README.md#architecture): default local runtime/JSON-RPC relationship at the research pin.
+- [Python SDK](https://github.com/github/copilot-sdk/tree/cf045793958ce674259c557f7769788f94ee20c9/python): tools, images, permissions, streaming and session configuration.
+- [Native custom agents](https://github.com/github/copilot-sdk/blob/cf045793958ce674259c557f7769788f94ee20c9/docs/features/custom-agents.md): scoped tools, model overrides and delegation.
+- [Steering and queueing](https://github.com/github/copilot-sdk/blob/cf045793958ce674259c557f7769788f94ee20c9/docs/features/steering-and-queueing.md): delivery semantics and best-effort steering.
+- [Usage reporting](https://github.com/github/copilot-sdk/blob/cf045793958ce674259c557f7769788f94ee20c9/docs/features/usage-and-billing.md): parent/subagent usage and version-sensitive metrics.
+- [Session persistence](https://github.com/github/copilot-sdk/blob/cf045793958ce674259c557f7769788f94ee20c9/docs/features/session-persistence.md): native resume contract.
 - [Unity Editor CLI](https://docs.unity3d.com/6000.0/Documentation/Manual/EditorCommandLineArguments.html): batch execution, `-executeMethod` and project-instance constraints.
 
-M01 must pin and prove the actual SDK/runtime/API combination. Contract/coordinate fixtures and progressive rendering follow in M02–M08. Image-to-3D gets an early feasibility proof and its own completion milestone. No reference link substitutes for these end-to-end integration checks.
+F00 establishes contract bindings, owner/scope proof, delivery/recovery primitives and the offline fixture harness as M01 begins. M01 pins/proves the actual SDK/runtime/API combination. M12 completes cross-provider recovery instead of introducing the foundational protocol late. The [fleet handover](development-fleet.md) defines ownership and acceptance for independent implementation. Image-to-3D retains its early feasibility proof and separate completion milestone.

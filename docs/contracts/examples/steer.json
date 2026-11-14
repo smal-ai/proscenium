@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "request_id": "req-steer-colour",
+  "project_id": "fixture-project",
+  "type": "steer",
+  "text": "Use blue for the second cube. Keep the floor unchanged.",
+  "context_id": "ctx-project-only",
+  "target_work_id": "work-create-scene"
+}

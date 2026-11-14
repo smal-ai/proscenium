@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "operation_id": "save-note-1",
+  "project_id": "fixture-project",
+  "expected_revision": 0,
+  "annotation": {
+    "annotation_id": "note-frame-2",
+    "saved_revision": null,
+    "target": {
+      "origin": "blender_render",
+      "artifact_id": "image-frame-2",
+      "displayed_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "dimensions": {"width": 640, "height": 360},
+      "item_id": "scene-fixture",
+      "version_id": "scene-fixture-v1",
+      "shot_id": "shot-fixture",
+      "render_job_id": "job-draft-1",
+      "source_frame": 2,
+      "media_artifact_id": "video-segment-1-4"
+    },
+    "range": {"start": 2, "end": 4},
+    "camera": null,
+    "markups": [{"id": "pin-centre", "kind": "pin", "points": [[0.5, 0.5]], "text": "Keep the cube clear of this edge during frames 2–4."}],
+    "text": "Review the movement over this range.",
+    "spatial_hits": [],
+    "spatial_status": "unavailable"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "publication_id": "pub-scene-v1",
+  "project_id": "fixture-project",
+  "items": [
+    {
+      "item_id": "scene-fixture",
+      "kind": "scene",
+      "name": "Fixture scene",
+      "version_id": "scene-fixture-v1",
+      "expected_current_version_id": null,
+      "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "source": {
+        "entry_path": "scenes/fixture/scene.blend",
+        "files": [
+          {
+            "destination": "scenes/fixture/scene.blend",
+            "origin": {
+              "kind": "git",
+              "repository_id": "repo-fixture",
+              "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "path": "scenes/fixture/scene.blend",
+              "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "dependencies": [],
+        "required_runtime": {"application": "blender", "version": "4.5.14", "features": ["cycles_cpu"]},
+        "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "artifact_ids": [],
+      "preview_requests": [
+        {
+          "intent_id": "render-keyframe-1",
+          "shot_id": "shot-fixture",
+          "purpose": "keyframe",
+          "source_closure_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "scene_name": "Scene",
+          "camera": {
+            "space": "blender_world_m",
+            "kind": "perspective",
+            "camera_to_world": [1, 0, 0, 0, 0, 0, -1, -10, 0, 1, 0, 2, 0, 0, 0, 1],
+            "projection": [0.5625, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1.002002002002002, -0.20020020020020018, 0, 0, -1, 0],
+            "aspect": 1.7777777777777777,
+            "near_m": 0.1,
+            "far_m": 100,
+            "source_camera_id": "camera-fixture",
+            "vertical_fov_degrees": 90,
+            "shift": [0, 0]
+          },
+          "frames": {"start": 1, "end": 1},
+          "fps": {"numerator": 24, "denominator": 1},
+          "dimensions": {"width": 1920, "height": 1080},
+          "engine": "CYCLES",
+          "device": "CPU",
+          "samples": 16,
+          "colour_management": {"view_transform": "AgX", "look": "None", "exposure": 0, "gamma": 1},
+          "renderer_revision": "synthetic-fixture-profile-1"
+        }
+      ]
+    }
+  ]
+}

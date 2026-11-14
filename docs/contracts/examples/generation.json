@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "job_id": "generate-concept-1",
+  "project_id": "fixture-project",
+  "generation_task_id": "generation-task-from-queue-1",
+  "target_id": "concept-shot-1",
+  "provider_id": "configured-comfy",
+  "capability": "image",
+  "workflow_artifact_id": "graph-synthetic-1",
+  "prompt_artifact_id": "prompt-synthetic-1",
+  "input_artifact_ids": ["reference-image-1"],
+  "seed": "7",
+  "model_ids": ["fixture-model-not-a-live-capability-claim"],
+  "settings": {"width": 1024, "height": 576, "steps": 4}
+}

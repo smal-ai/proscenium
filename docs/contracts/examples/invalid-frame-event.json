@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "project_id": "fixture-project",
+  "sequence": 2,
+  "occurred_at": "2026-11-14T12:00:02+02:00",
+  "event_type": "frame.available",
+  "request_id": "req-create-scene",
+  "work_id": "work-create-scene",
+  "actor": {"kind": "worker", "id": "worker-fixture"},
+  "native_session_id": null,
+  "native_event_id": null,
+  "payload": {"status": "looks complete"}
+}

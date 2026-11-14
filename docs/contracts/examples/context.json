@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "context_id": "ctx-project-only",
+  "project_id": "fixture-project",
+  "captured_at": "2026-11-14T12:00:00+02:00",
+  "item_id": null,
+  "version_id": null,
+  "view_mode": "none",
+  "target": null,
+  "camera": null,
+  "range": null,
+  "selected_object_ids": [],
+  "attachments": [],
+  "annotations": [],
+  "approved_findings": []
+}

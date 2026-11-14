@@ -1,16 +1,16 @@
 # Proscenium: product and technical requirements
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 
 **Updated:** 2026-11-14
 
-**Status:** V1 planning baseline incorporating the owner's architecture decisions. Implementation and acceptance remain outstanding.
+**Status:** V1 specification with normative contract 1.0 and confirmed owner policy. Application implementation and acceptance remain outstanding.
 
-Related documents: [architecture](architecture.md) and [user journeys and implementation milestones](user-journeys.md).
+Start with the [specification index and precedence](specification.md). Related documents include [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md), [execution](execution.md) and [user journeys](user-journeys.md).
 
 ## 1. Product definition
 
-Proscenium is a personal, desktop-browser studio for directing AI-authored Blender assets, scenes, storyboards and silent cinematics, with an optional playable Unity scene as a downstream output.
+Proscenium is a personal, desktop-browser studio for directing AI-authored Blender assets, scenes, storyboards and silent cinematics, with a playable Unity scene available as an optional per-project downstream output. The Unity capability itself is included in V1.
 
 The user works through a persistent project-wide discussion, selected references and annotations. A cloud frontier LLM runs through the GitHub Copilot Python SDK in FastAPI. Copilot manages its native subagents and operates the existing CLI/MCP toolchain. VLM analysis, image generation and planned image-to-3D generation are local-first capabilities behind separate interfaces.
 
@@ -25,7 +25,10 @@ This is a consolidation of the working practices and tooling in `smal-ai-blender
 - One user, multiple saved projects and one active project at a time.
 - Host-native deployment on one workstation, accessed locally or remotely through the existing SSH setup.
 - A desktop-only interface designed for a 1920 × 1080 viewport, using the supplied mockup's Linear Minimal styling.
-- Persistent project-wide Copilot discussion with an immutable UI-context snapshot per submitted message.
+- Persistent project-wide Copilot discussion with immutable context for Queue/Steer and a distinct Stop control request.
+- Autonomous progression through the requested creative stages, subject to the confirmed permission policy and genuinely missing decisions.
+- Agent access to relevant active-project content, including images, without requiring manual attachment of every file. No cross-project or credential access.
+- Configurable generation budgets with a three-attempt default per target and originating human generation task.
 - Native Copilot delegation, with an explicitly configured frontier lead and optional economical worker models.
 - Blender desktop authoring through existing MCP/CLI tools, including virtual-display operation for remote sessions.
 - A catalogue of individual assets, scenes, storyboards and sequences, not one project-wide Blender file.
@@ -80,12 +83,13 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 ### FR-01: Projects and source history
 
-- **FR-01.1:** The user MUST be able to create/open a chosen project folder and return to it later. V1 MUST permit only one active project at a time and preserve inactive projects.
+- **FR-01.1:** The user MUST be able to create/open a chosen project folder and return to it later. V1 MUST permit only one active project at a time and preserve inactive projects. Registration MUST bind a dedicated Git working-tree root and project identity as defined in [source resolution](source-publication.md).
 - **FR-01.2:** A project MUST contain independently identified assets, scenes, storyboards and sequences, each with a history and a current explicitly published version.
 - **FR-01.3:** Authored sources MUST use canonical working filenames and Git/Git LFS history. Product version history MUST NOT require numbered copies of every working source file.
 - **FR-01.4:** Published versions MUST identify the source commit, paths, actual file hashes and required dependency versions. Referenced LFS objects MUST be hydrated before use.
 - **FR-01.5:** Copilot MUST decide and author dependency changes. Proscenium MUST NOT automatically update scenes when an asset changes.
 - **FR-01.6:** Viewing a previous result MUST NOT reset the working tree or replace unsaved authoring work. A requested source restoration MUST be handled by Copilot as an explicit versioned change.
+- **FR-01.7:** Rendering an older version MUST resolve the recorded dependency bytes, including textures and linked sources, into a separate materialisation. Same-destination/different-content collisions and missing retained local-only sources MUST be explicit errors.
 
 ### FR-02: Copilot conversation and delegation
 
@@ -93,17 +97,21 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-02.2:** The initial LLM implementation MUST use cloud models available through the user's Copilot access. The selected lead model and worker model profiles MUST be configurable.
 - **FR-02.3:** Copilot MUST manage native subagent delegation. Proscenium MUST expose the configured CLI/MCP tools and display public agent/tool activity without implementing a competing agent loop.
 - **FR-02.4:** The application MUST support native subagents with scoped tools and optional explicit economical models. Enabling subagents alone MUST NOT be presented as a guarantee of cheaper execution.
-- **FR-02.5:** Ordinary Send MUST queue the next request. A separate Steer action MUST request a correction to ongoing work and make clear that an in-flight tool operation might already be executing.
+- **FR-02.5:** Queue, Steer and Stop MUST be explicit request types. Ordinary Send creates Queue. Steer targets the active work. Stop bypasses queued messages and invokes native cancellation rather than submitting a text prompt. In-flight external effects are not presumed cancelled.
 - **FR-02.6:** Message acceptance, tool execution, item publication and turn completion MUST be shown separately. Retrying a lost acknowledgement MUST NOT silently duplicate an accepted request.
 - **FR-02.7:** Public session/subagent events and available usage information MUST be associated with the correct project and task. Missing usage data MUST NOT be represented as zero cost.
+- **FR-02.8:** One authoritative application owner MUST control the active native session. Request, work, model-turn, invocation and external-job identities MUST remain distinct. Browser connections do not create separate session owners.
+- **FR-02.9:** Native questions and consequential permission requests MUST produce durable user-decision cards. Answers require the actual owner channel, exact operation fingerprint and expected revision.
+- **FR-02.10:** Stop MUST hold subsequent Queue requests, record requested versus confirmed cancellation, and preserve independently running jobs as separate resources. Held requests resume only through an explicit Resume choice.
 
 ### FR-03: Per-turn context and image inputs
 
-- **FR-03.1:** Each sent or steered message MUST capture the selected item/version, review mode, camera/frame/range, selected objects, relevant images, annotations and approved critique at submission time.
+- **FR-03.1:** Each Queue or Steer message MUST capture the selected item/version, review mode, camera/frame/range, selected objects, relevant images, annotations and approved critique at submission time. Stop instead identifies the active work and optional reason.
 - **FR-03.2:** The snapshot MUST remain unchanged while the user navigates or the message waits in the queue. Copilot MUST receive the original target rather than the UI's later selection.
 - **FR-03.3:** The LLM MUST be able to receive selected original images, annotated images/masks and user-approved VLM findings together. Local VLM text MUST NOT replace the selected visual evidence.
 - **FR-03.4:** Image/reference roles, source identities and transformations MUST be recorded. The system MUST distinguish concept images, actual Blender renders and spatial proxies.
-- **FR-03.5:** Submitted media and context MUST be retained sufficiently to replay the discussion and interpret its annotations. Unselected images, credentials and arbitrary workspace files MUST NOT be attached implicitly.
+- **FR-03.5:** Submitted media and context MUST be retained sufficiently to replay the discussion and interpret its annotations. Proscenium's automatic attachment list MUST contain only selected context. Copilot may independently inspect relevant permitted content in the active project, with visible tool access. Credentials, environment files and other projects are excluded by [owner policy](owner-policy.md).
+- **FR-03.6:** Draft annotation targets MUST be pinned when captured, independently of the later current viewport. A Send snapshot MUST preserve each attachment/annotation's own target and actual displayed image.
 
 ### FR-04: Explicit output publication
 
@@ -112,6 +120,8 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-04.3:** Completed items MUST appear incrementally while the rest of the user request continues. Preview state MUST be independent of source-publication state.
 - **FR-04.4:** Repeating the same publication ID and payload MUST be a no-op. A conflicting reuse MUST be reported rather than silently replacing published content.
 - **FR-04.5:** Proscenium MUST check the publication's technical identity and file availability before presenting files as available. An incomplete preview MUST NOT discard the previous available result or block Copilot's unrelated authoring.
+- **FR-04.6:** A publication batch MUST contain only completed source versions and register atomically. Pending previews are independent. Each head update MUST compare the expected current version, so late publication cannot silently replace a newer head.
+- **FR-04.7:** The publication, head updates, preview-job intents and public events MUST share a durable commit boundary. Recovery after worker-launch acknowledgement loss MUST reconcile the original job before a second launch.
 
 ### FR-05: Review modes and arbitrary-angle rendering
 
@@ -131,6 +141,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-06.4:** Stable object identifiers and declared coordinate conversions MUST map a valid proxy selection back to Blender. Names alone MUST NOT be treated as permanent identity.
 - **FR-06.5:** A 3D hit MUST only be attached when the geometry, camera and sample frame match the reviewed view. Missing or uncertain hits MUST remain explicit instead of invented XYZ coordinates.
 - **FR-06.6:** Drafts MUST survive navigation. Saved annotations MUST have durable IDs, safe retries and explicit save/error status, including across tabs or lost acknowledgements.
+- **FR-06.7:** A temporal range annotation MUST distinguish its drawn anchor frame from the range to which its comment applies. V1 MUST NOT imply automatic tracking of a mask through motion.
 
 ### FR-07: Progressive animation review
 
@@ -143,7 +154,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 ### FR-08: Asset research, discovery and reuse
 
-- **FR-08.1:** Copilot MUST discover reusable local assets using filenames, text metadata and ordinary search tools, without requiring a vector database.
+- **FR-08.1:** Copilot MUST discover reusable assets within the active project using filenames, text metadata and ordinary search tools, without requiring a vector database. Another project's content requires an explicit owner import into the active folder before agent access.
 - **FR-08.2:** Configured online MCPs MUST support asset discovery/acquisition where available. Search results MUST NOT be reported as imported or validated assets.
 - **FR-08.3:** Asset records MUST include descriptive metadata, source/licence information, paths and source-version references. Unknown rights MUST remain unknown.
 - **FR-08.4:** Copilot/tools MUST perform imports, procedural/Geometry Nodes authoring, scale/origin preparation and actual Blender validation as required by the request.
@@ -154,9 +165,10 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-09.1:** Copilot MUST turn a project brief into a structured narrative/shot plan with stable IDs, asset dependencies, composition, camera intent, motion beats and unresolved decisions.
 - **FR-09.2:** Plans MUST support ordered start/intermediate/end storyboard images, role-specific references and explicit missing/unbuilt states.
 - **FR-09.3:** Copilot MUST author the corresponding Blender scene, camera/marker and timeline bindings. Proscenium MUST present those bindings rather than create them independently.
-- **FR-09.4:** Storyboards and shot plans MUST be versioned and reviewable in V1. Revising one shot MUST identify affected downstream work without automatically rebuilding it.
+- **FR-09.4:** Storyboards and shot plans MUST be versioned and reviewable in V1. Revising one shot MUST identify affected downstream work. Copilot may continue the requested production task autonomously; Proscenium MUST NOT launch regeneration merely because catalogue/reference data changed.
 - **FR-09.5:** Planning, image generation, Blender authoring and assembly MUST be separately invocable stages. Browsing or rebuilding a review display MUST NOT submit generation jobs.
 - **FR-09.6:** Storyboard review pacing MUST NOT be represented as authored animation timing. Shot/sequence timing MUST be explicit.
+- **FR-09.7:** For a broad production request, Copilot MUST be permitted to progress through planning, concepts, authoring and draft/keyframe review without mandatory approval after each stage. User-requested checkpoints, consequential actions and approved VLM findings retain their explicit rules.
 
 ### FR-10: Local image generation
 
@@ -165,6 +177,8 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-10.3:** Tools MUST record exact submitted graphs, prompts, seeds, models, input hashes, job IDs, transformations and output hashes.
 - **FR-10.4:** Known job IDs MUST be reconciled after timeouts before any resubmission. Targeted revisions MUST preserve the previous selected result and unaffected work.
 - **FR-10.5:** Independently running ComfyUI MUST NOT be installed, upgraded, started, stopped or have its queue cleared implicitly by this workflow.
+- **FR-10.6:** Image and image-to-3D generation MUST share the configurable attempt policy: three attempts per target/task by default, with request/project overrides. Reserve before submission, retain uncertain reservations, and do not charge polling/download/reconciliation as fresh attempts.
+- **FR-10.7:** Budget exhaustion MUST preserve results, report the limitation and allow independent work to continue. Only an explicit owner allowance change/new generation request resets or extends the relevant budget.
 
 ### FR-11: Requested VLM review
 
@@ -173,6 +187,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-11.3:** The UI MUST allow findings to be selected, amended or rejected and submitted together. Only the user's approved findings become authorised critique input for the Builder.
 - **FR-11.4:** Approved findings MUST reach Copilot with the relevant original images and UI context. Neither the VLM nor an Approve button may directly mutate Blender.
 - **FR-11.5:** A failed/unavailable review MUST leave normal authoring and review of existing outputs usable. Publication MUST NOT require a VLM pass.
+- **FR-11.6:** A Copilot-triggered review tool MUST return a review ticket/status. Unapproved findings are delivered to the owner UI. A single owner Queue/Steer submission atomically links the approved finding revisions/text to that message.
 
 ### FR-12: Image-to-3D capability
 
@@ -188,6 +203,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-13.3:** The result MUST include basic movement, camera control, collision/floor support and a safe spawn appropriate to the brief. No additional gameplay is required.
 - **FR-13.4:** The specialist MUST validate the result and publish source-version references, Unity project/scene locations and validation results. Playtesting stays in the Unity Editor.
 - **FR-13.5:** Unity changes MUST use Unity APIs and preserve asset GUIDs. Tools MUST respect active/dirty Editor state rather than force-close an instance to run a batch command.
+- **FR-13.6:** The agent-operated Unity project MUST be within the active Proscenium project folder in V1. A configured external path does not widen the owner's current-project-only content permission.
 
 ### FR-14: Connection and restart recovery
 
@@ -196,10 +212,12 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-14.3:** Resume MUST give Copilot the unfinished request and recorded job/output identities so it can inspect actual tool state before deciding what remains.
 - **FR-14.4:** Unknown outcomes MUST remain uncertain until reconciled. The application MUST NOT infer success from a stale running flag, a reused PID or a missing exit code.
 - **FR-14.5:** Switching projects MUST NOT silently abandon active authoring. The UI MUST expose the active state and require an explicit settle/stop/switch choice where work is ongoing.
+- **FR-14.6:** Request admission/reconciliation and the restart execution gate MUST be established during M01/M03. M12 completes cross-provider recovery and backup acceptance, rather than retrofitting identity and durable delivery late.
+- **FR-14.7:** Native session loading, pending native messages and restored callback attribution MUST be tested before enabling automatic attachment to a restarted runtime. New execution waits for the explicit Resume path.
 
 ### FR-15: Silent cinematic delivery
 
-- **FR-15.1:** Copilot MUST assemble explicitly selected shot outputs with declared order, trims, timing, frame rate and any transitions into a silent cinematic delivery.
+- **FR-15.1:** Copilot MUST assemble explicitly pinned shot-output choices, labelled as agent-proposed or user-selected, with declared order, trims, timing, frame rate and transitions into a silent cinematic delivery. Autonomous assembly does not imply owner selection.
 - **FR-15.2:** Deliveries MUST identify the exact source/render versions and transformations, with measured dimensions, frame counts, duration and output hashes.
 - **FR-15.3:** A final video MUST be fully decodable and reviewable through Proscenium. Partial previews MUST remain labelled partial rather than complete deliveries.
 - **FR-15.4:** Existing feedback MUST retain its original frame/sequence mapping when an edit or delivery changes. Carrying notes to a new edit requires an explicit mapping, not filename reuse.
@@ -211,6 +229,20 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-16.3:** Local providers MUST have separate capability-appropriate interfaces. A model inference request and an asynchronous ComfyUI workflow MUST NOT be forced into one incompatible request shape.
 - **FR-16.4:** Opening projects, reviewing existing media and saving feedback MUST remain possible when cloud reasoning or a generation service is unavailable. No unrequested local LLM fallback is required.
 
+### FR-17: Owner policy and bounded autonomy
+
+- **FR-17.1:** Routine in-scope authoring, project edits, local checkpoints, configured free asset acquisition and configured local generation MUST run under the automatic policy in [owner policy](owner-policy.md).
+- **FR-17.2:** Purchases, installation/service changes, external publishing and destructive retained-content/Git operations MUST require the exact owner authorisation specified there. An agent statement is not a human approval.
+- **FR-17.3:** Active-project content scope MUST apply through every enabled tool path, including general shell/Python/MCP capabilities. E01 MUST test excluded/cross-project sentinels; unproven paths cannot claim scoped automatic operation.
+- **FR-17.4:** Owner, native-tool and worker API channels MUST have distinct capabilities. A tool cannot answer its own permission request or submit a user selection by spoofing an actor field.
+
+### FR-18: Uploads and explicit selections
+
+- **FR-18.1:** Browser image upload MUST have immutable IDs, decoding/type/size checks, content hashes and explicit readiness before attachment. Normalisation retains original bytes and transformation provenance.
+- **FR-18.2:** Uploading or publishing an image MUST NOT automatically select it or attach it to a model request. Roles and target context are explicit.
+- **FR-18.3:** The owner MUST be able to select, supersede and withdraw an asset/storyboard/shot version choice using revision-safe operations. Current publication, agent choice and owner selection remain separate.
+- **FR-18.4:** Input formats, default limits, range-annotation semantics and unavailable-media behaviour MUST follow [review and media](review-media.md).
+
 ## 5. Non-functional requirements
 
 ### NFR-01: Desktop interaction
@@ -218,6 +250,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **NFR-01.1:** The acceptance viewport MUST be 1920 × 1080 in a desktop browser. Panels MAY scroll internally. No mobile layout is required.
 - **NFR-01.2:** Linear Minimal MUST be the V1 visual baseline: neutral dark surfaces, thin borders, restrained indigo, Inter UI text and monospace technical labels. A multi-theme system is not required.
 - **NFR-01.3:** Busy, pending, partial, saved, failed and unavailable states MUST be visible. Keyboard playback/frame controls and selectable conversation text MUST remain usable.
+- **NFR-01.4:** Desktop Chromium, Brave and Edge MUST pass the defined acceptance cases. Automated Chromium checks and actual Brave/Edge checks MUST record browser versions on the Linux reference workstation.
 
 ### NFR-02: Deployment and service boundaries
 
@@ -243,8 +276,8 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 - **NFR-05.1:** The personal service MUST bind to loopback by default and use the existing SSH access model. Public exposure is outside V1.
 - **NFR-05.2:** Only intended UI assets and published media MUST be served. Arbitrary project roots, Git metadata, environment files and credentials MUST NOT be exposed by file-serving routes.
-- **NFR-05.3:** Copilot tools and permissions MUST be configured explicitly. Working directories and prompts MUST NOT be described as OS-enforced isolation.
-- **NFR-05.4:** Selected images may leave the workstation for cloud reasoning. The UI MUST show attached context, and secrets MUST NOT be deliberately included in prompts, exports or logs.
+- **NFR-05.3:** Copilot tools and permissions MUST implement [owner policy](owner-policy.md), including the project-only scope proof. Working directories and prompts MUST NOT be described as OS-enforced isolation.
+- **NFR-05.4:** Relevant permitted active-project images/files may reach cloud reasoning through attachments or agent tools. The UI MUST show captured attachments and public tool access. Credentials, environment files and cross-project content remain excluded.
 - **NFR-05.5:** Asset rights, attribution and private/local-only exclusions MUST survive reuse. Source checkpoints do not imply permission to push repositories or redistribute restricted assets.
 
 ### NFR-06: Verification and portability
@@ -252,6 +285,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **NFR-06.1:** Contract, integration and desktop-browser tests MUST cover the completed journeys, including retry and failure paths. A technical pass MUST NOT be presented as creative acceptance.
 - **NFR-06.2:** Reused tools MUST be adapted into maintained, licensed project tooling rather than depend on the reference repositories' active scenes, secrets, environments or machine-specific defaults.
 - **NFR-06.3:** The mockup is a visual reference, not production code. Runtime frontend assets MUST be bundled rather than depend on its Tailwind/Three.js/font CDNs.
+- **NFR-06.4:** Development work packages MUST consume a frozen contract revision and named fixtures, have explicit file ownership and follow the [fleet handover](development-fleet.md). Shared contracts, migrations and root build files have one integration owner.
 
 ## 6. Journey and milestone coverage
 
@@ -280,4 +314,5 @@ The full workflow, dependencies, tests and failure cases are in [user journeys a
 - Copilot SDK compatibility with the actual authentication, MCP definitions, image inputs and native subagent profiles must be proved first.
 - Progressive playback and version-pinned annotation are new integration work despite the existing per-frame render receipts.
 - Image-to-3D has no established working implementation. Model choice, licence, runtime support, mesh quality and resource limits remain an explicit feasibility task.
-- Exact contracts and SDK/runtime versions must be pinned and tested during M01, then evolved deliberately through the remaining milestones.
+- Contract 1.0 is specified in [contracts](contracts/README.md). F00 must validate it, generate bindings, establish the offline harness and pin/prove the SDK/runtime combination before dependent agents implement against it.
+- Project-only operation through the existing arbitrary Python/MCP path requires an execution-boundary proof. The existing bridge's working directory is not that proof.

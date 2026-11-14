@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "project_id": "fixture-project",
+  "sequence": 1,
+  "occurred_at": "2026-11-14T12:00:01+02:00",
+  "event_type": "request.accepted",
+  "request_id": "req-create-scene",
+  "work_id": null,
+  "actor": {"kind": "user", "id": "owner"},
+  "native_session_id": null,
+  "native_event_id": null,
+  "payload": {
+    "schema_version": "1.0",
+    "request_id": "req-create-scene",
+    "project_id": "fixture-project",
+    "type": "queue",
+    "state": "accepted",
+    "work_id": null,
+    "native_message_id": null,
+    "state_revision": 0,
+    "replayed": false
+  }
+}

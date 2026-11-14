@@ -1,0 +1,36 @@
+{
+  "fixture_version": "1.0",
+  "status": "generation_recipe_not_native_execution_evidence",
+  "project_id": "fixture-project",
+  "repository_id": "repo-fixture",
+  "source_paths": {
+    "asset": "assets/cube/asset.blend",
+    "texture": "assets/cube/colour.png",
+    "scene": "scenes/fixture/scene.blend",
+    "unity": "unity/FixtureProject"
+  },
+  "conventions": {"space": "blender_world_m", "fps": {"numerator": 24, "denominator": 1}, "frames": {"start": 1, "end": 12}},
+  "asset_versions": [
+    {"label": "v1", "local_bounds_min": [-0.5, -0.5, 0], "local_bounds_max": [0.5, 0.5, 1], "texture_rgb8": [32, 96, 224]},
+    {"label": "v2", "local_bounds_min": [-0.5, -0.5, 0], "local_bounds_max": [0.5, 0.5, 1.5], "texture_rgb8": [224, 32, 160]}
+  ],
+  "scene_objects": [
+    {"object_id": "object-floor", "instance_id": "instance-floor", "kind": "box", "position": [0, 0, -0.1], "dimensions": [6, 6, 0.2]},
+    {"object_id": "object-cube-source", "instance_id": "instance-blue", "kind": "linked_asset", "asset_version": "v1", "position": [1, 0, 0]},
+    {"object_id": "object-cube-source", "instance_id": "instance-renamed", "kind": "linked_asset", "asset_version": "v1", "position": [-1, 0, 0]},
+    {"object_id": "object-wall", "instance_id": "instance-wall", "kind": "box", "position": [0, 2.5, 1.25], "dimensions": [6, 0.2, 2.5]}
+  ],
+  "identity_operations": [
+    {"operation": "rename", "instance_id": "instance-renamed", "new_display_name": "Renamed cube", "preserve_instance_id": true},
+    {"operation": "duplicate", "instance_id": "instance-blue", "new_instance_id": "instance-duplicate", "preserve_instance_id": false}
+  ],
+  "animation": {"instance_id": "instance-renamed", "interpolation": "LINEAR", "positions": [{"frame": 1, "value": [-1, 0, 0]}, {"frame": 12, "value": [-1, 1, 0]}]},
+  "unity_controller": {"height_m": 1.8, "radius_m": 0.25, "skin_width_m": 0.02, "spawn_capsule_centre_blender": [0, -2, 0.92], "walk_speed_m_per_s": 2},
+  "required_generation_checks": [
+    "Generate native Blender sources and the texture inside a disposable project, then record actual Git/LFS/content identities.",
+    "Scene v1 uses v1 asset and texture bytes. A later asset-v2 commit must not change the materialised scene-v1 result.",
+    "Record the actual native inspection bounds and proxy object/instance mapping. Metadata labels do not substitute for a Blender reopen.",
+    "Create neighbouring-project and excluded-credential sentinels outside permitted agent content, without using real secrets.",
+    "Use coordinate-vectors.json camera cases and a numbered-frame overlay/fixture to establish image/frame oracles."
+  ]
+}

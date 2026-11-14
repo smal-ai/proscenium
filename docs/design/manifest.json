@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "selected_treatment": "Linear Minimal",
+  "recorded_at": "2026-11-14",
+  "purpose": "Owner-supplied visual reference; not application code or execution evidence",
+  "acceptance_viewport": {"width": 1920, "height": 1080, "units": "css_pixels"},
+  "files": [
+    {"path": "proscenium_mockup.png", "source": "~/Downloads/proscenium_mockup.png", "bytes": 516266, "sha256": "cb6ec0d64962e7b9e76f8d47276e055d8e280c132a4b0e0e21cd4bc360f006f1"},
+    {"path": "proscenium_ui_mockup.html", "source": "~/Downloads/proscenium_ui_mockup.html", "bytes": 65490, "sha256": "90a27f096ce36ef60cdbf0a66ac393d01a3eef9c24c7ab0e26ff634e8f904716"}
+  ]
+}

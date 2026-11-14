@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0",
+  "review_id": "review-frame-2",
+  "status": "ready",
+  "unapproved_repair": "This field must not be returned to the triggering Copilot tool."
+}
