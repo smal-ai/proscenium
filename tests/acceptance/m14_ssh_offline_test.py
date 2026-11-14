@@ -124,3 +124,27 @@ def test_unavailable_configuration_is_declarative_not_health():
     )
     assert settings.view()["profiles"][0]["scope_status"] == "unavailable"
     assert settings.view()["services"][0]["available"] is False
+
+
+def test_each_process_receipt_is_create_only_and_distinct(tmp_path):
+    from m14_ssh_run import process_receipt
+
+    names = ("sshd", "host-1", "ssh-1", "browser", "ssh-2", "host-2")
+    for pid, name in enumerate(names, 10):
+        process_receipt(tmp_path, name, pid, str(pid * 100))
+    assert len(list(tmp_path.glob("owned-*.json"))) == 6
+    assert json.loads((tmp_path / "owned-host-1.json").read_text())["pid"] == 11
+    with pytest.raises(FileExistsError):
+        process_receipt(tmp_path, "sshd", 99, "99")
+
+
+def test_evidence_parent_exists_before_any_allocation(tmp_path):
+    from m14_ssh_run import preflight_evidence
+
+    target = tmp_path / "missing/evidence/result.json"
+    preflight_evidence(target)
+    assert target.parent.is_dir()
+    target.write_text("original receipt")
+    with pytest.raises(FileExistsError):
+        preflight_evidence(target)
+    assert target.read_text() == "original receipt"

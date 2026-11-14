@@ -46,7 +46,7 @@ uv run python tests/native/studio/m14_ssh_prepare.py /home/quintin/.cache/prosce
 uv run python -u tests/native/studio/m14_ssh_run.py /home/quintin/.cache/proscenium-development/s14a docs/evidence/m14-ssh/result.json
 ```
 
-The prepare command already ran with zero SDK/SSH/browser allocations. Its source
+The prepare command ran with zero SDK/SSH/browser allocations. Its source
 import materialises the selected historical source through accepted W02 tools and
 verifies exact ready media bytes. The live command must run once only. No retry of
 the live allocation is implied by these instructions.
@@ -57,7 +57,67 @@ missing direct native executable and unused closed loopback provider ports. Publ
 metadata**, not successful health probes or evidence of physically stopping shared
 services. The driver separately observes TCP refusal at those private configured ports.
 
-## Result
+## Result: blocked by proof-harness errors
 
-Pending the single allocated execution. No native/message/media acceptance is claimed
-by the preflight or synthetic helper tests.
+The single live invocation at driver commit `6fa3fe7` stopped in **0.900 seconds**.
+It started the one fixture sshd and briefly spawned the first application process.
+No forwarding client, browser, native association or SDK send was started/admitted.
+No model-message, video-playback or unavailable-service acceptance is claimed.
+
+Two driver defects caused the failure:
+
+1. `tools.operations.recovery.write_json()` intentionally creates files exclusively.
+   Rewriting `owned-processes.json` after spawning the API raised `FileExistsError`.
+   The sshd's numeric PID/start receipt exists, but the API's second receipt does not.
+   In-memory PID/start-checked cleanup still reaped both owned processes.
+2. The public evidence parent directory did not exist. Export after cleanup raised
+   `FileNotFoundError`. The full failure report was already safely written to the
+   private root as `result-private.json`, SHA-256
+   `87b0da954ccacb2101e16fcebcbbacd00f1b7a7719dbdfddd9ee33d100113dc9`.
+
+The [sanitised failure receipt](../evidence/m14-ssh/result.json) preserves the executed
+revision, source hashes, actual process allocation, failures and remaining gaps. Its
+report is an after-the-fact export, not a missing host lifespan audit disguised as one.
+Both lifespan audit files are absent because application readiness was never observed.
+
+The corrected driver writes one immutable receipt per process, records numeric
+PID/start facts before further persistence, and preflights the evidence destination
+before keys or service allocation. Two new offline regressions exercise all six
+possible process receipts and a previously missing evidence parent. **No live retry
+was run.** The one-sshd allocation is consumed even though its model-send budget is
+unused. A new live allocation requires explicit coordinator authorisation.
+
+## Preserved state and checks
+
+- Available RAM at the single pre-start sample: **39,186,788,352 bytes**.
+- Original M13 inventory: **195 files**, all byte-identical after cleanup. The
+  inventory includes original source/Git/LFS, database, media and native history.
+- Isolated project has zero requests, contexts, work records, invocations, native
+  associations and annotations. Imported terminal history is not new execution.
+- No owned descendants remain. API exit `-15` and sshd exit `0` were actually observed.
+  Only exact owned process groups/descendants were eligible for signalling.
+- Production build passed with existing Lucide-directive and bundle-size warnings.
+  Node syntax check and affected Python lint/format checks pass.
+- Initial helper/accepted SSH regressions: **8 passed**. The correction adds two
+  targeted regression cases. The final affected run is **13 passed**: six helper
+  checks, four accepted SSH regressions and three retained-failure evidence checks.
+  These are offline checks, not replacement live evidence. Its JUnit observation is
+  `docs/evidence/m14-ssh/offline-junit.xml`.
+
+Still unproved: active-request tunnel cut/reconnect, exactly-once response/context/event
+replay, all ten presented movie frames and boundaries, real frame-note reload/downloads/
+range/upload through SSH, and unavailable-service review/feedback after quiet restart.
+No production defect was reached, so no production/shared/frontend/schema changes were made.
+
+Final offline verification:
+
+```bash
+uv run pytest -q tests/acceptance/m14_ssh_offline_test.py tests/acceptance/m14_ssh_evidence_test.py tests/acceptance/test_ssh_proof_contract.py --basetemp=/home/quintin/.cache/proscenium-development/m14-ssh-offline-final --junitxml=docs/evidence/m14-ssh/offline-junit.xml
+uv run ruff check tests/native/studio/m14_ssh*.py tests/acceptance/m14_ssh*
+uv run ruff format --check tests/native/studio/m14_ssh*.py tests/acceptance/m14_ssh*
+node --check tests/native/studio/m14_ssh_browser.mjs
+```
+
+The original run root is retained and refuses reuse. A future authorised live run
+must use a fresh private root. No result file or historical receipt should be removed
+to make the old command run again.

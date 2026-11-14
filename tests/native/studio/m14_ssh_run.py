@@ -53,8 +53,23 @@ def wait_file(path, browser=None, timeout=30):
     return json.loads(path.read_text()) if path.suffix == ".json" else None
 
 
+def preflight_evidence(path):
+    """The create-only report writer does not create its parent directories."""
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if path.exists():
+        raise FileExistsError(path)
+    if not os.access(path.parent, os.W_OK):
+        raise PermissionError(path.parent)
+
+
+def process_receipt(root, name, pid, start):
+    """One immutable receipt per owned process, never overwrite a previous receipt."""
+    write_json(root / f"owned-{name}.json", {"name": name, "pid": pid, "start": start})
+
+
 def run(root, evidence):
     os.umask(0o077)
+    preflight_evidence(evidence)
     spec = json.loads((root / "allocation.json").read_text())
     assert not (root / "allocation-started.json").exists()
     assert not (root / "send-reservation.json").exists()
@@ -137,17 +152,16 @@ def run(root, evidence):
         "sdk_send_seconds": 180,
         "children_authoring_encodes_provider_calls": 0,
         "commands": [],
+        "processes": [],
         "cleanup": [],
     }
 
     def spawn(name, argv):
         owned = Owned(argv, root, name)
         processes.append(owned)
+        result["processes"].append({"name": name, "pid": owned.process.pid, "start": owned.start})
         result["commands"].append(command_record(argv, root))
-        write_json(
-            root / "owned-processes.json",
-            [{"name": p.name, "pid": p.process.pid, "start": p.start} for p in processes],
-        )
+        process_receipt(root, name, owned.process.pid, owned.start)
         return owned
 
     def close(owned):

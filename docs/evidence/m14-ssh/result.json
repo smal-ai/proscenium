@@ -1,0 +1,97 @@
+{
+  "status": "blocked_harness_before_transport_or_sdk",
+  "journey_pass": false,
+  "cumulative_m12_m14_acceptance": false,
+  "date_sast": "2026-11-14",
+  "accepted_product_base": "904f73383d6e9a3e0a5daa411f3628efd90bc2cf",
+  "executed_driver_revision": "6fa3fe70e1d052ad6260f828825931e53556ec05",
+  "retained_root": "/home/quintin/.cache/proscenium-development/s14a",
+  "private_original_report": "result-private.json",
+  "private_original_report_sha256": "87b0da954ccacb2101e16fcebcbbacd00f1b7a7719dbdfddd9ee33d100113dc9",
+  "actual_elapsed_seconds": 0.9,
+  "available_ram_bytes_before_start": 39186788352,
+  "memory_gate_bytes": 4294967296,
+  "whole_allocation_limit_seconds": 600,
+  "send_limit": 1,
+  "send_limit_seconds": 180,
+  "observations": {
+    "temporary_sshd_processes_started": 1,
+    "application_processes_spawned": 1,
+    "application_readiness_observed": false,
+    "forwarding_clients_started": 0,
+    "browser_profiles_started": 0,
+    "sdk_sends": 0,
+    "send_reservation_exists": false,
+    "requests": 0,
+    "contexts": 0,
+    "work": 0,
+    "invocations": 0,
+    "native_session_associations": 0,
+    "annotations": 0,
+    "host_lifespan_audits_present": false,
+    "original_m13_byte_preserved": true,
+    "original_inventory_file_count": 195,
+    "original_inventory_sha256": "9fd793e80d3b5d7401a829a69d698dda07f36256abf4305d8d309787ba0a60ae"
+  },
+  "failures": [
+    {
+      "stage": "second owned-process receipt",
+      "type": "FileExistsError",
+      "cause": "The accepted write_json helper is intentionally create-only. The driver incorrectly rewrote owned-processes.json after spawning host-1."
+    },
+    {
+      "stage": "public evidence export after cleanup",
+      "type": "FileNotFoundError",
+      "cause": "The driver did not create docs/evidence/m14-ssh before passing result.json to the create-only writer. The complete failure report was already persisted privately."
+    }
+  ],
+  "cleanup": {
+    "sshd_receipt": {"name": "sshd", "pid": 4108030, "start": "47238719"},
+    "host_1_numeric_pid_start_receipt": "missing because the second receipt write failed",
+    "host_1": {"pid_start_checked_before_signal": true, "exit_code": -15, "original_identity_gone": true},
+    "sshd": {"pid_start_checked_before_signal": true, "exit_code": 0, "original_identity_gone": true},
+    "owned_descendants_remaining": 0,
+    "unrelated_processes_signalled": false,
+    "second_live_allocation_started": false
+  },
+  "preflight": {
+    "frontend_build": "passed",
+    "offline_helper_and_affected_ssh_checks": 8,
+    "standalone_imports": "passed",
+    "imported_history_records": 29,
+    "original_native_history_imported": false,
+    "original_requests_or_annotations_imported": false,
+    "fresh_native_association_required": true,
+    "preserved_project_id": "m13-cinematic",
+    "selected_version": "m13-film-v1",
+    "video_sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e",
+    "video_bytes": 64876,
+    "frame_count": 10,
+    "dimensions": {"width": 640, "height": 360},
+    "fps": {"numerator": 24, "denominator": 1},
+    "historical_map_and_source_materialisation": "passed, not browser playback evidence"
+  },
+  "versions": {
+    "sdk": "1.0.34",
+    "cli_package": "1.0.112",
+    "cli_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "ssh": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026",
+    "node": "v24.18.0",
+    "chromium": "not started"
+  },
+  "executed_source_hashes": {
+    "tests/native/studio/m14_ssh_prepare.py": "fb6fdcd54cc660cda805f351ec4b3f5e9df0c15d5263a3dd28543f8e25461fe2",
+    "tests/native/studio/m14_ssh_browser.mjs": "a7cf3a94942a587176ba26d7cf0cc51ff54e0dbcf57f1244b645b5e1788e2dfe",
+    "tests/native/studio/m14_ssh_host.py": "b57fd1acb0887797b23a2564f8d4f0298b0a3096f4135f5204fdec067e079708",
+    "tests/native/studio/m14_ssh_run.py": "a9622eb564e32a3f4991b8b68718597567e073860ef4f2cb003b763023518089"
+  },
+  "frontend_index_sha256": "cb2e7474016543997824f60b24b6a1f581c9e59b4b6cfab5fc4aaff92ac7d490",
+  "remaining_gaps": [
+    "Actual forwarded UI pairing, single SDK Queue and active-task SSH cut/reconnect",
+    "Exactly-once native/public response and immutable context/event replay verification",
+    "Actual ten-frame playback, frame pin/note reload, UI downloads, video range and image upload through SSH",
+    "Actual unavailable-service quiet restart, output review and durable second feedback save",
+    "Final lifespan audits and complete numeric PID/start receipts for a successful live run"
+  ],
+  "renewal_required": "One sshd allocation was consumed. No live retry, second daemon or new send was attempted. Coordinator must explicitly allocate a new run."
+}
