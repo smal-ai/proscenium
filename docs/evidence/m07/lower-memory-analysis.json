@@ -1,0 +1,97 @@
+{
+  "observed_at": "2026-11-14T18:40:29.211570+02:00",
+  "read_scope": "Only safetensors headers/stat, installed nodes.py/sd.py, /proc/meminfo and original receipt hashes. No tensor loading, inference or service effect.",
+  "host_mem_available_bytes": 14091120640,
+  "protected_headroom_bytes": 4294967296,
+  "original_cold_fit_floor_bytes": 20427268612,
+  "original_floor_changed": false,
+  "original_files_sha256": {
+    "w07-live-initial-report.json": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+    "w07-live-initial-timing.json": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe"
+  },
+  "inventory": {
+    "diffusion_models/flux-2-klein-4b.safetensors": {
+      "model": "diffusion_models/flux-2-klein-4b.safetensors",
+      "file_bytes": 7751105712,
+      "header_bytes": 16552,
+      "header_sha256": "401e76bb83f05f6f15ad75c60bb933df8c080ef7683016011f057895a505287e",
+      "tensor_payload_bytes_by_dtype": {
+        "BF16": 7751089152
+      },
+      "tensor_count": 149
+    },
+    "diffusion_models/flux-2-klein-9b-kv-fp8.safetensors": {
+      "model": "diffusion_models/flux-2-klein-9b-kv-fp8.safetensors",
+      "file_bytes": 9818935984,
+      "header_bytes": 48992,
+      "header_sha256": "48096450f3f2e4c915203b968ee6a5cf612d92fa2fb22d0e98277fa283ab10a4",
+      "tensor_payload_bytes_by_dtype": {
+        "F32": 840,
+        "BF16": 1480609792,
+        "F8_E4M3": 8338276352
+      },
+      "tensor_count": 411
+    },
+    "text_encoders/qwen_3_4b.safetensors": {
+      "model": "text_encoders/qwen_3_4b.safetensors",
+      "file_bytes": 8044982048,
+      "header_bytes": 45848,
+      "header_sha256": "4552846f1e705a23d7340bf1ffcc7251d9f742cd45e5029f80cc6694507a89ce",
+      "tensor_payload_bytes_by_dtype": {
+        "BF16": 8044936192
+      },
+      "tensor_count": 398
+    },
+    "text_encoders/qwen_3_8b_fp8mixed.safetensors": {
+      "model": "text_encoders/qwen_3_8b_fp8mixed.safetensors",
+      "file_bytes": 8664848742,
+      "header_bytes": 104616,
+      "header_sha256": "9fe2be112d0883665fcf216df4acda30cd59013453fffaa7b5c98deed2000009",
+      "tensor_payload_bytes_by_dtype": {
+        "F32": 904,
+        "BF16": 3862521856,
+        "F8_E4M3": 3848011776,
+        "U8": 954209582
+      },
+      "tensor_count": 935
+    },
+    "vae/flux2-vae.safetensors": {
+      "model": "vae/flux2-vae.safetensors",
+      "file_bytes": 336213556,
+      "header_bytes": 28056,
+      "header_sha256": "87f9d471e9e5e7cc57f56c43f6901c7d36da62ff88264f46395995b69dd0fe44",
+      "tensor_payload_bytes_by_dtype": {
+        "I64": 8,
+        "F32": 336185484
+      },
+      "tensor_count": 251
+    }
+  },
+  "proposed_new_graph_delta": {
+    "UNETLoader.weight_dtype": "fp8_e4m3fn"
+  },
+  "proposal_scope": "ONLY a separately authorised new explicit native generation task/graph; never mutate the original frozen job.",
+  "estimates": {
+    "ideal_packed_unet_fp8_payload_bytes": 3875544576,
+    "unchanged_clip4_payload_bytes": 8044936192,
+    "unchanged_vae_payload_bytes": 336185492,
+    "nominal_all_resident_payload_plus_headroom_bytes": 16551633556,
+    "nominal_shortfall_against_observation_bytes": 2460512916,
+    "caveat": "Arithmetic estimate, NOT measured runtime peak or a rigorous lower bound. Excludes casting overlap, scales, activations and allocator/cache effects. Normal offload/mmap may change residency; not tested."
+  },
+  "existing_encoder8_is_larger_than_encoder4_bytes": 619866694,
+  "native_9b_bundle_file_bytes_plus_headroom": 23114965578,
+  "safe_fit_proven": false,
+  "additional_model_loads": 0,
+  "additional_provider_posts": 0,
+  "original_window_reopened": false,
+  "independent_processes_touched": false,
+  "official_sources": [
+    "https://docs.comfy.org/tutorials/flux/flux-2-klein",
+    "https://raw.githubusercontent.com/Comfy-Org/ComfyUI/master/nodes.py"
+  ],
+  "installed_source_sha256": {
+    "nodes.py": "1af4a41e1d844550a836cf1d1b00fad85d3d0aefaf435743431a8f1598643e22",
+    "comfy/sd.py": "ffbd956e375ad62ad00a21418f2974bcb111513929f5b70569a31ab58ad7d470"
+  }
+}
