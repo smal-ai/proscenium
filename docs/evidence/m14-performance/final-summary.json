@@ -1,0 +1,865 @@
+{
+  "status": "complete_bounded_observations_heavy_software_orbit_slow_no_m14_claim",
+  "tested_commit": "aa034c911ea996697ea97f1f95feaace5f7070e3",
+  "product_base": "544e1b15e86c51a19f398598a601b791a212e22a",
+  "retained_root": "/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b",
+  "component_scope": "Compiled fixture imports unmodified maintained ProxyView, including useGLTF, Canvas, OrbitControls, CameraObserver and CaptureBinding. Not a complete studio/backend journey or shell benchmark.",
+  "allocation": {
+    "browser_profiles": 1,
+    "browser_launches": 1,
+    "fixture_servers": 1,
+    "proxy_cases": 2,
+    "elapsed_seconds": 41.361627549,
+    "sdk_sends_or_native_authoring_or_provider_or_encode_work": 0
+  },
+  "configured_allocation": {
+    "allocation": "authorised-new-browser-b",
+    "limits": {
+      "seconds": 240,
+      "min_host_available_bytes": 4294967296,
+      "max_browser_summed_rss_bytes": 4294967296
+    },
+    "source_hashes": {
+      "tests/native/studio/m14_performance.mjs": "002a0b041def096bac95dc591b58d21cc7423e1730901b89a3f418bbdc573e40",
+      "tests/acceptance/m14_performance_helpers.mjs": "4d07ae9d9e2a262c61124cf018125097d2d1c4479a89b7708c093191306d0fb0",
+      "tests/acceptance/m14_performance_helpers.test.mjs": "6f59fe47cf8396d2b81eff4eb8097edecd40588aa69d2e600aa7b91c8f896f40",
+      "tests/acceptance/m14_performance_fixture.tsx": "d57ee68da45a339d9b40ef5bb9da1858cd071a49c8f6c1e67f03082fe47cd228",
+      "tests/acceptance/m14_performance.html": "5cc2d34e07aae4febc87ec3911ed891b809fb4ec3a72b587d90384e80ffbfb25",
+      "apps/frontend/src/features/review/ProxyView.tsx": "42ecfb7da41491a7e39242d08bf60c199acac1b5f0e6cef9920cd3d9756fc5a3",
+      "apps/frontend/src/features/review/media.ts": "867ce663ca0cdcbf19b0793210fdc281654a4c9c12390fd3775354670a84abb6",
+      "package-lock.json": "7294b9cc1f45f96ec5a6ba58b1c24f2659d30ab7578fd65788acaa2fa54d4d0c"
+    },
+    "configured_before_browser_launch": true
+  },
+  "reservation": {
+    "allocation": "authorised-new-browser-b",
+    "limit_profiles": 1,
+    "limit_cases": 2,
+    "limits": {
+      "seconds": 240,
+      "min_host_available_bytes": 4294967296,
+      "max_browser_summed_rss_bytes": 4294967296
+    },
+    "started": "2026-11-14T18:43:04.045Z"
+  },
+  "identities": {
+    "os": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo\n",
+    "kernel": "7.0.0-43-generic",
+    "arch": "x64",
+    "cpu_model": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+    "logical_cpus": 32,
+    "node": "v24.18.0",
+    "chromium": "159.0.8154.6"
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "cases": {
+    "small": {
+      "workload": {
+        "bytes": 1788,
+        "triangles": 12,
+        "export_position_records": 24,
+        "meshes": 1
+      },
+      "loader": {
+        "load_start_ms": 597.6000000238419,
+        "ready_ms": 1014.5,
+        "loader_ready_ms": 416.89999997615814,
+        "ready_definition": "Maintained CaptureBinding ready after useGLTF decode, scene clone and model layout effect; not GPU completion",
+        "resource": {
+          "name": "http://127.0.0.1:43149/fixtures/small.glb",
+          "entryType": "resource",
+          "startTime": 705.6000000238419,
+          "duration": 16.399999976158142,
+          "navigationId": 4140,
+          "initiatorType": "fetch",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "",
+          "contentEncoding": "",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedRouterSource": "",
+          "workerFinalRouterSource": "",
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 705.6000000238419,
+          "domainLookupStart": 705.6000000238419,
+          "domainLookupEnd": 705.6000000238419,
+          "connectStart": 705.6000000238419,
+          "secureConnectionStart": 0,
+          "connectEnd": 705.6000000238419,
+          "requestStart": 706.7000000476837,
+          "responseStart": 721.6000000238419,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 721.6000000238419,
+          "responseEnd": 722,
+          "transferSize": 2088,
+          "encodedBodySize": 1788,
+          "decodedBodySize": 1788,
+          "responseStatus": 200,
+          "serverTiming": []
+        }
+      },
+      "http_server": {
+        "url": "/fixtures/small.glb",
+        "body_bytes": 1788,
+        "started_monotonic_ns": "474496462602306",
+        "finished_monotonic_ns": "474496466662523",
+        "duration_ms": 4.062017
+      },
+      "cadence": {
+        "interval_ms": {
+          "count": 122,
+          "p50": 16.69999998807907,
+          "p95": 17,
+          "max": 17.200000047683716
+        },
+        "callback_wall_ms": {
+          "count": 123,
+          "p50": 0.30000001192092896,
+          "p95": 0.40000003576278687,
+          "max": 0.5
+        },
+        "callback_count": 123,
+        "draw_calls": 123
+      },
+      "first_callback": {
+        "raf_timestamp_ms": 1724.4,
+        "start_ms": 1725,
+        "draw_calls": 1,
+        "end_ms": 1725.300000011921
+      },
+      "last_callback": {
+        "raf_timestamp_ms": 3757.7,
+        "start_ms": 3757.900000035763,
+        "draw_calls": 1,
+        "end_ms": 3758.2000000476837
+      },
+      "callback_span_ms": 2032.9000000357628,
+      "observed_draw_callbacks_per_second": 60.01278960984494,
+      "steady_started_at": "2026-11-14T18:43:05.925Z",
+      "steady_finished_at": "2026-11-14T18:43:07.978Z",
+      "load_orbit_capture_validation_before_sampling_ms": 1165.77277,
+      "visibility": {
+        "before": {
+          "camera": {
+            "space": "blender_world_m",
+            "camera_to_world": [
+              0.7071067811865476,
+              -0.3481553119113956,
+              0.6154574548966636,
+              5,
+              0.7071067811865475,
+              0.3481553119113957,
+              -0.6154574548966637,
+              -5.000000000000001,
+              -2.7755575615628914e-17,
+              0.8703882797784892,
+              0.4923659639173309,
+              4,
+              0,
+              0,
+              0,
+              1
+            ],
+            "projection": [
+              1.206285142786627,
+              0,
+              0,
+              0,
+              0,
+              2.1445069205095586,
+              0,
+              0,
+              0,
+              0,
+              -1.000002000002,
+              -0.02000002000002,
+              0,
+              0,
+              -1,
+              0
+            ],
+            "aspect": 1.7777777777777777,
+            "near_m": 0.01,
+            "far_m": 10000,
+            "source_camera_id": null,
+            "shift": [
+              0,
+              0
+            ],
+            "kind": "perspective",
+            "vertical_fov_degrees": 50
+          },
+          "dimensions": {
+            "width": 1600,
+            "height": 900
+          },
+          "quantised_colours": 10,
+          "sampled_pixels": 360000,
+          "different_from_corner": 15554,
+          "sha256": "bf0d3630549d4e76b58f5431e26dc9a707eedb6ca830c45bc7e428ec40a731f4"
+        },
+        "after": {
+          "camera": {
+            "space": "blender_world_m",
+            "camera_to_world": [
+              0.9205048534524405,
+              -0.24428158909092007,
+              0.3049546195775955,
+              2.4774630411195364,
+              0.3907311284892735,
+              0.5754913595870303,
+              -0.7184280620007617,
+              -5.8365371666623735,
+              1.3877787807814457e-17,
+              0.7804717805737029,
+              0.6251910105944534,
+              5.079075780302508,
+              0,
+              0,
+              0,
+              1
+            ],
+            "projection": [
+              1.206285142786627,
+              0,
+              0,
+              0,
+              0,
+              2.1445069205095586,
+              0,
+              0,
+              0,
+              0,
+              -1.000002000002,
+              -0.02000002000002,
+              0,
+              0,
+              -1,
+              0
+            ],
+            "aspect": 1.7777777777777777,
+            "near_m": 0.01,
+            "far_m": 10000,
+            "source_camera_id": null,
+            "shift": [
+              0,
+              0
+            ],
+            "kind": "perspective",
+            "vertical_fov_degrees": 50
+          },
+          "dimensions": {
+            "width": 1600,
+            "height": 900
+          },
+          "quantised_colours": 12,
+          "sampled_pixels": 360000,
+          "different_from_corner": 15114,
+          "sha256": "f9dcb6de6957bcdcf930798800241bac28ad5c7a5c3e4a6a7996f5c0d636e83e"
+        },
+        "actual_forwarded_draws_before_orbit": 15,
+        "mouse_moves_during_sampling": 90,
+        "camera_changes_during_sampling": 93
+      },
+      "graphics": {
+        "vendor": "WebKit",
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shading_language": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "unmasked_vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "intrinsic": [
+          1600,
+          900
+        ],
+        "css": {
+          "x": 160,
+          "y": 112,
+          "width": 1600,
+          "height": 900,
+          "top": 112,
+          "right": 1760,
+          "bottom": 1012,
+          "left": 160
+        }
+      },
+      "resources": {
+        "sample_count": 16,
+        "peak_browser_summed_rss_bytes": 1664749568,
+        "minimum_host_available_bytes": 37532045312
+      }
+    },
+    "heavy": {
+      "workload": {
+        "bytes": 90077656,
+        "triangles": 1304618,
+        "export_position_records": 3100876,
+        "meshes": 1
+      },
+      "loader": {
+        "load_start_ms": 3957.900000035763,
+        "ready_ms": 4351.100000023842,
+        "loader_ready_ms": 393.19999998807907,
+        "ready_definition": "Maintained CaptureBinding ready after useGLTF decode, scene clone and model layout effect; not GPU completion",
+        "resource": {
+          "name": "http://127.0.0.1:43149/fixtures/heavy.glb",
+          "entryType": "resource",
+          "startTime": 4049.800000011921,
+          "duration": 132.9000000357628,
+          "navigationId": 4140,
+          "initiatorType": "fetch",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "",
+          "contentEncoding": "",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedRouterSource": "",
+          "workerFinalRouterSource": "",
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 4049.800000011921,
+          "domainLookupStart": 4049.800000011921,
+          "domainLookupEnd": 4049.800000011921,
+          "connectStart": 4049.800000011921,
+          "secureConnectionStart": 0,
+          "connectEnd": 4049.800000011921,
+          "requestStart": 4050.300000011921,
+          "responseStart": 4051.400000035763,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 4051.400000035763,
+          "responseEnd": 4182.700000047684,
+          "transferSize": 90077956,
+          "encodedBodySize": 90077656,
+          "decodedBodySize": 90077656,
+          "responseStatus": 200,
+          "serverTiming": []
+        }
+      },
+      "http_server": {
+        "url": "/fixtures/heavy.glb",
+        "body_bytes": 90077656,
+        "started_monotonic_ns": "474499795531623",
+        "finished_monotonic_ns": "474499927678865",
+        "duration_ms": 132.148762
+      },
+      "cadence": {
+        "interval_ms": {
+          "count": 62,
+          "p50": 391,
+          "p95": 696.5,
+          "max": 828.5
+        },
+        "callback_wall_ms": {
+          "count": 63,
+          "p50": 0.30000001192092896,
+          "p95": 0.5,
+          "max": 1.699999988079071
+        },
+        "callback_count": 63,
+        "draw_calls": 63
+      },
+      "first_callback": {
+        "raf_timestamp_ms": 15573.8,
+        "start_ms": 15575,
+        "draw_calls": 1,
+        "end_ms": 15575.300000011921
+      },
+      "last_callback": {
+        "raf_timestamp_ms": 40689.6,
+        "start_ms": 40690.40000003576,
+        "draw_calls": 1,
+        "end_ms": 40690.80000001192
+      },
+      "callback_span_ms": 25115.400000035763,
+      "observed_draw_callbacks_per_second": 2.4686049196871926,
+      "steady_started_at": "2026-11-14T18:43:19.472Z",
+      "steady_finished_at": "2026-11-14T18:43:45.016Z",
+      "load_orbit_capture_validation_before_sampling_ms": 11415.130387,
+      "visibility": {
+        "before": {
+          "camera": {
+            "space": "blender_world_m",
+            "camera_to_world": [
+              0.7071067811865476,
+              -0.3481553119113956,
+              0.6154574548966636,
+              5,
+              0.7071067811865475,
+              0.3481553119113957,
+              -0.6154574548966637,
+              -5.000000000000001,
+              -2.7755575615628914e-17,
+              0.8703882797784892,
+              0.4923659639173309,
+              4,
+              0,
+              0,
+              0,
+              1
+            ],
+            "projection": [
+              1.206285142786627,
+              0,
+              0,
+              0,
+              0,
+              2.1445069205095586,
+              0,
+              0,
+              0,
+              0,
+              -1.000002000002,
+              -0.02000002000002,
+              0,
+              0,
+              -1,
+              0
+            ],
+            "aspect": 1.7777777777777777,
+            "near_m": 0.01,
+            "far_m": 10000,
+            "source_camera_id": null,
+            "shift": [
+              0,
+              0
+            ],
+            "kind": "perspective",
+            "vertical_fov_degrees": 50
+          },
+          "dimensions": {
+            "width": 1600,
+            "height": 900
+          },
+          "quantised_colours": 15,
+          "sampled_pixels": 360000,
+          "different_from_corner": 8558,
+          "sha256": "460e4a581b8c219252505ed454c79a9e15145a56187dc1088c839a047cf536b9"
+        },
+        "after": {
+          "camera": {
+            "space": "blender_world_m",
+            "camera_to_world": [
+              0.9205048534524405,
+              -0.24428158909092007,
+              0.3049546195775955,
+              2.4774630411195364,
+              0.3907311284892735,
+              0.5754913595870303,
+              -0.7184280620007617,
+              -5.8365371666623735,
+              1.3877787807814457e-17,
+              0.7804717805737029,
+              0.6251910105944534,
+              5.079075780302508,
+              0,
+              0,
+              0,
+              1
+            ],
+            "projection": [
+              1.206285142786627,
+              0,
+              0,
+              0,
+              0,
+              2.1445069205095586,
+              0,
+              0,
+              0,
+              0,
+              -1.000002000002,
+              -0.02000002000002,
+              0,
+              0,
+              -1,
+              0
+            ],
+            "aspect": 1.7777777777777777,
+            "near_m": 0.01,
+            "far_m": 10000,
+            "source_camera_id": null,
+            "shift": [
+              0,
+              0
+            ],
+            "kind": "perspective",
+            "vertical_fov_degrees": 50
+          },
+          "dimensions": {
+            "width": 1600,
+            "height": 900
+          },
+          "quantised_colours": 12,
+          "sampled_pixels": 360000,
+          "different_from_corner": 9004,
+          "sha256": "81f47e3dbb7df742ff138427df9ad0b8cf779ecb493e3d0c0359bfc995dea34f"
+        },
+        "actual_forwarded_draws_before_orbit": 184,
+        "mouse_moves_during_sampling": 60,
+        "camera_changes_during_sampling": 60
+      },
+      "graphics": {
+        "vendor": "WebKit",
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shading_language": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "unmasked_vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "intrinsic": [
+          1600,
+          900
+        ],
+        "css": {
+          "x": 160,
+          "y": 112,
+          "width": 1600,
+          "height": 900,
+          "top": 112,
+          "right": 1760,
+          "bottom": 1012,
+          "left": 160
+        }
+      },
+      "resources": {
+        "sample_count": 185,
+        "peak_browser_summed_rss_bytes": 2092216320,
+        "minimum_host_available_bytes": 36410953728
+      }
+    }
+  },
+  "observer_failures": [],
+  "resources": {
+    "sample_count": 207,
+    "peak_browser_summed_rss_bytes": 2092216320,
+    "minimum_host_available_bytes": 36410953728,
+    "peak_harness_rss_bytes": 368586752,
+    "maximum_sample_gap_ms": 252.6197549999997,
+    "host_load_average_first": [
+      10.18,
+      10.56,
+      11.37
+    ],
+    "host_load_average_last": [
+      19.19,
+      12.72,
+      12.06
+    ],
+    "limits": "Sampled sum of attributed Chromium-process RSS, not PSS or allocator usage. Shared pages count repeatedly. Whole-host available RAM/load includes independent activity. Intervening peaks may be missed."
+  },
+  "prospective_regression_targets": {
+    "qualification": "Proposed workload-specific future regression thresholds, not a universal SLA, repeated-run confidence bound, executed future gate or performance acceptance",
+    "profile": "Same host, Chromium159/SwiftShader, DPR1, 1920x1080 viewport, maintained ProxyView at 1600x900, small then heavy once, no HTTP cache; JavaScript/GL/shader/small-source cache can be warm for heavy",
+    "formulas": {
+      "loader_ready": "ceil(observed_ms * 1.5 + 100)",
+      "interval_p50_p95": "ceil(observed_ms * 1.25 + 2)",
+      "interval_max": "ceil(observed_ms * 1.5 + 5)",
+      "rss": "ceil(observed per-case sampled summed RSS * 1.25 / MiB) * MiB"
+    },
+    "cases": {
+      "small": {
+        "loader_ready_ms": 726,
+        "interval_p50_ms": 23,
+        "interval_p95_ms": 24,
+        "interval_max_ms": 31,
+        "sampled_browser_summed_rss_bytes": 2081423360,
+        "minimum_draw_callbacks": 120
+      },
+      "heavy": {
+        "loader_ready_ms": 690,
+        "interval_p50_ms": 491,
+        "interval_p95_ms": 873,
+        "interval_max_ms": 1248,
+        "sampled_browser_summed_rss_bytes": 2616197120,
+        "minimum_draw_callbacks": 60
+      }
+    },
+    "heavy_warning": "Regression limits derived from the poor heavy baseline do not make it interactive. The actual median draw-bearing JavaScript callback interval is 391 ms. Proxy optimisation remains unperformed and outside this measurement allocation.",
+    "safety_guards_separate_from_targets": {
+      "seconds": 240,
+      "min_host_available_bytes": 4294967296,
+      "max_browser_summed_rss_bytes": 4294967296
+    }
+  },
+  "measurement_limits": [
+    "Actual forwarded rAF callbacks that issue WebGL draw calls. No GPU fence, gl.finish, timer-query completion or compositor presentation was measured.",
+    "Short JavaScript callback wall duration does not measure asynchronous software rendering cost. Heavy draw-loop intervals are slow even though callback bodies and loader readiness are short.",
+    "Heavy loader readiness is not first visible-frame latency. The separately recorded pre-sampling validation interval includes actual framebuffer capture, pointer orbit and screenshot work, not an isolated GPU measurement.",
+    "Controlled compiled maintained-component fixture, not whole-studio shell/backend/native user-journey acceptance.",
+    "One ordered observation per asset, with 123/63 actual draw callbacks. No repeated-run variance, cold-heavy run, hardware-GPU benchmark or browser matrix.",
+    "Loopback ResourceTiming and server response completion include scheduling; transferSize is browser accounting rather than packet capture.",
+    "The four-GiB ceiling belongs only to the new -b allocation. The original -a two-GiB guard and palette failure remain unchanged.",
+    "No M14/release or universal performance-compliance claim. Coordinator assesses NFR04 coverage and the visible heavy-workload weakness."
+  ],
+  "source_preservation": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/artefacts/sha256/2b5f01e288df8ad19c313507f285351347b2c951ebcb71000ea89930e484825c/content",
+      "sha256": "2b5f01e288df8ad19c313507f285351347b2c951ebcb71000ea89930e484825c",
+      "unchanged": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/artefacts/sha256/9d451294e1ba757da78000ec97b05128c5d10f565062932eba38a420f7098a3e/content",
+      "sha256": "9d451294e1ba757da78000ec97b05128c5d10f565062932eba38a420f7098a3e",
+      "unchanged": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy.glb",
+      "sha256": "7631a575fa9dfb3478fbbb5fa26dcff0f6ff4741956856933f23e6c8be0c219e",
+      "unchanged": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy-map.json",
+      "sha256": "f1b9a31436bc664cd7f627fd1d9aea8f4e8d677db9dc4f06b8a67104c1c255cd",
+      "unchanged": true
+    }
+  ],
+  "cleanup": {
+    "observed_at": "2026-11-14T20:48:12.602584+02:00",
+    "browser": {
+      "original": {
+        "pid": 9697,
+        "ppid": 9683,
+        "pgrp": 9697,
+        "state": "R",
+        "start_ticks": "47449559",
+        "rss_bytes": 585728,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+          "--headless=new",
+          "--no-sandbox",
+          "--disable-dev-shm-usage",
+          "--no-first-run",
+          "--no-default-browser-check",
+          "--disable-breakpad",
+          "--disable-crash-reporter",
+          "--remote-debugging-port=0",
+          "--user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile",
+          "--window-size=1920,1080",
+          "--use-angle=swiftshader",
+          "--enable-unsafe-swiftshader",
+          "--disable-background-networking",
+          "about:blank"
+        ]
+      },
+      "observed": null,
+      "original_process_absent": true
+    },
+    "server_and_harness": {
+      "original": {
+        "pid": 9683,
+        "ppid": 15475,
+        "pgrp": 9683,
+        "state": "S",
+        "start_ticks": "47449520",
+        "rss_bytes": 227061760,
+        "argv": [
+          "node",
+          "tests/native/studio/m14_performance.mjs",
+          "measure",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b"
+        ]
+      },
+      "observed": null,
+      "original_process_absent": true
+    },
+    "recorded_cleanup": {
+      "before_forced_cleanup": [
+        {
+          "pid": 10022,
+          "ppid": 9705,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449969",
+          "rss_bytes": 73654272,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=13 --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=13 --gpu-channel-request-start-time-ticks=474499689376 --launch-time-ticks=474499691622 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708998493415531"
+          ]
+        },
+        {
+          "pid": 9697,
+          "ppid": 9683,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449559",
+          "rss_bytes": 208879616,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --headless=new --no-sandbox --disable-dev-shm-usage --no-first-run --no-default-browser-check --disable-breakpad --disable-crash-reporter --remote-debugging-port=0 --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --window-size=1920,1080 --use-angle=swiftshader --enable-unsafe-swiftshader --disable-background-networking --noerrdialogs --ozone-platform=headless --ozone-override-screen-size=800,600 about:blank"
+          ]
+        },
+        {
+          "pid": 9704,
+          "ppid": 9697,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449561",
+          "rss_bytes": 75882496,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=zygote --no-zygote-sandbox --no-sandbox --headless=new --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --no-first-run --ozone-platform=headless --ozone-override-screen-size=800,600 --disable-gpu"
+          ]
+        },
+        {
+          "pid": 9705,
+          "ppid": 9697,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449561",
+          "rss_bytes": 76120064,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=zygote --no-sandbox --headless=new --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --no-first-run --ozone-platform=headless --ozone-override-screen-size=800,600 --disable-gpu"
+          ]
+        },
+        {
+          "pid": 9731,
+          "ppid": 9704,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449563",
+          "rss_bytes": 435691520,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=gpu-process --gpu-recent-crash-count=0 --no-sandbox --disable-dev-shm-usage --disable-breakpad --headless=new --ozone-platform=headless --use-angle=swiftshader --enable-unsafe-swiftshader --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAACBAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708988185955192"
+          ]
+        },
+        {
+          "pid": 9733,
+          "ppid": 9697,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449563",
+          "rss_bytes": 120000512,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --no-sandbox --disable-dev-shm-usage --use-angle=swiftshader --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708989122997041"
+          ]
+        },
+        {
+          "pid": 9754,
+          "ppid": 9705,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449564",
+          "rss_bytes": 48558080,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=utility --no-sandbox --disable-dev-shm-usage --use-angle=swiftshader --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708990060038890"
+          ]
+        },
+        {
+          "pid": 9820,
+          "ppid": 9705,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449566",
+          "rss_bytes": 138178560,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --top-chrome-webui --gpu-client-id=5 --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --disallow-v8-feature-flag-overrides --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --gpu-channel-request-start-time-ticks=474495664878 --launch-time-ticks=474495665060 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708990997080739"
+          ]
+        },
+        {
+          "pid": 9832,
+          "ppid": 9705,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449568",
+          "rss_bytes": 73723904,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=7 --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=7 --gpu-channel-request-start-time-ticks=474495681416 --launch-time-ticks=474495681963 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708992871164437"
+          ]
+        },
+        {
+          "pid": 9833,
+          "ppid": 9705,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449568",
+          "rss_bytes": 392822784,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=6 --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=6 --gpu-channel-request-start-time-ticks=474495682110 --launch-time-ticks=474495684063 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708991934122588"
+          ]
+        },
+        {
+          "pid": 9864,
+          "ppid": 9697,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449570",
+          "rss_bytes": 89825280,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=utility --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=none --no-sandbox --disable-dev-shm-usage --use-angle=swiftshader --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708993808206286"
+          ]
+        },
+        {
+          "pid": 9884,
+          "ppid": 9705,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449572",
+          "rss_bytes": 94060544,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=10 --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --extension-process --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=10 --gpu-channel-request-start-time-ticks=474495725624 --launch-time-ticks=474495726134 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708995682289984"
+          ]
+        },
+        {
+          "pid": 9912,
+          "ppid": 9705,
+          "pgrp": 9697,
+          "state": "S",
+          "start_ticks": "47449573",
+          "rss_bytes": 97349632,
+          "argv": [
+            "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=11 --crashpad-handler-pid=9699 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-b/browser-profile --extension-process --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=11 --gpu-channel-request-start-time-ticks=474495729331 --launch-time-ticks=474495730373 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,15971022127161470064,10982951783641238147,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,4350137464304708436,1821904339465580602,4 --trace-process-track-uuid=3190708996619331833"
+          ]
+        }
+      ],
+      "after": [],
+      "root_after": null,
+      "owned_live_after": [],
+      "server_closed": true
+    }
+  },
+  "process_identity_records_sha256": {
+    "browser_root": "04e6e2f801605b76776ed491282633ae990e771fc767a4f2d18cbe88757eed82",
+    "server": "23454328d175b83e91f1962bd5b3c134fe7c20da184bfdffaa1a2fdbd3f143ba",
+    "processes": "6373dedc93ceefd74a52fc6a61969dec8ee31ae2d999468f4bcc2b36f382a5d8",
+    "cleanup": "cb373f517bf9c73c652ae09d0251c0d4d279eb1fdffbb128bc268dc820150fd5"
+  },
+  "original_a_evidence_sha256": {
+    "measurement.json": "c1a4a100e6074c98faae924b402d75b8e00bbc5e7e591b5a97713fdf5d5eb347",
+    "summary.json": "85123c20ff19262ddd9621f5106690ddc61a163bebaeeaa9d1294254d7e618ed",
+    "historical.json": "234f0406ad380d61b0637659dfff764a6001c6a01c8b3e3350a26a22d918853f",
+    "small-before.png": "bf0d3630549d4e76b58f5431e26dc9a707eedb6ca830c45bc7e428ec40a731f4"
+  },
+  "source_test_hashes": {
+    "tests/native/studio/m14_performance.mjs": "002a0b041def096bac95dc591b58d21cc7423e1730901b89a3f418bbdc573e40",
+    "tests/acceptance/m14_performance_helpers.mjs": "4d07ae9d9e2a262c61124cf018125097d2d1c4479a89b7708c093191306d0fb0",
+    "tests/acceptance/m14_performance_helpers.test.mjs": "6f59fe47cf8396d2b81eff4eb8097edecd40588aa69d2e600aa7b91c8f896f40",
+    "tests/acceptance/m14_performance_fixture.tsx": "d57ee68da45a339d9b40ef5bb9da1858cd071a49c8f6c1e67f03082fe47cd228",
+    "tests/acceptance/m14_performance.html": "5cc2d34e07aae4febc87ec3911ed891b809fb4ec3a72b587d90384e80ffbfb25",
+    "apps/frontend/src/features/review/ProxyView.tsx": "42ecfb7da41491a7e39242d08bf60c199acac1b5f0e6cef9920cd3d9756fc5a3",
+    "apps/frontend/src/features/review/media.ts": "867ce663ca0cdcbf19b0793210fdc281654a4c9c12390fd3775354670a84abb6",
+    "package-lock.json": "7294b9cc1f45f96ec5a6ba58b1c24f2659d30ab7578fd65788acaa2fa54d4d0c"
+  },
+  "compiled_build_hashes": {
+    "assets/m14_performance-DGZoBCQ7.js": "88c9b427b7df2251ddc16827c49a2c01cd91be73ceda3584a24fca819e6fd25e",
+    "fixtures/heavy-map.json": "f1b9a31436bc664cd7f627fd1d9aea8f4e8d677db9dc4f06b8a67104c1c255cd",
+    "fixtures/heavy.glb": "7631a575fa9dfb3478fbbb5fa26dcff0f6ff4741956856933f23e6c8be0c219e",
+    "fixtures/small-map.json": "9d451294e1ba757da78000ec97b05128c5d10f565062932eba38a420f7098a3e",
+    "fixtures/small.glb": "2b5f01e288df8ad19c313507f285351347b2c951ebcb71000ea89930e484825c",
+    "tests/acceptance/m14_performance.html": "3945d03c81e58d7969c206d5deaee0442798c405916cf62e0c98ac76a396a4cf"
+  },
+  "retained_sha256": {
+    "result.json": "cf40d9f1798ebe20cd6fa6a466d4ea8ad8f1bf8722108ae044b294840041078c",
+    "measurement-reservation.json": "cb7cc595972b07f492e13691030ba2c29497750ada715f4a351173206054243d",
+    "configured-allocation.json": "e5a1818f68c502757109916c6eef4269aa4f743e33eee1f4dc1762cbbe0ace05",
+    "prepared.json": "c5fe6cd5896b60f8ca6e975bf01ba21a8cc3be1f56bf0d40b21cbfdfbb5b78a4"
+  }
+}
