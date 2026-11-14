@@ -2,10 +2,13 @@
 
 import hashlib
 import json
-import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tests/native/studio"))
+from m14_ssh_sources import source_bytes  # noqa: E402
+
 REPORT = json.loads((ROOT / "docs/evidence/m14-ssh/result.json").read_text())
 
 
@@ -37,5 +40,5 @@ def test_original_preservation_and_cleanup_limits_are_explicit():
 def test_executed_hashes_bind_original_driver_not_corrected_head():
     revision = REPORT["executed_driver_revision"]
     for path, digest in REPORT["executed_source_hashes"].items():
-        data = subprocess.check_output(["git", "show", f"{revision}:{path}"], cwd=ROOT)
+        data = source_bytes(revision, path, digest)
         assert hashlib.sha256(data).hexdigest() == digest

@@ -1,0 +1,91 @@
+{
+  "format": "proscenium-m14-explicit-evidence-source-mirrors-1",
+  "semantics": "Original executed revision facts remain unchanged. Accepted mirrors and retained exact source bytes are separate hash-checked inspection identities.",
+  "sources": {
+    "6fa3fe70e1d052ad6260f828825931e53556ec05": {
+      "original_revision": "6fa3fe70e1d052ad6260f828825931e53556ec05",
+      "mode": "accepted_git_mirror",
+      "accepted_revision": "a46b510af2f1a257a59e3b56a6359dac882a532f",
+      "files": {
+        "tests/native/studio/m14_ssh_prepare.py": {
+          "sha256": "fb6fdcd54cc660cda805f351ec4b3f5e9df0c15d5263a3dd28543f8e25461fe2"
+        },
+        "tests/native/studio/m14_ssh_browser.mjs": {
+          "sha256": "a7cf3a94942a587176ba26d7cf0cc51ff54e0dbcf57f1244b645b5e1788e2dfe"
+        },
+        "tests/native/studio/m14_ssh_host.py": {
+          "sha256": "b57fd1acb0887797b23a2564f8d4f0298b0a3096f4135f5204fdec067e079708"
+        },
+        "tests/native/studio/m14_ssh_run.py": {
+          "sha256": "a9622eb564e32a3f4991b8b68718597567e073860ef4f2cb003b763023518089"
+        }
+      }
+    },
+    "c89e32246b43ebe688add4dd394676636341aad9": {
+      "original_revision": "c89e32246b43ebe688add4dd394676636341aad9",
+      "mode": "accepted_git_mirror",
+      "accepted_revision": "3d3fc64b0c47d64edc01cf67e2e08f77b53eda98",
+      "files": {
+        "tests/native/studio/m14_ssh_prepare.py": {
+          "sha256": "fb6fdcd54cc660cda805f351ec4b3f5e9df0c15d5263a3dd28543f8e25461fe2"
+        },
+        "tests/native/studio/m14_ssh_browser.mjs": {
+          "sha256": "3ba86db354f5ba5ecfc4b87be8a3cca870903e9d1dfdee9895f3b884201e50ac"
+        },
+        "tests/native/studio/m14_ssh_preflight.py": {
+          "sha256": "25a37a10dc96286bc8e4d75c646ae0a3e316ae67e17cf170b8e5df0244a8f279"
+        },
+        "tests/native/studio/m14_ssh_host.py": {
+          "sha256": "ffbc5911b3719ef6dc4f03f2a3c7fc55f0426af39ba6a4e54a2b2d3be6de907c"
+        },
+        "tests/native/studio/m14_ssh_run.py": {
+          "sha256": "8897bc24c6058aad80f11bb8188561404934a3ca74b05ad44cb26b2fb8cfc681"
+        }
+      }
+    },
+    "c517823de2249bcc21911fdbe92a943efb0cd535": {
+      "original_revision": "c517823de2249bcc21911fdbe92a943efb0cd535",
+      "mode": "retained_exact_source",
+      "files": {
+        "tests/native/studio/m14_ssh_run.py": {
+          "sha256": "82511eb685c78261d9f8296279d804960434266bc8be2eb64413d8e1f02a2278",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/c517823de2249bcc21911fdbe92a943efb0cd535/m14_ssh_run.py.txt"
+        },
+        "tests/native/studio/m14_ssh_host.py": {
+          "sha256": "06a4a9850b988e3b4604ae7ecfbc7599db5216511a3a4d1a7941416ec0aa1388",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/c517823de2249bcc21911fdbe92a943efb0cd535/m14_ssh_host.py.txt"
+        },
+        "tests/native/studio/m14_ssh_browser.mjs": {
+          "sha256": "33a00481210b7a16aeb0354949bfba938dbec9ad4c67c5408e93ae9bad94d495",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/c517823de2249bcc21911fdbe92a943efb0cd535/m14_ssh_browser.mjs.txt"
+        },
+        "tests/native/studio/m14_ssh_open.mjs": {
+          "sha256": "7be160ee7021ea3eb884599f4b36be2d51ea0acf359865d211caa51172b7ae56",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/c517823de2249bcc21911fdbe92a943efb0cd535/m14_ssh_open.mjs.txt"
+        },
+        "tests/native/studio/m14_ssh_oracle.py": {
+          "sha256": "663e0c4d536f78b65bc8d40c731890c825bee32ae65ed37e01f27b47578789fd",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/c517823de2249bcc21911fdbe92a943efb0cd535/m14_ssh_oracle.py.txt"
+        },
+        "tests/native/studio/m14_ssh_prepare.py": {
+          "sha256": "5edcd10f017a072c4a0e0ae60bda11465c6902ff77621a42652e28c3a433d0ec",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/c517823de2249bcc21911fdbe92a943efb0cd535/m14_ssh_prepare.py.txt"
+        }
+      }
+    },
+    "87ea8355bf92760af84d521084a09fb6cb26336b": {
+      "original_revision": "87ea8355bf92760af84d521084a09fb6cb26336b",
+      "mode": "retained_exact_source",
+      "files": {
+        "tests/native/studio/m14_ssh_recover_activation.mjs": {
+          "sha256": "3c3a49ee29a8507ac8c805f1d60b0158219c20d2df46eb6106af390dcfff9342",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/87ea8355bf92760af84d521084a09fb6cb26336b/m14_ssh_recover_activation.mjs.txt"
+        },
+        "tests/native/studio/m14_ssh_recover_upload.mjs": {
+          "sha256": "46d413abd5fb309ec6038a1c606d2a84f9709a292f21afb802bdaf5874aafca8",
+          "retained_path": "docs/evidence/m14-ssh/complete-sources/87ea8355bf92760af84d521084a09fb6cb26336b/m14_ssh_recover_upload.mjs.txt"
+        }
+      }
+    }
+  }
+}

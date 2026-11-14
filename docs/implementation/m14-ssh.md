@@ -20,7 +20,101 @@ completion event per message with the same ID/text, and a meaningful marker/cont
 reply. Multi-message, duplicate, loss, text-mismatch and shared-send-guard regressions
 passed before live allocation. No production completion semantics were changed.
 
-Current completion result: pending actual UI/media preflight and the one-send journey.
+### Completion result: PASS for the bounded assigned journey
+
+The actual browser/media preflight and sole SDK Queue completed in **one startup
+set**. The allocation used **363.399 seconds including pre-phase fixture-key setup**
+(361.748 seconds in the recorded phase), below the 1,200-second bound. Available RAM
+was **34,460,360,704 bytes** at the single pre-start sample. No wait/resampling or
+continuous-minimum RAM claim is made.
+
+| Criterion | Actual result |
+| --- | --- |
+| Paired UI and project opening | Actual fixture-key OpenSSH, strict fixture known-host verification, compiled same-origin UI pairing, explicit saved-project activation and real M13 v1 Animation selection. |
+| Whole UI/media preflight before Queue | Actual rVFC ordinals **1–10**, all 640 × 360, at the registered 24/1-fps sample mapping. Callback was installed before first play. The 3→4 and 6→7 sequence boundaries retain the original contributors. Playback ran at 0.5× for observation, without modifying or encoding the file. |
+| Frame pin and reload | Presented sequence frame **5**, source frame **null**, exact media/map lineage, real pin, save, reload and reopen through the saved-annotation UI. Its captured PNG SHA-256 is `175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af`, matching the accepted original M13 frame. |
+| Downloads, range and upload | Actual UI video download: **64,876 bytes**, SHA-256 `ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e`. Actual manifest download: **7,291 bytes**, SHA-256 `46d550ab364d2b572fd5fffbf17fe472714b24e6e249f20c9882076215321ef1`. Both match the catalogue. Exact video `206 bytes 0-31/64876` and an actual **82-byte PNG** UI upload passed. |
+| One real read-only Queue | Request `b3c0e114-3da9-4aad-815e-a740b7d4302f`, fresh native session `78160750-b60b-4733-98c8-50d91b8e4cf8`, one SDK send and one native `view` of the owned marker. Observed model `gpt-6.1-sol`, SDK `1.0.34`, official direct CLI `1.0.112`. No M13 native history was imported/resumed. |
+| Actual active-task SSH cut | SDK admission/native user ID was observed. The first client closed while the request was `acknowledged` and its work remained active. Browser was offline and forwarding was closed. Host journal observed completion **8.432076 seconds after the cut**, with forwarding still closed. Send-to-observed-completion was **8.452033 seconds**, below 180 seconds. |
+| Exactly-once identity and replay | Exactly one original native user message joined to the original request receipt. The one SDK turn emitted **two legitimate assistant messages**, an empty pre-tool message and the final marker/context reply. Each unique message/event ID has exactly one durable public completion. Ordered WS replay matched all **59** durable events after reconnect and **61** after restart. |
+| Immutable context and notes | The original selected v1/Animation context and attachments were byte-equivalent through tunnel loss and quiet restart. The first saved pin remained identical. No request replacement, native duplication or job authoring occurred. |
+| Unavailable-service review | Quiet restart used a genuinely missing configured native executable and unused closed Comfy/VLM loopback ports. UI displayed `unavailable` and `Offline` under **Configuration metadata only**. Existing film/pin stayed readable and a distinct second frame-5 pin saved, reloaded and reopened. No SDK send or provider HTTP attempt occurred on restart/browse. These are configured unavailable states with separately observed closed ports, not stopped shared models or successful health checks. |
+| Same-origin boundary | Actual normal Host returned 200, wrong Host and Origin each returned 403. Zero off-origin page requests. API/WS/video/range/download/upload all used the forwarded Proscenium origin. |
+| Cleanup and preservation | One sshd, two sequential clients, one continuous Chromium profile and two sequential API hosts. All six controller/API/SSH PID/start receipts and the native runtime identity were retained. Both lifespan audits persisted, all recorded identities exited and no owned descendants remain. All **195** original M13 files remain byte-identical. Known earlier `s14a`/`s14b` report and inventory hashes remain unchanged. |
+
+Original pin: `88657989-4c73-4bda-9c7b-b32c9acdd902`. Unavailable-state pin:
+`f8ecd0ea-c03d-4553-8d48-72caf28c0e69`. The original explicit imported owner choice
+still selects v1. This is imported actual media history, not newly rendered footage.
+
+### Retained observer failures and exact execution lineage
+
+Two pre-send harness failures were repaired in the **same living fixture**, without
+another SSH authentication daemon, browser profile or model turn:
+
+1. The import omitted empty `brief`/`storyboards` directories that Git cannot clone.
+   Normal product activation correctly rejected the incomplete layout. The owned empty
+   roots were restored and the retained original UI activation action retried.
+2. The real image upload returned 201, but Chromium's inspector evicted its response
+   body. Reading the acknowledged artefact ID through the real metadata API verified
+   the original bytes. The upload was not repeated and no synthetic success was supplied.
+
+Launched driver/host/browser/import source was **`c517823`**. The paused browser loaded
+only the explicit activation/upload recovery modules, committed as **`87ea835`** before
+the sole send was released. The raw report's `source_hashes` are **shutdown filesystem
+observations**, not a claim that edited browser/import files were retroactively loaded.
+The [source and asset lineage](../evidence/m14-ssh/complete-summary.json) records exact
+Git-bound launched-source hashes, runtime recovery-module hashes, the pre-send commit,
+and every compiled UI asset hash. The later on-disk Queue response-cache correction
+was not needed by this running browser and is not relabelled executed.
+
+Historical source checks are portable to a main-only clone. Original executed IDs
+`6fa3fe7` and `c89e322` remain unchanged in their receipts. Their explicit byte-identical
+accepted inspection mirrors are `a46b510` and `3d3fc64`, both reachable from the accepted
+base. The successful run's six launched files and two runtime recovery modules are
+retained as exact inert `.txt` source artefacts under `complete-sources/`. The explicit
+[source-mirror manifest](../evidence/m14-ssh/complete-source-mirrors.json) binds all
+original/mirror identities and file hashes. Tests reject a changed expected digest,
+tampered retained bytes and any attempt to inspect the unavailable fleet-only Git
+objects. These are inspection mirrors, never relabelled execution revisions.
+
+### Evidence and limits
+
+- [Complete actual receipt](../evidence/m14-ssh/complete-result.json),
+  [summary/identities/lineage](../evidence/m14-ssh/complete-summary.json), and
+  [actual UI/media preflight before any send](../evidence/m14-ssh/complete-ui-preflight.json).
+- Actual screenshots: [SSH review](../evidence/m14-ssh/complete-review.png),
+  [unavailable configuration](../evidence/m14-ssh/complete-unavailable-services.png),
+  [unavailable output/feedback](../evidence/m14-ssh/complete-unavailable-review.png).
+- Both original observer failures, page snapshots and screenshots remain privately
+  retained under `s14c/a/observer-*`; sanitised failure records are in the receipt.
+- Private keys, trust files, cookies, owner pairing, SDK history and actual downloads
+  remain outside Git. Only sanitised observations and input/source/asset hashes are exported.
+- Zero development children, product children, native authoring, encodes, local-model
+  inference, provider HTTP calls or independent-service installation/lifecycle operations.
+- Same-host authenticated SSH, not a physical remote-client or three-browser matrix.
+  No new render/performance/general recovery acceptance is inferred. Cumulative M12,
+  M14 and release acceptance remain coordinator-owned.
+
+The one-send allocation is consumed. Its shared exclusive guard remains at
+`s14c/sdk-send-reservation.json`, outside the phase folder. Do not remove it or replay
+the original Queue. Read-only evidence export/tests do not authorise another live run.
+
+Final affected verification: **34 passed**, covering identity-based multi-message
+projection, duplicate/loss faults, cross-phase send fencing, real import-path validation,
+the actual film/note/download/upload/replay/unavailable observations, source lineage,
+cleanup and retained earlier failures. Ruff check/format and Node syntax checks passed.
+The production UI build passed with the existing Lucide-directive and bundle-size
+warnings. The existing Starlette/httpx deprecation warning remains. No full matrix or
+additional SDK experiment was run.
+
+Read-only reproduction of the evidence checks:
+
+```bash
+uv run pytest -q tests/acceptance/m14_ssh_complete_test.py tests/acceptance/m14_ssh_offline_test.py tests/acceptance/m14_ssh_evidence_test.py tests/acceptance/m14_ssh_final_test.py tests/acceptance/test_ssh_proof_contract.py --basetemp=/new/private/offline-test-root
+uv run ruff check tests/native/studio/m14_ssh*.py tests/acceptance/m14_ssh*
+uv run ruff format --check tests/native/studio/m14_ssh*.py tests/acceptance/m14_ssh*
+node --check tests/native/studio/m14_ssh_browser.mjs
+```
 
 ## Renewed final allocation, accepted base `c0cdf58`
 
@@ -85,7 +179,8 @@ fix is **not live-verified** under the consumed allocation.
 Final affected offline verification: **16 passed**, with the existing Starlette/httpx
 deprecation warning. Python Ruff check/format and Node syntax checks passed. The JUnit
 observation is `docs/evidence/m14-ssh/final-offline-junit.xml`. Historical executed source
-hashes are checked against `c89e322`, not silently replaced by the corrected browser helper.
+hashes remain those recorded for `c89e322`. Portable inspection uses its byte-identical
+accepted mirror `3d3fc64`, not the corrected browser helper or a relabelled execution.
 
 Remaining criteria are unchanged: model-message/tunnel continuity, ordered WS replay,
 all ten movie frames/boundaries, exact video range, upload/downloads, saved frame pin,

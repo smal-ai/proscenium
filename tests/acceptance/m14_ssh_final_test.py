@@ -3,9 +3,12 @@
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tests/native/studio"))
+from m14_ssh_sources import source_bytes  # noqa: E402
 
 
 def test_whole_driver_and_actual_blocked_api_preflight():
@@ -66,7 +69,5 @@ def test_final_allocation_keeps_actual_failure_and_zero_send_audit():
         for row in value["browser"]["responses"]
     )
     for path, digest in value["source_hashes"].items():
-        source = subprocess.check_output(
-            ["git", "show", f"{value['driver_revision']}:{path}"], cwd=ROOT
-        )
+        source = source_bytes(value["driver_revision"], path, digest)
         assert hashlib.sha256(source).hexdigest() == digest
