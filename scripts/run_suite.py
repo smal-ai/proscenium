@@ -3,6 +3,7 @@
 import argparse
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,14 +15,16 @@ if args.suite != "browser" and not args.selector:
     raise SystemExit("Missing PROFILE/BROWSER. No native/browser acceptance was executed.")
 if args.suite == "browser-installed" and args.selector not in {"brave", "edge"}:
     raise SystemExit("BROWSER must be brave or edge")
+if args.suite == "native":
+    raise SystemExit(
+        subprocess.run(
+            [sys.executable, str(ROOT / "scripts/run_native.py"), args.selector], cwd=ROOT
+        ).returncode
+    )
 manifest = json.loads((ROOT / "package.json").read_text())
 script = f"test:{args.suite}"
 if script not in manifest.get("scripts", {}):
     raise SystemExit(
         f"Missing {args.suite} acceptance suite ({script}). No acceptance evidence produced."
-    )
-if args.suite == "native":
-    raise SystemExit(
-        "Native runner requires parent-integrated bounded allocation/resource validation."
     )
 raise SystemExit(subprocess.run(["npm", "run", script, "--", args.selector], cwd=ROOT).returncode)

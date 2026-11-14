@@ -24,10 +24,11 @@ startup, configuration reads, project restoration or job reads.
 - `package-lock.json` freezes the Node graph. Development uses Node 24.18.0, npm 11.16.0.
 - E01 owns the SDK/CLI compatibility proof. The coordinator integrated its accepted exact
   SDK/runtime pair after the initial offline foundation commit.
-- `make test-browser`, `make test-native PROFILE=...` and
-  `make test-browser-installed BROWSER=brave|edge` fail explicitly while their real suites
-  are absent. They do not claim a browser/native test passed. The native runner deliberately
-  refuses execution until the parent integrates bounded allocation/resource validation.
+- Browser commands fail explicitly while their real suites are absent. The integration-owned
+  native runner now accepts `make test-native PROFILE=blender-source`. It acquires an OS-held
+  resource claim, creates disposable output, applies the profile timeout and records command,
+  source revision and actual exit status. `uv run python scripts/run_native.py --list` lists
+  accepted profiles without execution. Unknown profiles fail before any native process starts.
 - Feature integration tests are offline by default. Mark every native/model test `native`
   and exclude it from the offline command. Native tests never belong in the unit suite.
 
