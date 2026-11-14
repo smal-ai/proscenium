@@ -1,0 +1,156 @@
+{
+  "recorded_at": "2026-11-14T15:11:19.730Z",
+  "base": "ad47260",
+  "ui_commit": "e85e7178ea269c88b92f85463e9cb5ed48b1c886",
+  "node": "v24.18.0",
+  "scope": "Exactly three targeted UI fixes: decoded readiness, pinned render camera, clean-image roles. Separate explicitly authorised guarded M06 replay, not new planning or native execution.",
+  "source_sha256": {
+    "apps/frontend/src/features/review/AnnotationEditor.tsx": "a9a86f465eae989994f8667b43f5e3ed035e0849d06ab05032c9a6d0bb413ca2",
+    "apps/frontend/src/features/review/CriticPanel.tsx": "88bb305b6f261b50b8e175094d8b4b93a0088bf1f9c30c8ffaaef51d8a477700",
+    "apps/frontend/src/features/review/DecodedReviewImage.tsx": "a26e6ca8cdeb573da346a444ba28e2511c4ccc27b81f21b24fe93ff9ea9a4f30",
+    "apps/frontend/src/features/review/Outliner.tsx": "dc642b3f2415b49ef197dd0f518d0e987ccd81a19d15ebaef2d8703209b4ed11",
+    "apps/frontend/src/features/review/ProgressivePlayer.tsx": "56402c919f9f6b61fd936fcc7eeb948f7db40b0047502c05487e20dd7dae1393",
+    "apps/frontend/src/features/review/ProxyView.tsx": "42ecfb7da41491a7e39242d08bf60c199acac1b5f0e6cef9920cd3d9756fc5a3",
+    "apps/frontend/src/features/review/ReviewWorkspace.tsx": "4b0b9869890ac0b758611b575380f506ad837636bee1022980f30edad3e45efd",
+    "apps/frontend/src/features/review/SequencePlayer.tsx": "7d9fdc46e9ba4e4b9996603ba5c3b57e0ad61efc57be70ebd44aa4ecfd8b868e",
+    "apps/frontend/src/features/review/context.ts": "8ef4aa091d6469e31f42a9ab54139c44f5a09879005c9953e494f1c99eb35cfd",
+    "apps/frontend/src/features/review/frameCamera.ts": "2f3bfbcbd2bd2a37ce271b53fa25f7d755049110782d661ed3d289e0caafe731",
+    "apps/frontend/src/features/review/index.ts": "7fbcb7c121d58767c9ea9c55f7fe7ca5b9079a1fb3c5939cd81b0868a4b3494b",
+    "apps/frontend/src/features/review/media.ts": "867ce663ca0cdcbf19b0793210fdc281654a4c9c12390fd3775354670a84abb6",
+    "apps/frontend/src/features/review/outbox.ts": "2f831f1378e68c5bfed91fed2648352f640df14f0275e2b7cf4d2e012050e26e",
+    "apps/frontend/src/features/review/png.ts": "86af141e6a5d843067ce9a246e54cfbcac25c4188fd0d3d692c8e3ef589f46d0",
+    "apps/frontend/src/features/review/proxyCaptureStore.ts": "66e7a4dd35a48c5db5a05528464bf8aef9a3071fecf0142875c88264937ef84f",
+    "apps/frontend/src/features/review/records.ts": "960cf1958c7f7c7b791a2e9c6d371eaf8deedf0516f30146d7bff21b0ae24bd2",
+    "apps/frontend/src/features/review/review.css": "de54160a2eeef2b2aa30be5006f94da85ee71e593f8db2ffaee982e63debf23d",
+    "apps/frontend/src/features/review/state.ts": "57d8669c1883c1ebfaf9feaeac3e1df9abcdb921f7937001487660f672fb7681",
+    "tests/browser/review-readiness-harness.html": "c32341f9c5d57e696524a66fa6f188c80db513723abb26e0a32136a7dea05154",
+    "tests/browser/review-readiness-harness.tsx": "2f348b88eb21d0931a394732f3629754604310ea84e387eeacacefeaec14fe94",
+    "tests/browser/review-readiness-host.py": "ddcef54baa01b69c518deadadca1f966415ce45cda066f3d915cba2fdd303683",
+    "tests/browser/review-readiness-m04.ts": "e8b1dcf14a22ab7740d1c8ab461b868f8c2cfebfb822962ed3aaff4b9257e607",
+    "tests/browser/review-readiness-m06.mjs": "d0181df77d3ac6fa3086f025c4e18ab4dcda722543a2450688f72f07b60b91c3",
+    "tests/browser/review-readiness.config.ts": "33eacb281f0c19d5718ccdba35cb4795b47254b7a5084326a0efd2676109d3b0",
+    "tests/browser/review-readiness.spec.ts": "2e45ea3bba7dabb75ecb2be9a589067075cbb1cd7a6db511cc549cf8f6c55d76"
+  },
+  "inputs": {
+    "docs/evidence/m06/known-review-defect.json": "cc706712f2a8e5209de52af78254c7082ada018e9152321ae5b7827922860008",
+    "docs/evidence/w05/readiness-m06-attempt1.json": "e6216173eb55290b74b25c5f1f4223adef1cbc15bf99c2202d5fb8f7258fa2a2"
+  },
+  "compiled_frontend_sha256": {
+    "index-BZWWIUqB.js": "abe94240cf3d604581c8ff7b278d1345545ea4cb823248fdac3d69fa22a3ef58",
+    "index-VG5WV1Cp.css": "8d68faf9412d4fb66e6eba2ff9831a78d7076648dbf12581b45d653eca41d517"
+  },
+  "checks": [
+    {
+      "command": "npx tsc --project tsconfig.tests.json",
+      "result": "passed"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed; existing Lucide use-client and large bundle warnings"
+    },
+    {
+      "command": "npx playwright test --config tests/browser/review-readiness.config.ts --reporter=json > docs/evidence/w05/readiness-component-result.json",
+      "result": "4 passed; Chromium 159.0.8154.6; no skipped/flaky/unexpected tests"
+    },
+    {
+      "command": "uv run ruff check tests/browser/review-readiness-host.py",
+      "result": "passed"
+    },
+    {
+      "command": "uv run ruff format --check tests/browser/review-readiness-host.py",
+      "result": "passed"
+    },
+    {
+      "command": "node --check tests/browser/review-readiness-m06.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "node tests/browser/review-readiness-m06.mjs",
+      "result": "corrected actual compiled-app/owner-backend replay passed; one newly authorised backend+browser session, no SDK/native/provider calls"
+    }
+  ],
+  "actual_m06": {
+    "root": "/home/quintin/.cache/proscenium-development/milestones/m06-readiness-XW17cx",
+    "request_count_before": 2,
+    "request_count_after": 2,
+    "jobs_before": 0,
+    "jobs_after": 0,
+    "browser": "159.0.8154.6",
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    },
+    "registryProof": {
+      "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+      "storage_revision_before": 3,
+      "domain_revision_before": 3,
+      "storage_revision_after": 4,
+      "domain_revision_after": 4,
+      "native_id_before": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+      "native_id_after": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+      "old_path": "/home/quintin/.cache/proscenium-development/milestones/m06-20261114T161211/project",
+      "new_path": "/home/quintin/.cache/proscenium-development/milestones/m06-readiness-XW17cx/project",
+      "native_association_preserved": true,
+      "historical_projection_ids": [
+        "project-ba3669ea-eba6-4259-9b78-9ddba9647779:2",
+        "project-ba3669ea-eba6-4259-9b78-9ddba9647779:3"
+      ],
+      "copied_auth_rows_erased": true
+    },
+    "cleanup": {
+      "server_reaped": true,
+      "browser_closed": true,
+      "elapsed_ms": 3152,
+      "allocation_limit_ms": 300000,
+      "original_project_unchanged": true,
+      "original_project_files": 280,
+      "original_machine_and_native_history_unchanged": true,
+      "old_failed_manifest_unchanged": true,
+      "copied_git_head_before": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+      "copied_git_head_after": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+      "audit": {
+        "sdk_factories": [],
+        "native_calls": [],
+        "provider_http": [],
+        "blocked_mutations": [],
+        "allowed_mutations": [
+          {
+            "method": "POST",
+            "path": "/api/v1/owner/session"
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/uploads/d67cd643-5ecb-47ee-8919-9e4dc0e32b00"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/annotations"
+          }
+        ],
+        "git_processes": 26,
+        "elapsed_seconds": 1.7419427720014937,
+        "lifecycle_started": false,
+        "copilot_delivery_task_started": false,
+        "execution_profiles": [],
+        "services": []
+      }
+    }
+  },
+  "limits": [
+    "Final M06 criterion/cumulative acceptance remains coordinator-owned and depends on original real authored plan/history.",
+    "No additional SDK roots, planning requests, native/model/GPU execution or live VLM review.",
+    "M04 camera/PNG/receipt are actual retained inputs; its focused UI persistence test uses synthetic HTTP responses, not another native render.",
+    "First replay copy-setup failure is retained, including its missing shutdown audit. No successful factory counts are inferred for that failed audit.",
+    "The original M06 failed manifest, original project/machine/native history and old annotation/selection records remain unchanged."
+  ],
+  "exports": "Unchanged public ReviewWorkspace/Outliner/CriticPanel/CatalogueBrowser seams."
+}

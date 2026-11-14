@@ -1,0 +1,19 @@
+{
+  "status": "failed",
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m06-readiness-2HCCtx",
+  "error": "locator.selectOption: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Storyboard version', { exact: true })\u001b[22m\n\n    at /home/quintin/.cache/proscenium-development/fleet/w05-readiness/tests/browser/review-readiness-m06.mjs:66:60",
+  "cleanup": {
+    "server_reaped": true,
+    "browser_closed": true,
+    "elapsed_ms": 18377,
+    "allocation_limit_ms": 300000,
+    "original_project_unchanged": true,
+    "original_project_files": 280,
+    "old_failed_manifest_unchanged": true,
+    "copied_git_head_before": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+    "copied_git_head_after": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+    "audit": {
+      "missing": true
+    }
+  }
+}

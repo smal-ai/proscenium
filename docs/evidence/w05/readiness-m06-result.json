@@ -1,0 +1,314 @@
+{
+  "status": "passed",
+  "criterion_2": "Direct shared-reference role/shot navigation and saved B annotation pass using retained real M06 plan/history. No new planning roots. Final criterion acceptance remains coordinator-owned.",
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m06-readiness-XW17cx",
+  "original": "/home/quintin/.cache/proscenium-development/milestones/m06-20261114T161211",
+  "registryProof": {
+    "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+    "storage_revision_before": 3,
+    "domain_revision_before": 3,
+    "storage_revision_after": 4,
+    "domain_revision_after": 4,
+    "native_id_before": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+    "native_id_after": "fc549912-572e-4ae9-a899-7f92e919ff1c",
+    "old_path": "/home/quintin/.cache/proscenium-development/milestones/m06-20261114T161211/project",
+    "new_path": "/home/quintin/.cache/proscenium-development/milestones/m06-readiness-XW17cx/project",
+    "native_association_preserved": true,
+    "historical_projection_ids": [
+      "project-ba3669ea-eba6-4259-9b78-9ddba9647779:2",
+      "project-ba3669ea-eba6-4259-9b78-9ddba9647779:3"
+    ],
+    "copied_auth_rows_erased": true
+  },
+  "project_id": "project-ba3669ea-eba6-4259-9b78-9ddba9647779",
+  "browser": "159.0.8154.6",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "observations": [
+    {
+      "shot": "kite-rise",
+      "frame": "kite-rise-start",
+      "context": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "reference",
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m06-kite-board",
+          "version_id": "m06-kite-board-v1",
+          "shot_id": "kite-rise",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+            "role": "reference",
+            "use": "kite-rise / kite-rise-start / start: REFERENCE ONLY: reuse the labelled synthetic owner-supplied 640x360 image. Desired start composition: a warm ochre paper kite low in soft sky, slate string curving below, generous negative space above. This is a proposed change, not a newly created concept or render."
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "decoded": {
+        "sameElement": true,
+        "newLoads": 0,
+        "currentSrc": "http://127.0.0.1:53977/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/artifacts/34bef859-a4a1-48e3-8749-834aeb958fa7/content",
+        "complete": true,
+        "width": 640,
+        "height": 360
+      }
+    },
+    {
+      "shot": "kite-rise",
+      "frame": "kite-rise-middle",
+      "context": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "reference",
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m06-kite-board",
+          "version_id": "m06-kite-board-v1",
+          "shot_id": "kite-rise",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+            "role": "reference",
+            "use": "kite-rise / kite-rise-middle / intermediate: REFERENCE ONLY: the same labelled synthetic owner-supplied 640x360 image, not another image. Desired intermediate composition: kite lifted toward centre, a subtle changed paper angle suggesting the proposed clockwise arc. No changed image, concept or render exists."
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "decoded": {
+        "sameElement": true,
+        "newLoads": 0,
+        "currentSrc": "http://127.0.0.1:53977/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/artifacts/34bef859-a4a1-48e3-8749-834aeb958fa7/content",
+        "complete": true,
+        "width": 640,
+        "height": 360
+      }
+    },
+    {
+      "shot": "kite-rise",
+      "frame": "kite-rise-end",
+      "context": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "reference",
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m06-kite-board",
+          "version_id": "m06-kite-board-v1",
+          "shot_id": "kite-rise",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+            "role": "reference",
+            "use": "kite-rise / kite-rise-end / end: REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired end composition: kite higher with ample soft sky, string gently extended, proposed clockwise arc eased out. No new concept or render exists."
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "decoded": {
+        "sameElement": true,
+        "newLoads": 0,
+        "currentSrc": "http://127.0.0.1:53977/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/artifacts/34bef859-a4a1-48e3-8749-834aeb958fa7/content",
+        "complete": true,
+        "width": 640,
+        "height": 360
+      }
+    },
+    {
+      "shot": "kite-rest",
+      "frame": "kite-rest-start",
+      "context": {
+        "item_id": "m06-kite-board",
+        "version_id": "m06-kite-board-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "reference",
+          "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+          "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m06-kite-board",
+          "version_id": "m06-kite-board-v1",
+          "shot_id": "kite-rest",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+            "role": "reference",
+            "use": "kite-rest / kite-rest-start / start: REFERENCE ONLY: reuse the same labelled synthetic owner-supplied 640x360 image. Desired start composition: lifted warm ochre kite in a locked soft-sky view, continuous in pose with kite-rise-end. No shot-specific concept or render exists."
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "decoded": {
+        "sameElement": true,
+        "newLoads": 0,
+        "currentSrc": "http://127.0.0.1:53977/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/artifacts/34bef859-a4a1-48e3-8749-834aeb958fa7/content",
+        "complete": true,
+        "width": 640,
+        "height": 360
+      }
+    }
+  ],
+  "annotation": {
+    "annotation_id": "221babcf-722c-415f-b818-6e1d90d53e20",
+    "camera": null,
+    "markup_artifact_id": "d67cd643-5ecb-47ee-8919-9e4dc0e32b00",
+    "markups": [
+      {
+        "colour": "#ff5555",
+        "id": "71c0d529-fc23-4287-a500-af2f3e0e0ad7",
+        "kind": "pin",
+        "points": [
+          [
+            0.5,
+            0.5
+          ]
+        ],
+        "text": "M06 readiness kite-rest-start, not kite-rise-start",
+        "width_px": 4
+      }
+    ],
+    "range": null,
+    "saved_revision": 1,
+    "spatial_hits": [],
+    "spatial_status": "unavailable",
+    "target": {
+      "artifact_id": "34bef859-a4a1-48e3-8749-834aeb958fa7",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "displayed_sha256": "b6dd3ead0174680778274e698e1e76de04a318f5bba8c6580ad105400f04935f",
+      "item_id": "m06-kite-board",
+      "media_artifact_id": null,
+      "origin": "reference",
+      "render_job_id": null,
+      "shot_id": "kite-rest",
+      "source_frame": null,
+      "version_id": "m06-kite-board-v1"
+    },
+    "text": "Readiness supplemental proof: kite-rest / kite-rest-start shared owner reference. Planning context only. No model or generation requested."
+  },
+  "receipt": {
+    "schema_version": "1.0",
+    "operation_id": "0f9319f4-e6d8-4650-9c11-3a89dbf876b0",
+    "resource_id": "221babcf-722c-415f-b818-6e1d90d53e20",
+    "state": "saved",
+    "state_revision": 1,
+    "replayed": false
+  },
+  "request_count_before": 2,
+  "request_count_after": 2,
+  "jobs_before": 0,
+  "jobs_after": 0,
+  "old_annotations_unchanged": true,
+  "selections_unchanged": true,
+  "mutations": [
+    {
+      "method": "POST",
+      "path": "/api/v1/owner/session"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/uploads/d67cd643-5ecb-47ee-8919-9e4dc0e32b00"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/annotations"
+    }
+  ],
+  "cleanup": {
+    "server_reaped": true,
+    "browser_closed": true,
+    "elapsed_ms": 3152,
+    "allocation_limit_ms": 300000,
+    "original_project_unchanged": true,
+    "original_project_files": 280,
+    "original_machine_and_native_history_unchanged": true,
+    "old_failed_manifest_unchanged": true,
+    "copied_git_head_before": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+    "copied_git_head_after": "97f983056b06a3692a40ce2db8fe24e2eeb26e3d",
+    "audit": {
+      "sdk_factories": [],
+      "native_calls": [],
+      "provider_http": [],
+      "blocked_mutations": [],
+      "allowed_mutations": [
+        {
+          "method": "POST",
+          "path": "/api/v1/owner/session"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/uploads/d67cd643-5ecb-47ee-8919-9e4dc0e32b00"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/projects/project-ba3669ea-eba6-4259-9b78-9ddba9647779/annotations"
+        }
+      ],
+      "git_processes": 26,
+      "elapsed_seconds": 1.7419427720014937,
+      "lifecycle_started": false,
+      "copilot_delivery_task_started": false,
+      "execution_profiles": [],
+      "services": []
+    }
+  }
+}
