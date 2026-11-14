@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 namespace Proscenium.Unity
 {
@@ -17,6 +18,13 @@ namespace Proscenium.Unity
         public bool testReset;
         public float Yaw { get; private set; }
         public float Pitch { get; private set; }
+        public Vector2 LastPolledMove { get; private set; }
+        public Vector2 LastPolledLook { get; private set; }
+        public bool LastPolledReset { get; private set; }
+        public int LastKeyboardId { get; private set; } = -1;
+        public int LastMouseId { get; private set; } = -1;
+        public int LastPollFrame { get; private set; } = -1;
+        public string LastPollPhase { get; private set; }
         private CharacterController controller;
         private float verticalSpeed;
 
@@ -44,6 +52,13 @@ namespace Proscenium.Unity
                     Cursor.lockState = CursorLockMode.None;
                 if (mouse != null && mouse.leftButton.wasPressedThisFrame)
                     Cursor.lockState = CursorLockMode.Locked;
+                LastPolledMove = move;
+                LastPolledLook = look;
+                LastPolledReset = reset;
+                LastKeyboardId = keyboard == null ? -1 : keyboard.deviceId;
+                LastMouseId = mouse == null ? -1 : mouse.deviceId;
+                LastPollFrame = Time.frameCount;
+                LastPollPhase = InputState.currentUpdateType.ToString();
             }
             if (reset || transform.position.y < spawnPosition.y - 20)
             {
