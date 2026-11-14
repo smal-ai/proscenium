@@ -48,6 +48,12 @@ class JobService:
         # Cancellation adapters register by job kind. Callback must observe only this admitted job.
         # It runs AFTER committing cancel_requested. It must not claim cancellation without evidence.
         self.cancellers: dict[str, Callable[[dict[str, Any]], None]] = {}
+        # Host-only per-adapter probes. Binding the callback identity means a later
+        # legacy registration never accidentally inherits another adapter's policy.
+        self.cancellation_eligibility: dict[
+            str,
+            tuple[Callable[[dict[str, Any]], None], Callable[[Transaction, dict[str, Any]], bool]],
+        ] = {}
 
     def check_caller(
         self, caller: Caller, operation: str, project_id: str, *, admission: bool = False
@@ -479,6 +485,13 @@ class JobService:
                 self.cas(job, body)
                 if job["state"] not in TERMINAL:
                     if job["kind"] not in self.cancellers:
+                        raise DomainError("cancel_unsupported", 501)
+                    probe = self.cancellation_eligibility.get(job["kind"])
+                    if (
+                        probe is not None
+                        and probe[0] is self.cancellers[job["kind"]]
+                        and not probe[1](tx, job)
+                    ):
                         raise DomainError("cancel_unsupported", 501)
                     transition("job_attempt", job["state"], "cancel_requested")
                     job.update(state="cancel_requested", state_revision=job["state_revision"] + 1)

@@ -4,6 +4,7 @@ from typing import Any
 
 from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
+from proscenium.db import Transaction
 from proscenium.db.store import Store
 
 
@@ -11,6 +12,29 @@ class Registry:
     def __init__(self, store: Store):
         self.store = store
         self.project_committed: Callable[[str], None] | None = None
+        previous = store.before_commit
+
+        def rebind_guard(tx: Transaction) -> None:
+            if previous is not None:
+                previous(tx)
+            if "projects" not in tx.changed_namespaces:
+                return
+            # W02 separately validates a moved/copied target even when the original
+            # path is gone. Check its private preparation state before publishing
+            # the registry relocation too, without relying on installed callbacks.
+            with store.transaction(write=False) as old:
+                originals = {row["project_id"]: row for row in old.all("projects")}
+            for record in tx.all("projects"):
+                original = originals.get(record["project_id"])
+                if original is None or original["path"] == record["path"]:
+                    continue
+                path = Path(record["path"]) / ".proscenium/state.sqlite3"
+                if not path.is_file():
+                    raise DomainError("source_unavailable", 422)
+                with Store(path, record["project_id"]).transaction(write=False) as target:
+                    self.assert_preparations_settled(target)
+
+        store.before_commit = rebind_guard
 
     def register(self, record: dict[str, Any]) -> None:
         validate("ProjectRecord", record)
@@ -90,6 +114,7 @@ class Registry:
 
     def assert_settled(self, project_id: str) -> None:
         with self.project_store(project_id, active=False).transaction(write=False) as tx:
+            self.assert_preparations_settled(tx)
             blockers = {
                 "jobs": {"succeeded", "failed", "cancelled"},
                 "work": {"completed", "failed", "stopped"},
@@ -103,3 +128,13 @@ class Registry:
                 "SELECT 1 FROM outbox WHERE state IN ('dispatching','outcome_uncertain') LIMIT 1"
             ).fetchone():
                 raise DomainError("project_busy", 409)
+
+    @staticmethod
+    def assert_preparations_settled(tx: Transaction) -> None:
+        """Durable pre-admission blockers, including operator-created Registry instances."""
+        if any(
+            row.get("phase") not in {"failed", "launched"} for row in tx.all("native_workflows")
+        ):
+            raise DomainError(
+                "project_busy", 409, "Native workflow preparation requires reconciliation"
+            )

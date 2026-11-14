@@ -65,7 +65,9 @@ def test_native_tools_use_explicit_provider_aliases_and_never_return_findings(
         provider, "request_review", lambda c, b: ({**ticket, "findings": ["private advice"]}, False)
     )
     result = asyncio.run(tools.invoke("request_vlm_review", invocation))
-    assert json.loads(result.text_result_for_llm) == {"error": "invalid_request"}
+    failure = json.loads(result.text_result_for_llm)
+    assert failure["error"] == "invalid_request" and failure["details"] == {}
+    assert isinstance(failure["message"], str) and failure["message"]
     assert "private advice" not in result.text_result_for_llm
     generation = json.loads(Path("docs/contracts/examples/generation.json").read_text())
     generation["project_id"] = "project-test"

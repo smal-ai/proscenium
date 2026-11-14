@@ -136,6 +136,11 @@ class Services:
         lifecycle = self.extensions.get("lifecycle")
         if lifecycle is not None and lifecycle.tasks:
             raise RuntimeError("Await the feature lifecycle before closing service ownership")
+        workflows = self.extensions.get("workflows")
+        if workflows is not None:
+            # Safe for passive/idle containers. An active callback, IO writer or
+            # export must instead finish await workflows.close() first.
+            workflows.close_idle()
         provider = self.extensions.get("providers")
         try:
             if provider is not None and getattr(provider, "owns_client", False):

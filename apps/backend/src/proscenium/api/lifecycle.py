@@ -1,7 +1,7 @@
 """Independent host workers. HTTP and browser connections own none of their lifetimes."""
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from proscenium.api.errors import DomainError
@@ -29,6 +29,31 @@ class FeatureLifecycle:
                 asyncio.create_task(self.watch(name, operation, gated), name=f"proscenium-{name}")
             )
         self.services.extensions["lifecycle"] = self
+        workflows = self.services.extension("workflows")
+        self.tasks.append(
+            asyncio.create_task(
+                self.watch_async("workflow-receipts", workflows.reconcile),
+                name="proscenium-workflow-receipts",
+            )
+        )
+
+    async def watch_async(self, name: str, operation: Callable[[str], Awaitable[Any]]) -> None:
+        """Await async workflow observation directly, including while execution is held."""
+        while not self.stop.is_set():
+            project_id = self.services.registry.active_id()
+            if project_id:
+                try:
+                    await operation(project_id)
+                    self.errors.pop(name, None)
+                except DomainError as exc:
+                    if exc.code not in {"project_busy", "scope_denied"}:
+                        self.errors[name] = exc.code
+                except Exception:
+                    self.errors[name] = "internal_error"
+            try:
+                await asyncio.wait_for(self.stop.wait(), self.interval)
+            except TimeoutError:
+                pass
 
     async def watch(self, name: str, operation: Callable[[str], Any], gated: bool) -> None:
         while not self.stop.is_set():
@@ -71,8 +96,14 @@ class FeatureLifecycle:
             if runtime is not None:
                 await runtime.close()
         finally:
-            # Worker loops are independent but their in-flight threads must all finish
-            # before providers.close() closes HTTP clients and the caller closes stores.
-            await asyncio.gather(*self.tasks, return_exceptions=True)
-            self.tasks.clear()
-            await self.services.extension("providers").close()
+            try:
+                # Cancel/join preparation and async export acknowledgement before
+                # waiting on the observer which may itself be queued behind that IO.
+                workflows = self.services.extensions.get("workflows")
+                if workflows is not None:
+                    await workflows.close()
+            finally:
+                # Never release clients/store ownership beneath a remaining writer.
+                await asyncio.gather(*self.tasks, return_exceptions=True)
+                self.tasks.clear()
+                await self.services.extension("providers").close()

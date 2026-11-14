@@ -18,7 +18,9 @@ def install(services: Services) -> Workflows:
     def cancel(job: dict) -> None:
         workflows.cancel_job(job)
 
-    services.jobs.cancellers.setdefault("unity", cancel)
+    if "unity" not in services.jobs.cancellers:
+        services.jobs.cancellers["unity"] = cancel
+        services.jobs.cancellation_eligibility["unity"] = (cancel, workflows.owns_cancellation)
     return workflows
 
 

@@ -7,12 +7,14 @@ import json
 import shutil
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
+from threading import RLock
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
+from proscenium.db import Transaction
 from proscenium.services import Services
 from proscenium.sources.common import active, admitted, binding, fingerprint, managed
 from tools.unity.jobs import (
@@ -61,27 +63,34 @@ class Workflows:
         self._exports: dict[str, asyncio.subprocess.Process] = {}
         self._inflight: set[str] = set()
         self._closed = False
+        self._close_complete = False
+        self._activity_lock = RLock()
+        self._sync_calls = 0
 
     @asynccontextmanager
     async def operation(self):
-        if self._closed:
-            raise DomainError("capability_unavailable", 503)
         task = asyncio.current_task()
         assert task is not None
-        self._calls.add(task)
+        with self._activity_lock:
+            if self._closed:
+                raise DomainError("capability_unavailable", 503)
+            self._calls.add(task)
         try:
             yield
         finally:
-            self._calls.discard(task)
+            with self._activity_lock:
+                self._calls.discard(task)
 
     async def io(self, function, *args):
-        if self._closed:
-            raise DomainError("capability_unavailable", 503)
-        future = asyncio.get_running_loop().run_in_executor(self._pool, function, *args)
-        self._io_jobs.add(future)
+        with self._activity_lock:
+            if self._closed:
+                raise DomainError("capability_unavailable", 503)
+            future = asyncio.get_running_loop().run_in_executor(self._pool, function, *args)
+            self._io_jobs.add(future)
 
         def finished(value):
-            self._io_jobs.discard(value)
+            with self._activity_lock:
+                self._io_jobs.discard(value)
             if not value.cancelled():
                 value.exception()  # Consume cancelled callback's eventual exception too.
 
@@ -666,17 +675,65 @@ class Workflows:
 
     def cancel_job(self, job: dict) -> dict:
         """Synchronous callback for the parent's existing owned outbox dispatcher."""
-        if self._closed:
-            raise DomainError("capability_unavailable", 503)
-        row = self._known_unity(job["project_id"], job["job_id"])
-        current = self.existing_job(row)
-        if current["attempt_id"] != job["attempt_id"]:
-            raise DomainError("scope_denied", 403)
-        return cancel_unity_job(self.services, worker(current), current["job_id"])["job"]
+        with self.synchronous_operation():
+            row = self._known_unity(job["project_id"], job["job_id"])
+            current = self.existing_job(row)
+            if current["attempt_id"] != job["attempt_id"]:
+                raise DomainError("scope_denied", 403)
+            return cancel_unity_job(self.services, worker(current), current["job_id"])["job"]
+
+    def owns_cancellation(self, tx: Transaction, job: dict) -> bool:
+        """Read-only host admission probe on the owner's existing transaction."""
+        index = tx.get("native_workflow_jobs", job["job_id"], required=False)
+        if not index or index.get("kind") != "unity":
+            return False
+        row = tx.get(NAMESPACE, index["identity"], required=False)
+        if not row or row.get("kind") != "unity" or row.get("job_id") != job["job_id"]:
+            return False
+        admission = row.get("admission", {})
+        return all(
+            admission.get(field) == job[field]
+            for field in ("project_id", "job_id", "kind", "input_digest", "target")
+        )
+
+    @contextmanager
+    def synchronous_operation(self):
+        with self._activity_lock:
+            if self._closed:
+                raise DomainError("capability_unavailable", 503)
+            self._sync_calls += 1
+        try:
+            yield
+        finally:
+            with self._activity_lock:
+                self._sync_calls -= 1
+
+    def close_idle(self) -> None:
+        """Synchronous passive-container cleanup, never detach an active writer."""
+        with self._activity_lock:
+            if self._close_complete:
+                return
+            if (
+                self._closed
+                or self._calls
+                or self._io_jobs
+                or self._exports
+                or self._inflight
+                or self._sync_calls
+            ):
+                raise RuntimeError(
+                    "Await workflows.close() before releasing active workflow ownership"
+                )
+            self._closed = True
+            self._pool.shutdown(wait=True, cancel_futures=True)
+            self._close_complete = True
 
     async def close(self) -> None:
         """Await before services.close(). Admitted Unity supervisors intentionally survive."""
-        self._closed = True
+        with self._activity_lock:
+            if self._close_complete:
+                return
+            self._closed = True
         calls = [task for task in self._calls if task is not asyncio.current_task()]
         for task in calls:
             task.cancel()
@@ -684,5 +741,9 @@ class Workflows:
             await asyncio.gather(*calls, return_exceptions=True)
         while self._io_jobs:
             await asyncio.gather(*list(self._io_jobs), return_exceptions=True)
+        while self._sync_calls:
+            await asyncio.sleep(0.01)
         self._pool.shutdown(wait=True, cancel_futures=True)
         reap_unity_supervisors()
+        with self._activity_lock:
+            self._close_complete = True

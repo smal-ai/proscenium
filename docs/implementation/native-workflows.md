@@ -69,8 +69,9 @@ supervisor. It does **not** wait 600 seconds for an admitted Editor or terminate
 jobs. Those bounded, receipt-producing supervisors intentionally survive a backend shutdown and
 are observed by the next owner's reconciler. There is no untracked `asyncio.to_thread` writer.
 
-No lifecycle/composition/router file was edited. Parent composition above is required before live
-acceptance. Use the existing source-checkpoint/publication tools after a completed authoring job.
+The original workflow package did not edit lifecycle/composition/router files. The F00 host
+follow-up below now supplies that composition and lifecycle. Use the existing
+source-checkpoint/publication tools after a completed authoring job.
 The application still does not parse creative prompts into Blender code or plan cuts automatically.
 
 ## Native model-facing tools
@@ -267,3 +268,71 @@ installing or executing a runtime/model. This is not a claim that the blocked te
 No Blender, Unity, cloud/model, GPU or browser matrix execution occurred. No shared job/db/auth/
 contract/router/lifecycle/renderer/provider/frontend code or dependency lock was changed. Parent
 composition and live cumulative M05/M11/M13 acceptance remain separate from this implementation.
+
+## F00 host follow-up
+
+**Base:** `ad47260`, branch `impl/f00-workflows`. This is the bounded host integration of accepted
+workflow code `583e550` and the parent's closed-gate cancellation dispatcher `c1b2181`. It does not
+change export/assembly logic, native tool definitions, SDK configuration, public schemas or routes.
+
+- `configure_services(services)` installs `workflows` idempotently after accepted sources/previews.
+  Constructing its lazy `ThreadPoolExecutor` creates no thread, native process or watcher.
+- `FeatureLifecycle` independently **awaits** `workflows.reconcile(current_project)` on its event
+  loop, including while the F00 gate is closed. It never sends this coroutine to `to_thread`.
+  Reconciliation remains observation only. The watcher resolves the current project each time.
+- Shutdown stops dispatch, fences the native root through the existing lifecycle, then awaits
+  `workflows.close()` before releasing service/store ownership. This cancels/joins preparation,
+  resolves owned export spawn/cleanup and drains tracked IO. Admitted Unity Editors and detached
+  workers are not killed or waited on as though they belonged to this host's shutdown.
+- `workflows.close_idle() -> None` is an idempotent synchronous hook for caller-managed passive
+  containers. `Services.close()` invokes it before closing any client or ownership lock. It
+  refuses while async calls, IO, exports, in-flight workflow operations or synchronous cancellation
+  callbacks remain active, or while awaited close has not finished. Activity admission and idle
+  close share a short reentrant lock, never held over an await or external operation.
+- `Registry.assert_settled` reads `native_workflows.phase` in its existing transaction. Anything
+  except `failed`/`launched` blocks settlement; normal job guards still govern launched jobs. This
+  works for backup tools constructing Registry directly, without installing Workflows. Registry's
+  relocation commit guard also checks the moved target database when the original path is gone.
+  Existing activation/write barriers exclude copy/rebind while preparation is outstanding.
+- F00 adds a host-only `jobs.cancellation_eligibility[kind] = (callback, probe)` map. A matching
+  adapter's `probe(tx, job) -> bool` runs before owner cancellation changes any state or creates
+  an acknowledgement/outbox intent. Workflow Unity cancellation requires its private job index
+  and matching admitted project/job/kind/input/target. A generic unowned Unity job returns
+  `cancel_unsupported`, not a false acceptance. Existing explicit legacy Unity callbacks are
+  retained, and replacing a callback never inherits the prior adapter's eligibility policy.
+  Exact-attempt dispatch remains the parent's existing guard. Marker delivery is not terminal
+  proof, and known workflow cancellation can be delivered while the root gate is closed.
+
+### Follow-up checks
+
+The accepted lock was installed locally using `uv sync --frozen` and
+`npm ci --ignore-scripts --cache /home/quintin/.cache/proscenium-development/npm-f00`.
+No lock/dependency upgrade was made. The real worktree-local pinned binary is available, so the
+previously blocked `test_wire_create_and_resume_both_memory_controls_and_owned_exec_launcher`
+was run without deselection and passed. Its fake SDK transport makes no model/runtime call.
+
+```bash
+TMPDIR=/home/quintin/.cache/proscenium-development/f00-tests uv run pytest -q \
+  tests/integration/foundation tests/integration/workflows tests/integration/unity \
+  tests/integration/copilot/test_native_reads.py \
+  tests/integration/copilot/test_tool_failures.py \
+  tests/integration/copilot/test_native_configuration.py \
+  tests/integration/copilot/test_child_allocation.py \
+  tests/integration/copilot/test_accepted_services.py \
+  --basetemp=/home/quintin/.cache/proscenium-development/f00-tests/workflows-final --tb=short
+uv run mypy apps/backend/src
+MYPYPATH=apps/backend/src:. PYTHONPATH=apps/backend/src:. uv run mypy \
+  --explicit-package-bases --follow-imports=silent apps/backend/src/proscenium/workflows \
+  apps/backend/src/proscenium/copilot/{tools,native,workflows}.py tools/unity/jobs.py \
+  tests/integration/workflows
+make lint spec-check
+```
+
+Result: **152 passed**: all **92** original workflow/Unity/native-read cases, plus **60** affected
+foundation cases including new lifecycle, idle/active close, durable settlement/backup, moved
+rebind and per-job cancellation coverage. No deselections or skipped cases. Mypy passed on
+77 backend files and 13 scoped files. Ruff/formatting passed on 225 maintained Python files,
+ESLint passed, and specification/generated-binding checks passed. One stale foundation test
+expected the old error-only tool payload. It now checks the accepted safe guidance envelope
+while retaining the negative finding-disclosure checks. The existing Starlette/httpx warning
+remains. No native/model/GPU/browser proof or cumulative milestone completion is claimed.

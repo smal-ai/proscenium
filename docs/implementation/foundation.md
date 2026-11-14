@@ -1,5 +1,36 @@
 # F00 shared foundation
 
+## Bounded native-workflow host integration
+
+Accepted base `ad47260`, branch `impl/f00-workflows`, integrates workflow package `583e550`
+with the parent's `c1b2181` cancellation dispatcher. All 53 normative route entries remain
+unchanged. This is offline host integration, not M05/M11/M13 native acceptance.
+
+- `configure_services` installs Workflows once after sources/previews, making the existing
+  native assembly/Unity/result tools callable. Construction starts no thread or external work.
+- An independent async lifecycle watcher directly awaits
+  `workflows.reconcile(current_project)`, even with execution held. It observes but never
+  launches. Shutdown awaits `workflows.close()` before client/store ownership is released.
+- `workflows.close_idle()` safely closes an unused or idle executor synchronously. Passive
+  `Services.close()` calls this hook and refuses before releasing anything while calls, IO,
+  exports or synchronous cancellation writers are still active. Await close first in that case.
+- Registry settlement includes durable `native_workflows` preparation phases, without needing
+  an installed service or async callback. `preparing`, `exporting`, `prepared`, uncertainty and
+  unknown phases block until `failed` or `launched`; existing job checks still apply. The same
+  durable check protects a relocated target before Registry publishes its changed path.
+- Optional host-only `JobService.cancellation_eligibility[kind] = (callback, probe)` entries
+  apply `probe(tx, job)` before owner cancellation admission. The probe is bound to the exact
+  callback identity, preserving existing/replacement legacy cancellers. Workflow Unity jobs
+  require their private index and matching admission. Unsupported generic Unity jobs are
+  rejected without mutation or a false acknowledgement. Closed-gate exact-attempt delivery
+  remains `dispatch_cancellations`; a delivered marker is not a terminal job observation.
+
+Checks and exact commands are recorded in `docs/implementation/native-workflows.md`.
+**152 cases passed**, including all 92 workflow/Unity/native-read cases with the formerly
+deselected create/resume wire test, and 60 foundation cases. Backend/scoped mypy, maintained
+Ruff/formatting, ESLint and specification/generated bindings passed. No dependency upgrade,
+schema migration, native process, model/GPU call or browser matrix rerun was performed.
+
 Baseline: specification 3.2.0, amended contract 1.0.0, source commit
 `2f00ebece9c5274ebda553df4c1558d5572669e0`. Implemented on 14 November 2026.
 This is shared foundation evidence, not product milestone or native-runtime acceptance.

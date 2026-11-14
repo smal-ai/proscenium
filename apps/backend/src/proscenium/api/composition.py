@@ -16,6 +16,7 @@ from proscenium.providers import router as providers_router
 from proscenium.reviews import install as install_reviews
 from proscenium.reviews import router as reviews_router
 from proscenium.services import Services
+from proscenium.workflows import install as install_workflows
 
 
 def feature_routers() -> tuple[APIRouter, ...]:
@@ -73,6 +74,7 @@ def configure_services(services: Services) -> None:
         services, registrar=lambda caller, body: register_provider_artifact(services, caller, body)
     )
     install_previews(services)
+    install_workflows(services)
     if services.runtime is None and "contexts" not in services.extensions:
         install_copilot(services)
     services.extensions.setdefault("generation", GenerationAlias(providers))
