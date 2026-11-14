@@ -1057,7 +1057,34 @@ class Copilot:
         pending = await self.native.pending(session)
         departed = getattr(self.native, "departed_process", None)
         if cold_resume and departed and empty(pending):
+            raw_history = (
+                [wire(e) for e in await session.get_raw_events()]
+                if hasattr(session, "get_raw_events")
+                else []
+            )
             with self.services.registry.project_store(project_id).transaction() as tx:
+                current_send = any(not task.done() for task in self.sends.values()) or any(
+                    s.get("state") in {"dispatching", "outcome_uncertain"}
+                    for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
+                )
+                self.state.observe_native_denials(
+                    tx,
+                    session.session_id,
+                    raw_history,
+                    {
+                        **departed,
+                        "invocation_ids": prior_invocations,
+                        "pending_empty": True,
+                        "current_send": current_send,
+                        "permission_fingerprints": {
+                            e["id"]: hashlib.sha256(
+                                canonical(e["data"]["permissionRequest"])
+                            ).hexdigest()
+                            for e in history
+                            if e["type"] == "permission.requested"
+                        },
+                    },
+                )
                 self.state.interrupt_coordinators(
                     tx,
                     session.session_id,
@@ -1399,6 +1426,7 @@ class Copilot:
                 and s.get("tool_call_id") == tool_id
                 and s.get("fingerprint") == fingerprint
                 and s.get("phase") != "completed"
+                and not self.state.native_denied_stage(tx, s)
             ]
             save(
                 tx,

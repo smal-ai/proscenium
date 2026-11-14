@@ -1079,3 +1079,220 @@ class State:
                 work_id=invocation["work_id"],
                 request_id=invocation["request_id"],
             )
+
+    def native_denied_stage(self, tx: Transaction, stage: dict[str, Any]) -> bool:
+        observation = tx.get(
+            "copilot.permission_outcomes",
+            key(stage["session_id"], stage["native_id"]),
+            required=False,
+        )
+        return bool(
+            observation
+            and observation.get("kind") == "native_authorization_denied"
+            and all(
+                observation.get(k) == stage.get(k)
+                for k in (
+                    "session_id",
+                    "native_id",
+                    "tool_call_id",
+                    "work_id",
+                    "request_id",
+                    "invocation_id",
+                )
+            )
+        )
+
+    def observe_native_denials(
+        self,
+        tx: Transaction,
+        session_id: str,
+        history: list[dict[str, Any]],
+        departed: dict[str, Any],
+    ) -> int:
+        """Observe a terminal CLI 1.0.112 commands-gate denial, never invent a ToolResult/ACK."""
+        if (
+            departed.get("session_id") != session_id
+            or departed.get("observed_identity") == departed.get("start")
+            or departed.get("pending_empty") is not True
+            or departed.get("current_send") is not False
+        ):
+            return 0
+        events: dict[str, dict[str, Any]] = {}
+        for event in history:
+            if event["id"] in events and events[event["id"]] != event:
+                return 0
+            events[event["id"]] = event
+        ordered = list(events.values())
+        count = 0
+        for invocation in tx.all("invocations"):
+            if (
+                invocation.get("session_id") != session_id
+                or invocation["state"] in TERMINAL
+                or invocation.get("invocation_id") not in departed.get("invocation_ids", [])
+                or invocation.get("kind") != "tool"
+                or invocation.get("name") != "bash"
+            ):
+                continue
+            tool = invocation["native_id"]
+            binding = self.binding(tx, session_id, "tool", tool)
+            work = tx.get("work", invocation["work_id"], required=False)
+            if (
+                not binding
+                or not work
+                or work["native_session_id"] != session_id
+                or work["originating_request_id"] != invocation["request_id"]
+                or any(
+                    binding.get(k) != invocation.get(k)
+                    for k in ("work_id", "request_id", "delivery_id")
+                )
+            ):
+                continue
+            requests = [
+                (n, e)
+                for n, e in enumerate(ordered)
+                if e["type"] == "permission.requested"
+                and e.get("data", {}).get("permissionRequest", {}).get("toolCallId") == tool
+            ]
+            starts = [
+                (n, e)
+                for n, e in enumerate(ordered)
+                if e["type"] == "tool.execution_start"
+                and e.get("data", {}).get("toolCallId") == tool
+            ]
+            if not requests or len(starts) != 1 or starts[0][0] >= requests[0][0]:
+                continue
+            # Any terminal/partial execution observation contradicts this narrow pre-execution fact.
+            if any(
+                e["type"]
+                not in {"tool.execution_start", "permission.requested", "permission.completed"}
+                and e.get("data", {}).get("toolCallId") == tool
+                for e in ordered
+            ):
+                continue
+            denied_index, denied = requests[-1]
+            data = denied["data"]
+            permission, prompt = data.get("permissionRequest", {}), data.get("promptRequest", {})
+            command = permission.get("fullCommandText")
+            segments = permission.get("commandSegments") or []
+            if (
+                permission.get("kind") != "shell"
+                or permission.get("shellType") != "bash"
+                or permission.get("hasParseErrors") is not False
+                or len(segments) != 1
+                or segments[0].get("fullCommandText") != command
+                or prompt.get("kind") != "commands"
+                or prompt.get("toolCallId") != tool
+                or data.get("ownerSessionId") != session_id
+                or not command
+                or prompt.get("fullCommandText") != command
+                or starts[0][1]["data"].get("toolName") != "bash"
+                or starts[0][1]["data"].get("arguments", {}).get("command") != command
+            ):
+                continue
+            completions = []
+            valid = True
+            ids = [e["data"]["requestId"] for _, e in requests]
+            if len(set(ids)) != len(ids):
+                continue
+            for position, (n, requested) in enumerate(requests):
+                matches = [
+                    (m, e)
+                    for m, e in enumerate(ordered)
+                    if e["type"] == "permission.completed"
+                    and e.get("data", {}).get("requestId") == requested["data"]["requestId"]
+                ]
+                if (
+                    len(matches) != 1
+                    or matches[0][0] <= n
+                    or matches[0][1]["data"].get("toolCallId") != tool
+                    or (position + 1 < len(requests) and matches[0][0] >= requests[position + 1][0])
+                ):
+                    valid = False
+                    break
+                completed = matches[0][1]
+                if position + 1 < len(requests):
+                    prior = requested["data"].get("promptRequest", {})
+                    if (
+                        prior.get("kind") != "path"
+                        or prior.get("accessKind") != "shell"
+                        or prior.get("toolCallId") != tool
+                        or requested["data"].get("ownerSessionId") != session_id
+                        or completed["data"].get("result", {}).get("kind") != "approved"
+                    ):
+                        valid = False
+                        break
+                completions.append(completed)
+            if (
+                not valid
+                or completions[-1]["data"].get("result", {}).get("kind")
+                != "denied-interactively-by-user"
+            ):
+                continue
+            if any(
+                e["type"] == "permission.completed"
+                and e.get("data", {}).get("toolCallId") == tool
+                and e["data"].get("requestId") not in ids
+                for e in ordered
+            ):
+                continue
+            native_id = data["requestId"]
+            stage = tx.get("copilot.permissions", key(session_id, native_id), required=False)
+            related = [
+                s
+                for s in tx.all("copilot.permissions")
+                if s.get("session_id") == session_id and s.get("tool_call_id") == tool
+            ]
+            if (
+                not stage
+                or any(s["native_id"] not in ids for s in related)
+                or stage.get("reply") is not None
+                or stage.get("authority") is not None
+                or stage.get("delivery_state") not in {"not_sent", "outcome_uncertain"}
+                or any(
+                    stage.get(k) != invocation.get(k)
+                    for k in ("work_id", "request_id", "invocation_id", "delivery_id")
+                )
+                or stage.get("fingerprint")
+                != departed.get("permission_fingerprints", {}).get(denied["id"])
+            ):
+                continue
+            observation = {
+                **{
+                    k: invocation[k]
+                    for k in ("work_id", "request_id", "invocation_id", "delivery_id")
+                },
+                "session_id": session_id,
+                "native_id": native_id,
+                "tool_call_id": tool,
+                "kind": "native_authorization_denied",
+                "runtime": "1.0.112",
+                "source_event_ids": [starts[0][1]["id"], denied["id"], completions[-1]["id"]],
+                "departed_process": departed,
+                "native_return_observed": False,
+                "native_exit_code": None,
+                "authority": None,
+                "at": now(),
+            }
+            tx.put("copilot.permission_outcomes", key(session_id, native_id), observation)
+            save(
+                tx,
+                "invocations",
+                invocation["invocation_id"],
+                {**invocation, "state": "failed", "recovery": observation},
+            )
+            tx.emit(
+                "tool.completed",
+                {
+                    "invocation_id": invocation["invocation_id"],
+                    "name": invocation["name"],
+                    "state": "failed",
+                    "summary": "Native commands authorisation denied before execution; callback delivery and decision authority remain unproven.",
+                    "artifact_ids": [],
+                    "model_id": invocation.get("model_id"),
+                },
+                actor=SYSTEM,
+                work_id=invocation["work_id"],
+                request_id=invocation["request_id"],
+            )
+            count += 1
+        return count
