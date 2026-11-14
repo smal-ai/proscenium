@@ -11,7 +11,7 @@ import pytest
 from proscenium.contracts import validate
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "native/studio"))
-from m07_review_server import ReadOnlyGuard, activation_git  # noqa: E402
+from m07_review_server import ReadOnlyGuard, read_only_git  # noqa: E402
 
 
 def test_activation_git_is_only_exact_read_only_root_validation():
@@ -25,8 +25,8 @@ def test_activation_git_is_only_exact_read_only_root_validation():
         "rev-parse",
         "--show-toplevel",
     ]
-    assert activation_git(command, root, {})
-    assert activation_git([*command[:-1], "--show-object-format"], root, {})
+    assert read_only_git(command, root, {})
+    assert read_only_git([*command[:-1], "--show-object-format"], root, {})
     for replacement in (
         ["copilot"],
         ["blender"],
@@ -34,10 +34,33 @@ def test_activation_git_is_only_exact_read_only_root_validation():
         [*command[:-2], "reset", "--hard"],
         [*command[:4], "/unowned/project", *command[5:]],
     ):
-        assert not activation_git(replacement, root, {})
-    assert not activation_git(command, root, {"shell": True})
-    assert not activation_git(command, root, {"executable": "/unowned/tool"})
-    assert not activation_git(command, root, {"cwd": "/unowned/project"})
+        assert not read_only_git(replacement, root, {})
+    assert not read_only_git(command, root, {"shell": True})
+    assert not read_only_git(command, root, {"executable": "/unowned/tool"})
+    assert not read_only_git(command, root, {"cwd": "/unowned/project"})
+
+
+def test_saved_plan_materialisation_can_read_pinned_blobs_without_mutating_git():
+    root = Path("/private/fixture/restored/project")
+    prefix = ["git", "-c", "core.hooksPath=/dev/null", "-C", str(root)]
+    for args in (
+        ["ls-tree", "-z", "a" * 40, "--", "storyboards/plan.json"],
+        ["cat-file", "blob", "b" * 40],
+        ["rev-parse", "--git-common-dir"],
+        ["lfs", "env"],
+    ):
+        assert read_only_git([*prefix, *args], root, {})
+    for args in (
+        ["ls-tree", "-z", "HEAD", "--", "storyboards/plan.json"],
+        ["ls-tree", "-z", "a" * 40, "--", "../outside"],
+        ["cat-file", "--filters", "b" * 40],
+        ["lfs", "fetch"],
+        ["fetch"],
+        ["push"],
+        ["checkout", "main"],
+        ["update-ref", "refs/heads/main", "b" * 40],
+    ):
+        assert not read_only_git([*prefix, *args], root, {})
 
 
 @pytest.mark.parametrize(

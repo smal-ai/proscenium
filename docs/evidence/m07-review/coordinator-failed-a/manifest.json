@@ -1,0 +1,30 @@
+{
+  "run.json": {
+    "bytes": 63459,
+    "sha256": "2a4ca3526242aa34fb8be81e030002806e53f5b756d201e4241690e554888aec"
+  },
+  "browser-result.json": {
+    "bytes": 10945,
+    "sha256": "beab5b7dae80b18741f8ce30f259e03795e1979bc77b548b5b1a429e8159391d"
+  },
+  "server-audit.json": {
+    "bytes": 7098,
+    "sha256": "33c17949abc5ad96de29da04764b79a2dbd561314c575530404531376f92beb9"
+  },
+  "preparation.json": {
+    "bytes": 1177,
+    "sha256": "04e0cee7afd919170d9b5a546eabbf8bac47179ee4d26286667272e19e4ce52e"
+  },
+  "import-report.json": {
+    "bytes": 818,
+    "sha256": "018e85637e4a95e37f708dcce7c38d34d657b07757299e20ec1be4c2712fe22f"
+  },
+  "protected-before.json": {
+    "bytes": 1638,
+    "sha256": "f7b69702f107221608399265d22f673d2b03dce40cebf7b24c1dd067f06d7c52"
+  },
+  "failed-readback.png": {
+    "bytes": 139803,
+    "sha256": "d6e1b40a9e035fee3c97094e3e57d878746208559aa044b419cea03fae61e76b"
+  }
+}

@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import os
+import re
 import signal
 import subprocess
 import sys
@@ -46,15 +48,33 @@ class ReadOnlyGuard:
         return await self.app(scope, receive, send)
 
 
-def activation_git(command, project, kwargs):
-    """The product's exact root validation, not a general shell/Git allowance."""
-    prefix = ["git", "-c", "core.hooksPath=/dev/null", "-C", str(project), "rev-parse"]
-    return (
-        command in [[*prefix, "--show-toplevel"], [*prefix, "--show-object-format"]]
-        and not kwargs.get("shell", False)
-        and kwargs.get("executable") is None
-        and kwargs.get("cwd") in {None, str(project), project}
-    )
+def read_only_git(command, project, kwargs):
+    """Permit root checks and immutable source reads needed to display a saved plan."""
+    prefix = ["git", "-c", "core.hooksPath=/dev/null", "-C", str(project)]
+    if (
+        not isinstance(command, list)
+        or command[: len(prefix)] != prefix
+        or kwargs.get("shell", False)
+        or kwargs.get("executable") is not None
+        or kwargs.get("cwd") not in {None, str(project), project}
+    ):
+        return False
+    args = command[len(prefix) :]
+    if args in [
+        ["rev-parse", "--show-toplevel"],
+        ["rev-parse", "--show-object-format"],
+        ["rev-parse", "--git-common-dir"],
+        ["lfs", "env"],
+    ]:
+        return True
+    if len(args) == 3 and args[:2] == ["cat-file", "blob"]:
+        return bool(re.fullmatch("[0-9a-f]{40}", args[2]))
+    if len(args) == 5 and args[:2] == ["ls-tree", "-z"] and args[3] == "--":
+        name = Path(args[4])
+        return bool(re.fullmatch("[0-9a-f]{40}", args[2])) and not (
+            name.is_absolute() or ".." in name.parts or not name.parts
+        )
+    return False
 
 
 def main(root):
@@ -81,8 +101,13 @@ def main(root):
     real_popen = subprocess.Popen
 
     def guarded_popen(command, *args, **kwargs):
-        if not activation_git(command, root / "restored/project", kwargs):
+        if not read_only_git(command, root / "restored/project", kwargs):
             return blocked("subprocess")()
+        kwargs["env"] = {
+            **(kwargs.get("env") or os.environ),
+            "GIT_NO_LAZY_FETCH": "1",
+            "GIT_OPTIONAL_LOCKS": "0",
+        }
         process = real_popen(command, *args, **kwargs)
         audit.setdefault("read_only_git", []).append({"argv": command, "pid": process.pid})
         return process
