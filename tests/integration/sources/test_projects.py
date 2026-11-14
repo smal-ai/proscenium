@@ -181,3 +181,34 @@ def test_duplicate_project_location_requires_explicit_rebind(
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "project_location_conflict"
     assert source_services.registry.get("project-test")["path"] == str(root)
+
+
+def test_rebind_consistent_backup_without_copying_runtime_lock(
+    client, owner_headers, source_services, root, tmp_path
+):
+    import shutil
+
+    settle(source_services)
+    restored = tmp_path / "restored-workspace"
+    shutil.copytree(root, restored, ignore=shutil.ignore_patterns(".proscenium", ".env*"))
+    (restored / ".proscenium").mkdir(mode=0o700)
+    source_services.registry.project_store("project-test").backup(
+        restored / ".proscenium/state.sqlite3"
+    )
+    assert not (restored / ".proscenium/owner.lock").exists()
+    body = dict(
+        schema_version="1.0",
+        operation_id="rebind-backup",
+        project_id="project-test",
+        expected_revision=0,
+        new_path=str(restored),
+    )
+    response = client.post(
+        "/api/v1/projects/project-test/rebind",
+        json=body,
+        headers={**owner_headers, "Idempotency-Key": body["operation_id"]},
+    )
+    assert response.status_code == 200, response.text
+    assert (restored / ".proscenium/owner.lock").exists()
+    assert source_services.registry.get("project-test")["path"] == str(restored)
+    assert root.is_dir()

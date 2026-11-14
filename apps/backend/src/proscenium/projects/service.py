@@ -507,11 +507,14 @@ class Projects:
             held = self.services.project_ownership.get(project_id)
             if (root / ".proscenium/owner.lock").is_symlink():
                 raise DomainError("scope_denied", 403)
-            same_lock = (
-                held
-                and os.fstat(held.file.fileno()).st_ino
-                == (root / ".proscenium/owner.lock").stat().st_ino
-            )
+            target_lock = root / ".proscenium/owner.lock"
+            same_lock = False
+            if held and target_lock.exists():
+                previous_stat, target_stat = os.fstat(held.file.fileno()), target_lock.stat()
+                same_lock = (previous_stat.st_dev, previous_stat.st_ino) == (
+                    target_stat.st_dev,
+                    target_stat.st_ino,
+                )
             new_lock = None if same_lock else Ownership(root / ".proscenium/owner.lock")
             try:
                 with registry.store.transaction() as tx:
