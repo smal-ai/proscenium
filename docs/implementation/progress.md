@@ -72,13 +72,13 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `02a3a8d` | Complete authenticated SSH message/media journey passed, including active-task tunnel cut, exactly-once replay, all ten film frames, uploads/downloads and quiet unavailable-service feedback. |
 | `cef82ee` | Empty-WAL source reads now preserve zero-byte sidecars. Nonempty committed-WAL recovery remains unchanged and tested. |
 | `6c7cec5` | Exact small M13 delivery/frame/source bytes retained for portable evidence tests. No new rendering or model execution. |
+| `d5a15ad`, `milestone/m10` | Actual native generated-mesh revision, independent measurement, pinned proxy/still and exact publication replay accepted. Source checkpoint `b98630210011142af66c92c46d4c86b72a7cdcc3`. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
 | M07 final readback | `/home/quintin/.cache/proscenium-development/fleet/m07-review-final`, `impl/m07-review-final` | `6c7cec5` | Correct retained-image job/shot context in the actual app, with native/provider execution disabled. | `ses_e24a65242ffe1NBgQTlIPeFUw1` |
-| M10 explicit follow-up | `/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete`, `impl/m10-revision-complete` | `02a3a8d` | One new explicitly authorised remaining-work Queue in the original project/session. Preserve the old prematurely completed row, author/publish v2 through normal tools. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
 | M11 cold Stop recovery | `/home/quintin/.cache/proscenium-development/fleet/cold-stop-recovery`, `impl/cold-stop-recovery` | `02a3a8d` | Verify the pinned native inactive-main-loop RPC plus empty paused queue/background/callback conditions for the exact departed read wait. Zero model sends. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
@@ -114,7 +114,7 @@ and an identical second retention invocation reused all 16 files (2,879,627 byte
 - M05 is accepted. The final native scene adoption was saved and published as `scene-main-v2`, pinning unchanged `asset-cube-v3`; alternate scene v1 retains asset v1. Earlier failed scripts/reports are preserved.
 - M06 is accepted. The shared-reference readiness correction passed an actual guarded application replay without further model calls.
 - M09 is accepted after M03/M04. Both real review origins and exactly-once approved handoff passed; only the owned Gemma instance was unloaded. Qwen and the saved profile remained unchanged.
-- M10's old Continue was acknowledged but did not author v2. W01 identified and fixed missing-file permission semantics and the empty-batch completion candidate. The historical completed work row remains unchanged. A new explicitly authorised remaining-work Queue in the original project/session is now allocated, rather than pretending the terminal old work was resumed.
+- M10 is accepted. Its explicit new same-session follow-up saved/published `m10-asset-v2`, measured 0.120000004768 m high with base Z zero and blue material. The old premature completion, all original source/provenance and the one E04 inference remain unchanged.
 - W10's protected-process blocker is fixed. The final SSH audit passed. Same-host transport/API traffic does not itself close full model-message/video playback or cumulative M12/M14.
 - M11 import/PlayMode and checkpoint pass. Typed file policy is fixed, but the original cold Stop has acknowledged pause/Abort without a fresh Abort/idle event. Work remains stop_requested and the read wrapper unresolved. The decision is cancelled without an owner answer. A narrowly scoped positive native-idle RPC proof is assigned before original publication continuation.
 - M12's accepted-send ACK-loss, same-session backup/continuation, detached renderer, provider-response recovery, partial-output retry and SSH continuity evidence now pass within their recorded scopes. M11's cold Stop/publication and cumulative integration remain open. Original unknown returns and failed recovery attempts are preserved.
@@ -189,7 +189,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M07 Concept generation | Generation/recovery/native budget passed; final actual UI job-context readback pending | — | [Actual generation and limitations](m07.md) |
 | M08 Progressive animation | Completed on 2026-11-14 | `milestone/m08` | [Pre-completion review, pinned inputs and final lineage](m08.md) |
 | M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
-| M10 Image-to-3D | Hardware/inspection passed; explicit remaining-work revision Queue active | — | [E04](../evidence/w09/live-b/README.md), [M10](m10.md) |
+| M10 Image-to-3D | Completed on 2026-11-14 | `milestone/m10` | [Actual mesh, native revision and publication](m10.md) |
 | M11 Playable Unity scene | Native import/PlayMode/checkpoint passed; cold Stop barrier pending | — | [Exact criteria and retained blocker](m11.md) |
 | M12 Recovery and backup | Required recovery observations substantially complete; M11/cumulative integration pending | — | [Native recovery](m12.md), [worker recovery](m08.md) |
 | M13 Silent cinematic delivery | All seven targeted criteria passed; dependencies pending | — | [Native edit/review/download proof](m13.md) |

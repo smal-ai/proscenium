@@ -149,6 +149,18 @@ were unchanged, Queue count was one and SDK sends zero at the live pre-send gate
 
 ## Result files
 
+The coordinator additionally retained hash-identical copies of the actual output
+and page captures, without another render or browser run:
+
+| File | SHA-256 |
+| --- | --- |
+| `v2-render.png` | `aab1367144684b2c3091d84a1a3700414e523688a078367f6cec43c4ca5e4b38` |
+| `v2-keyframe.png` | `b401ec80110a4879e77135b19f69952f9776aab8af1d9451453d14ea6dbaa9d7` |
+| `v2-inspection.png` | `504bb3bf38163c9b00961e1f9732f6566eea2075ca0551949db18eeb5e7fdd6e` |
+
+The original private-path entries in `retention.json` retain those same hashes.
+`coordinator-checks.xml` records 55 passing affected evidence/image-to-3D checks.
+
 - `actual-run.json`: actual new request/context/work IDs, SDK acknowledgement and guards,
   actual authoring receipts/measurements, checkpoint/version/publication, production preview
   jobs and native exits, UI observations, source/history preservation and process cleanup.
