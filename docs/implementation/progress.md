@@ -24,6 +24,7 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `fd330ae` | E01 runtime-pair evidence accepted within its documented limits. |
 | `3ef8020` | W04 desktop/project/conversation implementation, initially verified with synthetic browser APIs. |
 | `b6f1f62` | E03 actual progressive-media and three-browser codec/paused-frame proof. |
+| `76d8451` | W06 maintained research/storyboard skills and typed shotboard UI. Integrated journeys remain pending. |
 
 ## Active assignments
 
@@ -32,7 +33,8 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | W02 | `/tmp/opencode/proscenium-fleet/w02`, `impl/w02` | `7b95381` | Project/source/catalogue APIs, checkpoint, LFS materialisation and ingestion. | `ses_e264898f1ffeZI7lWdopwgAFJn` |
 | W05 | `/tmp/opencode/proscenium-fleet/w05`, `impl/w05` | `7b95381` | Review backend, three viewer modes, annotation, selections and critic presentation. | `ses_e264897f0ffe99g7L7VPZVpjjv` |
 | W01 | `/tmp/opencode/proscenium-fleet/w01`, `impl/w01` | `2bc3d5c` | Production Copilot adapter, context, durable request/decision/event delivery and native Stop/Resume. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
-| W06 | `/tmp/opencode/proscenium-fleet/w06`, `impl/w06` | `148ad0f` | Adapted research/storyboard resources and typed shotboard UI against accepted API seams. | `ses_e263d813fffefNumtCvVqwR169` |
+| W07 | `/tmp/opencode/proscenium-fleet/w07`, `impl/w07` | `76d8451` | ComfyUI generation/budget/recovery and requested LM Studio critique. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
+| W08 | `/tmp/opencode/proscenium-fleet/w08`, `impl/w08` | `76d8451` | Scoped Unity CLI/Editor import, controller and actual Play mode validation. | `ses_e262dde9cffevqHbPSmMm5CYKL` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
@@ -47,6 +49,8 @@ F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected jo
 | W04/W05 | Respective agents | Isolated browser data, local dependency environments and offline tests. No model/native/GPU processes. |
 | W01 live persistence | W01 agent | Six small cloud root requests and at most two native children, 120-second request bounds. Its own direct runtimes and disposable projects, no Blender/Unity/GPU. |
 | E03 | E03 agent | One CPU renderer, four threads, at most twelve 640×360 frames and sixteen samples, 300-second limit. Six short synthetic segments, one encoder at a time, sixty seconds each. Isolated Chromium/Brave/Edge profiles. No GPU/model services. |
+| W07 VLM | W07 agent | Read-only provider inventory and at most two 64×64-image, 512-output-token VLM calls on an already loaded model, 120 seconds each. No model loading or ComfyUI generation/service lifecycle. |
+| W08 | W08 agent | Its own disposable Unity project. At most three Unity invocations, 600 seconds each, plus one Blender CPU export, four threads, 180 seconds. Existing official Editor/licence, isolated project dependencies, own Xvfb if needed. |
 
 ## Milestones
 

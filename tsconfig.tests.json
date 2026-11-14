@@ -3,11 +3,12 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
     "esModuleInterop": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "tests/browser/**/*.ts"]
+  "include": ["playwright.config.ts", "tests/browser/**/*.ts", "tests/browser/**/*.tsx"]
 }
