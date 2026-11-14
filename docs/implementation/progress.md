@@ -129,7 +129,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M06 Storyboards | Planning/selection and corrected review passed; dependencies pending | — | [Original proof](m06.md), [review follow-up](../evidence/w05/readiness-readme.md) |
 | M07 Concept generation | Original-job continuation running under resource guard | — | — |
 | M08 Progressive animation | Targeted journey passed; dependencies pending | — | [Progressive and worker-recovery proof](m08.md) |
-| M09 Requested VLM critique | Positive journey passed; dependencies pending | — | [Positive evidence](../evidence/m09-positive/README.md) |
+| M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
 | M10 Image-to-3D | Hardware/inspection passed; original revision awaits continuation | — | [E04](../evidence/w09/live-b/README.md), [M10](m10.md) |
 | M11 Playable Unity scene | Native import/PlayMode passed; original publication blocked | — | [Exact criteria and blocker](m11.md) |
 | M12 Recovery and backup | Same-session restore/continuation and worker recovery passed; accepted ACK-loss pending | — | [Native recovery](m12.md), [worker recovery](m08.md) |

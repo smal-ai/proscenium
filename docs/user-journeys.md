@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M04 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M04 and M09 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -35,7 +35,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M06](#m06-brief-to-reviewable-storyboard) | Develop a complete narrative and shotboard | M02, M03, M05 | Planned |
 | [M07](#m07-generate-and-revise-concept-images) | Generate/revise selected storyboard and reference images through ComfyUI | M04, M06 | Planned |
 | [M08](#m08-author-and-review-animation-progressively) | Review animation and annotate available frames before rendering finishes | M04, M06. M07 when generated concepts are used | Planned |
-| [M09](#m09-request-and-approve-vlm-critique) | Request local critique and send approved findings with images to Copilot | M03, M04. M08 for motion-review inputs | Planned |
+| [M09](#m09-request-and-approve-vlm-critique) | Request local critique and send approved findings with images to Copilot | M03, M04. M08 for motion-review inputs | Accepted, `milestone/m09` |
 | [M10](#m10-image-to-3d-asset-generation) | Generate and publish a usable Blender mesh from an image | Early feasibility proof, M04, M05. M07 for generated inputs | Planned, unproven capability |
 | [M11](#m11-playable-unity-scene) | Ask the Unity specialist for a playable scene and test it in Unity | M03, M04, M05. M10 is not required for authored/imported assets | Planned |
 | [M12](#m12-reconnect-and-explicitly-resume) | Complete cross-provider reconnect/resume and backup acceptance | Delivery/recovery primitives from F00/M01/M03; M07, M08, M11 for representative job types | Planned |
@@ -373,6 +373,10 @@ saved review context, with the integrated installed-browser regression matrix.
 **Reuse:** Existing serial renderer/worker/input fingerprints/frame receipts, FFmpeg assembly and Review Studio frame/range controls. Progressive segment publication and its viewer are new integration work.
 
 ## M09: Request and approve VLM critique
+
+**Accepted:** 14 November 2026. [Actual review and handoff evidence](implementation/m09.md)
+records both review origins, owner amendment/rejection, image/target identity and
+exactly-once native submission. This acceptance uses still-image inputs.
 
 **User journey:** “I or Copilot request another visual assessment, then I choose which findings to send back for revision.”
 
