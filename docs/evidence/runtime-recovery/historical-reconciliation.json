@@ -1,0 +1,835 @@
+{
+  "m03-a-first": {
+    "label": "m03-a",
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "before_manifest_sha256": "ab9e8a7d2c223c6b20220086255a3f3ae0b61f03b1616833b18dc435ac2af3b1",
+    "snapshot_files": 10,
+    "original_process": {
+      "pid": 3735712,
+      "start": "46383675",
+      "parent_pid": 3727109,
+      "parent_start": "46375273"
+    },
+    "sends": 0,
+    "reconciliation": {
+      "pending_empty": true,
+      "uncertain_request_ids": [],
+      "live_invocations": 1,
+      "uncertain_stops": 0,
+      "uncertain_continuations": 0,
+      "duplicate_correlations": 0
+    },
+    "metadata_process": {
+      "pid": 3869724,
+      "start": "46705612",
+      "parent_pid": 3869634,
+      "parent_start": "46705490",
+      "same_identity_alive": false,
+      "parent_same_identity_alive": false
+    },
+    "original_top_files_unchanged": true,
+    "live_before": [
+      {
+        "agent_id": null,
+        "delivery_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "ask_user",
+        "native_id": "call_FZq8En5js167XKIiM3ZgoGc4",
+        "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "state": "running",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "live_after": [
+      {
+        "agent_id": null,
+        "delivery_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "ask_user",
+        "native_id": "call_FZq8En5js167XKIiM3ZgoGc4",
+        "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "state": "running",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "recovery_evidence": [],
+    "decisions_after": [
+      {
+        "decision_id": "decision-c8518db7f6ae26fbeeb9d6260eaa45d25e91d9633e36beb0bc0a29424eb8df12",
+        "native_decision_id": "09fd488d-94b3-490e-bd02-d61eb21cb974",
+        "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555",
+        "state": "pending",
+        "state_revision": 0,
+        "response": null,
+        "resolved_by": null,
+        "delivery_state": "not_sent",
+        "fingerprint": "946cdc04be28b6581de350a5ad5e892ae3b0023b7165db5a0aa3be9f0206fd3c"
+      }
+    ],
+    "work_before": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m03-fixture-task",
+        "job_ids": [],
+        "native_session_id": "fixture-not-native",
+        "originating_request_id": "m03-fixture-command",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m03-fixture-work"
+      },
+      {
+        "directive_request_ids": [
+          "af380f55-58ae-470c-b238-e39be8a42ac3"
+        ],
+        "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 4,
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 4,
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "work_after": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m03-fixture-task",
+        "job_ids": [],
+        "native_session_id": "fixture-not-native",
+        "originating_request_id": "m03-fixture-command",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m03-fixture-work"
+      },
+      {
+        "directive_request_ids": [
+          "af380f55-58ae-470c-b238-e39be8a42ac3"
+        ],
+        "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 4,
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 4,
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "request_ids_before": [
+      "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "84232ed6-d620-4811-8db9-eb802a9f0135",
+      "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "b12a62c8-d741-4ac2-8068-dd2255ec4ead"
+    ],
+    "request_ids_after": [
+      "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "84232ed6-d620-4811-8db9-eb802a9f0135",
+      "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "b12a62c8-d741-4ac2-8068-dd2255ec4ead"
+    ],
+    "new_public_events": [],
+    "source_and_job_records_unchanged": true
+  },
+  "m03-a": {
+    "label": "m03-a",
+    "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+    "before_manifest_sha256": "ec1005dc9263e7656b6f8ddb5e39743b953774ed6e0cfdfa0322982a43311afb",
+    "snapshot_files": 10,
+    "original_process": {
+      "pid": 3869724,
+      "start": "46705612",
+      "parent_pid": 3869634,
+      "parent_start": "46705490"
+    },
+    "sends": 0,
+    "reconciliation": {
+      "pending_empty": true,
+      "uncertain_request_ids": [],
+      "live_invocations": 0,
+      "uncertain_stops": 0,
+      "uncertain_continuations": 0,
+      "duplicate_correlations": 0
+    },
+    "metadata_process": {
+      "pid": 3875710,
+      "start": "46718155",
+      "parent_pid": 3875653,
+      "parent_start": "46718032",
+      "same_identity_alive": false,
+      "parent_same_identity_alive": false
+    },
+    "original_top_files_unchanged": true,
+    "live_before": [
+      {
+        "agent_id": null,
+        "delivery_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "ask_user",
+        "native_id": "call_FZq8En5js167XKIiM3ZgoGc4",
+        "owner_epoch": "epoch-3de1566a-d325-4a8f-9ec7-610aaa962444",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "state": "running",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "live_after": [],
+    "recovery_evidence": [
+      {
+        "at": "2026-11-14T16:41:10.620718+00:00",
+        "decision_binding_identity": "610a232dc9a5ac2b23b7fcb49728fbbe398abf85b4c7e59b3412fed1115d7631",
+        "departed_process": {
+          "invocation_ids": [
+            "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1"
+          ],
+          "observed_identity": null,
+          "parent_pid": 3869634,
+          "parent_start": "46705490",
+          "pid": 3869724,
+          "session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+          "start": "46705612"
+        },
+        "kind": "coordinator_interrupted",
+        "native_event_ids": [],
+        "native_return_observed": false,
+        "session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25"
+      }
+    ],
+    "decisions_after": [
+      {
+        "decision_id": "decision-c8518db7f6ae26fbeeb9d6260eaa45d25e91d9633e36beb0bc0a29424eb8df12",
+        "native_decision_id": "09fd488d-94b3-490e-bd02-d61eb21cb974",
+        "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555",
+        "state": "cancelled",
+        "state_revision": 1,
+        "response": null,
+        "resolved_by": null,
+        "delivery_state": "not_sent",
+        "fingerprint": "946cdc04be28b6581de350a5ad5e892ae3b0023b7165db5a0aa3be9f0206fd3c"
+      }
+    ],
+    "work_before": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m03-fixture-task",
+        "job_ids": [],
+        "native_session_id": "fixture-not-native",
+        "originating_request_id": "m03-fixture-command",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m03-fixture-work"
+      },
+      {
+        "directive_request_ids": [
+          "af380f55-58ae-470c-b238-e39be8a42ac3"
+        ],
+        "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 4,
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 4,
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "work_after": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m03-fixture-task",
+        "job_ids": [],
+        "native_session_id": "fixture-not-native",
+        "originating_request_id": "m03-fixture-command",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m03-fixture-work"
+      },
+      {
+        "directive_request_ids": [
+          "af380f55-58ae-470c-b238-e39be8a42ac3"
+        ],
+        "generation_task_id": "task-4ae88711d1f34c208ce50d99ad74a3ad",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "stopped",
+        "state_revision": 4,
+        "work_id": "work-6361ef13fbeb4f4884ff382bf96d8815"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-97b1a449d5cf4e578dcfa46568dba207",
+        "job_ids": [],
+        "native_session_id": "83e983b6-bd8f-4485-b483-9e6ba0bbea25",
+        "originating_request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 4,
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "request_ids_before": [
+      "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "84232ed6-d620-4811-8db9-eb802a9f0135",
+      "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "b12a62c8-d741-4ac2-8068-dd2255ec4ead"
+    ],
+    "request_ids_after": [
+      "3e9e382d-b2da-4f28-9ca3-91c86cac5014",
+      "84232ed6-d620-4811-8db9-eb802a9f0135",
+      "af380f55-58ae-470c-b238-e39be8a42ac3",
+      "b12a62c8-d741-4ac2-8068-dd2255ec4ead"
+    ],
+    "new_public_events": [
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "decision.resolved",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T16:41:10.620015+00:00",
+        "payload": {
+          "decision_id": "decision-c8518db7f6ae26fbeeb9d6260eaa45d25e91d9633e36beb0bc0a29424eb8df12",
+          "delivery_state": "not_sent",
+          "fingerprint": "946cdc04be28b6581de350a5ad5e892ae3b0023b7165db5a0aa3be9f0206fd3c",
+          "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+          "kind": "user_input",
+          "native_decision_id": "09fd488d-94b3-490e-bd02-d61eb21cb974",
+          "options": [
+            "Approve TEST_SHARE_SIMULATION",
+            "Decline TEST_SHARE_SIMULATION"
+          ],
+          "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+          "prompt": "The captured version m03-version-B is labelled \"M03 labelled asset B\". Do you approve TEST_SHARE_SIMULATION, a test-only in-project simulated consequential operation? No actual sharing, purchase, installation or external action occurs.",
+          "resolved_by": null,
+          "response": null,
+          "schema_version": "1.0",
+          "state": "cancelled",
+          "state_revision": 1,
+          "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+        },
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "sequence": 58,
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T16:41:10.620857+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "fd6cbbf83a7775743bb0e5fbabd97646ad02b8902b148869a13d7b6fef1858d1",
+          "model_id": "gpt-6.1-sol",
+          "name": "ask_user",
+          "state": "cancelled",
+          "summary": "Native coordination interrupted after exact owner process exit; no successful return observed."
+        },
+        "project_id": "project-d8b89f4f-2943-412c-8c3f-be9f35907a01",
+        "request_id": "b12a62c8-d741-4ac2-8068-dd2255ec4ead",
+        "schema_version": "1.0",
+        "sequence": 59,
+        "work_id": "work-6c566aaa39084a139da0b42fcff0b555"
+      }
+    ],
+    "source_and_job_records_unchanged": true
+  },
+  "m03-b": {
+    "label": "m03-b",
+    "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+    "before_manifest_sha256": "9c925bf7870332b461ad9698a2be8bb02f05b91be348da049e3f84f57c514a32",
+    "snapshot_files": 10,
+    "original_process": {
+      "pid": 3739547,
+      "start": "46392348",
+      "parent_pid": 3738910,
+      "parent_start": "46391133"
+    },
+    "sends": 0,
+    "reconciliation": {
+      "pending_empty": true,
+      "uncertain_request_ids": [],
+      "live_invocations": 1,
+      "uncertain_stops": 0,
+      "uncertain_continuations": 0,
+      "duplicate_correlations": 0
+    },
+    "metadata_process": {
+      "pid": 3871578,
+      "start": "46709586",
+      "parent_pid": 3871467,
+      "parent_start": "46709470",
+      "same_identity_alive": false,
+      "parent_same_identity_alive": false
+    },
+    "original_top_files_unchanged": true,
+    "live_before": [
+      {
+        "agent_id": null,
+        "delivery_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "invocation_id": "276193492ef46e08939a9eaacb31ad540bb624a365e589eab4477f35bf0ce8f3",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "bash",
+        "native_id": "call_ZnLmPpinhkSxNCWJS2lDE5RJ",
+        "owner_epoch": "epoch-ec6efc7a-f422-4bc6-82fd-0eb70f387692",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+        "state": "running",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      }
+    ],
+    "live_after": [
+      {
+        "agent_id": null,
+        "delivery_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "invocation_id": "276193492ef46e08939a9eaacb31ad540bb624a365e589eab4477f35bf0ce8f3",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "bash",
+        "native_id": "call_ZnLmPpinhkSxNCWJS2lDE5RJ",
+        "owner_epoch": "epoch-ec6efc7a-f422-4bc6-82fd-0eb70f387692",
+        "request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+        "state": "running",
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      }
+    ],
+    "recovery_evidence": [],
+    "decisions_after": [
+      {
+        "decision_id": "decision-7eee821715d655f6c01fa81c815afdff746542863a65e473d5f07b2b7b1aca42",
+        "native_decision_id": "effebdb2-dda6-44cd-b093-d0e0e05c075e",
+        "invocation_id": "b09714c17d0cf63cd2fe233e75b6dca71f283d13d96a8677db78c48c3bbdbc1a",
+        "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca",
+        "state": "answered",
+        "state_revision": 3,
+        "response": {
+          "action": "answer",
+          "answer": "DENY_TEST_SHARE_SIMULATION",
+          "expected_revision": 0,
+          "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b",
+          "operation_id": "cf424067-0cd2-4b7b-88d6-f2b9bce8ac0b",
+          "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+          "schema_version": "1.0"
+        },
+        "resolved_by": {
+          "id": "owner-21208824-6b45-461b-a7ed-b4c1d2f4e6c7",
+          "kind": "user"
+        },
+        "delivery_state": "acknowledged",
+        "fingerprint": "a1765136970ac2e828d6689352502edc3959ec66e73b10f20f2ba95dcc2b9f7b"
+      }
+    ],
+    "work_before": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m03-fixture-task",
+        "job_ids": [],
+        "native_session_id": "fixture-not-native",
+        "originating_request_id": "m03-fixture-command",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m03-fixture-work"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+        "job_ids": [],
+        "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+        "originating_request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 4,
+        "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+        "job_ids": [],
+        "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+        "originating_request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 3,
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      }
+    ],
+    "work_after": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m03-fixture-task",
+        "job_ids": [],
+        "native_session_id": "fixture-not-native",
+        "originating_request_id": "m03-fixture-command",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m03-fixture-work"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-944dcc107ce7406598e47b6c354b3412",
+        "job_ids": [],
+        "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+        "originating_request_id": "769071ca-3983-4cb6-b742-d89597308a7a",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 4,
+        "work_id": "work-80d1d932cafe45b2a867d15b5dbc1fca"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-1e0ac581e1b4456dad7b27ffb373f04e",
+        "job_ids": [],
+        "native_session_id": "4870c130-95d7-44f6-9e76-4541e9166f14",
+        "originating_request_id": "82fe4ffb-afc3-4a4f-8745-aad07c7775d2",
+        "project_id": "project-727d2574-3d2c-4b0b-93a2-3d80050b3f77",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 3,
+        "work_id": "work-ea4ab25e133747dba8e1f74dad160d2a"
+      }
+    ],
+    "request_ids_before": [
+      "769071ca-3983-4cb6-b742-d89597308a7a",
+      "82fe4ffb-afc3-4a4f-8745-aad07c7775d2"
+    ],
+    "request_ids_after": [
+      "769071ca-3983-4cb6-b742-d89597308a7a",
+      "82fe4ffb-afc3-4a4f-8745-aad07c7775d2"
+    ],
+    "new_public_events": [],
+    "source_and_job_records_unchanged": true
+  },
+  "m11": {
+    "label": "m11",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "before_manifest_sha256": "2712839274b201a9efd5def9f12a0ff5438be597a68499c0b420a4de3ce9b533",
+    "snapshot_files": 10,
+    "original_process": {
+      "pid": 3696956,
+      "start": "46307065",
+      "parent_pid": 3629809,
+      "parent_start": "46161590"
+    },
+    "sends": 0,
+    "reconciliation": {
+      "pending_empty": true,
+      "uncertain_request_ids": [],
+      "live_invocations": 0,
+      "uncertain_stops": 0,
+      "uncertain_continuations": 0,
+      "duplicate_correlations": 0
+    },
+    "metadata_process": {
+      "pid": 3872107,
+      "start": "46710548",
+      "parent_pid": 3872065,
+      "parent_start": "46710427",
+      "same_identity_alive": false,
+      "parent_same_identity_alive": false
+    },
+    "original_top_files_unchanged": true,
+    "live_before": [
+      {
+        "agent_id": null,
+        "delivery_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "invocation_id": "d569d49b86f433314bf0308c012d5aac6ef82d450b4d06da3c3b682e74d61ec4",
+        "kind": "tool",
+        "model_id": "gpt-6.1-sol",
+        "name": "task",
+        "native_id": "call_m00hecCK14WE4HWf95RE5Y30",
+        "owner_epoch": "epoch-ee7d6681-c47c-4347-aabe-b40977d986e7",
+        "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "state": "running",
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      }
+    ],
+    "live_after": [],
+    "recovery_evidence": [
+      {
+        "at": "2026-11-14T16:39:56.017980+00:00",
+        "departed_process": {
+          "invocation_ids": [
+            "d569d49b86f433314bf0308c012d5aac6ef82d450b4d06da3c3b682e74d61ec4"
+          ],
+          "observed_identity": null,
+          "parent_pid": 3629809,
+          "parent_start": "46161590",
+          "pid": 3696956,
+          "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+          "start": "46307065"
+        },
+        "kind": "coordinator_interrupted",
+        "native_event_ids": [
+          "e65e59a0-d0e6-407b-876e-53f614e6d9df",
+          "39a8c906-fe3e-460a-a3ff-f8c551a9ce48"
+        ],
+        "native_return_observed": false,
+        "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454"
+      }
+    ],
+    "decisions_after": [],
+    "work_before": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-attest-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-attest-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-attest"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-playmode-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-playmode-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-playmode"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-repeat-proof-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-repeat-proof-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-repeat-proof"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-seed-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-seed-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-seed"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+        "job_ids": [],
+        "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 2,
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-2f90411fa5a34c7d9aa29e067916e579",
+        "job_ids": [],
+        "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "originating_request_id": "3182279d-bae6-4228-a11d-741694769de0",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 2,
+        "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+      }
+    ],
+    "work_after": [
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-attest-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-attest-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-attest"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-playmode-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-playmode-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-playmode"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-repeat-proof-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-repeat-proof-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-repeat-proof"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "m11-operator-seed-task",
+        "job_ids": [],
+        "native_session_id": "m11-operator-fixture-not-a-native-session",
+        "originating_request_id": "m11-operator-seed-fixture-request",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 1,
+        "work_id": "m11-operator-seed"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+        "job_ids": [],
+        "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 2,
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      {
+        "directive_request_ids": [],
+        "generation_task_id": "task-2f90411fa5a34c7d9aa29e067916e579",
+        "job_ids": [],
+        "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "originating_request_id": "3182279d-bae6-4228-a11d-741694769de0",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 2,
+        "work_id": "work-c91f01f2f93740dfb251bb8f4d3d9766"
+      }
+    ],
+    "request_ids_before": [
+      "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "3182279d-bae6-4228-a11d-741694769de0"
+    ],
+    "request_ids_after": [
+      "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "3182279d-bae6-4228-a11d-741694769de0"
+    ],
+    "new_public_events": [
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T16:39:56.018173+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "d569d49b86f433314bf0308c012d5aac6ef82d450b4d06da3c3b682e74d61ec4",
+          "model_id": "gpt-6.1-sol",
+          "name": "task",
+          "state": "cancelled",
+          "summary": "Native coordination interrupted after exact owner process exit; no successful return observed."
+        },
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "schema_version": "1.0",
+        "sequence": 403,
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      }
+    ],
+    "source_and_job_records_unchanged": true
+  }
+}

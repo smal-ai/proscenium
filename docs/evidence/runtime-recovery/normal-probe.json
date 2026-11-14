@@ -1,0 +1,183 @@
+{
+  "application_base": "0b8e9ba",
+  "status": "BLOCKED: native Bash terminal event absent; Continue not sent",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "original_work": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-71221b2f231f41c99c8d949533249734",
+    "job_ids": [],
+    "native_session_id": "53069081-b6f0-4f71-b672-fda36cee5f5c",
+    "originating_request_id": "17ef5bd3-40ba-44f4-930b-de5662608210",
+    "project_id": "project-dfc3caf7-846d-4cb4-9e67-1b59a906c413",
+    "schema_version": "1.0",
+    "state": "running",
+    "state_revision": 1,
+    "work_id": "work-077bb2ae56b94cd4822896af020a25a6"
+  },
+  "queue": {
+    "status": 202,
+    "receipt": {
+      "native_message_id": null,
+      "project_id": "project-dfc3caf7-846d-4cb4-9e67-1b59a906c413",
+      "replayed": false,
+      "request_id": "17ef5bd3-40ba-44f4-930b-de5662608210",
+      "schema_version": "1.0",
+      "state": "held",
+      "state_revision": 0,
+      "type": "queue",
+      "work_id": "work-077bb2ae56b94cd4822896af020a25a6"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "request_id": "17ef5bd3-40ba-44f4-930b-de5662608210",
+      "project_id": "project-dfc3caf7-846d-4cb4-9e67-1b59a906c413",
+      "text": "Normal Stop/Continue capability test. Run exactly `python3 runtime_recovery_hold.py` using bash in this active project. It is a harmless project-local heartbeat helper with a hard 25-second self-timeout. Do not delegate, inspect other files, ask questions, install anything or use other commands. The owner will explicitly Stop this first execution. Do not describe cancellation as successful completion. If the owner later explicitly Continues this original work, run that same command once again, wait for its actual completion and report the observed outcome. Do not start a new task or change the objective.",
+      "context_id": "4a5865b4-ff30-4c07-a562-8005dcb6b235",
+      "type": "queue"
+    }
+  },
+  "stop": {
+    "status": 202,
+    "receipt": {
+      "native_message_id": null,
+      "project_id": "project-dfc3caf7-846d-4cb4-9e67-1b59a906c413",
+      "replayed": false,
+      "request_id": "81f3d35a-948d-41af-9ff1-709216efd1b3",
+      "schema_version": "1.0",
+      "state": "stop_requested",
+      "state_revision": 0,
+      "type": "stop",
+      "work_id": "work-077bb2ae56b94cd4822896af020a25a6"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "request_id": "81f3d35a-948d-41af-9ff1-709216efd1b3",
+      "project_id": "project-dfc3caf7-846d-4cb4-9e67-1b59a906c413",
+      "type": "stop",
+      "target_work_id": "work-077bb2ae56b94cd4822896af020a25a6"
+    }
+  },
+  "work_after": [
+    {
+      "directive_request_ids": [],
+      "generation_task_id": "task-71221b2f231f41c99c8d949533249734",
+      "job_ids": [],
+      "native_session_id": "53069081-b6f0-4f71-b672-fda36cee5f5c",
+      "originating_request_id": "17ef5bd3-40ba-44f4-930b-de5662608210",
+      "project_id": "project-dfc3caf7-846d-4cb4-9e67-1b59a906c413",
+      "schema_version": "1.0",
+      "state": "stop_requested",
+      "state_revision": 2,
+      "work_id": "work-077bb2ae56b94cd4822896af020a25a6"
+    }
+  ],
+  "invocations": [
+    {
+      "agent_id": null,
+      "delivery_id": "17ef5bd3-40ba-44f4-930b-de5662608210",
+      "invocation_id": "0074dc163628ba54e7c03f80df622a01a6f32b124e1a1e0438ba23de9f08e6b0",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "bash",
+      "native_id": "call_uWJVx2uNIYluc3IYjEST1Nz8",
+      "owner_epoch": "epoch-cda5d742-f1a7-42e2-85a2-eddaf62b3470",
+      "request_id": "17ef5bd3-40ba-44f4-930b-de5662608210",
+      "session_id": "53069081-b6f0-4f71-b672-fda36cee5f5c",
+      "state": "running",
+      "work_id": "work-077bb2ae56b94cd4822896af020a25a6"
+    }
+  ],
+  "stop_record": [
+    {
+      "abort": "acknowledged",
+      "pause": "acknowledged",
+      "phase": "outcome_uncertain",
+      "work_id": "work-077bb2ae56b94cd4822896af020a25a6"
+    }
+  ],
+  "native_evidence": [
+    {
+      "id": "7cb3a9c2-8e40-4f2c-8a94-2a0209efb959",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T16:30:03.216Z",
+      "parentId": "2c63e94d-1bbe-47c9-9bd7-a23130aa102e",
+      "data": {
+        "toolCallId": "call_uWJVx2uNIYluc3IYjEST1Nz8",
+        "toolName": "bash"
+      }
+    },
+    {
+      "id": "d7335894-3a9f-403e-9787-9b4c82151519",
+      "type": "abort",
+      "timestamp": "2026-11-14T16:30:03.538Z",
+      "parentId": "c88e67b8-4f09-4eae-a79b-9e4254690b09",
+      "data": {
+        "reason": "user_initiated"
+      }
+    },
+    {
+      "id": "da6df7b0-1ed5-4fc3-96a6-33d182582b34",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T16:30:03.540Z",
+      "parentId": "d7335894-3a9f-403e-9787-9b4c82151519",
+      "data": {}
+    }
+  ],
+  "helper_observations": [
+    {
+      "event": "started",
+      "pid": 3847711,
+      "start": "46651482",
+      "at": 1794673803.3216486
+    },
+    {
+      "event": "heartbeat",
+      "pid": 3847711,
+      "start": "46651482",
+      "at": 1794673803.3217409
+    }
+  ],
+  "sends": [
+    {
+      "at": "2026-11-14T16:29:56.787057+00:00",
+      "delivery_id": "17ef5bd3-40ba-44f4-930b-de5662608210",
+      "session_id": "53069081-b6f0-4f71-b672-fda36cee5f5c",
+      "mode": "enqueue",
+      "prompt_sha256": "f33a5598a5fb57343c388bd8ba2a735b5244acc3bc80ddb153aca7b229488ef7"
+    }
+  ],
+  "continuation_sends": 0,
+  "children": 0,
+  "cleanup": {
+    "server": {
+      "pid": 3846538,
+      "start": "46649631",
+      "same_identity_alive": false
+    },
+    "browser": {
+      "pid": 3846584,
+      "start": "46649741",
+      "cdp": 45135,
+      "same_identity_alive": false
+    },
+    "native": {
+      "pid": 3847054,
+      "start": "46650443",
+      "same_identity_alive": false
+    },
+    "helpers": [
+      {
+        "event": "started",
+        "pid": 3847711,
+        "start": "46651482",
+        "at": 1794673803.3216486,
+        "same_identity_alive": false
+      }
+    ]
+  }
+}

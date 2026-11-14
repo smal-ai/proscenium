@@ -1,0 +1,77 @@
+{
+  "commit": "209448a9d10287b777b005cd8e03e888d5e15cc8",
+  "source": "docs/evidence/m13/result.json",
+  "source_sha256": "1d500bc3c5e9ce52fdab56ef2fe72c5c71e647c4c9df8007c1c5a2fb58b188e0",
+  "base_revision": "e3cddf8",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "native_association": {
+    "created_at": "2026-11-14T16:05:04.441867+00:00",
+    "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+    "session_id": "bd724185-83d9-43fe-a290-05ff06addbdb"
+  },
+  "continuation": {
+    "message_id": "626a6506-87aa-41fa-bed7-021a29e3a527",
+    "operation_id": "665b040a-168d-4d02-9525-dc04867620c8",
+    "session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+    "state": "acknowledged"
+  },
+  "original_request": {
+    "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+    "receipt": {
+      "detail_code": "provider_unavailable",
+      "native_message_id": "9e1cd29f-1c49-4c8b-954b-57918de4e303",
+      "project_id": "m13-cinematic",
+      "replayed": false,
+      "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 6,
+      "type": "queue",
+      "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+    },
+    "generation_task_id": "task-6ca29cafac594307a672e1d3b1a78940"
+  },
+  "continued_invocation": {
+    "agent_id": null,
+    "delivery_id": "665b040a-168d-4d02-9525-dc04867620c8",
+    "invocation_id": "2a65d3cd49df738fe80de52cc67a1e5d2bad56d7be5965a32a992ba1a29fd27f",
+    "kind": "tool",
+    "model_id": "gpt-6.1-sol",
+    "name": "assemble_sequence",
+    "native_id": "call_N1eMvCN3wyvKa3R7WUBw0P53",
+    "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+    "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+    "session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+    "state": "completed",
+    "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+  },
+  "publication": {
+    "invocation_id": "6f275d6e6fb73d72bebfe332cc9c0bbce3c647714b7e7163015f0e544791f527",
+    "native_session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+    "receipt": {
+      "event_sequence": 55,
+      "job_ids": [],
+      "project_id": "m13-cinematic",
+      "publication_id": "m13-publish-v1",
+      "replayed": false,
+      "schema_version": "1.0",
+      "versions": [
+        {
+          "item_id": "m13-film",
+          "version_id": "m13-film-v1"
+        }
+      ]
+    },
+    "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+    "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+  },
+  "source_commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+  "product_copilot_changed_in_candidate": false,
+  "dispatches": 3,
+  "boundary": "Inspected candidate evidence. Parent acceptance remains authoritative. No new M13 execution."
+}

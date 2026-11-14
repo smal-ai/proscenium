@@ -1,0 +1,53 @@
+// One continuous Full-HD owner page. Production UI/backend/native. Two SDK sends maximum.
+import { chromium } from 'playwright';
+import fs from 'node:fs/promises';
+const root='/home/quintin/.cache/proscenium-development/runtime-recovery-normal-0b8e9ba';
+const info=JSON.parse(await fs.readFile(`${root}/host.private.json`,'utf8'));
+const chrome=JSON.parse(await fs.readFile(`${root}/browser.private.json`,'utf8'));
+const browser=await chromium.connectOverCDP(`http://127.0.0.1:${chrome.cdp}`);
+const page=browser.contexts()[0].pages()[0];
+await page.setViewportSize({width:1920,height:1080});page.setDefaultTimeout(20000);
+const prefix=`/api/v1/projects/${info.project_id}`;
+const status=async()=>JSON.parse(await fs.readFile(`${root}/status.json`,'utf8'));
+const wait=async(probe,limit=170000)=>{const end=Date.now()+limit;while(Date.now()<end){const r=await probe();if(r)return r;await new Promise(r=>setTimeout(r,100));}throw new Error('Bounded observation timed out');};
+const screenshot=async name=>page.screenshot({path:`${root}/${name}.png`,fullPage:false});
+let result={at:new Date().toISOString()};
+try{
+ await fs.writeFile(`${root}/ui-attempt.json`,JSON.stringify(result),{flag:'wx',mode:0o600});
+ await page.goto(info.pair_url);await page.getByRole('button',{name:'Connect this browser',exact:true}).click();
+ await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
+ result.viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,dpr:devicePixelRatio}));result.browser=browser.version();
+ const prompt='Normal Stop/Continue capability test. Run exactly `python3 runtime_recovery_hold.py` using bash in this active project. It is a harmless project-local heartbeat helper with a hard 25-second self-timeout. Do not delegate, inspect other files, ask questions, install anything or use other commands. The owner will explicitly Stop this first execution. Do not describe cancellation as successful completion. If the owner later explicitly Continues this original work, run that same command once again, wait for its actual completion and report the observed outcome. Do not start a new task or change the objective.';
+ await page.getByRole('textbox',{name:'Message Copilot',exact:true}).fill(prompt);
+ let response=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith(`${prefix}/requests`));
+ await page.getByRole('button',{name:'Queue message',exact:true}).click();
+ let r=await response;result.queue={status:r.status(),receipt:await r.json(),command:r.request().postDataJSON()};
+ if(!r.ok())throw new Error('Initial Queue was not admitted');
+ result.active=await wait(async()=>{try{const lines=(await fs.readFile(`${root}/project/.proscenium/tool-output/normal-helper.jsonl`,'utf8')).trim().split('\n').map(JSON.parse);const s=await status();return lines.some(v=>v.event==='started')&&s;}catch{return false;}});
+ result.original_work=result.active.work[0];
+ if(result.active.work.length!==1||result.active.decisions.length)throw new Error('Normal proof contains other work/decisions');
+ await screenshot('01-active-helper');
+ response=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith(`${prefix}/requests`));
+ await page.getByRole('button',{name:'Stop',exact:true}).click();r=await response;
+ result.stop={status:r.status(),receipt:await r.json(),command:r.request().postDataJSON()};
+ if(!r.ok())throw new Error('Stop rejected');
+ result.barrier=await wait(async()=>{const s=await status();return s['copilot.stops'][0]?.phase==='confirmed'&&s;},45000);
+ result.helper_at_barrier=await fs.readFile(`${root}/project/.proscenium/tool-output/normal-helper.jsonl`,'utf8');
+ await new Promise(r=>setTimeout(r,1000));
+ result.no_post_barrier_effects=result.helper_at_barrier===await fs.readFile(`${root}/project/.proscenium/tool-output/normal-helper.jsonl`,'utf8');
+ await page.getByLabel('Resume mode',{exact:true}).selectOption('continue_work');
+ await page.getByLabel('Original work to continue',{exact:true}).selectOption(result.original_work.work_id);
+ await page.getByRole('button',{name:'Resume',exact:true}).scrollIntoViewIfNeeded();
+ await screenshot('02-stopped-original-selected');
+ response=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith(`${prefix}/resume`));
+ await page.getByRole('button',{name:'Resume',exact:true}).click();r=await response;
+ result.continue={status:r.status(),receipt:await r.json(),command:r.request().postDataJSON()};
+ if(!r.ok())throw new Error('Continue admission failed');
+ if(result.continue.command.work_id!==result.original_work.work_id||result.continue.command.expected_revision!==result.barrier.work[0].state_revision)throw new Error('Wrong original Continue identity/revision');
+ result.completed=await wait(async()=>{const s=await status();return s.work[0]?.state==='completed'&&s;});
+ result.helper_final=await fs.readFile(`${root}/project/.proscenium/tool-output/normal-helper.jsonl`,'utf8');
+ await screenshot('03-original-completed');
+ await fs.writeFile(`${root}/ui-result.json`,JSON.stringify(result,null,2));
+ console.log(JSON.stringify({work_id:result.original_work.work_id,state:result.completed.work[0].state,viewport:result.viewport}));
+}catch(error){result.error=String(error);await fs.writeFile(`${root}/ui-failed.json`,JSON.stringify(result,null,2));await screenshot('FAILED');throw error;}
+finally{await browser.close();}

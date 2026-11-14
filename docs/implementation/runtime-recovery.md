@@ -11,6 +11,7 @@ Consumes parent recovery-Stop admission fix `ff8a32d` without changing contract 
   the exact recorded process plus connected SDK transport/pipe are still live.
   Missing/unattributed progress, closed transport, dead process and a second
   timeout still fail closed. No durable application attribution was removed.
+  Previously reduced duplicate events cannot count as new verified progress.
 - Private `copilot.runtime_errors` records retain boundary, original exception
   type/module and elapsed time. Exception text, raw prompts and authentication
   are not recorded. Unexpected Python exceptions retain uncertainty rather than
@@ -42,8 +43,28 @@ Actual metadata inspection exposed the SDK's non-persisted input notification.
 One additional regression covers that precise case. The corrected recovery plus
 delivery/fault selection passed **43 tests**, with mypy clean. The first M03
 metadata pass remained conservative and its evidence was preserved before correction.
+The final exact-duplicate heartbeat case passes within the **17-case focused
+health/coordination set**. Production mypy and Ruff remain clean.
 
 Actual follow-up observations and cumulative M03 assessment will be committed
 separately. M13 candidate `209448a9d10287b777b005cd8e03e888d5e15cc8` supplies
 the successful same-work compiled-UI Continue dependency, subject to parent
 acceptance. Genuine unknown Bash outcomes remain M12 limits, not product completion.
+
+## Actual metadata handover
+
+The separate [evidence report](../evidence/runtime-recovery/README.md) retains
+verified private before-copy hashes and all initial conservative outcomes.
+M11's parent task now has a system interruption record sourced from its exact
+child start/terminal events and proven-departed native process. The lost M03
+input wait is cancelled using its surviving immutable decision binding, with no
+owner answer or SDK reply ACK. Both have zero remaining live coordinators.
+M03's unfinished Bash still has one live/unresolved invocation and no fabricated
+terminal result. No historical model sends occurred, and all old work states and
+source/catalogue/job records remain unchanged.
+
+M13's inspected real same-work Continue supplies the positive M03 capability
+dependency under the parent's steering. The already-started fresh helper probe
+stopped after one SDK send because native Bash completion was missing. Its real
+failure, pause/Abort/idle observations and cleanup are retained, not relabelled.
+No additional fresh proof or historical continuation was launched.
