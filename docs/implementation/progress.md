@@ -73,12 +73,12 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `cef82ee` | Empty-WAL source reads now preserve zero-byte sidecars. Nonempty committed-WAL recovery remains unchanged and tested. |
 | `6c7cec5` | Exact small M13 delivery/frame/source bytes retained for portable evidence tests. No new rendering or model execution. |
 | `d5a15ad`, `milestone/m10` | Actual native generated-mesh revision, independent measurement, pinned proxy/still and exact publication replay accepted. Source checkpoint `b98630210011142af66c92c46d4c86b72a7cdcc3`. |
+| `milestone/m07` | Actual reference-conditioned generation, targeted revision, provider recovery, native shared reservation limits and corrected seven-view image/job/shot readback accepted. The colour instruction remains unachieved. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| M07 final readback | `/home/quintin/.cache/proscenium-development/fleet/m07-review-final`, `impl/m07-review-final` | `6c7cec5` | Correct retained-image job/shot context in the actual app, with native/provider execution disabled. | `ses_e24a65242ffe1NBgQTlIPeFUw1` |
 | M11 cold Stop recovery | `/home/quintin/.cache/proscenium-development/fleet/cold-stop-recovery`, `impl/cold-stop-recovery` | `02a3a8d` | Verify the pinned native inactive-main-loop RPC plus empty paused queue/background/callback conditions for the exact departed read wait. Zero model sends. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
@@ -107,7 +107,7 @@ and an identical second retention invocation reused all 16 files (2,879,627 byte
 
 ## Current acceptance blockers
 
-- W07's original Klein reservation and failed F32 admission remain preserved. The FP16 journey succeeded with two actual executions and original-provider response-loss recovery. Native parent/child reserved-budget enforcement also passed. M07's remaining actual-app readback is assigned after fixing its stale job label. The requested colour correction remains an explicit model-quality failure.
+- M07 is accepted. The coordinator's corrected actual readback verified all seven image/job/shot views with zero further inference. Original Klein/F32 records, the scripted setup orphan, sidecar and harness failures remain preserved. The requested colour correction remains an explicit model-quality failure.
 - E04 `e04-live-a` created no project, job, reservation or native process. The distinct `e04-live-b` passed hardware execution under the unchanged guards. M10 static inspection passed; its normal revision/publication is now allocated to the original work.
 - M02 is accepted. Its clean A→B run and real closed-gate cancellation supplement the preserved historical-source proof.
 - M03 proved active-child Stop, economical native delegation, queued context and durable owner input. The cinematic journey additionally proved actual same-work Continue through the corrected UI. Older genuinely interrupted invocations remain a recovery diagnosis; no terminal return is invented.
@@ -186,7 +186,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M04 Inspection and markup | Completed on 2026-11-14 | `milestone/m04` | [Native framing and composed review acceptance](m04.md) |
 | M05 Asset research and reuse | Completed on 2026-11-14 | `milestone/m05` | [Actual discovery, import, revision and explicit adoption](m05.md) |
 | M06 Storyboards | Completed on 2026-11-14 | `milestone/m06` | [Model-authored planning and corrected direct review](m06.md) |
-| M07 Concept generation | Generation/recovery/native budget passed; final actual UI job-context readback pending | — | [Actual generation and limitations](m07.md) |
+| M07 Concept generation | Completed on 2026-11-14 | `milestone/m07` | [Generation, correction, identity and recovery acceptance](m07.md) |
 | M08 Progressive animation | Completed on 2026-11-14 | `milestone/m08` | [Pre-completion review, pinned inputs and final lineage](m08.md) |
 | M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
 | M10 Image-to-3D | Completed on 2026-11-14 | `milestone/m10` | [Actual mesh, native revision and publication](m10.md) |

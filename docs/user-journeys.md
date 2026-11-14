@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M06 and M08–M10 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M10 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -33,7 +33,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M04](#m04-spatial-inspection-keyframes-and-markup) | Toggle inspection/keyframes, annotate and render a chosen viewing angle | M02, M03 | Accepted, `milestone/m04` |
 | [M05](#m05-research-find-import-and-reuse-assets) | Research and reuse local/online assets | M02, M03, M04 | Accepted, `milestone/m05` |
 | [M06](#m06-brief-to-reviewable-storyboard) | Develop a complete narrative and shotboard | M02, M03, M05 | Accepted, `milestone/m06` |
-| [M07](#m07-generate-and-revise-concept-images) | Generate/revise selected storyboard and reference images through ComfyUI | M04, M06 | Planned |
+| [M07](#m07-generate-and-revise-concept-images) | Generate/revise selected storyboard and reference images through ComfyUI | M04, M06 | Accepted, `milestone/m07` |
 | [M08](#m08-author-and-review-animation-progressively) | Review animation and annotate available frames before rendering finishes | M04, M06. M07 when generated concepts are used | Accepted, `milestone/m08` |
 | [M09](#m09-request-and-approve-vlm-critique) | Request local critique and send approved findings with images to Copilot | M03, M04. M08 for motion-review inputs | Accepted, `milestone/m09` |
 | [M10](#m10-image-to-3d-asset-generation) | Generate and publish a usable Blender mesh from an image | Early feasibility proof, M04, M05. M07 for generated inputs | Accepted, `milestone/m10` |
@@ -309,6 +309,11 @@ and the corrected shared-reference annotation journey.
 **Reuse:** `storyboard-generation`, `production-research` and the real seven-scene storyboard-review lessons. Adapt their contracts to canonical Git-backed source files rather than numbered plan folders.
 
 ## M07: Generate and revise concept images
+
+**Accepted:** 14 November 2026. [Cumulative evidence](implementation/m07.md)
+records actual reference-conditioned images, explicit selection/correction, exact
+image/job/shot context, provider recovery and shared native admission limits.
+The tested model's failed colour instruction remains an explicit quality observation.
 
 **User journey:** “I generate the selected storyboard or asset concept, compare it with its references and request a targeted correction.”
 

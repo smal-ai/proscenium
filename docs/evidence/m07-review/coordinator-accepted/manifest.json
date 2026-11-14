@@ -1,0 +1,54 @@
+{
+  "run.json": {
+    "bytes": 9573,
+    "sha256": "5ffc9b07f29db201afe53cdb278a589d889ce6332175f61796a6ca6edc94eccc"
+  },
+  "browser-result.json": {
+    "bytes": 39894,
+    "sha256": "d828305222a3241df7dd1304266909763923a2959f0fb2b1477920bac8b12108"
+  },
+  "server-audit.json": {
+    "bytes": 26348,
+    "sha256": "aaa1f811deca911db277dda6dfb7eebcf2a551b7561e0a0e47480860c0176597"
+  },
+  "preparation.json": {
+    "bytes": 1177,
+    "sha256": "c90e4c81acdd850f77144e898cce01fdbc3b626ab5674be3e2245d91fed7b219"
+  },
+  "import-report.json": {
+    "bytes": 818,
+    "sha256": "0b7f037b8d9147a37a1318fe3161037cf72d708ac6ec14379ef77e8b33a7e6ba"
+  },
+  "protected-before.json": {
+    "bytes": 1638,
+    "sha256": "f7b69702f107221608399265d22f673d2b03dce40cebf7b24c1dd067f06d7c52"
+  },
+  "01-saved-storyboard-correction.png": {
+    "bytes": 293735,
+    "sha256": "e62316eb20bf6a3b0e98efd01a9f589cb9d43e683875068f02669a9a0294fd9c"
+  },
+  "02-dropdown-initial.png": {
+    "bytes": 294603,
+    "sha256": "1b7019fe2b558d2120ec73bc6b0bf0dad52c784baf8889fe886a2905a496945e"
+  },
+  "03-storyboard-initial-to-correction.png": {
+    "bytes": 297980,
+    "sha256": "392b4a45138359db0b306ad0340ca2b38827e542a0b9849684fec5ab76a61448"
+  },
+  "04-dropdown-initial-again.png": {
+    "bytes": 299206,
+    "sha256": "7a33cef2ee80c2925a385f0465263edb371be2f75344dc606485e8e3a6ebb1b3"
+  },
+  "05-dropdown-correction.png": {
+    "bytes": 297980,
+    "sha256": "392b4a45138359db0b306ad0340ca2b38827e542a0b9849684fec5ab76a61448"
+  },
+  "06-unassociated-reference.png": {
+    "bytes": 198315,
+    "sha256": "462f4bec2521b83bd87ae654901586d51c84695c82df18b85f3842219d2698e4"
+  },
+  "07-reloaded-owner-correction.png": {
+    "bytes": 293741,
+    "sha256": "4f9a77648435728645b505cc657feef1616f3eff3585e534e980f63222617baa"
+  }
+}

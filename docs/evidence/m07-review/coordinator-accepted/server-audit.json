@@ -1,0 +1,923 @@
+{
+  "forbidden": [],
+  "requests": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/index-y9OoT4O1.js",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/index-VG5WV1Cp.css",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/owner/session",
+      "method": "POST",
+      "allowed": true,
+      "status": 201
+    },
+    {
+      "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/configuration",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/activate",
+      "method": "POST",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/snapshot",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/jobs",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/jobs",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/events",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/snapshot",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/jobs",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/shot-plan",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0/content",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference/content",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-0/content",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/configuration",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/snapshot",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/jobs",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/events",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/snapshot",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/jobs",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/shot-plan",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/shot-plan",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/items/m07-fp16-storyboard/versions",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-provenance",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/proxy-mapping",
+      "method": "GET",
+      "allowed": true,
+      "status": 422
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/annotations",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/versions/m07-fp16-plan-v1/shot-plan",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference/content",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-owner-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/jobs",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/requests",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/selections",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    }
+  ],
+  "sdk_sends": 0,
+  "provider_sends": 0,
+  "read_only_git": [
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "pid": 243078
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "rev-parse",
+        "--show-object-format"
+      ],
+      "pid": 243079
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "ls-tree",
+        "-z",
+        "1746e6bd1b080dc26cc9c889ead0f60596cea766",
+        "--",
+        "storyboards/m07-fp16-plan.json"
+      ],
+      "pid": 243086
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "cat-file",
+        "blob",
+        "a8ec21bbad40de74b60fbf62cb927a94d1c46f60"
+      ],
+      "pid": 243087
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "ls-tree",
+        "-z",
+        "1746e6bd1b080dc26cc9c889ead0f60596cea766",
+        "--",
+        "storyboards/m07-fp16-plan.json"
+      ],
+      "pid": 243154
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "cat-file",
+        "blob",
+        "a8ec21bbad40de74b60fbf62cb927a94d1c46f60"
+      ],
+      "pid": 243155
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "ls-tree",
+        "-z",
+        "1746e6bd1b080dc26cc9c889ead0f60596cea766",
+        "--",
+        "storyboards/m07-fp16-plan.json"
+      ],
+      "pid": 243156
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "cat-file",
+        "blob",
+        "a8ec21bbad40de74b60fbf62cb927a94d1c46f60"
+      ],
+      "pid": 243157
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "ls-tree",
+        "-z",
+        "1746e6bd1b080dc26cc9c889ead0f60596cea766",
+        "--",
+        "storyboards/m07-fp16-plan.json"
+      ],
+      "pid": 243176
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        "/home/quintin/.cache/proscenium-development/m07-review-coordinator-20261114-b/restored/project",
+        "cat-file",
+        "blob",
+        "a8ec21bbad40de74b60fbf62cb927a94d1c46f60"
+      ],
+      "pid": 243177
+    }
+  ],
+  "gate_closed": true,
+  "lifecycle_errors": {},
+  "services": [],
+  "execution_profiles": []
+}

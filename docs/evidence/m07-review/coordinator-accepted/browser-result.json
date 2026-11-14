@@ -1,0 +1,999 @@
+{
+  "source": "eb5ff0d6c126125a6c516175287c9a49617e5377",
+  "views": [
+    {
+      "name": "01-saved-storyboard-correction",
+      "job": "m07-fp16-correction",
+      "label": "shot-mug · image_generation · m07-fp16-correction",
+      "image": {
+        "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0/content",
+        "complete": true,
+        "width": 512,
+        "height": 512
+      },
+      "content": {
+        "bytes": 97386,
+        "sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df"
+      },
+      "context": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "context_snapshot_ready": {
+        "schema_version": "1.0",
+        "context_id": "readback-01-saved-storyboard-correction",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "captured_at": "2026-11-14T19:58:05.335Z",
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      }
+    },
+    {
+      "name": "02-dropdown-initial",
+      "job": "m07-fp16-initial",
+      "label": "shot-mug · image_generation · m07-fp16-initial",
+      "image": {
+        "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-0/content",
+        "complete": true,
+        "width": 512,
+        "height": 512
+      },
+      "content": {
+        "bytes": 84651,
+        "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d"
+      },
+      "context": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-initial-artifact-0",
+          "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-initial-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "context_snapshot_ready": {
+        "schema_version": "1.0",
+        "context_id": "readback-02-dropdown-initial",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "captured_at": "2026-11-14T19:58:05.432Z",
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-initial-artifact-0",
+          "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-initial-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      }
+    },
+    {
+      "name": "03-storyboard-initial-to-correction",
+      "job": "m07-fp16-correction",
+      "label": "shot-mug · image_generation · m07-fp16-correction",
+      "image": {
+        "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0/content",
+        "complete": true,
+        "width": 512,
+        "height": 512
+      },
+      "content": {
+        "bytes": 97386,
+        "sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df"
+      },
+      "context": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "context_snapshot_ready": {
+        "schema_version": "1.0",
+        "context_id": "readback-03-storyboard-initial-to-correction",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "captured_at": "2026-11-14T19:58:05.565Z",
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      }
+    },
+    {
+      "name": "04-dropdown-initial-again",
+      "job": "m07-fp16-initial",
+      "label": "shot-mug · image_generation · m07-fp16-initial",
+      "image": {
+        "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-initial-artifact-0/content",
+        "complete": true,
+        "width": 512,
+        "height": 512
+      },
+      "content": {
+        "bytes": 84651,
+        "sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d"
+      },
+      "context": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-initial-artifact-0",
+          "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-initial-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "context_snapshot_ready": {
+        "schema_version": "1.0",
+        "context_id": "readback-04-dropdown-initial-again",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "captured_at": "2026-11-14T19:58:05.641Z",
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-initial-artifact-0",
+          "displayed_sha256": "07673e7a7cea364e56b52bb4bc255722678e0cbf20b1b2c714e819c5ab84806d",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-initial-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      }
+    },
+    {
+      "name": "05-dropdown-correction",
+      "job": "m07-fp16-correction",
+      "label": "shot-mug · image_generation · m07-fp16-correction",
+      "image": {
+        "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0/content",
+        "complete": true,
+        "width": 512,
+        "height": 512
+      },
+      "content": {
+        "bytes": 97386,
+        "sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df"
+      },
+      "context": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "context_snapshot_ready": {
+        "schema_version": "1.0",
+        "context_id": "readback-05-dropdown-correction",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "captured_at": "2026-11-14T19:58:05.731Z",
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      }
+    },
+    {
+      "name": "06-unassociated-reference",
+      "job": "",
+      "label": "No associated job",
+      "image": {
+        "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-unrelated-reference/content",
+        "complete": true,
+        "width": 512,
+        "height": 512
+      },
+      "content": {
+        "bytes": 2126,
+        "sha256": "588bfaf07d944da5c0339d0dd92d226eaa21e951ae92426e8a3b7c8a2105c54c"
+      },
+      "context": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "reference",
+          "artifact_id": "m07-unrelated-reference",
+          "displayed_sha256": "588bfaf07d944da5c0339d0dd92d226eaa21e951ae92426e8a3b7c8a2105c54c",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-unrelated-reference",
+            "role": "reference",
+            "use": "shot-mug / frame-unrelated / end: Unrelated green reference, do not generate"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "context_snapshot_ready": {
+        "schema_version": "1.0",
+        "context_id": "readback-06-unassociated-reference",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "captured_at": "2026-11-14T19:58:05.847Z",
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "reference",
+          "artifact_id": "m07-unrelated-reference",
+          "displayed_sha256": "588bfaf07d944da5c0339d0dd92d226eaa21e951ae92426e8a3b7c8a2105c54c",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-unrelated-reference",
+            "role": "reference",
+            "use": "shot-mug / frame-unrelated / end: Unrelated green reference, do not generate"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      }
+    },
+    {
+      "name": "07-reloaded-owner-correction",
+      "job": "m07-fp16-correction",
+      "label": "shot-mug · image_generation · m07-fp16-correction",
+      "image": {
+        "src": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/artifacts/m07-fp16-correction-artifact-0/content",
+        "complete": true,
+        "width": 512,
+        "height": 512
+      },
+      "content": {
+        "bytes": 97386,
+        "sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df"
+      },
+      "context": {
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      },
+      "context_snapshot_ready": {
+        "schema_version": "1.0",
+        "context_id": "readback-07-reloaded-owner-correction",
+        "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+        "captured_at": "2026-11-14T19:58:06.300Z",
+        "item_id": "m07-fp16-storyboard",
+        "version_id": "m07-fp16-plan-v1",
+        "view_mode": "keyframes",
+        "target": {
+          "origin": "concept",
+          "artifact_id": "m07-fp16-correction-artifact-0",
+          "displayed_sha256": "5c84752669807be5857f90ff13b31d6f0766b4e2313bea7030a5be793214e8df",
+          "dimensions": {
+            "height": 512,
+            "width": 512
+          },
+          "item_id": "m07-fp16-storyboard",
+          "version_id": "m07-fp16-plan-v1",
+          "shot_id": "shot-mug",
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "camera": null,
+        "range": null,
+        "selected_objects": [],
+        "attachments": [
+          {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "role": "concept",
+            "use": "shot-mug / frame-mug / start: Mug concept target"
+          }
+        ],
+        "annotations": [],
+        "approved_findings": []
+      }
+    }
+  ],
+  "errors": [],
+  "mutations": [
+    {
+      "path": "/api/v1/owner/session",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/activate",
+      "method": "POST"
+    }
+  ],
+  "browser": {
+    "version": "159.0.8154.6",
+    "executable": "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+    "sha256": "045558b2f167db04624e36d952496705418a85d87ff9b5fb55a8c40cc59201ae"
+  },
+  "activation": {
+    "status": 200,
+    "body": {
+      "schema_version": "1.0",
+      "operation_id": "54ef41e3-4af1-4483-9295-b0e782d22acf",
+      "resource_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+      "state": "awaiting_resume",
+      "state_revision": 5,
+      "replayed": false
+    }
+  },
+  "before": {
+    "jobs": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "artifact_ids": [
+            "m07-fp16-correction-artifact-0",
+            "m07-fp16-correction-artifact-provenance"
+          ],
+          "attempt_id": "attempt-4255e36f-b8c4-4983-b37f-d12c67d2488e",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "9cbb1228-e32a-4c81-a587-06dbd66c20ab",
+          "input_digest": "861e3135e42e6eabb15c809eeb5f5a68f88ae3fd3fc714f99248e762ff3444f8",
+          "job_id": "m07-fp16-correction",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 3,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-ad69c51436d44f3a9e634fbb59db0764"
+        },
+        {
+          "artifact_ids": [
+            "m07-fp16-initial-artifact-0",
+            "m07-fp16-initial-artifact-provenance"
+          ],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 4,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        }
+      ],
+      "next_cursor": null
+    },
+    "requests": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": "4f1491b1-13d0-4943-815c-7cf4b364bd99",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+          },
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T18:18:13.966025+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-64f49649d9004a15a32ba790eb6b81e7",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": "0798cec6-86fe-4e0f-8d16-0f877d742d4b",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-ad69c51436d44f3a9e634fbb59db0764"
+          },
+          "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "4c88786b-685f-40f7-9a8f-eee3dfc7960d",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-correction\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-correction\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-correction\", \"prompt_artifact_id\": \"m07-prompt-correction\", \"input_artifact_ids\": [\"m07-fp16-initial-artifact-0\"], \"seed\": \"43\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        }
+      ],
+      "next_cursor": null
+    },
+    "selections": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+            "kind": "user"
+          },
+          "choice": {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "kind": "artifact"
+          },
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selection_id": "deb3502b-7283-44ea-899d-ccc28377e459",
+          "slot": {
+            "frame_id": "frame-mug",
+            "kind": "storyboard_frame",
+            "shot_id": "shot-mug",
+            "storyboard_version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "state": "selected",
+          "state_revision": 2
+        },
+        {
+          "actor": {
+            "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+            "kind": "user"
+          },
+          "choice": {
+            "artifact_id": "m07-unrelated-reference",
+            "kind": "artifact"
+          },
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selection_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+          "slot": {
+            "frame_id": "frame-unrelated",
+            "kind": "storyboard_frame",
+            "shot_id": "shot-mug",
+            "storyboard_version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "state": "selected",
+          "state_revision": 1
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  "after": {
+    "jobs": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "artifact_ids": [
+            "m07-fp16-correction-artifact-0",
+            "m07-fp16-correction-artifact-provenance"
+          ],
+          "attempt_id": "attempt-4255e36f-b8c4-4983-b37f-d12c67d2488e",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "9cbb1228-e32a-4c81-a587-06dbd66c20ab",
+          "input_digest": "861e3135e42e6eabb15c809eeb5f5a68f88ae3fd3fc714f99248e762ff3444f8",
+          "job_id": "m07-fp16-correction",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 3,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-ad69c51436d44f3a9e634fbb59db0764"
+        },
+        {
+          "artifact_ids": [
+            "m07-fp16-initial-artifact-0",
+            "m07-fp16-initial-artifact-provenance"
+          ],
+          "attempt_id": "attempt-ad6f9d52-fc3c-4b21-93bb-20ce25cb78e7",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": "79d8948d-8ed9-4975-ac2c-a628b957a27b",
+          "input_digest": "52f82d065512e98b2c7602dbd3e2ec11f7f0fa53e923fdaafd7e422d87fcb3a0",
+          "job_id": "m07-fp16-initial",
+          "kind": "image_generation",
+          "owner_epoch": "epoch-50a9a590-2b7f-4001-b0c8-2b33ec2daf02",
+          "owner_operation_id": null,
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "provider_id": "m07-fp16-comfy",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 4,
+          "target": {
+            "shot_id": "shot-mug",
+            "target_id": "storyboard-5372b6808ed2744c394b0d48fe415889d2348e83d27d82c3525b81fc7010460a",
+            "version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+        }
+      ],
+      "next_cursor": null
+    },
+    "requests": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "accepted_at": "2026-11-14T18:17:14.586817+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-278fabc477684504bd316016216ea8f3",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": "4f1491b1-13d0-4943-815c-7cf4b364bd99",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-4bda564d465348cc8bb49542669bfa78"
+          },
+          "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "7ca2e5f2-c45c-4557-a227-530e6a0ee3fc",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "43349d0a-832c-4c18-a0d1-f6e66054d010",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-initial\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-initial\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-initial\", \"prompt_artifact_id\": \"m07-prompt-initial\", \"input_artifact_ids\": [\"m07-owner-reference\"], \"seed\": \"42\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T18:18:13.966025+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-64f49649d9004a15a32ba790eb6b81e7",
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "receipt": {
+            "native_message_id": "0798cec6-86fe-4e0f-8d16-0f877d742d4b",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "replayed": false,
+            "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-ad69c51436d44f3a9e634fbb59db0764"
+          },
+          "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "4c88786b-685f-40f7-9a8f-eee3dfc7960d",
+            "profile_id": "authoring",
+            "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+            "request_id": "c4f6a756-1636-43a6-81d7-c20a20eed104",
+            "schema_version": "1.0",
+            "text": "M07 bounded actual generation. No children/delegation, VLM, mesh, Blender, Unity, rendering or source edits. Call submit_generation EXACTLY ONCE with the JSON below after replacing generation_task_id with the exact authoritative HOST extension-context generation_task_id. This is a new explicit owner Queue, not a retry or the old W07 fixture. Return only admitted job/status and stop. Never POST directly or retry inference if uncertain; the host reconciles. Do not select images. {\"schema_version\": \"1.0\", \"job_id\": \"m07-fp16-correction\", \"project_id\": \"project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8\", \"generation_task_id\": \"USE_AUTHORITATIVE_HOST_CONTEXT_GENERATION_TASK_ID\", \"target_id\": \"m07-mug-correction\", \"provider_id\": \"m07-fp16-comfy\", \"capability\": \"image\", \"workflow_artifact_id\": \"m07-graph-correction\", \"prompt_artifact_id\": \"m07-prompt-correction\", \"input_artifact_ids\": [\"m07-fp16-initial-artifact-0\"], \"seed\": \"43\", \"model_ids\": [\"sd_turbo-proscenium-fp16-1.safetensors\"], \"settings\": {\"target_slot\": {\"kind\": \"storyboard_frame\", \"storyboard_version\": {\"item_id\": \"m07-fp16-storyboard\", \"version_id\": \"m07-fp16-plan-v1\"}, \"shot_id\": \"shot-mug\", \"frame_id\": \"frame-mug\"}}}",
+            "type": "queue"
+          }
+        }
+      ],
+      "next_cursor": null
+    },
+    "selections": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+            "kind": "user"
+          },
+          "choice": {
+            "artifact_id": "m07-fp16-correction-artifact-0",
+            "kind": "artifact"
+          },
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selection_id": "deb3502b-7283-44ea-899d-ccc28377e459",
+          "slot": {
+            "frame_id": "frame-mug",
+            "kind": "storyboard_frame",
+            "shot_id": "shot-mug",
+            "storyboard_version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "state": "selected",
+          "state_revision": 2
+        },
+        {
+          "actor": {
+            "id": "owner-302286b0-e1ee-4f3c-8cfb-a0d8854e6e73",
+            "kind": "user"
+          },
+          "choice": {
+            "artifact_id": "m07-unrelated-reference",
+            "kind": "artifact"
+          },
+          "project_id": "project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8",
+          "schema_version": "1.0",
+          "selection_id": "ec058ab0-4a04-40f1-a5f0-71d15019d1f6",
+          "slot": {
+            "frame_id": "frame-unrelated",
+            "kind": "storyboard_frame",
+            "shot_id": "shot-mug",
+            "storyboard_version": {
+              "item_id": "m07-fp16-storyboard",
+              "version_id": "m07-fp16-plan-v1"
+            }
+          },
+          "state": "selected",
+          "state_revision": 1
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "pass": true
+}
