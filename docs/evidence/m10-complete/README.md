@@ -161,6 +161,13 @@ and page captures, without another render or browser run:
 The original private-path entries in `retention.json` retain those same hashes.
 `coordinator-checks.xml` records 55 passing affected evidence/image-to-3D checks.
 
+`original-model-script.py.txt` is the exact 8,496-byte pre-edit script, SHA-256
+`b65ddd7837abe49a00657f8eb5f6a75dd1c0da312ababff15f7ed2f63e3cdb37`.
+The retained-history oracle now checks this snapshot and the original byte prefix
+of the deliberately continued native event log. The previous full-file assertion
+incorrectly treated that append-only history and authorised working script as
+unchanging files. Its 1-failure/1,091-pass release run remains recorded separately.
+
 - `actual-run.json`: actual new request/context/work IDs, SDK acknowledgement and guards,
   actual authoring receipts/measurements, checkpoint/version/publication, production preview
   jobs and native exits, UI observations, source/history preservation and process cleanup.

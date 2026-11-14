@@ -94,8 +94,20 @@ def test_public_export_contains_no_private_assistant_reasoning():
 def test_retained_actual_sources_and_native_proxy_hashes():
     for row in load("retained-files.json")["files"]:
         path = Path(row["path"])
+        if path.name == "revise_asset.py":
+            # The later authorised v2 work revised this working script. Its exact
+            # pre-edit copy remains evidence of the original failed attempt.
+            path = EVIDENCE.parent / "m10-complete/original-model-script.py.txt"
         if not path.exists():
             # Public evidence can be transported without private runtime histories.
+            continue
+        if path.name == "events.jsonl":
+            # The same native session was deliberately continued. Its historical
+            # prefix is immutable, not the eventual length of its append-only log.
+            with path.open("rb") as stream:
+                prefix = stream.read(row["bytes"])
+            assert len(prefix) == row["bytes"]
+            assert hashlib.sha256(prefix).hexdigest() == row["sha256"]
             continue
         assert path.stat().st_size == row["bytes"]
         with path.open("rb") as stream:

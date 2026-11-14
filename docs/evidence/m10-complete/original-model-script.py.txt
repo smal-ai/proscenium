@@ -1,0 +1,233 @@
+import array
+import hashlib
+import json
+import math
+from pathlib import Path
+
+import bpy
+from mathutils import Matrix, Vector
+
+
+ROOT = Path(__file__).resolve().parents[2]
+ASSETS = ROOT / "assets/e04"
+OUTPUT = ASSETS / "asset-v2.blend"
+MEASUREMENTS = ASSETS / "revision-measurements.json"
+assert not OUTPUT.exists() and not MEASUREMENTS.exists(), "Revision already exists"
+originals = {
+    path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+    for path in ASSETS.iterdir()
+    if path.is_file() and path.name != Path(__file__).name
+}
+bpy.ops.wm.open_mainfile(filepath=str(ASSETS / "asset.blend"))
+scene = bpy.context.scene
+assert scene.name == "Scene"
+meshes = [obj for obj in bpy.data.objects if obj.type == "MESH"]
+assert len(meshes) == 1
+obj = meshes[0]
+assert obj.name == "E04_Mesh_001"
+assert obj.get("proscenium_object_id") == "e04-object-001"
+assert obj.get("proscenium_instance_id") == "e04-instance-001"
+assert not obj.modifiers and not obj.constraints and obj.parent is None
+mesh = obj.data
+
+
+def topology():
+    digest = hashlib.sha256()
+    for collection, attribute, size in (
+        (mesh.vertices, "co", 3),
+        (mesh.edges, "vertices", 2),
+        (mesh.loops, "vertex_index", 1),
+        (mesh.polygons, "loop_start", 1),
+        (mesh.polygons, "loop_total", 1),
+    ):
+        values = array.array("f" if attribute == "co" else "i", [0]) * (
+            len(collection) * size
+        )
+        collection.foreach_get(attribute, values)
+        digest.update(values.tobytes())
+    return digest.hexdigest()
+
+
+def counts():
+    mesh.calc_loop_triangles()
+    return {
+        "vertices": len(mesh.vertices),
+        "edges": len(mesh.edges),
+        "polygons": len(mesh.polygons),
+        "triangles": len(mesh.loop_triangles),
+    }
+
+
+def bounds():
+    minimum = [math.inf] * 3
+    maximum = [-math.inf] * 3
+    transform = obj.matrix_world.copy()
+    for vertex in mesh.vertices:
+        point = transform @ vertex.co
+        for axis in range(3):
+            minimum[axis] = min(minimum[axis], point[axis])
+            maximum[axis] = max(maximum[axis], point[axis])
+    return [minimum, maximum]
+
+
+before_counts = counts()
+assert before_counts["vertices"] == 350259
+assert before_counts["polygons"] == before_counts["triangles"] == 1304618
+before_topology = topology()
+before_bounds = bounds()
+height = before_bounds[1][2] - before_bounds[0][2]
+assert height > 0
+factor = 0.12 / height
+obj.matrix_world = Matrix.Scale(factor, 4) @ obj.matrix_world
+bpy.context.view_layer.update()
+scaled_bounds = bounds()
+obj.matrix_world = (
+    Matrix.Translation((0, 0, -scaled_bounds[0][2])) @ obj.matrix_world
+)
+bpy.context.view_layer.update()
+after_bounds = bounds()
+assert abs(after_bounds[0][2]) < 1e-8
+assert abs(after_bounds[1][2] - after_bounds[0][2] - 0.12) < 1e-8
+scene.unit_settings.system = "METRIC"
+scene.unit_settings.scale_length = 1.0
+
+material = bpy.data.materials.new("M10_Blue_Ceramic")
+material.use_nodes = True
+material.diffuse_color = (0.025, 0.16, 0.48, 1)
+shader = material.node_tree.nodes.get("Principled BSDF")
+shader.inputs["Base Color"].default_value = material.diffuse_color
+shader.inputs["Metallic"].default_value = 0
+shader.inputs["Roughness"].default_value = 0.23
+shader.inputs["Coat Weight"].default_value = 0.3
+shader.inputs["Coat Roughness"].default_value = 0.16
+mesh.materials.clear()
+mesh.materials.append(material)
+for polygon in mesh.polygons:
+    polygon.material_index = 0
+
+for existing in list(scene.objects):
+    if existing.type in {"CAMERA", "LIGHT"}:
+        bpy.data.objects.remove(existing, do_unlink=True)
+
+center = (Vector(after_bounds[0]) + Vector(after_bounds[1])) / 2
+extent = Vector(after_bounds[1]) - Vector(after_bounds[0])
+span = max(extent)
+camera_data = bpy.data.cameras.new("M10_Presentation_Camera")
+camera = bpy.data.objects.new("M10_Presentation_Camera", camera_data)
+scene.collection.objects.link(camera)
+camera.location = center + Vector((1.1, -1.8, 0.8)).normalized() * span * 3
+camera.rotation_euler = (center - camera.location).to_track_quat("-Z", "Y").to_euler()
+camera_data.type = "ORTHO"
+camera_data.clip_start = 0.001
+camera_data.clip_end = 100
+rotation = camera.rotation_euler.to_quaternion().inverted()
+corners = [
+    rotation @ (Vector((x, y, z)) - center)
+    for x in (after_bounds[0][0], after_bounds[1][0])
+    for y in (after_bounds[0][1], after_bounds[1][1])
+    for z in (after_bounds[0][2], after_bounds[1][2])
+]
+projected_width = max(p.x for p in corners) - min(p.x for p in corners)
+projected_height = max(p.y for p in corners) - min(p.y for p in corners)
+# Blender's orthographic scale is the horizontal span for this landscape frame.
+camera_data.ortho_scale = max(projected_width, projected_height * 640 / 360) * 1.2
+scene.camera = camera
+
+for name, offset, energy, size in (
+    ("M10_Key", (-1.5, -2.0, 2.5), 14, 1.8),
+    ("M10_Fill", (2.0, -0.5, 1.0), 6, 2.0),
+    ("M10_Rim", (0.2, 1.8, 2.0), 10, 1.3),
+):
+    data = bpy.data.lights.new(name, "AREA")
+    data.energy = energy
+    data.shape = "DISK"
+    data.size = span * size
+    light = bpy.data.objects.new(name, data)
+    scene.collection.objects.link(light)
+    light.location = center + Vector(offset) * span
+    light.rotation_euler = (center - light.location).to_track_quat("-Z", "Y").to_euler()
+
+world = bpy.data.worlds.new("M10_Local_Studio")
+world.use_nodes = True
+world.node_tree.nodes["Background"].inputs["Color"].default_value = (
+    0.12, 0.15, 0.2, 1
+)
+world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.4
+scene.world = world
+scene.render.engine = "CYCLES"
+scene.cycles.device = "CPU"
+scene.cycles.samples = 8
+scene.render.threads_mode = "FIXED"
+scene.render.threads = 4
+scene.render.resolution_x = 640
+scene.render.resolution_y = 360
+scene.render.resolution_percentage = 100
+scene.render.fps = 24
+scene.render.fps_base = 1
+scene.frame_start = scene.frame_end = 1
+scene.frame_set(1)
+scene.view_settings.view_transform = "Standard"
+scene.view_settings.look = "None"
+scene.view_settings.exposure = 0
+scene.view_settings.gamma = 1
+scene.render.film_transparent = False
+bpy.context.view_layer.update()
+
+from bpy_extras.object_utils import world_to_camera_view
+
+framing = [
+    world_to_camera_view(scene, camera, Vector((x, y, z)))
+    for x in (after_bounds[0][0], after_bounds[1][0])
+    for y in (after_bounds[0][1], after_bounds[1][1])
+    for z in (after_bounds[0][2], after_bounds[1][2])
+]
+assert all(0.01 < p.x < 0.99 and 0.01 < p.y < 0.99 and p.z > 0 for p in framing)
+after_counts = counts()
+assert after_counts == before_counts
+assert topology() == before_topology, "Mesh coordinates or connectivity changed"
+assert len([o for o in bpy.data.objects if o.type == "MESH"]) == 1
+assert all(node.type != "TEX_IMAGE" for node in material.node_tree.nodes)
+for name, digest in originals.items():
+    assert hashlib.sha256((ASSETS / name).read_bytes()).hexdigest() == digest
+
+bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), check_existing=True)
+report = {
+    "schema_version": "1.0",
+    "source": "assets/e04/asset.blend",
+    "output": "assets/e04/asset-v2.blend",
+    "blender_version": bpy.app.version_string,
+    "blender_build_hash": bpy.app.build_hash.decode("ascii"),
+    "object_name": obj.name,
+    "proscenium_object_id": obj["proscenium_object_id"],
+    "proscenium_instance_id": obj["proscenium_instance_id"],
+    "before": {"world_bounds_m": before_bounds, "counts": before_counts},
+    "after": {
+        "world_bounds_m": after_bounds,
+        "counts": after_counts,
+        "height_m": after_bounds[1][2] - after_bounds[0][2],
+        "lowest_world_z_m": after_bounds[0][2],
+        "matrix_world": [list(row) for row in obj.matrix_world],
+    },
+    "uniform_scale_factor": factor,
+    "mesh_coordinates_and_connectivity_sha256": before_topology,
+    "mesh_coordinates_and_connectivity_unchanged": True,
+    "original_file_sha256": originals,
+    "output_sha256": hashlib.sha256(OUTPUT.read_bytes()).hexdigest(),
+    "camera": camera.name,
+    "camera_bounds_ndc": [[p.x, p.y, p.z] for p in framing],
+    "material": material.name,
+    "limits": {
+        "topology_quality": "unproven",
+        "uvs": "unproven",
+        "retopology": "unproven",
+        "rigging": "unproven",
+    },
+    "execution": {
+        "cpu_threads": 4,
+        "timeout_seconds": 180,
+        "direct_render_performed": False,
+        "inference_operations": 0,
+    },
+}
+MEASUREMENTS.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+print(json.dumps(report, sort_keys=True))
