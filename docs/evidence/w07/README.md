@@ -1,5 +1,11 @@
 # W07 evidence: local providers
 
+The original evidence below is historical. The bounded integration follow-up against
+`029e56aabe8b79c830cc2abaad1c5acdd36e1b48` is recorded separately in
+[integration and live generation evidence](integration-20261114.md). It adds accepted W02
+promotion, lazy frozen-allowance target identity resolution and a separately allocated
+Comfy proof. No VLM load/call was allocated for that follow-up.
+
 **Date:** 14 November 2026, SAST. **Application base:**
 `76d845133c44c8759f50299160322b717e60d00a`. **Accepted review dependency:**
 `9945df9059ed0f659b7acfdde16ce0574731cdad`.

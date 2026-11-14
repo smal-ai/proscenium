@@ -24,3 +24,13 @@ Do not run a fresh inference to recover a missing acknowledgement.
   schema match is not proof of GPU execution, model fit or visual quality.
 - Reference provenance and changes are documented in [NOTICE](NOTICE). The retained
   upstream licence is [Apache-2.0](LICENSE). No reference project is a runtime dependency.
+
+## Development-only bounded proof
+
+`uv run python tools/comfy/prove_generation.py --execute` uses the real F00/W02/W05
+composition and provider ledger/bridge in the specifically authorised home scratch.
+It is not a general submit CLI. Stable IDs permit only the initial job and one explicitly
+requested correction after an actual known initial error. Queue, service memory and host
+MemAvailable checks can block without inference. The original 600-second deadline and
+evidence survive accidental reruns. This allocation expired without inference because host
+memory was insufficient. See the [measured result](../../docs/evidence/w07/integration-20261114.md).
