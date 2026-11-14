@@ -1,0 +1,588 @@
+{
+  "window": "w07-continuation-b",
+  "finished_epoch": 1794669296.493508,
+  "before": {
+    "job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-70a06bf9-1fbb-4188-8162-bddc030e7cd4",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "ab6c1b4bf2ab8d097f0b8550c08a3a60faebb20d78a909e47a88a19fdef04a8e",
+      "job_id": "w07-live-initial",
+      "kind": "image_generation",
+      "owner_epoch": "epoch-fb3d33c0-48a7-441b-9b15-ed735c226cd3",
+      "owner_operation_id": null,
+      "project_id": "w07-live-proof",
+      "provider_id": "live-comfy",
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "w07-live-task",
+        "version": null
+      },
+      "work_id": "w07-live-work"
+    },
+    "execution": {},
+    "inputs": {
+      "graph": {
+        "clip": {
+          "class_type": "CLIPLoader",
+          "inputs": {
+            "clip_name": "qwen_3_4b.safetensors",
+            "device": "default",
+            "type": "flux2"
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "sample",
+              0
+            ],
+            "vae": [
+              "vae",
+              0
+            ]
+          }
+        },
+        "guider": {
+          "class_type": "CFGGuider",
+          "inputs": {
+            "cfg": 1,
+            "model": [
+              "model",
+              0
+            ],
+            "negative": [
+              "reference_negative",
+              0
+            ],
+            "positive": [
+              "reference_positive",
+              0
+            ]
+          }
+        },
+        "latent": {
+          "class_type": "EmptyFlux2LatentImage",
+          "inputs": {
+            "batch_size": 1,
+            "height": 64,
+            "width": 64
+          }
+        },
+        "model": {
+          "class_type": "UNETLoader",
+          "inputs": {
+            "unet_name": "flux-2-klein-4b.safetensors",
+            "weight_dtype": "default"
+          }
+        },
+        "noise": {
+          "class_type": "RandomNoise",
+          "inputs": {
+            "noise_seed": 42
+          }
+        },
+        "reference": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "artifact:w07-live-reference"
+          }
+        },
+        "reference_encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": [
+              "reference",
+              0
+            ],
+            "vae": [
+              "vae",
+              0
+            ]
+          }
+        },
+        "reference_negative": {
+          "class_type": "ReferenceLatent",
+          "inputs": {
+            "conditioning": [
+              "zero",
+              0
+            ],
+            "latent": [
+              "reference_encode",
+              0
+            ]
+          }
+        },
+        "reference_positive": {
+          "class_type": "ReferenceLatent",
+          "inputs": {
+            "conditioning": [
+              "text",
+              0
+            ],
+            "latent": [
+              "reference_encode",
+              0
+            ]
+          }
+        },
+        "sample": {
+          "class_type": "SamplerCustomAdvanced",
+          "inputs": {
+            "guider": [
+              "guider",
+              0
+            ],
+            "latent_image": [
+              "latent",
+              0
+            ],
+            "noise": [
+              "noise",
+              0
+            ],
+            "sampler": [
+              "sampler",
+              0
+            ],
+            "sigmas": [
+              "sigmas",
+              0
+            ]
+          }
+        },
+        "sampler": {
+          "class_type": "KSamplerSelect",
+          "inputs": {
+            "sampler_name": "euler"
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "filename_prefix": "proscenium/generated",
+            "images": [
+              "decode",
+              0
+            ]
+          }
+        },
+        "sigmas": {
+          "class_type": "Flux2Scheduler",
+          "inputs": {
+            "height": 64,
+            "steps": 4,
+            "width": 64
+          }
+        },
+        "text": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "clip",
+              0
+            ],
+            "text": "A red rectangular block on the left and a blue rectangular block on the right, white background. Use the supplied reference composition."
+          }
+        },
+        "vae": {
+          "class_type": "VAELoader",
+          "inputs": {
+            "vae_name": "flux2-vae.safetensors"
+          }
+        },
+        "zero": {
+          "class_type": "ConditioningZeroOut",
+          "inputs": {
+            "conditioning": [
+              "text",
+              0
+            ]
+          }
+        }
+      },
+      "minimum_free_vram_bytes": 18279784964,
+      "prompt": "A red rectangular block on the left and a blue rectangular block on the right, white background. Use the supplied reference composition.",
+      "prompt_sha256": "220e2fe7fb87f3d975acd546b88f7595054c600b44e25f683a2b247424413e16",
+      "provider": {
+        "available": null,
+        "capabilities": [
+          "image"
+        ],
+        "endpoint": "http://127.0.0.1:8188",
+        "model_id": null,
+        "provider_id": "live-comfy"
+      },
+      "references": {
+        "w07-live-reference": {
+          "derived_sha256": "8bb0701d5c265584da05366f7e9f57779d5293138c70d111cf40797a29e90656",
+          "sha256": "8bb0701d5c265584da05366f7e9f57779d5293138c70d111cf40797a29e90656"
+        }
+      },
+      "request": {
+        "capability": "image",
+        "generation_task_id": "w07-live-task",
+        "input_artifact_ids": [
+          "w07-live-reference"
+        ],
+        "job_id": "w07-live-initial",
+        "model_ids": [
+          "flux-2-klein-4b.safetensors",
+          "qwen_3_4b.safetensors",
+          "flux2-vae.safetensors"
+        ],
+        "project_id": "w07-live-proof",
+        "prompt_artifact_id": "w07-live-prompt",
+        "provider_id": "live-comfy",
+        "schema_version": "1.0",
+        "seed": "42",
+        "settings": {},
+        "target_id": "w07-live-task",
+        "workflow_artifact_id": "w07-live-graph"
+      },
+      "target_resolution": {
+        "context": null,
+        "item": null,
+        "slot": null,
+        "target": {
+          "shot_id": null,
+          "target_id": "w07-live-task",
+          "version": null
+        },
+        "version_record": null,
+        "work_id": "w07-live-work"
+      },
+      "workflow_sha256": "3dc418248f5527a14bf8fe70f31e234285522131845367869bce3d23e24a8add"
+    },
+    "reservations": [
+      {
+        "id": "w07-live-initial",
+        "task_id": "w07-live-task",
+        "target_id": "w07-live-task",
+        "state": "reserved"
+      }
+    ],
+    "outbox": [
+      {
+        "id": "attempt-70a06bf9-1fbb-4188-8162-bddc030e7cd4",
+        "kind": "providers.generation",
+        "state": "pending"
+      }
+    ]
+  },
+  "after": {
+    "job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-70a06bf9-1fbb-4188-8162-bddc030e7cd4",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": null,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "ab6c1b4bf2ab8d097f0b8550c08a3a60faebb20d78a909e47a88a19fdef04a8e",
+      "job_id": "w07-live-initial",
+      "kind": "image_generation",
+      "owner_epoch": "epoch-fb3d33c0-48a7-441b-9b15-ed735c226cd3",
+      "owner_operation_id": null,
+      "project_id": "w07-live-proof",
+      "provider_id": "live-comfy",
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "planned",
+      "state_revision": 0,
+      "target": {
+        "shot_id": null,
+        "target_id": "w07-live-task",
+        "version": null
+      },
+      "work_id": "w07-live-work"
+    },
+    "execution": {},
+    "inputs": {
+      "graph": {
+        "clip": {
+          "class_type": "CLIPLoader",
+          "inputs": {
+            "clip_name": "qwen_3_4b.safetensors",
+            "device": "default",
+            "type": "flux2"
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "sample",
+              0
+            ],
+            "vae": [
+              "vae",
+              0
+            ]
+          }
+        },
+        "guider": {
+          "class_type": "CFGGuider",
+          "inputs": {
+            "cfg": 1,
+            "model": [
+              "model",
+              0
+            ],
+            "negative": [
+              "reference_negative",
+              0
+            ],
+            "positive": [
+              "reference_positive",
+              0
+            ]
+          }
+        },
+        "latent": {
+          "class_type": "EmptyFlux2LatentImage",
+          "inputs": {
+            "batch_size": 1,
+            "height": 64,
+            "width": 64
+          }
+        },
+        "model": {
+          "class_type": "UNETLoader",
+          "inputs": {
+            "unet_name": "flux-2-klein-4b.safetensors",
+            "weight_dtype": "default"
+          }
+        },
+        "noise": {
+          "class_type": "RandomNoise",
+          "inputs": {
+            "noise_seed": 42
+          }
+        },
+        "reference": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "artifact:w07-live-reference"
+          }
+        },
+        "reference_encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": [
+              "reference",
+              0
+            ],
+            "vae": [
+              "vae",
+              0
+            ]
+          }
+        },
+        "reference_negative": {
+          "class_type": "ReferenceLatent",
+          "inputs": {
+            "conditioning": [
+              "zero",
+              0
+            ],
+            "latent": [
+              "reference_encode",
+              0
+            ]
+          }
+        },
+        "reference_positive": {
+          "class_type": "ReferenceLatent",
+          "inputs": {
+            "conditioning": [
+              "text",
+              0
+            ],
+            "latent": [
+              "reference_encode",
+              0
+            ]
+          }
+        },
+        "sample": {
+          "class_type": "SamplerCustomAdvanced",
+          "inputs": {
+            "guider": [
+              "guider",
+              0
+            ],
+            "latent_image": [
+              "latent",
+              0
+            ],
+            "noise": [
+              "noise",
+              0
+            ],
+            "sampler": [
+              "sampler",
+              0
+            ],
+            "sigmas": [
+              "sigmas",
+              0
+            ]
+          }
+        },
+        "sampler": {
+          "class_type": "KSamplerSelect",
+          "inputs": {
+            "sampler_name": "euler"
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "filename_prefix": "proscenium/generated",
+            "images": [
+              "decode",
+              0
+            ]
+          }
+        },
+        "sigmas": {
+          "class_type": "Flux2Scheduler",
+          "inputs": {
+            "height": 64,
+            "steps": 4,
+            "width": 64
+          }
+        },
+        "text": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "clip",
+              0
+            ],
+            "text": "A red rectangular block on the left and a blue rectangular block on the right, white background. Use the supplied reference composition."
+          }
+        },
+        "vae": {
+          "class_type": "VAELoader",
+          "inputs": {
+            "vae_name": "flux2-vae.safetensors"
+          }
+        },
+        "zero": {
+          "class_type": "ConditioningZeroOut",
+          "inputs": {
+            "conditioning": [
+              "text",
+              0
+            ]
+          }
+        }
+      },
+      "minimum_free_vram_bytes": 18279784964,
+      "prompt": "A red rectangular block on the left and a blue rectangular block on the right, white background. Use the supplied reference composition.",
+      "prompt_sha256": "220e2fe7fb87f3d975acd546b88f7595054c600b44e25f683a2b247424413e16",
+      "provider": {
+        "available": null,
+        "capabilities": [
+          "image"
+        ],
+        "endpoint": "http://127.0.0.1:8188",
+        "model_id": null,
+        "provider_id": "live-comfy"
+      },
+      "references": {
+        "w07-live-reference": {
+          "derived_sha256": "8bb0701d5c265584da05366f7e9f57779d5293138c70d111cf40797a29e90656",
+          "sha256": "8bb0701d5c265584da05366f7e9f57779d5293138c70d111cf40797a29e90656"
+        }
+      },
+      "request": {
+        "capability": "image",
+        "generation_task_id": "w07-live-task",
+        "input_artifact_ids": [
+          "w07-live-reference"
+        ],
+        "job_id": "w07-live-initial",
+        "model_ids": [
+          "flux-2-klein-4b.safetensors",
+          "qwen_3_4b.safetensors",
+          "flux2-vae.safetensors"
+        ],
+        "project_id": "w07-live-proof",
+        "prompt_artifact_id": "w07-live-prompt",
+        "provider_id": "live-comfy",
+        "schema_version": "1.0",
+        "seed": "42",
+        "settings": {},
+        "target_id": "w07-live-task",
+        "workflow_artifact_id": "w07-live-graph"
+      },
+      "target_resolution": {
+        "context": null,
+        "item": null,
+        "slot": null,
+        "target": {
+          "shot_id": null,
+          "target_id": "w07-live-task",
+          "version": null
+        },
+        "version_record": null,
+        "work_id": "w07-live-work"
+      },
+      "workflow_sha256": "3dc418248f5527a14bf8fe70f31e234285522131845367869bce3d23e24a8add"
+    },
+    "reservations": [
+      {
+        "id": "w07-live-initial",
+        "task_id": "w07-live-task",
+        "target_id": "w07-live-task",
+        "state": "reserved"
+      }
+    ],
+    "outbox": [
+      {
+        "id": "attempt-70a06bf9-1fbb-4188-8162-bddc030e7cd4",
+        "kind": "providers.generation",
+        "state": "pending"
+      }
+    ]
+  },
+  "history_before": null,
+  "history_after": null,
+  "original_hashes_before": {
+    "w07-live-initial-report.json": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+    "w07-live-initial-timing.json": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe"
+  },
+  "original_hashes_after": {
+    "w07-live-initial-report.json": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+    "w07-live-initial-timing.json": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe"
+  },
+  "artifacts": [],
+  "provider_source_sha256": {
+    "router.py": "5726723809fc2d2fcf25c0d2032d7085fa9795e5fcdd5efce10a35d5aa2bac0f",
+    "mesh.py": "0fe9fe2fd6e037b5707d92d067fae1ce01c36ec1dbffb12d11049727df7523c9",
+    "targets.py": "65f6afefd08874f4e42554bd4c3435a2fcf92f513bd9b0ca5c5b8816a524d87c",
+    "vlm.py": "7ba47a721eb3e386bfd5b6f76ab834a0002b24ac40f69a8a86c911f9cf7be76e",
+    "hunyuan.py": "bc6f7f354bd84c05ef6306f7560ee06664d2b1fe892d5994332fc272fb6e2e8d",
+    "__init__.py": "c442c9e6ddab6bbdc6cbf3e61b9fadb0513d00a12ef08c1f29eee4abce314384",
+    "plugins.py": "0eac7a3ec29ee478e764d9568603a7b37ded1f636f52b13b0d6261c7c40e361c",
+    "comfy.py": "20dc19a6c1f25863f707e589ad4b5f8b54c8ff551158ef5be1c7d0492711c5dd",
+    "bridge.py": "9c53413be5d8fc00beb898a65099b1fa32a331412e472ef474449b90679e8b33",
+    "klein.py": "04a3a9968f68d4e3109695f60d50ee23bae0416f8579c955b910fd37e72963e5",
+    "service.py": "ef0fe0da07b7cba3ee3a799db070690eacd2e72dadd83e4f6f420dcd0058bde5"
+  },
+  "status": "blocked_or_failed",
+  "note": "No native M07 journey has been executed by this original-job continuation."
+}

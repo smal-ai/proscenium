@@ -1,0 +1,96 @@
+{
+  "status": "BLOCKED_BEFORE_INFERENCE_M07_NOT_COMPLETE",
+  "window": "w07-continuation-b",
+  "code_commit": "3f2663584b3f39095569f75db787a30aebe21e1e",
+  "original_background_shell": "sh_1da9711db0017BhqnTL3H2kd6w",
+  "receipt_directory": "/home/quintin/.cache/proscenium-development/providers-w07-20261114/continuations/w07-continuation-b",
+  "started_epoch": 1794668696.4815857,
+  "finished_epoch": 1794669296.493508,
+  "admission_deadline_seconds": 600,
+  "total_wall_seconds_including_local_report_sealing": 600.0119223594666,
+  "observed_samples": 300,
+  "required_host_mem_available_bytes": 20427268612,
+  "host_min_bytes": 11452526592,
+  "host_max_bytes": 16763625472,
+  "peak_shortfall_bytes": 3663643140,
+  "external_queue_counts": [
+    [
+      0,
+      0
+    ]
+  ],
+  "original_job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-70a06bf9-1fbb-4188-8162-bddc030e7cd4",
+    "attempt_number": 1,
+    "availability": "pending",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": null,
+    "input_digest": "ab6c1b4bf2ab8d097f0b8550c08a3a60faebb20d78a909e47a88a19fdef04a8e",
+    "job_id": "w07-live-initial",
+    "kind": "image_generation",
+    "owner_epoch": "epoch-fb3d33c0-48a7-441b-9b15-ed735c226cd3",
+    "owner_operation_id": null,
+    "project_id": "w07-live-proof",
+    "provider_id": "live-comfy",
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "planned",
+    "state_revision": 0,
+    "target": {
+      "shot_id": null,
+      "target_id": "w07-live-task",
+      "version": null
+    },
+    "work_id": "w07-live-work"
+  },
+  "original_reservations": [
+    {
+      "id": "w07-live-initial",
+      "task_id": "w07-live-task",
+      "target_id": "w07-live-task",
+      "state": "reserved"
+    }
+  ],
+  "original_hashes_before": {
+    "w07-live-initial-report.json": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+    "w07-live-initial-timing.json": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe"
+  },
+  "original_hashes_after": {
+    "w07-live-initial-report.json": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+    "w07-live-initial-timing.json": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe"
+  },
+  "actual_comfy_inferences": 0,
+  "provider_prompt_posts": 0,
+  "injected_ack_losses": 0,
+  "native_cloud_roots": 0,
+  "native_children": 0,
+  "new_m07_projects": 0,
+  "new_m07_selections": 0,
+  "actual_png_outputs": 0,
+  "native_rpc_ack_loss": "NOT_PROVEN",
+  "known_http_ack_loss": "NOT_EXECUTED_NO_SUBMISSION",
+  "remaining_journey": "NOT_RUN: original did not succeed. No initial/correction/selection/retention journey is claimed.",
+  "models_or_services_changed": false,
+  "input_graph_changed": false,
+  "native_work_adoption": false,
+  "report_hashes": {
+    "window.json": {
+      "sha256": "b6e192a4236d32a7d7e55d3dd15d87fe945364c1d9c23458b0f73ef14b34619d",
+      "bytes": 7948
+    },
+    "report.json": {
+      "sha256": "a3dd9e7bee285c6a74bd7dd0fb7833c6fe566c8ea9aa64a6a26ea074b37ba2f5",
+      "bytes": 16185
+    },
+    "observations.jsonl": {
+      "sha256": "0702d08c27b524422f70dd2f1d59159d5d211cd8a62a1bee0b981aaf04fd67b6",
+      "bytes": 118721
+    },
+    "preservation.json": {
+      "sha256": "80abc727973d2e280089038ca92a4236e3174180e1faee9c818a0f8e0b0132b8",
+      "bytes": 1340
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "observed_at": 1794669469.8688312,
+  "models": [
+    {
+      "type": "llm",
+      "modelKey": "qwen3.8-27b-uncensored",
+      "format": "gguf",
+      "displayName": "Qwen3.8 27B Uncensored",
+      "publisher": "orcarouter",
+      "path": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "sizeBytes": 16810714496,
+      "indexedModelIdentifier": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "deviceIdentifier": null,
+      "paramsString": "27B",
+      "architecture": "qwen35",
+      "quantization": {
+        "name": "Q4_K_M",
+        "bits": 4
+      },
+      "identifier": "qwen3.8-27b-uncensored",
+      "ttlMs": null,
+      "lastUsedTime": 1794663304597,
+      "vision": false,
+      "trainedForToolUse": true,
+      "maxContextLength": 262144,
+      "contextLength": 131072,
+      "status": "idle",
+      "queued": 0,
+      "parallel": 4
+    }
+  ],
+  "qwen_context_ttl_last_used_unchanged_since_m09_baseline": true,
+  "owned_gemma_unloaded": true,
+  "saved_profile_sha256": "904cf3234b23df68182d3d832d7f907fe2e3d18d6bb0686827ce6ec23f2f2e53",
+  "saved_profile_matches_m09_baseline": true,
+  "resource_claims": [],
+  "original_worker_process_settled": true,
+  "background_completion_notified": true,
+  "no_service_lifecycle_or_model_operation_performed": true
+}
