@@ -81,14 +81,57 @@ def git(root: Path, *args: str, output: Path | None = None, binary=False) -> Any
     return result.stdout if binary else result.stdout.decode("utf-8", errors="strict").rstrip("\n")
 
 
-def existing_store(path: Path, project_id: str | None = None) -> Store:
+class BackupSource(Store):
+    """F00 backup API over a quiescent, strictly read-only Linux source handle.
+
+    Ordinary read-only SQLite connections still modify WAL shared-memory marks.
+    unix-none + EXCLUSIVE uses a private in-memory WAL index instead. External
+    registry/project flocks AND stopped external writers are mandatory. Never use
+    immutable=1: it can omit committed WAL pages. No raw database copy is made.
+    """
+
+    def __init__(self, path: Path, project_id: str | None = None):
+        self.path, self.project_id = path, project_id
+        self.write_barrier = self.write_guard = self.before_commit = self.after_commit = None
+
+    def connect(self) -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            self.path.as_uri() + "?mode=ro&vfs=unix-none",
+            uri=True,
+            isolation_level=None,
+            timeout=5,
+        )
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA locking_mode=EXCLUSIVE")
+        connection.execute("PRAGMA query_only=ON")
+        connection.execute("PRAGMA foreign_keys=ON")
+        return connection
+
+
+class BackupRegistry(Registry):
+    """Keep the shared Registry settlement rule, without opening mutable sources."""
+
+    project_source: Store | None = None
+
+    def project_store(self, project_id: str, *, active: bool = True) -> Store:
+        if self.project_source is None or self.project_source.project_id != project_id:
+            raise RecoveryError("backup_project_identity_mismatch")
+        if active and self.active_id() != project_id:
+            raise RecoveryError("backup_project_not_active")
+        return self.project_source
+
+
+def existing_store(path: Path, project_id: str | None = None, *, read_only=False) -> Store:
     safe_file(path.parent, path.name)
-    with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
+    source = BackupSource(path, project_id) if read_only else None
+    with closing(
+        source.connect() if source else sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
+    ) as db:
         revision = db.execute("PRAGMA user_version").fetchone()[0]
         if revision != len(MIGRATIONS) or db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
             raise RecoveryError("unsupported_or_corrupt_database")
     # Exact current revision, so F00 does not migrate the source.
-    return Store(path, project_id)
+    return source if source else Store(path, project_id)
 
 
 def private_modes(root: Path) -> None:
@@ -246,8 +289,8 @@ def backup(settings: Settings, project_id: str, target: Path, *, allow_incomplet
     data = settings.data_directory.resolve(strict=True)
     # Registry ownership first, before opening/migrating any database.
     with locks([data / "owner.lock"]):
-        registry_store = existing_store(data / "registry.sqlite3")
-        registry = Registry(registry_store)
+        registry_store = existing_store(data / "registry.sqlite3", read_only=True)
+        registry = BackupRegistry(registry_store)
         project = registry.get(project_id)
         root = Path(project["path"])
         if root.resolve(strict=True) != root or (root / ".proscenium").is_symlink():
@@ -256,7 +299,8 @@ def backup(settings: Settings, project_id: str, target: Path, *, allow_incomplet
             raise RecoveryError("backup_destination_inside_live_store")
         with locks([root / ".proscenium/owner.lock"]):
             assert_stopped([root, data])
-            store = existing_store(root / ".proscenium/state.sqlite3", project_id)
+            store = existing_store(root / ".proscenium/state.sqlite3", project_id, read_only=True)
+            registry.project_source = store
             # Stopped service alone does not establish settled external/native work.
             registry.assert_settled(project_id)
             with registry_store.transaction(write=False) as tx:
