@@ -5,7 +5,7 @@ import hashlib
 import json
 import sqlite3
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -42,8 +42,19 @@ def now() -> str:
 
 
 class Store:
-    def __init__(self, path: Path, project_id: str | None = None):
+    def __init__(
+        self,
+        path: Path,
+        project_id: str | None = None,
+        *,
+        write_barrier: Any = None,
+        write_guard: Callable[[], None] | None = None,
+        before_commit: Callable[[Transaction], None] | None = None,
+        after_commit: Callable[[Transaction], None] | None = None,
+    ):
         self.path, self.project_id = path, project_id
+        self.write_barrier, self.write_guard = write_barrier, write_guard
+        self.before_commit, self.after_commit = before_commit, after_commit
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.migrate()
         path.chmod(0o600)
@@ -98,10 +109,25 @@ class Store:
 
     @contextmanager
     def transaction(self, *, write: bool = True) -> Iterator[Transaction]:
+        # All service-created owner stores share this reentrant barrier. Read handles
+        # remain independent, including nested reads made inside an existing writer.
+        with self.write_barrier if write and self.write_barrier is not None else nullcontext():
+            if write and self.write_guard:
+                self.write_guard()
+            with self._transaction(write=write) as tx:
+                yield tx
+            if write and self.after_commit:
+                self.after_commit(tx)
+
+    @contextmanager
+    def _transaction(self, *, write: bool) -> Iterator[Transaction]:
         connection = self.connect()
         try:
             connection.execute("BEGIN IMMEDIATE" if write else "BEGIN")
-            yield Transaction(connection, self.project_id)
+            tx = Transaction(connection, self.project_id)
+            yield tx
+            if write and self.before_commit:
+                self.before_commit(tx)
             connection.commit()
         except sqlite3.OperationalError as exc:
             connection.rollback()
@@ -117,6 +143,7 @@ class Store:
 class Transaction:
     def __init__(self, connection: sqlite3.Connection, project_id: str | None):
         self.connection, self.project_id = connection, project_id
+        self.changed_namespaces: set[str] = set()
 
     @contextmanager
     def savepoint(self) -> Iterator[None]:
@@ -174,6 +201,7 @@ class Transaction:
             "revision=excluded.revision,body=excluded.body",
             (namespace, identity, revision, canonical(body).decode()),
         )
+        self.changed_namespaces.add(namespace)
         return revision
 
     def revision(self, namespace: str, identity: str) -> int:

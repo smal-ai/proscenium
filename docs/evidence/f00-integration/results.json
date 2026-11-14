@@ -1,0 +1,55 @@
+{
+  "kind": "f00-composed-offline-integration-evidence",
+  "date": "2026-11-14",
+  "base_revision": "d068ed9f0433723e52253a8bd4b19a5bb1a1dee7",
+  "atomic_seam_revision": "ad3a529",
+  "branch": "impl/f00-integration",
+  "worktree": "/home/quintin/.cache/proscenium-development/fleet/f00-integration",
+  "identities": {
+    "python": "3.12.13",
+    "node": "24.18.0",
+    "npm": "11.16.0",
+    "github-copilot-sdk": "1.0.34",
+    "copilot_cli_package": "1.0.112",
+    "copilot_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "fastapi": "0.162.7",
+    "pydantic": "2.14.3",
+    "httpx": "0.28.1",
+    "pytest": "8.4.2"
+  },
+  "checks": [
+    {"command": "uv sync --frozen", "result": "passed; existing dependency lock retained"},
+    {"command": "npm ci --ignore-scripts --cache /home/quintin/.cache/proscenium-development/npm-f00", "result": "passed; existing dependency lock retained"},
+    {"command": "uv run pytest -q tests/integration/foundation/test_atomic_preview.py tests/integration/previews --basetemp=/home/quintin/.cache/proscenium-development/f00-tests/atomic --tb=short", "result": "28 passed"},
+    {"command": "uv run pytest -q tests/integration/foundation/test_composed_lifecycle.py tests/integration/foundation/test_project_projection.py tests/integration/foundation/test_rebind_barrier.py tests/integration/foundation/test_native_aliases_config.py tests/contracts/test_bindings.py --basetemp=/home/quintin/.cache/proscenium-development/f00-tests/lifecycle --tb=short", "result": "58 passed before the additional cancelled-shutdown parametrisation"},
+    {"command": "TMPDIR=/home/quintin/.cache/proscenium-development/f00-tests PYTEST_ADDOPTS=\"--basetemp=/home/quintin/.cache/proscenium-development/f00-tests/full --tb=short\" make test-unit test-contracts test-integration-offline", "result": "26 unit + 45 contract + 291 integration passed; no deselections/skips introduced"},
+    {"command": "uv run pytest -q tests/integration/foundation/test_project_projection.py tests/integration/sources --basetemp=/home/quintin/.cache/proscenium-development/f00-tests/projection-replay --tb=short", "result": "56 passed after covering late W02 activation-event repair alongside the native-association projection"},
+    {"command": "TMPDIR=/home/quintin/.cache/proscenium-development/f00-tests PYTEST_ADDOPTS=\"--basetemp=/home/quintin/.cache/proscenium-development/f00-tests/full-final --tb=short\" make test-unit test-contracts test-integration-offline", "result": "26 unit + 45 contract + 292 integration passed on the completed source"},
+    {"command": "make lint typecheck", "result": "passed; Ruff checks/formatting on 155 files, ESLint, mypy on 69 source files, application and browser-test TypeScript compilation"},
+    {"command": "make build", "result": "passed; real composed frontend emitted with bundled fonts and licence resources"},
+    {"command": "uv run pytest -q docs/evidence/f00-integration/startup_smoke.py --basetemp=/home/quintin/.cache/proscenium-development/f00-tests/startup --tb=short", "result": "1 passed; bounded real CLI/ASGI lifecycle, owner pairing, metadata/project activation, bundled licence, real WebSocket replay, graceful shutdown"},
+    {"command": "uv run pytest -q docs/evidence/f00-integration/startup_smoke.py tests/integration/foundation/test_native_aliases_config.py --basetemp=/home/quintin/.cache/proscenium-development/f00-tests/operator --tb=short", "result": "4 passed after final explicit worker-tool configuration"},
+    {"command": "make spec-check", "result": "passed; schemas, semantic oracles, operation ownership and deterministic generation retained"}
+  ],
+  "development_failures_retained": [
+    "First atomic-suite invocation: 3 passed and 25 setup errors because the disk-cache basetemp parent did not exist. Created the owned parent and reran: 28 passed.",
+    "First broader composed run: 149 passed and 1 failure. A moved project's missing original path was opened by projection reconciliation. Fixed the rebind hook and read native association from the verified target, retaining truthful missing-history rejection.",
+    "One mypy Optional-provider narrowing error was corrected without suppressing the check.",
+    "A test-only Resume CAS correction initially matched fixture setup rather than the Resume command. Corrected it, then reran the projection tests successfully. The public Resume command uses the actual ProjectRecord revision when work_id is null."
+  ],
+  "warning_limits": [
+    "Existing Starlette TestClient/httpx deprecation warning remains.",
+    "Existing Lucide use-client directive warnings and Vite bundle-size warning remain."
+  ],
+  "not_executed": [
+    "No SDK runtime/model turn, native desktop application, provider inference, GPU call, native proof or installed-browser case.",
+    "The existing 126 browser cases were not rerun.",
+    "No persistent service activation or global operator configuration write.",
+    "No native-history relocation verifier was invented."
+  ],
+  "remaining_integration": [
+    "Operator supplies actual loaded VLM model identity, existing Blender MCP configuration and workstation-specific resource paths.",
+    "Parent/W01/W08 retain native specialist/tool-wrapper and cumulative creative/native journey acceptance.",
+    "Existing E01/W01 child/Stop/restart and provider feasibility limits remain explicit in their accepted evidence."
+  ]
+}

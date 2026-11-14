@@ -43,6 +43,26 @@ class Settings:
         body = json.loads(path.read_text())
         if not isinstance(body, dict) or set(body) - {f.name for f in fields(cls)}:
             raise ValueError("Unknown configuration fields")
+        substitutions = {
+            "HOME": str(Path.home()),
+            "CONFIG_DIR": str(path.resolve().parent),
+            "APP_ROOT": str(Path(__file__).resolve().parents[5]),
+        }
+
+        def expand(value: Any) -> Any:
+            if isinstance(value, dict):
+                return {key: expand(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [expand(item) for item in value]
+            if isinstance(value, str):
+                for key, replacement in substitutions.items():
+                    value = value.replace("${" + key + "}", replacement)
+                if "${" in value:
+                    raise ValueError("Unknown configuration path substitution")
+                return str(Path(value).expanduser()) if value.startswith("~/") else value
+            return value
+
+        body = expand(body)
         for key in ("data_directory", "frontend_directory"):
             if body.get(key) is not None:
                 body[key] = Path(body[key]).expanduser()

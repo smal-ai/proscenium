@@ -379,12 +379,26 @@ class Projects:
                 tx.emit(
                     "project.state_changed", record, actor={"kind": "user", "id": saved["actor_id"]}
                 )
+                # An activation event may be repaired after W01 durably acquired its
+                # native association. Keep its original historical payload, then
+                # reassert the current known association in this same atomic replay.
+                current = self.services.registry.get(project_id)
+                if (
+                    current["native_session_id"]
+                    and current["native_session_id"] != record["native_session_id"]
+                ):
+                    tx.emit(
+                        "project.state_changed",
+                        current,
+                        actor={"kind": "system", "id": "project-host"},
+                    )
                 return {"emitted": True}
 
             tx.operation("projects.event", body["operation_id"], body, effect)
 
     def snapshot(self, project_id: str) -> dict[str, Any]:
         with self.services.activation_lock:
+            self.services.reconcile_project_projection(project_id)
             record = self.services.registry.get(project_id)
             settings = self.settings(project_id)
             with self.services.registry.project_store(project_id).transaction(write=False) as tx:
@@ -421,6 +435,8 @@ class Projects:
         registry = self.services.registry
         project_id = body["project_id"]
         with self.services.activation_lock:
+            if Path(registry.get(project_id)["path"]).exists():
+                self.services.reconcile_project_projection(project_id)
             with registry.store.transaction(write=False) as tx:
                 previous = replay(tx, "projects.rebind", body["operation_id"], body)
             if previous:
@@ -455,6 +471,11 @@ class Projects:
                         "Relocated database differs from the settled original",
                     )
             with target.transaction(write=False) as tx:
+                association = tx.get("copilot.session", "native", required=False)
+                if association:
+                    if record["native_session_id"] not in {None, association["session_id"]}:
+                        raise DomainError("source_conflict", 409, "Native session identity changed")
+                    record = {**record, "native_session_id": association["session_id"]}
                 if tx.require("project_identity", "identity") != {
                     "project_id": project_id,
                     "repository_id": record["repository_id"],

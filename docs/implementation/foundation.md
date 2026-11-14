@@ -4,18 +4,22 @@ Baseline: specification 3.2.0, amended contract 1.0.0, source commit
 `2f00ebece9c5274ebda553df4c1558d5572669e0`. Implemented on 14 November 2026.
 This is shared foundation evidence, not product milestone or native-runtime acceptance.
 
+**Current integration:** accepted source `d068ed9f0433723e52253a8bd4b19a5bb1a1dee7`,
+branch `impl/f00-integration`. The integrated lifecycle/configuration update below supersedes
+the initial bootstrap limitations. It does not extend any native/model test allocation.
+
 ## Install, generate and run
 
 ```bash
 make bootstrap
 make generate
 make spec-check lint typecheck test-unit test-contracts test-integration-offline build
-uv run python -m proscenium --frontend-dir apps/frontend/dist --pair
+uv run python -m proscenium --config config.example.json --pair
 ```
 
 Use the printed pairing URL only in the trusted operator/browser channel. Never paste its
-fragment into an agent session. The minimal bootstrap does not yet contain the pairing UI.
-The operator can POST its `OwnerBootstrap` using the browser application once W04 is composed.
+fragment into an agent session. The compiled W04 studio includes the owner pairing UI.
+Use a private copy of the example for workstation-specific paths and model/MCP choices.
 No model, native application, runtime client or provider is started by imports, application
 startup, configuration reads, project restoration or job reads.
 
@@ -91,12 +95,14 @@ app = create_app(settings, routers=[feature_router])
 ```
 
 `create_app(settings: Settings | None = None, *, routers: Sequence[APIRouter] = (),
-services: Services | None = None) -> FastAPI` installs F00 routes and the accepted feature
+services: Services | None = None, manage_features: bool | None = None) -> FastAPI` installs F00 routes and the accepted feature
 routers listed in integration-owned `api/composition.py`, plus explicitly supplied routers.
 Duplicate router objects are included once. It does not import unaccepted packages. The lifespan
 creates and closes the container unless a caller supplied it. A supplied container remains
-the caller's responsibility. Missing feature routes return a contract error, never a fake
-successful response. `/health` reports only foundation-process health.
+the caller's responsibility. Owned containers manage the feature lifecycle by default.
+Supplied containers default to passive composition for deterministic tests. Explicit
+`manage_features=True` opts them into host workers, as the CLI does. `/health` reports
+process health, not provider/model/native availability.
 
 `Services.create(settings) -> Services` acquires the machine OS lock and closes the
 execution gate on every boot. `services.close()` releases held locks. The dependency
@@ -390,7 +396,7 @@ outbox ambiguity, budget reservation, resource ownership, retry attempts, cancel
 and restart gating. Feature routers, actual SDK fencing, native media, browser acceptance and
 full product journeys remain the respective packages' integration responsibilities.
 
-### Recorded F00 check results
+### Initial F00 check results (historical)
 
 On 14 November 2026, using CPython 3.12.13 and Node 24.18.0 on Linux:
 
@@ -415,3 +421,133 @@ per pytest invocation. Tests still execute normally. No native runtime, GPU or i
 browser compatibility is inferred from these results. Specification checks validate the
 reference pin manifest and local design bytes. External reference-repository byte checks
 (`docs/validate_spec.py --check-references`) were not run and are not claimed here.
+
+## Integrated host lifecycle and operator configuration
+
+The default app composes the complete 53-entry normative operation catalogue: 52 HTTP
+handlers and the actual `connectProjectEvents` WebSocket upgrade. Tests walk registered
+routers, including the lazy FastAPI inclusions, and reject duplicate operation IDs.
+`configure_services` installs W02 catalogue/projects/sources/artefacts, W05 reviews, W07
+providers with `register_provider_artifact`, W03 previews and W01 Copilot. Installation
+does not create an SDK client/session, submit HTTP inference or launch a native application.
+Existing injected test implementations are retained rather than replaced.
+
+W01's `generation.submit` and `vlm.request` names are explicit thin aliases to the accepted
+provider methods. The latter returns only `ReviewTicket`; W01's strict tool-result validation
+rejects an added findings field. No alias queries owner findings. W07 continues to own its
+target policy, budget and provider dispatch. There is no second job planner.
+
+### Atomic W03 job seam
+
+```python
+JobService.update_in_transaction(
+    tx: Transaction, caller: Caller, body: JobStateUpdate_JSON, *, evidence: str | None = None
+) -> tuple[JobRecord_JSON, bool]
+```
+
+`update()` delegates to this one reduction. It retains caller/channel/project, historical
+admission, current attempt, CAS, transition/evidence, immutable external identity, monotonic
+availability/frame count and ready-artefact guards. Job, attempt, proof, operation receipt and
+job event all use the supplied transaction. A local SQLite savepoint is not a separate commit.
+The real W03 `register()` now discovers this seam and atomically commits its promoted artefact
+record, frame/segment, progress, availability and job projection. A fault injected at the
+**job** event after the earlier receipt writes rolls the entire reduction back. Immutable
+filesystem bytes promoted before the transaction may remain unregistered, never publicly ready.
+The previous optional/eventual job projection is not accepted completion evidence.
+
+### Lifecycle ownership
+
+`create_app(..., manage_features=None)` manages features when it owns the container. A supplied
+`Services` defaults to passive installation, with no background dispatch. Set
+`manage_features=True` explicitly for a caller-owned production container. `__main__` does so.
+Callers still own closing their supplied container after the ASGI lifespan exits.
+
+`FeatureLifecycle` awaits W01 `start`/`close`, and runs independent provider-pump,
+preview-dispatch and passive-preview-receipt tasks. Every iteration resolves the current active
+project rather than capturing the first project forever. Provider and preview launch pumps run
+only under the explicitly open F00 gate. Receipt reconciliation may continue with the gate closed.
+A blocked provider HTTP thread does not block preview progress. Worker errors are retained as
+redacted codes in `extensions['lifecycle'].errors`, not printed repeatedly or relabelled success.
+
+Shutdown closes admission and fences/reaps W01's owned Copilot runtime, stops the watchers,
+**waits for all in-flight thread work**, and only then closes the provider client. It does not
+kill admitted detached Blender/Unity workers. Cancelling the shutdown await cannot abandon an
+HTTP thread and release the stores beneath it. `Services.close()` refuses while lifecycle
+tasks remain. Passive caller-owned containers close unused owned HTTP clients synchronously.
+No new launch occurs because an HTTP request or WebSocket disconnects or reconnects.
+
+### Project association and copy/rebind coordination
+
+`Services.reconcile_project_projection(project_id)` consumes durable
+`copilot.session/native` and `copilot.control/gate`. It never calls the SDK or invents a session.
+The host updates `ProjectRecord.native_session_id` and active/awaiting-Resume metadata through a
+machine-CAS/project-event saga in `host.project_projection`. Pending event delivery is repaired
+idempotently. Startup repairs the active project's projection, while snapshot and rebind use the
+same host hook. A known native ID can never be overwritten by a different ID or replaced by null.
+The pre-commit guard also rejects an incompatible new W01 session association before it commits.
+
+When host metadata alone advances the ProjectRecord revision, the same idempotent project
+transaction carries forward a **previously matching** W01 `activation_revision` and emits the
+project event. A genuinely stale activation fence is not repaired that way. Explicit Resume
+still owns reconciliation/unfencing, and immutable request/context submissions are untouched.
+Tests use two independent FakeNative project histories, restart, exact session reattachment,
+explicit Resume and repeated projection repair without duplicate project events.
+If W02 later repairs an older activation event whose captured native ID was null, its replay
+atomically appends the current known header after that historical payload. A late repair cannot
+leave the public projection at null or increment the ProjectRecord again.
+
+All machine/project service stores use `Services.activation_lock` as their reentrant write
+barrier. It spans each write transaction and host projection callback, never an await or external
+HTTP/process call. Nested read handles remain independent. Old Store handles validate their
+registry location and active-project scope **after** acquiring the barrier, so they cannot write
+the abandoned database after rebind. Owner image ingestion is guarded for its entire synchronous
+filesystem/decode/commit phase, after the upload body has been received. The actual W02
+copy/rebind path is tested against racing feedback and upload threads: the stale feedback fails,
+and the upload lands only in the newly registered store. No physical migration was introduced.
+
+Rebind reads the verified moved database's native association even if the original path is gone
+or an older registry still had null. Without a trusted history relocation verifier it still
+returns `native_session_missing`. No fake native verifier is registered.
+
+### Operator launch
+
+```bash
+make bootstrap
+make run CONFIG=/absolute/private/operator.json ARGS=--pair
+# Equivalent after make build:
+uv run python -m proscenium --config /absolute/private/operator.json --pair
+```
+
+Copy `config.example.json` privately and set real workstation choices. An explicit missing
+`--config` file is an error, never a silent default launch. `Settings.load` expands only
+`${HOME}`, `${CONFIG_DIR}` and `${APP_ROOT}` (the deployed checkout), not arbitrary environment
+variables or secret files. The example uses loopback, the authoring profile, explicit required
+`gpt-6.1-sol` worker/lead choices, `blender-cpu`/`unity-local` execution profiles, a user-cache
+render claim and non-secret Comfy/VLM endpoints with availability **unknown**. It starts none of
+those independent services. The VLM model ID remains null until the operator configures the
+actual loaded vision instance. MCP settings remain explicitly empty until the operator supplies
+the existing bridge configuration. Unity specialist/tool-wrapper and remaining native journey
+acceptance stay with the parent/W01/W08 follow-ups, not a fabricated capability flag here.
+
+The CLI uses the direct native `@github/copilot-linux-x64/copilot` path. The accepted W01
+adapter enforces SHA-256 `463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69`
+and `github-copilot-sdk==1.0.34` / CLI `1.0.112`. This follow-up checked the installed binary's
+bytes, but executed no native CLI/model. Fonts and other Vite-emitted resources use `/assets`.
+Public font/licence directories, including `/licences/fonts.txt`, are served from the same
+compiled frontend origin. No CDN or development Vite server is required in production.
+
+### Integration evidence
+
+`docs/evidence/f00-integration/results.json` records exact commands and limits. The complete
+offline run passed **26 unit, 45 contract and 292 integration tests**. Full lint, type checks and
+the production build passed. Existing Starlette/httpx deprecation and frontend bundle-size/
+Lucide directive warnings remain visible. No dependency lock or native/feature implementation
+was upgraded or changed speculatively.
+
+The separately invoked `startup_smoke.py` requires the real compiled frontend. It starts the
+actual CLI/main/lifespan on a disposable loopback port, performs owner pairing, creates and
+activates a disposable Git project, reads its snapshot, serves the bundled licence and replays
+its real journal over WebSocket. SDK construction, provider HTTP and preview launch are
+hard-blocked before execution in that owned test process. It verifies clean API shutdown and
+leaves no server running. This proves composed startup and metadata transport, **not** a model
+turn, Blender/Unity render, provider inference, browser-media acceptance or a product milestone.

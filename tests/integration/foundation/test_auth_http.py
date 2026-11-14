@@ -134,7 +134,8 @@ def test_json_required_and_unimplemented_feature_not_success(services, client, c
     )
     assert response.status_code == 415
     response = client.get("/api/v1/projects")
-    assert response.status_code == 404
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "owner_session_required"
     validate("Error", response.json())
 
 

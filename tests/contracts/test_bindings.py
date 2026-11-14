@@ -65,13 +65,27 @@ def test_http_operation_ownership():
     from proscenium.app import create_app
 
     owners = json.loads((ROOT / "docs/contracts/operation-owners.json").read_text())
-    expected = {
-        op for group in owners["groups"] if group["owner"] == "F00" for op in group["operations"]
-    }
-    actual = {
-        operation["operationId"]
-        for methods in create_app().openapi()["paths"].values()
-        for operation in methods.values()
-        if "operationId" in operation
-    }
-    assert expected == actual
+    from collections import Counter
+
+    from fastapi.routing import APIRoute, APIWebSocketRoute
+    from proscenium.api.composition import feature_routers
+
+    expected = [op for group in owners["groups"] for op in group["operations"]]
+
+    # Included routers are lazy in the pinned FastAPI. Walk their real registered
+    # routes so duplicate HTTP methods and WebSocket upgrades cannot hide in OpenAPI.
+    def operations(routes):
+        for route in routes:
+            nested = getattr(route, "original_router", None)
+            if nested is not None:
+                yield from operations(nested.routes)
+            elif isinstance(route, APIRoute) and route.operation_id:
+                yield route.operation_id
+            elif isinstance(route, APIWebSocketRoute):
+                yield route.name
+
+    app = create_app(routers=feature_routers())  # Repeated accepted routers must be deduplicated.
+    actual = list(operations(app.routes))
+    assert Counter(expected) == Counter(actual)
+    assert all(count == 1 for count in Counter(actual).values())
+    assert len(actual) == 53 and "connectProjectEvents" in actual

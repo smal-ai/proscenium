@@ -10,6 +10,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from proscenium.api.composition import configure_services, feature_routers
 from proscenium.api.errors import DomainError
+from proscenium.api.lifecycle import FeatureLifecycle
 from proscenium.api.router import router
 from proscenium.configuration import Settings
 from proscenium.services import Services
@@ -49,18 +50,27 @@ def create_app(
     *,
     routers: Sequence[APIRouter] = (),
     services: Services | None = None,
+    manage_features: bool | None = None,
 ) -> FastAPI:
-    settings = settings or Settings()
+    settings = settings or (services.settings if services is not None else Settings())
+    manage = services is None if manage_features is None else manage_features
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.services = services or Services.create(settings)
+        lifecycle = FeatureLifecycle(app.state.services) if manage else None
         try:
             configure_services(app.state.services)
+            if lifecycle is not None:
+                await lifecycle.start()
             yield
         finally:
-            if services is None:
-                app.state.services.close()
+            try:
+                if lifecycle is not None:
+                    await lifecycle.close()
+            finally:
+                if services is None:
+                    app.state.services.close()
 
     app = FastAPI(
         title="Proscenium", version="0.1.0", lifespan=lifespan, docs_url=None, redoc_url=None
@@ -105,5 +115,12 @@ def create_app(
         @app.get("/", include_in_schema=False)
         def index() -> FileResponse:
             return FileResponse(frontend / "index.html")
+
+        # Vite copies these bundled, licensed public resources unchanged.
+        for directory in ("fonts", "licences"):
+            if (frontend / directory).is_dir():
+                app.mount(
+                    f"/{directory}", StaticFiles(directory=frontend / directory), name=directory
+                )
 
     return app

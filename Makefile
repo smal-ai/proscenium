@@ -1,6 +1,11 @@
 .PHONY: bootstrap generate check-generated spec-check lint typecheck build test-unit test-contracts test-integration-offline test-browser test-native test-browser-installed
 
 PYTHON_CHECK_PATHS = apps/backend/src tests scripts $(wildcard agent/skills tools/source tools/blender tools/comfy tools/unity tools/image_to_3d tools/operations)
+CONFIG ?= config.example.json
+
+.PHONY: run
+run: build
+	uv run python -m proscenium --config "$(CONFIG)" $(ARGS)
 
 bootstrap:
 	uv sync --frozen --python 3.12

@@ -41,12 +41,15 @@ class Services:
     extensions: dict[str, Any] = field(default_factory=dict)
     project_ownership: dict[str, Ownership] = field(default_factory=dict)
     activation_lock: Any = field(default_factory=RLock, repr=False)
+    projection_running: set[str] = field(default_factory=set, repr=False)
 
     @classmethod
     def create(cls, settings: Settings) -> "Services":
         ownership = Ownership(settings.data_directory / "owner.lock")
+        services: Services | None = None
         try:
-            store = Store(settings.data_directory / "registry.sqlite3")
+            barrier = RLock()
+            store = Store(settings.data_directory / "registry.sqlite3", write_barrier=barrier)
             registry = Registry(store)
             with store.transaction() as tx:
                 secret = tx.get("private", "cursor_key", required=False)
@@ -75,13 +78,19 @@ class Services:
                 JobService(registry, gate, settings, ownership.epoch),
                 Resources(store),
                 Cursors(bytes.fromhex(secret["key"])),
+                activation_lock=barrier,
             )
+            registry.project_committed = services.reconcile_project_projection
             active = registry.active_id()
             if active:
                 services.acquire_project(active)
+                services.reconcile_project_projection(active)
             return services
         except Exception:
-            ownership.close()
+            if services is not None:
+                services.close()
+            else:
+                ownership.close()
             raise
 
     def acquire_project(self, project_id: str) -> None:
@@ -118,10 +127,23 @@ class Services:
             raise DomainError("capability_unavailable", 501, f"{name} extension is not installed")
         return self.extensions[name]
 
+    def reconcile_project_projection(self, project_id: str) -> None:
+        from proscenium.api.project_projection import reconcile
+
+        reconcile(self, project_id)
+
     def close(self) -> None:
-        for owner in self.project_ownership.values():
-            owner.close()
-        self.ownership.close()
+        lifecycle = self.extensions.get("lifecycle")
+        if lifecycle is not None and lifecycle.tasks:
+            raise RuntimeError("Await the feature lifecycle before closing service ownership")
+        provider = self.extensions.get("providers")
+        try:
+            if provider is not None and getattr(provider, "owns_client", False):
+                provider.client.close()  # Also closes an unused caller-managed container's client.
+        finally:
+            for owner in self.project_ownership.values():
+                owner.close()
+            self.ownership.close()
 
 
 def get_services(request: Request) -> Services:

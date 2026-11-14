@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ from proscenium.db.store import Store
 class Registry:
     def __init__(self, store: Store):
         self.store = store
+        self.project_committed: Callable[[str], None] | None = None
 
     def register(self, record: dict[str, Any]) -> None:
         validate("ProjectRecord", record)
@@ -44,7 +46,37 @@ class Registry:
         runtime = root / ".proscenium"
         if runtime.is_symlink() or (runtime / "state.sqlite3").is_symlink():
             raise DomainError("scope_denied", 403)
-        return Store(runtime / "state.sqlite3", project_id)
+
+        def guard() -> None:
+            # A previously obtained handle may outlive rebind/activation while doing
+            # filesystem work. It must not mutate the abandoned original afterwards.
+            if self.get(project_id)["path"] != str(root):
+                raise DomainError("source_conflict", 409, "Project location changed")
+            if active and self.active_id() != project_id:
+                raise DomainError("scope_denied", 403)
+
+        def before(tx) -> None:
+            if "copilot.session" in tx.changed_namespaces:
+                association = tx.get("copilot.session", "native", required=False)
+                known = self.get(project_id)["native_session_id"]
+                if association and known and association["session_id"] != known:
+                    raise DomainError("source_conflict", 409, "Native session identity changed")
+
+        def after(tx) -> None:
+            if self.project_committed and tx.changed_namespaces & {
+                "copilot.session",
+                "copilot.control",
+            }:
+                self.project_committed(project_id)
+
+        return Store(
+            runtime / "state.sqlite3",
+            project_id,
+            write_barrier=self.store.write_barrier,
+            write_guard=guard,
+            before_commit=before,
+            after_commit=after,
+        )
 
     def activate(self, project_id: str) -> None:
         """W02 verifies project/source identities. This shared guard enforces settlement."""
