@@ -1,0 +1,24 @@
+{
+  "path": "/home/quintin/.cache/proscenium-development/image-to-3d/models/checkpoints/hunyuan3d-dit-v2_fp16.safetensors",
+  "size_bytes": 4928151562,
+  "sha256": "360bc281fc956d4acac0c3d36d5ec0ebf8cdddbf4b8892e894d12419388d479b",
+  "tensor_groups": {
+    "conditioner": 727,
+    "model": 652,
+    "vae": 266
+  },
+  "required_prefixes": [
+    "model.",
+    "conditioner.main_image_encoder.model.",
+    "vae."
+  ],
+  "header_bytes": 215424,
+  "metadata": {},
+  "tensor_loading": false,
+  "verified_at": "2026-11-14T14:59:03.833284+02:00",
+  "requested_weight_bytes": 4928151562,
+  "discovery_header_bytes_read": 8,
+  "total_requested_weight_bytes_including_header": 4928151570,
+  "disk_free_after": 361782738944,
+  "inference_run": false
+}

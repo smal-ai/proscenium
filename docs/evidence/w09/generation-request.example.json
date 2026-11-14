@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "job_id": "e04-mesh-preparation-example",
+  "project_id": "project-test",
+  "generation_task_id": "task-test",
+  "target_id": "task-test",
+  "provider_id": "e04-isolated-comfy",
+  "capability": "image_to_3d",
+  "workflow_artifact_id": "e04-registered-workflow",
+  "prompt_artifact_id": "e04-registered-provenance-prompt",
+  "input_artifact_ids": ["e04-conditioning"],
+  "seed": "1",
+  "model_ids": ["hunyuan3d-dit-v2_fp16.safetensors"],
+  "settings": {}
+}

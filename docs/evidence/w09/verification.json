@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "application_base": "d068ed9f0433723e52253a8bd4b19a5bb1a1dee7",
+  "python_environment": ".venv, created by uv from the existing frozen workspace lock",
+  "results": [
+    {
+      "command": ".venv/bin/python -m pytest -q tests/integration/image_to_3d/",
+      "status": "passed",
+      "passed": 37,
+      "warnings": 1,
+      "warning": "Existing Starlette/httpx deprecation warning"
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/integration/providers/ tests/integration/image_to_3d/",
+      "status": "passed",
+      "passed": 94,
+      "warnings": 1
+    },
+    {
+      "command": ".venv/bin/python -m ruff check tools/image_to_3d/ tests/integration/image_to_3d/",
+      "status": "passed"
+    },
+    {
+      "command": ".venv/bin/python -m ruff format --check tools/image_to_3d/ tests/integration/image_to_3d/",
+      "status": "passed",
+      "files": 8
+    },
+    {
+      "command": ".venv/bin/python -m mypy tools/image_to_3d/",
+      "status": "passed",
+      "source_files": 7
+    },
+    {
+      "command": ".venv/bin/python docs/validate_spec.py",
+      "status": "passed",
+      "schema_definitions": 119,
+      "http_operations": 53,
+      "schema_examples": 40
+    },
+    {
+      "command": "git diff --cached --check -- . ':(exclude)docs/evidence/w09/model-card.txt' ':(exclude)docs/evidence/w09/model-licence.txt'",
+      "status": "passed",
+      "exclusions": "Two unmodified official byte snapshots retain upstream trailing whitespace"
+    },
+    {
+      "command": "make spec-check",
+      "status": "blocked",
+      "passed_stage": "Documentation/schema/semantic/reference validator",
+      "blocked_stage": "Shared TypeScript generated-binding check",
+      "error": "ERR_MODULE_NOT_FOUND: json-schema-to-typescript",
+      "shared_files_changed": false
+    }
+  ],
+  "prepared_graph_submitted": false,
+  "gpu_inference_run": false,
+  "blender_started": false,
+  "existing_service_mutated": false,
+  "backend_mesh_dispatch_wired": false,
+  "e04_passed": false,
+  "m10_passed": false
+}

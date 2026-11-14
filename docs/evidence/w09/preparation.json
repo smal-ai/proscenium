@@ -1,0 +1,72 @@
+{
+  "observed_at": "2026-11-14T14:43:44.122217+02:00",
+  "application_base": "d068ed9f0433723e52253a8bd4b19a5bb1a1dee7",
+  "comfy_revision": "8ff6dc384ba5c410266b40e137799e049459d4f2",
+  "template_commit": "1ae390968e323dba24a6991d1860ded051f5a79b",
+  "sources": [
+    {
+      "path": "official-template.json",
+      "url": "https://raw.githubusercontent.com/Comfy-Org/workflow_templates/1ae390968e323dba24a6991d1860ded051f5a79b/templates/3d_hunyuan3d_image_to_model.json",
+      "sha256": "96e23811e16f2c9c37b3755fa1cd34ec3f61c47073065b9b0fba64b1c7d7b03e",
+      "bytes": 33379
+    },
+    {
+      "path": "model-card.txt",
+      "url": "https://huggingface.co/tencent/Hunyuan3D-2/raw/9cd649ba6913f7a852e3286bad86bfa9a2d83dcf/README.md",
+      "sha256": "315092be8a8763bbc20ac7da187a224875990b34ea67a64a2a2fbd04c9716690",
+      "bytes": 9518
+    },
+    {
+      "path": "model-licence.txt",
+      "url": "https://huggingface.co/tencent/Hunyuan3D-2/raw/9cd649ba6913f7a852e3286bad86bfa9a2d83dcf/LICENSE",
+      "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd",
+      "bytes": 17830
+    }
+  ],
+  "model": {
+    "repository": "tencent/Hunyuan3D-2",
+    "revision": "9cd649ba6913f7a852e3286bad86bfa9a2d83dcf",
+    "file": "hunyuan3d-dit-v2-0/model.fp16.safetensors",
+    "size_bytes": 4928151562,
+    "sha256": "360bc281fc956d4acac0c3d36d5ec0ebf8cdddbf4b8892e894d12419388d479b",
+    "model_card_metadata": {
+      "library_name": "hunyuan3d-2",
+      "license": "other",
+      "license_name": "tencent-hunyuan-community",
+      "license_link": "https://huggingface.co/tencent/Hunyuan3D-2/blob/main/LICENSE.txt",
+      "language": [
+        "en",
+        "zh"
+      ],
+      "tags": [
+        "image-to-3d",
+        "text-to-3d"
+      ],
+      "pipeline_tag": "image-to-3d",
+      "extra_gated_eu_disallowed": true
+    },
+    "gated": false,
+    "file_metadata": {
+      "rfilename": "hunyuan3d-dit-v2-0/model.fp16.safetensors",
+      "blobId": "ed321fb49e6d2e0310e48a547f4c29f1a9027c43",
+      "size": 4928151562,
+      "lfs": {
+        "sha256": "360bc281fc956d4acac0c3d36d5ec0ebf8cdddbf4b8892e894d12419388d479b",
+        "size": 4928151562,
+        "pointerSize": 135
+      }
+    }
+  },
+  "allocation": {
+    "weight_cap_bytes": 6442450944,
+    "reserve_bytes": 10737418240,
+    "disk_free_before_download_observed_earlier": 368780648448
+  },
+  "read_only_endpoint": "http://127.0.0.1:8188",
+  "loadimage_inventory_redacted": true,
+  "inference_run": false,
+  "blender_started": false,
+  "existing_service_mutated": false,
+  "e04_passed": false,
+  "m10_passed": false
+}

@@ -1,0 +1,8 @@
+{
+  "path": "prepared-api-graph.json",
+  "sha256": "d3d19f74b8e3644b81796daf2039440bfce2253971401df97294312801cbb15f",
+  "bytes": 1897,
+  "seed_placeholder": "$seed",
+  "reference_placeholder": "artifact:e04-conditioning",
+  "inference_run": false
+}

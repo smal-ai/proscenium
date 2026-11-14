@@ -1,0 +1,52 @@
+{
+  "argv": [
+    "/home/quintin/.local/opt/ComfyUI/.venv/bin/python",
+    "-B",
+    "/home/quintin/.local/opt/ComfyUI/main.py",
+    "--listen",
+    "127.0.0.1",
+    "--port",
+    "18588",
+    "--base-directory",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a",
+    "--models-directory",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/models",
+    "--user-directory",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/user",
+    "--input-directory",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/input",
+    "--output-directory",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/output",
+    "--temp-directory",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/temp",
+    "--database-url",
+    "sqlite:////home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/user/comfyui.db",
+    "--disable-all-custom-nodes",
+    "--disable-api-nodes",
+    "--disable-auto-launch",
+    "--cache-none"
+  ],
+  "cwd": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a",
+  "create_before_authorised_start": [
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/user",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/input",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/output",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/temp",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/cache",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/cache/torch",
+    "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/cache/hf"
+  ],
+  "environment_overrides": {
+    "OMP_NUM_THREADS": "4",
+    "MKL_NUM_THREADS": "4",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "XDG_CACHE_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/cache",
+    "TORCH_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/cache/torch",
+    "HF_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/cache/hf",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "TMPDIR": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-allocated-a/temp"
+  },
+  "executed": false,
+  "requires": "parent allocation, heavy-gpu claim, budgeted plugin and recheck of port/revision"
+}
