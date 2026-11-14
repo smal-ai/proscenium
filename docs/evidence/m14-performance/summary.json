@@ -1,0 +1,483 @@
+{
+  "status": "partial_harness_visibility_false_positive_nfr04_2_open",
+  "tested_commit": "fe55f8de5b71c565b40ebbce6f76d715ef53d920",
+  "retained_root": "/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a",
+  "allocation": {
+    "profiles": 1,
+    "browser_launches": 1,
+    "owned_fixture_servers": 1,
+    "proxy_cases_loaded": 1,
+    "proxy_cases_prepared": 2,
+    "sdk_sends": 0,
+    "native_authoring_or_render_or_inference": 0
+  },
+  "elapsed_seconds": 1.9543449960000001,
+  "small": {
+    "workload": {
+      "bytes": 1788,
+      "triangles": 12,
+      "export_position_records": 24,
+      "meshes": 1
+    },
+    "http": {
+      "name": "http://127.0.0.1:42189/fixtures/small.glb",
+      "entryType": "resource",
+      "startTime": 861,
+      "duration": 28,
+      "navigationId": 8872,
+      "initiatorType": "fetch",
+      "deliveryType": "",
+      "nextHopProtocol": "http/1.1",
+      "renderBlockingStatus": "non-blocking",
+      "contentType": "",
+      "contentEncoding": "",
+      "workerStart": 0,
+      "workerRouterEvaluationStart": 0,
+      "workerCacheLookupStart": 0,
+      "workerMatchedRouterSource": "",
+      "workerFinalRouterSource": "",
+      "workerMatchedSourceType": "",
+      "workerFinalSourceType": "",
+      "redirectStart": 0,
+      "redirectEnd": 0,
+      "fetchStart": 861,
+      "domainLookupStart": 861,
+      "domainLookupEnd": 861,
+      "connectStart": 861,
+      "secureConnectionStart": 0,
+      "connectEnd": 861,
+      "requestStart": 861.8000000119209,
+      "responseStart": 888.6000000238419,
+      "firstInterimResponseStart": 0,
+      "finalResponseHeadersStart": 888.6000000238419,
+      "responseEnd": 889,
+      "transferSize": 2088,
+      "encodedBodySize": 1788,
+      "decodedBodySize": 1788,
+      "responseStatus": 200,
+      "serverTiming": []
+    },
+    "loader_ready_ms": 417.69999998807907,
+    "server_http": {
+      "url": "/fixtures/small.glb",
+      "body_bytes": 1788,
+      "started_monotonic_ns": "473670278760615",
+      "finished_monotonic_ns": "473670286601919",
+      "duration_ms": 7.842774
+    },
+    "canvas_capture": {
+      "camera": {
+        "space": "blender_world_m",
+        "camera_to_world": [
+          0.7071067811865476,
+          -0.3481553119113956,
+          0.6154574548966636,
+          5,
+          0.7071067811865475,
+          0.3481553119113957,
+          -0.6154574548966637,
+          -5.000000000000001,
+          -2.7755575615628914e-17,
+          0.8703882797784892,
+          0.4923659639173309,
+          4,
+          0,
+          0,
+          0,
+          1
+        ],
+        "projection": [
+          1.206285142786627,
+          0,
+          0,
+          0,
+          0,
+          2.1445069205095586,
+          0,
+          0,
+          0,
+          0,
+          -1.000002000002,
+          -0.02000002000002,
+          0,
+          0,
+          -1,
+          0
+        ],
+        "aspect": 1.7777777777777777,
+        "near_m": 0.01,
+        "far_m": 10000,
+        "source_camera_id": null,
+        "shift": [
+          0,
+          0
+        ],
+        "kind": "perspective",
+        "vertical_fov_degrees": 50
+      },
+      "dimensions": {
+        "width": 1600,
+        "height": 900
+      },
+      "quantised_colours": 10,
+      "sampled_pixels": 360000,
+      "different_from_corner": 15554,
+      "sha256": "bf0d3630549d4e76b58f5431e26dc9a707eedb6ca830c45bc7e428ec40a731f4"
+    },
+    "graphics": {
+      "vendor": "WebKit",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "shading_language": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "unmasked_vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "intrinsic": [
+        1600,
+        900
+      ],
+      "css": {
+        "x": 160,
+        "y": 112,
+        "width": 1600,
+        "height": 900,
+        "top": 112,
+        "right": 1760,
+        "bottom": 1012,
+        "left": 160
+      }
+    },
+    "orbit_verified": false,
+    "render_loop_callback_count": 0,
+    "cadence_ms": {
+      "p50": null,
+      "p95": null,
+      "max": null
+    }
+  },
+  "heavy": {
+    "status": "not_loaded",
+    "workload": {
+      "bytes": 90077656,
+      "triangles": 1304618,
+      "export_position_records": 3100876,
+      "meshes": 1
+    },
+    "loader_ready_ms": null,
+    "render_loop_callback_count": 0
+  },
+  "resources": {
+    "sample_count": 9,
+    "peak_browser_summed_rss_bytes": 1604452352,
+    "minimum_host_available_bytes": 32346054656,
+    "load_average_first": [
+      11.14,
+      12.57,
+      12.53
+    ],
+    "load_average_last": [
+      10.97,
+      12.51,
+      12.51
+    ],
+    "sampled_not_exact_peak": true,
+    "rss_not_pss": "Sum of attributed process RSS counts shared pages more than once. Includes all observed browser-group/descendant processes, not merely the renderer tab."
+  },
+  "failure": {
+    "message": "AssertionError [ERR_ASSERTION]: No visible shaded geometry\n    at measure (file:///home/quintin/.cache/proscenium-development/fleet/m14-performance/tests/native/studio/m14_performance.mjs:227:14)\n    at async file:///home/quintin/.cache/proscenium-development/fleet/m14-performance/tests/native/studio/m14_performance.mjs:286:37",
+    "cause": "Harness required more than sixteen quantised colours. The actual flat-shaded block has ten colours and 15,554 sampled non-background pixels, so the palette heuristic falsely rejected visible geometry.",
+    "not_a_product_performance_failure": true,
+    "correction": "Pure predicate now requires non-uniform real pixels and a non-background pixel area, not a large palette. Exact recorded input and blank-frame negatives are tested. No browser rerun occurred."
+  },
+  "prospective_targets": {
+    "scope": "Same retained small GLB, maintained ProxyView fixture, Full-HD/DPR1, 1600x900 canvas, Chromium159/SwiftShader on this host. Single-observation provisional candidate, not qualified by orbit/cadence and not a universal SLA.",
+    "small_loader_ready_candidate_ms": 727,
+    "margin_formula": "ceil(observed loader-ready milliseconds * 1.5 + 100)",
+    "cadence": null,
+    "heavy": null,
+    "missing_reason": "No measured cadence or heavy load exists. Targets remain unset rather than derived from fabricated samples.",
+    "resource_guards_not_regression_targets": {
+      "host_available_min_bytes": 4294967296,
+      "browser_summed_rss_max_bytes": 2147483648
+    }
+  },
+  "cleanup": {
+    "before_forced_cleanup": [
+      {
+        "pid": 4168896,
+        "ppid": 4168864,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366920",
+        "rss_bytes": 204558336,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --headless=new --no-sandbox --disable-dev-shm-usage --no-first-run --no-default-browser-check --disable-breakpad --disable-crash-reporter --remote-debugging-port=0 --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --window-size=1920,1080 --use-angle=swiftshader --enable-unsafe-swiftshader --disable-background-networking --noerrdialogs --ozone-platform=headless --ozone-override-screen-size=800,600 about:blank"
+        ]
+      },
+      {
+        "pid": 4168906,
+        "ppid": 4168896,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366924",
+        "rss_bytes": 75001856,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=zygote --no-zygote-sandbox --no-sandbox --headless=new --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --no-first-run --ozone-platform=headless --ozone-override-screen-size=800,600 --disable-gpu"
+        ]
+      },
+      {
+        "pid": 4168907,
+        "ppid": 4168896,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366924",
+        "rss_bytes": 75476992,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=zygote --no-sandbox --headless=new --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --no-first-run --ozone-platform=headless --ozone-override-screen-size=800,600 --disable-gpu"
+        ]
+      },
+      {
+        "pid": 4168932,
+        "ppid": 4168906,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366926",
+        "rss_bytes": 316141568,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=gpu-process --gpu-recent-crash-count=0 --no-sandbox --disable-dev-shm-usage --disable-breakpad --headless=new --ozone-platform=headless --use-angle=swiftshader --enable-unsafe-swiftshader --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAACBAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708988185955192"
+        ]
+      },
+      {
+        "pid": 4168936,
+        "ppid": 4168896,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366927",
+        "rss_bytes": 119570432,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --no-sandbox --disable-dev-shm-usage --use-angle=swiftshader --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708989122997041"
+        ]
+      },
+      {
+        "pid": 4168940,
+        "ppid": 4168907,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366927",
+        "rss_bytes": 49135616,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=utility --no-sandbox --disable-dev-shm-usage --use-angle=swiftshader --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708990060038890"
+        ]
+      },
+      {
+        "pid": 4169004,
+        "ppid": 4168907,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366931",
+        "rss_bytes": 137179136,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --top-chrome-webui --gpu-client-id=5 --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --disallow-v8-feature-flag-overrides --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --gpu-channel-request-start-time-ticks=473669313075 --launch-time-ticks=473669313269 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708990997080739"
+        ]
+      },
+      {
+        "pid": 4169016,
+        "ppid": 4168907,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366933",
+        "rss_bytes": 73375744,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=7 --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=7 --gpu-channel-request-start-time-ticks=473669331331 --launch-time-ticks=473669331762 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708992871164437"
+        ]
+      },
+      {
+        "pid": 4169017,
+        "ppid": 4168907,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366933",
+        "rss_bytes": 187957248,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=6 --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=6 --gpu-channel-request-start-time-ticks=473669331875 --launch-time-ticks=473669333167 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708991934122588"
+        ]
+      },
+      {
+        "pid": 4169046,
+        "ppid": 4168896,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366935",
+        "rss_bytes": 89956352,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=utility --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=none --no-sandbox --disable-dev-shm-usage --use-angle=swiftshader --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708993808206286"
+        ]
+      },
+      {
+        "pid": 4169047,
+        "ppid": 4168896,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366936",
+        "rss_bytes": 89812992,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=utility --utility-sub-type=video_capture.mojom.VideoCaptureService --lang=en-US --service-sandbox-type=none --no-sandbox --disable-dev-shm-usage --use-angle=swiftshader --message-loop-type-ui --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708994745248135"
+        ]
+      },
+      {
+        "pid": 4169058,
+        "ppid": 4168907,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366938",
+        "rss_bytes": 91627520,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=10 --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --extension-process --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=10 --gpu-channel-request-start-time-ticks=473669382286 --launch-time-ticks=473669382585 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708995682289984"
+        ]
+      },
+      {
+        "pid": 4169062,
+        "ppid": 4168907,
+        "pgrp": 4168896,
+        "state": "S",
+        "start_ticks": "47366938",
+        "rss_bytes": 96854016,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome --type=renderer --gpu-client-id=11 --crashpad-handler-pid=4168901 --enable-crash-reporter=, --noerrdialogs --user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile --extension-process --change-stack-guard-on-fork=enable --no-sandbox --disable-dev-shm-usage --disable-breakpad --remote-debugging-port=0 --ozone-platform=headless --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=11 --gpu-channel-request-start-time-ticks=473669385205 --launch-time-ticks=473669385447 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,17230478734883661269,18163716665950354878,262144 --disable-features=PaintHolding --variations-seed-version --pseudonymization-salt-handle=7,i,12305720980127447764,14220647186887789311,4 --trace-process-track-uuid=3190708996619331833"
+        ]
+      }
+    ],
+    "after": [],
+    "root_after": null,
+    "owned_live_after": [],
+    "server_closed": true
+  },
+  "post_process_cleanup": {
+    "observed_at": "2026-11-14T20:33:59.085614+02:00",
+    "browser": {
+      "original": {
+        "pid": 4168896,
+        "ppid": 4168864,
+        "pgrp": 4168896,
+        "state": "R",
+        "start_ticks": "47366920",
+        "rss_bytes": 1638400,
+        "argv": [
+          "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+          "--headless=new",
+          "--no-sandbox",
+          "--disable-dev-shm-usage",
+          "--no-first-run",
+          "--no-default-browser-check",
+          "--disable-breakpad",
+          "--disable-crash-reporter",
+          "--remote-debugging-port=0",
+          "--user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile",
+          "--window-size=1920,1080",
+          "--use-angle=swiftshader",
+          "--enable-unsafe-swiftshader",
+          "--disable-background-networking",
+          "about:blank"
+        ]
+      },
+      "observed": null,
+      "original_process_absent": true
+    },
+    "server_and_harness": {
+      "original": {
+        "pid": 4168864,
+        "ppid": 15475,
+        "pgrp": 4168864,
+        "state": "S",
+        "start_ticks": "47366875",
+        "rss_bytes": 227672064,
+        "argv": [
+          "node",
+          "tests/native/studio/m14_performance.mjs",
+          "measure",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a"
+        ]
+      },
+      "observed": null,
+      "original_process_absent": true
+    }
+  },
+  "browser_root": {
+    "pid": 4168896,
+    "ppid": 4168864,
+    "pgrp": 4168896,
+    "state": "R",
+    "start_ticks": "47366920",
+    "rss_bytes": 1638400,
+    "argv": [
+      "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+      "--headless=new",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-breakpad",
+      "--disable-crash-reporter",
+      "--remote-debugging-port=0",
+      "--user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a/browser-profile",
+      "--window-size=1920,1080",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader",
+      "--disable-background-networking",
+      "about:blank"
+    ]
+  },
+  "server": {
+    "pid": 4168864,
+    "identity": {
+      "pid": 4168864,
+      "ppid": 15475,
+      "pgrp": 4168864,
+      "state": "S",
+      "start_ticks": "47366875",
+      "rss_bytes": 227672064,
+      "argv": [
+        "node",
+        "tests/native/studio/m14_performance.mjs",
+        "measure",
+        "/home/quintin/.cache/proscenium-development/milestones/m14-performance-20261114-a"
+      ]
+    },
+    "port": 42189,
+    "label": "One owned loopback static fixture server in the harness process, no product backend or SDK"
+  },
+  "source_preservation": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/artefacts/sha256/2b5f01e288df8ad19c313507f285351347b2c951ebcb71000ea89930e484825c/content",
+      "sha256": "2b5f01e288df8ad19c313507f285351347b2c951ebcb71000ea89930e484825c",
+      "unchanged": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-b/project/.proscenium/artefacts/sha256/9d451294e1ba757da78000ec97b05128c5d10f565062932eba38a420f7098a3e/content",
+      "sha256": "9d451294e1ba757da78000ec97b05128c5d10f565062932eba38a420f7098a3e",
+      "unchanged": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy.glb",
+      "sha256": "7631a575fa9dfb3478fbbb5fa26dcff0f6ff4741956856933f23e6c8be0c219e",
+      "unchanged": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy-map.json",
+      "sha256": "f1b9a31436bc664cd7f627fd1d9aea8f4e8d677db9dc4f06b8a67104c1c255cd",
+      "unchanged": true
+    }
+  ],
+  "evidence_sha256": {
+    "raw_result": "c1a4a100e6074c98faae924b402d75b8e00bbc5e7e591b5a97713fdf5d5eb347",
+    "canvas_png": "bf0d3630549d4e76b58f5431e26dc9a707eedb6ca830c45bc7e428ec40a731f4"
+  },
+  "limits": [
+    "No orbit verification or steady cadence sample was completed.",
+    "Heavy GLB/mapping were copied and hash-checked only, not loaded by the browser.",
+    "Loader readiness is model layout/CaptureBinding readiness, not a GPU fence or compositor presentation.",
+    "Loopback resource timing includes browser scheduling, not pure network bandwidth.",
+    "Original code/test/build hashes are retained in measurement.json. The corrected palette predicate was not browser-executed.",
+    "No replacement browser/profile/server, production change or service lifecycle action is authorised implicitly.",
+    "NFR04.2 viewport cadence, complete performance acceptance and M14/release remain open."
+  ],
+  "coordinator_question": "Authorise one replacement browser measurement after the proven palette-check defect, with the same two retained cases and unchanged time/RSS/headroom guards? No replacement was launched."
+}

@@ -10,7 +10,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { setTimeout as pause } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
 import { build } from 'vite';
-import { cadence, digest, glbWorkload, ownedProcesses, processStat } from '../../acceptance/m14_performance_helpers.mjs';
+import { cadence, digest, glbWorkload, ownedProcesses, processStat, visibleGeometry } from '../../acceptance/m14_performance_helpers.mjs';
 
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
 const root=path.resolve(process.argv[3]??'');
@@ -224,7 +224,7 @@ async function measure(){
         return {...data,sha256:digest(bytes)};
       }
       record.before_orbit=await capture('before');
-      assert.ok(record.before_orbit.quantised_colours>16&&record.before_orbit.different_from_corner>100,'No visible shaded geometry');
+      assert.ok(visibleGeometry(record.before_orbit),'No visible non-uniform geometry');
       const box=await canvas.boundingBox();
       const x=box.x+box.width*.72,y=box.y+box.height*.52;
       await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+55,y+23,{steps:8});await page.mouse.up();

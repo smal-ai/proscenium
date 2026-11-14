@@ -1,11 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {summary,cadence,processStat,ownedProcesses} from './m14_performance_helpers.mjs';
+import {summary,cadence,processStat,ownedProcesses,visibleGeometry} from './m14_performance_helpers.mjs';
 
 test('nearest-rank quantiles retain real small samples and empty partial results',()=>{
   assert.deepEqual(summary([4,1,3,2]),{count:4,p50:2,p95:4,max:4});
   assert.deepEqual(summary([]),{count:0,p50:null,p95:null,max:null});
   assert.throws(()=>summary([NaN]));
+});
+test('actual flat-shaded block is visible with ten quantised colours; blank is not',()=>{
+  assert.equal(visibleGeometry({quantised_colours:10,different_from_corner:15554,sampled_pixels:360000}),true);
+  assert.equal(visibleGeometry({quantised_colours:1,different_from_corner:0,sampled_pixels:360000}),false);
 });
 test('cadence uses actual start timestamps, not manufactured target FPS',()=>{
   assert.deepEqual(cadence([{start_ms:10,end_ms:14,draw_calls:1},{start_ms:30,end_ms:39,draw_calls:2}]),{

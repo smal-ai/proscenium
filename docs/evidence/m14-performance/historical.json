@@ -1,0 +1,193 @@
+{
+  "label": "Read-only historical measurements. No native/model/renderer/provider run repeated on the performance-task revision.",
+  "sources_sha256": {
+    "docs/evidence/w03/native.json": "87aca36fc250beec628135b579738d12099e311aa9a2d31fd68a7df0b11d6754",
+    "docs/evidence/m08/final-run.json": "0f60da286c4eeaef1c2f2bc69b35993e78801e9983c817449c8d2041364ad4b8",
+    "docs/implementation/m08.md": "bd9bb207ffccaaf8480b3bfda3794db623810f30939e13cdc892148685bdd6ea",
+    "docs/evidence/w09/live-b/native-report.json": "f86950cc63944a248950f4fe856f637c0cfe93e4b831a095930e7932c1233bb3",
+    "docs/evidence/w09/live-b/README.md": "16d84c919ced5ffb339e6914349843e641fed5ce9b866e5195e40cf19b908ab1",
+    "docs/evidence/m09/vlm-responses-redacted.json": "2d9643170e023ab89c2629f424d39e1dc4ee6e53648b811e051c87fa9853a1fd",
+    "docs/evidence/m09/result.json": "a0a0753ae41dd0f477497e7ea0698d82134fd5aaf049c69cab345f5a769c7b6b",
+    "docs/evidence/m09-positive/vlm-observations.json": "bf9b7d10d5865f6588768b5216a8ba70b39460337cd41cac5ec6ce3e42b4d9be",
+    "docs/evidence/m09-positive/README.md": "e89ef14098dccdf7c42699995af046ec37d26c41df182dc4f38c9f22225b9e6a"
+  },
+  "w03": {
+    "tested_base": "66f653bcf1ef036a7473c7784fd15dd94db5a6a7",
+    "implementation_commits": {
+      "renderer_media_assembly": "67adfba53febf780535fba1d5d3a2823380c0e20",
+      "authoring_launcher": "e91eb07e7fb8651a33703989170f86faa744641d"
+    },
+    "runtime": {
+      "host": "Gerard-EVO-X2",
+      "os": "Linux x86_64 7.0.0-43-generic",
+      "python": "3.12.13",
+      "pillow": "12.3.0",
+      "blender": "4.5.14 LTS",
+      "build_hash": "62c1db4208e8",
+      "ffmpeg_ffprobe": "8.0.1-3ubuntu2",
+      "engine": "CYCLES",
+      "device": "CPU",
+      "render_threads": 4,
+      "samples": 8,
+      "dimensions": [
+        640,
+        360
+      ],
+      "draft_fps": [
+        24,
+        1
+      ],
+      "additional_encoder_fps": [
+        24000,
+        1001
+      ],
+      "review_output": "PNG RGB8, baked Standard view transform, sRGB display, look None, exposure 0, gamma 1",
+      "draft_camera": null,
+      "native_timeout_seconds": 300,
+      "encoder_timeout_seconds": 60,
+      "render_claim": "/tmp/opencode/proscenium-native-claims/blender-render.lock"
+    },
+    "performance_seconds": {
+      "first_frame_published": 1.284406269,
+      "first_segment_published": 3.259371882,
+      "last_frame_ready": 7.564896067,
+      "first_encode_including_full_validation": 0.133427938,
+      "frame_median": 0.5705226624999999,
+      "frame_p95_nearest_rank": 0.616549585,
+      "supervisor_total": 7.675434191
+    },
+    "renderer_reported_peak_memory_M": 27.15,
+    "os_telemetry_limit": "not sampled",
+    "historical_integration_gap": "F00 update_in_transaction is absent. Media receipt/artifact/availability/event commit is atomic. JobRecord progress currently follows in a separate F00 reconciliation transaction."
+  },
+  "m08": {
+    "tested_parent_dependency": "4607c17 including a46c9ba; driver/evidence 2d7a32ab93875c8ea507938b045c3267c20ddb56, as recorded in docs/implementation/m08.md",
+    "runtime": {
+      "sdk": "1.0.34",
+      "cli": "1.0.112",
+      "model": "gpt-6.1-sol",
+      "session_id": "b0e5d66e-ff17-476c-98c1-ae4fab4f490c",
+      "blender": {
+        "version": "4.5.14 LTS",
+        "build_hash": "62c1db4208e8",
+        "build_branch": "blender-v4.5-release",
+        "build_date": "2026-09-15",
+        "build_time": "01:31:19"
+      },
+      "browser": "159.0.8154.6",
+      "viewport": [
+        1920,
+        1080,
+        1
+      ],
+      "engine": "CYCLES",
+      "device": "CPU",
+      "samples": 8,
+      "threads": 4,
+      "dimensions": [
+        640,
+        360
+      ],
+      "fps": [
+        24,
+        1
+      ]
+    },
+    "performance": {
+      "last_frame_ready_ns": 463463724453244,
+      "annotation_host_ns": 463459420221169,
+      "first_segment_played_host_ns": 463459663532218,
+      "annotation_margin_seconds": 4.304232075,
+      "playback_margin_seconds": 4.060921026,
+      "first_png_ready_seconds": 0.885865996,
+      "first_segment_ready_seconds": 2.954547617,
+      "render_total_seconds": 8.519850502,
+      "throughput_fps": 1.4084754183401513,
+      "frame_median_seconds": 0.6478460155,
+      "frame_p95_nearest_rank_seconds": 0.764986664,
+      "renderer_reported_peak_M": 27.14,
+      "os_rss_and_cpu_percent": "not sampled"
+    },
+    "os_telemetry_limit": "not sampled"
+  },
+  "e04_live_b": {
+    "tested_code_revision": "6d731787a19298d2e4bc5347536e248dd6223c35",
+    "runtime": "ComfyUI0.37.4 revision8ff6dc384ba5c410266b40e137799e049459d4f2; torch2.13.0+rocm10.0.0; AMD8060S/gfx1151, see original README",
+    "provider_dispatch_to_registered_result_seconds": 72.981861025,
+    "comfy_reported_prompt_execution_seconds": 70.78,
+    "sampled_resources": {
+      "samples": 171,
+      "minimum_mem_available_bytes": 6326824960,
+      "maximum_owned_rss_bytes": 10304139264,
+      "exact_allocator_peak": false
+    },
+    "limits": "Provider timing includes upload/poll/registration, not GPU kernel time. Device-wide VRAM includes independent services. Blender RSS and exact allocator peak were not measured."
+  },
+  "m09_initial": {
+    "tested_base": "b1fa32c8a73d5aca8243fa82e65837a8acaba75c",
+    "responses": [
+      {
+        "seconds": 10.786323715990875,
+        "model": "google/gemma-4-e4b",
+        "usage": {
+          "prompt_tokens": 259,
+          "completion_tokens": 512,
+          "total_tokens": 771,
+          "completion_tokens_details": {
+            "reasoning_tokens": 509
+          }
+        },
+        "finish_reason": "length"
+      },
+      {
+        "seconds": 4.5630400980007835,
+        "model": "google/gemma-4-e4b",
+        "usage": {
+          "prompt_tokens": 412,
+          "completion_tokens": 192,
+          "total_tokens": 604,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "quality_limit": "First response exhausted 512 tokens with empty content; second mixed visual/measured evidence. Both remain failed-quality results, not successful findings.",
+    "os_rss_limit": "No per-response process RSS or GPU allocator peak recorded."
+  },
+  "m09_positive": {
+    "tested_base": "ad47260a922612393896c21ff7186d643037c524",
+    "driver_commit": "b8a68c043c361c53b12ee2ca2328daa944465cdf",
+    "model": "google/gemma-4-e4b",
+    "configuration": "65536 context; batch4096/ubatch2048; K/Vf16; flash auto; TTLdisabled; reasoning_effort none; max_tokens512",
+    "responses": [
+      {
+        "seconds": 4.5320921770180576,
+        "usage": {
+          "prompt_tokens": 252,
+          "completion_tokens": 162,
+          "total_tokens": 414,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "finish_reason": "stop"
+      },
+      {
+        "seconds": 5.587153607979417,
+        "usage": {
+          "prompt_tokens": 417,
+          "completion_tokens": 210,
+          "total_tokens": 627,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "os_rss_limit": "Pre-POST host MemAvailable recorded, not per-response process RSS or GPU allocator peak."
+  },
+  "m07": "Intentionally not joined here. Coordinator will add the returning inference measurements."
+}
