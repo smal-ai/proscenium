@@ -9,10 +9,15 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+from geometry_nodes import modifier_kind, reachable_geometry_groups  # type: ignore[import-not-found] # noqa: E402
 from journal import atomic, identity, output, read, sha  # type: ignore[import-not-found] # noqa: E402
 
 
 def dependencies(bpy, source, closure, scene):
+    for obj in scene.objects:
+        for modifier in obj.modifiers:
+            if modifier_kind(modifier) == "geometry_nodes":
+                reachable_geometry_groups(modifier)
     declared = {row["destination"]: row["origin"]["sha256"] for row in closure["files"]}
     paths = list(bpy.utils.blend_paths(absolute=True, packed=False, local=False))
     for image in bpy.data.images:
@@ -62,15 +67,7 @@ def dependencies(bpy, source, closure, scene):
             missing.append("missing_linked_library")
     for obj in scene.objects:
         for modifier in obj.modifiers:
-            # V1 refuses simulation evaluation rather than silently rendering unbaked dynamics.
-            if modifier.type in {
-                "CLOTH",
-                "FLUID",
-                "DYNAMIC_PAINT",
-                "PARTICLE_SYSTEM",
-                "SOFT_BODY",
-                "NODES",
-            }:
+            if modifier_kind(modifier) == "unsupported_simulation_cache":
                 missing.append("unsupported_simulation_cache")
     if bpy.data.cache_files or bpy.data.volumes:
         missing.append("unsupported_dynamic_cache")
@@ -158,7 +155,7 @@ def proxy(bpy, scene, root, task):
     depsgraph = bpy.context.evaluated_depsgraph_get()
     if any(instance.is_instance for instance in depsgraph.object_instances):
         raise ValueError(
-            "Collection/particle instances require an explicit authored instance mapping"
+            "Unresolved geometry/collection/particle instances require an explicit authored instance mapping"
         )
     meshes = [obj for obj in scene.objects if obj.type == "MESH" and not obj.hide_render]
     pairs = [(obj.get("proscenium_object_id"), obj.get("proscenium_instance_id")) for obj in meshes]
@@ -240,6 +237,45 @@ def proxy(bpy, scene, root, task):
     )
 
 
+def evaluated_procedural_meshes(bpy, scene):
+    """Private native evidence from evaluated geometry, not an authoring/apply step."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    result = []
+    for obj in scene.objects:
+        if obj.type != "MESH" or not any(
+            modifier_kind(m) == "geometry_nodes" for m in obj.modifiers
+        ):
+            continue
+        evaluated = obj.evaluated_get(depsgraph)
+        mesh = evaluated.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
+        try:
+            if mesh is None:
+                raise ValueError(
+                    "unsupported_geometry_nodes: generator has no realised mesh output"
+                )
+            points = [evaluated.matrix_world @ vertex.co for vertex in mesh.vertices]
+            result.append(
+                {
+                    "object_id": obj.get("proscenium_object_id"),
+                    "instance_id": obj.get("proscenium_instance_id"),
+                    "source_vertices": len(obj.data.vertices),
+                    "evaluated_vertices": len(mesh.vertices),
+                    "evaluated_polygons": len(mesh.polygons),
+                    "bounds_min": [min(p[i] for p in points) for i in range(3)] if points else None,
+                    "bounds_max": [max(p[i] for p in points) for i in range(3)] if points else None,
+                    "node_groups": [
+                        group.name
+                        for modifier in obj.modifiers
+                        if modifier_kind(modifier) == "geometry_nodes"
+                        for group in reachable_geometry_groups(modifier)
+                    ],
+                }
+            )
+        finally:
+            evaluated.to_mesh_clear()
+    return result
+
+
 def main():
     import bpy  # type: ignore[import-not-found]
 
@@ -263,6 +299,7 @@ def main():
         "animation",
         "linked-libraries",
         "external-textures",
+        "geometry-nodes",
     }
     if set(closure["required_runtime"]["features"]) - supported:
         raise ValueError("Required native feature is not supported by this renderer")
@@ -291,6 +328,8 @@ def main():
     scene.display_settings.display_device = "sRGB"
     for key, value in spec["colour_management"].items():
         setattr(scene.view_settings, key, value)
+    scene.frame_set(spec["frames"]["start"])
+    dependencies(bpy, source, closure, scene)
     override = camera_override(bpy, scene, spec["camera"]) if spec["camera"] else None
     static_camera = scene.camera if override else None
     atomic(
@@ -305,6 +344,7 @@ def main():
             "threads": scene.render.threads,
             "samples": scene.cycles.samples,
             "device": scene.cycles.device,
+            "procedural_meshes": evaluated_procedural_meshes(bpy, scene),
         },
     )
     if spec["purpose"] == "proxy":

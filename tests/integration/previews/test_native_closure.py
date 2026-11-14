@@ -9,7 +9,7 @@ import pytest
 from proscenium.previews.journal import sha
 
 
-@pytest.mark.parametrize("fault", ["outside", "undeclared", "cache", "geometry_nodes"])
+@pytest.mark.parametrize("fault", ["outside", "undeclared", "cache", "missing_geometry_group"])
 def test_native_entrypoint_rejects_unadmitted_dependencies(tmp_path, monkeypatch, fault):
     monkeypatch.setattr(sys, "path", list(sys.path))
     module = runpy.run_path(
@@ -46,6 +46,13 @@ def test_native_entrypoint_rejects_unadmitted_dependencies(tmp_path, monkeypatch
         utils=NS(blend_paths=lambda **kwargs: paths),
         path=NS(abspath=lambda raw, **kwargs: raw),
     )
-    scene = NS(objects=[NS(modifiers=[NS(type="NODES")])] if fault == "geometry_nodes" else [])
-    with pytest.raises(ValueError, match="dependency_missing"):
+    scene = NS(
+        objects=[NS(modifiers=[NS(type="NODES")])] if fault == "missing_geometry_group" else []
+    )
+    with pytest.raises(
+        ValueError,
+        match="unsupported_geometry_nodes"
+        if fault == "missing_geometry_group"
+        else "dependency_missing",
+    ):
         module["dependencies"](fake, tmp_path, closure, scene)
