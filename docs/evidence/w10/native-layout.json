@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-11-14",
+  "evidence_type": "owned_proof_directory_metadata_only",
+  "proof_root": "/home/quintin/.cache/proscenium-development/w01-child-proof-20261114-a/machine/copilot-runtime/home/session-state",
+  "observed_session_id": "b73c7578-8bc0-413d-99c2-b060deaeb99a",
+  "observed_relative_entries": [
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/",
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/events.jsonl",
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/workspace.yaml",
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/.workspace-fork.lock",
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/files/",
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/research/",
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/checkpoints/",
+    "b73c7578-8bc0-413d-99c2-b060deaeb99a/checkpoints/index.md",
+    ".session-operation-locks/b73c7578-8bc0-413d-99c2-b060deaeb99a.lock"
+  ],
+  "sdk_reference": "https://github.com/github/copilot-sdk/blob/v1.0.34/python/copilot/session.py",
+  "sdk_contract_observed": "disconnect preserves conversation/planning/artefacts on disk; get_raw_events uses session.getMessages and preserves unknown fields",
+  "application_native_base_directory": "Settings.data_directory/copilot-runtime/home",
+  "backup_selection": "Only exact persisted associated IDs under session-state. Copy entire selected trees as private opaque bytes, excluding transient .lock files. No whole-home copy.",
+  "limits": [
+    "No native history contents were displayed, supplied as model context or copied from this proof directory.",
+    "Directory metadata establishes the pinned local layout, not resumed inference or relocation compatibility.",
+    "No external linked event archive was observed. Symlinks/external storage layouts are refused, not guessed.",
+    "Private backups are not shareable exports or generic content secret scanners."
+  ]
+}
