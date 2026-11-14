@@ -1,0 +1,17 @@
+{
+  "actual_readback": "FAILED",
+  "actual_source": "d918cd03afc46132794b13ec939c79baf7c4a9c8",
+  "actual_browser": {
+    "version": "159.0.8154.6",
+    "executable": "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+    "sha256": "045558b2f167db04624e36d952496705418a85d87ff9b5fb55a8c40cc59201ae"
+  },
+  "actual_views_verified": 0,
+  "elapsed_seconds": 139.34099078399595,
+  "minimum_available_bytes": 22488727552,
+  "original_unchanged_since_import": true,
+  "protected_identities_unchanged": true,
+  "parent_acceptance": "NOT_CLAIMED",
+  "cobalt_blue_instruction": "NOT_ACHIEVED_IN_ORIGINAL_GENERATION",
+  "fresh_generation": false
+}

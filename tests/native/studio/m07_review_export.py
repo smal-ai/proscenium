@@ -13,8 +13,9 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def main(root, browser):
-    destination = REPO / "docs/evidence/m07-review/final"
+def main(root, browser, suffix=""):
+    assert suffix in {"", "failed-stack-a"}
+    destination = REPO / "docs/evidence/m07-review/final" / suffix
     destination.mkdir(parents=True, exist_ok=True)
     for name in (
         "run.json",
@@ -63,4 +64,4 @@ def main(root, browser):
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]), Path(sys.argv[2]))
+    main(Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3] if len(sys.argv) > 3 else "")

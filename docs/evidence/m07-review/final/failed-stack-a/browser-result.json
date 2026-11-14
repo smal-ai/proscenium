@@ -1,0 +1,23 @@
+{
+  "source": "d918cd03afc46132794b13ec939c79baf7c4a9c8",
+  "views": [],
+  "errors": [],
+  "mutations": [
+    {
+      "path": "/api/v1/owner/session",
+      "method": "POST"
+    }
+  ],
+  "browser": {
+    "version": "159.0.8154.6",
+    "executable": "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+    "sha256": "045558b2f167db04624e36d952496705418a85d87ff9b5fb55a8c40cc59201ae"
+  },
+  "error": "TimeoutError: locator.selectOption: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Saved project', { exact: true })\u001b[22m\n",
+  "failed_phases": [
+    {
+      "error": "TimeoutError: locator.selectOption: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Saved project', { exact: true })\u001b[22m\n",
+      "at": "2026-11-14T19:18:21.448Z"
+    }
+  ]
+}

@@ -164,19 +164,21 @@ def isolated_import(root):
             {
                 **project,
                 "path": str(destination / "project"),
-                "state": "awaiting_resume",
+                "state": "inactive",
                 "state_revision": project["state_revision"] + 1,
             },
             expected_revision=tx.revision("projects", PROJECT_ID),
             schema="ProjectRecord",
         )
-        tx.put("registry", "active", {"project_id": PROJECT_ID})
+    assert registry.active_id() is None and registry.get(PROJECT_ID)["state"] == "inactive"
     report = {
         "project_id": PROJECT_ID,
         "path": str(destination / "project"),
         "data_directory": str(destination / "machine"),
         "original_path": str(source),
-        "execution": "closed_read_only_import",
+        "execution": "closed_read_only_import_requires_explicit_activation",
+        "initial_registry_active_id": None,
+        "initial_registry_project_state": "inactive",
         "limits": ["original_scripted_setup_invocation_running"],
         "preserved_blockers": blockers,
     }

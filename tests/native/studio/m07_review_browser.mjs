@@ -34,7 +34,11 @@ try {
   await page.getByLabel('Saved project',{exact:true}).selectOption(projectId);
   const activation=page.waitForResponse(response=>response.url().endsWith(`${prefix}/activate`)&&response.request().method()==='POST');
   await page.getByRole('button',{name:'Activate selected project',exact:true}).click();assert.ok((await activation).ok());
-  await page.getByRole('button',{name:'Close projects',exact:true}).click();
+  // Activation replaces ProjectStudio's key. Its old menu normally disappears
+  // with that component, so observe the new shell before closing any retained menu.
+  await page.waitForFunction(id=>document.querySelector('.panel-footer code')?.textContent===id,projectId);
+  const closeProjects=page.getByRole('button',{name:'Close projects',exact:true});
+  if(await closeProjects.count())await closeProjects.click();
   const get=path=>page.evaluate(async path=>{const response=await fetch(path);if(!response.ok)throw Error(`${path}: ${response.status}`);return response.json();},path);
   result.before={jobs:await get(`${prefix}/jobs`),requests:await get(`${prefix}/requests`),selections:await get(`${prefix}/selections`)};
   await page.getByRole('button',{name:'Shots',exact:true}).click();
