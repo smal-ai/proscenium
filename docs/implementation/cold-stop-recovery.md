@@ -70,3 +70,24 @@ owned modules. All tests use fake SDK transport, not models or native authoring.
 The authorised one additional M11 cold metadata/control runtime follows this code
 commit. Its actual RPC facts, preservation checks and readiness outcome must be
 reported separately. No publication model send is allocated to this package.
+
+## Actual native result
+
+The one additional M11 cold runtime passed in approximately **4.40 seconds** with
+zero sends/turns/children/callback/provider effects. Native typed Abort returned
+success true, interruptMainTurn returned **interrupted false**, tasks list and
+pending external tools were empty, and all five complete pending snapshots were
+empty under the acknowledged pause. Actual request IDs, response hashes, epochs
+and timestamps are retained in [the evidence](../evidence/cold-stop-recovery/README.md).
+
+Original Stop `33048c8a-df79-4027-a6c2-10ba396e5044` is confirmed/completed revision
+2; original work is **stopped revision 10** with zero live invocations. The read
+wrapper was interrupted with native return/exit unknown. Its cancelled question
+and prepared host-reject stage are byte-identical. Original failed receipt/phase/
+outbox evidence and old public history remain preserved, not reset or redispatched.
+No idle native event ID was fabricated. HEAD/checkpoint/source/meta/report/history
+preservation checks passed, and the SDK plus parent process are closed.
+
+The work is eligible for separately authorised original Continue after parent
+acceptance. No Unity publication, goal completion or whole-M12 acceptance is
+claimed. M10 was not accessed.
