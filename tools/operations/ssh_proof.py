@@ -394,6 +394,7 @@ def run(root: Path, frontend: Path) -> dict:
                 report["status"] = "failed_backend_transport_audit"
         else:
             report["status"] = "blocked_missing_execution_guard_receipt"
+            report.setdefault("blocker", "execution_guard_receipt_unavailable")
         report["protected_session"] = {
             "pid": 3327474,
             "not_signalled": True,

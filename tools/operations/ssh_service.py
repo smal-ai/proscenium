@@ -4,7 +4,7 @@ import argparse
 import json
 import signal
 import subprocess
-from contextlib import ExitStack
+from contextlib import ExitStack, asynccontextmanager
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,6 +16,22 @@ from proscenium.copilot import install
 from proscenium.services import Services
 
 from .recovery import write_json
+
+
+def witness_lifespan(app, persist):
+    original = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def witnessed(application):
+        try:
+            async with original(application):
+                yield
+        finally:
+            # Uvicorn re-raises SIGTERM after lifespan shutdown. Persist before it
+            # restores the default handler, not in unreachable post-run cleanup.
+            persist()
+
+    app.router.lifespan_context = witnessed
 
 
 def main():
@@ -86,6 +102,34 @@ def main():
     install(services, native=NoNative())
     configure_services(services)
     write_json(root / "pairing-private.json", {"code": services.auth.issue_pairing()})
+    written = False
+
+    def persist():
+        nonlocal written
+        if written:
+            return
+        project = services.registry.active_id()
+        empty = {}
+        if project:
+            with services.registry.project_store(project).transaction(write=False) as tx:
+                empty = {
+                    name: len(tx.all(name))
+                    for name in ("jobs", "work", "requests", "copilot.session")
+                }
+        gate_closed = not project or project not in services.gate._open
+        services.close()
+        write_json(
+            root / "execution-guards.json",
+            {
+                "attempts": counters,
+                "records": empty,
+                "gate_closed": gate_closed,
+                "transport_audit": audit,
+            },
+        )
+        written = True
+        assert not any(counters.values()) and not any(empty.values()) and gate_closed
+
     with ExitStack() as stack:
         stack.enter_context(patch("httpx.Client.send", forbidden("provider_http")))
         stack.enter_context(patch("httpx.AsyncClient.send", forbidden("provider_http")))
@@ -96,6 +140,7 @@ def main():
         try:
             app = create_app(settings, services=services, manage_features=True)
             app.add_middleware(TransportAudit)
+            witness_lifespan(app, persist)
             uvicorn.run(
                 app,
                 host="127.0.0.1",
@@ -105,26 +150,7 @@ def main():
                 log_level="critical",
             )
         finally:
-            project = services.registry.active_id()
-            empty = {}
-            if project:
-                with services.registry.project_store(project).transaction(write=False) as tx:
-                    empty = {
-                        name: len(tx.all(name))
-                        for name in ("jobs", "work", "requests", "copilot.session")
-                    }
-                assert project not in services.gate._open
-            services.close()
-            write_json(
-                root / "execution-guards.json",
-                {
-                    "attempts": counters,
-                    "records": empty,
-                    "gate_closed": True,
-                    "transport_audit": audit,
-                },
-            )
-            assert not any(counters.values())
+            persist()
 
 
 if __name__ == "__main__":

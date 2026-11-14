@@ -1,12 +1,16 @@
 """Offline safety checks. The actual SSH/browser allocation is an explicit CLI run."""
 
+import asyncio
 import io
 import json
+from contextlib import asynccontextmanager
+from types import SimpleNamespace
 
 import pytest
 
 from tools.operations import ssh_proof
 from tools.operations.safety import RecoveryError
+from tools.operations.ssh_service import witness_lifespan
 
 
 def test_sshd_configuration_is_loopback_public_key_and_fixed_forward_only(tmp_path):
@@ -43,3 +47,28 @@ def test_changed_owned_start_identity_cannot_be_signalled(monkeypatch):
     monkeypatch.setattr(ssh_proof.os, "killpg", lambda *_args: pytest.fail("No unrelated signals"))
     with pytest.raises(RecoveryError, match="identity_changed"):
         owned.close()
+
+
+def test_guard_receipt_is_persisted_before_post_lifespan_signal_reraise():
+    order = []
+
+    @asynccontextmanager
+    async def original(_app):
+        order.append("started")
+        try:
+            yield
+        finally:
+            order.append("closed")
+
+    app = SimpleNamespace(router=SimpleNamespace(lifespan_context=original))
+    witness_lifespan(app, lambda: order.append("receipt"))
+
+    async def run():
+        async with app.router.lifespan_context(app):
+            order.append("traffic")
+        # Uvicorn's later signal re-raise cannot prevent the already-written receipt.
+        raise RuntimeError("Synthetic post-lifespan termination")
+
+    with pytest.raises(RuntimeError, match="post-lifespan"):
+        asyncio.run(run())
+    assert order == ["started", "traffic", "closed", "receipt"]
