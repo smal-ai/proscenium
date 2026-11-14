@@ -1,6 +1,7 @@
 """One original-work publication continuation. No operator-authored first effects."""
 
 import asyncio
+import dataclasses
 import json
 import shutil
 import sqlite3
@@ -25,6 +26,13 @@ else:
 SCENE = "unity/M11/Assets/Proscenium/Generated/f4ecf3b8541adc9031e22d92/Playable.unity"
 SCENE_SHA = "2d8e139c878c2ad4c6734f5616d1412e91b4bcf06f7c5e3fb9c604199c84d834"
 HEAD = "3297ae647200270ebdc102630e7cfbfce2f4bfd1"
+
+
+def tool_wire(value):
+    """SDK tool records are dataclasses, not the Pydantic native event objects."""
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return dataclasses.asdict(value)
+    return wire(value)
 
 
 def headroom():
@@ -109,10 +117,10 @@ class FinalHooks:
             self.loop = asyncio.get_running_loop()
             result = await original(tools, name, invocation)
             if name in {"checkpoint_sources", "publish_outputs"}:
-                self.calls.append((tools, name, invocation, wire(result)))
+                self.calls.append((tools, name, invocation, tool_wire(result)))
                 self.write(
                     "native-tools.json",
-                    [dict(name=n, invocation=wire(i), result=r) for _, n, i, r in self.calls],
+                    [dict(name=n, invocation=tool_wire(i), result=r) for _, n, i, r in self.calls],
                 )
             return result
 
@@ -137,13 +145,13 @@ class FinalHooks:
         for tools, name, invocation, result in self.calls:
             parsed = json.loads(result["text_result_for_llm"])
             assert not parsed.get("error"), parsed
-            replayed = wire(await self.original_invoke(tools, name, invocation))
+            replayed = tool_wire(await self.original_invoke(tools, name, invocation))
             actual = json.loads(replayed["text_result_for_llm"])
             assert actual.pop("replayed") is True, actual
             expected = dict(parsed)
             expected.pop("replayed", None)
             assert actual == expected, (actual, expected)
-            results.append(dict(name=name, invocation=wire(invocation), result=replayed))
+            results.append(dict(name=name, invocation=tool_wire(invocation), result=replayed))
         after = {n: records(database, n) for n in namespaces}
         assert before == after, (
             "Original replay must not create/change source/catalogue/job records"

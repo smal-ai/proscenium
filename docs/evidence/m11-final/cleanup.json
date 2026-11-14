@@ -1,0 +1,22 @@
+{
+  "browser_reaped": true,
+  "services_closed": true,
+  "sdk_sends": 1,
+  "host": {
+    "pid": 4072610,
+    "start": "47193047"
+  },
+  "browser": {
+    "pid": 4072697,
+    "start": "47193150"
+  },
+  "sdk": {
+    "pid": 4073517,
+    "start": "47194029",
+    "parent_pid": 4072610,
+    "parent_start": "47193047",
+    "binary": "/home/quintin/play/proscenium/node_modules/@github/copilot-linux-x64/copilot"
+  },
+  "recorded_identities_gone": true,
+  "stack_seconds": 78.20333456993103
+}

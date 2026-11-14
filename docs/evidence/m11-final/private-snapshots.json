@@ -1,0 +1,26 @@
+{
+  "before": {
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/final-20261114-a/private-before",
+    "copies": {
+      "project.sqlite3": "e7aa55febc417b5e4001c4b7b0242d91174852e0def53ee4da86ad6ff2255764",
+      "registry.sqlite3": "9cc4d9b71a4106d481e01286c61720e6b1182c32fdd9c7e6be5cf8628bd9b973",
+      "native-events.jsonl": "f6090d70d89f1662b1cc41fd6c2b6637768e9c5b2bb2f6bd257893acb7f65510"
+    }
+  },
+  "blocked": {
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/final-20261114-a/private-blocked",
+    "copies": {
+      "project.sqlite3": "492309e957506bc4dd9acf35627f3cbd1d400cea3bd127193a897f310a87ad71",
+      "registry.sqlite3": "bfde1c764976ef29ce48d773d8738213840410ac00d771129d2d3ebdce1fff26",
+      "native-events.jsonl": "a7ad77a00713de85e1e1fbc0d9891ff04deac470ccf01d3663b26ee76abf942b"
+    }
+  },
+  "after": {
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/final-20261114-a/private-after",
+    "copies": {
+      "project.sqlite3": "0922ec6ac4e8294a83082d688985ed6f519ca797320417e25236648cf8d12e71",
+      "registry.sqlite3": "e1abdbac70cacd5cb63effe6815b9722a9e5ba8a2a58159938602c079fd9cb02",
+      "native-events.jsonl": "2d3d6cd3222dbdaf7564d4402b9a6d043559b377516c5bd622d9fe76242224cd"
+    }
+  }
+}

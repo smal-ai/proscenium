@@ -1,0 +1,66 @@
+{
+  "send": {
+    "message_id": "7f08953c-6774-497a-bccd-0c1de49cfa9d",
+    "operation_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+    "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+    "state": "acknowledged"
+  },
+  "continuation": {
+    "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+    "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "work": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+    "job_ids": [],
+    "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+    "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "schema_version": "1.0",
+    "state": "awaiting_user",
+    "state_revision": 8,
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "live_invocations": [
+    {
+      "agent_id": null,
+      "arguments_sha256": "f78c15a7bbcaa3e8f95688a914875caba28653b9adbae3451594ceb6b65873eb",
+      "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+      "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "rg",
+      "native_id": "call_XcQ3lvQAC0HOmPxz3LBd6jzc",
+      "owner_epoch": "epoch-beb48663-3cc3-4fc8-83ba-5cf6ec9a5150",
+      "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+      "state": "running",
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    }
+  ],
+  "owner_resumes": [
+    {
+      "body": {
+        "expected_revision": 6,
+        "mode": "reconcile_only",
+        "operation_id": "407cebf6-fcc8-47b3-b231-12eb3ca97676",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      "state": "completed"
+    },
+    {
+      "body": {
+        "expected_revision": 6,
+        "mode": "continue_work",
+        "operation_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      "state": "completed"
+    }
+  ]
+}

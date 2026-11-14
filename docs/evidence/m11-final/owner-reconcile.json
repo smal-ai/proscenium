@@ -1,0 +1,11 @@
+{
+  "status": 202,
+  "body": {
+    "schema_version": "1.0",
+    "operation_id": "407cebf6-fcc8-47b3-b231-12eb3ca97676",
+    "resource_id": "work-4a7e644e78514109b4a5232316e3aacc",
+    "state": "accepted",
+    "state_revision": 6,
+    "replayed": false
+  }
+}
