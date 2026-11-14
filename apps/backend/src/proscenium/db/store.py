@@ -64,6 +64,10 @@ class Store:
                 raise DomainError(
                     "unsupported_contract", 415, "Database is newer than this backend"
                 )
+            if version == len(MIGRATIONS):
+                # Opening another read handle inside a service transaction must not
+                # attempt a second write transaction merely to verify the schema.
+                return
             if version and version < len(MIGRATIONS):
                 self.backup(self.path.with_suffix(f".pre-v{version + 1}.sqlite3"))
             # Execute individual statements: executescript implicitly commits and breaks rollback.

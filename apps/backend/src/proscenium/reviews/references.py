@@ -6,8 +6,6 @@ import math
 from fractions import Fraction
 from typing import Any
 
-from PIL import Image
-
 from proscenium.api.errors import DomainError
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
@@ -216,24 +214,12 @@ class References:
                 or mask.get("dimensions") != target["dimensions"]
             ):
                 raise DomainError("source_conflict", 409)
-            path = self.services.extension("artifacts").ready_path(
-                str(tx.project_id), mask["artifact_id"]
+            self.services.extension("artifacts").validate_mask(
+                str(tx.project_id),
+                mask["artifact_id"],
+                dimensions=target["dimensions"],
+                semantics=markup["mask_encoding"]["semantics"],
             )
-            if hashlib.sha256(path.read_bytes()).hexdigest() != mask["sha256"]:
-                raise DomainError("media_unavailable", 422)
-            with Image.open(path) as image:
-                if (
-                    image.format != "PNG"
-                    or image.mode != "L"
-                    or image.size != (target["dimensions"]["width"], target["dimensions"]["height"])
-                ):
-                    raise DomainError("invalid_request", message="Mask must be 8-bit greyscale PNG")
-                if markup["mask_encoding"]["semantics"] == "binary" and any(
-                    value not in {0, 255} for value in image.tobytes()
-                ):
-                    raise DomainError(
-                        "invalid_request", message="Binary mask contains soft coverage"
-                    )
         if annotation["spatial_status"] != "valid" and annotation["spatial_hits"]:
             raise DomainError("source_conflict", 409)
         for hit in annotation["spatial_hits"]:

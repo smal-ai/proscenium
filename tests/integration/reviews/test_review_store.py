@@ -10,13 +10,14 @@ from PIL import Image
 from proscenium.api.errors import DomainError
 from proscenium.app import create_app
 from proscenium.auth import Caller
+from proscenium.catalogue.artifacts import Artifacts
 from proscenium.contracts import validate
 from proscenium.reviews import install, router
 
 
 @pytest.fixture
 def reviews(services, tmp_path):
-    class SyntheticArtifacts:
+    class SyntheticArtifacts(Artifacts):
         def get(self, project_id, artifact_id):
             with services.registry.project_store(project_id).transaction(write=False) as tx:
                 return tx.require("artifacts", artifact_id)
@@ -24,7 +25,7 @@ def reviews(services, tmp_path):
         def ready_path(self, project_id, artifact_id):
             return tmp_path / artifact_id
 
-    services.extensions["artifacts"] = SyntheticArtifacts()
+    services.extensions["artifacts"] = SyntheticArtifacts(services)
     result = install(services)
     with services.registry.project_store("project-test").transaction() as tx:
         tx.put("items", "scene", {"item_id": "scene", "project_id": "project-test"})

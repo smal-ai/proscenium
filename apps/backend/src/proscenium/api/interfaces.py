@@ -10,6 +10,9 @@ from proscenium.db import Transaction
 class ArtifactService(Protocol):
     def get(self, project_id: str, artifact_id: str) -> dict[str, Any]: ...
     def ready_path(self, project_id: str, artifact_id: str) -> Path: ...
+    def validate_mask(
+        self, project_id: str, artifact_id: str, *, dimensions: dict[str, int], semantics: str
+    ) -> dict[str, Any]: ...
 
 
 class SourceService(Protocol):

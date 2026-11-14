@@ -289,7 +289,7 @@ class Artifacts:
     ) -> dict[str, Any]:
         artifact = self.get(project_id, artifact_id)
         if (
-            artifact["kind"] != "mask"
+            artifact["kind"] not in {"mask", "image"}
             or artifact.get("dimensions") != dimensions
             or semantics not in {"binary", "soft"}
         ):

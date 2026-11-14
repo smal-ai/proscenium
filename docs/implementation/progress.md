@@ -26,12 +26,12 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `b6f1f62` | E03 actual progressive-media and three-browser codec/paused-frame proof. |
 | `76d8451` | W06 maintained research/storyboard skills and typed shotboard UI. Integrated journeys remain pending. |
 | `9945df9`, `5da13fb` | W05 review backend and UI. Forty-eight component browser cases passed, including continuous numbered segment boundaries and missing-interval behaviour. |
+| `72b0771`, `3c38031`, `df933fa`, `d2fe9a6` | W02 projects/catalogue/checkpoints/media and native historical-source evidence. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| W02 | `/tmp/opencode/proscenium-fleet/w02`, `impl/w02` | `7b95381` | Project/source/catalogue APIs, checkpoint, LFS materialisation and ingestion. | `ses_e264898f1ffeZI7lWdopwgAFJn` |
 | W01 | `/tmp/opencode/proscenium-fleet/w01`, `impl/w01` | `2bc3d5c` | Production Copilot adapter, context, durable request/decision/event delivery and native Stop/Resume. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
 | W07 | `/tmp/opencode/proscenium-fleet/w07`, `impl/w07` | `76d8451` | ComfyUI generation/budget/recovery and requested LM Studio critique. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
 | W08 | `/tmp/opencode/proscenium-fleet/w08`, `impl/w08` | `76d8451` | Scoped Unity CLI/Editor import, controller and actual Play mode validation. | `ses_e262dde9cffevqHbPSmMm5CYKL` |
@@ -86,3 +86,5 @@ E03 delivered a first frame at 0.933 s, a first four-frame segment at 2.845 s an
 W04 integration added explicit sibling-view navigation and corrected rejection recovery. Eight synthetic shell scenarios passed in each installed browser family, for 24 cases total. This verifies real browser UI behaviour against controlled API fixtures, not the unfinished combined backend journey.
 
 W05 is composed into the production frontend and the backend's accepted-feature router list. A targeted integration follow-up connects main-chat submission to active annotation preparation and hardens catalogue-selection acknowledgement recovery. The combined foundation/review/storyboard backend suite passes 61 tests. Source/catalogue, native request execution and provider integration remain pending package returns.
+
+W02's 17 operations are now composed. Its actual production resolver reopens original and revised linked Blender bytes with measured 1.0 m / 1.5 m heights and rejects the missing texture. Integration fixed current-schema read handles attempting nested migration writes, and shares strict canonical-mask validation between upload and review services. The affected real-source/review integration suite passes 77 tests.
