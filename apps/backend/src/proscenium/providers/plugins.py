@@ -8,7 +8,7 @@ from typing import Any, Protocol
 from PIL import Image
 
 from proscenium.api.errors import DomainError
-from proscenium.providers import hunyuan
+from proscenium.providers import hunyuan, sd_turbo
 from proscenium.providers.comfy import bind_graph, preflight
 from proscenium.providers.mesh import inspect_glb_bytes
 
@@ -107,16 +107,53 @@ class HunyuanPlugin:
         return inspect_glb_bytes(data)
 
 
+class SDTurboImg2ImgPlugin(ImagePlugin):
+    revision = sd_turbo.REVISION
+    expected_model_hashes = {sd_turbo.FILENAME: sd_turbo.SHA256}
+    model_source = {
+        "repository": "stabilityai/sd-turbo",
+        "revision": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
+        "filename": sd_turbo.FILENAME,
+        "sha256": sd_turbo.SHA256,
+        "licence": "Stability AI Community License, 2024-07-05",
+    }
+    reference_dimensions = {"width": 512, "height": 512}
+    conditioning_method = (
+        "VAE-encoded latent img2img, SDTurboScheduler denoise=0.5, 4 steps, cfg=1, no resize"
+    )
+
+    def bind_graph(self, workflow, prompt, seed, references, models):
+        return sd_turbo.bind(workflow, prompt, seed, references, models)
+
+    def inspect_output(self, data, maximum_pixels):
+        result = super().inspect_output(data, maximum_pixels)
+        with Image.open(io.BytesIO(data)) as image:
+            if image.size != (512, 512):
+                raise DomainError("image_dimensions_exceeded", 413)
+        return {
+            **result,
+            "dimensions": self.reference_dimensions,
+            "conditioning_method": self.conditioning_method,
+        }
+
+
 # No model/request/graph field can register a plugin, nominate Python or choose a revision.
 PLUGINS: dict[str, GenerationCapabilityPlugin] = {
     "image": ImagePlugin(),
     "image_to_3d": HunyuanPlugin(),
 }
 REGISTRY = MappingProxyType(PLUGINS)
+IMAGE_REVISIONS = MappingProxyType(
+    {"comfy-image-1": PLUGINS["image"], sd_turbo.REVISION: SDTurboImg2ImgPlugin()}
+)
 
 
 def plugin(capability: str, revision: str | None = None) -> GenerationCapabilityPlugin:
-    result = REGISTRY.get(capability)
+    result = (
+        IMAGE_REVISIONS.get(revision)
+        if capability == "image" and revision is not None
+        else REGISTRY.get(capability)
+    )
     if result is None or (revision is not None and revision != result.revision):
         raise DomainError("capability_unavailable", 501, "Frozen capability plugin is unavailable")
     return result

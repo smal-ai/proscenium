@@ -1,0 +1,15 @@
+{
+  "repository": "stabilityai/sd-turbo",
+  "revision": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
+  "filename": "sd_turbo.safetensors",
+  "bytes": 5214561328,
+  "sha256": "3f067a1b943cf162f2b8f8588f6cf5824bd5b4c7d1d88d87164b9ca123616549",
+  "tensor_payload_bytes_by_dtype": {
+    "F32": 5214392912
+  },
+  "private": false,
+  "gated": false,
+  "source_url": "https://huggingface.co/stabilityai/sd-turbo/resolve/b261bac6fd2cf515557d5d0707481eafa0485ec2/sd_turbo.safetensors?download=true",
+  "licence": "Stability AI Community License, 2024-07-05",
+  "fit_floor_bytes": 13804495920
+}

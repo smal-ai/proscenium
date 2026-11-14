@@ -114,7 +114,12 @@ class ProviderService:
         self._background: asyncio.Task[None] | None = None
         self._stop = asyncio.Event()
         self.options = dict(services.settings.provider_options)
-        allowed = {"review_provider_id", "minimum_free_vram_bytes", "vlm_max_tokens"}
+        allowed = {
+            "review_provider_id",
+            "minimum_free_vram_bytes",
+            "vlm_max_tokens",
+            "image_profiles",
+        }
         if set(self.options) - allowed:
             raise ValueError(
                 "Unknown provider_options keys. Credentials must use a parent transport"
@@ -125,6 +130,16 @@ class ProviderService:
                 raise ValueError("Invalid provider execution limit")
         if self.options.get("vlm_max_tokens", 512) > 512:
             raise ValueError("VLM output is bounded to 512 tokens")
+        profiles = self.options.get("image_profiles", {})
+        if not isinstance(profiles, dict):
+            raise ValueError(
+                "image_profiles must map host provider IDs to installed versioned image profiles"
+            )
+        for provider_id, revision in profiles.items():
+            validate("Id", provider_id)
+            if not isinstance(revision, str):
+                raise ValueError("image profile revision must be a string")
+            plugin("image", revision)
 
     @property
     def artifacts(self) -> ArtifactService:
@@ -195,7 +210,12 @@ class ProviderService:
                 if existing != {"request": request, "work_id": caller.work_id}:
                     raise DomainError("idempotency_conflict", 409)
                 return tx.require("jobs", request["job_id"]), True
-        capability = plugin(request["capability"])
+        revision = (
+            self.options.get("image_profiles", {}).get(request["provider_id"])
+            if request["capability"] == "image"
+            else None
+        )
+        capability = plugin(request["capability"], revision)
         resolved = resolve_target(self.services, caller, request)
         provider = self.provider(request["provider_id"], capability.capability)
         workflow, data = self.artifact_bytes(project_id, request["workflow_artifact_id"])
@@ -214,7 +234,17 @@ class ProviderService:
             raise DomainError("invalid_request", message="Duplicate conditioning image")
         for artifact_id in request["input_artifact_ids"]:
             artifact, clean = self.image_bytes(project_id, artifact_id)
-            references[artifact_id] = {"sha256": artifact["sha256"], "derived_sha256": sha(clean)}
+            required_dimensions = getattr(capability, "reference_dimensions", None)
+            if required_dimensions and artifact.get("dimensions") != required_dimensions:
+                raise DomainError(
+                    "invalid_request",
+                    message="Selected image profile requires exact 512x512 reference pixels; no implicit resize",
+                )
+            references[artifact_id] = {
+                "sha256": artifact["sha256"],
+                "derived_sha256": sha(clean),
+                "dimensions": artifact.get("dimensions"),
+            }
         try:
             bound = capability.bind_graph(
                 graph,
@@ -231,6 +261,8 @@ class ProviderService:
                 "capability": capability.capability,
                 "revision": capability.revision,
                 "expected_model_hashes": capability.expected_model_hashes,
+                "conditioning_method": getattr(capability, "conditioning_method", None),
+                "model_source": getattr(capability, "model_source", None),
             },
             "provider": provider,
             "graph": bound,

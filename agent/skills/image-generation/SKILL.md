@@ -22,15 +22,23 @@ description: Generate or correct project concept images with the configured, bud
   of routine creative progression. Missing essential input is reported explicitly.
 - Register the exact API graph and UTF-8 prompt as project artefacts. Use `$prompt` in
   CLIPTextEncode and `$seed` in the noise input. Supply a decimal seed and exact model filenames.
-- For conditioning use `artifact:<id>` in LoadImage and include that image in
-  `input_artifact_ids`. It must feed VAEEncode, ReferenceLatent and the positive CFGGuider.
-  A filename in a prompt is not reference conditioning. The optional graph generator at
-  `tools/comfy/graph.py` builds this FLUX.2 Klein path. Specify dimensions and installed models.
-- Submit through the host's `submit_generation_job` tool, which calls
+- Use the **host-selected, frozen image family**. The default `comfy-image-1` remains the
+  FLUX.2 Klein path: `artifact:<id>` in LoadImage feeds VAEEncode, ReferenceLatent and the
+  positive CFGGuider. `tools/comfy/graph.py` constructs that graph.
+- For an explicitly configured `comfy-sd-turbo-img2img-1` provider, use the exact
+  `proscenium.providers.sd_turbo.graph(reference_id)` profile instead. It requires one
+  actual 512×512 reference, no implicit resize, the pinned `sd_turbo.safetensors`, four
+  SDTurboScheduler steps at denoise 0.5 and cfg 1. LoadImage feeds VAEEncode and the sampler's
+  `latent_image` while CLIPTextEncode supplies prompt conditioning. This is **img2img**,
+  not FLUX ReferenceLatent. Include the actual image in `input_artifact_ids`.
+- A filename in prose is never image conditioning. The host chooses the profile through
+  private `provider_options.image_profiles`, not tool JSON. Do not change the family,
+  checkpoint or graph of a previously admitted job, including the retained Klein job.
+- Submit through the native `submit_generation` tool, which calls
   `extensions['providers'].submit(caller, GenerationSubmit JSON)`. Do not POST inference
   directly or try `retry_job` to bypass the ledger. `settings` may contain only the target
   slot above. The exact graph is the execution specification, not opaque settings.
-  Image-to-3D is unavailable until E04 is integrated.
+  Image-to-3D is a separate configured capability and is not invoked by these image profiles.
 - The host preflights actual node schemas/model choices, checks queues/memory and obtains
   its shared GPU claim. Busy/unavailable means waiting or an actionable failure. Never
   start/stop services, unload models, clear a global queue or substitute another endpoint.
