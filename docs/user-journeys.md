@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M04 and M09 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M05 and M09 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -31,7 +31,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M02](#m02-projects-output-catalogue-and-history) | Open projects, browse assets/scenes and inspect their history | M01 | Accepted, `milestone/m02` |
 | [M03](#m03-project-discussion-steering-and-native-delegation) | Queue, steer, stop and observe native specialists and pending decisions | M01, M02 | Accepted, `milestone/m03` |
 | [M04](#m04-spatial-inspection-keyframes-and-markup) | Toggle inspection/keyframes, annotate and render a chosen viewing angle | M02, M03 | Accepted, `milestone/m04` |
-| [M05](#m05-research-find-import-and-reuse-assets) | Research and reuse local/online assets | M02, M03, M04 | Planned |
+| [M05](#m05-research-find-import-and-reuse-assets) | Research and reuse local/online assets | M02, M03, M04 | Accepted, `milestone/m05` |
 | [M06](#m06-brief-to-reviewable-storyboard) | Develop a complete narrative and shotboard | M02, M03, M05 | Planned |
 | [M07](#m07-generate-and-revise-concept-images) | Generate/revise selected storyboard and reference images through ComfyUI | M04, M06 | Planned |
 | [M08](#m08-author-and-review-animation-progressively) | Review animation and annotate available frames before rendering finishes | M04, M06. M07 when generated concepts are used | Planned |
@@ -237,6 +237,10 @@ saved review context, with the integrated installed-browser regression matrix.
 **Reuse:** Mockup's Linear Minimal layout, existing rendered-keyframe pipeline and Review Studio targeting/outbox logic. Object mapping and coordinate fixtures are new work.
 
 ## M05: Research, find, import and reuse assets
+
+**Accepted:** 14 November 2026. [Cumulative evidence](implementation/m05.md)
+records native metadata discovery, real asset acquisition/import/revision and an
+explicit new scene dependency while the alternate scene retained its original pin.
 
 **User journey:** “I ask for a prop or environment, inspect the sources Copilot finds and reuse or revise the resulting asset.”
 

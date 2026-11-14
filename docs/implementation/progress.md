@@ -125,7 +125,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M02 Projects and history | Completed on 2026-11-14 | `milestone/m02` | [Accepted criteria and retained failures](m02.md) |
 | M03 Discussion and delegation | Completed on 2026-11-14 | `milestone/m03` | [Cumulative runtime criteria and remaining M12 fault limits](m03.md) |
 | M04 Inspection and markup | Completed on 2026-11-14 | `milestone/m04` | [Native framing and composed review acceptance](m04.md) |
-| M05 Asset research and reuse | Acquisition/revision passed; adoption continuation pending | — | [Exact criteria](m05.md) |
+| M05 Asset research and reuse | Completed on 2026-11-14 | `milestone/m05` | [Actual discovery, import, revision and explicit adoption](m05.md) |
 | M06 Storyboards | Planning/selection and corrected review passed; dependencies pending | — | [Original proof](m06.md), [review follow-up](../evidence/w05/readiness-readme.md) |
 | M07 Concept generation | Original-job continuation running under resource guard | — | — |
 | M08 Progressive animation | Targeted journey passed; dependencies pending | — | [Progressive and worker-recovery proof](m08.md) |
