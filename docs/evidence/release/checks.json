@@ -1,0 +1,39 @@
+{
+  "format": "proscenium-release-assembly-checks-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "candidate": "722dce5e7631454ac116819d41ed18837ea160f1",
+  "evidence_snapshot": "722dce5e7631454ac116819d41ed18837ea160f1",
+  "status": "inactive_draft_assembly_verified_release_correctly_refused",
+  "tested_source_identity": "New assembler/test files were uncommitted owned candidates over the stated base during checks. Final file hashes below identify the final assembler and its direct normalisation regression. The base is not relabelled as every executed candidate byte. The assembly commit subsequently pins the final sources and evidence.",
+  "runtime": {"python": "3.12.13", "pytest": "8.4.2", "ruff": "0.17.5", "environment": "Owned worktree .venv installed from unchanged uv.lock. No provider/native/application execution."},
+  "final_source_sha256": {
+    "tools/operations/release_inputs.py": "5bdf8909e7f8a07bbf3cce91b50568ab812e1e739131afd24da9d72ffdc9ff2f",
+    "tests/acceptance/test_release_inputs.py": "6e072353eb66736896205b60651c6a8441fc1580bcb1482af63f2efa3202de86",
+    "docs/evidence/release/recipe.json": "ee696c80a7daa3d20af350a67b8ebdf39938530389c470abecbbaaec891fd7d1"
+  },
+  "checks": [
+    {"command":"uv sync --frozen","exit_code":0,"scope":"Only ignored owned-worktree dependencies. No manifest/lock edits or runtime/service start."},
+    {"command":"uv run pytest -q tests/acceptance/test_release_inputs.py --basetemp /home/quintin/.cache/proscenium-development/release-inputs-pure --junitxml docs/evidence/release/assembly-junit.xml","exit_code":0,"result":"8 pure tests passed. Case/invariant/layer inventory, original committed hashes, failed-record retention, inactive identities, scope qualifications, deterministic rebuild, no original fleet-only source inspection, tamper rejection and explicit pairing proposal boundaries. Before the subsequent default-M10 normalisation correction."},
+    {"command":"uv run python -m tools.operations.release_inputs --recipe docs/evidence/release/recipe.json --snapshot 722dce5e7631454ac116819d41ed18837ea160f1 --candidate 722dce5e7631454ac116819d41ed18837ea160f1 --output docs/evidence/release/draft","exit_code":0,"result":"22 source cards, 31 cases, 112 scenario clauses, 88 inactive case-layer proposals, 30 inactive journey proposals, 144 committed input hashes and 24 portable retained artefacts. No activation or release claim."},
+    {"command":"uv run python -m tools.operations.acceptance --junit docs/evidence/w10/offline-junit-accepted.xml --junit docs/evidence/w10/integration-confirmed-junit.xml --junit docs/evidence/integration-final-slices-20261114.xml --junit docs/evidence/integration-procedural-ssh-20261114.xml --junit docs/evidence/integration-runtime-final-20261114.xml --junit docs/evidence/integration-empty-wal-20261114.xml --junit docs/evidence/integration-applicability-final-20261114.xml --output docs/evidence/release/draft/validator-report.json --release","exit_code":1,"result":"EXPECTED REFUSAL. All 31 case maps resolve. Fourteen mapped offline cases observed in this archival JUnit subset. Ninety-five submission gaps remain with no live/journey receipts activated. Separate six-entry required_remaining list is not conflated with those archival/import gaps."},
+    {"command":"Read-only comparison of normalised cases/gaps/release_ready/m10/validated_applicability against actual validator output","initial_result":"Failed only on m10: first builder used an empty evidence object, while unchanged CLI supplies blocked_no_owner_scope_decision. No case/gap state or execution receipt was affected.","correction":"Builder now calls existing inspect_receipts(root, None, None). Initial report retained as draft/report.partial-initial.json. Rebuilt only the corrected generated report, other output bytes identical."},
+    {"command":"uv run pytest -q tests/acceptance/test_release_inputs.py::test_partial_report_never_converts_junit_to_native_pass --basetemp /home/quintin/.cache/proscenium-development/release-inputs-m10-default --junitxml docs/evidence/release/normalisation-junit.xml","exit_code":0,"result":"Direct affected regression passed on final source hashes. Existing Starlette/httpx warning retained. No full-suite or old live-proof rerun."},
+    {"command":"Read-only AST/hash validation with Python ast/hashlib/json and original committed bytes","exit_code":0,"result":"Both new Python files parse. All 144 input artefacts match path, SHA-256 and byte size. Current partial report cases/gaps/release_ready/m10/validated_applicability equal actual unchanged-validator output."},
+    {"command":"uv run ruff check tools/operations/release_inputs.py tests/acceptance/test_release_inputs.py","exit_code":0,"result":"Passed on final files."},
+    {"command":"uv run ruff format --check tools/operations/release_inputs.py tests/acceptance/test_release_inputs.py","exit_code":0,"result":"Two files already formatted."}
+  ],
+  "artifacts": [
+    {"path":"docs/evidence/release/assembly-junit.xml","sha256":"f37eaf0b0a9bc3b09e1dbcb05cc7b87b47e587640a8fad288179a7480fe279b5"},
+    {"path":"docs/evidence/release/normalisation-junit.xml","sha256":"f1f86ac0df30c6d4ab213f743ad3f224159b37d7f65273f18737ea7ab00eb978"},
+    {"path":"docs/evidence/release/draft/index.json","sha256":"d3a02c1bba12643022a8db190a8cfd0ef7c2139b28c7cacb6f800bb74721bc30"},
+    {"path":"docs/evidence/release/draft/receipts.draft.json","sha256":"98458ec8ed361faa4a37e97cc63aed8fbd14faab2019a97f8779a8cdd6c78dd2"},
+    {"path":"docs/evidence/release/draft/report.partial.json","sha256":"610fd4a1bba6b5104e2505aec3f9ed3299f9b7c34bb390f0f16c954558ac4ecd"},
+    {"path":"docs/evidence/release/draft/report.partial-initial.json","sha256":"dfb005fcf71eb1e1023e77e3516d47aa2440959578c71b10cd39ca20301a2e5d"},
+    {"path":"docs/evidence/release/draft/validator-report.json","sha256":"0df4f6e0316b89475c5688659c79c8663b0874a9268dc08b94af68c1c925c53c"},
+    {"path":"docs/evidence/release/draft/gaps.json","sha256":"cb3a200b4432ea3f470a7fd11bbbb89af07fcf0d1b92da73615f44969eaec741"}
+  ],
+  "prohibited_operations_performed": {"child_agents":0,"model_sends":0,"provider_calls":0,"browsers":0,"native_tools":0,"gpu_work":0,"service_operations":0,"remote_git":0,"other_agent_uncommitted_reads":0},
+  "remaining": ["M07 accepted actual corrected job/shot UI readback", "M10 accepted explicit remaining-work Queue/revision/publication", "M11 accepted positive cold Stop barrier and normal Unity publication/readback", "Parent cumulative dependency acceptance and individual remaining milestone tags", "Final integrated candidate whole-suite JUnit and installed-browser report", "Parent reviewed per-layer scope/applicability activation and release validation"],
+  "limits": ["This assembly does not accept milestones, approve applicability or certify release.","Historical source/runtime identities and raw failed records remain unchanged.","Archived JUnit is offline evidence only. No synthetic check becomes LLM/native execution.","Draft applicability helper requires explicit complete pairings and emits pending, not coordinator approval.","Main-only source inspection portability does not remove current validator's known original tested-commit requirement for activation."]
+}
