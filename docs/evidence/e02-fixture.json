@@ -1,0 +1,26 @@
+{
+  "case": "F01-native-fixture-preparation",
+  "status": "native_fixture_verified",
+  "recorded_at": "2026-11-14T12:41:13.727898+02:00",
+  "scope": "Native source generation, Git LFS hydration and historical Blender reopening. Production resolver, rendering and Copilot acceptance remain separate.",
+  "command": "python3 tools/proofs/blender/create_fixture.py --output /tmp/opencode/proscenium-f01-20261114-a",
+  "repeat_result": "reused",
+  "source_hashes": {
+    "tools/proofs/blender/create_fixture.py": "669959191fed57578b1253d78b4a49b23ab8fd4dc7f502f910e9ff5ab6a8df83",
+    "tools/proofs/blender/source_fixture.py": "e67360356608b0d65a9b1f32389b4935a71bae7f15dbbc0dd3f50ad7ba4e9635"
+  },
+  "blender": {"version": "4.5.14 LTS", "build_hash": "62c1db4208e8"},
+  "git_lfs": "3.8.0",
+  "asset_v1_commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+  "asset_v2_commit": "885400de571c3b8d2e7b7dca349601d7b4ec85b1",
+  "measured_cube_heights_m": {"historical": [1.0, 1.0], "current": [1.5, 1.5]},
+  "original_texture_sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+  "current_texture_sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33",
+  "unchanged_scene_sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+  "retained_output": "/tmp/opencode/proscenium-f01-20261114-a",
+  "evidence_hashes": {
+    "fixture-evidence.json": "541e3fb04a7a88454e24ad41b7f9b04c5fd8da4a7448f94349882fdfb469a508",
+    "historical-inspection.json": "565917ef9a486fa871c8e8b7b3ec84190dead3a731eb28ad8ed601024dba5dc9",
+    "current-inspection.json": "108b510fbbf1437c6b5e8b4cdfb58d772ff23ebfb2f80c1bd2c89fc69fa19a6c"
+  }
+}
