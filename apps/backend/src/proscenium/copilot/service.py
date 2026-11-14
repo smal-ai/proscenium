@@ -8,7 +8,7 @@ import re
 import time
 from collections.abc import Callable
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -21,6 +21,7 @@ from proscenium.contracts import canonical, validate
 from proscenium.db.store import now
 from proscenium.services import Services
 
+from . import cold_stop
 from .context import Contexts
 from .io_policy import file_io
 from .native import Native
@@ -48,6 +49,7 @@ class CallbackOwner:
     failure_handled: bool = False
     progress_at: float = 0
     progress_sequence: int = 0
+    activity_sequence: int = 0
 
 
 def retired_housekeeping(event: dict[str, Any]) -> bool:
@@ -406,6 +408,7 @@ class Copilot:
         holder: dict[str, str] = {"session_id": session_id} if session_id else {}
 
         def on_event(event: Any) -> None:
+            owner.activity_sequence += 1
             value = wire(event)
             sid = holder.get("session_id") or value.get("data", {}).get("sessionId")
             if sid:
@@ -472,16 +475,19 @@ class Copilot:
             self.notify()
 
         async def permission(request: Any, invocation: Any) -> Any:
+            owner.activity_sequence += 1
             if owner.retired or self.closing:
                 return PermissionDecisionReject()
             return await self.permission(project_id, wire(request), invocation)
 
         async def user_input(request: Any, invocation: Any) -> Any:
+            owner.activity_sequence += 1
             if owner.retired or self.closing:
                 raise DomainError("stale_decision", 409)
             return await self.user_input(project_id, wire(request), invocation)
 
         def prompt_hook(data: dict[str, Any], context: Any) -> dict[str, str]:
+            owner.activity_sequence += 1
             if owner.retired or self.closing:
                 raise DomainError("permission_denied", 403)
             agent = data.get("agentId")
@@ -509,6 +515,14 @@ class Copilot:
                 )
             return {"additionalContext": canonical(payload).decode()}
 
+        native_tools = []
+        for tool in tools.definitions():
+
+            async def observed_handler(invocation: Any, handler: Any = tool.handler) -> Any:
+                owner.activity_sequence += 1
+                return await handler(invocation)
+
+            native_tools.append(replace(tool, handler=observed_handler))
         session = await self.native.open(
             project_id,
             session_id,
@@ -517,7 +531,7 @@ class Copilot:
                 on_permission_request=permission,
                 on_user_input_request=user_input,
                 hooks={"on_user_prompt_submitted": prompt_hook},
-                tools=tools.definitions(),
+                tools=native_tools,
             ),
         )
         holder["session_id"] = session.session_id
@@ -1151,11 +1165,20 @@ class Copilot:
                     s.get("state") in {"dispatching", "outcome_uncertain"}
                     for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
                 )
+                uncertain_stop_ids = [
+                    r["request_id"]
+                    for r in tx.all("requests")
+                    if r["submission"]["type"] == "stop"
+                    and r["receipt"]["state"] == "outcome_uncertain"
+                    and tx.require("copilot.stops", r["request_id"])["phase"] == "outcome_uncertain"
+                ]
+                uncertain_stop_id = uncertain_stop_ids[0] if len(uncertain_stop_ids) == 1 else None
                 owner = self.callback_owners.get(project_id)
                 if owner and not owner.retired:
                     self.read_wait_recovery[project_id] = {
                         "session_id": session.session_id,
                         "callback_generation": owner.generation,
+                        "activity_sequence": owner.activity_sequence,
                         "proofs": probe_read_wait(
                             self.state,
                             tx,
@@ -1165,6 +1188,7 @@ class Copilot:
                                 "departed": departed,
                                 "prior_invocations": prior_invocations,
                                 "current_send": current_send,
+                                "uncertain_stop_id": uncertain_stop_id,
                                 "validated_targets": validated_targets,
                                 "pending_empty": {
                                     "items",
@@ -1226,6 +1250,8 @@ class Copilot:
                     history,
                     {**departed, "invocation_ids": prior_invocations},
                 )
+            if uncertain_stop_id:
+                await self.reconcile_cold_read_stop(project_id, session, uncertain_stop_id)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             uncertain = [
                 r["request_id"]
@@ -1247,6 +1273,141 @@ class Copilot:
             "uncertain_continuations": len(continuations),
             "duplicate_correlations": len(duplicates),
         }
+
+    async def reconcile_cold_read_stop(self, project_id: str, session: Any, stop_id: str) -> None:
+        sid = session.session_id
+        recovery = self.read_wait_recovery.get(project_id)
+        owner = self.callback_owners.get(project_id)
+        if (
+            not recovery
+            or not owner
+            or len(recovery["proofs"]) != 1
+            or recovery["proofs"][0].get("existing_stop_request_id") != stop_id
+            or not hasattr(self.native, "cold_stop_snapshot")
+            or getattr(self.native, "non_continuing_session_id", None) != session.session_id
+        ):
+            return
+        epoch = self.services.ownership.epoch
+        observation_id = key(epoch, stop_id)
+        store = self.services.registry.project_store(project_id)
+        with store.transaction() as tx:
+            if tx.get("copilot.cold_stop_observations", observation_id, required=False):
+                return  # Non-idempotent pause is never retried in this owner epoch.
+            phase = tx.require("copilot.stops", stop_id)
+            stop = tx.require("requests", stop_id)
+            work = tx.require("work", phase["work_id"])
+            outbox = tx.connection.execute(
+                "SELECT state,evidence FROM outbox WHERE id=?", (stop_id,)
+            ).fetchone()
+            observation = {
+                "id": observation_id,
+                "epoch": epoch,
+                "session_id": session.session_id,
+                "callback_generation": owner.generation,
+                "activity_sequence": recovery["activity_sequence"],
+                "status": "collecting",
+                "started_at": now(),
+                "previous_stop_phase": phase,
+                "previous_stop_receipt": stop["receipt"],
+                "stop_payload": stop["submission"],
+                "previous_work": work,
+                "previous_outbox": dict(state=outbox[0], evidence=outbox[1]) if outbox else None,
+            }
+            observation["candidate_records"] = [
+                {
+                    "namespace": namespace,
+                    "id": identity,
+                    "sha256": hashlib.sha256(
+                        canonical(tx.require(namespace, identity))
+                    ).hexdigest(),
+                }
+                for proof in recovery["proofs"]
+                for namespace, identity in (
+                    ("invocations", proof["invocation_id"]),
+                    ("decisions", proof["decision_id"]),
+                    ("copilot.permissions", key(session.session_id, proof["native_id"])),
+                )
+            ]
+            tx.put("copilot.cold_stop_observations", observation_id, observation)
+
+        def owned() -> bool:
+            if (
+                self.closing
+                or self.services.registry.active_id() != project_id
+                or self.services.ownership.epoch != epoch
+                or owner.retired
+                or owner.failure
+                or self.callback_owners.get(project_id) is not owner
+                or self.sessions.get(project_id) is not session
+                or self.session_callback_owners.get(id(session)) is not owner
+                or owner.generation != recovery["callback_generation"]
+                or owner.activity_sequence != recovery["activity_sequence"]
+                or any(not task.done() for task in self.sends.values())
+                or getattr(self.native, "non_continuing_session_id", None) != sid
+                or getattr(session, "session_id", None) != sid
+                or not self.native.transport_alive()
+            ):
+                return False
+            return True
+
+        def stable() -> bool:
+            if not owned():
+                return False
+            with store.transaction(write=False) as tx:
+                allowed = {p["invocation_id"] for p in recovery["proofs"]}
+                return (
+                    self.state.control(tx)["fenced"]
+                    and tx.require("copilot.stops", stop_id) == observation["previous_stop_phase"]
+                    and tx.require("requests", stop_id)["receipt"]
+                    == observation["previous_stop_receipt"]
+                    and tx.require("work", work["work_id"]) == observation["previous_work"]
+                    and all(
+                        hashlib.sha256(canonical(tx.require(r["namespace"], r["id"]))).hexdigest()
+                        == r["sha256"]
+                        for r in observation["candidate_records"]
+                    )
+                    and {
+                        i.get("invocation_id")
+                        for i in tx.all("invocations")
+                        if i["state"] not in TERMINAL
+                    }
+                    == allowed
+                    and not any(
+                        w["work_id"] != work["work_id"] and w["state"] not in TERMINAL | {"pending"}
+                        for w in tx.all("work")
+                    )
+                    and not any(
+                        s.get("state") != "acknowledged"
+                        for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
+                    )
+                    and not any(
+                        r["submission"]["type"] == "steer" and r["receipt"]["state"] not in TERMINAL
+                        for r in tx.all("requests")
+                    )
+                )
+
+        try:
+            cold_stop.require(stable(), "wrong_owner_or_live_work")
+            snapshot = await asyncio.wait_for(self.native.cold_stop_snapshot(session, stable), 30)
+            cold_stop.require(stable(), "callback_or_owner_changed")
+            observation["snapshot"] = snapshot
+            with store.transaction() as tx:
+                cold_stop.require(owned(), "callback_or_owner_changed")
+                cold_stop.apply(self.state, tx, stop_id, recovery["proofs"], observation)
+                observation.update(status="applied", finished_at=now())
+                save(tx, "copilot.cold_stop_observations", observation_id, observation)
+                cold_stop.require(owned(), "callback_or_owner_changed")
+            self.pause_owner[project_id] = stop_id
+        except Exception as exc:
+            observation.update(
+                status="uncertain",
+                finished_at=now(),
+                error_type=type(exc).__qualname__,
+                error_reason=exc.details.get("reason") if isinstance(exc, DomainError) else None,
+                snapshot=getattr(self.native, "latest_cold_stop_snapshot", {}),
+            )
+            with store.transaction() as tx:
+                save(tx, "copilot.cold_stop_observations", observation_id, observation)
 
     async def resume(self, project_id: str, operation_id: str) -> None:
         store = self.services.registry.project_store(project_id)

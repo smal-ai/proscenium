@@ -8,21 +8,29 @@ import json
 import os
 import signal
 import sys
+import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from copilot import CopilotClient, RuntimeConnection
 from copilot.generated.rpc import (
+    AbortRequest,
+    InterruptMainTurnRequest,
     QueueSetDrainPausedRequest,
     QueueWithdrawMessageRequest,
     SandboxConfig,
 )
 
 from proscenium.api.errors import DomainError
+from proscenium.contracts import canonical
+from proscenium.db.store import now
 from proscenium.services import Services
 
+from .cold_stop import external_empty, queue_empty, require, tasks_inactive, validate
 from .launcher import identity
 
 BINARY_SHA256 = "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69"
@@ -183,6 +191,8 @@ class Native:
         self.config = Configuration.load(services.settings.runtime)
         self.client: Any = None
         self.departed_process: dict[str, Any] | None = None
+        self.non_continuing_session_id: str | None = None
+        self.latest_cold_stop_snapshot: dict[str, Any] = {}
 
     def reconcile_process(self) -> None:
         record_path = self.services.settings.data_directory / "copilot-runtime/process.json"
@@ -315,15 +325,179 @@ class Native:
             if self.departed_process is not None:
                 self.departed_process = {**self.departed_process, "session_id": session_id}
             try:
-                return await asyncio.wait_for(
+                resumed = await asyncio.wait_for(
                     self.client.resume_session(session_id, **settings, continue_pending_work=False),
                     30,
                 )
+                self.non_continuing_session_id = session_id
+                return resumed
             except Exception as exc:
                 if "not found" in str(exc).lower():
                     raise DomainError("native_session_missing", 503) from None
                 raise
+        self.non_continuing_session_id = None
         return await asyncio.wait_for(self.client.create_session(**settings), 30)
+
+    async def _cold_rpc(
+        self,
+        session: Any,
+        method: str,
+        parameters: dict[str, Any],
+        call: Callable[[], Awaitable[Any]],
+    ) -> Any:
+        """Capture the real pinned transport request ID without logging params/prompts/auth."""
+        client = session.rpc._client
+        original_send = client._send_message
+        ids: list[str] = []
+        record: dict[str, Any] = {
+            "observation_id": uuid4().hex,
+            "session_id": session.session_id,
+            "method": method,
+            "parameters": parameters,
+            "started_at": now(),
+            "status": "dispatching",
+        }
+        self.latest_cold_stop_snapshot["rpc"].append(record)
+
+        async def send(message: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+            if (
+                message.get("method") == method
+                and message.get("params", {}).get("sessionId") == session.session_id
+            ):
+                require(
+                    message.get("params") == {**parameters, "sessionId": session.session_id},
+                    "unexpected_rpc_parameters",
+                )
+                ids.append(message["id"])
+            return await original_send(message, *args, **kwargs)
+
+        client._send_message = send
+        try:
+            result = await call()
+            data = result.to_dict() if hasattr(result, "to_dict") else result
+            summary: Any
+            require(len(ids) == 1 and isinstance(ids[0], str), "unobserved_rpc_request_id")
+            if method == "session.tasks.list" and isinstance(data, dict):
+                summary = {
+                    "tasks": [
+                        {k: t[k] for k in ("id", "type", "status") if k in t}
+                        for t in data.get("tasks", [])
+                    ]
+                }
+            elif method == "session.tools.listPendingRequests" and isinstance(data, dict):
+                summary = {
+                    "items": [
+                        {k: t[k] for k in ("requestId", "toolCallId", "toolName") if k in t}
+                        for t in data.get("items", [])
+                    ]
+                }
+            elif method == "session.queue.pendingItems" and not queue_empty(data):
+                summary = {
+                    "items_count": len(data.get("items", [])),
+                    "steering_count": len(data.get("steeringMessages", [])),
+                    "inFlightSteeringCount": data.get("inFlightSteeringCount"),
+                }
+            else:
+                summary = data
+            record.update(
+                status="succeeded",
+                rpc_request_id=ids[0],
+                response=summary,
+                response_sha256=hashlib.sha256(canonical(data)).hexdigest(),
+                summary_sha256=hashlib.sha256(canonical(summary)).hexdigest(),
+            )
+            return data
+        except Exception as exc:
+            record.update(
+                status="uncertain",
+                error_type=type(exc).__qualname__,
+                error_code=getattr(exc, "code", None),
+                rpc_request_id=ids[0] if len(ids) == 1 else None,
+            )
+            raise
+        finally:
+            record["finished_at"] = now()
+            client._send_message = original_send
+
+    async def cold_stop_snapshot(self, session: Any, stable: Callable[[], bool]) -> dict[str, Any]:
+        require(
+            self.non_continuing_session_id == session.session_id, "not_non_continuing_cold_session"
+        )
+        self.latest_cold_stop_snapshot = {
+            "session_id": session.session_id,
+            "non_continuing": True,
+            "started_monotonic": time.monotonic(),
+            "started_at": now(),
+            "rpc": [],
+            "complete": False,
+        }
+        record_path = self.services.settings.data_directory / "copilot-runtime/process.json"
+        if record_path.exists():
+            process = json.loads(record_path.read_text())
+            self.latest_cold_stop_snapshot["current_process"] = {
+                k: process[k] for k in ("pid", "start", "parent_pid", "parent_start")
+            }
+
+        async def rpc(
+            method: str, parameters: dict[str, Any], call: Callable[[], Awaitable[Any]]
+        ) -> Any:
+            require(stable(), "callback_or_owner_changed")
+            value = await self._cold_rpc(session, method, parameters, call)
+            require(stable(), "callback_or_owner_changed")
+            return value
+
+        async def pending() -> Any:
+            result = await rpc(
+                "session.queue.pendingItems", {}, lambda: session.rpc.queue.pending_items(timeout=5)
+            )
+            require(queue_empty(result), "queued_or_inflight_work")
+            return result
+
+        await pending()
+        await rpc(
+            "session.queue.setDrainPaused",
+            {"paused": True},
+            lambda: session.rpc.queue.set_drain_paused(
+                QueueSetDrainPausedRequest(paused=True), timeout=5
+            ),
+        )
+        await pending()
+        tasks = await rpc("session.tasks.list", {}, lambda: session.rpc.tasks.list(timeout=5))
+        require(tasks_inactive(tasks), "background_task_active_or_unknown")
+        external = await rpc(
+            "session.tools.listPendingRequests",
+            {},
+            lambda: session.rpc.tools.list_pending_requests(timeout=5),
+        )
+        require(external_empty(external), "external_tool_pending")
+        await pending()
+        aborted = await rpc(
+            "session.abort", {}, lambda: session.rpc.abort(AbortRequest(), timeout=5)
+        )
+        require(
+            isinstance(aborted, dict)
+            and aborted.get("success") is True
+            and not aborted.get("error"),
+            "no_abort_ack",
+        )
+        await pending()
+        interrupted = await rpc(
+            "session.interruptMainTurn",
+            {"flushQueued": False},
+            lambda: session.rpc.interrupt_main_turn(
+                InterruptMainTurnRequest(flush_queued=False), timeout=5
+            ),
+        )
+        require(
+            isinstance(interrupted, dict) and interrupted.get("interrupted") is False,
+            "main_loop_not_proven_inactive",
+        )
+        await pending()
+        self.latest_cold_stop_snapshot.update(
+            complete=True, finished_monotonic=time.monotonic(), finished_at=now()
+        )
+        validate(self.latest_cold_stop_snapshot, session.session_id)
+        return self.latest_cold_stop_snapshot
 
     async def pause(self, session: Any, paused: bool) -> None:
         await session.rpc.queue.set_drain_paused(
@@ -370,3 +544,4 @@ class Native:
                 await asyncio.wait_for(self.client.force_stop(), 20)
             finally:
                 self.client = None
+                self.non_continuing_session_id = None

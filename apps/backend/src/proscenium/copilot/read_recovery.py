@@ -1,6 +1,7 @@
 """Interrupt a known lost native read wait only through an evidenced explicit Stop."""
 
 import hashlib
+import json
 from typing import Any
 
 from proscenium.contracts import canonical
@@ -9,10 +10,51 @@ from proscenium.db import Transaction
 from .state import SYSTEM, TERMINAL, State, key, save
 
 
+def cancelled_by_stop(
+    tx: Transaction, decision: dict[str, Any], work_id: str, stop_id: str
+) -> bool:
+    stop = tx.get("requests", stop_id, required=False)
+    phase = tx.get("copilot.stops", stop_id, required=False)
+    if (
+        not stop
+        or not phase
+        or phase["phase"] != "outcome_uncertain"
+        or stop["submission"]["type"] != "stop"
+        or stop["submission"].get("target_work_id") != work_id
+        or stop["receipt"]["state"] != "outcome_uncertain"
+        or phase["work_id"] != work_id
+    ):
+        return False
+    operation = tx.connection.execute(
+        "SELECT fingerprint FROM operations WHERE scope='request.submit' AND id=?", (stop_id,)
+    ).fetchone()
+    if not operation or operation[0] != hashlib.sha256(canonical(stop["submission"])).hexdigest():
+        return False
+    events = [
+        json.loads(row[0])
+        for row in tx.connection.execute("SELECT body FROM events ORDER BY sequence")
+    ]
+    for n, event in enumerate(events):
+        if (
+            n >= 2
+            and event["event_type"] == "request.accepted"
+            and event["request_id"] == stop_id
+            and events[n - 1]["event_type"] == "work.state_changed"
+            and events[n - 1]["work_id"] == work_id
+            and events[n - 1]["payload"]["state"] == "stop_requested"
+            and events[n - 2]["event_type"] == "decision.resolved"
+            and events[n - 2]["payload"] == decision
+            and events[n - 2]["payload"]["state"] == "cancelled"
+        ):
+            return True
+    return False
+
+
 def probe(
     state: State, tx: Transaction, sid: str, history: list[dict[str, Any]], context: dict[str, Any]
 ) -> list[dict[str, Any]]:
     departed = context.get("departed", {})
+    uncertain_stop = context.get("uncertain_stop_id")
     if (
         departed.get("session_id") != sid
         or departed.get("observed_identity") == departed.get("start")
@@ -91,7 +133,12 @@ def probe(
             or not decision_binding
             or len(decisions) != 1
             or work["native_session_id"] != sid
-            or work["state"] not in {"awaiting_user", "awaiting_resume", "outcome_uncertain"}
+            or work["state"]
+            not in (
+                {"stop_requested", "awaiting_resume", "outcome_uncertain"}
+                if uncertain_stop
+                else {"awaiting_user", "awaiting_resume", "outcome_uncertain"}
+            )
             or any(binding.get(k) != inv[k] for k in fields[:-1])
             or any(stage.get(k) != inv[k] or decision_binding.get(k) != inv[k] for k in fields)
             or stage.get("session_id") != sid
@@ -113,7 +160,12 @@ def probe(
             decision["native_decision_id"] != native_id
             or decision["kind"] != "permission"
             or decision["work_id"] != inv["work_id"]
-            or decision["state"] != "pending"
+            or (
+                decision["state"] != "pending"
+                if not uncertain_stop
+                else decision["state"] != "cancelled"
+                or not cancelled_by_stop(tx, decision, inv["work_id"], uncertain_stop)
+            )
             or decision["response"] is not None
             or decision["resolved_by"] is not None
             or decision["delivery_state"] != "not_sent"
@@ -128,7 +180,8 @@ def probe(
                 "arguments_sha256": inv["arguments_sha256"],
                 "permission_fingerprint": stage["fingerprint"],
                 "decision_id": decision["decision_id"],
-                "decision_revision": decision["state_revision"],
+                "decision_revision": decision["state_revision"] - (1 if uncertain_stop else 0),
+                "existing_stop_request_id": uncertain_stop,
                 "decision_fingerprint": decision["fingerprint"],
                 "source_event_ids": [start["id"], event["id"]],
                 "target": context["validated_targets"][event["id"]],
@@ -163,6 +216,58 @@ def interrupt(
         or request["receipt"]["state"] != "stop_requested"
     ):
         return 0
+    return _interrupt_waits(
+        tx,
+        sid,
+        stop_id,
+        proofs,
+        epoch,
+        {
+            "completion_basis": "native_stop_events",
+            "control_event_ids": [phase["abort_native_event_id"], phase["idle_native_event_id"]],
+        },
+    )
+
+
+def interrupt_cold(
+    tx: Transaction,
+    sid: str,
+    stop_id: str,
+    proofs: list[dict[str, Any]],
+    epoch: str,
+    observation_id: str,
+) -> int:
+    """Called only after validating the positive cold RPC barrier, not synthetic phase changes."""
+    phase = tx.require("copilot.stops", stop_id)
+    request = tx.require("requests", stop_id)
+    if phase["phase"] != "outcome_uncertain" or request["receipt"]["state"] != "outcome_uncertain":
+        return 0
+    if any(p.get("existing_stop_request_id") != stop_id for p in proofs):
+        return 0
+    return _interrupt_waits(
+        tx,
+        sid,
+        stop_id,
+        proofs,
+        epoch,
+        {
+            "completion_basis": "cold_inactive_main_loop_rpc",
+            "rpc_observation_id": observation_id,
+            "control_event_ids": [],
+            "native_main_loop_interrupted": False,
+        },
+    )
+
+
+def _interrupt_waits(
+    tx: Transaction,
+    sid: str,
+    stop_id: str,
+    proofs: list[dict[str, Any]],
+    epoch: str,
+    basis: dict[str, Any],
+) -> int:
+    phase = tx.require("copilot.stops", stop_id)
     count = 0
     for proof in proofs:
         if (
@@ -221,14 +326,14 @@ def interrupt(
             "source_event_ids": [
                 *proof["source_event_ids"],
                 *completion_ids,
-                phase["abort_native_event_id"],
-                phase["idle_native_event_id"],
+                *basis["control_event_ids"],
             ],
             "native_permission_completion_observed": bool(completion_ids),
             "native_return_observed": False,
             "native_exit_code": None,
             "result": "Read wait interrupted by verified Stop; native search result remains unknown.",
         }
+        evidence.update({k: v for k, v in basis.items() if k != "control_event_ids"})
         evidence["pending_empty"] = True
         tx.put("copilot.permission_outcomes", key(sid, proof["native_id"]), evidence)
         save(
