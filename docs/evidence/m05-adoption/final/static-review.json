@@ -1,0 +1,28 @@
+{
+  "source_sha256": "78af72c20b125075ce6946f148b47ce5a7dc35962c6b0bfb7b03f73b5437448a",
+  "source_lines": 205,
+  "canonical_helper_cases_passed": [
+    "in-project dot components",
+    "missing path rejected",
+    "escaping path rejected",
+    "lexical symlink rejected"
+  ],
+  "required_model_edits": [
+    "safe(): retain lexical scope/symlink guard, then resolve(strict=True), then canonical containment",
+    "Fresh history_adopt_final.py and history-adoption-final.json; current native request/work/context IDs",
+    "Only the new live native-final-allocation folder and current report excluded from protected set; old reports protected",
+    "Canonical sorted blend_paths and same-directory relative library references for stable pre/post-save dependency equality",
+    "Fresh scene.adopting-final.blend sibling; explicit compress=False makes BLENDER header assertion authoritative",
+    "Preserve exact-ID selector, scene state equality, protected bytes and all scope/missing-file guards"
+  ],
+  "remaining_assertions_reviewed": [
+    "actual v3 mesh/material/dimensions",
+    "library equality and source hash",
+    "orphans purge does not change scene state",
+    "temporary output freshness/header",
+    "dependency equality after same-directory save",
+    "protected report set excludes live writer",
+    "historical hashes remain immutable"
+  ],
+  "no_native_or_model_call": true
+}

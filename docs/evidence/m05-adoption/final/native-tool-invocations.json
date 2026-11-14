@@ -1,0 +1,231 @@
+[
+  {
+    "native_event_id": "60886af4-2114-4d05-8ff9-123a173648aa",
+    "timestamp": "2026-11-14T17:14:52.795Z",
+    "toolCallId": "call_qyobKMuXYNwAGH9QyIEqgdOa",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "asset-cube-v3"
+    }
+  },
+  {
+    "native_event_id": "95cbcd54-fbd2-405a-9ef6-30eabaf4dccc",
+    "timestamp": "2026-11-14T17:14:52.795Z",
+    "toolCallId": "call_QuKwdKDO4xVgr3HBMO4XjWQj",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "scene-main-v1"
+    }
+  },
+  {
+    "native_event_id": "b67cd94c-58dd-4f45-be2c-e912feeb5247",
+    "timestamp": "2026-11-14T17:14:52.795Z",
+    "toolCallId": "call_FVAN5CcM3JhIa9KrerUrdS2H",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/history_adopt_completion.py"
+    }
+  },
+  {
+    "native_event_id": "a6f1c5b8-b934-4d19-a794-a72e1dcbc6e0",
+    "timestamp": "2026-11-14T17:14:52.796Z",
+    "toolCallId": "call_3wJuFvWvqbLY5ry6M8ll36RK",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/m05_adopt_final_guard.py"
+    }
+  },
+  {
+    "native_event_id": "5a87303a-c04c-4ca8-bb56-6b7cab5d29fc",
+    "timestamp": "2026-11-14T17:14:52.803Z",
+    "toolCallId": "call_uSL4mLZ89wC2wHcdXlqoIjOq",
+    "toolName": "bash",
+    "arguments": {
+      "command": "git status --short && git rev-parse HEAD && cat project.json && python - <<'PY'\nimport json\nfrom pathlib import Path\nr=json.loads(Path('reports/history-adoption-completion.json').read_text()); print(json.dumps({'status':r['status'],'history':[(h['version_id'],h['status'],[o['dimensions_m'] for o in h['instances']],[(t['dimensions'],t['sha256']) for t in h['dependencies']['textures']]) for h in r['historical_inspections']]}))\nimport proscenium.contracts.generated as g\nprint('PublicationSubmit available',hasattr(g,'PublicationSubmit'))\nPY",
+      "description": "Inspect active status, metadata, prior history evidence and exact publication contract"
+    }
+  },
+  {
+    "native_event_id": "a4dd397f-d6c6-4f72-86f7-a7fb618fde79",
+    "timestamp": "2026-11-14T17:14:56.526Z",
+    "toolCallId": "call_7bXVPQ4wo4UwVJdnnWAjt1vV",
+    "toolName": "bash",
+    "arguments": {
+      "command": "cp --no-clobber tools/history_adopt_completion.py tools/history_adopt_final.py",
+      "description": "Create final script copy while preserving earlier scripts"
+    }
+  },
+  {
+    "native_event_id": "fb23e981-ab09-46f3-830a-08f45782b4be",
+    "timestamp": "2026-11-14T17:15:03.877Z",
+    "toolCallId": "custom_call_3aHrZMeU3Dz703Se4CKsbQA4",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Update File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/history_adopt_final.py\n@@\n-report_path = root / \"reports/history-adoption-completion.json\"\n+report_path = root / \"reports/history-adoption-final.json\"\n@@\n     assert p.is_relative_to(root) and not any(x.is_symlink() for x in [p, *p.parents]), str(p)\n+    p = p.resolve(strict=True)\n+    assert p.is_relative_to(root.resolve(strict=True)), str(p)\n     return p\n@@\n def dependencies(scope):\n-    paths = list(bpy.utils.blend_paths(absolute=True, packed=False, local=False))\n+    scope = safe(scope)\n+    paths = sorted(str(safe(p)) for p in bpy.utils.blend_paths(absolute=True, packed=False, local=False))\n@@\n-    return {\"blend_paths\": paths, \"libraries\": libraries, \"textures\": textures}\n+    return {\"blend_paths\": paths, \"libraries\": sorted(libraries, key=lambda x: (x[\"resolved_path\"], x[\"name\"])),\n+            \"textures\": sorted(textures, key=lambda x: (x[\"resolved_path\"], x[\"name\"]))}\n@@\n-              if p.is_file() and p != report_path and \"native-adoption-allocation\" not in p.parts]\n-protected.append(\"tools/history_adopt.py\")\n+              if p.is_file() and p != report_path and \"native-final-allocation\" not in p.parts]\n+protected += [p.relative_to(root).as_posix() for p in (root / \"tools\").rglob(\"*\")\n+              if p.is_file() and p.name != \"history_adopt_final.py\"]\n@@\n-    \"command\": \"python tools/m05_adopt_guard.py tools/history_adopt_completion.py\",\n-    \"request_id\": \"0cac4d20-0fc1-48a5-b26a-9487c027cbee\", \"work_id\": \"work-314f1c4eee9f47278ce6d6e280e6950c\",\n-    \"generation_task_id\": \"task-3d6f06b8c2204596b420a9de90174c08\", \"context_id\": \"9ba1a5f1-8731-4964-8939-c487fe382814\",\n+    \"command\": \"python tools/m05_adopt_final_guard.py tools/history_adopt_final.py\",\n+    \"request_id\": \"b9370f80-1ebd-4e8e-84c0-c7822ee834ef\", \"work_id\": \"work-1934aa7969374f9181cf4cb9fcde3150\",\n+    \"generation_task_id\": \"task-5574017c84d440219feca866a4dae800\", \"context_id\": \"fdb4e5e0-3649-4eb4-8edb-8f7d1b85b181\",\n@@\n-temporary = source.with_name(\"scene.adopting-completion.blend\")\n+temporary = source.with_name(\"scene.adopting-final.blend\")\n@@\n for lib in bpy.data.libraries:\n@@\n     lib.filepath = \"//\" + os.path.relpath(p, source.parent)\n+    assert lib.filepath == \"//../../assets/cube/asset.blend\"\n@@\n-bpy.ops.wm.save_as_mainfile(filepath=str(temporary), check_existing=False)\n+bpy.ops.wm.save_as_mainfile(filepath=str(temporary), check_existing=False, compress=False)\n@@\n saved_deps = dependencies(root)\n assert saved_deps == deps\n+assert scene_state() == state_before\n+assert baseline == {p: sha(p) for p in protected}\n+for inspection in report[\"historical_inspections\"]:\n+    snapshot = safe(inspection[\"snapshot_root\"])\n+    assert inspection[\"hashes_before\"] == {p: sha(snapshot / p) for p in inspection[\"hashes_before\"]}\n os.replace(temporary, source)\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "42371c9a-8960-47bd-92bc-3129fc2715ed",
+    "timestamp": "2026-11-14T17:15:10.840Z",
+    "toolCallId": "call_EFUo4QQZFeCH2ltU3bXBE13l",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/m05_adopt_final_guard.py tools/history_adopt_final.py && python - <<'PY'\nimport json\nfrom pathlib import Path\nr=json.loads(Path('reports/history-adoption-final.json').read_text()); assert r['status']=='passed'; print(json.dumps({'status':r['status'],'output':r['adoption']['output'],'instances':r['adoption']['instances'],'dependencies':r['adoption']['saved_dependency_recheck'],'state_preserved':r['adoption']['state_preserved'],'protected_unchanged':r['protected_before']==r['protected_after']}))\nPY",
+      "description": "Run single final guarded Blender process and verify successful scene promotion",
+      "initial_wait": 30
+    }
+  },
+  {
+    "native_event_id": "558289f2-bd09-4ddc-903a-9d9851daf444",
+    "timestamp": "2026-11-14T17:15:17.712Z",
+    "toolCallId": "call_M0fijepra4ooNuQwttOcXMp0",
+    "toolName": "checkpoint_sources",
+    "arguments": {
+      "schema_version": "1.0",
+      "operation_id": "m05-main-final-checkpoint-b9370f80",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "paths": [
+        "scenes/fixture/scene.blend",
+        "tools/history_adopt_final.py",
+        "reports/history-adoption-final.json"
+      ],
+      "message": "Adopt pinned Khronos Box v3 into main scene only with verified historical readback\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+      "expected_head": "a3a3c8ea36bc3e91b88c262d2cdafb5713024845"
+    }
+  },
+  {
+    "native_event_id": "952f0ddf-441d-4102-8c4e-98b276ade4aa",
+    "timestamp": "2026-11-14T17:15:27.538Z",
+    "toolCallId": "call_BKJlOo4o3iLGc1tjwVwjxybF",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport json,hashlib\nfrom pathlib import Path\nfrom proscenium.contracts import canonical\nfrom proscenium.contracts.generated import PublicationSubmit\nroot=Path.cwd(); project=json.loads(Path('project.json').read_text()); r=json.loads(Path('reports/history-adoption-final.json').read_text()); commit='3af0032a166468f19e3ed0ca9d433ec0148e22bc'\nassert r['status']=='passed' and r['protected_before']==r['protected_after']\nfor p,h in r['protected_before'].items(): assert hashlib.sha256(Path(p).read_bytes()).hexdigest()==h,p\nasset={'destination':'assets/cube/asset.blend','origin':{'kind':'git','repository_id':'repository-cee20008-dbe9-4469-bfab-c1d21f052e7e','commit':'b836298f258967c1c37a1b2521aded58cbaced2e','path':'assets/cube/asset.blend','sha256':'da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde'}}\nassert hashlib.sha256(Path(asset['destination']).read_bytes()).hexdigest()==asset['origin']['sha256']\nfiles=[asset]\nfor p in ['scenes/fixture/scene.blend','tools/history_adopt_final.py','reports/history-adoption-final.json']:\n files.append({'destination':p,'origin':{'kind':'git','repository_id':project['repository_id'],'commit':commit,'path':p,'sha256':hashlib.sha256(Path(p).read_bytes()).hexdigest()}})\nclosure={'entry_path':'scenes/fixture/scene.blend','files':sorted(files,key=lambda f:f['destination']),'dependencies':[{'item_id':'asset-cube','version_id':'asset-cube-v3'}],'required_runtime':{'application':'blender','version':'4.5.14 LTS','features':['linked-libraries']}}\nclosure['digest']=hashlib.sha256(canonical(closure)).hexdigest()\nitem={'item_id':'scene-main','kind':'scene','name':'Pinned tabletop scene - adopted Box v3','version_id':'scene-main-v2','expected_current_version_id':'scene-main-v1','source_commit':commit,'source':closure,'artifact_ids':[],'preview_requests':[],'derived_from':[{'item_id':'scene-main','version_id':'scene-main-v1'}],'description':'Owner-authorised main-only adoption of asset-cube-v3. Both stable-ID instances are 1 x 1 x 1.5 metres with Red material and base Z=0; instance IDs, transforms, animation, camera and timeline preserved. Both historical v1 scenes reopened with original one-metre textured cubes and unchanged hashes. Alternate remains pinned to asset-cube-v1. No render, preview or visual/rig/motion acceptance performed.','tags':['setup-fixture','explicit-adoption'],'provenance':{'source_url':None,'creator':None,'licence':None,'note':'Scene fixture provenance remains unknown. Linked asset-cube-v3 retains its exact Khronos/Cesium/CC-BY-4.0 provenance; no rights clearance inferred.'}}\ncommand={'schema_version':'1.0','publication_id':'m05-main-v2-publication-b9370f80','project_id':project['project_id'],'items':[item]}\nPublicationSubmit.model_validate(command)\nprint(json.dumps(command))\nPY",
+      "description": "Validate exact PublicationSubmit and canonical closure using pinned dependency origins"
+    }
+  },
+  {
+    "native_event_id": "9c5ae62a-79e7-4d67-bcd7-3422f309e107",
+    "timestamp": "2026-11-14T17:15:36.834Z",
+    "toolCallId": "call_hG7jjqBc6RlFf60YnIA9Qdb5",
+    "toolName": "publish_outputs",
+    "arguments": {
+      "schema_version": "1.0",
+      "publication_id": "m05-main-v2-publication-b9370f80",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "items": [
+        {
+          "item_id": "scene-main",
+          "kind": "scene",
+          "name": "Pinned tabletop scene - adopted Box v3",
+          "version_id": "scene-main-v2",
+          "expected_current_version_id": "scene-main-v1",
+          "source_commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+          "source": {
+            "entry_path": "scenes/fixture/scene.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "kind": "git",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "commit": "b836298f258967c1c37a1b2521aded58cbaced2e",
+                  "path": "assets/cube/asset.blend",
+                  "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+                }
+              },
+              {
+                "destination": "reports/history-adoption-final.json",
+                "origin": {
+                  "kind": "git",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+                  "path": "reports/history-adoption-final.json",
+                  "sha256": "1abdba2a41651a05bc3d259b575b22626d9dae6ea37d233e033102ad43b1547f"
+                }
+              },
+              {
+                "destination": "scenes/fixture/scene.blend",
+                "origin": {
+                  "kind": "git",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+                  "path": "scenes/fixture/scene.blend",
+                  "sha256": "e9861086ae5beedacf120ee7ea744e8bf143a386a8aacb02ba98c31c714aa164"
+                }
+              },
+              {
+                "destination": "tools/history_adopt_final.py",
+                "origin": {
+                  "kind": "git",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+                  "path": "tools/history_adopt_final.py",
+                  "sha256": "266ceedf479cad40c0bb8fce82c76308a40dc840ad74894b93dfebd4fe3d33b2"
+                }
+              }
+            ],
+            "dependencies": [
+              {
+                "item_id": "asset-cube",
+                "version_id": "asset-cube-v3"
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "version": "4.5.14 LTS",
+              "features": [
+                "linked-libraries"
+              ]
+            },
+            "digest": "9f87663bcf205e74b0b076fe215293990078df28faf6ceda40304fab5fff38f7"
+          },
+          "artifact_ids": [],
+          "preview_requests": [],
+          "derived_from": [
+            {
+              "item_id": "scene-main",
+              "version_id": "scene-main-v1"
+            }
+          ],
+          "description": "Owner-authorised main-only adoption of asset-cube-v3. Both stable-ID instances are 1 x 1 x 1.5 metres with Red material and base Z=0; instance IDs, transforms, animation, camera and timeline preserved. Both historical v1 scenes reopened with original one-metre textured cubes and unchanged hashes. Alternate remains pinned to asset-cube-v1. No render, preview or visual/rig/motion acceptance performed.",
+          "tags": [
+            "setup-fixture",
+            "explicit-adoption"
+          ],
+          "provenance": {
+            "source_url": null,
+            "creator": null,
+            "licence": null,
+            "note": "Scene fixture provenance remains unknown. Linked asset-cube-v3 retains its exact Khronos/Cesium/CC-BY-4.0 provenance; no rights clearance inferred."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "native_event_id": "e6635354-5608-4957-809a-0daa5cdb083e",
+    "timestamp": "2026-11-14T17:15:44.996Z",
+    "toolCallId": "call_63yjk35fPFdwSIAe4diKBB1J",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "scene-main-v2"
+    }
+  },
+  {
+    "native_event_id": "17b613a8-eb0a-4499-984f-854e2f88e1e5",
+    "timestamp": "2026-11-14T17:15:44.996Z",
+    "toolCallId": "call_BknWqe7MH9JEa2pKj6pKNWwY",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "scene-alternate-v1"
+    }
+  },
+  {
+    "native_event_id": "784c3315-f522-4f00-8153-fd4995e37779",
+    "timestamp": "2026-11-14T17:15:44.997Z",
+    "toolCallId": "call_XSmpvb2I6yAWoqmOi5HWzSdx",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport hashlib,json\nfrom pathlib import Path\nr=json.loads(Path('reports/history-adoption-final.json').read_text())\nfor p,h in r['protected_before'].items(): assert hashlib.sha256(Path(p).read_bytes()).hexdigest()==h,p\nassert hashlib.sha256(Path('scenes/fixture/scene.blend').read_bytes()).hexdigest()==r['adoption']['output']['sha256']\nassert r['adoption']['dependencies']==r['adoption']['saved_dependency_recheck']\nprint('All protected sources/evidence unchanged; saved scene hash and dependencies verified')\nPY",
+      "description": "Verify persistent scene bytes and all protected files after publication"
+    }
+  }
+]

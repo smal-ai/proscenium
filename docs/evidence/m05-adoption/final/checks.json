@@ -1,0 +1,15 @@
+{
+  "scope": "Final bounded M05 adoption, reusing accepted discovery/import/revision/history/UI proof",
+  "commands": [
+    {"command": "npm run build", "result": "passed", "note": "Accepted production source, no product or UI changes"},
+    {"command": ".venv/bin/ruff check tests/native/studio/m05_adopt_final*.py tests/acceptance/m05_adopt_final_retained.py", "result": "passed"},
+    {"command": ".venv/bin/ruff format --check tests/native/studio/m05_adopt_final*.py tests/acceptance/m05_adopt_final_retained.py", "result": "passed"},
+    {"command": "PYTHONPATH=. .venv/bin/pytest -q tests/acceptance/m05_adopt_final_retained.py tests/acceptance/m05_adopt_retained.py tests/acceptance/m05_retained.py tests/contracts", "result": "passed", "passed": 66, "new_final_checks": 6, "warnings": ["Existing Starlette/httpx TestClient deprecation warning"]}
+  ],
+  "broad_browser_matrix_rerun": false,
+  "new_model_sends": 1,
+  "new_native_processes": 1,
+  "new_children": 0,
+  "new_jobs": 0,
+  "scoped_journey_result": "pass: actual saved scene-main-v2 and real source publication"
+}

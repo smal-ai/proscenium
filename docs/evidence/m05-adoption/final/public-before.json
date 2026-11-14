@@ -1,0 +1,1318 @@
+{
+  "project": {
+    "name": "M05 real asset acquisition and reuse",
+    "native_session_id": "b10c3435-27d1-407d-934b-19e8d673190f",
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project",
+    "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+    "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+    "schema_version": "1.0",
+    "state": "awaiting_resume",
+    "state_revision": 5
+  },
+  "snapshot": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "M05 real asset acquisition and reuse",
+      "native_session_id": "b10c3435-27d1-407d-934b-19e8d673190f",
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 5
+    },
+    "settings": {
+      "default_profile_id": null,
+      "generation_attempt_limit": 3,
+      "state_revision": 0
+    },
+    "event_sequence": 2022,
+    "active_work": null,
+    "held_requests": [],
+    "items": [
+      {
+        "current_version_id": "asset-companion-v1",
+        "description": "Explicitly imported F01 setup fixture",
+        "item_id": "asset-companion",
+        "kind": "asset",
+        "name": "Comparison companion",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": null,
+          "licence": null,
+          "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+          "source_url": null
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0,
+        "tags": [
+          "setup-fixture"
+        ]
+      },
+      {
+        "current_version_id": "asset-cube-v3",
+        "description": "Native revision of the imported Khronos Box: 1 x 1 x 1.5 metres, base Z=0; imported 24-vertex/12-polygon topology and Red material preserved. Mesh Cube and application stable IDs corrected. Full blend_paths dependency audit and unused-datablock purge remove the outside brush reference; no external source inputs remain. One new keyframe requested, no proxy or retry. Not owner accepted or scene adopted.",
+        "item_id": "asset-cube",
+        "kind": "asset",
+        "name": "Khronos Box - 1.5 metre editable asset",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": "Cesium",
+          "licence": "CC-BY-4.0",
+          "note": "Official per-model metadata attribution; public availability is not independent licence clearance.",
+          "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb"
+        },
+        "schema_version": "1.0",
+        "selected_version_id": "asset-cube-v1",
+        "state_revision": 2,
+        "tags": [
+          "amber-cube",
+          "metre-fixture",
+          "khronos",
+          "online-acquired"
+        ]
+      },
+      {
+        "current_version_id": "scene-alternate-v1",
+        "description": "Explicitly imported F01 setup fixture",
+        "item_id": "scene-alternate",
+        "kind": "scene",
+        "name": "Pinned alternate scene",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": null,
+          "licence": null,
+          "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+          "source_url": null
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0,
+        "tags": [
+          "setup-fixture"
+        ]
+      },
+      {
+        "current_version_id": "scene-main-v1",
+        "description": "Explicitly imported F01 setup fixture",
+        "item_id": "scene-main",
+        "kind": "scene",
+        "name": "Pinned tabletop scene",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": null,
+          "licence": null,
+          "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+          "source_url": null
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0,
+        "tags": [
+          "setup-fixture"
+        ]
+      }
+    ],
+    "jobs": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-1dc63792-38c5-4402-b656-9ac50170e0e5",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": 0,
+        "error_code": "dependency_missing",
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "4399f37e073a1fb68640a2497e59f2204c94d16594a59bfdf7d6d6d94a629ab0",
+        "job_id": "preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7",
+        "kind": "render",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-70cc51ac-eb61-4bf4-8790-560ca6e3006d",
+        "owner_operation_id": null,
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "extra_outputs": [],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m05-box-v2-proxy-9c9db828",
+          "purpose": "proxy",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "AssetReview",
+          "shot_id": null,
+          "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+        },
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 4,
+        "target": {
+          "shot_id": null,
+          "target_id": "asset-cube",
+          "version": {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v2"
+          }
+        },
+        "work_id": "work-0d3d78c995f0451d8630188b4f642041"
+      },
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-9065ef23-9d20-4f44-b753-e746dc61fe46",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": 0,
+        "error_code": "dependency_missing",
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "7784de09b7e5d6e58e82f105bb266dd1c34571611a1f59fe022a7e0ae5b89d67",
+        "job_id": "preview-8c74e8e6ec6a8a797894de0cbad4bb4b4ad64fb60d333287a702774f3c617cfa",
+        "kind": "render",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-70cc51ac-eb61-4bf4-8790-560ca6e3006d",
+        "owner_operation_id": null,
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "extra_outputs": [],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m05-box-v2-keyframe-9c9db828",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "AssetReview",
+          "shot_id": null,
+          "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+        },
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 4,
+        "target": {
+          "shot_id": null,
+          "target_id": "asset-cube",
+          "version": {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v2"
+          }
+        },
+        "work_id": "work-0d3d78c995f0451d8630188b4f642041"
+      },
+      {
+        "artifact_ids": [
+          "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-f1",
+          "attempt-1db93d12-138e-460a-821e-f7782779e6ae-s1-1"
+        ],
+        "attempt_id": "attempt-1db93d12-138e-460a-821e-f7782779e6ae",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 1,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "0462e24d9f974f9c69c3f474687522ab6decea77626c8a509e4ba8fee22fc3fe",
+        "job_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-70cc51ac-eb61-4bf4-8790-560ca6e3006d",
+        "owner_operation_id": null,
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "extra_outputs": [],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m05-box-v3-keyframe-99c24f2a",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "AssetReview",
+          "shot_id": null,
+          "source_closure_digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 7,
+        "target": {
+          "shot_id": null,
+          "target_id": "asset-cube",
+          "version": {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v3"
+          }
+        },
+        "work_id": "work-2ad446d5123e47abbaebde6808a2c015"
+      }
+    ],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "items": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "current_version_id": "asset-companion-v1",
+        "description": "Explicitly imported F01 setup fixture",
+        "item_id": "asset-companion",
+        "kind": "asset",
+        "name": "Comparison companion",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": null,
+          "licence": null,
+          "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+          "source_url": null
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0,
+        "tags": [
+          "setup-fixture"
+        ]
+      },
+      {
+        "current_version_id": "asset-cube-v3",
+        "description": "Native revision of the imported Khronos Box: 1 x 1 x 1.5 metres, base Z=0; imported 24-vertex/12-polygon topology and Red material preserved. Mesh Cube and application stable IDs corrected. Full blend_paths dependency audit and unused-datablock purge remove the outside brush reference; no external source inputs remain. One new keyframe requested, no proxy or retry. Not owner accepted or scene adopted.",
+        "item_id": "asset-cube",
+        "kind": "asset",
+        "name": "Khronos Box - 1.5 metre editable asset",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": "Cesium",
+          "licence": "CC-BY-4.0",
+          "note": "Official per-model metadata attribution; public availability is not independent licence clearance.",
+          "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb"
+        },
+        "schema_version": "1.0",
+        "selected_version_id": "asset-cube-v1",
+        "state_revision": 2,
+        "tags": [
+          "amber-cube",
+          "metre-fixture",
+          "khronos",
+          "online-acquired"
+        ]
+      },
+      {
+        "current_version_id": "scene-alternate-v1",
+        "description": "Explicitly imported F01 setup fixture",
+        "item_id": "scene-alternate",
+        "kind": "scene",
+        "name": "Pinned alternate scene",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": null,
+          "licence": null,
+          "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+          "source_url": null
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0,
+        "tags": [
+          "setup-fixture"
+        ]
+      },
+      {
+        "current_version_id": "scene-main-v1",
+        "description": "Explicitly imported F01 setup fixture",
+        "item_id": "scene-main",
+        "kind": "scene",
+        "name": "Pinned tabletop scene",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provenance": {
+          "creator": null,
+          "licence": null,
+          "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+          "source_url": null
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0,
+        "tags": [
+          "setup-fixture"
+        ]
+      }
+    ],
+    "next_cursor": null
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T16:45:43.155292+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-3d6f06b8c2204596b420a9de90174c08",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "receipt": {
+          "native_message_id": "3486c167-677e-4bf3-88ee-6d80154aa882",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "replayed": false,
+          "request_id": "0cac4d20-0fc1-48a5-b26a-9487c027cbee",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-314f1c4eee9f47278ce6d6e280e6950c"
+        },
+        "request_id": "0cac4d20-0fc1-48a5-b26a-9487c027cbee",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "9ba1a5f1-8731-4964-8939-c487fe382814",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "request_id": "0cac4d20-0fc1-48a5-b26a-9487c027cbee",
+          "schema_version": "1.0",
+          "text": "New explicit owner request after original request 113219f0-a14c-45b5-b740-3f0596d7bd60 completed honestly without adoption. This is a renewed narrow allocation, NOT a retry of an uncertain native effect. ONE cloud root under 170 seconds, no children, ONE additional background Blender inspection/authoring process under 180 seconds/four threads. No downloads, acquisition, imports, asset revision, GPU/VLM/Comfy/Unity, independent service changes, installs, purchases, remote uploads or SQLite. Do not retry any old failed job. Preserve all old reports, failed receipts, source versions, asset v3 bytes/provenance, previous owner selection and unrelated staged/dirty files.\n\nFinish only the previously blocked historical verification and main-scene adoption. Use actual get_version metadata for asset-cube-v3, scene-main-v1 and scene-alternate-v1. The earlier W02 materialisations recorded in reports/historical-inputs.json are still inside this project and byte-pinned to the actual old published scene versions. Use those exact historical source roots. Do not access original fixtures/sibling projects. Use the accepted research/source tools.\n\nThe known authored bug is ONLY the broad mesh-name OR fallback in tools/history_adopt.py:cubes(), which included Floor and Wall. Read the original script; preserve it and the original reports/history-adoption.json unchanged. Copy it to tools/history_adopt_completion.py and correct the selector to EXACT obj.get('proscenium_object_id') == 'object-cube-source'. Require exactly instance-blue and instance-renamed, not arbitrary objects sharing a Cube mesh-name prefix. Route all NEW proof output to reports/history-adoption-completion.json and fresh temporary scene filename; update only new request/work IDs in that copied proof where needed. Keep the existing inspection/adoption logic otherwise, including original texture assertions, metre units, before/after hashes and scene-state preservation.\n\nRun the model-authored corrected script ONCE via `python tools/m05_adopt_guard.py tools/history_adopt_completion.py`. The new operator-installed guard is allocation control only: one new reservation directory, four threads, 180 seconds, python-exit-code 1, common OS claim and protected host headroom. It does NOT author/import/revise geometry. Do not use the exhausted old m05_blender.py guard or remove/reset any old claims. Do not invoke Blender in any other way or repeat a failed/uncertain launch.\n\nIn that single actual Blender process: first reopen BOTH old materialised scenes without saving, prove the two exact stable-ID cube instances are one metre tall, units METRIC/1, original external texture decodes to 8x8 and hashes fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568, and retain every historical source hash unchanged. THEN explicitly adopt the existing 1.5-metre asset-cube-v3 into ONLY the working scenes/fixture/scene.blend, preserving scene instance IDs/transforms/animation/camera/timeline, with actual linked Red material and metre units. Save only that declared scene via a fresh temporary sibling and promote after successful validation. Preserve scenes/alternate/scene.blend and all asset/research/old report bytes. If anything unexpected blocks, report the exact limitation; do not fabricate completion or spend another process.\n\nIf the native process succeeds, use checkpoint_sources for ONLY scenes/fixture/scene.blend, tools/history_adopt_completion.py and reports/history-adoption-completion.json, with actual HEAD as expected_head. Then publish ONLY scene-main-v2 on item scene-main, expected_current_version_id scene-main-v1, with exact asset-cube/asset-cube-v3 source dependency, truthful description and preview_requests:[]. Build SourceClosure from actual scene/report/source hashes and the exact existing dependency origins from get_version(asset-cube-v3), correct project repository ID, returned source commit and canonical digest using installed proscenium.contracts. Validate before publish_outputs. No asset revision, no alternate scene publication and no new preview/proxy/still are needed. Do not call Git add/commit directly or include unrelated guard/dirty files.\n\nFinish with actual historical measurements/texture evidence, adoption readback, preserved-state checks and exact source/version/publication IDs. An explicit owner operation already authorises this main-only adoption, so do not impose an extra creative approval stage. The previous failure remains in history, unaltered.\n",
+          "type": "queue"
+        }
+      },
+      {
+        "accepted_at": "2026-11-14T15:09:19.862913+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-11d15a7c6f964a6ab632ed1f716cea21",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "receipt": {
+          "native_message_id": "796405ee-c51c-4b52-8414-e55784c98196",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "replayed": false,
+          "request_id": "113219f0-a14c-45b5-b740-3f0596d7bd60",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-28be728f76cd4851b56ef075b70a653c"
+        },
+        "request_id": "113219f0-a14c-45b5-b740-3f0596d7bd60",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "9c26d0fb-a3c5-4110-b64e-5a3cc2df6fdb",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "request_id": "113219f0-a14c-45b5-b740-3f0596d7bd60",
+          "schema_version": "1.0",
+          "text": "Explicit final M05 request: verify the two OLD published scene snapshots still reopen original one-metre textured cubes, then adopt asset-cube-v3 ONLY into scene-main as a new scene-main-v2 publication. This is the first authorised scene adoption. scene-alternate must stay pinned to asset-cube-v1. The old scene-main-v1 and all old assets/sources remain immutable. No new preview, proxy, render, generation, GPU/VLM/Comfy/Unity, child, service change, install, remote effect or SQLite. Finish this cloud root within 170 seconds.\n\nRead actual get_version for asset-cube-v3, scene-main-v1 and scene-alternate-v1. reports/historical-inputs.json is a labelled operator fixture containing the ACTUAL W02 SourceService.materialise read results for those old versions, with project-relative snapshot roots and exact version records. It contains no fabricated scene or Blender result. Use only these materialisations INSIDE this project, never original F01 or any sibling project.\n\nAuthor tools/history_adopt.py yourself and run it ONCE through `python tools/m05_blender.py history-adopt tools/history_adopt.py`. This is the THIRD AND LAST guarded background Blender authoring/inspection process (four threads, 180 seconds, OS claim and protected headroom). Do not invoke Blender another way or repeat it. In this one process first open each historical scene entry from the supplied materialisation root without saving it. Record actual bpy.app version/build, units, all object-cube-source instances' measured world dimensions/bounds and IDs, actual linked library paths and external texture paths/dimensions/SHA-256. Assert both historical cube instances are one metre tall and the texture SHA-256 is fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568. Rehash historical sources before/after inspection; do not mutate materialisations. Record this actual readback in reports/history-adoption.json; distinguish actual inspected history from the requested future operation.\n\nThen in that SAME process open the working scenes/fixture/scene.blend only for the explicit adoption. Its library path points to current assets/cube/asset.blend; resolve the revised Cube mesh (v3) and preserve both scene object/instance IDs, locations, animation, camera and timeline. Confirm the linked Box instances are now 1.5 metres tall with the actual Red material and metre units. Preserve relative library paths within the project, audit required paths and purge only unused external default datablocks if needed. Save this main scene to a temporary sibling then promote only on success. Never touch scenes/alternate/scene.blend or any asset source. Do not render anything.\n\nCheckpoint only the adopted main-scene source and your owned readback/script metadata with actual HEAD. Publish scene-main-v2 on item scene-main with expected_current_version_id scene-main-v1, a truthful description and pinned source dependency {item_id:'asset-cube',version_id:'asset-cube-v3'}, preview_requests:[]. SourceClosure files must use actual hydrated hashes, correct repository ID/checkpoint commit, and canonical digest; files covering the dependency must use the exact asset-cube-v3 origin hashes/commit instead of blessing altered bytes. The closure must include all actually required files at their correct destinations. Use installed proscenium.contracts for validation and checkpoint_sources -> publish_outputs. No automatic adoption of the alternate scene. Finish with exact old/new source/version/publication IDs, historical versus adopted measurements, texture hash and unchanged alternate/asset evidence. Report honest limitations; no stage approval is needed for this exact owner-authorised adoption.\n",
+          "type": "queue"
+        }
+      },
+      {
+        "accepted_at": "2026-11-14T15:04:52.166141+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-4f76c9edec6448e69d6c5e39f9c98d44",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "receipt": {
+          "native_message_id": "d96147f0-36c1-4851-a99a-5eb19d00f3b4",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "replayed": false,
+          "request_id": "99c24f2a-efde-4322-ad4e-c40104acbbe6",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-2ad446d5123e47abbaebde6808a2c015"
+        },
+        "request_id": "99c24f2a-efde-4322-ad4e-c40104acbbe6",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "b6125ce6-edd7-4747-9daa-1c72d00701d7",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "request_id": "99c24f2a-efde-4322-ad4e-c40104acbbe6",
+          "schema_version": "1.0",
+          "text": "Ordinary revision of the independently published asset-cube-v2: make the imported Box 50% taller (height 1.5 metres), preserve X/Y one metre and base Z=0, actual imported mesh topology/material, object-cube-source / instance-asset IDs, metres and the same camera/light treatment. This is native authoring, not image generation. Do not touch either scene, companion, existing colour.png, downloaded originals or old published sources. No children, GPU, VLM, ComfyUI, Unity, service changes, installs, purchases, remote sharing or SQLite. Finish this cloud root within 170 seconds. Use the accepted research skill and get_version(asset-cube-v2).\n\nActual W03 jobs from v2 BOTH FAILED KNOWN preflight with dependency_missing/outside_materialisation; no frames or proxy were produced. Do NOT retry, relaunch or modify those original jobs. Their process attempts are finished. The allocated proxy attempt is exhausted: do not request another proxy. Only one new corrected-source keyframe job is permitted on this v3 publication.\n\nAuthor tools/revise_box.py yourself and execute it ONCE through `python tools/m05_blender.py revise tools/revise_box.py` (the second of three guarded Blender authoring processes). Inside that one actual Blender process, open assets/cube/asset.blend; first record complete bpy.utils.blend_paths(absolute=True, packed=False, local=False), actual file-backed images/fonts/libraries and relevant datablock names. The first import's image-only check missed the outside dependency. Correct real source paths to project-relative paths and include required inputs in the source closure, or remove truly unused external datablocks only. Do not weaken W03 validation or conceal required external resources. Recheck all blend_paths and actual referenced files before saving. If a necessary unknown dependency cannot be resolved, report the exact limitation rather than fake success. No manual rendering.\n\nAlso fix the known mesh-name limitation: remove/rename only the unused old Cube mesh datablock so the actual imported mesh is named Cube. Preserve the imported 24-vertex/12-polygon geometry identity and Red material. Add the actual application keys proscenium_object_id='object-cube-source' and proscenium_instance_id='instance-asset' to the Box; keep existing ID keys too. Give camera/light their own stable proscenium keys if necessary. Set scene AssetReview, CYCLES CPU, four threads, eight samples, frame 1, 640x360, Standard/None. Record height/bounds, mesh name, materials, actual IDs/build and before/after dependency audit in reports/revision-inspection.json. Save to a temporary sibling and promote only on verified success; keep reports honest about checks not performed.\n\nUse checkpoint_sources for your exact owned source/script/report/ledger updates with actual HEAD, then publish only asset-cube-v3 on item asset-cube with expected_current_version_id asset-cube-v2. Keep the known Khronos/Cesium/CC-BY-4.0 metadata from actual retained evidence; do not infer owner selection or adoption. SourceClosure must contain exact hydrated required files and actual hashes, pinned checkpoint commit, correct repository ID and canonical digest. Validate using installed proscenium.contracts. Neither scene version/dependency changes until an explicit later adoption.\n\nOn that publication request exactly ONE new W03 keyframe using a NEW intent ID and this v3 source digest: purpose keyframe, AssetReview, camera:null, frames 1..1, fps24/1, 640x360, CYCLES/CPU/8 samples, Standard/None/exposure0/gamma1, renderer_revision proscenium-blender-1, view_transformed_srgb PNG RGB8, extra_outputs:[]. No other preview/render/proxy or generation job. Return actual checkpoint/publication/version/job IDs, the corrected dependency evidence, new height and precise remaining limits; do not wait for or claim that keyframe complete inside this root.\n",
+          "type": "queue"
+        }
+      },
+      {
+        "accepted_at": "2026-11-14T14:59:50.474264+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-16e05b5f7137443e86bfdac23e2ec2b5",
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "receipt": {
+          "native_message_id": "3a5e98f2-bc8c-4c5d-ab77-96c51e6b4966",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "replayed": false,
+          "request_id": "9c9db828-703a-4dc8-a756-b830426ec935",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-0d3d78c995f0451d8630188b4f642041"
+        },
+        "request_id": "9c9db828-703a-4dc8-a756-b830426ec935",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "158df540-cf78-40f5-a491-ba43b22e018c",
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "request_id": "9c9db828-703a-4dc8-a756-b830426ec935",
+          "schema_version": "1.0",
+          "text": "Use the accepted research skill for this active-project M05 request. Work only in this project, no sibling/original projects, SQLite, vector database, credentials, accounts, installs, native children, Blender UI/MCP, Unity, ComfyUI, VLM, GPU or independent-service changes. Finish this root within 170 seconds. Missing creative choices are fixed below. Keep unrelated work and both existing scene sources/dependencies unchanged.\n\nDiscover the reusable local cube using ACTUAL list_items queries 'amber-cube' (tag), 'tabletop blocking' (description) and 'Reusable fixture cube' (name), following pagination. Read the selected exact asset version with get_version. No filesystem-latest or private database reads. Record which queries found it. Inspect the active project's existing metadata and Git status before changes.\n\nI authorise one free online sample from the official KhronosGroup/glTF-Sample-Assets repository: the small Models/Box glTF-Binary Box.glb. This supplied repository URL is a discovery starting point, NOT a BlendSwap search. BlendSwap MCP is NOT CONFIGURED; report that truthfully and do not install it. Use ordinary permitted HTTP through Python urllib or curl, no auth. Read actual official catalogue metadata/README before downloading. Resolve the current repository commit via the public GitHub API and pin raw.githubusercontent.com URLs to it. Stream with timeouts, an aggregate FIVE MiB cap covering metadata and asset bytes, save to project-scoped temporary targets and atomically promote only complete verified bytes. Reject escaping targets/symlinks and never overwrite an existing original with partial bytes. Read actual file metadata/licence/creator if present; missing values stay null and do not block import/publication. Preserve the README/source URLs and actual hashes/byte sizes in research/box-ledger.json. Keep discovered, acquired, imported and validated observations distinct, with commands/evidence. Do not equate public/free with a cleared licence.\n\nImport the acquired actual GLB through an ordinary Blender Python script that YOU author in this project. Execute it ONCE through `python tools/m05_blender.py import tools/import_box.py`. That fixed guard owns the 180-second/four-thread/OS-claim/headroom and three-authoring-process budget. Do not invoke Blender another way, install an importer or retry an uncertain launch. The installed Blender is 4.5.14 LTS; verify bpy.app identity in the report. Import actual glTF geometry/materials, declare metric units and scale_length=1, apply any necessary transforms, centre the 1-metre Box in X/Y with its base at Z=0. Preserve stable object ID object-cube-source and instance ID instance-asset; name its mesh Cube for later explicit scene adoption. Keep actual imported material(s) available. Save editable source to a temporary sibling of assets/cube/asset.blend, verify and promote only on success. Do not touch assets/cube/colour.png, companion assets or scenes. The old asset/texture bytes are already preserved by their published v1 closure. No geometry may be created by substituting a procedural box for the downloaded file.\n\nFor independent review add an authored camera and area light/world to that asset scene, name the scene AssetReview, aim at the actual imported Box, camera roughly (3,-4,2.5), 45-mm lens, and name/stably identify camera/light. Use CYCLES CPU, four threads, 8 samples, one frame, 640x360, Standard/None colour management. Do not render from this authoring process. Record imported bounds, mesh/object IDs, units, material names/slots, missing external resources and actual Blender build in reports/import-inspection.json. Technical validation is not owner selection or finished rig/motion acceptance.\n\nPublish the imported source as a new version of the discovered asset item asset-cube: version_id asset-cube-v2, expected_current_version_id asset-cube-v1. Use a clear name 'Khronos Box - imported editable asset', tags retaining amber-cube/metre-fixture plus khronos/online-acquired, description explaining the acquired/imported state, and exact known/null provenance. Do NOT republish or adopt either scene. Retain the companion item. Checkpoint only your explicitly owned source/ledger/report/script paths with checkpoint_sources and actual HEAD. The asset SourceClosure must use real hydrated file hashes, repository ID and returned checkpoint commit, include every actual required external source file, and have sha256(canonical(closure_without_digest)) with sorted files/dependencies. Use installed proscenium.contracts for all exact types and validate before publish_outputs.\n\nRequest exactly TWO W03 previews on this first asset publication: one keyframe and one proxy, both one frame, 640x360, AssetReview, camera:null (authored camera), fps 24/1, engine CYCLES, device CPU, samples 8, colour_management {view_transform:'Standard',look:'None',exposure:0,gamma:1}, renderer_revision 'proscenium-blender-1', review_output {media_type:'image/png',encoding:'view_transformed_srgb',bit_depth:8}, extra_outputs:[], exact source_closure_digest and unique intent IDs. Do not wait for background previews inside this root, submit another preview, generate images, claim jobs complete or launch services. Report exact asset/source/publication/job IDs, download bytes, discovered/acquired/imported/validated distinctions, optional BlendSwap unavailable, and any real limitation. Routine authorised acquisition/checkpoint/publication needs no stage approval. Do not render screenshots as if they were Blender outputs.\n",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-1dc63792-38c5-4402-b656-9ac50170e0e5",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": 0,
+        "error_code": "dependency_missing",
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "4399f37e073a1fb68640a2497e59f2204c94d16594a59bfdf7d6d6d94a629ab0",
+        "job_id": "preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7",
+        "kind": "render",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-70cc51ac-eb61-4bf4-8790-560ca6e3006d",
+        "owner_operation_id": null,
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "extra_outputs": [],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m05-box-v2-proxy-9c9db828",
+          "purpose": "proxy",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "AssetReview",
+          "shot_id": null,
+          "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+        },
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 4,
+        "target": {
+          "shot_id": null,
+          "target_id": "asset-cube",
+          "version": {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v2"
+          }
+        },
+        "work_id": "work-0d3d78c995f0451d8630188b4f642041"
+      },
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-9065ef23-9d20-4f44-b753-e746dc61fe46",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": 0,
+        "error_code": "dependency_missing",
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "7784de09b7e5d6e58e82f105bb266dd1c34571611a1f59fe022a7e0ae5b89d67",
+        "job_id": "preview-8c74e8e6ec6a8a797894de0cbad4bb4b4ad64fb60d333287a702774f3c617cfa",
+        "kind": "render",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-70cc51ac-eb61-4bf4-8790-560ca6e3006d",
+        "owner_operation_id": null,
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "extra_outputs": [],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m05-box-v2-keyframe-9c9db828",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "AssetReview",
+          "shot_id": null,
+          "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+        },
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 4,
+        "target": {
+          "shot_id": null,
+          "target_id": "asset-cube",
+          "version": {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v2"
+          }
+        },
+        "work_id": "work-0d3d78c995f0451d8630188b4f642041"
+      },
+      {
+        "artifact_ids": [
+          "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-f1",
+          "attempt-1db93d12-138e-460a-821e-f7782779e6ae-s1-1"
+        ],
+        "attempt_id": "attempt-1db93d12-138e-460a-821e-f7782779e6ae",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 1,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "0462e24d9f974f9c69c3f474687522ab6decea77626c8a509e4ba8fee22fc3fe",
+        "job_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-70cc51ac-eb61-4bf4-8790-560ca6e3006d",
+        "owner_operation_id": null,
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "extra_outputs": [],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m05-box-v3-keyframe-99c24f2a",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "AssetReview",
+          "shot_id": null,
+          "source_closure_digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 7,
+        "target": {
+          "shot_id": null,
+          "target_id": "asset-cube",
+          "version": {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v3"
+          }
+        },
+        "work_id": "work-2ad446d5123e47abbaebde6808a2c015"
+      }
+    ],
+    "next_cursor": null
+  },
+  "selections": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "actor": {
+          "id": "owner-31d95c6d-3fb2-482a-b9f0-fb3cae120182",
+          "kind": "user"
+        },
+        "choice": {
+          "kind": "version",
+          "version": {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v1"
+          }
+        },
+        "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+        "schema_version": "1.0",
+        "selection_id": "becf74a9-7507-417b-bd60-4394dd89a8fd",
+        "slot": {
+          "item_id": "asset-cube",
+          "kind": "item"
+        },
+        "state": "selected",
+        "state_revision": 1
+      }
+    ],
+    "next_cursor": null
+  },
+  "versions": {
+    "asset-companion": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "m05-fixture-not-sdk",
+            "kind": "tool"
+          },
+          "artifact_ids": [],
+          "created_at": "2026-11-14T14:59:13.413331+00:00",
+          "description": "Explicitly imported F01 setup fixture",
+          "item_id": "asset-companion",
+          "kind": "asset",
+          "name": "Comparison companion",
+          "preview_job_ids": [],
+          "preview_requests": [],
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "provenance": {
+            "creator": null,
+            "licence": null,
+            "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+            "source_url": null
+          },
+          "publication_id": "m05-labelled-setup-publication",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [],
+            "digest": "f435db0d308f8c4020254a72c6d01a1efb5bda64be78e6908ad382f92eb3514d",
+            "entry_path": "assets/companion/asset.blend",
+            "files": [
+              {
+                "destination": "assets/companion/asset.blend",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/companion/asset.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                }
+              },
+              {
+                "destination": "assets/companion/colour.png",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/companion/colour.png",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [
+                "linked-libraries",
+                "external-textures"
+              ],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "source_commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+          "tags": [
+            "setup-fixture"
+          ],
+          "version_id": "asset-companion-v1"
+        }
+      ],
+      "next_cursor": null
+    },
+    "asset-cube": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "m05-fixture-not-sdk",
+            "kind": "tool"
+          },
+          "artifact_ids": [],
+          "created_at": "2026-11-14T14:59:13.412001+00:00",
+          "description": "Reusable ochre textured one-metre cube for tabletop blocking",
+          "item_id": "asset-cube",
+          "kind": "asset",
+          "name": "Reusable fixture cube",
+          "preview_job_ids": [],
+          "preview_requests": [],
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "provenance": {
+            "creator": null,
+            "licence": null,
+            "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+            "source_url": null
+          },
+          "publication_id": "m05-labelled-setup-publication",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [],
+            "digest": "fd77953107c6a3f0e5980cb54a78ae8bcde4bc2521a8b632b2dea0be560b68be",
+            "entry_path": "assets/cube/asset.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/cube/asset.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                }
+              },
+              {
+                "destination": "assets/cube/colour.png",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/cube/colour.png",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [
+                "linked-libraries",
+                "external-textures"
+              ],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "source_commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+          "tags": [
+            "amber-cube",
+            "metre-fixture"
+          ],
+          "version_id": "asset-cube-v1"
+        },
+        {
+          "actor": {
+            "id": "call_bT4l6VFiLYDu3ogMqsM2GMUE",
+            "kind": "tool"
+          },
+          "artifact_ids": [],
+          "created_at": "2026-11-14T15:02:04.166457+00:00",
+          "description": "Official Khronos Box GLB acquired and imported as editable geometry/material in Blender 4.5.14 LTS. Metre-scale technical checks passed; mesh datablock naming limitation: Cube.001 (object Cube). Independent previews requested, not completed or owner accepted. No scene adoption.",
+          "item_id": "asset-cube",
+          "kind": "asset",
+          "name": "Khronos Box - imported editable asset",
+          "preview_job_ids": [
+            "preview-8c74e8e6ec6a8a797894de0cbad4bb4b4ad64fb60d333287a702774f3c617cfa",
+            "preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7"
+          ],
+          "preview_requests": [
+            {
+              "camera": null,
+              "colour_management": {
+                "exposure": 0,
+                "gamma": 1,
+                "look": "None",
+                "view_transform": "Standard"
+              },
+              "device": "CPU",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "engine": "CYCLES",
+              "extra_outputs": [],
+              "fps": {
+                "denominator": 1,
+                "numerator": 24
+              },
+              "frames": {
+                "end": 1,
+                "start": 1
+              },
+              "intent_id": "m05-box-v2-keyframe-9c9db828",
+              "purpose": "keyframe",
+              "renderer_revision": "proscenium-blender-1",
+              "review_output": {
+                "bit_depth": 8,
+                "encoding": "view_transformed_srgb",
+                "media_type": "image/png"
+              },
+              "samples": 8,
+              "scene_name": "AssetReview",
+              "shot_id": null,
+              "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+            },
+            {
+              "camera": null,
+              "colour_management": {
+                "exposure": 0,
+                "gamma": 1,
+                "look": "None",
+                "view_transform": "Standard"
+              },
+              "device": "CPU",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "engine": "CYCLES",
+              "extra_outputs": [],
+              "fps": {
+                "denominator": 1,
+                "numerator": 24
+              },
+              "frames": {
+                "end": 1,
+                "start": 1
+              },
+              "intent_id": "m05-box-v2-proxy-9c9db828",
+              "purpose": "proxy",
+              "renderer_revision": "proscenium-blender-1",
+              "review_output": {
+                "bit_depth": 8,
+                "encoding": "view_transformed_srgb",
+                "media_type": "image/png"
+              },
+              "samples": 8,
+              "scene_name": "AssetReview",
+              "shot_id": null,
+              "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+            }
+          ],
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "provenance": {
+            "creator": "Cesium",
+            "licence": "CC-BY-4.0",
+            "note": "Official per-model metadata attribution; public availability is not independent licence clearance.",
+            "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb"
+          },
+          "publication_id": "m05-box-publication-9c9db828",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [],
+            "digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a",
+            "entry_path": "assets/cube/asset.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "commit": "86430967543c9b760a6e3b562d5e02d69fce9b02",
+                  "kind": "git",
+                  "path": "assets/cube/asset.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "20363a522d6eed2070360cab48b739bb286ab31826e684214340222f411f591c"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "source_commit": "86430967543c9b760a6e3b562d5e02d69fce9b02",
+          "tags": [
+            "amber-cube",
+            "metre-fixture",
+            "khronos",
+            "online-acquired"
+          ],
+          "version_id": "asset-cube-v2"
+        },
+        {
+          "actor": {
+            "id": "call_PCD607ojynX8lCWYpCKYxXWF",
+            "kind": "tool"
+          },
+          "artifact_ids": [
+            "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-f1",
+            "attempt-1db93d12-138e-460a-821e-f7782779e6ae-s1-1"
+          ],
+          "created_at": "2026-11-14T15:06:36.411733+00:00",
+          "derived_from": [
+            {
+              "item_id": "asset-cube",
+              "version_id": "asset-cube-v2"
+            }
+          ],
+          "description": "Native revision of the imported Khronos Box: 1 x 1 x 1.5 metres, base Z=0; imported 24-vertex/12-polygon topology and Red material preserved. Mesh Cube and application stable IDs corrected. Full blend_paths dependency audit and unused-datablock purge remove the outside brush reference; no external source inputs remain. One new keyframe requested, no proxy or retry. Not owner accepted or scene adopted.",
+          "item_id": "asset-cube",
+          "kind": "asset",
+          "name": "Khronos Box - 1.5 metre editable asset",
+          "preview_job_ids": [
+            "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a"
+          ],
+          "preview_requests": [
+            {
+              "camera": null,
+              "colour_management": {
+                "exposure": 0,
+                "gamma": 1,
+                "look": "None",
+                "view_transform": "Standard"
+              },
+              "device": "CPU",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "engine": "CYCLES",
+              "extra_outputs": [],
+              "fps": {
+                "denominator": 1,
+                "numerator": 24
+              },
+              "frames": {
+                "end": 1,
+                "start": 1
+              },
+              "intent_id": "m05-box-v3-keyframe-99c24f2a",
+              "purpose": "keyframe",
+              "renderer_revision": "proscenium-blender-1",
+              "review_output": {
+                "bit_depth": 8,
+                "encoding": "view_transformed_srgb",
+                "media_type": "image/png"
+              },
+              "samples": 8,
+              "scene_name": "AssetReview",
+              "shot_id": null,
+              "source_closure_digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79"
+            }
+          ],
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "provenance": {
+            "creator": "Cesium",
+            "licence": "CC-BY-4.0",
+            "note": "Official per-model metadata attribution; public availability is not independent licence clearance.",
+            "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb"
+          },
+          "publication_id": "m05-box-v3-publication-99c24f2a",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [],
+            "digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79",
+            "entry_path": "assets/cube/asset.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "commit": "b836298f258967c1c37a1b2521aded58cbaced2e",
+                  "kind": "git",
+                  "path": "assets/cube/asset.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "source_commit": "b836298f258967c1c37a1b2521aded58cbaced2e",
+          "tags": [
+            "amber-cube",
+            "metre-fixture",
+            "khronos",
+            "online-acquired"
+          ],
+          "version_id": "asset-cube-v3"
+        }
+      ],
+      "next_cursor": null
+    },
+    "scene-alternate": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "m05-fixture-not-sdk",
+            "kind": "tool"
+          },
+          "artifact_ids": [],
+          "created_at": "2026-11-14T14:59:13.415474+00:00",
+          "description": "Explicitly imported F01 setup fixture",
+          "item_id": "scene-alternate",
+          "kind": "scene",
+          "name": "Pinned alternate scene",
+          "preview_job_ids": [],
+          "preview_requests": [],
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "provenance": {
+            "creator": null,
+            "licence": null,
+            "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+            "source_url": null
+          },
+          "publication_id": "m05-labelled-setup-publication",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [
+              {
+                "item_id": "asset-cube",
+                "version_id": "asset-cube-v1"
+              }
+            ],
+            "digest": "42a094db73bb237d044c47db56bf768e7ee8d41737cf40ba69b6c5dba891bd71",
+            "entry_path": "scenes/alternate/scene.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/cube/asset.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                }
+              },
+              {
+                "destination": "assets/cube/colour.png",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/cube/colour.png",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                }
+              },
+              {
+                "destination": "scenes/alternate/scene.blend",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "scenes/alternate/scene.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [
+                "linked-libraries",
+                "external-textures"
+              ],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "source_commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+          "tags": [
+            "setup-fixture"
+          ],
+          "version_id": "scene-alternate-v1"
+        }
+      ],
+      "next_cursor": null
+    },
+    "scene-main": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "m05-fixture-not-sdk",
+            "kind": "tool"
+          },
+          "artifact_ids": [],
+          "created_at": "2026-11-14T14:59:13.414258+00:00",
+          "description": "Explicitly imported F01 setup fixture",
+          "item_id": "scene-main",
+          "kind": "scene",
+          "name": "Pinned tabletop scene",
+          "preview_job_ids": [],
+          "preview_requests": [],
+          "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+          "provenance": {
+            "creator": null,
+            "licence": null,
+            "note": "Owner-authorised synthetic F01 import. Rights metadata unknown, not a publication gate.",
+            "source_url": null
+          },
+          "publication_id": "m05-labelled-setup-publication",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [
+              {
+                "item_id": "asset-cube",
+                "version_id": "asset-cube-v1"
+              }
+            ],
+            "digest": "0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e",
+            "entry_path": "scenes/fixture/scene.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/cube/asset.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                }
+              },
+              {
+                "destination": "assets/cube/colour.png",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "assets/cube/colour.png",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                }
+              },
+              {
+                "destination": "scenes/fixture/scene.blend",
+                "origin": {
+                  "commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+                  "kind": "git",
+                  "path": "scenes/fixture/scene.blend",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [
+                "linked-libraries",
+                "external-textures"
+              ],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "source_commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+          "tags": [
+            "setup-fixture"
+          ],
+          "version_id": "scene-main-v1"
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  "view": {
+    "context": {
+      "item_id": null,
+      "version_id": null,
+      "view_mode": "keyframes",
+      "target": null,
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [],
+      "annotations": [],
+      "approved_findings": []
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "browser": "159.0.8154.6"
+}

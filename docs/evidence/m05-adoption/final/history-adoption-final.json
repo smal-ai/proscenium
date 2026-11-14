@@ -1,0 +1,1212 @@
+{
+  "command": "python tools/m05_adopt_final_guard.py tools/history_adopt_final.py",
+  "request_id": "b9370f80-1ebd-4e8e-84c0-c7822ee834ef",
+  "work_id": "work-1934aa7969374f9181cf4cb9fcde3150",
+  "generation_task_id": "task-5574017c84d440219feca866a4dae800",
+  "context_id": "fdb4e5e0-3649-4eb4-8edb-8f7d1b85b181",
+  "blender": {
+    "version": "4.5.14 LTS",
+    "build_hash": "62c1db4208e8",
+    "build_branch": "blender-v4.5-release"
+  },
+  "historical_inspections": [
+    {
+      "version_id": "scene-main-v1",
+      "source_commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+      "source_closure_digest": "0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e",
+      "snapshot_root": ".proscenium/snapshots/0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e/4ce4b921-256d-443d-b086-e7e3fbd1d53f",
+      "units": {
+        "system": "METRIC",
+        "scale_length": 1.0
+      },
+      "instances": [
+        {
+          "name": "Blue cube",
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-blue"
+          },
+          "mesh": "Cube",
+          "mesh_ids": {},
+          "library": "//../../assets/cube/asset.blend",
+          "bounds_m": {
+            "min": [
+              0.5,
+              -0.5,
+              0.0
+            ],
+            "max": [
+              1.5,
+              0.5,
+              1.0
+            ]
+          },
+          "dimensions_m": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "location": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "materials": [
+            "Fixture texture"
+          ],
+          "vertices": 8,
+          "polygons": 6
+        },
+        {
+          "name": "Renamed cube",
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-renamed"
+          },
+          "mesh": "Cube",
+          "mesh_ids": {},
+          "library": "//../../assets/cube/asset.blend",
+          "bounds_m": {
+            "min": [
+              -1.5,
+              -0.5,
+              0.0
+            ],
+            "max": [
+              -0.5,
+              0.5,
+              1.0
+            ]
+          },
+          "dimensions_m": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "location": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "materials": [
+            "Fixture texture"
+          ],
+          "vertices": 8,
+          "polygons": 6
+        }
+      ],
+      "dependencies": {
+        "blend_paths": [
+          "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e/4ce4b921-256d-443d-b086-e7e3fbd1d53f/assets/cube/asset.blend",
+          "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e/4ce4b921-256d-443d-b086-e7e3fbd1d53f/assets/cube/colour.png"
+        ],
+        "libraries": [
+          {
+            "name": "asset.blend",
+            "filepath": "//../../assets/cube/asset.blend",
+            "resolved_path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e/4ce4b921-256d-443d-b086-e7e3fbd1d53f/assets/cube/asset.blend",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          }
+        ],
+        "textures": [
+          {
+            "name": "colour.png",
+            "filepath": "//colour.png",
+            "resolved_path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e/4ce4b921-256d-443d-b086-e7e3fbd1d53f/assets/cube/colour.png",
+            "dimensions": [
+              8,
+              8
+            ],
+            "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+          }
+        ]
+      },
+      "hashes_before": {
+        "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+      },
+      "hashes_after": {
+        "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+      },
+      "saved": false,
+      "status": "actual_reopen_verified"
+    },
+    {
+      "version_id": "scene-alternate-v1",
+      "source_commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+      "source_closure_digest": "42a094db73bb237d044c47db56bf768e7ee8d41737cf40ba69b6c5dba891bd71",
+      "snapshot_root": ".proscenium/snapshots/42a094db73bb237d044c47db56bf768e7ee8d41737cf40ba69b6c5dba891bd71/a8b0e20b-61d5-4068-89e9-ad588e79aad5",
+      "units": {
+        "system": "METRIC",
+        "scale_length": 1.0
+      },
+      "instances": [
+        {
+          "name": "Blue cube",
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-blue"
+          },
+          "mesh": "Cube",
+          "mesh_ids": {},
+          "library": "//../../assets/cube/asset.blend",
+          "bounds_m": {
+            "min": [
+              0.5,
+              -0.5,
+              0.0
+            ],
+            "max": [
+              1.5,
+              0.5,
+              1.0
+            ]
+          },
+          "dimensions_m": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "location": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "materials": [
+            "Fixture texture"
+          ],
+          "vertices": 8,
+          "polygons": 6
+        },
+        {
+          "name": "Renamed cube",
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-renamed"
+          },
+          "mesh": "Cube",
+          "mesh_ids": {},
+          "library": "//../../assets/cube/asset.blend",
+          "bounds_m": {
+            "min": [
+              -1.5,
+              -0.5,
+              0.0
+            ],
+            "max": [
+              -0.5,
+              0.5,
+              1.0
+            ]
+          },
+          "dimensions_m": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "location": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "materials": [
+            "Fixture texture"
+          ],
+          "vertices": 8,
+          "polygons": 6
+        }
+      ],
+      "dependencies": {
+        "blend_paths": [
+          "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/42a094db73bb237d044c47db56bf768e7ee8d41737cf40ba69b6c5dba891bd71/a8b0e20b-61d5-4068-89e9-ad588e79aad5/assets/cube/asset.blend",
+          "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/42a094db73bb237d044c47db56bf768e7ee8d41737cf40ba69b6c5dba891bd71/a8b0e20b-61d5-4068-89e9-ad588e79aad5/assets/cube/colour.png"
+        ],
+        "libraries": [
+          {
+            "name": "asset.blend",
+            "filepath": "//../../assets/cube/asset.blend",
+            "resolved_path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/42a094db73bb237d044c47db56bf768e7ee8d41737cf40ba69b6c5dba891bd71/a8b0e20b-61d5-4068-89e9-ad588e79aad5/assets/cube/asset.blend",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          }
+        ],
+        "textures": [
+          {
+            "name": "colour.png",
+            "filepath": "//colour.png",
+            "resolved_path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/42a094db73bb237d044c47db56bf768e7ee8d41737cf40ba69b6c5dba891bd71/a8b0e20b-61d5-4068-89e9-ad588e79aad5/assets/cube/colour.png",
+            "dimensions": [
+              8,
+              8
+            ],
+            "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+          }
+        ]
+      },
+      "hashes_before": {
+        "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "scenes/alternate/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+      },
+      "hashes_after": {
+        "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "scenes/alternate/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+      },
+      "saved": false,
+      "status": "actual_reopen_verified"
+    }
+  ],
+  "requested_future_operation": "Adopt asset-cube-v3 only into scene-main-v2",
+  "status": "passed",
+  "rendered": false,
+  "protected_before": {
+    "assets/cube/asset.blend": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde",
+    "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "assets/companion/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+    "assets/companion/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "scenes/alternate/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+    "research/box-README.md": "ae63b4ad1c8136b881686e66faf930c9b9e71fa823a7a4b1738076ae06739c35",
+    "research/box-commit.json": "bea52b75afc237486e3f943e59091017344f278503504ef29d7a4a49483ff8d0",
+    "research/box-metadata.json": "f5867d1cb319a739e434cce40177c7da65701e747198eef97da025610eac9af6",
+    "research/box-ledger.json": "b10b56432ee6818ea5b70e9877236459d7534704eac015f8e6f211e10afbaf4d",
+    "research/Box.glb": "ed52f7192b8311d700ac0ce80644e3852cd01537e4d62241b9acba023da3d54e",
+    "reports/historical-inputs.json": "d86db52e1de4b21d50a7aaf45bcb000772e0fe74c5d81645c7805801d73fa5f5",
+    "reports/import-inspection.json": "d744978a00cfce64a5bc146b192f10b7c09b053804a2d999fb63007846676976",
+    "reports/revision-inspection.json": "9b8f75d5c7a7c9518d2ff06ed0a177fda4672f876146c9ac908caa4af40deb60",
+    "reports/history-adoption.json": "bc3ce8810553704dd585da9980870a82545f3b27baa9ed205c96326607d2d527",
+    "reports/history-adoption-completion.json": "6c5f52f04a0782d806567fbd052ba933f0ae8e24064e1ea6265181f9cb6dd933",
+    "reports/native-allocation/revise.claim": "bd8ddc4d6bd14316c46c43822841185590aec1113d18bc31228f07633bccfd53",
+    "reports/native-allocation/import.json": "346fdbd90ba6811161eb1a4716e3819e73bf1cc88b84024ce186dff894cc80a0",
+    "reports/native-allocation/history-adopt.claim": "bd8ddc4d6bd14316c46c43822841185590aec1113d18bc31228f07633bccfd53",
+    "reports/native-allocation/revise.log": "726130404d97cdfdb6f35caee3e160883212e6c9a1bb151de9f2e8ab87f903d5",
+    "reports/native-allocation/history-adopt.log": "514858a239b1629954b94b00eb139a32758de7e1bc3ac03ab79369044493b3f6",
+    "reports/native-allocation/import.log": "4f215a440deccc76b5b46d011699a8d853baca28985d545bd17368464dae99a7",
+    "reports/native-allocation/import.claim": "bd8ddc4d6bd14316c46c43822841185590aec1113d18bc31228f07633bccfd53",
+    "reports/native-allocation/revise.json": "c58615c0fd5cd610f0a390710cca3614a05d2e337cb1498585a480a5f4dcf661",
+    "reports/native-allocation/history-adopt.json": "c39e7542b37a25ffdd751ade7499e6034afcae578cf866d92220eeb2d5100186",
+    "reports/native-adoption-allocation/terminal.json": "567b60d492aeccaf39c99c3da69ddd4ce422b6aa9b8b7f2fe81253e47f1f15f5",
+    "reports/native-adoption-allocation/process.json": "0cb4e65ec5966db58a3dd44d351717d22fa4f63644a57bb685378234821901ac",
+    "reports/native-adoption-allocation/adoption.claim": "d055d415705541ac41c95b46556d870468652c20c116a987cae5ae262bc3e9ab",
+    "reports/native-adoption-allocation/blender.log": "215edbca11601007f5d13af78d16cb2ae40af1e2a25235d73c9039cdb6b81529",
+    "tools/acquire_box.py": "abad4c31d665f8872cdf493efc8298cc6e58fbc57368f7e76eab626cc21241d1",
+    "tools/finalize_history_failure.py": "90991f8a2dff164feb5de6865f6037f9960fc324be549dea09640b8a837a3b3a",
+    "tools/history_adopt.py": "b792fa4fba5433e418e788a6c6421748f9dfe1c84815ec997deccd52b7f617af",
+    "tools/import_box.py": "63555a4d28880de391f4ba9b62ca2568de6dfcc4cfe7bffe8ef1df6ef5d97191",
+    "tools/m05_blender.py": "25f4ab32bcd52878b64521acd0fc5069b16a9f5a98b8a98a910fc90648abcde2",
+    "tools/revise_box.py": "65b69a978535a170ae084c197c5c01238a19b442e6ba711b29ba388af65a48af",
+    "tools/m05_adopt_guard.py": "74f830cc8bb66eddb5ce4610eee560fc16f287cd54f7ec2c3a1d83c36fbf1b24",
+    "tools/history_adopt_completion.py": "78af72c20b125075ce6946f148b47ce5a7dc35962c6b0bfb7b03f73b5437448a",
+    "tools/m05_adopt_final_guard.py": "b5afb244049e1abec6d661991d324d9f30f3c3fc5379a31ca65149455fa6fb15",
+    "tools/prepare_box_publication.py": "686ad28d7606b50187e949d0012180437cd018762d0644bbbfd817d87346787f",
+    "tools/prepare_box_revision_publication.py": "a87a3bcd4a9fb1fa28e71b97c881ce09aaf2c459c308787af8b51e6804d4c9ea",
+    "tools/__pycache__/prepare_box_revision_publication.cpython-312.pyc": "cb79e4465001db7a27a4901ffac5991b999b7696b140cd2995bc429ead510896"
+  },
+  "adoption": {
+    "based_on": "scene-main-v1",
+    "version_id": "scene-main-v2",
+    "dependency": {
+      "item_id": "asset-cube",
+      "version_id": "asset-cube-v3"
+    },
+    "instances": [
+      {
+        "name": "Blue cube",
+        "ids": {
+          "proscenium_object_id": "object-cube-source",
+          "proscenium_instance_id": "instance-blue"
+        },
+        "mesh": "Cube",
+        "mesh_ids": {},
+        "library": "//../../assets/cube/asset.blend",
+        "bounds_m": {
+          "min": [
+            0.5,
+            -0.5000001788139343,
+            0.0
+          ],
+          "max": [
+            1.5,
+            0.5000001788139343,
+            1.5000004768371582
+          ]
+        },
+        "dimensions_m": [
+          1.0,
+          1.0000003576278687,
+          1.5000004768371582
+        ],
+        "location": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "materials": [
+          "Red"
+        ],
+        "vertices": 24,
+        "polygons": 12
+      },
+      {
+        "name": "Renamed cube",
+        "ids": {
+          "proscenium_object_id": "object-cube-source",
+          "proscenium_instance_id": "instance-renamed"
+        },
+        "mesh": "Cube",
+        "mesh_ids": {},
+        "library": "//../../assets/cube/asset.blend",
+        "bounds_m": {
+          "min": [
+            -1.5,
+            -0.5000001788139343,
+            0.0
+          ],
+          "max": [
+            -0.5,
+            0.5000001788139343,
+            1.5000004768371582
+          ]
+        },
+        "dimensions_m": [
+          1.0,
+          1.0000003576278687,
+          1.5000004768371582
+        ],
+        "location": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "materials": [
+          "Red"
+        ],
+        "vertices": 24,
+        "polygons": 12
+      }
+    ],
+    "units": {
+      "system": "METRIC",
+      "scale_length": 1.0
+    },
+    "state_before": {
+      "objects": {
+        "Blue cube": {
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-blue"
+          },
+          "location": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        },
+        "Renamed cube": {
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-renamed"
+          },
+          "location": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": {
+            "action": "Renamed cubeAction",
+            "curves": [
+              {
+                "path": "location",
+                "index": 0,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      -1.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      -1.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      -1.0
+                    ],
+                    "interpolation": "LINEAR"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      -1.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      -1.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      -1.0
+                    ],
+                    "interpolation": "LINEAR"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 1,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      0.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      0.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      0.0
+                    ],
+                    "interpolation": "LINEAR"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      1.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      1.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      1.0
+                    ],
+                    "interpolation": "LINEAR"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 2,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      0.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      0.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      0.0
+                    ],
+                    "interpolation": "LINEAR"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      0.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      0.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      0.0
+                    ],
+                    "interpolation": "LINEAR"
+                  }
+                ]
+              }
+            ],
+            "drivers": [],
+            "nla": []
+          }
+        },
+        "Floor": {
+          "ids": {
+            "proscenium_object_id": "object-floor",
+            "proscenium_instance_id": "instance-floor"
+          },
+          "location": [
+            0.0,
+            0.0,
+            -0.10000000149011612
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        },
+        "Wall": {
+          "ids": {
+            "proscenium_object_id": "object-wall",
+            "proscenium_instance_id": "instance-wall"
+          },
+          "location": [
+            0.0,
+            2.5,
+            1.25
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        },
+        "Fixture camera": {
+          "ids": {},
+          "location": [
+            5.0,
+            -7.0,
+            4.0
+          ],
+          "rotation": [
+            1.204492449760437,
+            -4.427188216027389e-08,
+            0.6202496290206909
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": {
+            "action": "Fixture cameraAction",
+            "curves": [
+              {
+                "path": "location",
+                "index": 0,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      5.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      5.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      5.0
+                    ],
+                    "interpolation": "BEZIER"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      4.5
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      4.5
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      4.5
+                    ],
+                    "interpolation": "BEZIER"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 1,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      -7.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      -7.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      -7.0
+                    ],
+                    "interpolation": "BEZIER"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      -7.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      -7.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      -7.0
+                    ],
+                    "interpolation": "BEZIER"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 2,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      4.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      4.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      4.0
+                    ],
+                    "interpolation": "BEZIER"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      4.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      4.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      4.0
+                    ],
+                    "interpolation": "BEZIER"
+                  }
+                ]
+              }
+            ],
+            "drivers": [],
+            "nla": []
+          }
+        },
+        "Fixture area": {
+          "ids": {},
+          "location": [
+            1.0,
+            -3.0,
+            6.0
+          ],
+          "rotation": [
+            0.485049843788147,
+            -3.1963294233605666e-09,
+            0.3217506408691406
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        }
+      },
+      "camera": "Fixture camera",
+      "timeline": [
+        1,
+        12,
+        1,
+        24,
+        1.0
+      ]
+    },
+    "state_after": {
+      "objects": {
+        "Blue cube": {
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-blue"
+          },
+          "location": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        },
+        "Renamed cube": {
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-renamed"
+          },
+          "location": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": {
+            "action": "Renamed cubeAction",
+            "curves": [
+              {
+                "path": "location",
+                "index": 0,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      -1.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      -1.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      -1.0
+                    ],
+                    "interpolation": "LINEAR"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      -1.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      -1.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      -1.0
+                    ],
+                    "interpolation": "LINEAR"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 1,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      0.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      0.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      0.0
+                    ],
+                    "interpolation": "LINEAR"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      1.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      1.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      1.0
+                    ],
+                    "interpolation": "LINEAR"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 2,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      0.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      0.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      0.0
+                    ],
+                    "interpolation": "LINEAR"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      0.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      0.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      0.0
+                    ],
+                    "interpolation": "LINEAR"
+                  }
+                ]
+              }
+            ],
+            "drivers": [],
+            "nla": []
+          }
+        },
+        "Floor": {
+          "ids": {
+            "proscenium_object_id": "object-floor",
+            "proscenium_instance_id": "instance-floor"
+          },
+          "location": [
+            0.0,
+            0.0,
+            -0.10000000149011612
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        },
+        "Wall": {
+          "ids": {
+            "proscenium_object_id": "object-wall",
+            "proscenium_instance_id": "instance-wall"
+          },
+          "location": [
+            0.0,
+            2.5,
+            1.25
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        },
+        "Fixture camera": {
+          "ids": {},
+          "location": [
+            5.0,
+            -7.0,
+            4.0
+          ],
+          "rotation": [
+            1.204492449760437,
+            -4.427188216027389e-08,
+            0.6202496290206909
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": {
+            "action": "Fixture cameraAction",
+            "curves": [
+              {
+                "path": "location",
+                "index": 0,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      5.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      5.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      5.0
+                    ],
+                    "interpolation": "BEZIER"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      4.5
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      4.5
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      4.5
+                    ],
+                    "interpolation": "BEZIER"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 1,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      -7.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      -7.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      -7.0
+                    ],
+                    "interpolation": "BEZIER"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      -7.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      -7.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      -7.0
+                    ],
+                    "interpolation": "BEZIER"
+                  }
+                ]
+              },
+              {
+                "path": "location",
+                "index": 2,
+                "keys": [
+                  {
+                    "co": [
+                      1.0,
+                      4.0
+                    ],
+                    "left": [
+                      -2.6666667461395264,
+                      4.0
+                    ],
+                    "right": [
+                      4.6666669845581055,
+                      4.0
+                    ],
+                    "interpolation": "BEZIER"
+                  },
+                  {
+                    "co": [
+                      12.0,
+                      4.0
+                    ],
+                    "left": [
+                      8.333333015441895,
+                      4.0
+                    ],
+                    "right": [
+                      15.666666984558105,
+                      4.0
+                    ],
+                    "interpolation": "BEZIER"
+                  }
+                ]
+              }
+            ],
+            "drivers": [],
+            "nla": []
+          }
+        },
+        "Fixture area": {
+          "ids": {},
+          "location": [
+            1.0,
+            -3.0,
+            6.0
+          ],
+          "rotation": [
+            0.485049843788147,
+            -3.1963294233605666e-09,
+            0.3217506408691406
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "animation": null
+        }
+      },
+      "camera": "Fixture camera",
+      "timeline": [
+        1,
+        12,
+        1,
+        24,
+        1.0
+      ]
+    },
+    "state_preserved": true,
+    "dependency_paths_before_unused_purge": [
+      "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/assets/cube/asset.blend"
+    ],
+    "unused_datablocks_purged": 0,
+    "dependencies": {
+      "blend_paths": [
+        "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/assets/cube/asset.blend"
+      ],
+      "libraries": [
+        {
+          "name": "asset.blend",
+          "filepath": "//../../assets/cube/asset.blend",
+          "resolved_path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/assets/cube/asset.blend",
+          "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+        }
+      ],
+      "textures": []
+    },
+    "input_sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+    "output": {
+      "path": "scenes/fixture/scene.blend",
+      "sha256": "e9861086ae5beedacf120ee7ea744e8bf143a386a8aacb02ba98c31c714aa164",
+      "bytes": 453539
+    },
+    "saved_dependency_recheck": {
+      "blend_paths": [
+        "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/assets/cube/asset.blend"
+      ],
+      "libraries": [
+        {
+          "name": "asset.blend",
+          "filepath": "//../../assets/cube/asset.blend",
+          "resolved_path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/assets/cube/asset.blend",
+          "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+        }
+      ],
+      "textures": []
+    }
+  },
+  "protected_after": {
+    "assets/cube/asset.blend": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde",
+    "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "assets/companion/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+    "assets/companion/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "scenes/alternate/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+    "research/box-README.md": "ae63b4ad1c8136b881686e66faf930c9b9e71fa823a7a4b1738076ae06739c35",
+    "research/box-commit.json": "bea52b75afc237486e3f943e59091017344f278503504ef29d7a4a49483ff8d0",
+    "research/box-metadata.json": "f5867d1cb319a739e434cce40177c7da65701e747198eef97da025610eac9af6",
+    "research/box-ledger.json": "b10b56432ee6818ea5b70e9877236459d7534704eac015f8e6f211e10afbaf4d",
+    "research/Box.glb": "ed52f7192b8311d700ac0ce80644e3852cd01537e4d62241b9acba023da3d54e",
+    "reports/historical-inputs.json": "d86db52e1de4b21d50a7aaf45bcb000772e0fe74c5d81645c7805801d73fa5f5",
+    "reports/import-inspection.json": "d744978a00cfce64a5bc146b192f10b7c09b053804a2d999fb63007846676976",
+    "reports/revision-inspection.json": "9b8f75d5c7a7c9518d2ff06ed0a177fda4672f876146c9ac908caa4af40deb60",
+    "reports/history-adoption.json": "bc3ce8810553704dd585da9980870a82545f3b27baa9ed205c96326607d2d527",
+    "reports/history-adoption-completion.json": "6c5f52f04a0782d806567fbd052ba933f0ae8e24064e1ea6265181f9cb6dd933",
+    "reports/native-allocation/revise.claim": "bd8ddc4d6bd14316c46c43822841185590aec1113d18bc31228f07633bccfd53",
+    "reports/native-allocation/import.json": "346fdbd90ba6811161eb1a4716e3819e73bf1cc88b84024ce186dff894cc80a0",
+    "reports/native-allocation/history-adopt.claim": "bd8ddc4d6bd14316c46c43822841185590aec1113d18bc31228f07633bccfd53",
+    "reports/native-allocation/revise.log": "726130404d97cdfdb6f35caee3e160883212e6c9a1bb151de9f2e8ab87f903d5",
+    "reports/native-allocation/history-adopt.log": "514858a239b1629954b94b00eb139a32758de7e1bc3ac03ab79369044493b3f6",
+    "reports/native-allocation/import.log": "4f215a440deccc76b5b46d011699a8d853baca28985d545bd17368464dae99a7",
+    "reports/native-allocation/import.claim": "bd8ddc4d6bd14316c46c43822841185590aec1113d18bc31228f07633bccfd53",
+    "reports/native-allocation/revise.json": "c58615c0fd5cd610f0a390710cca3614a05d2e337cb1498585a480a5f4dcf661",
+    "reports/native-allocation/history-adopt.json": "c39e7542b37a25ffdd751ade7499e6034afcae578cf866d92220eeb2d5100186",
+    "reports/native-adoption-allocation/terminal.json": "567b60d492aeccaf39c99c3da69ddd4ce422b6aa9b8b7f2fe81253e47f1f15f5",
+    "reports/native-adoption-allocation/process.json": "0cb4e65ec5966db58a3dd44d351717d22fa4f63644a57bb685378234821901ac",
+    "reports/native-adoption-allocation/adoption.claim": "d055d415705541ac41c95b46556d870468652c20c116a987cae5ae262bc3e9ab",
+    "reports/native-adoption-allocation/blender.log": "215edbca11601007f5d13af78d16cb2ae40af1e2a25235d73c9039cdb6b81529",
+    "tools/acquire_box.py": "abad4c31d665f8872cdf493efc8298cc6e58fbc57368f7e76eab626cc21241d1",
+    "tools/finalize_history_failure.py": "90991f8a2dff164feb5de6865f6037f9960fc324be549dea09640b8a837a3b3a",
+    "tools/history_adopt.py": "b792fa4fba5433e418e788a6c6421748f9dfe1c84815ec997deccd52b7f617af",
+    "tools/import_box.py": "63555a4d28880de391f4ba9b62ca2568de6dfcc4cfe7bffe8ef1df6ef5d97191",
+    "tools/m05_blender.py": "25f4ab32bcd52878b64521acd0fc5069b16a9f5a98b8a98a910fc90648abcde2",
+    "tools/revise_box.py": "65b69a978535a170ae084c197c5c01238a19b442e6ba711b29ba388af65a48af",
+    "tools/m05_adopt_guard.py": "74f830cc8bb66eddb5ce4610eee560fc16f287cd54f7ec2c3a1d83c36fbf1b24",
+    "tools/history_adopt_completion.py": "78af72c20b125075ce6946f148b47ce5a7dc35962c6b0bfb7b03f73b5437448a",
+    "tools/m05_adopt_final_guard.py": "b5afb244049e1abec6d661991d324d9f30f3c3fc5379a31ca65149455fa6fb15",
+    "tools/prepare_box_publication.py": "686ad28d7606b50187e949d0012180437cd018762d0644bbbfd817d87346787f",
+    "tools/prepare_box_revision_publication.py": "a87a3bcd4a9fb1fa28e71b97c881ce09aaf2c459c308787af8b51e6804d4c9ea",
+    "tools/__pycache__/prepare_box_revision_publication.cpython-312.pyc": "cb79e4465001db7a27a4901ffac5991b999b7696b140cd2995bc429ead510896"
+  },
+  "limitations": [
+    "No render, visual review, rig/motion acceptance or new preview performed",
+    "Historical readback is verified; scene-main-v2 publication is a separate host operation"
+  ]
+}

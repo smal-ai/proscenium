@@ -1,0 +1,113 @@
+{
+  "invocation_id": "976bc5541bb64f60c109dc4a123582648a7067844de0ed6f530bb1bb01a52f3d",
+  "native_session_id": "b10c3435-27d1-407d-934b-19e8d673190f",
+  "receipt": {
+    "event_sequence": 2172,
+    "job_ids": [],
+    "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+    "publication_id": "m05-main-v2-publication-b9370f80",
+    "replayed": false,
+    "schema_version": "1.0",
+    "versions": [
+      {
+        "item_id": "scene-main",
+        "version_id": "scene-main-v2"
+      }
+    ]
+  },
+  "request_id": "b9370f80-1ebd-4e8e-84c0-c7822ee834ef",
+  "submission": {
+    "items": [
+      {
+        "artifact_ids": [],
+        "derived_from": [
+          {
+            "item_id": "scene-main",
+            "version_id": "scene-main-v1"
+          }
+        ],
+        "description": "Owner-authorised main-only adoption of asset-cube-v3. Both stable-ID instances are 1 x 1 x 1.5 metres with Red material and base Z=0; instance IDs, transforms, animation, camera and timeline preserved. Both historical v1 scenes reopened with original one-metre textured cubes and unchanged hashes. Alternate remains pinned to asset-cube-v1. No render, preview or visual/rig/motion acceptance performed.",
+        "expected_current_version_id": "scene-main-v1",
+        "item_id": "scene-main",
+        "kind": "scene",
+        "name": "Pinned tabletop scene - adopted Box v3",
+        "preview_requests": [],
+        "provenance": {
+          "creator": null,
+          "licence": null,
+          "note": "Scene fixture provenance remains unknown. Linked asset-cube-v3 retains its exact Khronos/Cesium/CC-BY-4.0 provenance; no rights clearance inferred.",
+          "source_url": null
+        },
+        "source": {
+          "dependencies": [
+            {
+              "item_id": "asset-cube",
+              "version_id": "asset-cube-v3"
+            }
+          ],
+          "digest": "9f87663bcf205e74b0b076fe215293990078df28faf6ceda40304fab5fff38f7",
+          "entry_path": "scenes/fixture/scene.blend",
+          "files": [
+            {
+              "destination": "assets/cube/asset.blend",
+              "origin": {
+                "commit": "b836298f258967c1c37a1b2521aded58cbaced2e",
+                "kind": "git",
+                "path": "assets/cube/asset.blend",
+                "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+              }
+            },
+            {
+              "destination": "reports/history-adoption-final.json",
+              "origin": {
+                "commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+                "kind": "git",
+                "path": "reports/history-adoption-final.json",
+                "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                "sha256": "1abdba2a41651a05bc3d259b575b22626d9dae6ea37d233e033102ad43b1547f"
+              }
+            },
+            {
+              "destination": "scenes/fixture/scene.blend",
+              "origin": {
+                "commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+                "kind": "git",
+                "path": "scenes/fixture/scene.blend",
+                "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                "sha256": "e9861086ae5beedacf120ee7ea744e8bf143a386a8aacb02ba98c31c714aa164"
+              }
+            },
+            {
+              "destination": "tools/history_adopt_final.py",
+              "origin": {
+                "commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+                "kind": "git",
+                "path": "tools/history_adopt_final.py",
+                "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                "sha256": "266ceedf479cad40c0bb8fce82c76308a40dc840ad74894b93dfebd4fe3d33b2"
+              }
+            }
+          ],
+          "required_runtime": {
+            "application": "blender",
+            "features": [
+              "linked-libraries"
+            ],
+            "version": "4.5.14 LTS"
+          }
+        },
+        "source_commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+        "tags": [
+          "setup-fixture",
+          "explicit-adoption"
+        ],
+        "version_id": "scene-main-v2"
+      }
+    ],
+    "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+    "publication_id": "m05-main-v2-publication-b9370f80",
+    "schema_version": "1.0"
+  },
+  "work_id": "work-1934aa7969374f9181cf4cb9fcde3150"
+}

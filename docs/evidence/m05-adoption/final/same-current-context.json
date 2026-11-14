@@ -1,0 +1,79 @@
+{
+  "before": {
+    "context": {
+      "item_id": "asset-cube",
+      "version_id": "asset-cube-v3",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "blender_render",
+        "artifact_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-f1",
+        "displayed_sha256": "4cfd4b8a9c45eb3f85d9d436e7caf26133a65154cdd67996292a57ce772b072a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "asset-cube",
+        "version_id": "asset-cube-v3",
+        "shot_id": null,
+        "render_job_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a",
+        "source_frame": 1,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-f1",
+          "role": "render"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "after": {
+    "context": {
+      "item_id": "asset-cube",
+      "version_id": "asset-cube-v3",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "blender_render",
+        "artifact_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-f1",
+        "displayed_sha256": "4cfd4b8a9c45eb3f85d9d436e7caf26133a65154cdd67996292a57ce772b072a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "asset-cube",
+        "version_id": "asset-cube-v3",
+        "shot_id": null,
+        "render_job_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a",
+        "source_frame": 1,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-f1",
+          "role": "render"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": []
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "exactly_preserved": true
+}

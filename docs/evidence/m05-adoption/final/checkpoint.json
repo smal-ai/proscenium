@@ -1,0 +1,41 @@
+{
+  "state": "completed",
+  "parent": "a3a3c8ea36bc3e91b88c262d2cdafb5713024845",
+  "receipt": {
+    "files": [
+      {
+        "path": "reports/history-adoption-final.json",
+        "sha256": "1abdba2a41651a05bc3d259b575b22626d9dae6ea37d233e033102ad43b1547f"
+      },
+      {
+        "path": "scenes/fixture/scene.blend",
+        "sha256": "e9861086ae5beedacf120ee7ea744e8bf143a386a8aacb02ba98c31c714aa164"
+      },
+      {
+        "path": "tools/history_adopt_final.py",
+        "sha256": "266ceedf479cad40c0bb8fce82c76308a40dc840ad74894b93dfebd4fe3d33b2"
+      }
+    ],
+    "operation_id": "m05-main-final-checkpoint-b9370f80",
+    "parent_commit": "a3a3c8ea36bc3e91b88c262d2cdafb5713024845",
+    "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+    "replayed": false,
+    "schema_version": "1.0",
+    "source_commit": "3af0032a166468f19e3ed0ca9d433ec0148e22bc",
+    "state": "completed"
+  },
+  "files": [
+    {
+      "path": "reports/history-adoption-final.json",
+      "sha256": "1abdba2a41651a05bc3d259b575b22626d9dae6ea37d233e033102ad43b1547f"
+    },
+    {
+      "path": "scenes/fixture/scene.blend",
+      "sha256": "e9861086ae5beedacf120ee7ea744e8bf143a386a8aacb02ba98c31c714aa164"
+    },
+    {
+      "path": "tools/history_adopt_final.py",
+      "sha256": "266ceedf479cad40c0bb8fce82c76308a40dc840ad74894b93dfebd4fe3d33b2"
+    }
+  ]
+}

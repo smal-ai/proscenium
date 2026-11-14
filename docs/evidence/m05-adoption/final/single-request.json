@@ -1,0 +1,30 @@
+{
+  "request": {
+    "accepted_at": "2026-11-14T17:14:42.364823+00:00",
+    "effective_profile_id": "authoring",
+    "generation_task_id": "task-5574017c84d440219feca866a4dae800",
+    "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+    "receipt": {
+      "native_message_id": "5b60e0d9-96a5-4a37-8055-173f080b6459",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "replayed": false,
+      "request_id": "b9370f80-1ebd-4e8e-84c0-c7822ee834ef",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-1934aa7969374f9181cf4cb9fcde3150"
+    },
+    "request_id": "b9370f80-1ebd-4e8e-84c0-c7822ee834ef",
+    "schema_version": "1.0",
+    "submission": {
+      "context_id": "fdb4e5e0-3649-4eb4-8edb-8f7d1b85b181",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "request_id": "b9370f80-1ebd-4e8e-84c0-c7822ee834ef",
+      "schema_version": "1.0",
+      "text": "One final explicit owner Queue after request 0cac4d20-0fc1-48a5-b26a-9487c027cbee completed with known unsaved assertion failure. ONE root under 170 seconds, no children, ONE Blender process under 180 seconds/four threads. No downloads, asset changes, GPU/VLM/Comfy/Unity, stills, extra inspection processes, independent services, installs, remote effects or SQLite. All earlier authoring requests are completed. Do not retry/reset old jobs or claims. Finish ONLY the main-scene adoption and actual checkpoint/publication, preserving alternate scene v1 and every old report/script/source/owner choice.\n\nRead tools/history_adopt_completion.py and current get_version metadata for asset-cube-v3 and scene-main-v1. Parent has statically reviewed the complete 205-line source and tested the pure path contract. Historical two-scene geometry/texture checks are ALREADY proven in reports/history-adoption-completion.json; you may consume that evidence. Keeping its historical readbacks inside your one process is also allowed, but do not launch any extra process.\n\nCreate a new model-authored tools/history_adopt_final.py and new reports/history-adoption-final.json. NEVER overwrite history_adopt.py/history_adopt_completion.py or either failed report. Use your CURRENT host request_id/work_id/generation_task_id/context_id, not old hardcoded IDs. Keep the exact proscenium_object_id selector and required instance-blue/instance-renamed identities.\n\nMinimal fixes required before executing: safe() must preserve lexical absolute/in-project and symlink rejection FIRST, then p=p.resolve(strict=True), then assert canonical containment inside root.resolve(strict=True); missing files must still fail. This makes the library equality compare canonical paths and corrects the ../.. bug. Preserve actual hash checks. In dependencies(), use canonical/sorted blend_paths and canonical resolved resource paths for a stable semantic before/after-save comparison; do NOT weaken missing/outside-resource checks or author absolute runtime snapshot paths. The actual Blender library path must stay //../../assets/cube/asset.blend, not a .proscenium snapshot reference.\n\nStatic remaining-assertion review also found two concrete helper interactions to account for. (1) Use a fresh sibling scene.adopting-final.blend and save_as_mainfile(...,compress=False), save_version=0, so its existing BLENDER header assertion is explicit rather than depending on compression defaults. (2) Protected report enumeration must exclude the NEW live reports/native-final-allocation directory plus the new report_path, because guard logs/process receipts change during the run. Protect ALL old native-allocation/native-adoption-allocation reports/claims and other old sources instead; never exclude or rewrite the old failed reports. Keep scene-state identity/transforms/animation/camera/timeline equality, post-save dependency equality and protected/hash checks. There are no permitted creative asset changes.\n\nRun your corrected script ONCE via `python tools/m05_adopt_final_guard.py tools/history_adopt_final.py`. The operator-installed guard is allocation control, not creative code: one new reservation, common OS claim, 4 GiB protected headroom, four threads, 180 seconds, python-exit-code 1. Never use/reset an older guard. In that one process open only the owned working main scene (plus optional same-process historical readbacks), verify its linked asset is actual unchanged v3 with the two 1.5 m Red cube instances and canonical project-local relative library, preserve all scene state, and save/promote only scenes/fixture/scene.blend on successful checks. No render. Failure means report exact known state, no second process or invented publication.\n\nAfter successful native exit, call checkpoint_sources with actual HEAD and ONLY scenes/fixture/scene.blend, tools/history_adopt_final.py and reports/history-adoption-final.json. Then publish_outputs ONLY scene-main-v2 on item scene-main, expected_current_version_id scene-main-v1, with logical dependency asset-cube/asset-cube-v3 and preview_requests:[]. Build the SourceClosure with actual hydrated hashes, correct repository ID and returned checkpoint commit; reuse the exact asset-v3 dependency origins from get_version rather than substituting mutable latest files. Files/dependencies sorted; digest sha256(canonical(closure_without_digest)); validate exact shared PublicationSubmit through installed proscenium.contracts. Include all required source/dependency files, with no paths to runtime snapshots in the authored Blender library. Do not hand-commit, overwrite any source-version record, publish alternate/asset revisions or request another stage approval.\n\nReturn the actual saved output hash, protected-state/readback checks, checkpoint source_commit, scene-main-v2 publication receipt and unchanged alternate/asset version evidence. Successful save PLUS actual publication is required. Do not stop after merely writing the authoring script or claim a prospective adoption is published.\n",
+      "type": "queue"
+    }
+  },
+  "elapsed_ms": 68768
+}
