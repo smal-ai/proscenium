@@ -473,6 +473,44 @@ class State:
                 if old["fingerprint"] != fingerprint:
                     raise DomainError("idempotency_conflict", 409)
                 return
+            if not event.get("agentId") and (
+                kind == "session.idle" or kind == "abort" and data.get("reason") == "user_initiated"
+            ):
+                controls = []
+                for request in tx.all("requests"):
+                    if (
+                        request["submission"]["type"] != "stop"
+                        or request["receipt"]["state"] != "stop_requested"
+                    ):
+                        continue
+                    phase = tx.require("copilot.stops", request["request_id"])
+                    work = tx.require("work", phase["work_id"])
+                    if (
+                        phase["phase"] in {"aborting", "reconciling"}
+                        and work["native_session_id"] == session_id
+                    ):
+                        controls.append((request["request_id"], phase))
+                if len(controls) == 1:
+                    stop_id, phase = controls[0]
+                    field = (
+                        "idle_native_event_id"
+                        if kind == "session.idle"
+                        else "abort_native_event_id"
+                    )
+                    save(tx, "copilot.stops", stop_id, {**phase, field: identity})
+                    if kind == "session.idle":
+                        # Session-scoped Stop evidence, not an invented request/turn binding.
+                        save(
+                            tx,
+                            "copilot.idle",
+                            session_id,
+                            {
+                                "idle": True,
+                                "session_id": session_id,
+                                "stop_request_id": stop_id,
+                                "native_event_id": identity,
+                            },
+                        )
             agent = event.get("agentId")
             binding = self.binding(tx, session_id, "agent", agent)
             if kind == "user.message" and data.get("clientTurnId"):
@@ -864,8 +902,66 @@ class State:
                     },
                     **emit,
                 )
-            if not agent and kind in {"assistant.turn_end", "session.task_complete"}:
-                save(tx, "copilot.completion", request_id, {**binding, "candidate": True})
+            if not agent and kind == "assistant.turn_start":
+                save(
+                    tx,
+                    "copilot.completion",
+                    request_id,
+                    {**binding, "candidate": False, "public_terminal_message": False},
+                )
+            if not agent and kind == "assistant.message":
+                old_completion = tx.get("copilot.completion", request_id, required=False) or {}
+                if old_completion.get("producer") != "session.task_complete" or old_completion.get(
+                    "delivery_id"
+                ) != binding.get("delivery_id"):
+                    public_terminal = (
+                        isinstance(data.get("content"), str)
+                        and bool(data["content"].strip())
+                        and not data.get("toolRequests")
+                    )
+                    save(
+                        tx,
+                        "copilot.completion",
+                        request_id,
+                        {
+                            **binding,
+                            "candidate": False,
+                            "public_terminal_message": public_terminal,
+                            "message_id": data.get("messageId"),
+                            "message_event_id": identity,
+                        },
+                    )
+            if not agent and kind == "assistant.turn_end":
+                completion = tx.get("copilot.completion", request_id, required=False) or {}
+                matching_delivery = completion.get("delivery_id") == binding.get("delivery_id")
+                explicit = (
+                    matching_delivery and completion.get("producer") == "session.task_complete"
+                )
+                save(
+                    tx,
+                    "copilot.completion",
+                    request_id,
+                    {
+                        **completion,
+                        **binding,
+                        "candidate": bool(
+                            explicit
+                            or matching_delivery
+                            and completion.get("public_terminal_message")
+                        ),
+                        "producer": "session.task_complete" if explicit else "assistant.turn_end",
+                        "producer_event_id": completion.get("producer_event_id")
+                        if explicit
+                        else identity,
+                    },
+                )
+            if not agent and kind == "session.task_complete":
+                save(
+                    tx,
+                    "copilot.completion",
+                    request_id,
+                    {**binding, "candidate": True, "producer": kind, "producer_event_id": identity},
+                )
             if kind == "session.idle" and not agent:
                 save(tx, "copilot.idle", session_id, {**binding, "idle": True})
 

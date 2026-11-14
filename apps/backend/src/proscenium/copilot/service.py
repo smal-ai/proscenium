@@ -18,12 +18,15 @@ from copilot.generated.rpc import PermissionDecisionApproveOnce, PermissionDecis
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
-from proscenium.db.paths import project_path
 from proscenium.db.store import now
 from proscenium.services import Services
 
 from .context import Contexts
+from .io_policy import file_io
 from .native import Native
+from .read_recovery import interrupt as interrupt_read_wait
+from .read_recovery import probe as probe_read_wait
+from .read_recovery import retired_stage as retired_read_stage
 from .state import SYSTEM, TERMINAL, State, key, receipt, save
 from .tools import DISCOVERY_READS, READ_TOOLS, TOOLS, Tools, read_arguments
 from .workflows import WORKFLOW_TOOLS
@@ -100,6 +103,7 @@ class Copilot:
         self.send_callback_owners: dict[str, CallbackOwner] = {}
         self.pause_owner: dict[str, str] = {}
         self.checked_projects: set[str] = set()
+        self.read_wait_recovery: dict[str, dict[str, Any]] = {}
 
     def restore(self, project_id: str) -> None:
         if project_id:
@@ -850,6 +854,7 @@ class Copilot:
                     save(tx, "copilot.idle", session.session_id, {"idle": False})
             await asyncio.wait_for(session.abort(), 10)
             with store.transaction() as tx:
+                phase = tx.require("copilot.stops", operation_id)
                 phase.update(phase="reconciling", abort="acknowledged")
                 save(tx, "copilot.stops", operation_id, phase)
             pending = await self.native.pending(session)
@@ -890,6 +895,25 @@ class Copilot:
                 # removed=False is NOT a successful withdrawal. Re-observe the actual queue.
             for _ in range(50):
                 pending = await self.native.pending(session)
+                recovery = self.read_wait_recovery.get(project_id)
+                owner = self.callback_owners.get(project_id)
+                if (
+                    empty(pending)
+                    and recovery
+                    and owner
+                    and not owner.retired
+                    and recovery["session_id"] == session.session_id
+                    and recovery["callback_generation"] == owner.generation
+                ):
+                    with store.transaction() as tx:
+                        interrupt_read_wait(
+                            tx,
+                            session.session_id,
+                            operation_id,
+                            recovery["proofs"],
+                            self.services.ownership.epoch,
+                            pending,
+                        )
                 with store.transaction(write=False) as tx:
                     live = [
                         i
@@ -903,6 +927,7 @@ class Copilot:
             else:
                 raise DomainError("provider_unavailable", 503)
             with store.transaction() as tx:
+                phase = tx.require("copilot.stops", operation_id)
                 for record in records:
                     current = tx.require("requests", record["request_id"])
                     if current["receipt"]["state"] not in TERMINAL:
@@ -1064,6 +1089,35 @@ class Copilot:
                 if hasattr(session, "get_raw_events")
                 else []
             )
+            validated_targets: dict[str, str] = {}
+            root = Path(self.services.registry.get(project_id)["path"])
+            for event in raw_history:
+                permission = event.get("data", {}).get("permissionRequest", {})
+                if event["type"] != "permission.requested" or permission.get("kind") != "read":
+                    continue
+                starts = [
+                    e
+                    for e in raw_history
+                    if e["type"] == "tool.execution_start"
+                    and e.get("data", {}).get("toolCallId") == permission.get("toolCallId")
+                ]
+                if len(starts) != 1 or starts[0]["data"].get("toolName") != "rg":
+                    continue
+                try:
+                    targets, special = file_io(root, permission)
+                    args = starts[0]["data"].get("arguments", {})
+                    declared = {**permission, "path": args.get("paths")}
+                    declared.pop("resolvedPath", None)
+                    argument_targets, _ = file_io(root, declared)
+                    if (
+                        not special
+                        and targets == argument_targets
+                        and len(targets) == 1
+                        and not targets[0].is_dir()
+                    ):
+                        validated_targets[event["id"]] = str(targets[0])
+                except DomainError:
+                    pass
             checkpoint_head: dict[str, Any] = {"verified": False}
             for event in raw_history:
                 request = event.get("data", {}).get("permissionRequest", {})
@@ -1097,6 +1151,38 @@ class Copilot:
                     s.get("state") in {"dispatching", "outcome_uncertain"}
                     for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
                 )
+                owner = self.callback_owners.get(project_id)
+                if owner and not owner.retired:
+                    self.read_wait_recovery[project_id] = {
+                        "session_id": session.session_id,
+                        "callback_generation": owner.generation,
+                        "proofs": probe_read_wait(
+                            self.state,
+                            tx,
+                            session.session_id,
+                            raw_history,
+                            {
+                                "departed": departed,
+                                "prior_invocations": prior_invocations,
+                                "current_send": current_send,
+                                "validated_targets": validated_targets,
+                                "pending_empty": {
+                                    "items",
+                                    "steeringMessages",
+                                    "inFlightSteeringCount",
+                                }
+                                <= pending.keys()
+                                and empty(pending),
+                                "permission_fingerprints": {
+                                    e["id"]: hashlib.sha256(
+                                        canonical(e["data"]["permissionRequest"])
+                                    ).hexdigest()
+                                    for e in history
+                                    if e["type"] == "permission.requested"
+                                },
+                            },
+                        ),
+                    }
                 self.state.observe_native_denials(
                     tx,
                     session.session_id,
@@ -1494,6 +1580,7 @@ class Copilot:
                 and s.get("phase") != "completed"
                 and not self.state.native_denied_stage(tx, s)
                 and not self.state.interrupted_custom_stage(tx, s)
+                and not retired_read_stage(tx, s)
             ]
             save(
                 tx,
@@ -1594,36 +1681,63 @@ class Copilot:
                 # This grants entry only. The handler retains path/source/job/budget/caller guards.
                 return reply(True, "automatic_policy")
 
+        is_io = request.get("kind") in {"read", "write"}
+        if is_io:
+            try:
+                _, special_approval = file_io(
+                    Path(self.services.registry.get(project_id)["path"]), request
+                )
+                with self.services.registry.project_store(project_id).transaction(
+                    write=False
+                ) as tx:
+                    original = tx.require("invocations", binding["invocation_id"])
+                    work = tx.require("work", original["work_id"])
+                    record = tx.require("requests", binding["request_id"])
+                    if (
+                        original.get("session_id") != sid
+                        or original.get("native_id") != tool_id
+                        or original.get("owner_epoch") != self.services.ownership.epoch
+                        or original.get("state") not in {"admitted", "running"}
+                        or work["native_session_id"] != sid
+                        or record["receipt"]["work_id"] != work["work_id"]
+                        or any(
+                            original.get(k) != binding.get(k)
+                            for k in ("work_id", "request_id", "delivery_id")
+                        )
+                    ):
+                        raise DomainError("attribution_unavailable", 409)
+            except DomainError:
+                return reply(False, "automatic_policy")
+            if not special_approval:
+                return reply(True, "automatic_policy")
+
+        if request.get("kind") == "shell" and (
+            not isinstance(request.get("fullCommandText"), str)
+            or not request["fullCommandText"].strip()
+        ):
+            return reply(False, "host")
+
         text = canonical(request).decode()
         # This is the owner's pragmatic tool policy, not an OS/network sandbox. Shell remains enabled.
-        denied = re.search(
-            r"(?i)(\.env(?:\W|$)|\.ssh|credentials|credential[_ -]?store|github_token|/etc/shadow)",
-            text,
+        denied = (
+            None
+            if is_io
+            else re.search(
+                r"(?i)(\.env(?:\W|$)|\.ssh|credentials|credential[_ -]?store|github_token|/etc/shadow)",
+                text,
+            )
         )
-        consequential = re.search(
-            r"(?i)(\b(push|purchase|install|upgrade|sudo|scp)\b|reset\s+--hard|rm\s+-[rf]|curl\s+.*(?:--upload-file|--data|-[dT]|-X\s*(?:POST|PUT|DELETE)))",
-            text,
+        consequential = (
+            True
+            if is_io
+            else re.search(
+                r"(?i)(\b(push|purchase|install|upgrade|sudo|scp)\b|reset\s+--hard|rm\s+-[rf]|curl\s+.*(?:--upload-file|--data|-[dT]|-X\s*(?:POST|PUT|DELETE)))",
+                request.get("fullCommandText", "") if request.get("kind") == "shell" else text,
+            )
         )
         if denied:
             return reply(False, "automatic_policy")
-        if request.get("kind") in {"read", "write"}:
-            root = Path(self.services.registry.get(project_id)["path"]).resolve()
-            candidate = Path(request.get("resolvedPath") or request.get("path", ""))
-            try:
-                candidate = candidate if candidate.is_absolute() else root / candidate
-                relative = candidate.resolve().relative_to(root).as_posix()
-                project_path(
-                    root,
-                    relative,
-                    managed=request["kind"] == "read",
-                    directory=candidate.is_dir(),
-                    must_exist=request["kind"] == "read",
-                )
-            except (ValueError, DomainError):
-                return reply(False, "automatic_policy")
         if not consequential and request.get("kind") in {
-            "read",
-            "write",
             "shell",
             "mcp",
             "url",
