@@ -1,0 +1,1768 @@
+{
+  "format": "proscenium-acceptance-report-1",
+  "map_resolved": true,
+  "release_ready": true,
+  "cases": [
+    {
+      "id": "C01",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_native_events_before_ack_and_duplicate_user_echo"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/copilot/test_delivery.py::test_native_events_before_ack_and_duplicate_user_echo": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C02",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_lost_ack_closes_gate_and_never_blind_resubmits"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/copilot/test_delivery.py::test_lost_ack_closes_gate_and_never_blind_resubmits": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C03",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_submission_timeout_never_blind_retries"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/providers/test_adapters.py::test_submission_timeout_never_blind_retries": [
+          "synthetic_verified",
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C04",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_stop_pause_fence_late_ack_and_no_retry"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/copilot/test_delivery.py::test_stop_pause_fence_late_ack_and_no_retry": [
+          "synthetic_verified",
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C05",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_child_context_and_late_tools_bind_original_work"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/copilot/test_delivery.py::test_child_context_and_late_tools_bind_original_work": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C06",
+      "tests": [
+        "tests/integration/sources/test_sources.py::test_historical_materialisation_copies_committed_bytes"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/sources/test_sources.py::test_historical_materialisation_copies_committed_bytes": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C07",
+      "tests": [
+        "tests/integration/sources/test_sources.py::test_missing_lfs_is_not_fetched",
+        "tests/integration/sources/test_sources.py::test_missing_retained_and_symlink",
+        "tests/acceptance/test_recovery.py::test_missing_or_corrupt_lfs_refuses_offline_without_fetch"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/sources/test_sources.py::test_missing_lfs_is_not_fetched": [
+          "synthetic_verified"
+        ],
+        "tests/integration/sources/test_sources.py::test_missing_retained_and_symlink": [
+          "synthetic_verified"
+        ],
+        "tests/acceptance/test_recovery.py::test_missing_or_corrupt_lfs_refuses_offline_without_fetch": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C08",
+      "tests": [
+        "tests/integration/sources/test_publication.py::test_concurrent_publications_cannot_overwrite_same_head",
+        "tests/integration/sources/test_publication.py::test_publication_job_events_atomic_and_replay_before_current_state"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/sources/test_publication.py::test_concurrent_publications_cannot_overwrite_same_head": [
+          "synthetic_verified"
+        ],
+        "tests/integration/sources/test_publication.py::test_publication_job_events_atomic_and_replay_before_current_state": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C09",
+      "tests": [
+        "tests/integration/previews/test_assembly_and_recovery.py::test_closed_gate_passive_journal_reconciliation_and_ambiguous_dispatch"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/previews/test_assembly_and_recovery.py::test_closed_gate_passive_journal_reconciliation_and_ambiguous_dispatch": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C10",
+      "tests": [
+        "tests/integration/previews/test_publication.py::test_out_of_order_holes_and_partial_failure"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "limit": "Backend intervals alone do not prove decoded presentation order. Numbered-media browser reports are required.",
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/previews/test_publication.py::test_out_of_order_holes_and_partial_failure": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C11",
+      "tests": [
+        "tests/integration/previews/test_assembly_and_recovery.py::test_frame_binding_never_tracks_new_viewport",
+        "tests/integration/reviews/test_review_store.py::test_annotation_cas_and_immutable_target"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/previews/test_assembly_and_recovery.py::test_frame_binding_never_tracks_new_viewport": [
+          "synthetic_verified"
+        ],
+        "tests/integration/reviews/test_review_store.py::test_annotation_cas_and_immutable_target": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C12",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_budget_held_across_child_steer_resume_and_new_job_ids",
+        "tests/integration/providers/test_adapters.py::test_only_recorded_owner_extension_can_raise_same_task_allowance"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/providers/test_adapters.py::test_budget_held_across_child_steer_resume_and_new_job_ids": [
+          "synthetic_verified"
+        ],
+        "tests/integration/providers/test_adapters.py::test_only_recorded_owner_extension_can_raise_same_task_allowance": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C13",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_decision_revision_owner_channel_stop_and_native_delivery_separate"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/copilot/test_delivery.py::test_decision_revision_owner_channel_stop_and_native_delivery_separate": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C14",
+      "tests": [
+        "tests/integration/foundation/test_auth_http.py::test_browser_tool_and_worker_channel_separation",
+        "tests/unit/test_store.py::test_forbidden_paths",
+        "tests/integration/copilot/test_native_configuration.py::test_wire_create_and_resume_both_memory_controls_and_owned_exec_launcher"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/foundation/test_auth_http.py::test_browser_tool_and_worker_channel_separation": [
+          "synthetic_verified"
+        ],
+        "tests/unit/test_store.py::test_forbidden_paths": [
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified"
+        ],
+        "tests/integration/copilot/test_native_configuration.py::test_wire_create_and_resume_both_memory_controls_and_owned_exec_launcher": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C15",
+      "tests": [
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup",
+        "tests/acceptance/test_recovery.py::test_missing_native_history_is_distinct_and_never_replaced",
+        "tests/acceptance/test_recovery.py::test_missing_and_corrupt_required_media_are_not_substituted",
+        "tests/integration/sources/test_projects.py::test_duplicate_project_location_requires_explicit_rebind"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "limit": "W10 native directory bytes are synthetic. Real cold native history read/resume remains unexecuted.",
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup": [
+          "synthetic_verified"
+        ],
+        "tests/acceptance/test_recovery.py::test_missing_native_history_is_distinct_and_never_replaced": [
+          "synthetic_verified"
+        ],
+        "tests/acceptance/test_recovery.py::test_missing_and_corrupt_required_media_are_not_substituted": [
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified"
+        ],
+        "tests/integration/sources/test_projects.py::test_duplicate_project_location_requires_explicit_rebind": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C16",
+      "tests": [
+        "tests/integration/previews/test_publication.py::test_receipt_rejects_bad_bytes_and_wrong_attempt",
+        "tests/integration/unity/test_input_proof.py::test_disk_reserve_refuses_below_five_gib"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/previews/test_publication.py::test_receipt_rejects_bad_bytes_and_wrong_attempt": [
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified"
+        ],
+        "tests/integration/unity/test_input_proof.py::test_disk_reserve_refuses_below_five_gib": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C17",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_exact_endpoint_frozen_across_changed_defaults",
+        "tests/integration/providers/test_adapters.py::test_actual_reference_upload_graph_and_derivative_provenance",
+        "tests/integration/storyboards/test_plan_tools.py::test_skills_ship_resources_and_no_execution_dependencies"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/providers/test_adapters.py::test_exact_endpoint_frozen_across_changed_defaults": [
+          "synthetic_verified",
+          "synthetic_verified"
+        ],
+        "tests/integration/providers/test_adapters.py::test_actual_reference_upload_graph_and_derivative_provenance": [
+          "synthetic_verified",
+          "synthetic_verified"
+        ],
+        "tests/integration/storyboards/test_plan_tools.py::test_skills_ship_resources_and_no_execution_dependencies": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C18",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_three_findings_only_one_owner_amendment_submitted_once",
+        "tests/integration/copilot/test_accepted_services.py::test_accepted_w05_findings_link_is_atomic_with_real_w02_images"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/providers/test_adapters.py::test_three_findings_only_one_owner_amendment_submitted_once": [
+          "synthetic_verified"
+        ],
+        "tests/integration/copilot/test_accepted_services.py::test_accepted_w05_findings_link_is_atomic_with_real_w02_images": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C19",
+      "tests": [
+        "tests/integration/unity/test_workflow.py::test_prepare_retains_meta_and_unrelated_files",
+        "tests/integration/unity/test_workflow.py::test_prepare_refuses_locally_edited_tool_and_active_editor"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "limit": "Offline helpers do not prove CharacterController input/physics. W08 PlayMode XML and input evidence are separate.",
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/unity/test_workflow.py::test_prepare_retains_meta_and_unrelated_files": [
+          "synthetic_verified"
+        ],
+        "tests/integration/unity/test_workflow.py::test_prepare_refuses_locally_edited_tool_and_active_editor": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C20",
+      "tests": [
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup",
+        "tests/integration/providers/test_adapters.py::test_no_startup_or_read_execution_and_reset_gate",
+        "tests/integration/copilot/test_delivery.py::test_restart_is_quiet_and_existing_work_awaits_resume"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup": [
+          "synthetic_verified"
+        ],
+        "tests/integration/providers/test_adapters.py::test_no_startup_or_read_execution_and_reset_gate": [
+          "synthetic_verified"
+        ],
+        "tests/integration/copilot/test_delivery.py::test_restart_is_quiet_and_existing_work_awaits_resume": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C21",
+      "tests": [
+        "tests/integration/sources/test_projects.py::test_snapshot_contains_full_held_request_and_work_at_watermark",
+        "tests/integration/copilot/test_delivery.py::test_http_history_cancel_replay_and_socket_owner_boundary"
+      ],
+      "required_evidence": [
+        "offline",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/sources/test_projects.py::test_snapshot_contains_full_held_request_and_work_at_watermark": [
+          "synthetic_verified"
+        ],
+        "tests/integration/copilot/test_delivery.py::test_http_history_cancel_replay_and_socket_owner_boundary": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C22",
+      "tests": [
+        "tests/integration/sources/test_publication.py::test_unity_provenance_ancestry_and_omissions_survive_service_reload"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/sources/test_publication.py::test_unity_provenance_ancestry_and_omissions_survive_service_reload": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C23",
+      "tests": [
+        "tests/integration/reviews/test_review_store.py::test_spatial_mapping_binds_version_source_sample_and_instance"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/reviews/test_review_store.py::test_spatial_mapping_binds_version_source_sample_and_instance": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C24",
+      "tests": [
+        "tests/integration/reviews/test_review_store.py::test_sequence_composite_target_uses_explicit_map_not_source_frame",
+        "tests/integration/sources/test_read_models.py::test_sequence_weighted_map_semantics_and_untrusted_owner_label"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/reviews/test_review_store.py::test_sequence_composite_target_uses_explicit_map_not_source_frame": [
+          "synthetic_verified"
+        ],
+        "tests/integration/sources/test_read_models.py::test_sequence_weighted_map_semantics_and_untrusted_owner_label": [
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C25",
+      "tests": [
+        "tests/integration/foundation/test_jobs_recovery.py::test_cancellation_race_preserves_observed_success",
+        "tests/integration/foundation/test_jobs_recovery.py::test_stale_revisions_retries_and_old_attempt_rejected",
+        "tests/integration/previews/test_assembly_and_recovery.py::test_late_old_attempt_cannot_mutate_retry"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/foundation/test_jobs_recovery.py::test_cancellation_race_preserves_observed_success": [
+          "synthetic_verified"
+        ],
+        "tests/integration/foundation/test_jobs_recovery.py::test_stale_revisions_retries_and_old_attempt_rejected": [
+          "synthetic_verified"
+        ],
+        "tests/integration/previews/test_assembly_and_recovery.py::test_late_old_attempt_cannot_mutate_retry": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C26",
+      "tests": [
+        "tests/integration/copilot/test_faults.py::test_stop_withdraws_only_owned_exact_message_and_fences_unknowns",
+        "tests/integration/copilot/test_faults.py::test_stop_requires_observed_native_idle_not_just_empty_queue"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/copilot/test_faults.py::test_stop_withdraws_only_owned_exact_message_and_fences_unknowns": [
+          "synthetic_verified",
+          "synthetic_verified"
+        ],
+        "tests/integration/copilot/test_faults.py::test_stop_requires_observed_native_idle_not_just_empty_queue": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C27",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_owner_review_stays_independent_of_active_work_and_findings_private",
+        "tests/integration/unity/test_workflow.py::test_known_job_before_start_and_repeat_no_launch"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/providers/test_adapters.py::test_owner_review_stays_independent_of_active_work_and_findings_private": [
+          "synthetic_verified"
+        ],
+        "tests/integration/unity/test_workflow.py::test_known_job_before_start_and_repeat_no_launch": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C28",
+      "tests": [
+        "tests/integration/sources/test_checkpoint.py::test_lost_git_ack_recovers_exact_commit_after_head_advance",
+        "tests/integration/sources/test_checkpoint.py::test_unborn_checkpoint_preserves_original_index"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/sources/test_checkpoint.py::test_lost_git_ack_recovers_exact_commit_after_head_advance": [
+          "synthetic_verified"
+        ],
+        "tests/integration/sources/test_checkpoint.py::test_unborn_checkpoint_preserves_original_index": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C29",
+      "tests": [
+        "tests/integration/copilot/test_native_configuration.py::test_wire_create_and_resume_both_memory_controls_and_owned_exec_launcher"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/copilot/test_native_configuration.py::test_wire_create_and_resume_both_memory_controls_and_owned_exec_launcher": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C30",
+      "tests": [
+        "tests/integration/reviews/test_review_store.py::test_selection_slot_unique_and_revisioned",
+        "tests/integration/reviews/test_review_store.py::test_storyboard_exact_version_slot_and_no_source_mutation",
+        "tests/integration/sources/test_read_models.py::test_shot_plan_new_version_does_not_inherit_owner_choice"
+      ],
+      "required_evidence": [
+        "offline",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/reviews/test_review_store.py::test_selection_slot_unique_and_revisioned": [
+          "synthetic_verified"
+        ],
+        "tests/integration/reviews/test_review_store.py::test_storyboard_exact_version_slot_and_no_source_mutation": [
+          "synthetic_verified"
+        ],
+        "tests/integration/sources/test_read_models.py::test_shot_plan_new_version_does_not_inherit_owner_choice": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C31",
+      "tests": [
+        "tests/integration/sources/test_artifacts.py::test_soft_mask_bytes_and_coverage_round_trip_without_alpha",
+        "tests/integration/foundation/test_composed_review.py::test_composed_mask_save_does_not_reacquire_database_writer"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "synthetic_verified",
+        "native": "live_pass",
+        "browser:chromium": "live_pass",
+        "browser:brave": "live_pass",
+        "browser:edge": "live_pass"
+      },
+      "offline_test_observations": {
+        "tests/integration/sources/test_artifacts.py::test_soft_mask_bytes_and_coverage_round_trip_without_alpha": [
+          "synthetic_verified"
+        ],
+        "tests/integration/foundation/test_composed_review.py::test_composed_mask_save_does_not_reacquire_database_writer": [
+          "synthetic_verified"
+        ]
+      }
+    }
+  ],
+  "gaps": [],
+  "m10": {
+    "status": "native_mesh_and_revision_accepted",
+    "acceptance_tag": "milestone/m10"
+  },
+  "validated_applicability": [
+    {
+      "receipt_sha256": "4701beda8d7894d265edbc492cbe2bc7c8ba54de80e37f83e1145659d8390b4b",
+      "tested_commit": "b9079722800613513fa31bf17649f643e0e70411",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "4870e4a337c3aae1a50730b93f308057cd098f39abfe3dbc6926ccc8e7620578",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "c220f1e394839e85067c74e00b43eee4fa3648290a77a1d85e181dbaa44c80f7",
+      "tested_commit": "41a08ba64d53f77e9a50f41fc93112a259af1c4c",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "2aa6d7f3469a66aec475e26505c6daa38288bdc15a17e25f79fb4c39b344f7a5",
+      "tested_commit": "41a08ba64d53f77e9a50f41fc93112a259af1c4c",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "d9e843d993908fdc973ca87925937cdd7198adf0c0b41107bb69f3d688b66e6c",
+      "tested_commit": "970040b8a22a3298b653924b2ce033e1b8ffba86",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "11e6a3c72c3e4e7eff4bc7915b577059d572d5e54597807fac068518d4d1ca8d",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "9f3dcb855c7f03dea4b4b114e2e5fa58774faaa5e217f378c1f76de5b323dd8a",
+      "tested_commit": "79acf89fd6874130631bb3db816b7445f69ab9c1",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "9a1887dcd9acff8696c8f7f26077051975eab8a2eedea61d102959184f1c1943",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "46f490f24644d6f1e38c7435ce0e18fdabb412e5f501e68c29a4758f5c6cba44",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "6e93804ec3655d7f34607555e2ea83f7dc4ca09f630ff2428a8c0a7c62734c10",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f19381b6ea61d80aa97839ced47a60fad44509a2007e60b70cb312ed62a24268",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "dc798219bb22a5a35578e0c9e18fefdd1e95b0566c7da1398057330cb6f7202a",
+      "tested_commit": "4607c1704ddb54c5f419352e364a414bcd13a687",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "80a9cf1a85e52c9ca0d8d01642f555ab265d4ea0be899c49539db409031fb2bf",
+      "tested_commit": "027327a129a3807ee100306bea99ad662d544240",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "47fbda1df0c0b8627a4a42a2f353566785e903c9a76a75d6a8096fa8af781816",
+      "tested_commit": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "191a01bdd6304b29b49dd740e2e638ab4419fd2427576e546a3d59838fcfbe12",
+      "tested_commit": "2f1281e950f69f8f6a91367c78463d7c6e113d96",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "830ff213cb580431af095ac8453d901e36a37b6e120315299db42c73b2922385",
+      "tested_commit": "4607c1704ddb54c5f419352e364a414bcd13a687",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "749797bee30bdf45a801c88ffccd10b52ae8449e27f61ab9f84ccdf08149eb97",
+      "tested_commit": "027327a129a3807ee100306bea99ad662d544240",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "3018d795bbc9f68248c95ca1af8be7498b0c82bcd5b0e275b9619dafd0a046ee",
+      "tested_commit": "b9079722800613513fa31bf17649f643e0e70411",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "83d44284b86bd0ed353d90a451605f9e2977230bfcd39e3236009e17b01795b1",
+      "tested_commit": "027327a129a3807ee100306bea99ad662d544240",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "874075bcccde6ae89f1faa456bad9a56a0983a2a254389e53041b02cfc3519f1",
+      "tested_commit": "4607c1704ddb54c5f419352e364a414bcd13a687",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "c9c0d4fb88317a48146f04005eeda25e2718b6f0d14255ee20e74501971cb888",
+      "tested_commit": "4607c1704ddb54c5f419352e364a414bcd13a687",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "c2ddd506aff89e3162b8edd7acae60a3b203132901f880d76a0cda552cd1d2f3",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "d6650f70918d3efc2502e7e3d8b2768af09bf9bd9011a1069d741b189eb7cdb0",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "efdf107dfccb73482b0f7c866e23c355d81d5d5854b6ed17281bff95ac15262e",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "793449e031cf4c29f9b019f9d15763c7e2378608c62640e148fcf71adc21712d",
+      "tested_commit": "4607c1704ddb54c5f419352e364a414bcd13a687",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "26e48f8cca525832d2c03c98afc0456d3c5afeddb268ab024a98d3b38d82a16f",
+      "tested_commit": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f84a8fb7b28bec369b5511b7d5939dcd4e79109b2f024c8c5eca09dff33a3876",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f25b4f70052f7eb1eb7c55f7bfaddf03e472a1d9e14d12ed7eb703054b98f173",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a33e4d20a85532f7b2a998df0c9cbbee843db2a3c15a233f353fbab96d6ec65b",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "6fc7c8148c1b1895a7ab65a81b9c40fc5b93c1c50fbc395a348e00759f83502f",
+      "tested_commit": "e5787dc50e6ca3afd053e6cff83e6f69abf7ca0e",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a89468c467d05e79bc6225f24d4906e5de2dfb09918275cb0922472059751062",
+      "tested_commit": "970040b8a22a3298b653924b2ce033e1b8ffba86",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "252dd48a7735253642f0e12603549f562fb029927b0f26220197f55d583798bd",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "618b48def19359ec7070cb2191bbb5889170e81939184214670fb6326a4bd24d",
+      "tested_commit": "79acf89fd6874130631bb3db816b7445f69ab9c1",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f99a53e1434f1ae0cce34c47f1a29a51a7bd06cb71a616dce289849fec9a442a",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "5148e62756eb9c060fe38b519665646ef040c710d04fedb5a0b10f1c0b5d1522",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "459f58c663ecc31f012db514ba9801438a7b95523400ce828d6ae2637bd71dc5",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "25252e38ffc4d31f00573e1a5fb91170be535a685208088994d3adcada73e072",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "dd49addeac04931251159447a07515f87ef64eb44df8ca07a7fc08d10aaba253",
+      "tested_commit": "41a08ba64d53f77e9a50f41fc93112a259af1c4c",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "3d8941a92f1b3046e6c3bcdeaa7d52e5de3f3fb54e5bbc20d8019816ccbff93b",
+      "tested_commit": "c517823de2249bcc21911fdbe92a943efb0cd535",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "bb4e16c48e8c9bf7faa7c41b3091b0f88b29a6eb04442aaed385dd74527684cd",
+      "tested_commit": "a6200494130b2802837ce0465dd67466729f05a3",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "dd0edcb6082a05aaf7116d29afb58c6c71a3b1259f32598c6d7db4f499fbd758",
+      "tested_commit": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "fa5db85362bd6b0ed6801205fec8dca97c7f3c80435411564d45194d363be66e",
+      "tested_commit": "80630a4f48f5fcb3600ec32f5f00fa9bacfaa5dd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "cf4075e28059f1693ecb113e56a15a99b36675ecac8717848f8d2c3227eb656c",
+      "tested_commit": "b1fa32c8a73d5aca8243fa82e65837a8acaba75c",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "5cb651e9d2a396ba71ccf6f5d643acbed68307120ba6910d426fdeb84d2514ae",
+      "tested_commit": "970040b8a22a3298b653924b2ce033e1b8ffba86",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "5d4669c805cb212067d63879fdafbd07adfd42f88b07cbcbac31bc42471350e9",
+      "tested_commit": "eb5ff0d6c126125a6c516175287c9a49617e5377",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "b8f2691d4031048d2a0ec299515dc968cb297bee18ddb39692b56ce422cd1e8a",
+      "tested_commit": "ad47260a922612393896c21ff7186d643037c524",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a72341fccfa51b9acc3599fa18bcfb271dce4d0b1be66a9f365832064d7d184a",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "325ec0d95cccf4f5f256fb951aea13825bccbbacf30e13e4a281ac9664399b10",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "6a74be01dba9abc08540dd2b3811dc730521e0ee51f3ab0a13fef2ed6c86009c",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "5b90dcc20ec99dc501ea96249bb70749022fd4c9fd70075dfdc0a52b81e91d83",
+      "tested_commit": "a2a2097725bb18bb95b64f1a7ab82b63e0fb301e",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "fb996937e52663f5393f16a4baa2f2d5c4883c89ec5fcfa55b6371b3e3ecf2a3",
+      "tested_commit": "38d5aa1fe31f66cef83bc0c627f3f2e37e2879f4",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "c5276af00476228b3f4ec782e30093bb77bfc00351af1a981ef819dec2adc575",
+      "tested_commit": "a6200494130b2802837ce0465dd67466729f05a3",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "1fedbaac961cbba20e5c9e806a6e7631892b93e4df7a796c1231ea3dd244eb2e",
+      "tested_commit": "41a08ba64d53f77e9a50f41fc93112a259af1c4c",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "e5ec6f520ebbaa74f0b6a49346325541ea57e13c51a16315633da8a4dee49c7f",
+      "tested_commit": "c517823de2249bcc21911fdbe92a943efb0cd535",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "aa05ba36392e6f217284c85085cff4acbf8ce22c248efc23c8257f3464b0e3d5",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "87f34fa0087ddcfc403126c12adfbf79780539be81bbae066487b27bb9756a3b",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "740ab0e1bc317805486d7e05d8356e4dfbe35367a327fee0bec87ca21fdfde2d",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "020fb99a67839221b198b2d400b1644c4007c984a6a5581b20fe649dd0461f24",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "70bdc66fee363521ea3322dee08f84932ca014690166a8453039abf49c8bb51b",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a338f22246c4f5cca8ee7f96cb9fb558225a8c186d3e40566fce6c0bed1545ee",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "85ac43f8ad069416d00064ef6c3ab18edf021f5004f12e6abdb1ffba0444da07",
+      "tested_commit": "2f1281e950f69f8f6a91367c78463d7c6e113d96",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "16f58a07396d21dca710e32c2837d9957c7a67c6b1e1621d4b0a387d9d6fe17d",
+      "tested_commit": "38d5aa1fe31f66cef83bc0c627f3f2e37e2879f4",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "0496e298d14f9e1e9acfd7e7d519d22aa7ceeebbdc49f84b67c9971be46bb708",
+      "tested_commit": "a530cbd1e7df78ccdfbd30a7e632e1bd98ddb7a0",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "6a2996587f8d9c4411d428c29b50b6a46f3f2a82301ad3959e8d1861290d625c",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "11d5cd0924e2e9a80a115e6e8657d0a279400a4e0efdd2d69e33f24385251c5d",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a6044385c4f6232693cee2748c9a1c743ad11f27f864ff0091345c6e5ea51250",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "c38e0a4e17dcb920223f7d5e9f0888a74da86c1d6093a2d1f4f5349cf73271f2",
+      "tested_commit": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "97643ba612dffab6efbc8ebb6dda0f648d3b57cf44e936b9c930c64486019142",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "24405fe9b9e8fe0ee863a99f3f276eb7ebbebd962bbcb9da4d4760494616febe",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "0894928860d25095da461fd275ef01bda7fb4ca4d10974aac3ad82828e077620",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "bb44daee2a90a23d866bb3e7e9e5694e7f84c0082990944197b6ab6d1675ebd5",
+      "tested_commit": "80630a4f48f5fcb3600ec32f5f00fa9bacfaa5dd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "3f0d0a2cebfe22d839de28b59046eedd732db2886d754ee02969d4a7fc153b76",
+      "tested_commit": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "d563f547c1cbda37cde08f3895d7970491b10dfc6cd9fd609af2d6ef68f7b395",
+      "tested_commit": "4607c1704ddb54c5f419352e364a414bcd13a687",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "d0aaabc898fdf4a0efb1f6e5e355da3d95593d9f332ab25e8c33ba10612fef79",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a34a35d1a76075b60c78f3caeedf65ae43d7f92e61effda8aaafef14c18828c9",
+      "tested_commit": "79acf89fd6874130631bb3db816b7445f69ab9c1",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "06027b86b71202fd4b3189d668c37a96f1a8ecc2e9efd87c01e9122cf494913e",
+      "tested_commit": "ad47260a922612393896c21ff7186d643037c524",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "d1d547d550455c8886cd72bad87a581a1dc25511c23f3741d3ebe47edda69f8c",
+      "tested_commit": "a2a2097725bb18bb95b64f1a7ab82b63e0fb301e",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "42f540f023e25773a580b5db1dab3b20147767bc404642a41cf072446e2c6638",
+      "tested_commit": "027327a129a3807ee100306bea99ad662d544240",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "b150a419894085ac325a9ccc714a070d14c5c110d12f3ebdf942a57e33953096",
+      "tested_commit": "b9079722800613513fa31bf17649f643e0e70411",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f123a0d628b3f65075f784bb92e73222d4c07bac2a18852c79e00799bb0ba1af",
+      "tested_commit": "a6200494130b2802837ce0465dd67466729f05a3",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "62ac327e7f063a0ce0c464a147ae1e2cd27e6d20b5b8e04d463a19f4079eaaf7",
+      "tested_commit": "41a08ba64d53f77e9a50f41fc93112a259af1c4c",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "2bc0d4747dc0428e29c3cfdd80fe2e7b9c338766d2b6689f18bf021e1926a00e",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "60439a0e0dc717d25b8a2ca63eb5eeeff46310879623e6c946d58868ffdd90d2",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "b8461898af605a6ac76cf5ef30a7ea780a3f1b5eb4cbab3dcbbe4fc425a0c4b0",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a1aad45d0c665870adc0f7032a10b42fc3ad69cbac4afc6d66f4e85e1b154ca5",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "731b3cd1e7c19f59ab4961ce24876ee4282bd1b60ccb25f95b9194cd76accd4c",
+      "tested_commit": "970040b8a22a3298b653924b2ce033e1b8ffba86",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "41c0bdd5a7d607dcb6df81c0f92dc9823205abd4c81a1582ff96850c31ca6b82",
+      "tested_commit": "a530cbd1e7df78ccdfbd30a7e632e1bd98ddb7a0",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "48b3b3024e3671d36840a8f07150dbb4204d7c12e8ef1addc603d86ddee2a5b9",
+      "tested_commit": "eb5ff0d6c126125a6c516175287c9a49617e5377",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "da33d5483fad61942824ac6cc34b92e226c33d83ed7737970f1b83daa299a367",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "db9c444bca7e36349f6dcb4c482f1bf482997d6909d82ab5ff6e98ad1bd7bdb2",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "833683edd49e0c57daabbdc4f4de6bbf49286238c0eeed0011d4f150e2ebdc2e",
+      "tested_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "source_hashes",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f5ed891432bbd0fcd8834e77908ef387b9fa96b8e190b462bea0d39cefdd3489",
+      "tested_commit": "b9079722800613513fa31bf17649f643e0e70411",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "15a02f2df6dc72b3130f551921142cd84a5a8ae3069c219a27d7a269a847c8f1",
+      "tested_commit": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "a86776551a9263bed33f831e97cedc914b709caaf0d07b01711abb32b68d93c3",
+      "tested_commit": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "75e6f7a9eb1884d60e3df32e3c1494bfb9a978e13b0ae1c08a69251c9bd9f035",
+      "tested_commit": "a530cbd1e7df78ccdfbd30a7e632e1bd98ddb7a0",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "7386ac53e075fb8db5949a9589e1607e501d94c73cf29fb12bb35f05b0512884",
+      "tested_commit": "2f1281e950f69f8f6a91367c78463d7c6e113d96",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f5eda258530eda206e4224656cf3303d23142a4e28b47ff08eac0d4709fc6117",
+      "tested_commit": "b1fa32c8a73d5aca8243fa82e65837a8acaba75c",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "045902bbe3436b3393c78af11281803b5b080e996d64f140e2e65fdc3ec8cc2f",
+      "tested_commit": "eb5ff0d6c126125a6c516175287c9a49617e5377",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "e5e826f6a916fc009c2331688cde45d7c5a74948a065ce547fd48a06cfe53903",
+      "tested_commit": "4607c1704ddb54c5f419352e364a414bcd13a687",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "3f7bc03584cbb19aec387c05680f99586e88ffa6c10cac128f5b9e32a4ee5f5d",
+      "tested_commit": "ad47260a922612393896c21ff7186d643037c524",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "fc0ba8c76b4d4fc48987b5128ebb2cb0e055e112192e1039f6bb8014e757cf4f",
+      "tested_commit": "9e01f876c1902455647b5626b7196c665934593a",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "e4ad6872b6ed901b6263156473b6e6d14744b02812552f19322645764b017888",
+      "tested_commit": "38d5aa1fe31f66cef83bc0c627f3f2e37e2879f4",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "134ec5810ea2a9fd9882f0dc001742bc8731b68ff901efc09394691d906e867c",
+      "tested_commit": "38d5aa1fe31f66cef83bc0c627f3f2e37e2879f4",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "c62b3813da3bad1febc14cf42a1fba11d2aad45c80d518a0a8c7e77ab681e32f",
+      "tested_commit": "e3cddf8e90f49a627c7630dab12669d97f1c3dfd",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_ancestor",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "03a50f75c7b1e68f67a5b2bb7b48875865aa56f82c3d98cfc884fc1e2d89a62c",
+      "tested_commit": "38d5aa1fe31f66cef83bc0c627f3f2e37e2879f4",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "7cf6b60518d27c02a72154a522b13c893a926605e7bd09874b57061ee208fb9c",
+      "tested_commit": "c517823de2249bcc21911fdbe92a943efb0cd535",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    },
+    {
+      "receipt_sha256": "f59abd87699092b37ce2a0f5991b3d5646624b7376ed729dd4dd9fd7b1e729bf",
+      "tested_commit": "aa034c911ea996697ea97f1f95feaace5f7070e3",
+      "accepted_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "integration_commit": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+      "mode": "reviewed_cherry_pick",
+      "meaning": "coordinator applicability, not fresh execution",
+      "limits_preserved": true
+    }
+  ],
+  "limits": [
+    "Function resolution is not execution.",
+    "JUnit proves only offline checks.",
+    "Structured receipts require human review of their actual evidence."
+  ]
+}

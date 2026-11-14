@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M13 are accepted with real application/native evidence. Final consolidated M14 acceptance is in progress. [Implementation progress](implementation/progress.md) records evidence and remaining release checks.
+**Status:** M01–M14 are accepted with real application/native evidence and a zero-gap consolidated release report. [Implementation progress](implementation/progress.md) records exact revisions, evidence and retained operating limits.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -40,7 +40,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M11](#m11-playable-unity-scene) | Ask the Unity specialist for a playable scene and test it in Unity | M03, M04, M05. M10 is not required for authored/imported assets | Accepted, `milestone/m11` |
 | [M12](#m12-reconnect-and-explicitly-resume) | Complete cross-provider reconnect/resume and backup acceptance | Delivery/recovery primitives from F00/M01/M03; M07, M08, M11 for representative job types | Accepted, `milestone/m12` |
 | [M13](#m13-assemble-review-and-deliver-a-silent-cinematic) | Review/export an assembled silent sequence | M06, M08, M12 | Accepted, `milestone/m13` |
-| [M14](#m14-consolidated-desktop-studio-acceptance) | Use the complete personal studio from a clean configured workspace | All included V1 milestones | Planned |
+| [M14](#m14-consolidated-desktop-studio-acceptance) | Use the complete personal studio from a clean configured workspace | All included V1 milestones | Accepted, `milestone/m14` |
 
 ### Foundation gate and early proofs
 
@@ -571,6 +571,11 @@ stable earlier selection and byte-identical video/manifest downloads.
 **Reuse:** Existing assembler/full-decode checks, per-cue source records, Review Studio scene mapping and lessons about keeping selected delivery separate from newer authored sources.
 
 ## M14: Consolidated desktop studio acceptance
+
+**Accepted:** 14 November 2026. [Consolidated evidence](implementation/m14.md)
+includes all prior journeys, complete SSH message/media use, unavailable-service
+feedback, measured workloads, 1,102 passing checks, 193 passing browser cases and
+an unchanged-validator report with 31 cases and zero gaps.
 
 **User journey:** “I start the studio on my workstation, connect over SSH and use every included V1 workflow without depending on the old project checkouts.”
 

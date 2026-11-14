@@ -134,10 +134,17 @@ For an already prepared SD-Turbo FP16 service, the relevant private option is:
 
 Merge that key into `provider_options`, retaining the other required options.
 The derivative's exact filename, hash, conversion provenance and measured preparation
-are in [the profile record](evidence/m07-fp16/README.md). Preparation alone does not
-prove inference fit. The current execution result is tracked in [M07](implementation/m07.md).
+are in [the profile record](evidence/m07-fp16/README.md). The actual reference-host
+generation, correction and recovery passed [M07](implementation/m07.md), with the
+failed colour instruction retained as a model-quality observation.
 The service must already expose the selected model and graph nodes. The generic
 256 MiB preflight floor is not a model-specific RAM/VRAM budget.
+
+For the verified Hunyuan workflow, add `image_to_3d` to the appropriate configured
+Comfy provider's `capabilities` once its operator has prepared the required nodes
+and exact model. The image-to-3D tool uses the same endpoint, budget ledger and
+immutable job protocol. [M10](implementation/m10.md) records the actual supported
+mesh/import/revision scope and its topology/material limits.
 
 `services[].available` and `profiles[].scope_status` are configured capability
 metadata. `available: null` displays Unknown. A configured Available label is not

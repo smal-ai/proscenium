@@ -2,6 +2,13 @@
 
 **Authorised:** 2026-11-14. **Specification:** 3.2.0. **Contract:** 1.0.0.
 
+**Complete: M01–M14 accepted on 2026-11-14, each with an individual milestone
+commit/tag.** The final release validator reports **31 cases, zero gaps** for
+candidate `50e6030ca99ab0b45dd75a6404d6a16a313a348e`. Final checks: **1,102 passing
+unit/contract/integration/evidence tests and 193 passing installed-browser cases**,
+plus lint, type checking, specification and generated-binding validation.
+[Final evidence and replay command](../evidence/release/README.md).
+
 The owner requested the complete M01–M14 system, a fleet of OpenCode agents using `github-copilot/gpt-6.1-sol`, individual commits for completed milestones, and autonomous coordination while away. The coordinating agent owns integration, technical decisions, resource allocations, acceptance and the milestone history. The development fleet is separate from the product's native Copilot agents.
 
 ## Execution rules
@@ -78,6 +85,7 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `7210315`, `milestone/m11` | Original-work native publication and actual Unity catalogue/readback accepted. All 77 files pin the existing checkpoint; actual operator PlayMode evidence stays distinct from generic import not_run. |
 | `milestone/m12` | Cumulative browser/SSH continuity, quiet restart, original-session restoration, accepted-send/provider recovery, detached workers and verified local retry accepted with original unknown outcomes retained. |
 | `milestone/m13` | Both native-authored silent edits, measured encodes, composite-frame review, preserved old selection and exact video/manifest downloads accepted after M12. |
+| `milestone/m14` | Consolidated host-native studio, complete SSH use, unavailable-service review, measured workloads and C01–C31 release validation accepted. |
 
 ## Active assignments
 
@@ -118,7 +126,7 @@ skips, retries or flaky results across Chromium, Brave, Edge and DPR 2. Exact re
 are `docs/evidence/release-checks-20261114.json`, `release-offline-baseline-20261114.xml`
 and `release-browser-20261114.json`. These preserve their tested revision.
 
-## Current acceptance blockers
+## Accepted scope and retained operating limits
 
 - M07 is accepted. The coordinator's corrected actual readback verified all seven image/job/shot views with zero further inference. Original Klein/F32 records, the scripted setup orphan, sidecar and harness failures remain preserved. The requested colour correction remains an explicit model-quality failure.
 - E04 `e04-live-a` created no project, job, reservation or native process. The distinct `e04-live-b` passed hardware execution under the unchanged guards. M10 static inspection passed; its normal revision/publication is now allocated to the original work.
@@ -132,8 +140,8 @@ and `release-browser-20261114.json`. These preserve their tested revision.
 - M11 is accepted. One actual original-work Continue published `m11-playable-v1` from the existing verified checkpoint. Work completed at revision 12 with real final-response/turn-end/idle evidence. All old questions, unknown native read delivery and failed attempts remain retained.
 - M12 is accepted after M07/M08/M11. Browser/SSH continuity, original-session backup/continuation, accepted-send/provider recovery, detached renderer and local retry are covered. Original unknown returns and failed recovery attempts remain preserved.
 - Earlier M07 windows were constrained by independent SQL Server/Blender workloads. Later FP16 conversion observed at least 35,388,723,200 bytes available. No independent workload was stopped or evicted by this programme. Every new allocation still checks its own unchanged admission threshold.
-- Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
-- Geometry Nodes, complete SSH message/video use and proxy measurements passed. M14 still needs final cumulative milestone integration, browser/offline checks and release validation. Earlier SSH/palette/selector harness failures remain retained. The heavy SwiftShader workload is measurably sluggish; no unmeasured hardware-accelerated performance claim is made.
+- All milestones are cumulatively accepted from actual journeys plus their applicable regressions. Earlier native/SSH/palette/selector failures remain retained and are not relabelled successful.
+- The heavy SwiftShader workload is measurably sluggish. The SD-Turbo colour instruction failed despite a working generation/correction pipeline. Native restoration retains its documented same-host/opaque-history limits. No unmeasured hardware-accelerated performance or artistic approval is claimed.
 
 ## Resource allocations
 
@@ -207,7 +215,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M11 Playable Unity scene | Completed on 2026-11-14 | `milestone/m11` | [Native specialist, PlayMode, source and publication acceptance](m11.md) |
 | M12 Recovery and backup | Completed on 2026-11-14 | `milestone/m12` | [Cumulative native, provider, worker and backup acceptance](m12.md) |
 | M13 Silent cinematic delivery | Completed on 2026-11-14 | `milestone/m13` | [Native edit, composite review and exact delivery acceptance](m13.md) |
-| M14 Consolidated acceptance | Geometry Nodes, SSH, performance and native-fault slices passed; final consolidation pending | — | [SSH](m14-ssh.md), [performance](performance.md), [native faults](m14-native-faults.md) |
+| M14 Consolidated acceptance | Completed on 2026-11-14 | `milestone/m14` | [Cumulative criteria and zero-gap release report](m14.md) |
 
 ## Host observations
 

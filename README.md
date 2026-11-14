@@ -2,7 +2,7 @@
 
 A personal, desktop-browser studio for directing AI-authored Blender assets, scenes, storyboards and silent cinematics, with playable Unity scenes as a downstream output.
 
-**Status: implemented, cumulative acceptance in progress.** The host-native studio runs against specification 3.2.0 and contract 1.0. The first real browser → Copilot → Blender → rendered-feedback journey has passed. Image/VLM/mesh execution and remaining cumulative journeys are tracked in [implementation progress](docs/implementation/progress.md).
+**Status: M01–M14 implemented and accepted.** The host-native studio runs against specification 3.2.0 and contract 1.0.0. Actual Blender, ComfyUI, VLM, image-to-mesh, Unity, cinematic and SSH journeys are retained alongside **1,102 passing checks and 193 passing browser cases**. [Implementation progress](docs/implementation/progress.md) records individual milestone tags. The [release report](docs/evidence/release/README.md) has 31 cases and zero gaps.
 
 ## Run
 
@@ -40,7 +40,9 @@ Start the private configuration from [`config.example.json`](config.example.json
 - Canonical source filenames with Git/Git LFS history and pinned asset dependencies.
 - Browser disconnections leave work running. Backend/workstation restarts require explicit Resume.
 
-Image-to-3D has a [real Hunyuan hardware proof](docs/evidence/w09/live-b/README.md): one image-conditioned mesh was imported into Blender and published. The generated-asset inspection/revision journey remains open for M10 acceptance. The earlier memory-blocked allocation is retained in the evidence.
+Image-to-3D passed [M10 acceptance](docs/implementation/m10.md): an actual Hunyuan mesh was imported, inspected, revised through the native lead and published with source/proxy/keyframe evidence. Earlier memory-blocked and interrupted allocations remain retained.
+
+The tested SD-Turbo correction did not achieve its requested blue colour. The 90 MB mesh proxy was slow under SwiftShader. [Measured workloads and limitations](docs/implementation/performance.md) distinguish those observations from technical completion and owner selection.
 
 ## Architecture boundary
 
@@ -68,7 +70,7 @@ The project consolidates lessons from `smal-ai-blender`, `smal-ai-game` and `sma
 
 **Prompt → Copilot/Blender → Git checkpoint → published render → annotation → follow-up.**
 
-The [real M01 evidence](docs/evidence/m01/README.md) records the source correction, two rendered versions, clean/marked image delivery, retained annotation and idempotent publication replay. The [foundation handover](docs/implementation/foundation.md) records the pinned runtime, shared interfaces and startup checks. Remaining milestones require their own cumulative acceptance.
+The [real M01 evidence](docs/evidence/m01/README.md) records the source correction, two rendered versions, clean/marked image delivery, retained annotation and idempotent publication replay. The [foundation handover](docs/implementation/foundation.md) records the pinned runtime, shared interfaces and startup checks. The later milestone documents retain their own actual journeys and acceptance boundaries.
 
 ## Validate the specification
 

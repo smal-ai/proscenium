@@ -1,0 +1,108 @@
+# M14 consolidated acceptance disposition
+
+**All product criteria verified. Final receipt/application-lineage validation pending.**
+M01–M13 have individual coordinator acceptance commits and tags. The final integrated
+checks passed 1,102 unit/contract/integration/evidence tests, 193 installed-browser
+cases, lint, type checking and specification/generated-binding validation.
+
+## Coordinator criterion assessment
+
+| M14 criterion | Actual basis |
+| --- | --- |
+| 1. Complete configured workflows | Accepted M01–M13 actual native/application journeys, using isolated projects and maintained tools. |
+| 2. Image-to-3D included | Accepted M10 actual Hunyuan mesh, import, native revision and publication. No scope removal. |
+| 3. Supported desktop browsers | One clean 193-case Chromium/Brave/Edge/DPR-2 run at 1920×1080, with actual decode/coordinates/controls. Controlled API states remain labelled. |
+| 4. Single-origin SSH usage | Real authenticated SSH, active-task tunnel loss, original message/event replay, all ten film frames, byte ranges, uploads and matching downloads. |
+| 5. Unavailable services preserve review | Actual quiet configured-unavailable restart, retained film/notes and another saved feedback item, with no further SDK/provider call. |
+| 6. File/caller boundaries | Real composed scope/channel tests and native configuration, exact path/secret rejection and unchanged Host/Origin enforcement. |
+| 7. Bundled host-native studio | Compiled same-origin UI and bundled fonts, one loopback owner, maintained reference-independent runtime. |
+| 8. Integrated checks and performance identities | 1,102 passing checks, lint/types/specification, 193 browser cases, measured native render/provider/proxy profiles and exact runtime/source identities. |
+| 9. Source/runtime separation | Git/source checks reject secrets/runtime paths; tracked application inventory contains no environment, database, dependency cache or model-weight files. |
+| 10. C01–C31 and owner policy | Explicit per-clause layer review, actual native/browser support, complete offline observations and unchanged normative contracts. Final structural receipt validation follows. |
+
+The coordinator accepts the measured performance scope, including the slow 90 MB
+SwiftShader proxy. The failed SD-Turbo colour instruction remains a quality failure.
+Neither becomes an invented fast/accurate result or a new owner approval.
+
+## Original inactive assembly snapshot
+
+The sections below retain the initial `722dce5` assembly disposition. Its pending
+inputs have since been supplied by the accepted milestones and final regression.
+Original execution identities, failed records and qualifications remain unchanged.
+
+## Accepted observations and their actual scopes
+
+| Area | Disposition | Evidence |
+| --- | --- | --- |
+| M01–M06, M08, M09 | Parent-accepted milestones. Historical runtime/test identities remain unchanged. | Existing individual milestone documents/tags and committed progress. |
+| M07 | Two FP16 generations, owner choices, completed-provider-response loss/history reconciliation and real native parent/child reserved-budget refusal passed. Corrected actual image job/shot UI readback is still pending. Requested cobalt-blue correction was not achieved. | `m07-fp16/execution/`, `m07-native-budget/`, original failed `m07-review/`. |
+| M10 | Actual Hunyuan mesh/import, static proxy/picking and resource evidence passed. New explicitly authorised remaining-work Queue/revision/publication is active elsewhere. Old prematurely completed work is not rewritten or called resumed. | `w09/live-b/`, `m10/`, `m10-continuation/`. |
+| M11 | Native import/PlayMode/input/physics/checkpoint passed. Positive cold Stop barrier and normal saved Unity publication/readback remain pending parent-accepted results. Owner-card cancellation and pause/Abort acknowledgement alone do not prove native idle. | `m11/`, `m11-final/`, `m11-publication/`, `native-io-policy/m11-stop.json`. |
+| M12 | Actual same-session backup restore/held Queue, accepted-send response loss, surviving-worker recovery, Comfy history recovery, partial writer/same-job retry and full SSH records exist. M11 and cumulative acceptance remain open. | `m12/native-recovery.json`, `m12-selective-ack/final-verified-result.json`, M08, M07, native faults and SSH. |
+| M13 | All seven targeted native/UI journey criteria passed. Parent dependency acceptance remains pending. Actual source shots were imported from accepted W03 history, not newly rendered during assembly. | `m13/result.json`, hash-verified portable `m13/retained/`. |
+| Stateless Geometry Nodes | Actual model-authored saved graph, normal checkpoint/publication, mapped 12-triangle GLB and CPU still passed. No simulation/bake/cache expansion or added browser-picking claim. | `geometry-nodes/final-run.json`, integrated `005ffc5`. |
+| Full SSH | Bounded authenticated loopback same-origin journey passed: one read-only native Queue, active-task cut, exactly-once replay, ten presented frames, saved pins, downloads/range/upload and quiet unavailable-service review. Not a physical remote-client or three-browser model matrix. | `m14-ssh/complete-result.json`, `complete-summary.json`, integrated `02a3a8d`. |
+| Performance | Small/heavy workload observations completed under explicit bounds. Heavy SwiftShader orbit remains slow at 2.469 draw callbacks/s. Draw cadence is not presented FPS or GPU completion. Proposed regression margins are not executed SLAs. | `m14-performance/final-summary.json`, `final-measurement.json`, integrated `535d56f`. |
+| Installed browsers | 173 unique actual installed-browser cases use the product frontend, controlled API states and real native media/GLB. Additional 12 job-identity checks cover current UI changes. Neither proves backend/model execution in every browser. | `browser-matrix-20261114.json`, committed progress. Final candidate matrix report is parent-owned and pending. |
+| Current regression | Parent retained 275 runtime/evidence passes include the native-I/O/completion correction. Scoped historical checks, not final whole-suite acceptance after remaining code. | `integration-runtime-final-20261114.xml`, committed progress, source correction `ed75296`. |
+
+Paths in the table are relative to `docs/evidence/` unless explicitly stated otherwise.
+Full source identities, commands/argv references, original runtime facts and SHA-256/size
+of committed evidence are assembled in the [release index](../evidence/release/README.md).
+
+## Required qualifications
+
+- C12's actual parent/child proof made three **reserved admissions** and refused the fourth
+  with execution disabled. It did not execute three inferences or prove consumed-three
+  exhaustion. The separate two-generation FP16 proof is not conflated with that ledger.
+- C03 withheld an actual completed Comfy response and reconciled original client/history.
+  It did not restart a cold provider.
+- C16's actual fault was a labelled unreceipted partial file and failed native writer.
+  Disk-reserve/storage-full checks remain offline. Actual disk exhaustion is not invented.
+- M12 selectively withheld the exact real RPC response while forwarding genuine hooks and
+  events. Identity was projected from forwarded events before physical FileIO closure.
+  It proves original admission reconciliation, not exclusive ACK-only identity recovery or
+  model/work completion. One SDK send, final work `awaiting_resume`, execution gate closed.
+- Controlled API/browser/offline permutations remain at those layers. Native media bytes or
+  an installed browser do not turn an API fixture into backend/model execution.
+- Historical `application_commit` remains its original test identity. Some runs identify a
+  committed baseline plus candidate/compiled hashes, not an exact whole-tree execution commit.
+  M04 explicitly lacks pre-format candidate driver hashes. SSH has staged loaded-source
+  identities distinct from shutdown filesystem observations. None is rewritten as final code.
+- Failed SSH startups/chooser attempts, performance palette failure, model-quality failures,
+  earlier ACK helpers, partial-writer reporting failure and old M10/M11 outcomes remain intact.
+  Passing later allocations use distinct records and do not erase those observations.
+
+## Remaining release conditions
+
+1. Parent supplies accepted M07 actual corrected image job/shot readback.
+2. Parent supplies accepted M10 new remaining-work Queue, revised normal publication/readback.
+3. Parent supplies accepted M11 exact positive cold-idle Stop barrier and normal publication.
+4. Parent closes cumulative M07/M10/M11/M12/M13/M14 dependencies and individual tags.
+5. Parent supplies final whole-suite JUnit/browser reports on the integrated final candidate,
+   with exact source/runtime/commands and distinct hash-verified regression artefacts.
+6. Parent reviews C01–C31 invariant/layer scope, activates explicit receipt applicability and
+   obtains a release-ready result from the unchanged acceptance validator.
+
+No further native execution is requested by this document. It does not add cold-provider
+restart, physical remote-client testing, three executed budget attempts, disk-filling or
+hardware-FPS targets merely to remove fixture qualifications. Where a clause is demonstrated
+only offline, the index says so and leaves sufficiency to the authorised coordinator.
+
+## Receipt/regeneration handover
+
+[Release recipe and exact commands](../evidence/release/README.md) produce a portable
+index, inactive case/journey receipt proposals and a deliberately incomplete normalised report.
+Candidate and evidence snapshot are initially full SHA
+`722dce5e7631454ac116819d41ed18837ea160f1`. `release_ready=false` is expected.
+
+The builder reads committed bytes/local objects, validates explicit inspection mirrors and
+retained M13 hashes and never discovers equivalent commits by subject or ancestry alone.
+Parent applicability may use reviewed ancestors, identical committed source hashes or complete
+ordered exact cherry-pick maps under existing policy. A helper can calculate an explicitly
+supplied pairing proposal, but emits no coordinator approval. Inspection mirrors remain
+inspection identities, not replacements for original execution IDs.
+
+This assembly owns no shared policy/schema change, coverage-layer removal, other package
+handover, progress edit, child agent, service operation or release tag. Only affected pure
+tool tests, AST resolution and committed hash validation are performed here.

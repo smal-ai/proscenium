@@ -1,0 +1,156 @@
+{
+  "format": "proscenium-release-gaps-1",
+  "candidate": "50e6030ca99ab0b45dd75a6404d6a16a313a348e",
+  "required_remaining": [
+    {
+      "id": "G01",
+      "kind": "required_journey",
+      "requirement": "M07 corrected actual-app retained-image job/shot context readback",
+      "state": "resolved_by_accepted_evidence_and_coordinator_review",
+      "affected": [
+        "M07"
+      ]
+    },
+    {
+      "id": "G02",
+      "kind": "required_journey",
+      "requirement": "M10 explicitly authorised new remaining-work Queue authors and normally publishes revised source/version with inspection readback",
+      "state": "resolved_by_accepted_evidence_and_coordinator_review",
+      "affected": [
+        "M10"
+      ]
+    },
+    {
+      "id": "G03",
+      "kind": "required_journey",
+      "requirement": "M11 exact cold Stop positive native idle/empty queue/background/callback barrier, then normal saved Unity publication and readback",
+      "state": "resolved_by_accepted_evidence_and_coordinator_review",
+      "affected": [
+        "C04",
+        "C13",
+        "C19",
+        "C22",
+        "C26",
+        "M11",
+        "M12"
+      ]
+    },
+    {
+      "id": "G04",
+      "kind": "parent_acceptance",
+      "requirement": "Parent cumulative dependency acceptance and individual milestone tags M07/M10/M11/M12/M13/M14",
+      "state": "resolved_by_accepted_evidence_and_coordinator_review",
+      "affected": [
+        "M07",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14"
+      ]
+    },
+    {
+      "id": "G05",
+      "kind": "final_candidate_regression",
+      "requirement": "Parent final whole-suite JUnit, final installed-browser report, exact commands/runtime/candidate source and distinct artifact hashes after remaining code integration",
+      "state": "resolved_by_accepted_evidence_and_coordinator_review",
+      "affected": [
+        "C01-C31",
+        "M14"
+      ]
+    },
+    {
+      "id": "G06",
+      "kind": "receipt_assembly",
+      "requirement": "Parent reviewed per-layer/per-invariant scope and explicit final-candidate applicability, complete ordered approved cherry-pick maps where required, passing activation through unchanged validator",
+      "state": "coordinator_review_activated_pending_final_structural_validation",
+      "affected": [
+        "C01-C31",
+        "M01-M14",
+        "SSH",
+        "PERFORMANCE"
+      ]
+    }
+  ],
+  "validator_assembly_gaps": [
+    "C01:native:unexecuted",
+    "C02:native:unexecuted",
+    "C03:native:unexecuted",
+    "C04:native:unexecuted",
+    "C04:browser:chromium:unexecuted",
+    "C04:browser:brave:unexecuted",
+    "C04:browser:edge:unexecuted",
+    "C05:native:unexecuted",
+    "C06:native:unexecuted",
+    "C07:native:unexecuted",
+    "C08:native:unexecuted",
+    "C09:native:unexecuted",
+    "C10:native:unexecuted",
+    "C10:browser:chromium:unexecuted",
+    "C10:browser:brave:unexecuted",
+    "C10:browser:edge:unexecuted",
+    "C11:native:unexecuted",
+    "C11:browser:chromium:unexecuted",
+    "C11:browser:brave:unexecuted",
+    "C11:browser:edge:unexecuted",
+    "C12:native:unexecuted",
+    "C13:native:unexecuted",
+    "C13:browser:chromium:unexecuted",
+    "C13:browser:brave:unexecuted",
+    "C13:browser:edge:unexecuted",
+    "C14:native:unexecuted",
+    "C15:native:unexecuted",
+    "C16:native:unexecuted",
+    "C17:native:unexecuted",
+    "C18:native:unexecuted",
+    "C18:browser:chromium:unexecuted",
+    "C18:browser:brave:unexecuted",
+    "C18:browser:edge:unexecuted",
+    "C19:native:unexecuted",
+    "C20:native:unexecuted",
+    "C20:browser:chromium:unexecuted",
+    "C20:browser:brave:unexecuted",
+    "C20:browser:edge:unexecuted",
+    "C21:browser:chromium:unexecuted",
+    "C21:browser:brave:unexecuted",
+    "C21:browser:edge:unexecuted",
+    "C22:native:unexecuted",
+    "C23:native:unexecuted",
+    "C23:browser:chromium:unexecuted",
+    "C23:browser:brave:unexecuted",
+    "C23:browser:edge:unexecuted",
+    "C24:native:unexecuted",
+    "C24:browser:chromium:unexecuted",
+    "C24:browser:brave:unexecuted",
+    "C24:browser:edge:unexecuted",
+    "C25:native:unexecuted",
+    "C26:native:unexecuted",
+    "C27:native:unexecuted",
+    "C28:native:unexecuted",
+    "C29:native:unexecuted",
+    "C30:browser:chromium:unexecuted",
+    "C30:browser:brave:unexecuted",
+    "C30:browser:edge:unexecuted",
+    "C31:native:unexecuted",
+    "C31:browser:chromium:unexecuted",
+    "C31:browser:brave:unexecuted",
+    "C31:browser:edge:unexecuted",
+    "M01:cumulative_acceptance_unexecuted_or_incomplete",
+    "M02:cumulative_acceptance_unexecuted_or_incomplete",
+    "M03:cumulative_acceptance_unexecuted_or_incomplete",
+    "M04:cumulative_acceptance_unexecuted_or_incomplete",
+    "M05:cumulative_acceptance_unexecuted_or_incomplete",
+    "M06:cumulative_acceptance_unexecuted_or_incomplete",
+    "M07:cumulative_acceptance_unexecuted_or_incomplete",
+    "M08:cumulative_acceptance_unexecuted_or_incomplete",
+    "M09:cumulative_acceptance_unexecuted_or_incomplete",
+    "M11:cumulative_acceptance_unexecuted_or_incomplete",
+    "M12:cumulative_acceptance_unexecuted_or_incomplete",
+    "M13:cumulative_acceptance_unexecuted_or_incomplete",
+    "M14:cumulative_acceptance_unexecuted_or_incomplete",
+    "SSH:cumulative_acceptance_unexecuted_or_incomplete",
+    "PERFORMANCE:cumulative_acceptance_unexecuted_or_incomplete",
+    "M10:blocked_requires_native_mesh_proof_or_explicit_owner_scope_decision"
+  ],
+  "meaning": "Do not buy new native runs to fill archival receipt/import gaps. Parent first reviews existing evidence at its proper layer."
+}

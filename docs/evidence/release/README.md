@@ -1,4 +1,42 @@
-# Release evidence assembly, not release acceptance
+# Release evidence and acceptance
+
+**Final coordinator release validation passed on 14 November 2026.** Candidate
+`50e6030ca99ab0b45dd75a6404d6a16a313a348e`, specification 3.2.0, contract 1.0.0.
+M01–M14 are individually accepted. The verified final inputs are:
+
+| File | Meaning |
+| --- | --- |
+| `final-recipe.json` | Current source cards and accepted cumulative dependencies, preserving historical observations. |
+| `final-index/index.json` | Expanded, hash-pinned final evidence index. Its proposal/partial-report siblings remain deliberately inactive. |
+| `FINAL-REVIEW.md` | Explicit coordinator decisions about each applicable offline/native/browser layer and retained qualifications. |
+| `reviewed-transfers.json` | Fifteen inspected exact-edit transfers used for original-revision applicability. |
+| `criteria-assessment.md.txt` | Immutable pre-validation M14 assessment snapshot, retained as inert text so its original relative links and bytes remain unchanged. |
+| `accepted-receipts.json` | Activated coordinator bundle: 91 case receipts, 16 cumulative journey/workload receipts and 107 applicability records. |
+| `accepted-report.json` | Unchanged validator result: **release_ready=true, 31 cases, zero gaps**. |
+
+The complete regression passed **1,102 tests**. A single installed-browser matrix
+passed **193 cases**, with no failures, skips, retries or flaky results. The
+original actual model/editor/provider proofs remain separately identified.
+
+```bash
+uv run python -m tools.operations.acceptance \
+  --junit docs/evidence/release-final-verified-offline-20261114.xml \
+  --receipts docs/evidence/release/accepted-receipts.json \
+  --application-commit 50e6030ca99ab0b45dd75a6404d6a16a313a348e --release
+```
+
+Historical applicability needs the original tested Git objects retained by the
+fleet's branches. A main-only source checkout can run the application and portable
+tests, but must also obtain that retained source history to independently validate
+the historical applicability bundle. No remote fetch or credential prompt is
+performed automatically.
+
+`active-receipts.json` / `release-report.json` and `final-receipts.json` /
+`final-report.json` retain earlier successful activation records before the inert
+assessment snapshot reached its final path. Use the **accepted** files above.
+All earlier failed runs, inactive drafts and original limits remain intact.
+
+## Original inactive assembly handover
 
 **Inactive draft against `722dce5e7631454ac116819d41ed18837ea160f1`. Release is not ready.**
 The parent owns technical acceptance, final candidate regression, applicability
