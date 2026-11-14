@@ -1,6 +1,6 @@
 # Proscenium: user journeys and implementation milestones
 
-**Version:** 3.1.0
+**Version:** 3.2.0
 
 **Updated:** 2026-11-14
 
@@ -545,7 +545,7 @@ Acceptance is cumulative. A milestone is not complete because an API returned su
 7. Frontend assets/fonts do not require the mockup's CDNs. No public ingress, mobile layout, multi-user roles or parallel active projects have been introduced.
 8. Unit/contract, tool integration and browser suites pass using isolated data. Actual device/runtime/model identities accompany performance and capability claims.
 9. The source repository and user-project workspaces keep secrets, environments, runtime stores and disposable generation caches out of source checkpoints.
-10. C01–C20 and the contract examples pass at their applicable offline/native/browser layers. Project-only scope, owner/tool/worker separation, generation budget and autonomous stage policy match the confirmed owner decisions.
+10. C01–C31 and the contract examples pass at their applicable offline/native/browser layers. Project-only scope, owner/tool/worker separation, generation budget and autonomous stage policy match the confirmed owner decisions.
 
 ### Failure and recovery checks
 
@@ -597,6 +597,8 @@ These are bounded implementation decisions, not reasons to repeat the architectu
 | Storage/backup implementation | F00, M02, M12, M14 | Follow the defined XDG registry, project-local SQLite, retained artefact and native-session policy. |
 
 ## 6. Implementation starting point
+
+The final-review regressions C21–C31 are cumulative acceptance: reconnect includes original user text/context, published metadata round-trips, instance picks remain distinct, sequence/composite targets use explicit frame maps, cancellation/retry preserves attempts, native deferred steering is settled by Stop, idle owner reviews and Unity jobs have admission identities, checkpoints survive acknowledgement loss, native memory and session-store retrieval are both disabled, and selection/mask conventions are shared by every consumer. The documentation semantic fixtures validate their deterministic record invariants before native implementation.
 
 Start F00/E01 with the normative contracts, generated bindings, execution ownership and offline fault harness, then demonstrate M01's real Blender feedback loop. Use the [fleet handover](development-fleet.md) to assign bounded slices against accepted revisions. Preserve the full milestone map while implementing the first slice.
 

@@ -10,13 +10,13 @@ The scope is the active project's canonical real path, including its project-own
 
 For V1, an agent-operated Unity project must be inside the active project folder. A previously external Unity project can be copied or moved into that folder by an explicit owner operation before it is exposed to the agent. Configuring a path is not permission to read a second project. Likewise, a reusable asset from another project must be explicitly imported by the owner into the current workspace before the agent may inspect it. Online acquisition through approved tools downloads into the active workspace.
 
-At minimum, exclude `.env`, `.env.*` except an explicitly sanitised example, `.envrc`, `.direnv/`, private keys, credential stores, SDK/provider tokens and runtime authentication data from Proscenium's automatic context capture, file serving and source materialisation. Native cross-session memory (`memory={"enabled": False}`) must be disabled or namespaced to the active project so context from other projects is not injected automatically.
+At minimum, exclude `.env`, `.env.*` except an explicitly sanitised example, `.envrc`, `.direnv/`, private keys, credential stores, SDK/provider tokens and runtime authentication data from Proscenium's automatic context capture, file serving and source materialisation. Disable both native memory (`memory={"enabled": False}`) and the separate cross-session retrieval store (`enable_session_store=False`) on create and resume. A working directory or the memory flag alone does not disable the retrieval store.
 
 ### Pragmatic boundary and the existing MCP bridge
 
 To avoid crippling authoring tools or adding fragile OS sandboxes, V1 uses a pragmatic, bare-minimum boundary:
 
-1. **Session working directory and instructions:** Proscenium sets the Copilot session's `working_directory` to the active project root and configures system instructions and skills to operate only within that root, preserve unsaved Blender/Unity work, and never read or stage `.env*`, credentials or sibling projects.
+1. **Session working directory and instructions:** Proscenium sets the Copilot session's `working_directory` to the active project root, disables memory and cross-session retrieval, and configures system instructions and skills to operate only within that root, preserve unsaved Blender/Unity work, and never read or stage `.env*`, credentials or sibling projects.
 2. **Application route validation:** Proscenium's own HTTP media/artefact routes, source-closure materialisation and Git checkpoint helpers validate that resolved paths remain inside the active project root and exclude secret/runtime files.
 3. **Caller channel separation:** Owner browser routes, native tool routes and worker receipt routes use separate tokens (`OwnerSession`, `ToolCapability`, `WorkerCapability`) so an agent tool cannot call an owner approval endpoint directly.
 

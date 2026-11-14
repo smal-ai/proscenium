@@ -165,7 +165,7 @@ paths:
     get:
       operationId: getRequest
       responses:
-        '200': {$ref: '#/components/responses/RequestReceipt'}
+        '200': {$ref: '#/components/responses/RequestRecord'}
         default: {$ref: '#/components/responses/Error'}
   /api/v1/projects/{project_id}/requests/{request_id}/cancel:
     parameters:
@@ -310,6 +310,20 @@ paths:
           content:
             application/json:
               schema: {$ref: './schema.json#/$defs/FrameAvailability'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/jobs/{job_id}/attempts:
+    parameters:
+      - {$ref: '#/components/parameters/ProjectId'}
+      - {name: job_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    get:
+      operationId: listJobAttempts
+      parameters: [{$ref: '#/components/parameters/Cursor'}, {$ref: '#/components/parameters/Limit'}]
+      responses:
+        '200':
+          description: Attempt history, including original owner/provider identities and terminal evidence.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/JobAttemptPage'}
         default: {$ref: '#/components/responses/Error'}
   /api/v1/projects/{project_id}/jobs/{job_id}/frames:
     parameters:
@@ -604,6 +618,36 @@ paths:
               schema: {$ref: './schema.json#/$defs/JobRecord'}
         '200': *jobResponse
         default: {$ref: '#/components/responses/Error'}
+  /internal/v1/jobs:
+    post:
+      operationId: admitToolJob
+      security: [{ToolCapability: []}]
+      parameters: *toolWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/JobAdmission'}
+      responses:
+        '202': *jobResponse
+        '200': *jobResponse
+        default: {$ref: '#/components/responses/Error'}
+  /internal/v1/jobs/{job_id}/retry:
+    parameters:
+      - {name: job_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    post:
+      operationId: retryToolJob
+      security: [{ToolCapability: []}]
+      parameters: *toolWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/JobRetry'}
+      responses:
+        '202': *jobResponse
+        '200': *jobResponse
+        default: {$ref: '#/components/responses/Error'}
   /internal/v1/jobs/{job_id}/state:
     parameters:
       - {name: job_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
@@ -711,6 +755,11 @@ components:
       content:
         application/json:
           schema: {$ref: './schema.json#/$defs/RequestReceipt'}
+    RequestRecord:
+      description: Immutable user submission, acceptance time, context reference and current receipt. Available before native dispatch.
+      content:
+        application/json:
+          schema: {$ref: './schema.json#/$defs/RequestRecord'}
     ReviewTicket:
       description: Review status only. Unapproved findings are not returned to a native tool.
       content:

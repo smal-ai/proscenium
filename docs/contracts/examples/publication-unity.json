@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0", "publication_id": "pub-unity-v1", "project_id": "fixture-project",
+  "items": [{
+    "item_id": "unity-fixture", "kind": "unity_result", "name": "Playable fixture", "version_id": "unity-fixture-v1",
+    "expected_current_version_id": null, "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "description": "An Editor-playable fixture", "tags": ["playable", "fixture"],
+    "provenance": {"source_url": null, "creator": "Fixture author", "licence": null},
+    "derived_from": [{"item_id": "scene-fixture", "version_id": "scene-fixture-v1"}],
+    "unity": {"editor_version": "6000.3.27f1", "pipeline": "URP", "scene_path": "unity/Assets/Scenes/Main.unity", "player_script": "unity/Assets/Player.cs", "validation": {"status": "passed", "notes": "Synthetic record, not a test result"}},
+    "source": {"entry_path": "unity/Assets/Scenes/Main.unity", "files": [{"destination": "unity/Assets/Scenes/Main.unity", "origin": {"kind": "git", "repository_id": "repo-fixture", "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "path": "unity/Assets/Scenes/Main.unity", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}}], "dependencies": [], "required_runtime": {"application": "unity", "version": "6000.3.27f1", "features": ["urp"]}, "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+    "artifact_ids": ["unity-validation-log"], "preview_requests": []
+  }]
+}

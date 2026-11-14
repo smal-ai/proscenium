@@ -1,0 +1,41 @@
+{
+  "fixture_version": "1.0",
+  "status": "documentation_semantic_oracles_not_native_execution_evidence",
+  "cases": [
+    {"id": "S01", "definition": "RequestRecord", "fixture": "../contracts/examples/request-record.json", "related": {"submission": "../contracts/examples/queue.json", "context": "../contracts/examples/context.json"}, "valid": true},
+    {"id": "S02", "definition": "RequestRecord", "fixture": "../contracts/examples/request-record.json", "related": {"submission": "../contracts/examples/queue.json"}, "mutations": [{"path": "/submission/text", "value": "A reconstructed different prompt"}], "valid": false, "error": "request_submission_changed"},
+    {"id": "S03", "definition": "VersionRecord", "fixture": "../contracts/examples/version-unity.json", "related": {"publication": "../contracts/examples/publication-unity.json"}, "valid": true},
+    {"id": "S04", "definition": "VersionRecord", "fixture": "../contracts/examples/version-unity.json", "related": {"publication": "../contracts/examples/publication-unity.json"}, "mutations": [{"path": "/provenance", "remove": true}], "valid": false, "error": "publication_metadata_lost"},
+    {"id": "S05", "definition": "ContextSnapshot", "fixture": "../contracts/examples/context.json", "related": {"source_fixture": "source-fixture.json"}, "mutations": [{"path": "/item_id", "value": "scene-fixture"}, {"path": "/version_id", "value": "scene-fixture-v1"}, {"path": "/selected_objects", "value": [{"object_id": "object-cube-source", "instance_id": "instance-blue"}, {"object_id": "object-cube-source", "instance_id": "instance-renamed"}]}], "valid": true},
+    {"id": "S06", "definition": "ContextSnapshot", "fixture": "../contracts/examples/context.json", "related": {"source_fixture": "source-fixture.json"}, "mutations": [{"path": "/item_id", "value": "scene-fixture"}, {"path": "/version_id", "value": "scene-fixture-v1"}, {"path": "/selected_objects", "value": [{"object_id": "object-cube-source", "instance_id": "wrong-instance"}]}], "valid": false, "error": "unknown_instance_selection"},
+    {"id": "S07", "definition": "SequenceMap", "fixture": "../contracts/examples/sequence-map.json", "related": {"frame_map": "../contracts/examples/frame-map.json"}, "valid": true},
+    {"id": "S08", "definition": "SequenceMap", "fixture": "../contracts/examples/sequence-map.json", "mutations": [{"path": "/frame_count", "value": 36}], "valid": false, "error": "sequence_partition_invalid"},
+    {"id": "S09", "definition": "SequenceMap", "fixture": "../contracts/examples/sequence-map.json", "mutations": [{"path": "/entries/1/sequence_frames/start", "value": 4}], "valid": false, "error": "sequence_partition_invalid"},
+    {"id": "S10", "definition": "SequenceMap", "fixture": "../contracts/examples/sequence-retime.json", "related": {"frame_map": "../contracts/examples/frame-map-retime.json"}, "valid": true},
+    {"id": "S11", "definition": "SequenceMap", "fixture": "../contracts/examples/sequence-retime.json", "mutations": [{"path": "/entries/0/transform", "value": "identity"}], "valid": false, "error": "implicit_retime"},
+    {"id": "S12", "definition": "FrameMap", "fixture": "../contracts/examples/frame-map.json", "mutations": [{"path": "/frames/5/contributors/0/weight", "value": {"numerator": 1, "denominator": 3}}], "valid": false, "error": "frame_weights_invalid"},
+    {"id": "S13", "definition": "FrameTarget", "fixture": "../contracts/examples/composite-target.json", "related": {"frame_map": "../contracts/examples/frame-map.json"}, "valid": true},
+    {"id": "S14", "definition": "FrameTarget", "fixture": "../contracts/examples/composite-target.json", "related": {"frame_map": "../contracts/examples/frame-map.json"}, "mutations": [{"path": "/sequence_frame", "value": 13}], "valid": false, "error": "frame_out_of_range"},
+    {"id": "S15", "definition": "JobRecord", "fixture": "../contracts/examples/owner-review-job.json", "valid": true},
+    {"id": "S16", "definition": "JobRecord", "fixture": "../contracts/examples/owner-review-job.json", "mutations": [{"path": "/work_id", "value": "unrelated-current-work"}], "valid": false, "error": "job_authority_ambiguous"},
+    {"id": "S17", "definition": "SelectionSave", "fixture": "../contracts/examples/selection.json", "valid": true},
+    {"id": "S18", "definition": "SelectionSave", "fixture": "../contracts/examples/selection.json", "mutations": [{"path": "/choice/version/item_id", "value": "other-item"}], "valid": false, "error": "selection_item_mismatch"},
+    {"id": "S19", "definition": "SelectionSave", "fixture": "../contracts/examples/storyboard-selection.json", "related": {"shot_plan": "../contracts/examples/shot-plan.json"}, "valid": true},
+    {"id": "S20", "definition": "SelectionSave", "fixture": "../contracts/examples/storyboard-selection.json", "related": {"shot_plan": "../contracts/examples/shot-plan.json"}, "mutations": [{"path": "/slot/frame_id", "value": "missing-frame"}], "valid": false, "error": "selection_slot_missing"}
+  ],
+  "state_cases": [
+    {"record": "job_attempt", "from": "cancel_requested", "to": "succeeded", "valid": true},
+    {"record": "job_attempt", "from": "planned", "to": "cancel_requested", "valid": true},
+    {"record": "job_attempt", "from": "cancel_requested", "to": "cancelled", "valid": true},
+    {"record": "job_attempt", "from": "failed", "to": "running", "valid": false},
+    {"record": "job_attempt", "from": "outcome_uncertain", "to": "succeeded", "valid": true},
+    {"record": "work", "from": "stopped", "to": "running", "valid": true, "requires_resume": true},
+    {"record": "work", "from": "awaiting_resume", "to": "running", "valid": true, "requires_resume": true},
+    {"record": "work", "from": "completed", "to": "running", "valid": false}
+  ],
+  "mask_cases": [
+    {"id": "binary", "semantics": "binary", "pixels": [0, 255, 255, 0], "coverage": [[0, 1], [1, 1], [1, 1], [0, 1]], "valid": true},
+    {"id": "soft", "semantics": "soft", "pixels": [0, 64, 128, 255], "coverage": [[0, 1], [64, 255], [128, 255], [1, 1]], "valid": true},
+    {"id": "invalid-binary", "semantics": "binary", "pixels": [0, 128, 255], "valid": false}
+  ]
+}

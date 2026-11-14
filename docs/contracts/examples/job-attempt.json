@@ -1,0 +1,5 @@
+{
+  "schema_version": "1.0", "project_id": "fixture-project", "job_id": "job-draft-1", "attempt_id": "attempt-draft-1", "attempt_number": 1,
+  "owner_epoch": "owner-fixture", "input_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "trigger_operation_id": "render-keyframe-1", "state": "succeeded", "external_job_id": null, "native_exit_code": 0
+}

@@ -1,6 +1,6 @@
 # Proscenium: product and technical requirements
 
-**Version:** 3.1.0
+**Version:** 3.2.0
 
 **Updated:** 2026-11-14
 
@@ -103,6 +103,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-02.8:** One authoritative application owner MUST control the active native session. Request, work, model-turn, invocation and external-job identities MUST remain distinct. Browser connections do not create separate session owners.
 - **FR-02.9:** Native questions and consequential permission requests MUST produce durable user-decision cards. Answers require the actual owner channel, exact operation fingerprint and expected revision.
 - **FR-02.10:** Stop MUST hold subsequent Queue requests, record requested versus confirmed cancellation, and preserve independently running jobs as separate resources. Held requests resume only through an explicit Resume choice.
+- **FR-02.11:** Request history and request events MUST expose the exact original submission/context reference through `RequestRecord`, including held or never-dispatched requests. Native echoes MUST NOT duplicate user entries. Stop confirmation MUST account for any accepted steering deferred into the native queue.
 
 ### FR-03: Per-turn context and image inputs
 
@@ -122,6 +123,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-04.5:** Proscenium MUST check the publication's technical identity and file availability before presenting files as available. An incomplete preview MUST NOT discard the previous available result or block Copilot's unrelated authoring.
 - **FR-04.6:** A publication batch MUST contain only completed source versions and register atomically. Pending previews are independent. Each head update MUST compare the expected current version, so late publication cannot silently replace a newer head.
 - **FR-04.7:** The publication, head updates, preview-job intents and public events MUST share a durable commit boundary. Recovery after worker-launch acknowledgement loss MUST reconcile the original job before a second launch.
+- **FR-04.8:** Version reads MUST retain declared descriptive metadata, provenance, Unity results, ancestry and initial preview specifications. Jobs MUST expose their logical target and pinned context version. A new execution attempt MUST retain the previous attempt's evidence.
 
 ### FR-05: Review modes and arbitrary-angle rendering
 
@@ -142,6 +144,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-06.5:** A 3D hit MUST only be attached when the geometry, camera and sample frame match the reviewed view. Missing or uncertain hits MUST remain explicit instead of invented XYZ coordinates.
 - **FR-06.6:** Drafts MUST survive navigation. Saved annotations MUST have durable IDs, safe retries and explicit save/error status, including across tabs or lost acknowledgements.
 - **FR-06.7:** A temporal range annotation MUST distinguish its drawn anchor frame from the range to which its comment applies. V1 MUST NOT imply automatic tracking of a mask through motion.
+- **FR-06.8:** Object selection MUST preserve both object and instance IDs even without a spatial hit. Masks MUST use the canonical greyscale/polarity contract. Sequence annotations MUST use a typed frame map and retain all composite contributors rather than inventing one source frame.
 
 ### FR-07: Progressive animation review
 
@@ -188,6 +191,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-11.4:** Approved findings MUST reach Copilot with the relevant original images and UI context. Neither the VLM nor an Approve button may directly mutate Blender.
 - **FR-11.5:** A failed/unavailable review MUST leave normal authoring and review of existing outputs usable. Publication MUST NOT require a VLM pass.
 - **FR-11.6:** A Copilot-triggered review tool MUST return a review ticket/status. Unapproved findings are delivered to the owner UI. A single owner Queue/Steer submission atomically links the approved finding revisions/text to that message.
+- **FR-11.7:** An owner-requested review MUST work without active Copilot work. Its job records the owner review operation, participates in settlement/cancellation, and is discoverable through the ticket's `job_id`.
 
 ### FR-12: Image-to-3D capability
 
@@ -204,6 +208,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-13.4:** The specialist publishes source-version references, the Unity scene path and a `UnityResult` validation status of passed, failed or not_run. A failed or skipped playtest does not block publication. Playtesting stays in the Unity Editor. Keyboard and mouse are sufficient. Visual parity with Blender is not required.
 - **FR-13.5:** Unity changes MUST use Unity APIs and preserve asset GUIDs. Tools MUST respect active/dirty Editor state rather than force-close an instance to run a batch command.
 - **FR-13.6:** The agent-operated Unity project MUST be within the active Proscenium project folder in V1. A configured external path does not widen the owner's current-project-only content permission.
+- **FR-13.7:** Unity operations MUST be durably admitted before the CLI starts, using the shared job/attempt protocol. An untracked detached process is not sufficient for the required recovery and project-settlement behaviour.
 
 ### FR-14: Connection and restart recovery
 
@@ -214,6 +219,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-14.5:** Switching projects MUST NOT silently abandon active authoring. The UI MUST expose the active state and require an explicit settle/stop/switch choice where work is ongoing.
 - **FR-14.6:** Request admission/reconciliation and the restart execution gate MUST be established during M01/M03. M12 completes cross-provider recovery and backup acceptance, rather than retrofitting identity and durable delivery late.
 - **FR-14.7:** Native session loading, pending native messages and restored callback attribution MUST be tested before enabling automatic attachment to a restarted runtime. New execution waits for the explicit Resume path.
+- **FR-14.8:** Checkpoint acknowledgement loss MUST recover the original commit through its operation journal/reference. Job completion may win a cancellation race. Retry of a verified failed/cancelled local job creates a new attempt under the same unchanged job/input identity.
 
 ### FR-15: Silent cinematic delivery
 
@@ -235,6 +241,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 - **FR-17.2:** Purchases, installation/service changes, external publishing and destructive retained-content/Git operations MUST require the exact owner authorisation specified there. An agent statement is not a human approval.
 - **FR-17.3:** Active-project content scope MUST set the session working directory to the active project root, disable cross-session memory, instruct agents/skills to stay within the project root, and enforce path/exclusion checks on Proscenium's own HTTP and publication routes. No OS-level sandbox wrapper is required around Blender MCP or CLI tools.
 - **FR-17.4:** Owner, native-tool and worker API channels MUST have distinct capabilities. A tool cannot answer its own permission request or submit a user selection by spoofing an actor field.
+- **FR-17.5:** Both native memory and `enable_session_store` MUST be disabled on creation and resume. E01 MUST exercise two project histories so the separate cross-session retrieval facility is covered.
 
 ### FR-18: Uploads and explicit selections
 

@@ -48,7 +48,7 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `GET /api/v1/projects/{project_id}/contexts/{context_id}` | — | Exact stored `ContextSnapshot`. |
 | `POST /api/v1/projects/{project_id}/requests` | `MessageSubmit` | `RequestReceipt`. Queue/Steer/Stop follow the lifecycle protocol. |
 | `GET /api/v1/projects/{project_id}/requests` | Pagination | `RequestPage`. |
-| `GET /api/v1/projects/{project_id}/requests/{request_id}` | — | Current `RequestReceipt`; no resubmission. |
+| `GET /api/v1/projects/{project_id}/requests/{request_id}` | — | `RequestRecord`: original submission/context ID, accepted time, effective profile/task and current receipt; no resubmission. |
 | `POST /api/v1/projects/{project_id}/requests/{request_id}/cancel` | `RevisionCommand` | Cancel an application-held request. Active work requires Stop. |
 | `POST /api/v1/projects/{project_id}/resume` | `ResumeCommand` | `CommandReceipt`; explicit recovery/release action. |
 | `PUT /api/v1/projects/{project_id}/settings` | `ProjectSettings` | `CommandReceipt`; applies to future work. In-flight jobs retain admitted settings. |
@@ -59,6 +59,7 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `GET /api/v1/projects/{project_id}/versions/{version_id}/proxy-mapping` | — | `ProxyMapping` for a published asset or scene version. |
 | `GET /api/v1/projects/{project_id}/jobs` | Pagination | `JobPage`. |
 | `GET /api/v1/projects/{project_id}/jobs/{job_id}` | — | `JobRecord`, including the admitted render specification where applicable. |
+| `GET /api/v1/projects/{project_id}/jobs/{job_id}/attempts` | Pagination | `JobAttemptPage`; original attempt identities and terminal evidence are retained. |
 | `GET /api/v1/projects/{project_id}/jobs/{job_id}/availability` | — | `FrameAvailability`; available/pending/failed partition plus playable subset. |
 | `GET /api/v1/projects/{project_id}/jobs/{job_id}/frames` | Pagination, optional `from_frame`/`to_frame` | `FramePage`; source-frame ordered ready receipts. |
 | `GET /api/v1/projects/{project_id}/jobs/{job_id}/segments` | Pagination | `SegmentPage`; exact ready segment mappings. |
@@ -80,13 +81,31 @@ The publication tool is named `publish_outputs`; its input is `PublicationSubmit
 | `POST /internal/v1/publications` | `PublicationSubmit` | `PublicationReceipt`; same contract as `publish_outputs`. |
 | `POST /internal/v1/previews` | `PreviewRequest` | `JobRecord`; same contract as `request_preview`, with no source/head change. |
 | `POST /internal/v1/generation-jobs` | `GenerationSubmit` | `JobRecord`; reserve attempt before dispatch. |
+| `POST /internal/v1/jobs` | `JobAdmission` | Admit a Unity or assembly/encode operation before its CLI starts. Does not itself execute the CLI. |
+| `POST /internal/v1/jobs/{job_id}/retry` | `JobRetry` | Allocate one new local execution attempt after verified terminal failure/cancellation. Budgeted inference cannot use this operation. |
 | `POST /internal/v1/jobs/{job_id}/state` | `JobStateUpdate` | `JobRecord`; worker/tool updates job state, availability, external ID or exit/error code. |
 | `POST /internal/v1/reviews` | `ReviewRequest` | `ReviewTicket`; model-facing result contains no findings. |
 | `POST /internal/v1/reviews/{review_id}/complete` | `ReviewComplete` | `ReviewTicket`; registers completed owner-visible findings and sets `ready` or `failed`. |
 | `POST /internal/v1/frame-receipts` | `FrameReceipt` | `CommandReceipt`; exact admitted job and output hash required. |
 | `POST /internal/v1/segments` | `PreviewSegment` | `CommandReceipt`; exact contiguous frame/encode mapping required. |
 
-Project `paths` are directories and may use `.` for the root, including a Unity project whose root is the active project itself. Source/artefact file paths must name a file and cannot use that directory shorthand. `brief` is a required project path. `ShotPlan` is a wire projection. Copilot writes `AuthoredShotPlan` and calls `checkpoint_sources` (`CheckpointRequest`) for an owned local commit. That tool is not an owner approval and has no separate HTTP route.
+Project `paths` are directories and may use `.` for the root, including a Unity project whose root is the active project itself. Source/artefact file paths must name a file and cannot use that directory shorthand. `brief` is a required project path. `ShotPlan` is a wire projection. Copilot writes `AuthoredShotPlan` and calls `checkpoint_sources` (`CheckpointRequest` → `CheckpointReceipt`) for an owned local commit. That tool is not an owner approval and has no separate HTTP route. Its result/recovery protocol is defined in [source publication](../source-publication.md#checkpoint-result-and-reconciliation).
+
+### Read-model completeness
+
+`RequestPage`, request GET and request events contain `RequestRecord`, including the exact `MessageSubmit` received before native dispatch. Its top-level IDs, nested submission and nested receipt must agree. Queue/Steer retain their original text and `context_id`; Stop retains its work target and reason. `accepted_at`, effective profile and generation-task association are host-derived. Receipt responses to POST remain lightweight. A reload can reconstruct held or never-dispatched requests without native history or browser-local storage. The UI renders user messages from these records, not by inventing an `assistant.completed` event for a user.
+
+`VersionRecord` round-trips the publication's kind, name, description, tags, provenance, Unity result, ancestry and initial preview specifications. Optional metadata omitted on publication remains omitted. `ItemRecord` exposes the current published head's descriptive metadata; historical metadata comes from the requested version. Render-derived artefact/job associations are read-model additions and do not rewrite the immutable publication body. All `JobRecord` values expose a `JobTarget`, including the pinned context version when one exists. UI consumers must not infer a job's target from the current viewport.
+
+### Job admission and owner review
+
+Unity and explicit assembly tools call `admit_job` (`JobAdmission`, the service behind `/internal/v1/jobs`) before starting an external process. The host derives work, owner epoch and invocation association, validates the configured execution profile and inputs, and durably allocates the initial `JobAttempt`. Retries return the same admission. Private launch/caller capabilities are delivered out of band and never included in public `JobRecord` or model-facing results. Render/segment child processes follow the existing preview-intent admission. Image/mesh inference uses the budgeted generation operation exclusively.
+
+Every `ReviewRequest` atomically creates its review ticket and a `vlm_review` job. A native-tool request inherits its admitted work. An owner HTTP request sets `work_id: null` and `owner_operation_id` to the original `review_id`, even if another Copilot work unit happens to be active. It creates no native conversation turn. The job target identifies the review ID; the stored request retains its complete target list. `ReviewTicket.job_id` connects pending/failed reviews to progress and cancellation. Repeating the request creates neither a second job nor another inference call.
+
+Every job has a `JobTarget` with a stable logical `target_id`, optional pinned context `version`, and optional `shot_id`. New concept/mesh targets may have no published version yet. A render must identify its exact published version. Admission and attempt records retain the original provider identity, input digest and attribution independently of later default configuration changes.
+
+`retry_job` accepts `JobRetry` only under an open execution gate and admitted work. It supports local render/encode/Unity jobs whose previous attempt is verifiably failed or cancelled. It allocates a fresh attempt identity while keeping the job/input/target identity, and may reuse verified frames. A live or uncertain attempt is reconciled first. An identical retry operation never allocates twice. A new provider inference uses a new `GenerationSubmit` under the original task/target budget; VLM reruns use a new explicit review request. Observing a surviving provider job or downloading its output does not create a new attempt. See [execution](../execution.md#attempts-and-late-outcomes).
 
 Internal routes are a protocol boundary, not a requirement to put an extra HTTP hop inside the same process. SDK handlers may invoke the same authenticated service operation directly. Owner routes are not automatically exposed as agent tools.
 

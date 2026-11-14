@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0", "operation_id": "select-frame-start", "project_id": "fixture-project",
+  "selection_id": "selection-frame-start", "expected_revision": 0,
+  "slot": {"kind": "storyboard_frame", "storyboard_version": {"item_id": "storyboard-fixture", "version_id": "storyboard-fixture-v1"}, "shot_id": "shot-fixture", "frame_id": "frame-start"},
+  "choice": {"kind": "artifact", "artifact_id": "image-frame-start"}, "action": "select"
+}

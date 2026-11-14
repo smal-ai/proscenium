@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0", "project_id": "fixture-project", "sequence_version_id": "sequence-retime-v1",
+  "fps": {"numerator": 24, "denominator": 1}, "frame_count": 4, "blend_space": "linear_rgb",
+  "frames": [
+    {"sequence_frame": 1, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 1, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 2, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 1, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 3, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 2, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 4, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 2, "weight": {"numerator": 1, "denominator": 1}}]}
+  ]
+}

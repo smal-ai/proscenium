@@ -9,7 +9,7 @@
   "target": null,
   "camera": null,
   "range": null,
-  "selected_object_ids": [],
+  "selected_objects": [],
   "attachments": [],
   "annotations": [],
   "approved_findings": []

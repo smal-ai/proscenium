@@ -1,0 +1,4 @@
+{
+  "schema_version": "1.0", "operation_id": "checkpoint-scene-1", "project_id": "fixture-project",
+  "paths": ["scenes/fixture/scene.blend"], "message": "Create fixture scene", "expected_head": null
+}

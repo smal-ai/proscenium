@@ -1,6 +1,6 @@
 # Proscenium: system architecture
 
-**Version:** 3.1.0
+**Version:** 3.2.0
 
 **Updated:** 2026-11-14
 
@@ -111,6 +111,7 @@ Configuration supplies:
 - Native subagent definitions with clear descriptions, instructions, tool access and optional model/reasoning overrides.
 - CLI/MCP connections and reusable skills adapted from the reference projects.
 - Explicit SDK permission handling and project working directory.
+- Both native memory and cross-session retrieval disabled, including on resume.
 - Public event subscriptions and supported usage reporting.
 
 The lead decides when to delegate and progresses autonomously through the requested stages. Economical worker profiles set `model_policy` to `required`. An unavailable worker model is reported, and the lead may do the work itself. Generation attempts use the shared task/target budget, default three. No assumption is made that default delegation automatically chooses the cheapest model or reduces total cost. Autopilot continuation stays on. Shell, file and Git tools stay available. The [execution lock](execution.md#pinned-runtime-lock) names `abort()`, context delivery, sandbox, memory and skill paths.
@@ -153,7 +154,7 @@ The following overview is implemented as a normative specification in [contract 
 | Published version | Immutable version ID, item ID, source/dependency closure, creation/request attribution, available artefacts and preview requests. |
 | Publication request | Schema version, immutable publication ID, project/request context and one or more completed item versions. Same ID plus same payload is retry-safe. |
 | Artefact | Stable artefact ID, kind, local managed location, hash, dimensions and media metadata as applicable. URLs resolve by ID, not arbitrary supplied paths. |
-| UI context | Target item/version, selected mode, camera/frame/range, selection IDs, reference/media IDs and immutable annotation/finding snapshots captured for Queue/Steer. Stop identifies its active work instead. |
+| UI context | Target item/version, selected mode, camera/frame/range, object/instance selection pairs, reference/media IDs and immutable annotation/finding snapshots captured for Queue/Steer. Stop identifies its active work instead. |
 | Annotation | Immutable target reference, actual displayed frame/media hash, vector/pin/mask data, image dimensions/coordinates, optional valid spatial hits, text and save revision. |
 | Render job | Job ID, pinned source closure, profile/engine/device, camera, sample or inclusive frame range, rational frame rate, expected outputs, process identity and frame receipts. |
 | Preview segment | Job/shot ID, inclusive source-frame interval, frame count, frame-to-video-time mapping and encoded artefact hash. |
@@ -161,6 +162,10 @@ The following overview is implemented as a normative specification in [contract 
 | Generation job | Exact graph/prompt/model/seed/settings, input hashes/roles, endpoint/job IDs, execution status and output/derivative records. |
 | Review finding | Exact source/media target, evidence, observation versus telemetry, recommendation and separate agent/user review states. |
 | Unity result | `UnityResult` on a `unity_result` publication: editor, pipeline, scene path and validation status. Missing playtest does not block publication. |
+| Request history | `RequestRecord` preserves the original `MessageSubmit`, context ID, acceptance time and effective profile/task together with its current acknowledgement/state. |
+| Job admission/attempt | `JobAdmission`, `JobTarget` and `JobAttempt` bind native Unity/encode operations before launch and preserve each attempt's evidence. An idle owner review has an owner operation and no synthetic Copilot work. |
+| Sequence frame map | `FrameMap` expands every output ordinal into weighted source-frame contributors. `sequence_render` targets reference that map instead of one fictitious source frame. |
+| Owner selection | `SelectionSlot` identifies an item, exact storyboard frame or sequence entry; `SelectionChoice` identifies the selected version or ready image. |
 
 ### Identity rules
 

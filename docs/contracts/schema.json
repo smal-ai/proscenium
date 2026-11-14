@@ -31,6 +31,14 @@
       "type": "object", "additionalProperties": false, "required": ["item_id", "version_id"],
       "properties": {"item_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}}
     },
+    "ObjectSelection": {
+      "type": "object", "additionalProperties": false, "required": ["object_id", "instance_id"],
+      "properties": {"object_id": {"$ref": "#/$defs/Id"}, "instance_id": {"$ref": "#/$defs/Id"}}
+    },
+    "Weight": {
+      "type": "object", "additionalProperties": false, "required": ["numerator", "denominator"],
+      "properties": {"numerator": {"type": "integer", "minimum": 0}, "denominator": {"type": "integer", "minimum": 1}}
+    },
     "Actor": {
       "type": "object", "additionalProperties": false, "required": ["kind", "id"],
       "properties": {"kind": {"enum": ["user", "lead", "subagent", "tool", "worker", "system"]}, "id": {"$ref": "#/$defs/Id"}}
@@ -107,16 +115,23 @@
     "FrameTarget": {
       "type": "object", "additionalProperties": false, "required": ["origin", "artifact_id", "displayed_sha256", "dimensions", "item_id", "version_id", "shot_id", "render_job_id", "source_frame", "media_artifact_id"],
       "properties": {
-        "origin": {"enum": ["concept", "blender_render", "proxy_capture", "reference"]}, "artifact_id": {"$ref": "#/$defs/Id"}, "displayed_sha256": {"$ref": "#/$defs/Sha256"}, "dimensions": {"$ref": "#/$defs/Dimensions"},
+        "origin": {"enum": ["concept", "blender_render", "proxy_capture", "reference", "sequence_render"]}, "artifact_id": {"$ref": "#/$defs/Id"}, "displayed_sha256": {"$ref": "#/$defs/Sha256"}, "dimensions": {"$ref": "#/$defs/Dimensions"},
         "item_id": {"$ref": "#/$defs/NullableId"}, "version_id": {"$ref": "#/$defs/NullableId"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "render_job_id": {"$ref": "#/$defs/NullableId"},
-        "source_frame": {"type": ["integer", "null"], "minimum": 1}, "media_artifact_id": {"$ref": "#/$defs/NullableId"}, "sequence_version_id": {"$ref": "#/$defs/NullableId"}, "sequence_frame": {"type": ["integer", "null"], "minimum": 1}
+        "source_frame": {"type": ["integer", "null"], "minimum": 1}, "media_artifact_id": {"$ref": "#/$defs/NullableId"}, "sequence_version_id": {"$ref": "#/$defs/NullableId"}, "sequence_frame": {"type": ["integer", "null"], "minimum": 1}, "frame_map_artifact_id": {"$ref": "#/$defs/NullableId"}
       },
-      "allOf": [{"if": {"properties": {"origin": {"enum": ["blender_render", "proxy_capture"]}}}, "then": {"properties": {"item_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "source_frame": {"type": "integer", "minimum": 1}}}}]
+      "allOf": [
+        {"if": {"properties": {"origin": {"enum": ["blender_render", "proxy_capture"]}}}, "then": {"properties": {"item_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "source_frame": {"type": "integer", "minimum": 1}}}},
+        {"if": {"properties": {"origin": {"const": "sequence_render"}}}, "then": {"required": ["sequence_version_id", "sequence_frame", "frame_map_artifact_id"], "properties": {"item_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "sequence_frame": {"type": "integer", "minimum": 1}, "frame_map_artifact_id": {"$ref": "#/$defs/Id"}, "source_frame": {"type": "null"}, "shot_id": {"type": "null"}, "render_job_id": {"type": "null"}}}}
+      ]
+    },
+    "MaskEncoding": {
+      "type": "object", "additionalProperties": false, "required": ["channel", "bit_depth", "selected_value", "unselected_value", "semantics"],
+      "properties": {"channel": {"const": "luma"}, "bit_depth": {"const": 8}, "selected_value": {"const": 255}, "unselected_value": {"const": 0}, "semantics": {"enum": ["binary", "soft"]}}
     },
     "Markup": {
       "type": "object", "additionalProperties": false, "required": ["id", "kind", "points"],
-      "properties": {"id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["stroke", "arrow", "region", "pin", "mask"]}, "points": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Point2"}}, "width_px": {"type": "number", "exclusiveMinimum": 0}, "colour": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"}, "text": {"type": "string"}, "mask_artifact_id": {"$ref": "#/$defs/Id"}},
-      "allOf": [{"if": {"properties": {"kind": {"const": "mask"}}}, "then": {"required": ["mask_artifact_id"]}}, {"if": {"properties": {"kind": {"const": "pin"}}}, "then": {"required": ["text"]}}]
+      "properties": {"id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["stroke", "arrow", "region", "pin", "mask"]}, "points": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Point2"}}, "width_px": {"type": "number", "exclusiveMinimum": 0}, "colour": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"}, "text": {"type": "string"}, "mask_artifact_id": {"$ref": "#/$defs/Id"}, "mask_encoding": {"$ref": "#/$defs/MaskEncoding"}},
+      "allOf": [{"if": {"properties": {"kind": {"const": "mask"}}}, "then": {"required": ["mask_artifact_id", "mask_encoding"]}}, {"if": {"properties": {"kind": {"const": "pin"}}}, "then": {"required": ["text"]}}]
     },
     "SpatialHit": {
       "type": "object", "additionalProperties": false, "required": ["proxy_artifact_id", "mapping_artifact_id", "version_id", "sample_frame", "object_id", "instance_id", "space", "position", "normal", "camera"],
@@ -139,12 +154,12 @@
       "properties": {"finding_id": {"$ref": "#/$defs/Id"}, "finding_revision": {"type": "integer", "minimum": 1}, "approved_text": {"type": "string", "minLength": 1}, "target": {"$ref": "#/$defs/FrameTarget"}}
     },
     "ContextSnapshot": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "context_id", "project_id", "captured_at", "item_id", "version_id", "view_mode", "target", "camera", "range", "selected_object_ids", "attachments", "annotations", "approved_findings"],
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "context_id", "project_id", "captured_at", "item_id", "version_id", "view_mode", "target", "camera", "range", "selected_objects", "attachments", "annotations", "approved_findings"],
       "properties": {
         "schema_version": {"const": "1.0"}, "context_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "captured_at": {"$ref": "#/$defs/Timestamp"},
         "item_id": {"$ref": "#/$defs/NullableId"}, "version_id": {"$ref": "#/$defs/NullableId"}, "view_mode": {"enum": ["none", "3d_inspection", "keyframes", "animation"]},
         "target": {"anyOf": [{"$ref": "#/$defs/FrameTarget"}, {"type": "null"}]}, "camera": {"anyOf": [{"$ref": "#/$defs/Camera"}, {"type": "null"}]}, "range": {"anyOf": [{"$ref": "#/$defs/FrameRange"}, {"type": "null"}]},
-        "selected_object_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/Id"}}, "attachments": {"type": "array", "items": {"$ref": "#/$defs/Attachment"}},
+        "selected_objects": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/ObjectSelection"}}, "attachments": {"type": "array", "items": {"$ref": "#/$defs/Attachment"}},
         "annotations": {"type": "array", "items": {"$ref": "#/$defs/AnnotationSnapshot"}}, "approved_findings": {"type": "array", "items": {"$ref": "#/$defs/ApprovedFinding"}}
       }
     },
@@ -165,6 +180,10 @@
     "RequestReceipt": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "request_id", "project_id", "type", "state", "work_id", "native_message_id", "state_revision", "replayed"],
       "properties": {"schema_version": {"const": "1.0"}, "request_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "type": {"enum": ["queue", "steer", "stop"]}, "state": {"$ref": "#/$defs/RequestState"}, "work_id": {"$ref": "#/$defs/NullableId"}, "native_message_id": {"type": ["string", "null"]}, "state_revision": {"$ref": "#/$defs/Revision"}, "replayed": {"type": "boolean"}, "detail_code": {"type": ["string", "null"]}}
+    },
+    "RequestRecord": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "request_id", "project_id", "submission", "receipt", "accepted_at", "effective_profile_id", "generation_task_id"],
+      "properties": {"schema_version": {"const": "1.0"}, "request_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "submission": {"$ref": "#/$defs/MessageSubmit"}, "receipt": {"$ref": "#/$defs/RequestReceipt"}, "accepted_at": {"$ref": "#/$defs/Timestamp"}, "effective_profile_id": {"$ref": "#/$defs/NullableId"}, "generation_task_id": {"$ref": "#/$defs/NullableId"}}
     },
     "ResumeCommand": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "expected_revision", "mode", "work_id"],
@@ -225,29 +244,59 @@
       "properties": {"schema_version": {"const": "1.0"}, "publication_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "versions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/VersionRef"}}, "job_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "event_sequence": {"type": "integer", "minimum": 1}, "replayed": {"type": "boolean"}}
     },
     "FrameReceipt": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "receipt_id", "project_id", "job_id", "version_id", "shot_id", "source_frame", "artifact_id", "output_path", "sha256", "dimensions", "input_digest"],
-      "properties": {"schema_version": {"const": "1.0"}, "receipt_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "source_frame": {"type": "integer", "minimum": 1}, "artifact_id": {"$ref": "#/$defs/Id"}, "output_path": {"$ref": "#/$defs/RelativePath"}, "sha256": {"$ref": "#/$defs/Sha256"}, "dimensions": {"$ref": "#/$defs/Dimensions"}, "input_digest": {"$ref": "#/$defs/Sha256"}}
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "receipt_id", "project_id", "job_id", "attempt_id", "version_id", "shot_id", "source_frame", "artifact_id", "output_path", "sha256", "dimensions", "input_digest"],
+      "properties": {"schema_version": {"const": "1.0"}, "receipt_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "attempt_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "source_frame": {"type": "integer", "minimum": 1}, "artifact_id": {"$ref": "#/$defs/Id"}, "output_path": {"$ref": "#/$defs/RelativePath"}, "sha256": {"$ref": "#/$defs/Sha256"}, "dimensions": {"$ref": "#/$defs/Dimensions"}, "input_digest": {"$ref": "#/$defs/Sha256"}}
     },
     "PreviewSegment": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "segment_id", "project_id", "job_id", "shot_id", "version_id", "source_frames", "fps", "frame_count", "artifact_id", "output_path", "sha256", "input_digest"],
-      "properties": {"schema_version": {"const": "1.0"}, "segment_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "version_id": {"$ref": "#/$defs/Id"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "artifact_id": {"$ref": "#/$defs/Id"}, "output_path": {"$ref": "#/$defs/RelativePath"}, "sha256": {"$ref": "#/$defs/Sha256"}, "input_digest": {"$ref": "#/$defs/Sha256"}}
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "segment_id", "project_id", "job_id", "attempt_id", "shot_id", "version_id", "source_frames", "fps", "frame_count", "artifact_id", "output_path", "sha256", "input_digest"],
+      "properties": {"schema_version": {"const": "1.0"}, "segment_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "attempt_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "version_id": {"$ref": "#/$defs/Id"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "artifact_id": {"$ref": "#/$defs/Id"}, "output_path": {"$ref": "#/$defs/RelativePath"}, "sha256": {"$ref": "#/$defs/Sha256"}, "input_digest": {"$ref": "#/$defs/Sha256"}}
     },
     "JobRecord": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "job_id", "project_id", "work_id", "kind", "state", "state_revision", "availability", "input_digest", "external_job_id", "provider_id", "owner_epoch", "completed_frames", "expected_frames", "artifact_ids", "render_spec"],
-      "properties": {"schema_version": {"const": "1.0"}, "job_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "work_id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["render", "encode", "image_generation", "mesh_generation", "unity", "vlm_review"]}, "state": {"enum": ["planned", "waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "state_revision": {"$ref": "#/$defs/Revision"}, "availability": {"enum": ["pending", "partial", "complete"]}, "input_digest": {"$ref": "#/$defs/Sha256"}, "external_job_id": {"type": ["string", "null"]}, "provider_id": {"$ref": "#/$defs/NullableId"}, "owner_epoch": {"$ref": "#/$defs/Id"}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "expected_frames": {"type": ["integer", "null"], "minimum": 1}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "render_spec": {"anyOf": [{"$ref": "#/$defs/RenderSpec"}, {"type": "null"}]}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}}
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "job_id", "project_id", "work_id", "owner_operation_id", "target", "attempt_id", "attempt_number", "kind", "state", "state_revision", "availability", "input_digest", "external_job_id", "provider_id", "owner_epoch", "completed_frames", "expected_frames", "artifact_ids", "render_spec"],
+      "properties": {"schema_version": {"const": "1.0"}, "job_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "work_id": {"$ref": "#/$defs/NullableId"}, "owner_operation_id": {"$ref": "#/$defs/NullableId"}, "target": {"$ref": "#/$defs/JobTarget"}, "attempt_id": {"$ref": "#/$defs/Id"}, "attempt_number": {"type": "integer", "minimum": 1}, "kind": {"enum": ["render", "encode", "image_generation", "mesh_generation", "unity", "vlm_review"]}, "state": {"enum": ["planned", "waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "state_revision": {"$ref": "#/$defs/Revision"}, "availability": {"enum": ["pending", "partial", "complete"]}, "input_digest": {"$ref": "#/$defs/Sha256"}, "external_job_id": {"type": ["string", "null"]}, "provider_id": {"$ref": "#/$defs/NullableId"}, "owner_epoch": {"$ref": "#/$defs/Id"}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "expected_frames": {"type": ["integer", "null"], "minimum": 1}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "render_spec": {"anyOf": [{"$ref": "#/$defs/RenderSpec"}, {"type": "null"}]}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}},
+      "allOf": [{"if": {"properties": {"work_id": {"type": "null"}}}, "then": {"properties": {"owner_operation_id": {"$ref": "#/$defs/Id"}}}}]
+    },
+    "JobTarget": {
+      "type": "object", "additionalProperties": false, "required": ["target_id", "version", "shot_id"],
+      "properties": {"target_id": {"$ref": "#/$defs/Id"}, "version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "shot_id": {"$ref": "#/$defs/NullableId"}}
+    },
+    "JobAdmission": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "job_id", "kind", "target", "input_digest", "input_artifact_ids", "execution_profile_id"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["unity", "encode"]}, "target": {"$ref": "#/$defs/JobTarget"}, "input_digest": {"$ref": "#/$defs/Sha256"}, "input_artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "execution_profile_id": {"$ref": "#/$defs/Id"}}
+    },
+    "JobAttempt": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "job_id", "attempt_id", "attempt_number", "owner_epoch", "input_digest", "trigger_operation_id", "state", "external_job_id", "native_exit_code"],
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "attempt_id": {"$ref": "#/$defs/Id"}, "attempt_number": {"type": "integer", "minimum": 1}, "owner_epoch": {"$ref": "#/$defs/Id"}, "input_digest": {"$ref": "#/$defs/Sha256"}, "trigger_operation_id": {"$ref": "#/$defs/Id"}, "state": {"enum": ["planned", "waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "external_job_id": {"type": ["string", "null"]}, "native_exit_code": {"type": ["integer", "null"]}}
+    },
+    "JobRetry": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "job_id", "expected_revision"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}}
     },
     "JobStateUpdate": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "job_id", "expected_revision", "state", "availability"],
-      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "state": {"enum": ["waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "availability": {"enum": ["pending", "partial", "complete"]}, "external_job_id": {"type": ["string", "null"]}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}}
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "job_id", "attempt_id", "expected_revision", "state", "availability"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "attempt_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "state": {"enum": ["waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "availability": {"enum": ["pending", "partial", "complete"]}, "external_job_id": {"type": ["string", "null"]}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}}
+    },
+    "SelectionSlot": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "item_id"], "properties": {"kind": {"const": "item"}, "item_id": {"$ref": "#/$defs/Id"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "storyboard_version", "shot_id", "frame_id"], "properties": {"kind": {"const": "storyboard_frame"}, "storyboard_version": {"$ref": "#/$defs/VersionRef"}, "shot_id": {"$ref": "#/$defs/Id"}, "frame_id": {"$ref": "#/$defs/Id"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "sequence_version", "entry_id"], "properties": {"kind": {"const": "assembly_shot"}, "sequence_version": {"$ref": "#/$defs/VersionRef"}, "entry_id": {"$ref": "#/$defs/Id"}}}
+      ]
+    },
+    "SelectionChoice": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "version"], "properties": {"kind": {"const": "version"}, "version": {"$ref": "#/$defs/VersionRef"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "artifact_id"], "properties": {"kind": {"const": "artifact"}, "artifact_id": {"$ref": "#/$defs/Id"}}}
+      ]
     },
     "SelectionSave": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "selection_id", "expected_revision", "slot_id", "version", "action"],
-      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "selection_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "slot_id": {"$ref": "#/$defs/Id"}, "version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "action": {"enum": ["select", "withdraw"]}},
-      "allOf": [{"if": {"properties": {"action": {"const": "select"}}}, "then": {"properties": {"version": {"$ref": "#/$defs/VersionRef"}}}}, {"if": {"properties": {"action": {"const": "withdraw"}}}, "then": {"properties": {"version": {"type": "null"}}}}]
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "selection_id", "expected_revision", "slot", "choice", "action"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "selection_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "slot": {"$ref": "#/$defs/SelectionSlot"}, "choice": {"anyOf": [{"$ref": "#/$defs/SelectionChoice"}, {"type": "null"}]}, "action": {"enum": ["select", "withdraw"]}},
+      "allOf": [{"if": {"properties": {"action": {"const": "select"}}}, "then": {"properties": {"choice": {"$ref": "#/$defs/SelectionChoice"}}}}, {"if": {"properties": {"action": {"const": "withdraw"}}}, "then": {"properties": {"choice": {"type": "null"}}}}]
     },
     "SelectionRecord": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "selection_id", "project_id", "slot_id", "version", "state", "state_revision", "actor"],
-      "properties": {"schema_version": {"const": "1.0"}, "selection_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "slot_id": {"$ref": "#/$defs/Id"}, "version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "state": {"enum": ["selected", "withdrawn"]}, "state_revision": {"type": "integer", "minimum": 1}, "actor": {"$ref": "#/$defs/Actor"}}
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "selection_id", "project_id", "slot", "choice", "state", "state_revision", "actor"],
+      "properties": {"schema_version": {"const": "1.0"}, "selection_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "slot": {"$ref": "#/$defs/SelectionSlot"}, "choice": {"anyOf": [{"$ref": "#/$defs/SelectionChoice"}, {"type": "null"}]}, "state": {"enum": ["selected", "withdrawn"]}, "state_revision": {"type": "integer", "minimum": 1}, "actor": {"$ref": "#/$defs/Actor"}}
     },
     "Decision": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "decision_id", "project_id", "work_id", "kind", "state", "state_revision", "fingerprint", "prompt", "options"],
@@ -263,8 +312,8 @@
       "properties": {"schema_version": {"const": "1.0"}, "review_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "targets": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/FrameTarget"}}, "criteria": {"type": "string", "minLength": 1}, "telemetry_artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}}
     },
     "ReviewTicket": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "review_id", "status"],
-      "properties": {"schema_version": {"const": "1.0"}, "review_id": {"$ref": "#/$defs/Id"}, "status": {"enum": ["pending", "running", "ready", "failed"]}}
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "review_id", "job_id", "status"],
+      "properties": {"schema_version": {"const": "1.0"}, "review_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "status": {"enum": ["pending", "running", "ready", "failed"]}}
     },
     "ReviewFinding": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "finding_id", "review_id", "project_id", "revision", "target", "observation", "recommendation", "evidence", "state"],
@@ -307,18 +356,34 @@
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "paths", "message", "expected_head"],
       "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "paths": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/RelativePath"}}, "message": {"type": "string", "minLength": 1}, "expected_head": {"anyOf": [{"$ref": "#/$defs/Commit"}, {"type": "null"}]}}
     },
+    "CheckpointReceipt": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "state", "source_commit", "parent_commit", "files", "replayed"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "state": {"enum": ["completed", "outcome_uncertain"]}, "source_commit": {"anyOf": [{"$ref": "#/$defs/Commit"}, {"type": "null"}]}, "parent_commit": {"anyOf": [{"$ref": "#/$defs/Commit"}, {"type": "null"}]}, "files": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"$ref": "#/$defs/RelativePath"}, "sha256": {"$ref": "#/$defs/Sha256"}}}}, "replayed": {"type": "boolean"}},
+      "allOf": [{"if": {"properties": {"state": {"const": "completed"}}}, "then": {"properties": {"source_commit": {"$ref": "#/$defs/Commit"}}}}, {"if": {"properties": {"state": {"const": "outcome_uncertain"}}}, "then": {"properties": {"source_commit": {"type": "null"}}}}]
+    },
+    "FrameContributor": {
+      "type": "object", "additionalProperties": false, "required": ["shot_id", "version_id", "job_id", "source_frame", "weight"],
+      "properties": {"shot_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "source_frame": {"type": "integer", "minimum": 1}, "weight": {"$ref": "#/$defs/Weight"}}
+    },
+    "FrameMap": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "sequence_version_id", "fps", "frame_count", "blend_space", "frames"],
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "blend_space": {"const": "linear_rgb"}, "frames": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["sequence_frame", "contributors"], "properties": {"sequence_frame": {"type": "integer", "minimum": 1}, "contributors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/FrameContributor"}}}}}}
+    },
     "SequenceContributor": {
       "type": "object", "additionalProperties": false, "required": ["shot_id", "version_id", "source_frames"],
       "properties": {"shot_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/NullableId"}, "source_frames": {"$ref": "#/$defs/FrameRange"}}
     },
     "SequenceEntry": {
-      "type": "object", "additionalProperties": false, "required": ["shot_id", "version_id", "job_id", "source_frames", "sequence_frames", "transform", "mapping_artifact_id"],
+      "type": "object", "additionalProperties": false, "required": ["entry_id", "shot_id", "version_id", "job_id", "source_frames", "sequence_frames", "transform", "mapping_artifact_id"],
       "properties": {
-        "shot_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "sequence_frames": {"$ref": "#/$defs/FrameRange"},
+        "entry_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "sequence_frames": {"$ref": "#/$defs/FrameRange"},
         "transform": {"enum": ["identity", "trim", "retime", "transition"]}, "mapping_artifact_id": {"$ref": "#/$defs/NullableId"}, "choice": {"enum": ["agent", "owner"]},
         "contributors": {"type": "array", "items": {"$ref": "#/$defs/SequenceContributor"}}
       },
-      "allOf": [{"if": {"properties": {"transform": {"const": "transition"}}, "required": ["transform"]}, "then": {"required": ["contributors"], "properties": {"contributors": {"minItems": 2}}}}]
+      "allOf": [
+        {"if": {"properties": {"transform": {"const": "transition"}}, "required": ["transform"]}, "then": {"required": ["contributors"], "properties": {"contributors": {"minItems": 2}}}},
+        {"if": {"properties": {"transform": {"enum": ["retime", "transition"]}}}, "then": {"properties": {"mapping_artifact_id": {"$ref": "#/$defs/Id"}}}}
+      ]
     },
     "SequenceMap": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "sequence_version_id", "project_id", "fps", "frame_count", "entries", "silent"],
@@ -329,11 +394,12 @@
     },
     "ItemRecord": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "item_id", "kind", "name", "current_version_id", "selected_version_id", "state_revision"],
-      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "item_id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["asset", "scene", "storyboard", "sequence", "unity_result"]}, "name": {"type": "string"}, "current_version_id": {"$ref": "#/$defs/NullableId"}, "selected_version_id": {"$ref": "#/$defs/NullableId"}, "state_revision": {"$ref": "#/$defs/Revision"}}
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "item_id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["asset", "scene", "storyboard", "sequence", "unity_result"]}, "name": {"type": "string"}, "current_version_id": {"$ref": "#/$defs/NullableId"}, "selected_version_id": {"$ref": "#/$defs/NullableId"}, "state_revision": {"$ref": "#/$defs/Revision"}, "description": {"type": "string"}, "tags": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}, "provenance": {"$ref": "#/$defs/Provenance"}}
     },
     "VersionRecord": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "item_id", "version_id", "publication_id", "source_commit", "source", "artifact_ids", "preview_job_ids", "created_at", "actor"],
-      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "item_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "publication_id": {"$ref": "#/$defs/Id"}, "source_commit": {"$ref": "#/$defs/Commit"}, "source": {"$ref": "#/$defs/SourceClosure"}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "preview_job_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "created_at": {"$ref": "#/$defs/Timestamp"}, "actor": {"$ref": "#/$defs/Actor"}}
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "item_id", "version_id", "kind", "name", "publication_id", "source_commit", "source", "artifact_ids", "preview_requests", "preview_job_ids", "created_at", "actor"],
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "item_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["asset", "scene", "storyboard", "sequence", "unity_result"]}, "name": {"type": "string", "minLength": 1}, "description": {"type": "string"}, "tags": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}, "provenance": {"$ref": "#/$defs/Provenance"}, "unity": {"$ref": "#/$defs/UnityResult"}, "derived_from": {"type": "array", "items": {"$ref": "#/$defs/VersionRef"}}, "publication_id": {"$ref": "#/$defs/Id"}, "source_commit": {"$ref": "#/$defs/Commit"}, "source": {"$ref": "#/$defs/SourceClosure"}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "preview_requests": {"type": "array", "items": {"$ref": "#/$defs/RenderSpec"}}, "preview_job_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "created_at": {"$ref": "#/$defs/Timestamp"}, "actor": {"$ref": "#/$defs/Actor"}},
+      "allOf": [{"if": {"properties": {"kind": {"const": "unity_result"}}}, "then": {"required": ["unity"]}}]
     },
     "WorkRecord": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "work_id", "project_id", "originating_request_id", "directive_request_ids", "state", "state_revision", "native_session_id", "job_ids", "generation_task_id"],
@@ -341,7 +407,7 @@
     },
     "ProjectSnapshot": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project", "settings", "event_sequence", "active_work", "held_requests", "items", "jobs", "pending_decisions"],
-      "properties": {"schema_version": {"const": "1.0"}, "project": {"$ref": "#/$defs/ProjectRecord"}, "settings": {"$ref": "#/$defs/ProjectSettingsRecord"}, "event_sequence": {"type": "integer", "minimum": 0}, "active_work": {"anyOf": [{"$ref": "#/$defs/WorkRecord"}, {"type": "null"}]}, "held_requests": {"type": "array", "items": {"$ref": "#/$defs/RequestReceipt"}}, "items": {"type": "array", "items": {"$ref": "#/$defs/ItemRecord"}}, "jobs": {"type": "array", "items": {"$ref": "#/$defs/JobRecord"}}, "pending_decisions": {"type": "array", "items": {"$ref": "#/$defs/Decision"}}, "reviews": {"type": "array", "items": {"$ref": "#/$defs/ReviewTicket"}}}
+      "properties": {"schema_version": {"const": "1.0"}, "project": {"$ref": "#/$defs/ProjectRecord"}, "settings": {"$ref": "#/$defs/ProjectSettingsRecord"}, "event_sequence": {"type": "integer", "minimum": 0}, "active_work": {"anyOf": [{"$ref": "#/$defs/WorkRecord"}, {"type": "null"}]}, "held_requests": {"type": "array", "items": {"$ref": "#/$defs/RequestRecord"}}, "items": {"type": "array", "items": {"$ref": "#/$defs/ItemRecord"}}, "jobs": {"type": "array", "items": {"$ref": "#/$defs/JobRecord"}}, "pending_decisions": {"type": "array", "items": {"$ref": "#/$defs/Decision"}}, "reviews": {"type": "array", "items": {"$ref": "#/$defs/ReviewTicket"}}}
     },
     "ProxyMapping": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "version_id", "proxy_artifact_id", "source_closure_digest", "sample_frame", "space", "nodes"],
@@ -400,7 +466,7 @@
       "allOf": [
         {"if": {"properties": {"event_type": {"const": "project.state_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ProjectRecord"}}}},
         {"if": {"properties": {"event_type": {"const": "work.state_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/WorkRecord"}}}},
-        {"if": {"properties": {"event_type": {"enum": ["request.accepted", "request.state_changed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/RequestReceipt"}}}},
+        {"if": {"properties": {"event_type": {"enum": ["request.accepted", "request.state_changed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/RequestRecord"}}}},
         {"if": {"properties": {"event_type": {"enum": ["assistant.delta", "assistant.completed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ConversationEventData"}}}},
         {"if": {"properties": {"event_type": {"enum": ["tool.started", "tool.completed", "subagent.started", "subagent.completed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ActivityEventData"}}}},
         {"if": {"properties": {"event_type": {"const": "publication.created"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/PublicationReceipt"}}}},
@@ -424,7 +490,8 @@
     "ProjectPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/ProjectRecord"}}}}]},
     "ItemPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/ItemRecord"}}}}]},
     "VersionPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/VersionRecord"}}}}]},
-    "RequestPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/RequestReceipt"}}}}]},
+    "RequestPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/RequestRecord"}}}}]},
+    "JobAttemptPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/JobAttempt"}}}}]},
     "JobPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/JobRecord"}}}}]},
     "FramePage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/FrameReceipt"}}}}]},
     "SegmentPage": {"allOf": [{"$ref": "#/$defs/RecordPage"}, {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/PreviewSegment"}}}}]},

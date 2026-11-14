@@ -37,6 +37,34 @@
       {"world": [1, 0, 2], "pixel": [822, 486], "normalised": [0.428125, 0.45]}
     ]
   },
+  "rotated_perspective": {
+    "dimensions": [1200, 900], "vertical_fov_degrees": 90, "near_m": 0.1, "far_m": 100,
+    "camera_to_world": [0, -1, 0, 2, 1, 0, 0, 3, 0, 0, 1, 14, 0, 0, 0, 1],
+    "projection": [0.75, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1.002002002002002, -0.20020020020020018, 0, 0, -1, 0],
+    "landmarks": [
+      {"world": [2, 3, 4], "pixel": [600, 450], "normalised": [0.5, 0.5]},
+      {"world": [2, 5, 4], "pixel": [690, 450], "normalised": [0.575, 0.5]},
+      {"world": [0, 3, 4], "pixel": [600, 360], "normalised": [0.5, 0.4]}
+    ]
+  },
+  "transform_cases": [
+    {
+      "id": "rotated_nonuniform_instance",
+      "matrix": [0, -3, 0, 1, 2, 0, 0, 2, 0, 0, 0.5, 3, 0, 0, 0, 1],
+      "point": [1, 2, 4], "world_point": [-5, 4, 5], "proxy_point": [-5, 5, -4], "unity_point": [-5, 5, 4],
+      "normal": [1, 1, 0], "world_normal": [-0.5547001962252291, 0.8320502943378437, 0],
+      "triangle": [[0, 0, 0], [0, 0, 1], [1, -1, 0]],
+      "determinant": 3, "reverse_winding": false, "unity_reverse_winding": true
+    },
+    {
+      "id": "reflected_nonuniform_instance",
+      "matrix": [-2, 0, 0, 1, 0, 3, 0, 2, 0, 0, 0.5, 3, 0, 0, 0, 1],
+      "point": [1, 2, 4], "world_point": [-1, 8, 5], "proxy_point": [-1, 5, -8], "unity_point": [-1, 5, 8],
+      "normal": [0, 0, 1], "world_normal": [0, 0, 1],
+      "triangle": [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+      "determinant": -3, "reverse_winding": true, "unity_reverse_winding": false
+    }
+  ],
   "image_mapping": [
     {"id": "letterbox_centre", "content_rect_css": [100, 50, 960, 540], "pointer_css": [580, 320], "dpr": 1, "normalised": [0.5, 0.5]},
     {"id": "letterbox_dpr2", "content_rect_css": [100, 50, 960, 540], "pointer_css": [580, 320], "dpr": 2, "normalised": [0.5, 0.5]},

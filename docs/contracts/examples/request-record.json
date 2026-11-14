@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0", "request_id": "req-create-scene", "project_id": "fixture-project",
+  "submission": {
+    "schema_version": "1.0", "request_id": "req-create-scene", "project_id": "fixture-project", "type": "queue",
+    "text": "Create a small scene with a floor and two distinguishable cubes, then publish a keyframe.",
+    "context_id": "ctx-project-only", "generation_attempt_limit": 3, "profile_id": "configured-frontier"
+  },
+  "receipt": {
+    "schema_version": "1.0", "request_id": "req-create-scene", "project_id": "fixture-project", "type": "queue",
+    "state": "held", "work_id": null, "native_message_id": null, "state_revision": 1, "replayed": false
+  },
+  "accepted_at": "2026-11-14T12:00:01+02:00", "effective_profile_id": "configured-frontier", "generation_task_id": "gen-task-1"
+}

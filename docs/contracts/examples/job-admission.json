@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0", "operation_id": "admit-unity-1", "project_id": "fixture-project", "job_id": "job-unity-1", "kind": "unity",
+  "target": {"target_id": "unity-fixture", "version": {"item_id": "scene-fixture", "version_id": "scene-fixture-v1"}, "shot_id": null},
+  "input_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "input_artifact_ids": ["export-fixture-fbx"], "execution_profile_id": "unity-fixture-profile"
+}

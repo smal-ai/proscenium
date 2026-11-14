@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Normative backend ownership. Each HTTP operation has exactly one implementing package; F00 owns composition, bindings and migrations.",
+  "groups": [
+    {"owner": "F00", "path": "apps/backend/src/proscenium/auth/", "operations": ["pairOwnerSession"], "cases": ["C13", "C14"]},
+    {"owner": "F00", "path": "apps/backend/src/proscenium/configuration/", "operations": ["getConfigurationView"], "cases": ["C17", "C29"]},
+    {"owner": "F00", "path": "apps/backend/src/proscenium/jobs/", "operations": ["listJobs", "getJob", "listJobAttempts", "requestJobCancellation", "admitToolJob", "retryToolJob", "updateJobState"], "cases": ["C03", "C09", "C25", "C27"]},
+    {"owner": "W01", "path": "apps/backend/src/proscenium/copilot/", "operations": ["captureContext", "getContext", "listRequests", "submitRequest", "getRequest", "cancelHeldRequest", "resumeProjectWork", "answerOwnerDecision", "replayProjectEvents", "connectProjectEvents"], "cases": ["C01", "C02", "C04", "C13", "C21", "C26", "C29"]},
+    {"owner": "W02", "path": "apps/backend/src/proscenium/projects/", "operations": ["listProjects", "openProject", "activateProject", "rebindProjectLocation", "getProjectSnapshot", "updateProjectSettings"], "cases": ["C14", "C15", "C20"]},
+    {"owner": "W02", "path": "apps/backend/src/proscenium/catalogue/", "operations": ["listItems", "listItemVersions", "getVersionShotPlan", "getVersionSequenceMap", "getVersionProxyMapping", "uploadImage", "getArtifact", "getArtifactContent", "headArtifactContent", "registerToolArtifact", "publishOutputs"], "cases": ["C06", "C07", "C08", "C22", "C30", "C31"]},
+    {"owner": "W03", "path": "apps/backend/src/proscenium/previews/", "operations": ["getFrameAvailability", "listFrameReceipts", "listPreviewSegments", "requestPreview", "registerFrameReceipt", "registerPreviewSegment"], "cases": ["C09", "C10", "C11", "C16", "C24", "C25"]},
+    {"owner": "W05", "path": "apps/backend/src/proscenium/reviews/", "operations": ["listAnnotations", "saveAnnotation", "listSelections", "saveSelection", "listOwnerReviews", "listOwnerReviewFindings", "rejectReviewFinding"], "cases": ["C11", "C18", "C23", "C24", "C30", "C31"]},
+    {"owner": "W07", "path": "apps/backend/src/proscenium/providers/", "operations": ["requestOwnerReview", "submitGenerationJob", "requestToolReview", "completeToolReview"], "cases": ["C03", "C12", "C17", "C18", "C27"]}
+  ],
+  "tools": [
+    {"name": "checkpoint_sources", "owner": "W02", "path": "tools/source/", "request": "CheckpointRequest", "response": "CheckpointReceipt", "cases": ["C28"]}
+  ]
+}

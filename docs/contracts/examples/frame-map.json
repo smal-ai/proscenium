@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0", "project_id": "fixture-project", "sequence_version_id": "sequence-fixture-v1",
+  "fps": {"numerator": 24, "denominator": 1}, "frame_count": 12, "blend_space": "linear_rgb",
+  "frames": [
+    {"sequence_frame": 1, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 1, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 2, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 2, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 3, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 3, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 4, "contributors": [{"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 4, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 5, "contributors": [
+      {"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 5, "weight": {"numerator": 1, "denominator": 1}},
+      {"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 1, "weight": {"numerator": 0, "denominator": 1}}
+    ]},
+    {"sequence_frame": 6, "contributors": [
+      {"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 6, "weight": {"numerator": 2, "denominator": 3}},
+      {"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 2, "weight": {"numerator": 1, "denominator": 3}}
+    ]},
+    {"sequence_frame": 7, "contributors": [
+      {"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 7, "weight": {"numerator": 1, "denominator": 3}},
+      {"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 3, "weight": {"numerator": 2, "denominator": 3}}
+    ]},
+    {"sequence_frame": 8, "contributors": [
+      {"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frame": 8, "weight": {"numerator": 0, "denominator": 1}},
+      {"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 4, "weight": {"numerator": 1, "denominator": 1}}
+    ]},
+    {"sequence_frame": 9, "contributors": [{"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 5, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 10, "contributors": [{"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 6, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 11, "contributors": [{"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 7, "weight": {"numerator": 1, "denominator": 1}}]},
+    {"sequence_frame": 12, "contributors": [{"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frame": 8, "weight": {"numerator": 1, "denominator": 1}}]}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0", "project_id": "fixture-project", "job_id": "job-review-frame-2",
+  "work_id": null, "owner_operation_id": "review-frame-2",
+  "target": {"target_id": "review-frame-2", "version": null, "shot_id": null},
+  "attempt_id": "attempt-review-1", "attempt_number": 1, "kind": "vlm_review", "state": "planned", "state_revision": 0,
+  "availability": "pending", "input_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "external_job_id": null, "provider_id": "vlm-fixture", "owner_epoch": "owner-fixture",
+  "completed_frames": null, "expected_frames": null, "artifact_ids": [], "render_spec": null,
+  "native_exit_code": null, "error_code": null
+}

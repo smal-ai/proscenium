@@ -8,6 +8,8 @@
 | [openapi.yaml](openapi.yaml) | OpenAPI 3.1 HTTP operations and shared wire definitions. |
 | [HTTP protocol](http-api.md) | Authentication channels, idempotency, pagination, status codes and semantic checks. |
 | [Event protocol](events.md) | Durable public events, native-event mapping and reconnect handshake. |
+| [State transitions](state-transitions.json) | Normative work/job-attempt edges with the guards in execution.md. |
+| [Operation ownership](operation-owners.json) | One backend owner/path for every HTTP operation and the shared checkpoint tool. |
 | [Examples](examples/index.json) | Schema-valid and deliberately invalid synthetic payloads. |
 | [Execution](../execution.md) | Normative request/work/job transitions and recovery. |
 | [Publication](../source-publication.md) | Source materialisation, expected-head comparison and atomic publication. |
@@ -47,5 +49,7 @@ The API/tool owner checks, at minimum:
 8. Publication heads, save revisions and decision fingerprints match before mutation.
 9. Generation limits are reserved against the original human task/target.
 10. State transitions and idempotent retries follow the execution/publication protocols.
+
+The [semantic fixture pack](../acceptance/semantic-cases.json) supplies executable document-level positive/negative oracles for request and metadata round trips, instance selections, sequence coverage/weighted frame maps, typed owner slots and job authority. Its schema-valid negative cases must fail the named semantic invariant. `docs/validate_spec.py` also checks endpoint ownership, transition edges and mask/coordinate vectors. These checks do not establish native media existence, live cancellation, provider inference or application completion.
 
 Errors use the shared `Error` envelope. A structural schema pass does not replace these checks or imply artistic approval.

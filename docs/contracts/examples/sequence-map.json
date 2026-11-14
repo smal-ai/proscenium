@@ -3,32 +3,39 @@
   "sequence_version_id": "sequence-fixture-v1",
   "project_id": "fixture-project",
   "fps": {"numerator": 24, "denominator": 1},
-  "frame_count": 36,
+  "frame_count": 12,
   "silent": true,
   "entries": [
     {
+      "entry_id": "entry-a",
       "shot_id": "shot-a",
       "version_id": "shot-a-v1",
       "job_id": "job-a",
-      "source_frames": {"start": 1, "end": 24},
-      "sequence_frames": {"start": 1, "end": 24},
+      "source_frames": {"start": 1, "end": 4},
+      "sequence_frames": {"start": 1, "end": 4},
       "transform": "identity",
       "mapping_artifact_id": null,
       "choice": "agent"
     },
     {
+      "entry_id": "entry-dissolve",
       "shot_id": "shot-a",
       "version_id": "shot-a-v1",
       "job_id": "job-a",
-      "source_frames": {"start": 21, "end": 24},
-      "sequence_frames": {"start": 21, "end": 28},
+      "source_frames": {"start": 5, "end": 8},
+      "sequence_frames": {"start": 5, "end": 8},
       "transform": "transition",
-      "mapping_artifact_id": null,
+      "mapping_artifact_id": "map-sequence-fixture",
       "choice": "agent",
       "contributors": [
-        {"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frames": {"start": 21, "end": 24}},
-        {"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frames": {"start": 1, "end": 8}}
+        {"shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a", "source_frames": {"start": 5, "end": 8}},
+        {"shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b", "source_frames": {"start": 1, "end": 4}}
       ]
+    },
+    {
+      "entry_id": "entry-b", "shot_id": "shot-b", "version_id": "shot-b-v1", "job_id": "job-b",
+      "source_frames": {"start": 5, "end": 8}, "sequence_frames": {"start": 9, "end": 12},
+      "transform": "trim", "mapping_artifact_id": null, "choice": "agent"
     }
   ]
 }

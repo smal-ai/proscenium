@@ -37,6 +37,57 @@
       ]
     },
     {
+      "id": "F06-C",
+      "scenarios": ["C04", "C26"],
+      "steps": [
+        {"given": "accepted_steer_deferred_to_native_queue", "work_id": "work-create-scene", "native_message_id": "native-steer-deferred"},
+        {"input": "owner_stop", "request_fixture": "../contracts/examples/stop.json"},
+        {"observe": "native_abort_acknowledged_with_deferred_message_remaining"},
+        {"expect": "stop_not_confirmed_and_delivery_fenced"},
+        {"observe": "owned_deferred_message_cancelled_by_verified_runtime_facility"},
+        {"expect": "stop_confirmed_after_quiescence", "post_barrier_native_sends": 0, "held_queue_released": false}
+      ]
+    },
+    {
+      "id": "F06-D",
+      "scenarios": ["C25"],
+      "steps": [
+        {"given": "render_attempt_running", "job_id": "job-draft-1", "attempt_id": "attempt-draft-1"},
+        {"input": "cancel_owned_job"},
+        {"observe": "verified_success_before_cancellation_takes_effect"},
+        {"expect": "job_succeeded_not_failed", "source_frames_retained": true},
+        {"given": "different_job_with_verified_failed_attempt"},
+        {"input": "retry_local_job_under_open_gate"},
+        {"expect": "new_attempt_same_job_and_inputs", "previous_attempt_terminal": true},
+        {"observe": "late_old_attempt_state_update"},
+        {"expect": "reject_stale_attempt_without_mutating_current_attempt"}
+      ]
+    },
+    {
+      "id": "F06-E",
+      "scenarios": ["C28"],
+      "steps": [
+        {"input": "checkpoint_sources", "fixture": "../contracts/examples/checkpoint-request.json"},
+        {"observe": "git_branch_and_checkpoint_ref_committed_atomically"},
+        {"fault": "lose_checkpoint_receipt_before_sqlite_ack"},
+        {"given": "head_later_advanced_with_unrelated_staging_preserved"},
+        {"input": "retry_original_checkpoint_operation"},
+        {"expect": "recover_original_commit", "response_fixture": "../contracts/examples/checkpoint-receipt.json", "new_commits": 0}
+      ]
+    },
+    {
+      "id": "F07-B",
+      "scenarios": ["C18", "C27"],
+      "steps": [
+        {"given": "active_project_without_copilot_work"},
+        {"input": "owner_review_request", "review_id": "review-frame-2"},
+        {"expect": "owner_review_job_admitted", "job_fixture": "../contracts/examples/owner-review-job.json"},
+        {"expect": "ticket_links_job", "ticket_fixture": "../contracts/examples/review-ticket.json", "native_sends": 0},
+        {"input": "retry_owner_review_request", "review_id": "review-frame-2"},
+        {"expect": "same_job_and_one_provider_submission"}
+      ]
+    },
+    {
       "id": "F07-A",
       "scenarios": ["C03", "C12", "C17"],
       "steps": [

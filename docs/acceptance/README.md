@@ -1,6 +1,6 @@
 # Acceptance pack
 
-**Specification:** 3.1.0. **Contract:** 1.0.0, amended before implementation. This pack defines fixtures and expected outcomes. It does not claim that application tests have run or passed.
+**Specification:** 3.2.0. **Contract:** 1.0.0, amended before implementation. This pack defines fixtures and expected outcomes. It does not claim that application tests have run or passed.
 
 ## Fixture families
 
@@ -15,6 +15,7 @@ F00 implements deterministic generators/readers for these definitions in disposa
 | F05 | Minimal Unity floor/wall/spawn and controller imported from F01-derived assets | Actual Play mode movement/look, floor/wall contact, safe spawn and unchanged GUIDs on repeat import. |
 | F06 | [Normalised adapter traces](adapter-traces.json): early events, lost ACK, steering, Stop and late children | [Scenario catalogue](scenarios.json). No model calls or real service changes; E01 adds actual vendor captures. |
 | F07 | Fake ComfyUI/VLM providers with mutable status/history and controlled acceptance faults | [Provider trace](adapter-traces.json), prompt/job reconciliation, budget reservations, owner-only findings and endpoint consistency. |
+| F08 | [Semantic cases](semantic-cases.json), typed frame maps and mask vectors | Document-level request/metadata round trips, complete sequence coverage, retime/dissolve contributors, instance selection and mask conventions. Native/render/browser checks remain implementation work. |
 
 Native generation of F01/F05 belongs to implementation proofs. Do not create a text file with a `.blend` suffix and call it a native fixture. Metadata examples under [contracts/examples](../contracts/examples/index.json) are explicitly synthetic schema cases.
 
@@ -45,6 +46,8 @@ For H.264, verify actual decode and boundary behaviour in the installed build. A
 
 The evidence manifest records case ID, application commit, contract revision, fixture revision, runtime/model/browser identities, command, result, artefact hashes and limits. `planned`, `synthetic_verified`, `live_pass`, `failed`, `blocked` and `owner_selected` are not interchangeable. Creative selection is always a separate owner fact.
 
+C21–C31 close the final specification-review regressions. In addition to the earlier fault traces, F00 must implement held-message reload, metadata round trips, instance-only selection, composite annotation, cancellation/attempt races, native deferred-Steer fencing, idle owner review admission, checkpoint acknowledgement recovery, both cross-session controls, typed owner slots and real PNG mask conversion.
+
 ## Documentation validation
 
 Run the repository's documentation validator using a Python environment which already provides `jsonschema` and `PyYAML`:
@@ -53,7 +56,7 @@ Run the repository's documentation validator using a Python environment which al
 python3 -B docs/validate_spec.py
 ```
 
-If those modules are unavailable, use an existing suitable environment or install them only through an explicitly authorised development setup. The validator performs no generation or application startup. It validates JSON/YAML syntax, schema/reference integrity, positive/negative examples, local document links, design hashes and scenario IDs. It does not execute the future semantic/native/browser scenarios.
+If those modules are unavailable, use an existing suitable environment or install them only through an explicitly authorised development setup. The validator performs no generation or application startup. It validates JSON/YAML syntax, schema/reference integrity, positive/negative schema examples, deterministic semantic fixtures, state-edge/ownership catalogues, local document links, design hashes and scenario IDs. Schema validity and semantic validity are reported separately. The semantic checks in `docs/semantic_checks.py` are documentation oracles for the named fixtures, not the complete application validators or native/browser scenarios.
 
 For optional verification of the committed reference-file hashes against the existing local checkouts:
 

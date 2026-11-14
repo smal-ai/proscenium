@@ -3,6 +3,7 @@
   "receipt_id": "receipt-frame-2",
   "project_id": "fixture-project",
   "job_id": "job-draft-1",
+  "attempt_id": "attempt-draft-1",
   "version_id": "scene-fixture-v1",
   "shot_id": "shot-fixture",
   "source_frame": 2,

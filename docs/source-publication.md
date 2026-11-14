@@ -59,6 +59,16 @@ Copilot edits canonical filenames and checkpoints a coherent, completed change s
 
 Version identity is opaque and stable. Source identity combines full commit SHA, canonical path, actual content SHA-256 and a complete materialisation manifest. File modification times, branch names, Git HEAD at review time and model-generated version labels are not source identities.
 
+### Checkpoint result and reconciliation
+
+`checkpoint_sources` accepts `CheckpointRequest` and returns `CheckpointReceipt`. A completed receipt contains the full `source_commit`, original `parent_commit` (null for an unborn branch), and the hydrated hashes of the explicitly checkpointed files. Callers use that receipt, not a later read of mutable HEAD, to construct publications. An uncertain receipt has `source_commit: null` until reconciled.
+
+Before modifying Git, persist an operation intent containing its canonical request fingerprint, expected HEAD, exact owned path/content hashes and commit metadata. Use the single checkpoint writer and a temporary index based on the expected HEAD. Preserve the user's original index and all unrelated staged/unstaged changes. The resulting commit must contain the prepared owned bytes; a changed base or input is `source_conflict`.
+
+Record `Proscenium-Checkpoint: <operation_id>` and the request fingerprint in commit trailers. Update the intended branch and a local checkpoint reference `refs/proscenium/checkpoints/<sha256-of-operation-id>` with one compare-and-swap Git ref transaction. Persist the receipt afterwards. A retry first checks the operation journal and exact checkpoint reference, before testing its old `expected_head` against today's HEAD. Verify the parent, tree, trailers and owned file hashes before returning the original receipt. A lost acknowledgement after a successful commit must not create another commit or fail merely because HEAD advanced. If the Git effect cannot be proved, retain `outcome_uncertain` and fence that checkpoint operation for reconciliation. This does not push any refs remotely.
+
+C28 covers both the Git-ref-to-SQLite acknowledgement window and preservation of unrelated staging. F00/W02 provide the journal and recovery implementation; feature tools consume this single contract.
+
 ## 2. Dependency materialisation contract
 
 A `SourceClosure` contains an entry path, all files needed to open/render it and pinned item-version dependencies. Each file maps a **materialised project-relative path** to either:
@@ -117,6 +127,7 @@ After commit, the owned renderer dispatch loop consumes persisted intents. A cra
 - A harmless retry never changes the current head again and never schedules another render.
 - To deliberately publish a result derived from an older version, Copilot makes a new version with explicit ancestry and the **current** expected head. It does not reuse the old publication ID or reset the working tree through the UI.
 - Source/version records are immutable. Preview availability, assessment and user selection are separate revisioned records.
+- Version reads retain the immutable published kind/name, descriptive/provenance metadata, Unity result, ancestry and original preview specifications. Later preview-job/artefact associations are separately stored read-model links. Catalogue reads must not lose publication information after a restart.
 - An admitted render may attach new frame/segment artefacts to its existing version. That does not mutate the original source publication payload.
 
 For a new camera/profile preview of an **already published** version, Copilot calls `request_preview` with `PreviewRequest`. This admits a render intent without creating another source version or changing the item's current head. It is the normal completion path for Render this view, including inspection of a historical version. Preview intent IDs are unique across initial publication and later preview requests; the same intent/spec/version is reused, and a conflicting reuse is rejected.

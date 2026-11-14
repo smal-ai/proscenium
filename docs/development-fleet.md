@@ -1,6 +1,6 @@
 # Development fleet handover
 
-**Baseline:** specification 3.1.0, contract 1.0.0 amended before implementation. **Status:** work packages defined, none dispatched or implemented.
+**Baseline:** specification 3.2.0, contract 1.0.0 amended before implementation. **Status:** work packages defined, none dispatched or implemented.
 
 This document governs agents developing Proscenium. It is separate from the product's native Copilot subagents, which author user projects at runtime. A work-package description is not authority to start agents, install models, alter shared services or modify the reference projects.
 
@@ -54,9 +54,24 @@ Paths below are target implementation locations. Missing directories are created
 | W07 Local AI adapters | ComfyUI jobs/budgets and local VLM review, M07/M09 | `tools/comfy/`, `apps/backend/src/proscenium/providers/`, `agent/skills/image-generation/`, corresponding integration tests | F00 budget/review/job contracts and W02 artefacts | C03/C12/C17/C18; one endpoint throughout; no implicit service lifecycle changes. |
 | W08 Unity | Scoped CLI/Editor import/controller/validation workflow, M11 | `tools/unity/`, `agent/skills/unity/`, `tests/integration/unity/` | W02 pinned source versions, W01 native specialist integration | F05, C19; repeat import without duplicate objects or GUID damage; actual Play mode. |
 | W09 Image-to-3D proof | E04 and M10 if feasible | `tools/image_to_3d/`, proof-specific fixtures/evidence and `agent/skills/image-to-3d/` | W07 job/budget interface, W02 publication | Actual mesh, import and resource evidence. Record a known licence. Rights do not fail the proof. A mesh failure stays blocked and is escalated to the owner. |
-| W10 Release acceptance | Cross-journey acceptance, operator documentation and backup/restore, M12/M14 | `tests/acceptance/`, operator documentation, acceptance evidence manifests | Accepted feature packages | C01–C20, all required browsers, clean workspace and explicit capability status. |
+| W10 Release acceptance | Cross-journey acceptance, operator documentation and backup/restore, M12/M14 | `tests/acceptance/`, operator documentation, acceptance evidence manifests | Accepted feature packages | C01–C31, all required browsers, clean workspace and explicit capability status. |
 
 Only F00 changes schemas, generated bindings, dependency lockfiles, shared migrations, the composition router and global build commands. Feature agents submit an interface/migration proposal to that owner rather than editing shared files independently. The owner can delegate a bounded change explicitly and updates the ownership record.
+
+### Backend endpoint ownership
+
+[operation-owners.json](contracts/operation-owners.json) assigns every OpenAPI operation to exactly one backend package, implementation directory and acceptance cases. Its paths extend the package table above and must be included in the dispatched task's explicit write grant. The documentation validator rejects missing or multiply owned operations.
+
+| Package | Explicit backend responsibility and additional owned paths |
+| --- | --- |
+| F00 | `apps/backend/src/proscenium/auth/`, `configuration/` and `jobs/`: owner pairing/caller authentication, configuration reads, common job/attempt admission, status, cancellation and retry. Shared repository interfaces and migrations remain F00-owned. |
+| W01 | `apps/backend/src/proscenium/copilot/`: request/context history, native decisions, Stop/Resume and public event reads/streaming. |
+| W02 | `apps/backend/src/proscenium/projects/`, `catalogue/` and `sources/`: project lifecycle/settings, image ingestion, artefact storage/media serving, source/publication reads and checkpoint tooling. |
+| W03 | `apps/backend/src/proscenium/previews/`: render/encode execution, frame/segment receipts and progressive availability, using F00's job service. |
+| W05 | `apps/backend/src/proscenium/reviews/`: annotation and typed-selection persistence, owner review/findings reads and rejection. This package owns the corresponding backend handlers as well as its existing review frontend. |
+| W07 | `apps/backend/src/proscenium/providers/`: generation budgets/provider execution and VLM request/completion, consuming W05's accepted review-store interface and F00's job service. |
+
+W06 consumes W02/W05 shot-plan and selection APIs; W08 calls the common job admission and checkpoint/publication tools. No feature package implements a second pairing, upload, job or selection service. F00 supplies interface stubs and the shared schema/migrations before these consumers start, and integrates each package's routers through the composition router.
 
 ## Assignment template
 

@@ -3,6 +3,7 @@
   "operation_id": "op-job-complete-1",
   "project_id": "fixture-project",
   "job_id": "job-draft-1",
+  "attempt_id": "attempt-draft-1",
   "expected_revision": 1,
   "state": "succeeded",
   "availability": "complete",

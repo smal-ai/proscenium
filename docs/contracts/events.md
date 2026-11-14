@@ -12,7 +12,7 @@ Native deduplication uses `(native_session_id, native_event_id)` when available.
 | --- | --- |
 | `project.state_changed` | `ProjectRecord`; update activation/recovery state. |
 | `work.state_changed` | `WorkRecord`; update root objective/held or interrupted execution state. |
-| `request.accepted`, `request.state_changed` | `RequestReceipt`; update one immutable request identity. |
+| `request.accepted`, `request.state_changed` | `RequestRecord`; retain the original user submission/context and update its current receipt. |
 | `assistant.delta` | `ConversationEventData`; append public text to the named message. |
 | `assistant.completed` | Same shape; authoritative complete public message text replaces accumulated deltas. |
 | `tool.started`, `tool.completed` | `ActivityEventData`; a terminal payload can state failed/cancelled/uncertain. |
@@ -26,6 +26,8 @@ Native deduplication uses `(native_session_id, native_event_id)` when available.
 | `usage.recorded` | `UsageEventData`; report only observed units/tokens/model identity. |
 
 Raw private reasoning, system prompts, authentication data, full HTTP headers and provider secrets are outside the event allowlist. Large tool logs/images are registered artefacts with scoped visibility, not repeated event blobs. Review findings are owner-only records; a native review tool receives the ticket/status rather than an unapproved repair.
+
+User text and Queue/Steer context references are present in `RequestRecord` from initial acceptance, including requests still held by the application. The UI keys each user entry by application request ID. A later native user-message echo only enriches that record's correlation; it does not append a second user entry. `assistant.*` events contain assistant output exclusively. Replaying request state changes updates an existing entry while preserving its immutable submission.
 
 ## 2. WebSocket handshake
 

@@ -1,0 +1,4 @@
+{
+  "id": "mask-inverted", "kind": "mask", "points": [[0, 0], [1, 1]], "mask_artifact_id": "mask-image-1",
+  "mask_encoding": {"channel": "luma", "bit_depth": 8, "selected_value": 0, "unselected_value": 255, "semantics": "soft"}
+}

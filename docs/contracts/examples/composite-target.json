@@ -1,0 +1,7 @@
+{
+  "origin": "sequence_render", "artifact_id": "capture-sequence-frame-6",
+  "displayed_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "dimensions": {"width": 640, "height": 360}, "item_id": "sequence-fixture", "version_id": "sequence-fixture-v1",
+  "shot_id": null, "render_job_id": null, "source_frame": null, "media_artifact_id": "video-sequence-fixture",
+  "sequence_version_id": "sequence-fixture-v1", "sequence_frame": 6, "frame_map_artifact_id": "map-sequence-fixture"
+}

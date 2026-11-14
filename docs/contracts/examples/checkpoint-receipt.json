@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0", "operation_id": "checkpoint-scene-1", "project_id": "fixture-project", "state": "completed",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "parent_commit": null,
+  "files": [{"path": "scenes/fixture/scene.blend", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}],
+  "replayed": true
+}

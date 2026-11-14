@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0", "sequence_version_id": "sequence-retime-v1", "project_id": "fixture-project",
+  "fps": {"numerator": 24, "denominator": 1}, "frame_count": 4, "silent": true,
+  "entries": [{"entry_id": "entry-hold-drop", "shot_id": "shot-a", "version_id": "shot-a-v1", "job_id": "job-a",
+    "source_frames": {"start": 1, "end": 2}, "sequence_frames": {"start": 1, "end": 4},
+    "transform": "retime", "mapping_artifact_id": "map-retime-fixture", "choice": "agent"}]
+}

@@ -30,7 +30,7 @@ Before a new owner attaches for execution, the previous native owner must be qui
 
 E01 records the exact SDK, CLI and login method. Proscenium starts the runtime through the SDK client. It does not ask the user to run a second Copilot server, and it does not copy tokens into the project, events or logs. Operator login uses the CLI's existing credential store. If that process exits while FastAPI is still up, close the admission gate and wait for Resume. Do not send a new turn to replace it.
 
-The lock enables the agent's ordinary file, shell and Git tools. It does not install a Proscenium sandbox or a network filter. If the pinned CLI has its own sandbox, turn that off for this session and record the setting. Set `memory.enabled` false. Set `working_directory` to the active project root. Load skills from `skill_directories` pointing at Proscenium's adapted skills, not from an OpenCode discovery path inside the project.
+The lock enables the agent's ordinary file, shell and Git tools. It does not install a Proscenium sandbox or a network filter. If the pinned CLI has its own sandbox, turn that off for this session and record the setting. Set both `memory.enabled: false` and `enable_session_store: false` on creation and every resume. These are separate SDK facilities: the pinned Python SDK enables cross-session search/retrieval by default in `copilot-cli` mode when `enable_session_store` is omitted. E01 must test two project histories and verify that neither facility supplies the other project's content. Set `working_directory` to the active project root. Load skills from `skill_directories` pointing at Proscenium's adapted skills, not from an OpenCode discovery path inside the project.
 
 Worker profiles set `model_policy` to `required`. An unavailable worker model is reported. The lead may do that work itself. Do not silently fall back to the parent model.
 
@@ -92,7 +92,7 @@ The payload is canonical UTF-8 JSON:
     "target": { "...FrameTarget or null..." },
     "camera": { "...Camera or null..." },
     "range": { "start": 2, "end": 4 },
-    "selected_object_ids": ["object-cube-source"]
+    "selected_objects": [{"object_id": "object-cube-source", "instance_id": "instance-blue"}]
   },
   "annotations": [ "...AnnotationSnapshot items..." ],
   "approved_findings": [ "...ApprovedFinding items..." ],
@@ -145,6 +145,12 @@ Stop is a durable control request, not a model prompt. It names the active work 
 
 Stop invalidates unanswered user-input/permission decisions for that work. A racing late answer receives `stale_decision`. It does not cancel independently running jobs. A separate job-cancel operation records `cancel_requested`, calls only that job's supported cancellation method and waits for confirmation. Unsupported cancellation returns `cancel_unsupported` while the job remains visible.
 
+### Deferred steering and the Stop barrier
+
+On Stop admission, fence both Queue delivery and new Steer admission for that work. Retain the native IDs of every accepted directive, including any Steer which became a queued native message during a completion race. Before reporting confirmed Stop, use the pinned runtime's verified queue hold/removal or execution-fencing facility to settle those owned deferred messages. They must be proven cancelled or accounted for as already executed before the barrier. `session.abort()` alone is insufficient because it does not hold the native queue.
+
+E01 records the exact supported facility and the native evidence for this barrier. If the selected runtime cannot prevent residual deferred messages from starting after confirmed Stop, the proof is blocked. Do not substitute a natural-language stop prompt, assume an idle event emptied the queue, or declare success by allowing the deferred correction to run after confirmation. C26 specifically tests a deferred Steer, a late acknowledgement and native idle before any unrelated Queue request is released.
+
 Resume after Stop/restart defaults to retaining held Queue requests. Its command explicitly chooses `continue_work`, `release_held_queue` or `reconcile_only`. `continue_work` names the interrupted/stopped work and does not release unrelated held requests. Discarding a held request is an explicit cancellation of that request, not a source deletion. There is no automatic resumption after Stop.
 
 ## 6. State machines
@@ -154,14 +160,26 @@ Statuses are observations, not artistic approval. Terminal records retain their 
 | Record | Allowed transitions |
 | --- | --- |
 | Queue request | `accepted → held/dispatching → acknowledged → running → completed/failed/stopped`; uncertain dispatch may enter `outcome_uncertain`, then a proved existing state. `accepted/held → cancelled` only by explicit cancellation. |
-| Steer request | `accepted → dispatching → acknowledged → applied/deferred/completed`; failure/uncertainty is explicit. `deferred` still awaits its native continuation result. |
+| Steer request | `accepted → dispatching → acknowledged → applied/deferred/completed`; failure/uncertainty is explicit. `deferred` still awaits its native continuation result or verified cancellation by Stop. |
 | Stop request | `accepted → stop_requested → completed/failed/outcome_uncertain`. |
-| Work | `pending → running ↔ awaiting_user`; then `completed/failed/stop_requested`; `stop_requested → stopped/failed/outcome_uncertain`. Interrupted work enters `awaiting_resume` on host restart. |
-| Job | `planned → waiting_resource/starting → running → succeeded/failed/cancel_requested/outcome_uncertain`; `cancel_requested → cancelled/failed/outcome_uncertain`. Resume adds a new attempt/owner association to the same job identity when inputs are unchanged. |
+| Work | `pending → running ↔ awaiting_user`; then `completed/failed/stop_requested`; `stop_requested → stopped/completed/failed/outcome_uncertain`. Interrupted work enters `awaiting_resume`. Explicit Resume may continue `stopped/failed/awaiting_resume` work after reconciliation, preserving its original request and task identity. Completed work requires a new Queue request. |
+| Job attempt | `planned → waiting_resource/starting → running`; terminal outcomes are `succeeded/failed/cancelled`. Cancellation may be requested before or during execution. `cancel_requested → succeeded` represents completion winning the race; verified unsuccessful cancellation may return to the actual live state. Uncertainty resolves only to an observed state. A retry creates a new attempt rather than rewriting a terminal attempt. |
 | Media availability | `pending → partial → complete`. A failed job can still have `partial` availability. Failure is recorded on the job and unavailable intervals rather than erasing completed artefacts. |
 | Permission/input decision | `pending → answered/declined/cancelled/expired`. A changed operation requires a new decision ID. |
 
 Persist a `state_revision` on mutable records. An invalid transition is `invalid_state_transition`; it is not repaired by overwriting a status string. The adapter can receive duplicate/out-of-order native events and must reduce them idempotently using native identity and the established work mapping.
+
+The edge catalogue in [state-transitions.json](contracts/state-transitions.json) is normative alongside these guards. It covers fast completion before a launch acknowledgement, cancellation before launch, completion during cancellation and reconciliation. An edge is necessary but not sufficient: attribution, expected revision, Stop/Resume gates and proof of external state must also hold.
+
+### Attempts and late outcomes
+
+`JobRecord` projects the current `JobAttempt` and retains `attempt_id` and `attempt_number`. Initial admission allocates attempt 1 durably before launch. After verified failure/cancellation, `retry_job` may allocate the next attempt for a local render/encode/Unity job with unchanged inputs. The old attempt remains terminal in history. A successful job is reused. Changed inputs require a new job. Ambiguous or live attempts are observed/reconciled, not relaunched.
+
+Worker capabilities and all `JobStateUpdate`, `FrameReceipt` and `PreviewSegment` records bind to the admitted attempt. State updates from an older attempt cannot mutate the new attempt. A late identical receipt is harmless; other late old-attempt output is retained as evidence and must be reconciled before a retry, not silently merged into the active writer. Segment receipts identify the render-job attempt that commissioned their encoding. Already verified frames may be reused by a later attempt of the same job/input identity.
+
+An external generation job keeps its provider prompt ID and attempt reservation during waiting/downloading/reconciliation. New inference is a new budgeted `GenerationSubmit`, never a `JobRetry`. An owner-requested VLM job has its original review operation as authority and a nullable work association; it still participates in resource settlement and project switching.
+
+An explicit `continue_work` Resume can update the current Queue receipt back to running while retaining its previous stopped/failed revisions and immutable submission. Bind any new native continuation message to the Resume operation and original work/generation task in SQLite. Do not resend the original Queue body as a fresh task, rewrite its accepted timestamp, or release held requests implicitly. Verified uncertainty may restore the actual earlier state; it never manufactures a missing exit code.
 
 ## 7. Native questions and permissions
 

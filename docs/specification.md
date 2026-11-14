@@ -1,12 +1,14 @@
 # Specification index and authority
 
-**Specification revision:** 3.1.0
+**Specification revision:** 3.2.0
 
 **Contract revision:** 1.0.0, amended 2026-11-14 before implementation. Wire `schema_version` remains `1.0`. No migration.
 
 **Owner decisions incorporated:** 2026-11-14
 
 **Implementation status:** Not started. Contract fixtures are examples, not execution evidence.
+
+The 3.2.0 review amendment closes request-history and publication read models, instance selections, sequence/composite frame maps, attempt/cancellation recovery, idle owner reviews, checkpoint receipts and backend ownership. Contract 1.0 is amended before any implementation baseline or client deployment, so no migration is claimed. F00 freezes the corrected revision before generating consumer bindings.
 
 ## Read in this order
 
