@@ -35,6 +35,7 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | W01 | `/tmp/opencode/proscenium-fleet/w01`, `impl/w01` | `2bc3d5c` | Production Copilot adapter, context, durable request/decision/event delivery and native Stop/Resume. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
 | W07 | `/tmp/opencode/proscenium-fleet/w07`, `impl/w07` | `76d8451` | ComfyUI generation/budget/recovery and requested LM Studio critique. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
 | W08 | `/tmp/opencode/proscenium-fleet/w08`, `impl/w08` | `76d8451` | Scoped Unity CLI/Editor import, controller and actual Play mode validation. | `ses_e262dde9cffevqHbPSmMm5CYKL` |
+| W03 | `/tmp/opencode/proscenium-fleet/w03`, `impl/w03` | `66f653b` | Production render/proxy/receipt pipeline, progressive encoding, assembly and scoped Blender launch. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
@@ -51,6 +52,7 @@ F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected jo
 | E03 | E03 agent | One CPU renderer, four threads, at most twelve 640×360 frames and sixteen samples, 300-second limit. Six short synthetic segments, one encoder at a time, sixty seconds each. Isolated Chromium/Brave/Edge profiles. No GPU/model services. |
 | W07 VLM | W07 agent | Read-only provider inventory and at most two 64×64-image, 512-output-token VLM calls on an already loaded model, 120 seconds each. No model loading or ComfyUI generation/service lifecycle. |
 | W08 | W08 agent | Its own disposable Unity project. At most three Unity invocations, 600 seconds each, plus one Blender CPU export, four threads, 180 seconds. Existing official Editor/licence, isolated project dependencies, own Xvfb if needed. |
+| W03 | W03 agent | At most twenty CPU-rendered 640×360 frames, sixteen samples, four threads, 300 seconds per worker, plus three static proxies. One renderer at a time and bounded short encodes. No model/GPU/service changes. |
 
 ## Milestones
 
@@ -88,3 +90,7 @@ W04 integration added explicit sibling-view navigation and corrected rejection r
 W05 is composed into the production frontend and the backend's accepted-feature router list. A targeted integration follow-up connects main-chat submission to active annotation preparation and hardens catalogue-selection acknowledgement recovery. The combined foundation/review/storyboard backend suite passes 61 tests. Source/catalogue, native request execution and provider integration remain pending package returns.
 
 W02's 17 operations are now composed. Its actual production resolver reopens original and revised linked Blender bytes with measured 1.0 m / 1.5 m heights and rejects the missing texture. Integration fixed current-schema read handles attempting nested migration writes, and shares strict canonical-mask validation between upload and review services. The affected real-source/review integration suite passes 77 tests.
+
+The integration-owned browser command now covers the composed shell, review/context and storyboard suites. **126 cases passed** across Chromium, Brave, Edge and the Chromium DPR-2 review subset. Main-chat preparation includes unsaved annotations and masks, rejects failed saves and preserves the captured target through navigation. The browser APIs remain controlled fixtures. Live application journeys are the next acceptance layer.
+
+Resource inspection found `/tmp` is a 31 GiB tmpfs with about 8 GiB free, while the disk-backed home filesystem has about 348 GiB free. Larger subsequent native scratch work uses `/home/quintin/.cache/proscenium-development/` to avoid exhausting RAM-backed temporary storage. Existing evidence is retained.

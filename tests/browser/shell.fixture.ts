@@ -53,6 +53,8 @@ export class SyntheticStudio {
         if (path.endsWith("/items")) return reply(pageOf(this.snapshot.items));
         if (path.endsWith("/versions")) return reply(pageOf([version("version-new"), version("version-old")]));
         if (path.endsWith("/jobs")) return reply(pageOf(this.snapshot.jobs));
+        if (["/selections", "/annotations", "/reviews", "/frames", "/segments"].some(suffix => path.endsWith(suffix))) return reply(pageOf([]));
+        if (["/proxy-mapping", "/shot-plan", "/sequence-map"].some(suffix => path.endsWith(suffix))) return reply({ schema_version: "1.0", error: { code: "not_found", message: "No media mapping in the shell fixture", operation_id: null, retryable: false, details: {} } }, 404);
         if (path.endsWith("/requests")) {
           if (this.pagination && !url.searchParams.has("cursor")) return reply({ ...pageOf(this.requests.slice(0, 1)), next_cursor: "synthetic-page-2" });
           return reply(pageOf(this.pagination ? this.requests.slice(1) : this.requests));
@@ -67,6 +69,7 @@ export class SyntheticStudio {
           return record ? reply(record) : reply({ error: { code: "not_found", message: "Request not found", retryable: false } }, 404);
         }
         if (path.endsWith("/content")) return route.fulfill({ contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0uUAAAAASUVORK5CYII=", "base64") });
+        throw new Error(`Unexpected synthetic API read ${path}`);
       }
       const body = method === "PUT" && path.includes("/uploads/") ? {} : request.postDataJSON() as Record<string, unknown>;
       const commandReceipt = { schema_version: "1.0", operation_id: body.operation_id, resource_id: String(body.project_id ?? this.snapshot.project.project_id), state: "accepted", state_revision: 1, replayed: false };

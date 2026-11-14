@@ -43,18 +43,18 @@ test.describe("W04 shell · synthetic HTTP/socket evidence", () => {
     await expect(page.getByText("synthetic-image-model", { exact: true })).toBeVisible();
     await expect(page.getByText("Offline", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Services & models" }).click();
+    await page.getByRole("button", { name: /Lighting study\s+version-old/ }).click();
     await page.locator("body").click({ position: { x: 900, y: 500 } });
     await page.keyboard.press("1");
-    await expect(page.locator('[data-review-mode="3d_inspection"]')).toBeVisible();
-    await expect(page.locator("[data-review-mode]")).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "1 3D Inspection", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("navigation", { name: "Review mode", exact: true })).toHaveCount(1);
     expect(studio.posts).toHaveLength(0);
   });
 
   test("freezes original version/images, reconciles lost ACK without replay and retains draft", async ({ page }) => {
     const studio = new SyntheticStudio(); studio.abortNextRequest = true;
     await studio.install(page); await page.goto("/");
-    await page.getByRole("button", { name: "Lighting study" }).click();
-    await page.getByRole("button", { name: /Historical publication/ }).click();
+    await page.getByRole("button", { name: /Lighting study\s+version-old/ }).click();
     await page.getByLabel("Attach images").setInputFiles({ name: "reference.png", mimeType: "image/png", buffer: Buffer.from("synthetic-image-bytes") });
     await expect(page.getByText("Next request context · 1 images")).toBeVisible();
     await page.getByLabel("Message Copilot").fill("Keep the original lighting direction");
@@ -64,7 +64,7 @@ test.describe("W04 shell · synthetic HTTP/socket evidence", () => {
     const captured = [...studio.contexts.values()][0];
     expect(captured.version_id).toBe("version-old");
     expect(captured.attachments).toEqual([{ artifact_id: "image-ready", role: "reference" }]);
-    await page.getByRole("button", { name: /Current publication/ }).click();
+    await page.getByRole("button", { name: /Lighting study\s+version-new/ }).click();
     await page.getByRole("button", { name: "Reconcile original request / retry same ID" }).click();
     await expect(page.getByText("Request awaiting confirmation", { exact: true })).toHaveCount(0);
     await expect(page.locator(".user-message")).toHaveCount(1);
@@ -160,8 +160,7 @@ test.describe("W04 shell · synthetic HTTP/socket evidence", () => {
   test("deduplicates replay, repairs socket gaps and reconnects without moving a historical selection", async ({ page }) => {
     const studio = new SyntheticStudio(); await studio.install(page); await page.goto("/");
     await expect(page.getByText("Connected", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Lighting study" }).click();
-    await page.getByRole("button", { name: /Historical publication/ }).click();
+    await page.getByRole("button", { name: /Lighting study\s+version-old/ }).click();
     const delta = studio.emit("assistant.delta", { message_id: "message-test", text: "Part ", native_agent_id: null });
     studio.sockets.at(-1)!.send(JSON.stringify(delta));
     studio.emit("assistant.delta", { message_id: "message-test", text: "two", native_agent_id: null }, false);

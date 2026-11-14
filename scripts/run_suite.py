@@ -27,5 +27,5 @@ if script not in manifest.get("scripts", {}):
     raise SystemExit(
         f"Missing {args.suite} acceptance suite ({script}). No acceptance evidence produced."
     )
-selector = [f"--project={args.selector}"] if args.suite == "browser-installed" else []
+selector = [f"--project={args.selector}-*"] if args.suite == "browser-installed" else []
 raise SystemExit(subprocess.run(["npm", "run", script, "--", *selector], cwd=ROOT).returncode)
