@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { AnnotationSnapshot, Markup } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
-import type { TurnSelection } from "../../api/studio";
+import type { ContextPreparer, TurnSelection } from "../../api/studio";
 import { contentRect, imagePoint, mediaUrl, stableJson } from "./media";
 import { flushDraft, saveDraft, VECTOR_MASK, type Draft } from "./outbox";
 import { greyPng } from "./png";
@@ -41,9 +41,10 @@ function paint(ctx: CanvasRenderingContext2D, markups: Markup[], width: number, 
 
 const pngBlob = (canvas: HTMLCanvasElement): Promise<Blob> => new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("PNG export failed")), "image/png"));
 
-export function AnnotationEditor({api, draft, onChange, onQueue, onClose}: {
+export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onContextPreparer}: {
   api: ApiClient; draft: Draft; onChange: (draft: Draft) => void;
   onQueue: (text: string, context: TurnSelection) => void | Promise<void>; onClose: () => void;
+  onContextPreparer?: (prepare: ContextPreparer | null) => void;
 }) {
   const [tool, setTool] = useState<Tool>("stroke");
   const [width, setWidth] = useState(4);
@@ -53,17 +54,20 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose}: {
   const saveLatch = useRef(false);
   const [queueState, setQueueState] = useState<"idle" | "submitting" | "submitted">("idle");
   const queueLatch = useRef(false);
+  const queueInFlight = useRef(false);
+  const mounted = useRef(true);
   const [serverRevision, setServerRevision] = useState<AnnotationSnapshot | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const image = useRef<HTMLImageElement>(null);
   const active = useRef<string | null>(null);
   const live = useRef(draft); live.current = draft;
   const writes = useRef(Promise.resolve());
-  const busy = draft.state === "saving" || (!!draft.operation && draft.state !== "saved");
+  const busy = saving || queueState === "submitting" || draft.state === "saving" || (!!draft.operation && draft.state !== "saved");
   const annotation = draft.annotation;
   const {width: iw, height: ih} = annotation.target.dimensions;
 
   function edit(next: AnnotationSnapshot) {
+    if (saveLatch.current || queueInFlight.current) return;
     const updated: Draft = {...live.current, annotation: next, operation: undefined, state: "browser-local", error: undefined, markup: undefined, mask: undefined, markupUploadId: undefined, maskUploadId: undefined};
     live.current = updated; onChange(updated);
     writes.current = writes.current.then(() => saveDraft(updated)).catch(e => setError(`Local draft could not be saved: ${String(e)}`));
@@ -75,7 +79,7 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose}: {
   }
 
   function start(event: React.PointerEvent<HTMLDivElement>) {
-    if (busy || event.button !== 0) return;
+    if (busy || saveLatch.current || queueInFlight.current || event.button !== 0) return;
     const p = point(event); if (!p) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     if (tool === "eraser") {
@@ -92,7 +96,7 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose}: {
   }
 
   function move(event: React.PointerEvent<HTMLDivElement>) {
-    if (!active.current || busy) return;
+    if (!active.current || busy || saveLatch.current || queueInFlight.current) return;
     const p = point(event);
     // End the geometry at the content edge. Never manufacture edge points outside the image.
     if (!p) { active.current = null; return; }
@@ -100,46 +104,80 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose}: {
       ? {...m, points: m.kind === "arrow" ? [m.points[0], p] : [...m.points, p]} : m)});
   }
 
-  async function save() {
-    if (saveLatch.current) return;
+  async function prepareSavedDraft(): Promise<Draft> {
+    if (saveLatch.current || queueInFlight.current) throw new Error("Annotation submission is already in progress");
+    // Freeze both the editable record and intrinsic canvas pixels before any await.
+    // A later navigation/unmount cannot replace this target with the new viewport.
+    let frozen = structuredClone(live.current);
+    if (frozen.state === "conflict") throw new Error(frozen.error || "Resolve the annotation revision conflict before sending");
+    if (frozen.state === "saved" && (frozen.annotation.markup_artifact_id || !frozen.annotation.markups.length)) return frozen;
     saveLatch.current = true; setSaving(true);
+    active.current = null;
     setError("");
     try {
-      await writes.current;
-      if (draft.operation) { await flushDraft(api, draft, onChange); return; }
-      if (!image.current?.complete || image.current.naturalWidth !== iw || image.current.naturalHeight !== ih) throw new Error("Target image is not decoded at its recorded dimensions");
-      const canvas = document.createElement("canvas"); canvas.width = iw; canvas.height = ih;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(image.current, 0, 0); paint(ctx, annotation.markups, iw, ih, false);
-      const markup = await pngBlob(canvas);
-      let mask: Blob | undefined;
-      if (annotation.markups.some(m => m.kind === "mask" && m.text === VECTOR_MASK)) {
-        // Imported binary/soft raster masks retain their exact registered bytes.
-        // Only our editable binary vector brushes are re-rasterised after an edit.
-        ctx.fillStyle = "black"; ctx.fillRect(0, 0, iw, ih); paint(ctx, annotation.markups.filter(m=>m.text===VECTOR_MASK), iw, ih, true);
-        const rgba = ctx.getImageData(0, 0, iw, ih).data;
-        const pixels = new Uint8Array(iw * ih);
-        for (let i = 0; i < pixels.length; i++) pixels[i] = rgba[i*4] >= 128 ? 255 : 0;
-        mask = await greyPng(iw, ih, pixels);
+      let markupCanvas: HTMLCanvasElement | undefined;
+      let maskPixels: Uint8Array | undefined;
+      const {width, height} = frozen.annotation.target.dimensions;
+      if (!frozen.operation && !frozen.markup) {
+        const clean = image.current;
+        const expectedSource = new URL(mediaUrl(frozen.projectId, frozen.annotation.target.artifact_id), location.href).href;
+        if (!clean?.complete || clean.currentSrc !== expectedSource || clean.naturalWidth !== width || clean.naturalHeight !== height) throw new Error("Target image is not decoded at its recorded identity and dimensions");
+        markupCanvas = document.createElement("canvas"); markupCanvas.width = width; markupCanvas.height = height;
+        const ctx = markupCanvas.getContext("2d")!;
+        ctx.drawImage(clean, 0, 0); paint(ctx, frozen.annotation.markups, width, height, false);
+        if (frozen.annotation.markups.some(m => m.kind === "mask" && m.text === VECTOR_MASK)) {
+          const maskCanvas = document.createElement("canvas"); maskCanvas.width = width; maskCanvas.height = height;
+          const maskContext = maskCanvas.getContext("2d")!;
+          maskContext.fillStyle = "black"; maskContext.fillRect(0, 0, width, height);
+          paint(maskContext, frozen.annotation.markups.filter(m => m.text === VECTOR_MASK), width, height, true);
+          const rgba = maskContext.getImageData(0, 0, width, height).data;
+          maskPixels = new Uint8Array(width * height);
+          for (let i = 0; i < maskPixels.length; i++) maskPixels[i] = rgba[i * 4] >= 128 ? 255 : 0;
+        }
       }
-      const frozen = {...draft, markup, mask}; await saveDraft(frozen);
-      await flushDraft(api, frozen, onChange);
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-    finally {saveLatch.current = false; setSaving(false);}
+      await writes.current;
+      if (markupCanvas) {
+        frozen = {...frozen, operation: undefined, markup: await pngBlob(markupCanvas),
+          mask: maskPixels ? await greyPng(width, height, maskPixels) : undefined};
+        await saveDraft(frozen);
+      }
+      const saved = await flushDraft(api, frozen, next => {
+        live.current = next;
+        if (mounted.current) onChange(next);
+      });
+      if (saved.state !== "saved") throw new Error(saved.error || `Annotation save ${saved.state}`);
+      return saved;
+    } catch (e) {
+      if (mounted.current) setError(e instanceof Error ? e.message : String(e));
+      throw e;
+    } finally {saveLatch.current = false; if (mounted.current) setSaving(false);}
   }
 
+  const prepareRef = useRef<ContextPreparer>(async () => structuredClone(annotationContext((await prepareSavedDraft()).annotation)));
+  prepareRef.current = async () => structuredClone(annotationContext((await prepareSavedDraft()).annotation));
+  useLayoutEffect(() => {
+    mounted.current = true;
+    onContextPreparer?.(() => prepareRef.current());
+    return () => {mounted.current = false; onContextPreparer?.(null);};
+  }, [onContextPreparer]);
+
+  async function save() {try {await prepareSavedDraft();} catch { /* The failed outbox and visible error are retained. */ }}
+
   async function queue() {
-    if (queueLatch.current) return;
+    if (queueLatch.current || saveLatch.current) return;
+    const snapshot = structuredClone(live.current.annotation);
     queueLatch.current = true; setQueueState("submitting");
-    try {await onQueue(annotation.text || "Apply this annotated feedback.", annotationContext(annotation)); setQueueState("submitted");}
+    queueInFlight.current = true;
+    try {await onQueue(snapshot.text || "Apply this annotated feedback.", annotationContext(snapshot)); setQueueState("submitted");}
     catch (e) {setError(String(e)); queueLatch.current = false; setQueueState("idle");}
+    finally {queueInFlight.current = false;}
   }
 
   return <section className="review-annotation" aria-label="Pinned annotation">
     <div className="review-toolbar">{tools.map(t => <button key={t} aria-pressed={tool === t} disabled={busy} onClick={() => setTool(t)}>{t}</button>)}
-      <label>Width (image px)<input type="number" min="1" max="256" value={width} onChange={e => setWidth(Math.max(1, Number(e.target.value)))} /></label>
+      <label>Width (image px)<input disabled={busy} type="number" min="1" max="256" value={width} onChange={e => setWidth(Math.max(1, Number(e.target.value)))} /></label>
       {tool === "pin" && <input aria-label="Pin text" value={pinText} onChange={e => setPinText(e.target.value)} />}
-      <button onClick={onClose}>Close draft</button>
+      <button disabled={saving || queueState === "submitting"} onClick={onClose}>Close draft</button>
     </div>
     <div className="review-canvas" ref={host} onPointerDown={start} onPointerMove={move} onPointerUp={() => {active.current = null;}} onPointerCancel={() => {active.current = null;}}>
       <img ref={image} src={mediaUrl(draft.projectId, annotation.target.artifact_id)} alt="Pinned clean annotation target" draggable={false} onError={() => setError(`media_unavailable: ${annotation.target.artifact_id}`)} />
@@ -157,8 +195,8 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose}: {
       <label>Range start<input disabled={busy} type="number" min="1" value={annotation.range?.start ?? ""} onChange={e => edit({...annotation, range: e.target.value ? {start: Number(e.target.value), end: Math.max(Number(e.target.value), annotation.range?.end ?? Number(e.target.value))} : null})}/></label>
       <label>Range end<input disabled={busy || !annotation.range} type="number" min={annotation.range?.start ?? 1} value={annotation.range?.end ?? ""} onChange={e => annotation.range && edit({...annotation, range: {...annotation.range, end: Math.max(annotation.range.start, Number(e.target.value))}})}/></label>
       <output aria-live="polite">{draft.state}{draft.error ? `: ${draft.error}` : ""}</output>
-      <button disabled={saving || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>
-      <button disabled={draft.state !== "saved" || queueState !== "idle"} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : "Queue feedback"}</button>
+      <button disabled={saving || queueState === "submitting" || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>
+      <button disabled={saving || draft.state !== "saved" || queueState !== "idle"} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : "Queue feedback"}</button>
     </div>
     {(error || draft.state === "conflict") && <p role="alert">{error || "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit."}</p>}
     {draft.state === "conflict" && <button onClick={() => {

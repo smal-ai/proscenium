@@ -1,0 +1,53 @@
+{
+  "base": "a547471",
+  "branch": "impl/w05-context",
+  "recorded_at": "2026-11-14T11:54:26.315Z",
+  "node": "v24.18.0",
+  "scope": "Bounded frontend follow-up. Actual ReviewWorkspace plus accepted W04 ChatPanel/composer against synthetic HTTP. No native/model/GPU or media proof.",
+  "source_sha256": {
+    "apps/frontend/src/features/catalogue/CatalogueBrowser.tsx": "d8fd5dafaf5cc813bae33f006bdad8d144fd0984e0af9f299d00144d2e22b9b4",
+    "apps/frontend/src/features/catalogue/pendingSelection.ts": "9dcd74ca2ca41da618a72736dc67d1ae783b81cea68be38233696a3ed2167892",
+    "apps/frontend/src/features/review/AnnotationEditor.tsx": "a9a86f465eae989994f8667b43f5e3ed035e0849d06ab05032c9a6d0bb413ca2",
+    "apps/frontend/src/features/review/ReviewWorkspace.tsx": "d4ac51610a50e51087298e709df703f95d28db4a99be078247a777935bbc79b3",
+    "apps/frontend/src/features/review/outbox.ts": "2f831f1378e68c5bfed91fed2648352f640df14f0275e2b7cf4d2e012050e26e",
+    "tests/browser/review-context-harness.html": "2fc28faa7298ad94cbd0f955724677349c64c0ff444c5725dd26b996fda0aafb",
+    "tests/browser/review-context-harness.tsx": "28fe8b91debd2f4e9a86c57c306758e7169afeff246850ac259da65978ccd415",
+    "tests/browser/review-context.config.ts": "e4f6d586768b17eab407d5845bb2d8fc1318d7422a20cbacf048f92512b454f3",
+    "tests/browser/review-context.spec.ts": "d4d9b1178f020c7941acf3b3c8fd5b12c6e5c72cac9146cbcb486994c467366e",
+    "tests/browser/review-fixtures.ts": "1ba50839528c0023b087fd6c749b58dd8116b999090c1dbf993cc35965eb0481",
+    "tests/browser/review-harness.tsx": "8e3ff53cb363449fc56c5c9d2585ffd5f46fedf4d70f8dba432d7ecaa02049b3"
+  },
+  "package_lock_sha256": "7294b9cc1f45f96ec5a6ba58b1c24f2659d30ab7578fd65788acaa2fa54d4d0c",
+  "commands": [
+    {
+      "command": "npx tsc --project tsconfig.tests.json",
+      "result": "passed, fully shaped typed browser harness records"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed, composed production build; ignored Lucide use-client directives and existing >500kB bundle warning"
+    },
+    {
+      "command": "npx playwright test --config tests/browser/review-context.config.ts --reporter=json > docs/evidence/w05/context-browser-result.json",
+      "result": "27 passed, 0 skipped, 0 flaky, 0 unexpected; Chromium/Brave/Edge"
+    },
+    {
+      "command": "npx playwright test --config tests/browser/review.config.ts --project chromium -g 'durable original-operation|mask brush|revision conflict' --reporter=json > docs/evidence/w05/context-regressions.json",
+      "result": "3 passed, 0 skipped, 0 flaky, 0 unexpected"
+    }
+  ],
+  "dependency_recovery": "npm ci encountered quota errno -122 and incomplete local extraction. Recovered local vendor dependencies using exact accepted-lock package versions from existing installed vendor bytes, excluding shared caches. Two added type packages copied at exact locked versions. No application source or cache contents in another checkout were edited.",
+  "limitations": [
+    "HTTP responses are synthetic. Backend mask-role validation and nested Store issue remain parent-owned.",
+    "No backend/shared API/chat/app/root configuration edits.",
+    "Browser allocation reused for only these targeted frontend checks."
+  ]
+}

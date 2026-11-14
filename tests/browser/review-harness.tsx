@@ -4,14 +4,15 @@ import { createRoot } from "react-dom/client";
 import { ApiClient } from "../../apps/frontend/src/api/client";
 import { emptySelection } from "../../apps/frontend/src/api/studio";
 import type { TurnSelection } from "../../apps/frontend/src/api/studio";
-import type { JobRecord, VersionRecord } from "../../apps/frontend/src/api/generated/contracts";
+import type { VersionRecord } from "../../apps/frontend/src/api/generated/contracts";
 import { ReviewWorkspace, Outliner, CriticPanel } from "../../apps/frontend/src/features/review";
 import * as media from "../../apps/frontend/src/features/review/media";
 import { greyPng } from "../../apps/frontend/src/features/review/png";
+import { syntheticJobs, syntheticVersion } from "./review-fixtures";
 
 const api = new ApiClient();
-const version = {schema_version:"1.0",project_id:"synthetic",item_id:"scene",version_id:"v1",kind:"scene",name:"Synthetic version",publication_id:"publication",source_commit:"a".repeat(40),source:{digest:"a".repeat(64)},artifact_ids:[],preview_requests:[],preview_job_ids:["job"],created_at:"2026-11-14T00:00:00Z",actor:{kind:"user",id:"owner"}} as VersionRecord;
-const jobs = [{job_id:"job",project_id:"synthetic",target:{target_id:"scene",version:{item_id:"scene",version_id:"v1"},shot_id:"shot"},state_revision:0,render_spec:{engine:"BLENDER_EEVEE_NEXT",purpose:"keyframe",samples:16}}] as JobRecord[];
+const version: VersionRecord = {...syntheticVersion, name: "Synthetic version"};
+const jobs = syntheticJobs;
 
 function Harness() {
   const [selection, setSelection] = useState<TurnSelection>(emptySelection);

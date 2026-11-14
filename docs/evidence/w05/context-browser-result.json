@@ -1,0 +1,1200 @@
+{
+  "config": {
+    "argv": [
+      "/home/quintin/.nvm/versions/node/v24.18.0/bin/node",
+      "/tmp/opencode/proscenium-fleet/w05-context/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "tests/browser/review-context.config.ts",
+      "--reporter=json"
+    ],
+    "configFile": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser/review-context.config.ts",
+    "rootDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/opencode/proscenium-w05-context-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-context.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/tmp/opencode/proscenium-w05-context-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "brave",
+        "name": "brave",
+        "testDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-context.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/tmp/opencode/proscenium-w05-context-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "edge",
+        "name": "edge",
+        "testDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "review-context.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/opencode/proscenium-w05-context-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "snapshotDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-context.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5187",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "browserName": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/opencode/proscenium-w05-context-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "brave",
+        "testDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "snapshotDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-context.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5187",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "browserName": "chromium",
+          "launchOptions": {
+            "executablePath": "/usr/bin/brave-browser"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "brave"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/tmp/opencode/proscenium-w05-context-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "edge",
+        "testDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "snapshotDir": "/tmp/opencode/proscenium-fleet/w05-context/tests/browser",
+        "testIgnore": [],
+        "testMatch": "review-context.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:5187",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "headless": true,
+          "browserName": "chromium",
+          "launchOptions": {
+            "executablePath": "/usr/bin/microsoft-edge"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "edge"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npx vite --host 127.0.0.1 --port 5187 --strictPort",
+      "cwd": "/tmp/opencode/proscenium-fleet/w05-context",
+      "url": "http://127.0.0.1:5187/tests/browser/review-context-harness.html",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "review-context.spec.ts",
+      "file": "review-context.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "registered preparer saves unsaved marks and canonical masks before actual main-chat Send",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 652,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:46.461Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 715,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:51.447Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 711,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:57.217Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-f63f0718057313177fa0",
+          "file": "review-context.spec.ts",
+          "line": 69,
+          "column": 1
+        },
+        {
+          "title": "failed network annotation preparation blocks model submission",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 587,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:47.170Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 674,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:52.276Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 653,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:58.042Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-5c220c10e9ee3298963c",
+          "file": "review-context.spec.ts",
+          "line": 86,
+          "column": 54
+        },
+        {
+          "title": "failed conflict annotation preparation blocks model submission",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 477,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:47.763Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 556,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:52.957Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 549,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:58.701Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-26aab066f20d82f5694f",
+          "file": "review-context.spec.ts",
+          "line": 86,
+          "column": 54
+        },
+        {
+          "title": "draft and chat snapshots remain pinned when navigation unmounts the editor during upload",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 683,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:48.246Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 728,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:53.519Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 761,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:59.256Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-a346d1683bfccf88738a",
+          "file": "review-context.spec.ts",
+          "line": 102,
+          "column": 1
+        },
+        {
+          "title": "normal viewer preparer returns a detached exact context and clears its registration on unmount",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 326,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:48.935Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 402,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:54.254Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 393,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:53:00.024Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-229fda918a421299b224",
+          "file": "review-context.spec.ts",
+          "line": 128,
+          "column": 1
+        },
+        {
+          "title": "imported raster mask keeps its original artifact while the preparer exports markup",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 464,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:49.268Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 557,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:54.670Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 537,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:53:00.424Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-44fd35526e3a5624c0e7",
+          "file": "review-context.spec.ts",
+          "line": 141,
+          "column": 1
+        },
+        {
+          "title": "catalogue lost ACK survives reload and repeats identical SelectionSave without guessing owner choice",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 555,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:49.737Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 659,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:55.232Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 644,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:53:00.966Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-327d81bdcb493bb3e5af",
+          "file": "review-context.spec.ts",
+          "line": 154,
+          "column": 1
+        },
+        {
+          "title": "catalogue clears known unadmitted 409 and reloads choices before a new owner command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 447,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:50.297Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 533,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:55.896Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 533,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:53:01.615Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-ccd6bd514a567ac02ed8",
+          "file": "review-context.spec.ts",
+          "line": 172,
+          "column": 31
+        },
+        {
+          "title": "catalogue clears known unadmitted 422 and reloads choices before a new owner command",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "159.0.8154.6"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 463,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:50.749Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "159.0.8154.6"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.8103.39"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "brave",
+              "projectName": "brave",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 512,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:52:56.435Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.8103.39"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "actual-browser-engine",
+                  "description": "157.0.4341.42"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "edge",
+              "projectName": "edge",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 532,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T11:53:02.153Z",
+                  "annotations": [
+                    {
+                      "type": "actual-browser-engine",
+                      "description": "157.0.4341.42"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9ca9841035699fa8d5f3-49f6d8055f2614517191",
+          "file": "review-context.spec.ts",
+          "line": 172,
+          "column": 31
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-14T11:52:45.762Z",
+    "duration": 17060.267,
+    "expected": 27,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

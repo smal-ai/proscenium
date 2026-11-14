@@ -1,6 +1,6 @@
-import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, PreviewSegment, ProxyMapping } from "../../api/generated/contracts";
-import { emptySelection, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
+import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { AnnotationEditor } from "./AnnotationEditor";
 import { frameTarget, mediaUrl, sequenceTarget, typingTarget } from "./media";
 import { flushDraft, readDrafts, saveDraft, type Draft } from "./outbox";
@@ -25,7 +25,7 @@ export function ReviewWorkspace(props: ReviewSurfaceProps) {
   return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props}/>;
 }
 
-function Workspace({api, projectId, version, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onQueue}: ReviewSurfaceProps) {
+function Workspace({api, projectId, version, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
   const [mode, setMode] = useState<Mode>("keyframes");
   const [frames, setFrames] = useState<FrameReceipt[]>([]);
   const [segments, setSegments] = useState<PreviewSegment[]>([]);
@@ -55,6 +55,8 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
   const versionJobs = jobs.filter(j => j.target.version?.version_id === version?.version_id);
   const jobsKey = versionJobs.map(j => `${j.job_id}:${j.state_revision}`).join("|");
   const draft = drafts.find(d => d.key === draftId);
+  const editorPreparer = useRef<ContextPreparer | null>(null);
+  const registerEditorPreparer = useCallback((prepare: ContextPreparer | null) => {editorPreparer.current = prepare;}, []);
   const reviewJobId=selectedJobId ?? target?.render_job_id ?? versionJobs[0]?.job_id;
   const activeJob = jobs.find(j => j.job_id === reviewJobId);
   const currentFrames=useMemo(()=>frames.filter(f=>!reviewJobId||f.job_id===reviewJobId),[frames,reviewJobId]);
@@ -185,6 +187,21 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
     range: mode === "3d_inspection" && mapping ? {start: mapping.sample_frame, end: mapping.sample_frame} : range,
     attachments: mode !== "3d_inspection" && target ? [{artifact_id: target.artifact_id, role: target.origin === "concept" ? "concept" : target.origin === "reference" ? "reference" : "render"}] : []};
   const contextKey = JSON.stringify(context);
+  const prepareState = useRef({context, draftKey: draft?.key});
+  prepareState.current = {context, draftKey: draft?.key};
+  // Workspace alone owns the shell registration. The editor delegates internally,
+  // so its cleanup can never clear a newer workspace's shell handler.
+  useLayoutEffect(() => {
+    onContextPreparer?.(async () => {
+      if (prepareState.current.draftKey) {
+        const prepare = editorPreparer.current;
+        if (!prepare) throw new Error("Annotation preparation is not ready");
+        return prepare();
+      }
+      return structuredClone(prepareState.current.context);
+    });
+    return () => onContextPreparer?.(null);
+  }, [onContextPreparer]);
   useEffect(() => {const selection = JSON.parse(contextKey) as TurnSelection; emittedPrimary.current = JSON.stringify({target: selection.target, annotation: selection.annotations.map(a => [a.annotation_id,a.saved_revision])}); onContextChange(selection);}, [contextKey, onContextChange]);
 
   function step(delta: number, shot = false) {
@@ -266,7 +283,7 @@ function Workspace({api, projectId, version, jobs, refreshRevision, selection: e
       <button disabled={!target || !captureReady || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
       {mode === "3d_inspection" && <button disabled={!camera || queueingView} onClick={async () => {setQueueingView(true);try {await onQueue("Render this view",structuredClone(context));}catch(e){setError(String(e));}finally{setQueueingView(false);}}}>Render this view</button>}
     </nav>
-    {draft ? <AnnotationEditor api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onClose={() => setDraftId(null)}/>
+    {draft ? <AnnotationEditor key={draft.key} api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onContextPreparer={registerEditorPreparer} onClose={() => setDraftId(null)}/>
       : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
         : mode === "animation" ? assembly && frameMap ? <SequencePlayer projectId={projectId} artifact={assembly} mapping={frameMap.map} onCapture={async (blob,frame,width,height) => {
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});

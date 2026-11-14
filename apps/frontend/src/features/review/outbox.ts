@@ -42,7 +42,16 @@ export const readDrafts = async (projectId: string): Promise<Draft[]> =>
     .map(d => d.state === "saving" ? {...d,state:"failed",error:"Save interrupted. Original operation retained for retry."} : d);
 
 /** Persist each identity before its first network effect. A retry never reconstructs a command. */
+const inFlight = new Set<string>();
 export async function flushDraft(api: ApiClient, source: Draft, notify: (draft: Draft) => void): Promise<Draft> {
+  const identity = `${source.projectId}:${source.key}`;
+  if (inFlight.has(identity)) throw new Error("This annotation save is already in progress");
+  inFlight.add(identity);
+  try {return await flushOriginalDraft(api, source, notify);}
+  finally {inFlight.delete(identity);}
+}
+
+async function flushOriginalDraft(api: ApiClient, source: Draft, notify: (draft: Draft) => void): Promise<Draft> {
   let draft = structuredClone(source);
   const update = async (next: Draft) => { draft = next; await saveDraft(draft); notify(draft); };
   await update({...draft, state: "saving", error: undefined});
