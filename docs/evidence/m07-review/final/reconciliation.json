@@ -1,0 +1,53 @@
+{
+  "reconciled_at": "2026-11-14T19:37:06.011139+00:00",
+  "status": "TERMINAL_FAILED_BEFORE_REVIEW",
+  "actual_source": "4a41e99583c5556c2b5d28d9ce15af914d180d2c",
+  "actual_browser": {
+    "version": "159.0.8154.6",
+    "executable": "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+    "sha256": "045558b2f167db04624e36d952496705418a85d87ff9b5fb55a8c40cc59201ae"
+  },
+  "actual_views_verified": 0,
+  "image_job_shot_context_result": "NOT_VERIFIED",
+  "failure": "Proof guard rejected activation's read-only Git validation before child creation",
+  "durable_error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok((await activation).ok())\n",
+  "elapsed_seconds": 123.22766935301479,
+  "cleanup": {
+    "children": {
+      "server": {
+        "pid": 147037,
+        "start": "47692764",
+        "returncode": 0,
+        "reaped": true,
+        "original_identity_live": false
+      },
+      "browser": {
+        "pid": 147038,
+        "start": "47692764",
+        "returncode": 1,
+        "reaped": true,
+        "original_identity_live": false
+      }
+    },
+    "port_released_at_shutdown": true
+  },
+  "preservation": {
+    "basis": "existing_terminal_receipt",
+    "original_inventory_unchanged": true,
+    "protected_project_and_budget_hashes_unchanged": true
+  },
+  "sdk_sends": 0,
+  "provider_sends": 0,
+  "receipt_sha256": {
+    "run.json": "6d6e611255086c167c4320c458ee335d9cef26929c08fa3dc8b03294e1b71774",
+    "browser-result.json": "474203f9f14b6ca5020683bfea8d2217ee2aad734f19e89a6001433b4facd4bb",
+    "server-audit.json": "46257a3180bd341675e74b2945e184ca1ef6dd7287e92c499b5fbe7749e1c7dd",
+    "protected-before.json": "f7b69702f107221608399265d22f673d2b03dce40cebf7b24c1dd067f06d7c52"
+  },
+  "historical_manifest_sha256": "8d217b491529c76d4a7fffc2a33ef94ac0cfe7ffc01e152dfcfdfa7d51616ca1",
+  "historical_manifest_files_verified": 26,
+  "continuation_executed": false,
+  "new_stack_started": false,
+  "new_model_or_provider_work": false,
+  "parent_integrated_revision_not_exercised_by_this_old_run": "abedc19"
+}
