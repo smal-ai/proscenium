@@ -1,0 +1,277 @@
+{
+  "label": "m10",
+  "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+  "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+  "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+  "head_before": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+  "source_files": 13,
+  "old_report_files": 23,
+  "snapshot_files": 10,
+  "snapshot_manifest_sha256": "4b559ca78c77dfaf27673e81823193427be38a05436e82120d7704fa8a87ec52",
+  "reconciliation_before_control": {
+    "pending_empty": true,
+    "uncertain_request_ids": [],
+    "live_invocations": 0,
+    "uncertain_stops": 0,
+    "uncertain_continuations": 0,
+    "duplicate_correlations": 0
+  },
+  "read_wait_candidates": 0,
+  "native_runtime_seconds": 2.768353699997533,
+  "process": {
+    "pid": 357,
+    "start": "47422526",
+    "parent_pid": 4194285,
+    "parent_start": "47422398",
+    "same_identity_alive": false,
+    "parent_same_identity_alive": false
+  },
+  "counts": {
+    "opens": 1,
+    "raw_history_rpc": 1,
+    "typed_history": 1,
+    "sends": 0,
+    "blocked_callbacks": 0,
+    "aborts": 0,
+    "pauses": 0,
+    "unexpected_turns": 0
+  },
+  "source_scene_meta_unchanged": true,
+  "all_old_reports_unchanged": true,
+  "git_refs_unchanged": true,
+  "head_after": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+  "old_bindings_unchanged": true,
+  "contexts_unchanged": true,
+  "source_job_receipt_records_unchanged": true,
+  "send_records_unchanged": true,
+  "original_submissions_unchanged": true,
+  "work_before": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+    "job_ids": [],
+    "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "originating_request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "schema_version": "1.0",
+    "state": "completed",
+    "state_revision": 6,
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "work_after": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+    "job_ids": [],
+    "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "originating_request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "schema_version": "1.0",
+    "state": "completed",
+    "state_revision": 6,
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "live_before": [],
+  "live_after": [],
+  "read_outcomes": [],
+  "permission_stage_before": {
+    "authority": "automatic_policy",
+    "claim_id": "2fb0ba8b438e493aa7aaef36518ddb53",
+    "claimed_at": "2026-11-14T18:00:09.705224+00:00",
+    "completed_at": "2026-11-14T18:00:09.734008+00:00",
+    "completions": [
+      {
+        "matches": true,
+        "native_event_id": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+        "result": "denied-interactively-by-user"
+      }
+    ],
+    "delivery_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+    "delivery_state": "acknowledged",
+    "fingerprint": "a577936667509869f1197e98cfb4625fc08f5520c400e1be638cbd55651736a4",
+    "invocation_id": "9755bc3511336ba0dc4959b74f9219ae9a5233e93a32f08a1180a5b3816d48d0",
+    "native_id": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+    "native_result": "denied-interactively-by-user",
+    "phase": "completed",
+    "reply": "reject",
+    "reply_prepared_at": "2026-11-14T18:00:09.708026+00:00",
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "tool_call_id": "call_pKoAp26w293LCPhPJ3iV6uz1",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "permission_stage_after": {
+    "authority": "automatic_policy",
+    "claim_id": "2fb0ba8b438e493aa7aaef36518ddb53",
+    "claimed_at": "2026-11-14T18:00:09.705224+00:00",
+    "completed_at": "2026-11-14T18:00:09.734008+00:00",
+    "completions": [
+      {
+        "matches": true,
+        "native_event_id": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+        "result": "denied-interactively-by-user"
+      }
+    ],
+    "delivery_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+    "delivery_state": "acknowledged",
+    "fingerprint": "a577936667509869f1197e98cfb4625fc08f5520c400e1be638cbd55651736a4",
+    "invocation_id": "9755bc3511336ba0dc4959b74f9219ae9a5233e93a32f08a1180a5b3816d48d0",
+    "native_id": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+    "native_result": "denied-interactively-by-user",
+    "phase": "completed",
+    "reply": "reject",
+    "reply_prepared_at": "2026-11-14T18:00:09.708026+00:00",
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "tool_call_id": "call_pKoAp26w293LCPhPJ3iV6uz1",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "decisions_before": [],
+  "decisions_after": [],
+  "new_public_events": [],
+  "ready_for_original_continue": false,
+  "native_user_messages_before": 2,
+  "native_user_messages_after": 2,
+  "native_history_prefix_preserved": true,
+  "counts_scope": "One cold SDK metadata runtime; cached raw history shared by typed projection. Python tool/provider-HTTP and prompt callbacks blocked. Not an OS network sandbox.",
+  "original_receipt_before": {
+    "detail_code": "attribution_unavailable",
+    "native_message_id": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "replayed": false,
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "schema_version": "1.0",
+    "state": "completed",
+    "state_revision": 6,
+    "type": "queue",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "original_receipt_after": {
+    "detail_code": "attribution_unavailable",
+    "native_message_id": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "replayed": false,
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "schema_version": "1.0",
+    "state": "completed",
+    "state_revision": 6,
+    "type": "queue",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "new_native_events": [
+    {
+      "id": "e72040d2-2d3e-4776-a686-4130dc83eccb",
+      "type": "session.resume",
+      "timestamp": "2026-11-14T18:38:34.503000+00:00",
+      "parentId": "b001eef5-21b8-4fb3-9ac3-6102ddc8b1a4",
+      "data": {}
+    }
+  ],
+  "completion_diagnostic": {
+    "source_commit": "e18310c6872c166a6a7b3989730d5f3f23e85ca1",
+    "producer": "State.reduce assistant.turn_end candidate -> Copilot.settle after idle/pending/tools/decision checks",
+    "producer_native_event_id": "3c0c7062-ce70-4e7e-be44-01f7260fbd0e",
+    "producer_binding": {
+      "delivery_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    "cached_completion_before": {
+      "candidate": true,
+      "delivery_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+      "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    "durable_idle_before": [
+      {
+        "delivery_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+        "idle": true,
+        "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+        "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+      }
+    ],
+    "full_task_terminal_observed": false,
+    "nonempty_public_final_observed": false,
+    "native_trace": [
+      {
+        "id": "d6d69484-924f-4471-86c9-20e911cced8f",
+        "type": "user.message",
+        "timestamp": "2026-11-14T18:00:04.887Z",
+        "parentId": "0c9d1bf4-6c73-4eb9-88f1-c2b4653c5150",
+        "client_turn_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+        "native_message_id": "0616732c-cddd-44b1-9875-4e59ff93a202"
+      },
+      {
+        "id": "71431c25-e106-4632-9615-0a817f017488",
+        "type": "assistant.turn_start",
+        "timestamp": "2026-11-14T18:00:04.915Z",
+        "parentId": "ce6d70ee-c56f-47a0-8ce8-ccd7293670cf"
+      },
+      {
+        "id": "85753930-6c30-4d36-8ed6-c87280cf2bb8",
+        "type": "assistant.message",
+        "timestamp": "2026-11-14T18:00:09.635Z",
+        "parentId": "71431c25-e106-4632-9615-0a817f017488",
+        "public_content_nonempty": false,
+        "tool_requests": 2
+      },
+      {
+        "id": "f4cf979d-1a9e-4383-a8b7-7e7bf41be801",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T18:00:09.637Z",
+        "parentId": "85753930-6c30-4d36-8ed6-c87280cf2bb8"
+      },
+      {
+        "id": "272a4d62-562b-4922-95c3-5b00032dfa69",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T18:00:09.641Z",
+        "parentId": "f4cf979d-1a9e-4383-a8b7-7e7bf41be801"
+      },
+      {
+        "id": "f7bdb626-a133-42da-a9e8-0485518cad83",
+        "type": "permission.requested",
+        "timestamp": "2026-11-14T18:00:09.692Z",
+        "parentId": "97fbea79-282b-4621-a44d-cf4481e8b52d"
+      },
+      {
+        "id": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+        "type": "permission.completed",
+        "timestamp": "2026-11-14T18:00:09.712Z",
+        "parentId": "f7bdb626-a133-42da-a9e8-0485518cad83",
+        "native_permission_id": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+        "tool_call_id": "call_pKoAp26w293LCPhPJ3iV6uz1",
+        "result": "denied-interactively-by-user"
+      },
+      {
+        "id": "1cce1389-7750-4f01-bac8-7e228543875e",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T18:00:09.715Z",
+        "parentId": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+        "tool_call_id": "call_pKoAp26w293LCPhPJ3iV6uz1",
+        "native_tool_success": false,
+        "error_code": "rejected"
+      },
+      {
+        "id": "83323727-ea62-4efb-b07f-14dcbf3e7328",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T18:00:09.767Z",
+        "parentId": "a93b5ecc-cd60-44d2-8918-5c4b16976fcd",
+        "tool_call_id": "call_YbIvylEHu9XJe4vS00n9wUtz",
+        "native_tool_success": true,
+        "error_code": null
+      },
+      {
+        "id": "3c0c7062-ce70-4e7e-be44-01f7260fbd0e",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T18:00:09.772Z",
+        "parentId": "83323727-ea62-4efb-b07f-14dcbf3e7328"
+      },
+      {
+        "id": "b001eef5-21b8-4fb3-9ac3-6102ddc8b1a4",
+        "type": "session.shutdown",
+        "timestamp": "2026-11-14T18:00:10.432Z",
+        "parentId": "eef78cdd-bb81-4549-abfb-234f03d05299"
+      }
+    ],
+    "historical_completed_record_unchanged": true,
+    "interpretation": "Application completed from an empty tool-batch turn boundary. No independent full-task or business-goal completion is certified. Future producer guard is fixed; this historical completed row is not reopened."
+  }
+}

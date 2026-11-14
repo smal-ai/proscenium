@@ -78,3 +78,24 @@ including new IO/path/binding/Stop/settlement cases and existing permission,
 registered-handler, delivery/fault and retired-callback coverage. Ruff and mypy on
 four owned production files pass. Metadata execution and final preservation/
 readiness outcomes follow separately; no model send is authorised by this report.
+
+## Actual bounded outcome
+
+The [metadata handover](../evidence/native-io-policy/README.md) records both
+before-snapshotted, one-cold-open, zero-send executions. M11 matched one exact
+departed read wait, then the explicit Stop received pause/Abort acknowledgements
+but no fresh Abort/idle event or native read completion. It correctly stayed
+unconfirmed: work stop_requested revision 9, Stop outcome_uncertain, rg unresolved.
+The decision is cancelled with null answer/resolver and not_sent delivery. No
+native result or successful cancellation barrier was invented. Original publication
+work is **not ready for Continue** on this evidence.
+
+M11 HEAD/receipt `8d49caaee980d18a140111e81b15a46c71e229ce` and all checkpoint
+bytes are preserved. M10's historical completed revision-6 record is unchanged;
+the actual turn-end candidate/binding and absent full-task/final-response evidence
+are retained without manually making it resumable. Both SDK runtimes and their
+parents are closed. No extra allocation or native retry occurred.
+
+The small offline-test portability correction is `c42f3ff`: checked-in captures
+and a selected immutable M10 fixture replace unreachable fleet refs. Twenty-three
+focused checks pass, without changing historical capture files.

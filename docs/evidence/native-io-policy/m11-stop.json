@@ -1,0 +1,418 @@
+{
+  "label": "m11",
+  "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+  "work_id": "work-4a7e644e78514109b4a5232316e3aacc",
+  "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+  "head_before": "8d49caaee980d18a140111e81b15a46c71e229ce",
+  "source_files": 86,
+  "old_report_files": 313,
+  "snapshot_files": 10,
+  "snapshot_manifest_sha256": "d2ede6ec22bf01dd8d9561a7175eab328f885032cc73e799e685429bd18f84d2",
+  "reconciliation_before_control": {
+    "pending_empty": true,
+    "uncertain_request_ids": [],
+    "live_invocations": 1,
+    "uncertain_stops": 0,
+    "uncertain_continuations": 0,
+    "duplicate_correlations": 0
+  },
+  "read_wait_candidates": 1,
+  "stop_command": {
+    "schema_version": "1.0",
+    "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "type": "stop",
+    "target_work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "stop_admission": {
+    "native_message_id": null,
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "replayed": false,
+    "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+    "schema_version": "1.0",
+    "state": "stop_requested",
+    "state_revision": 0,
+    "type": "stop",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "stop_phase": {
+    "abort": "acknowledged",
+    "pause": "acknowledged",
+    "phase": "outcome_uncertain",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "work_after_control": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+    "job_ids": [],
+    "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+    "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "schema_version": "1.0",
+    "state": "stop_requested",
+    "state_revision": 9,
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "native_runtime_seconds": 7.732305018987972,
+  "process": {
+    "pid": 4192437,
+    "start": "47415032",
+    "parent_pid": 4192402,
+    "parent_start": "47414900",
+    "same_identity_alive": false,
+    "parent_same_identity_alive": false
+  },
+  "counts": {
+    "opens": 1,
+    "raw_history_rpc": 1,
+    "typed_history": 1,
+    "sends": 0,
+    "blocked_callbacks": 0,
+    "aborts": 1,
+    "pauses": 1,
+    "unexpected_turns": 0
+  },
+  "source_scene_meta_unchanged": true,
+  "all_old_reports_unchanged": true,
+  "git_refs_unchanged": true,
+  "head_after": "8d49caaee980d18a140111e81b15a46c71e229ce",
+  "old_bindings_unchanged": true,
+  "contexts_unchanged": true,
+  "source_job_receipt_records_unchanged": true,
+  "send_records_unchanged": true,
+  "original_submissions_unchanged": true,
+  "work_before": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+    "job_ids": [],
+    "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+    "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "schema_version": "1.0",
+    "state": "awaiting_user",
+    "state_revision": 8,
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "work_after": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+    "job_ids": [],
+    "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+    "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "schema_version": "1.0",
+    "state": "stop_requested",
+    "state_revision": 9,
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "live_before": [
+    {
+      "agent_id": null,
+      "arguments_sha256": "f78c15a7bbcaa3e8f95688a914875caba28653b9adbae3451594ceb6b65873eb",
+      "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+      "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "rg",
+      "native_id": "call_XcQ3lvQAC0HOmPxz3LBd6jzc",
+      "owner_epoch": "epoch-beb48663-3cc3-4fc8-83ba-5cf6ec9a5150",
+      "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+      "state": "running",
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    }
+  ],
+  "live_after": [
+    {
+      "agent_id": null,
+      "arguments_sha256": "f78c15a7bbcaa3e8f95688a914875caba28653b9adbae3451594ceb6b65873eb",
+      "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+      "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "rg",
+      "native_id": "call_XcQ3lvQAC0HOmPxz3LBd6jzc",
+      "owner_epoch": "epoch-beb48663-3cc3-4fc8-83ba-5cf6ec9a5150",
+      "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+      "state": "running",
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    }
+  ],
+  "read_outcomes": [],
+  "permission_stage_before": {
+    "authority": "host",
+    "claim_id": "0f9d7b3be4234d20aa5c01f8b05a2400",
+    "claimed_at": "2026-11-14T18:01:18.673419+00:00",
+    "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+    "delivery_state": "outcome_uncertain",
+    "fingerprint": "d9572712ce7b46aed27fdf4fd056cb7080b0a3a238f431d746ac84e43c8872c9",
+    "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+    "native_id": "f4cb7f12-085b-42b8-9288-19b946111107",
+    "phase": "reply_prepared",
+    "reply": "reject",
+    "reply_prepared_at": "2026-11-14T18:01:37.601817+00:00",
+    "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+    "tool_call_id": "call_XcQ3lvQAC0HOmPxz3LBd6jzc",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "permission_stage_after": {
+    "authority": "host",
+    "claim_id": "0f9d7b3be4234d20aa5c01f8b05a2400",
+    "claimed_at": "2026-11-14T18:01:18.673419+00:00",
+    "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+    "delivery_state": "outcome_uncertain",
+    "fingerprint": "d9572712ce7b46aed27fdf4fd056cb7080b0a3a238f431d746ac84e43c8872c9",
+    "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+    "native_id": "f4cb7f12-085b-42b8-9288-19b946111107",
+    "phase": "reply_prepared",
+    "reply": "reject",
+    "reply_prepared_at": "2026-11-14T18:01:37.601817+00:00",
+    "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+    "tool_call_id": "call_XcQ3lvQAC0HOmPxz3LBd6jzc",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "decisions_before": [
+    {
+      "decision_id": "decision-fbd9a5d969c84dd82857ba80d5811d112076572904ba29f6f27a09e384c972ff",
+      "delivery_state": "not_sent",
+      "fingerprint": "35449c96dbf092a563e7d9586789ef94af00815b9353ee1eab8e9134d952a434",
+      "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+      "kind": "permission",
+      "native_decision_id": "f4cb7f12-085b-42b8-9288-19b946111107",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "resolved_by": null,
+      "response": null,
+      "schema_version": "1.0",
+      "state": "pending",
+      "state_revision": 0,
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    }
+  ],
+  "decisions_after": [
+    {
+      "decision_id": "decision-fbd9a5d969c84dd82857ba80d5811d112076572904ba29f6f27a09e384c972ff",
+      "delivery_state": "not_sent",
+      "fingerprint": "35449c96dbf092a563e7d9586789ef94af00815b9353ee1eab8e9134d952a434",
+      "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+      "kind": "permission",
+      "native_decision_id": "f4cb7f12-085b-42b8-9288-19b946111107",
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "resolved_by": null,
+      "response": null,
+      "schema_version": "1.0",
+      "state": "cancelled",
+      "state_revision": 1,
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    }
+  ],
+  "new_public_events": [
+    {
+      "actor": {
+        "id": "copilot-host",
+        "kind": "system"
+      },
+      "event_type": "decision.resolved",
+      "native_event_id": null,
+      "native_session_id": null,
+      "occurred_at": "2026-11-14T18:37:20.102073+00:00",
+      "payload": {
+        "decision_id": "decision-fbd9a5d969c84dd82857ba80d5811d112076572904ba29f6f27a09e384c972ff",
+        "delivery_state": "not_sent",
+        "fingerprint": "35449c96dbf092a563e7d9586789ef94af00815b9353ee1eab8e9134d952a434",
+        "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+        "kind": "permission",
+        "native_decision_id": "f4cb7f12-085b-42b8-9288-19b946111107",
+        "options": [
+          "approve_once",
+          "decline"
+        ],
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "prompt": "{\"intention\":\"Search in file: /home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/unity/M11/Assets/Proscenium/tool-install.json\",\"kind\":\"read\",\"path\":\"/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/project/unity/M11/Assets/Proscenium/tool-install.json\",\"toolCallId\":\"call_XcQ3lvQAC0HOmPxz3LBd6jzc\"}",
+        "resolved_by": null,
+        "response": null,
+        "schema_version": "1.0",
+        "state": "cancelled",
+        "state_revision": 1,
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "request_id": null,
+      "schema_version": "1.0",
+      "sequence": 517,
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    },
+    {
+      "actor": {
+        "id": "copilot-host",
+        "kind": "system"
+      },
+      "event_type": "work.state_changed",
+      "native_event_id": null,
+      "native_session_id": null,
+      "occurred_at": "2026-11-14T18:37:20.102878+00:00",
+      "payload": {
+        "directive_request_ids": [],
+        "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+        "job_ids": [],
+        "native_session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "originating_request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "schema_version": "1.0",
+        "state": "stop_requested",
+        "state_revision": 9,
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+      "schema_version": "1.0",
+      "sequence": 518,
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    },
+    {
+      "actor": {
+        "id": "native-io-policy-scripted-owner-stop",
+        "kind": "user"
+      },
+      "event_type": "request.accepted",
+      "native_event_id": null,
+      "native_session_id": null,
+      "occurred_at": "2026-11-14T18:37:20.103329+00:00",
+      "payload": {
+        "accepted_at": "2026-11-14T18:37:20.100212+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "receipt": {
+          "native_message_id": null,
+          "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+          "replayed": false,
+          "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+          "schema_version": "1.0",
+          "state": "stop_requested",
+          "state_revision": 0,
+          "type": "stop",
+          "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+        },
+        "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+        "schema_version": "1.0",
+        "submission": {
+          "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+          "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+          "schema_version": "1.0",
+          "target_work_id": "work-4a7e644e78514109b4a5232316e3aacc",
+          "type": "stop"
+        }
+      },
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+      "schema_version": "1.0",
+      "sequence": 519,
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    },
+    {
+      "actor": {
+        "id": "copilot-host",
+        "kind": "system"
+      },
+      "event_type": "request.state_changed",
+      "native_event_id": null,
+      "native_session_id": null,
+      "occurred_at": "2026-11-14T18:37:25.255274+00:00",
+      "payload": {
+        "accepted_at": "2026-11-14T18:37:20.100212+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-b390b793013d46f687f2daf462be79b4",
+        "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+        "receipt": {
+          "detail_code": "provider_unavailable",
+          "native_message_id": null,
+          "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+          "replayed": false,
+          "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+          "schema_version": "1.0",
+          "state": "outcome_uncertain",
+          "state_revision": 1,
+          "type": "stop",
+          "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+        },
+        "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+        "schema_version": "1.0",
+        "submission": {
+          "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+          "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+          "schema_version": "1.0",
+          "target_work_id": "work-4a7e644e78514109b4a5232316e3aacc",
+          "type": "stop"
+        }
+      },
+      "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+      "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+      "schema_version": "1.0",
+      "sequence": 520,
+      "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+    }
+  ],
+  "ready_for_original_continue": false,
+  "native_user_messages_before": 6,
+  "native_user_messages_after": 6,
+  "native_history_prefix_preserved": true,
+  "counts_scope": "One cold SDK metadata runtime; cached raw history shared by typed projection. Python tool/provider-HTTP and prompt callbacks blocked. Not an OS network sandbox.",
+  "original_receipt_before": {
+    "detail_code": "provider_unavailable",
+    "native_message_id": "655ebd77-d120-497f-9e0f-4c0c7ac57755",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "replayed": false,
+    "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "schema_version": "1.0",
+    "state": "running",
+    "state_revision": 5,
+    "type": "queue",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "original_receipt_after": {
+    "detail_code": "provider_unavailable",
+    "native_message_id": "655ebd77-d120-497f-9e0f-4c0c7ac57755",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "replayed": false,
+    "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+    "schema_version": "1.0",
+    "state": "running",
+    "state_revision": 5,
+    "type": "queue",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "new_native_events": [
+    {
+      "id": "369db6eb-99c5-4469-9a35-363568aa2292",
+      "type": "session.resume",
+      "timestamp": "2026-11-14T18:37:19.577000+00:00",
+      "parentId": "6a832b19-b777-4002-8160-3e63adfc93e1",
+      "data": {}
+    }
+  ],
+  "stop_receipt": {
+    "detail_code": "provider_unavailable",
+    "native_message_id": null,
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "replayed": false,
+    "request_id": "33048c8a-df79-4027-a6c2-10ba396e5044",
+    "schema_version": "1.0",
+    "state": "outcome_uncertain",
+    "state_revision": 1,
+    "type": "stop",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+  },
+  "missing_observations": [
+    "No native permission.completed or rg tool.execution_complete for the retained read.",
+    "Pause/Abort RPCs acknowledged but cold runtime emitted neither a fresh native abort nor session.idle.",
+    "No final verified pending/idle/tool barrier was committed; dead owner plus unchanged source does not prove a read return."
+  ],
+  "preflight_correction": {
+    "type": "NameError",
+    "missing_import": "Services",
+    "native_open_before_failure": false
+  }
+}
