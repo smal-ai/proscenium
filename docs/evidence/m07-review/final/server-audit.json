@@ -1,0 +1,84 @@
+{
+  "forbidden": [
+    "subprocess"
+  ],
+  "requests": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/index-y9OoT4O1.js",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/index-VG5WV1Cp.css",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/owner/session",
+      "method": "POST",
+      "allowed": true,
+      "status": 201
+    },
+    {
+      "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/configuration",
+      "method": "GET",
+      "allowed": true,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/activate",
+      "method": "POST",
+      "allowed": true
+    }
+  ],
+  "sdk_sends": 0,
+  "provider_sends": 0,
+  "gate_closed": true,
+  "lifecycle_errors": {},
+  "services": [],
+  "execution_profiles": []
+}

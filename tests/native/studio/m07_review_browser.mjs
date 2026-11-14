@@ -33,7 +33,10 @@ try {
   await page.locator('button.project-trigger').click();
   await page.getByLabel('Saved project',{exact:true}).selectOption(projectId);
   const activation=page.waitForResponse(response=>response.url().endsWith(`${prefix}/activate`)&&response.request().method()==='POST');
-  await page.getByRole('button',{name:'Activate selected project',exact:true}).click();assert.ok((await activation).ok());
+  await page.getByRole('button',{name:'Activate selected project',exact:true}).click();
+  const activationResponse=await activation;
+  result.activation={status:activationResponse.status(),body:await activationResponse.json()};
+  assert.ok(activationResponse.ok(),JSON.stringify(result.activation));
   // Activation replaces ProjectStudio's key. Its old menu normally disappears
   // with that component, so observe the new shell before closing any retained menu.
   await page.waitForFunction(id=>document.querySelector('.panel-footer code')?.textContent===id,projectId);

@@ -46,6 +46,17 @@ class ReadOnlyGuard:
         return await self.app(scope, receive, send)
 
 
+def activation_git(command, project, kwargs):
+    """The product's exact root validation, not a general shell/Git allowance."""
+    prefix = ["git", "-c", "core.hooksPath=/dev/null", "-C", str(project), "rev-parse"]
+    return (
+        command in [[*prefix, "--show-toplevel"], [*prefix, "--show-object-format"]]
+        and not kwargs.get("shell", False)
+        and kwargs.get("executable") is None
+        and kwargs.get("cwd") in {None, str(project), project}
+    )
+
+
 def main(root):
     signal.alarm(290)
     audit: dict[str, Any] = {"forbidden": [], "requests": [], "sdk_sends": 0, "provider_sends": 0}
@@ -67,6 +78,15 @@ def main(root):
     (root / "pair.private").write_text(settings.origin + "/#pair=" + services.auth.issue_pairing())
     (root / "pair.private").chmod(0o600)
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=18969, log_level="warning"))
+    real_popen = subprocess.Popen
+
+    def guarded_popen(command, *args, **kwargs):
+        if not activation_git(command, root / "restored/project", kwargs):
+            return blocked("subprocess")()
+        process = real_popen(command, *args, **kwargs)
+        audit.setdefault("read_only_git", []).append({"argv": command, "pid": process.pid})
+        return process
+
     # Uvicorn's ordinary handler re-raises SIGTERM after shutdown. Keep the final
     # audit in this process's finally, including on an externally requested stop.
     signal.signal(signal.SIGTERM, lambda *_: setattr(server, "should_exit", True))
@@ -74,13 +94,13 @@ def main(root):
         with ExitStack() as stack:
             stack.enter_context(patch.object(server, "capture_signals", ExitStack))
             for target, name, kind in (
-                (subprocess, "Popen", "subprocess"),
                 (asyncio, "create_subprocess_exec", "async_subprocess"),
                 (httpx.Client, "send", "provider_http"),
                 (httpx.AsyncClient, "send", "async_provider_http"),
                 (CopilotSession, "send", "sdk_send"),
             ):
                 stack.enter_context(patch.object(target, name, blocked(kind)))
+            stack.enter_context(patch.object(subprocess, "Popen", guarded_popen))
             server.run()
     finally:
         audit["gate_closed"] = not services.gate._open

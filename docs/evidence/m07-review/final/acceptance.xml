@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="9" time="0.059" timestamp="2026-11-14T21:29:27.587319+02:00" hostname="Gerard-EVO-X2"><testcase classname="tests.acceptance.m07_review_test" name="test_activation_git_is_only_exact_read_only_root_validation" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[GET-/api/v1/projects/p/artifacts/a/content-True]" time="0.001" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/owner/session-True]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/projects/p/activate-True]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/projects/p/requests-False]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/internal/v1/generation-jobs-False]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_read_only_guard[POST-/api/v1/projects/p/selections-False]" time="0.000" /><testcase classname="tests.acceptance.m07_review_test" name="test_retained_actual_boundary_cleanup" time="0.001"><failure message="AssertionError: assert (['subprocess'] == []&#10;  &#10;  Left contains one more item: 'subprocess'&#10;  Use -v to get more diff)">def test_retained_actual_boundary_cleanup():
+        run, result, audit = retained()
+        assert run["original_unchanged"] and run["port_released"]
+        assert run["protected_identities_unchanged"]
+        assert run["elapsed"] &lt;= 300
+        assert min(row["available"] for row in run["samples"]) &gt;= 4 * 1024**3
+        assert all(row["reaped"] for row in run["children"].values())
+&gt;       assert audit["forbidden"] == [] and audit["gate_closed"]
+E       AssertionError: assert (['subprocess'] == []
+E         
+E         Left contains one more item: 'subprocess'
+E         Use -v to get more diff)
+
+tests/acceptance/m07_review_test.py:92: AssertionError</failure></testcase><testcase classname="tests.acceptance.m07_review_test" name="test_retained_actual_readback" time="0.001"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert.ok((await activation).ok())&#10;  &#10;assert (None)&#10; +  where None = &lt;built-in method get of dict object at 0x7339ba68a840&gt;('pass')&#10; +    where &lt;built-in method get of dict object at 0x7339ba68a840&gt; = {'build': {'apps/frontend/dist/assets/index-VG5WV1Cp.css': '8d68faf9412d4fb66e6eba2ff9831a78d7076648dbf12581b45d653eca...'reaped': True, 'returncode': 0, 'start': '47692764'}}, 'elapsed': 123.22766935301479, 'original_unchanged': True, ...}.get">def test_retained_actual_readback():
+        run, result, audit = retained()
+&gt;       assert run.get("pass") and result.get("pass"), result.get(
+            "error", "Actual UI proof is incomplete"
+        )
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert.ok((await activation).ok())
+E         
+E       assert (None)
+E        +  where None = &lt;built-in method get of dict object at 0x7339ba68a840&gt;('pass')
+E        +    where &lt;built-in method get of dict object at 0x7339ba68a840&gt; = {'build': {'apps/frontend/dist/assets/index-VG5WV1Cp.css': '8d68faf9412d4fb66e6eba2ff9831a78d7076648dbf12581b45d653eca...'reaped': True, 'returncode': 0, 'start': '47692764'}}, 'elapsed': 123.22766935301479, 'original_unchanged': True, ...}.get
+
+tests/acceptance/m07_review_test.py:99: AssertionError</failure></testcase></testsuite></testsuites>

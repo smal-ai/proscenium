@@ -1,0 +1,27 @@
+{
+  "source": "4a41e99583c5556c2b5d28d9ce15af914d180d2c",
+  "views": [],
+  "errors": [],
+  "mutations": [
+    {
+      "path": "/api/v1/owner/session",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/projects/project-2d8c0aea-e3de-41cf-9c23-1d0108fd8bb8/activate",
+      "method": "POST"
+    }
+  ],
+  "browser": {
+    "version": "159.0.8154.6",
+    "executable": "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+    "sha256": "045558b2f167db04624e36d952496705418a85d87ff9b5fb55a8c40cc59201ae"
+  },
+  "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok((await activation).ok())\n",
+  "failed_phases": [
+    {
+      "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok((await activation).ok())\n",
+      "at": "2026-11-14T19:23:38.159Z"
+    }
+  ]
+}

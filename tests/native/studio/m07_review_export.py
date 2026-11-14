@@ -41,6 +41,7 @@ def main(root, browser, suffix=""):
         shutil.copyfile(path, captures / path.name)
     browser_result = json.loads((root / "browser-result.json").read_text())
     run = json.loads((root / "run.json").read_text())
+    audit = json.loads((root / "server-audit.json").read_text())
     summary = {
         "actual_readback": "PASS" if browser_result.get("pass") and run.get("pass") else "FAILED",
         "actual_source": run["source"],
@@ -50,6 +51,9 @@ def main(root, browser, suffix=""):
         "minimum_available_bytes": min(row["available"] for row in run["samples"]),
         "original_unchanged_since_import": run["original_unchanged"],
         "protected_identities_unchanged": run["protected_identities_unchanged"],
+        "guard_rejections": audit["forbidden"],
+        "sdk_sends": audit["sdk_sends"],
+        "provider_sends": audit["provider_sends"],
         "parent_acceptance": "NOT_CLAIMED",
         "cobalt_blue_instruction": "NOT_ACHIEVED_IN_ORIGINAL_GENERATION",
         "fresh_generation": False,

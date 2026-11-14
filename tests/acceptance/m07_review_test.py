@@ -11,7 +11,33 @@ import pytest
 from proscenium.contracts import validate
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "native/studio"))
-from m07_review_server import ReadOnlyGuard  # noqa: E402
+from m07_review_server import ReadOnlyGuard, activation_git  # noqa: E402
+
+
+def test_activation_git_is_only_exact_read_only_root_validation():
+    root = Path("/private/fixture/restored/project")
+    command = [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-C",
+        str(root),
+        "rev-parse",
+        "--show-toplevel",
+    ]
+    assert activation_git(command, root, {})
+    assert activation_git([*command[:-1], "--show-object-format"], root, {})
+    for replacement in (
+        ["copilot"],
+        ["blender"],
+        ["git", "status"],
+        [*command[:-2], "reset", "--hard"],
+        [*command[:4], "/unowned/project", *command[5:]],
+    ):
+        assert not activation_git(replacement, root, {})
+    assert not activation_git(command, root, {"shell": True})
+    assert not activation_git(command, root, {"executable": "/unowned/tool"})
+    assert not activation_git(command, root, {"cwd": "/unowned/project"})
 
 
 @pytest.mark.parametrize(
