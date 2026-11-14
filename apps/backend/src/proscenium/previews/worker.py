@@ -127,9 +127,16 @@ def supervise(root: Path) -> None:
                 futures: list[concurrent.futures.Future] = []
                 scheduled = set()
                 spec = task["spec"]
+                # PNG keyframes preserve the exact captured camera/intrinsic dimensions.
+                # Keep the existing optional segment for even-sized keyframes, but never
+                # pad/crop/round an odd still merely to satisfy yuv420p encoding.
+                encode_segments = spec["purpose"] != "proxy" and not (
+                    spec["purpose"] == "keyframe"
+                    and (spec["dimensions"]["width"] % 2 or spec["dimensions"]["height"] % 2)
+                )
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as encoder:
                     while True:
-                        if spec["purpose"] != "proxy":
+                        if encode_segments:
                             for first in range(
                                 spec["frames"]["start"], spec["frames"]["end"] + 1, 4
                             ):
@@ -162,7 +169,7 @@ def supervise(root: Path) -> None:
                                 log.flush()
                             elif native.poll() is not None:
                                 # One final scheduling pass handles the last completed group.
-                                if spec["purpose"] == "proxy" or len(scheduled) == sum(
+                                if not encode_segments or len(scheduled) == sum(
                                     all(
                                         (root / f"frame-{frame:08d}.json").exists()
                                         for frame in range(

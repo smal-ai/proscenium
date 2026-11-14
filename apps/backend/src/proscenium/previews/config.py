@@ -64,10 +64,12 @@ class Rendering:
             or dimensions["width"] * dimensions["height"] > self.max_pixels
             or spec["samples"] is None
             or spec["samples"] > self.max_samples
-            or dimensions["width"] % 2
-            or dimensions["height"] % 2
         ):
             raise DomainError("invalid_request", message="Render exceeds configured profile bounds")
+        if spec["purpose"] in {"draft_motion", "final"} and (
+            dimensions["width"] % 2 or dimensions["height"] % 2
+        ):
+            raise DomainError("invalid_request", message="H.264 motion requires even dimensions")
         if spec["purpose"] == "proxy" and count != 1:
             raise DomainError("invalid_request", message="A proxy is a single static sample")
         if spec.get("extra_outputs"):
