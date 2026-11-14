@@ -1,0 +1,130 @@
+[
+  {
+    "session_id": "36c7cb83-1072-4351-8a96-3e4fe3f49cd5",
+    "events": [
+      {
+        "id": "2eb47651-0d95-4d1e-8ef6-c6cf4cd93126",
+        "type": "session.start",
+        "timestamp": "2026-11-14T14:01:49.357Z",
+        "data": {
+          "sessionId": "36c7cb83-1072-4351-8a96-3e4fe3f49cd5",
+          "copilotVersion": "1.0.112",
+          "selectedModel": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "0f76166d-348e-45f6-a0e9-129c4cc9795f",
+        "type": "user.message",
+        "timestamp": "2026-11-14T14:01:53.218Z",
+        "data": {
+          "messageId": "8b2f83fb-332b-497d-8c6f-36ea1adc959e",
+          "clientTurnId": "3c70dabb-e7e1-4498-81e0-d14165bd3ea4"
+        }
+      },
+      {
+        "id": "62cd27b2-7c84-418f-9a87-2daf0887eac1",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T14:01:57.316Z",
+        "data": {
+          "toolCallId": "call_BReu9aAZl92vi4eTYeVspkom",
+          "toolName": "view",
+          "model": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "743bbd35-5a02-4a10-80c2-b70699f33f92",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T14:01:57.395Z",
+        "data": {
+          "toolCallId": "call_BReu9aAZl92vi4eTYeVspkom",
+          "model": "gpt-6.1-sol",
+          "success": true
+        }
+      },
+      {
+        "id": "d8d2045c-3da9-4a80-82bf-dc77c17e38e7",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T14:01:57.399Z",
+        "data": {}
+      },
+      {
+        "id": "e1006c5c-3b64-40af-ac93-e268a84c3057",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T14:02:00.675Z",
+        "data": {}
+      },
+      {
+        "id": "3896c6b3-0261-4421-94db-57548a896978",
+        "type": "session.shutdown",
+        "timestamp": "2026-11-14T14:02:15.015Z",
+        "data": {}
+      }
+    ],
+    "cloud_execution_seconds": 7.457,
+    "history_sha256": "cdad43cab8fbff6c84179a83449185e79244738ea66a68b56f5adf7f2e3c2037"
+  },
+  {
+    "session_id": "51c6df9c-92d8-4b35-9057-e41731de5e40",
+    "events": [
+      {
+        "id": "cf9917e6-55c0-4a4a-9440-8fddedada6eb",
+        "type": "session.start",
+        "timestamp": "2026-11-14T13:58:35.158Z",
+        "data": {
+          "sessionId": "51c6df9c-92d8-4b35-9057-e41731de5e40",
+          "copilotVersion": "1.0.112",
+          "selectedModel": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "64160fa5-dba9-4cc4-87da-a8af9084437e",
+        "type": "user.message",
+        "timestamp": "2026-11-14T13:58:39.068Z",
+        "data": {
+          "messageId": "cad65406-6cbf-421f-a849-b83200b3678a",
+          "clientTurnId": "b9338970-4c03-4cef-8cca-16d2464373fd"
+        }
+      },
+      {
+        "id": "b18da8d0-a068-4f18-aaee-8d59f694d833",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T13:58:42.600Z",
+        "data": {
+          "toolCallId": "call_F3CeVLY1vuELIrvwNmMU2uKI",
+          "toolName": "view",
+          "model": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "c3ff864a-641a-4947-9484-cddc9dd10dd9",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T13:58:42.672Z",
+        "data": {
+          "toolCallId": "call_F3CeVLY1vuELIrvwNmMU2uKI",
+          "model": "gpt-6.1-sol",
+          "success": true
+        }
+      },
+      {
+        "id": "ec21b339-5d9d-4163-bef2-7e02cd7e6e80",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T13:58:42.675Z",
+        "data": {}
+      },
+      {
+        "id": "79eb578f-a7b5-4665-a46b-1330479f095a",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T13:58:45.391Z",
+        "data": {}
+      },
+      {
+        "id": "7ac983ea-b318-4512-9504-d9edfb7be54d",
+        "type": "session.shutdown",
+        "timestamp": "2026-11-14T13:59:25.679Z",
+        "data": {}
+      }
+    ],
+    "cloud_execution_seconds": 6.323,
+    "history_sha256": "237a25148cb59d2f73230570ee34af389b6a4b3d653636b694ba5a5ecebaa54f"
+  }
+]

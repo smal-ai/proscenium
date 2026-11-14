@@ -1,0 +1,126 @@
+{
+  "projects": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "name": "M02 project A",
+        "native_session_id": null,
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/project-a",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 1
+      }
+    ],
+    "next_cursor": null
+  },
+  "snapshot": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "M02 project A",
+      "native_session_id": null,
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/project-a",
+      "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+      "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 1
+    },
+    "settings": {
+      "default_profile_id": null,
+      "generation_attempt_limit": 3,
+      "state_revision": 0
+    },
+    "event_sequence": 2,
+    "active_work": null,
+    "held_requests": [
+      {
+        "accepted_at": "2026-11-14T13:58:32.153070+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-19595fd777664898bb40eb49fb519099",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "receipt": {
+          "native_message_id": null,
+          "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+          "replayed": false,
+          "request_id": "b9338970-4c03-4cef-8cca-16d2464373fd",
+          "schema_version": "1.0",
+          "state": "held",
+          "state_revision": 0,
+          "type": "queue",
+          "work_id": "work-42e9273bbd304539ae98183d915a2a1f"
+        },
+        "request_id": "b9338970-4c03-4cef-8cca-16d2464373fd",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "40983479-d889-482f-814f-8da94c80a99a",
+          "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+          "request_id": "b9338970-4c03-4cef-8cca-16d2464373fd",
+          "schema_version": "1.0",
+          "text": "SCRIPTED M02 TEST-USER INPUT. Read only the actual active-project file brief/title.md. Reply with its title and sentinel. Do not edit files, author creative content, delegate, start a service, inspect another project, or call a provider. This single small request establishes this project's real native SDK session association.",
+          "type": "queue"
+        }
+      }
+    ],
+    "items": [],
+    "jobs": [],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T13:58:32.153070+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-19595fd777664898bb40eb49fb519099",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "receipt": {
+          "native_message_id": null,
+          "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+          "replayed": false,
+          "request_id": "b9338970-4c03-4cef-8cca-16d2464373fd",
+          "schema_version": "1.0",
+          "state": "held",
+          "state_revision": 0,
+          "type": "queue",
+          "work_id": "work-42e9273bbd304539ae98183d915a2a1f"
+        },
+        "request_id": "b9338970-4c03-4cef-8cca-16d2464373fd",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "40983479-d889-482f-814f-8da94c80a99a",
+          "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+          "request_id": "b9338970-4c03-4cef-8cca-16d2464373fd",
+          "schema_version": "1.0",
+          "text": "SCRIPTED M02 TEST-USER INPUT. Read only the actual active-project file brief/title.md. Reply with its title and sentinel. Do not edit files, author creative content, delegate, start a service, inspect another project, or call a provider. This single small request establishes this project's real native SDK session association.",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "items": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  },
+  "versions": {},
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "visible": {
+    "source": null,
+    "pinned": null,
+    "text": "P\nPROSCENIUM\nM02 project A\n/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/project-a\nConnected\nServices & models\nShots\nOutliner\nAssets\nReconcile selection status\nActive-project scope\nproject-52956839-2541-401e-b3b4-833c38c79c1e\nREVIEW WORKSPACE\nStart with a project. Make something worth reviewing.\n\nSelect a published version to review.\n\nNo published version selected\nGit-backed sources · Immutable publications\nCopilot\nCritic\nProject Copilot\nNo active work\nContinue deliberately\n\nHeld requests stay held until explicitly released. Reconcile inspects known outcomes without sending a new prompt.\n\nReconcile only\nContinue original work\nRelease held queue\nResume\nYou\nqueue · held\n\nSCRIPTED M02 TEST-USER INPUT. Read only the actual active-project file brief/title.md. Reply with its title and sentinel. Do not edit files, author creative content, delegate, start a service, inspect another project, or call a provider. This single small request establishes this project's real native SDK session association.\n\nOriginal captured context\nCancel held request\nIndependent jobs\n0\nUsage is shown only when reported by the runtime. Missing usage is unavailable, not zero.\nNext request context · 0 images\nMessage Copilot\nAttach images\nQueue\nSteer\nStop\nCtrl+Enter to queue · Context is captured on submit"
+  }
+}

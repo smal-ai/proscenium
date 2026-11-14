@@ -1,0 +1,26 @@
+{
+  "strict_result": "FAIL",
+  "blocked_by": [
+    "Old native session housekeeping/disconnect event fences newly active project.",
+    "Closed-gate lifecycle does not dispatch accepted owner cancellation without trusted intervention."
+  ],
+  "successful_recovered_observations": {
+    "native_sessions": [
+      "51c6df9c-92d8-4b35-9057-e41731de5e40",
+      "36c7cb83-1072-4351-8a96-3e4fe3f49cd5"
+    ],
+    "cloud_roots": 2,
+    "native_children": 0,
+    "background_inspections": 1,
+    "rendered_frames": 0,
+    "items": 5,
+    "versions": 9,
+    "source_browsing_unchanged": true,
+    "m01_unchanged": true
+  },
+  "notes": [
+    "Full source/version provenance inspected using actual authenticated browser listItemVersions JSON; this is not a claim that the catalogue UI exposes all metadata.",
+    "Imported M01 PNGs are reference artefacts, never receipts for the unrendered M02 sources.",
+    "SDK effects and scripted source-import work are explicitly separate."
+  ]
+}

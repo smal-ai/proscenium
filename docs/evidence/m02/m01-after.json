@@ -1,0 +1,13 @@
+{
+  "head": "9cc229fe2d19c762d8a86576f75eb973d0a1860e",
+  "files": {
+    "project/scenes/loop/scene.blend": "72bfdf2b3df4162f923138b3f7f33db425b041283ce8811b29f9f9e2ea33f413",
+    "project/.proscenium/state.sqlite3": "a18c8a5e0c3c16d94e5bf166b9d1c405c39c8537e3e2d64d85902e95ceeb0212",
+    "project/.proscenium/artefacts/sha256/f42309323bbbec243409451fe1ad7c402f3965475b7226de7a80c8d10015d5bf/content": "f42309323bbbec243409451fe1ad7c402f3965475b7226de7a80c8d10015d5bf",
+    "project/.proscenium/artefacts/sha256/03a83332afea7fe401f0f0b4e2b32718a3bc181c77d85457c498040bfebb726e/content": "03a83332afea7fe401f0f0b4e2b32718a3bc181c77d85457c498040bfebb726e",
+    "project/.proscenium/artefacts/sha256/083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd/content": "083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd",
+    "project/.proscenium/artefacts/sha256/a5df5d2a6fcc55167366a7e59a5d533536650fdbb0e4ac826a11d954eda78bc7/content": "a5df5d2a6fcc55167366a7e59a5d533536650fdbb0e4ac826a11d954eda78bc7",
+    "project/.proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+    "machine/copilot-runtime/home/session-state/d939999f-bff2-448c-9d24-028c1dcff527/events.jsonl": "e93880dfe3dac7bfa78ca9dee9a0690ccd515102e18e7a6f31cafb1ab00864c3"
+  }
+}

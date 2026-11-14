@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-14",
+  "test_base": "4e8b2337e09dc8416fdc833532f20db473c873a7",
+  "strict_m02_result": "FAIL",
+  "command": ".venv/bin/pytest -q tests/integration/sources/ tests/integration/foundation/test_project_projection.py tests/integration/foundation/test_rebind_barrier.py tests/acceptance/m02_evidence_test.py",
+  "passed": 63,
+  "seconds": 5.02,
+  "retained_proof_integrity_tests": 5,
+  "affected_offline_regressions": 58,
+  "other_checks": [
+    {"command": "uv sync --frozen", "result": "passed; no lock change"},
+    {"command": "cmp package-lock.json /home/quintin/play/proscenium/package-lock.json", "result": "byte-identical"},
+    {"command": "npm run build", "result": "passed; compiled production frontend"},
+    {"command": ".venv/bin/ruff check tests/native/studio/m02*.py tests/acceptance/m02_evidence_test.py", "result": "passed"},
+    {"command": ".venv/bin/ruff format --check tests/native/studio/m02*.py tests/acceptance/m02_evidence_test.py", "result": "passed"},
+    {"command": "node --check tests/native/studio/m02_browser.mjs", "result": "passed"},
+    {"command": ".venv/bin/python tests/native/studio/m02_evidence.py <retained-root>", "result": "retained actual bytes verified; strict result remains FAIL"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "resource_use": {
+    "real_cloud_roots": 2,
+    "native_children": 0,
+    "cloud_execution_seconds": [6.323, 7.457],
+    "background_blender_inspections": 1,
+    "inspection_threads": 4,
+    "inspection_timeout_seconds": 180,
+    "rendered_frames": 0,
+    "authoring_ui_launches": 0,
+    "provider_gpu_or_model_service_changes": 0
+  },
+  "warnings": [
+    "Existing Starlette/httpx TestClient deprecation warning.",
+    "Existing Vite bundle-size and Lucide use-client directive warnings."
+  ],
+  "meaning": "Passing regression/integrity checks do not repair the two observed production integration failures or constitute M02 acceptance."
+}

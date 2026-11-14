@@ -1,0 +1,58 @@
+{
+  "origin": "http://127.0.0.1:42439",
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z",
+  "cdp": 58417,
+  "boot": "16b15b2d-6346-47d2-977f-3ce58c093e7b",
+  "server": {
+    "pid": 3459670,
+    "start": "45802765",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m02-history/.venv/bin/python",
+      "/home/quintin/.cache/proscenium-development/fleet/m02-history/tests/native/studio/m02_host.py",
+      "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z"
+    ]
+  },
+  "browser": {
+    "pid": 3399869,
+    "start": "45732614",
+    "argv": [
+      "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+      "--headless",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--window-size=1920,1080",
+      "--remote-debugging-port=58417",
+      "--user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/browser-profile",
+      "about:blank"
+    ]
+  },
+  "previous_servers": [
+    {
+      "pid": 3399868,
+      "start": "45732614",
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m02-history/.venv/bin/python",
+        "/home/quintin/.cache/proscenium-development/fleet/m02-history/tests/native/studio/m02_host.py",
+        "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z"
+      ]
+    },
+    {
+      "pid": 3425095,
+      "start": "45764723",
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m02-history/.venv/bin/python",
+        "/home/quintin/.cache/proscenium-development/fleet/m02-history/tests/native/studio/m02_host.py",
+        "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z"
+      ]
+    },
+    {
+      "pid": 3427150,
+      "start": "45771186",
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m02-history/.venv/bin/python",
+        "/home/quintin/.cache/proscenium-development/fleet/m02-history/tests/native/studio/m02_host.py",
+        "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z"
+      ]
+    }
+  ]
+}

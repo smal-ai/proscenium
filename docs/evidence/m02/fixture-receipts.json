@@ -1,0 +1,1192 @@
+{
+  "11-diagnose-old-event": {
+    "status": "completed",
+    "command": {
+      "action": "diagnose-old-event"
+    },
+    "fixture_source_sha256": "9438f1d80d850d0707db1191400a9ea25664e70503260e4837b1c33c696bba68",
+    "result": {
+      "fixture": "targeted diagnosis using actual retained terminal SDK event; no inference or replay of a prompt",
+      "event_id": "3896c6b3-0261-4421-94db-57548a896978",
+      "event_type": "session.shutdown",
+      "native_session_id": "36c7cb83-1072-4351-8a96-3e4fe3f49cd5",
+      "inactive_project_id": "project-5b3cf90c-00d1-452a-8417-9b4065b2bc1e",
+      "active_project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+      "reducer_error": "scope_denied",
+      "unchanged_active_project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e"
+    }
+  },
+  "08-explicit-cancel": {
+    "status": "completed",
+    "command": {
+      "action": "dispatch-cancel"
+    },
+    "fixture_source_sha256": "b4be833bb1a3cc07361143900417ac5270ca748145acd9328890c78cec50706e",
+    "result": {
+      "fixture": "trusted explicit dispatch of actual owner-HTTP cancellation via production outbox/adapter; lifecycle closed-gate workaround",
+      "job": {
+        "artifact_ids": [],
+        "attempt_id": "attempt-3eb64490-fc21-4d0b-bf13-abb8fd54f57f",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": 0,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "2feca57d88b5f35513981a0d2bed93527a20c1836ed533dd25fb52c92430bcaf",
+        "job_id": "preview-b244ef5fe32a2ad307eeb048239fd37e34cf57d50d1c58ab58a5f7faad4eb52e",
+        "kind": "render",
+        "owner_epoch": "epoch-406373e4-b5af-4c7b-8b76-c7a3c0b0053d",
+        "owner_operation_id": null,
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "AgX"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "extra_outputs": [
+            "image/x-exr"
+          ],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m02-explicit-pending-preview",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Scene",
+          "shot_id": "shot-fixture",
+          "source_closure_digest": "5cdcb385aaf0a6cc4beaf83bf6396eba59ea8a71a0ef27541edd73f453a99c07"
+        },
+        "schema_version": "1.0",
+        "state": "cancelled",
+        "state_revision": 2,
+        "target": {
+          "shot_id": "shot-fixture",
+          "target_id": "scene-main",
+          "version": {
+            "item_id": "scene-main",
+            "version_id": "scene-main-v1"
+          }
+        },
+        "work_id": "m02-fixture-seed-work"
+      }
+    }
+  },
+  "10-final-source-state": {
+    "status": "completed",
+    "command": {
+      "action": "state"
+    },
+    "fixture_source_sha256": "2cd18c6a3ab69c80d41cc6fd8d364958c2422b2da772ee0dc993b51bfda73269",
+    "result": {
+      "head": "1ecde79257c17f77001db6650cac31103f134f36",
+      "files": {
+        ".git/index": "0d2bf886ced5bc3b619b469721e9a9d561d832c3abe603088abe4c4be9447f79",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250",
+        "brief/staged-note.txt": "b0d20ac6670eafc4ce4360fcc086362a079675ddc5c3f781c571156559cf4ce6",
+        "brief/unpublished.txt": "41ef012f5a652c1258aa1e68378c5aef87d771871dfad37be431741c2fa82a6c"
+      },
+      "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  assets/unfinished/asset.blend\nD  assets/unfinished/colour.png\nA  brief/staged-note.txt\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/title.md\n?? brief/unpublished.txt\n?? project.json\n?? scenes/\n"
+    }
+  },
+  "02-seed": {
+    "status": "completed",
+    "command": {
+      "action": "seed"
+    },
+    "fixture_source_sha256": "b5a1c9b3b7a69e11f7d84db32a96418aa9cde6bcfba316e69bf4fcef8b800a31",
+    "result": {
+      "fixture": "scripted import through production services, not SDK effect",
+      "imports": [
+        {
+          "from": "/tmp/opencode/proscenium-f01-20261114-a/historical/assets/cube/asset.blend",
+          "to": "assets/cube/asset.blend",
+          "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+        },
+        {
+          "from": "/tmp/opencode/proscenium-f01-20261114-a/historical/assets/cube/colour.png",
+          "to": "assets/cube/colour.png",
+          "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+        },
+        {
+          "from": "/tmp/opencode/proscenium-f01-20261114-a/historical/scenes/fixture/scene.blend",
+          "to": "scenes/fixture/scene.blend",
+          "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+        }
+      ],
+      "checkpoint": {
+        "schema_version": "1.0",
+        "operation_id": "m02-fixture-seed-checkpoint",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "state": "completed",
+        "source_commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+        "parent_commit": null,
+        "files": [
+          {
+            "path": "assets/companion/asset.blend",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          },
+          {
+            "path": "assets/companion/colour.png",
+            "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+          },
+          {
+            "path": "assets/cube/asset.blend",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          },
+          {
+            "path": "assets/cube/colour.png",
+            "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+          },
+          {
+            "path": "scenes/alternate/scene.blend",
+            "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+          },
+          {
+            "path": "scenes/fixture/scene.blend",
+            "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+          }
+        ],
+        "replayed": false
+      },
+      "publication": {
+        "schema_version": "1.0",
+        "publication_id": "m02-fixture-seed-publication",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "items": [
+          {
+            "item_id": "asset-cube",
+            "kind": "asset",
+            "name": "Linked cube",
+            "version_id": "asset-cube-v1",
+            "expected_current_version_id": null,
+            "source_commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+            "source": {
+              "entry_path": "assets/cube/asset.blend",
+              "files": [
+                {
+                  "destination": "assets/cube/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/cube/asset.blend",
+                    "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                  }
+                },
+                {
+                  "destination": "assets/cube/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/cube/colour.png",
+                    "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                  }
+                }
+              ],
+              "dependencies": [],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "197f5fd800c1ae637a55daf0bd73a3f0054a68c595da6299b236eddc7ed8982f"
+            },
+            "artifact_ids": [],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          },
+          {
+            "item_id": "scene-main",
+            "kind": "scene",
+            "name": "Linked scene",
+            "version_id": "scene-main-v1",
+            "expected_current_version_id": null,
+            "source_commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+            "source": {
+              "entry_path": "scenes/fixture/scene.blend",
+              "files": [
+                {
+                  "destination": "assets/cube/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/cube/asset.blend",
+                    "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                  }
+                },
+                {
+                  "destination": "assets/cube/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/cube/colour.png",
+                    "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                  }
+                },
+                {
+                  "destination": "scenes/fixture/scene.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "scenes/fixture/scene.blend",
+                    "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+                  }
+                }
+              ],
+              "dependencies": [
+                {
+                  "item_id": "asset-cube",
+                  "version_id": "asset-cube-v1"
+                }
+              ],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "5cdcb385aaf0a6cc4beaf83bf6396eba59ea8a71a0ef27541edd73f453a99c07"
+            },
+            "artifact_ids": [
+              "m02-fixture-seed-explicit-imported-reference"
+            ],
+            "preview_requests": [
+              {
+                "intent_id": "m02-explicit-pending-preview",
+                "shot_id": "shot-fixture",
+                "purpose": "draft_motion",
+                "source_closure_digest": "5cdcb385aaf0a6cc4beaf83bf6396eba59ea8a71a0ef27541edd73f453a99c07",
+                "scene_name": "Scene",
+                "camera": null,
+                "frames": {
+                  "start": 1,
+                  "end": 1
+                },
+                "fps": {
+                  "numerator": 24,
+                  "denominator": 1
+                },
+                "dimensions": {
+                  "width": 640,
+                  "height": 360
+                },
+                "engine": "CYCLES",
+                "device": "CPU",
+                "samples": 8,
+                "colour_management": {
+                  "view_transform": "AgX",
+                  "look": "None",
+                  "exposure": 0,
+                  "gamma": 1
+                },
+                "renderer_revision": "proscenium-blender-1",
+                "review_output": {
+                  "media_type": "image/png",
+                  "encoding": "view_transformed_srgb",
+                  "bit_depth": 8
+                },
+                "extra_outputs": [
+                  "image/x-exr"
+                ]
+              }
+            ],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          },
+          {
+            "item_id": "asset-companion",
+            "kind": "asset",
+            "name": "Companion asset",
+            "version_id": "asset-companion-v1",
+            "expected_current_version_id": null,
+            "source_commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+            "source": {
+              "entry_path": "assets/companion/asset.blend",
+              "files": [
+                {
+                  "destination": "assets/companion/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/companion/asset.blend",
+                    "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                  }
+                },
+                {
+                  "destination": "assets/companion/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/companion/colour.png",
+                    "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                  }
+                }
+              ],
+              "dependencies": [],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "6ba3bbbc7be99c4b743bdfa1e0be1e9e75522d4d8671bf4291aa883ded898519"
+            },
+            "artifact_ids": [],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          },
+          {
+            "item_id": "scene-alternate",
+            "kind": "scene",
+            "name": "Alternate scene",
+            "version_id": "scene-alternate-v1",
+            "expected_current_version_id": null,
+            "source_commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+            "source": {
+              "entry_path": "scenes/alternate/scene.blend",
+              "files": [
+                {
+                  "destination": "assets/cube/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/cube/asset.blend",
+                    "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                  }
+                },
+                {
+                  "destination": "assets/cube/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "assets/cube/colour.png",
+                    "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+                  }
+                },
+                {
+                  "destination": "scenes/alternate/scene.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+                    "path": "scenes/alternate/scene.blend",
+                    "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+                  }
+                }
+              ],
+              "dependencies": [
+                {
+                  "item_id": "asset-cube",
+                  "version_id": "asset-cube-v1"
+                }
+              ],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "1ab8c5096201f22d8b44cae9dda84fba1269f4185d1dfe6e98dba56dec9386b0"
+            },
+            "artifact_ids": [
+              "m02-fixture-seed-explicit-imported-reference"
+            ],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          }
+        ]
+      },
+      "receipt": {
+        "schema_version": "1.0",
+        "publication_id": "m02-fixture-seed-publication",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "versions": [
+          {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v1"
+          },
+          {
+            "item_id": "scene-main",
+            "version_id": "scene-main-v1"
+          },
+          {
+            "item_id": "asset-companion",
+            "version_id": "asset-companion-v1"
+          },
+          {
+            "item_id": "scene-alternate",
+            "version_id": "scene-alternate-v1"
+          }
+        ],
+        "job_ids": [
+          "preview-b244ef5fe32a2ad307eeb048239fd37e34cf57d50d1c58ab58a5f7faad4eb52e"
+        ],
+        "event_sequence": 36,
+        "replayed": false
+      },
+      "media": {
+        "schema_version": "1.0",
+        "artifact_id": "m02-fixture-seed-explicit-imported-reference",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "kind": "image",
+        "purpose": "reference",
+        "sha256": "083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd",
+        "bytes": 303163,
+        "media_type": "image/png",
+        "state": "ready",
+        "derived_from": [],
+        "dimensions": {
+          "width": 640,
+          "height": 360
+        }
+      },
+      "state": {
+        "head": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+        "files": {
+          "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+          "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+        },
+        "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/\n?? project.json\n?? scenes/\n"
+      },
+      "gate_closed_before_dispatch_lock_released": true
+    }
+  },
+  "04-finish": {
+    "status": "completed",
+    "command": {
+      "action": "finish"
+    },
+    "fixture_source_sha256": "9274d1b54e48de16750841d4ab7cbe695e6cc3471aedb599327b6e29e57ab066",
+    "result": {
+      "fixture": "scripted import through production services, not SDK effect",
+      "imports": [],
+      "checkpoint": {
+        "schema_version": "1.0",
+        "operation_id": "m02-fixture-finish-checkpoint",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "state": "completed",
+        "source_commit": "1ecde79257c17f77001db6650cac31103f134f36",
+        "parent_commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+        "files": [
+          {
+            "path": "assets/companion/asset.blend",
+            "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+          },
+          {
+            "path": "assets/companion/colour.png",
+            "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+          },
+          {
+            "path": "assets/unfinished/asset.blend",
+            "sha256": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+          },
+          {
+            "path": "assets/unfinished/colour.png",
+            "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+          },
+          {
+            "path": "scenes/alternate/scene.blend",
+            "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+          }
+        ],
+        "replayed": false
+      },
+      "publication": {
+        "schema_version": "1.0",
+        "publication_id": "m02-fixture-finish-publication",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "items": [
+          {
+            "item_id": "asset-companion",
+            "kind": "asset",
+            "name": "Companion asset",
+            "version_id": "asset-companion-v2",
+            "expected_current_version_id": "asset-companion-v1",
+            "source_commit": "1ecde79257c17f77001db6650cac31103f134f36",
+            "source": {
+              "entry_path": "assets/companion/asset.blend",
+              "files": [
+                {
+                  "destination": "assets/companion/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "1ecde79257c17f77001db6650cac31103f134f36",
+                    "path": "assets/companion/asset.blend",
+                    "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+                  }
+                },
+                {
+                  "destination": "assets/companion/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "1ecde79257c17f77001db6650cac31103f134f36",
+                    "path": "assets/companion/colour.png",
+                    "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+                  }
+                }
+              ],
+              "dependencies": [],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "8badfc7ddc2c5d415165db6e88377da9c1118b7320fffd3665aabfa9e3ce5810"
+            },
+            "artifact_ids": [],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          },
+          {
+            "item_id": "scene-alternate",
+            "kind": "scene",
+            "name": "Alternate scene",
+            "version_id": "scene-alternate-v2",
+            "expected_current_version_id": "scene-alternate-v1",
+            "source_commit": "1ecde79257c17f77001db6650cac31103f134f36",
+            "source": {
+              "entry_path": "scenes/alternate/scene.blend",
+              "files": [
+                {
+                  "destination": "assets/cube/asset.blend",
+                  "origin": {
+                    "commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+                    "kind": "git",
+                    "path": "assets/cube/asset.blend",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "sha256": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+                  }
+                },
+                {
+                  "destination": "assets/cube/colour.png",
+                  "origin": {
+                    "commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+                    "kind": "git",
+                    "path": "assets/cube/colour.png",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+                  }
+                },
+                {
+                  "destination": "scenes/alternate/scene.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "1ecde79257c17f77001db6650cac31103f134f36",
+                    "path": "scenes/alternate/scene.blend",
+                    "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+                  }
+                }
+              ],
+              "dependencies": [
+                {
+                  "item_id": "asset-cube",
+                  "version_id": "asset-cube-v2"
+                }
+              ],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "446769c7dcf4e4373165e86ac2959fcdc0e5119cf693b1ebca06be9b7f02ea8c"
+            },
+            "artifact_ids": [],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          },
+          {
+            "item_id": "asset-delayed",
+            "kind": "asset",
+            "name": "Later completed asset",
+            "version_id": "asset-delayed-v1",
+            "expected_current_version_id": null,
+            "source_commit": "1ecde79257c17f77001db6650cac31103f134f36",
+            "source": {
+              "entry_path": "assets/unfinished/asset.blend",
+              "files": [
+                {
+                  "destination": "assets/unfinished/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "1ecde79257c17f77001db6650cac31103f134f36",
+                    "path": "assets/unfinished/asset.blend",
+                    "sha256": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+                  }
+                },
+                {
+                  "destination": "assets/unfinished/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "1ecde79257c17f77001db6650cac31103f134f36",
+                    "path": "assets/unfinished/colour.png",
+                    "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+                  }
+                }
+              ],
+              "dependencies": [],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "e062a8ad124808ca11d7587031b8385f95f0757d5759aca1e73b507642287aa7"
+            },
+            "artifact_ids": [],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          }
+        ]
+      },
+      "receipt": {
+        "schema_version": "1.0",
+        "publication_id": "m02-fixture-finish-publication",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "versions": [
+          {
+            "item_id": "asset-companion",
+            "version_id": "asset-companion-v2"
+          },
+          {
+            "item_id": "scene-alternate",
+            "version_id": "scene-alternate-v2"
+          },
+          {
+            "item_id": "asset-delayed",
+            "version_id": "asset-delayed-v1"
+          }
+        ],
+        "job_ids": [],
+        "event_sequence": 38,
+        "replayed": false
+      },
+      "media": null,
+      "state": {
+        "head": "1ecde79257c17f77001db6650cac31103f134f36",
+        "files": {
+          "assets/cube/colour.png": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33",
+          "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+        },
+        "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  assets/unfinished/asset.blend\nD  assets/unfinished/colour.png\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/\n?? project.json\n?? scenes/\n"
+      },
+      "gate_closed_before_dispatch_lock_released": true
+    }
+  },
+  "07-after-browse": {
+    "status": "completed",
+    "command": {
+      "action": "state"
+    },
+    "fixture_source_sha256": "e43848a6f54773bd7488a7ef0aa7b365c0d209f6af10a10bd20ad66b680b7f26",
+    "result": {
+      "head": "1ecde79257c17f77001db6650cac31103f134f36",
+      "files": {
+        ".git/index": "0d2bf886ced5bc3b619b469721e9a9d561d832c3abe603088abe4c4be9447f79",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250",
+        "brief/staged-note.txt": "b0d20ac6670eafc4ce4360fcc086362a079675ddc5c3f781c571156559cf4ce6",
+        "brief/unpublished.txt": "41ef012f5a652c1258aa1e68378c5aef87d771871dfad37be431741c2fa82a6c"
+      },
+      "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  assets/unfinished/asset.blend\nD  assets/unfinished/colour.png\nA  brief/staged-note.txt\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/title.md\n?? brief/unpublished.txt\n?? project.json\n?? scenes/\n"
+    }
+  },
+  "09-mtime-trap": {
+    "status": "completed",
+    "command": {
+      "action": "mtime-trap"
+    },
+    "fixture_source_sha256": "2cd18c6a3ab69c80d41cc6fd8d364958c2422b2da772ee0dc993b51bfda73269",
+    "result": {
+      "fixture": "newest filesystem source is deliberately unpublished",
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/project-a/scenes/newest-unpublished/scene.blend",
+      "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+      "mtime_ns": 1893456000000000000,
+      "state": {
+        "head": "1ecde79257c17f77001db6650cac31103f134f36",
+        "files": {
+          ".git/index": "0d2bf886ced5bc3b619b469721e9a9d561d832c3abe603088abe4c4be9447f79",
+          "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+          "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250",
+          "brief/staged-note.txt": "b0d20ac6670eafc4ce4360fcc086362a079675ddc5c3f781c571156559cf4ce6",
+          "brief/unpublished.txt": "41ef012f5a652c1258aa1e68378c5aef87d771871dfad37be431741c2fa82a6c"
+        },
+        "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  assets/unfinished/asset.blend\nD  assets/unfinished/colour.png\nA  brief/staged-note.txt\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/title.md\n?? brief/unpublished.txt\n?? project.json\n?? scenes/\n"
+      }
+    }
+  },
+  "06-old-open": {
+    "status": "completed",
+    "command": {
+      "action": "inspect"
+    },
+    "fixture_source_sha256": "e43848a6f54773bd7488a7ef0aa7b365c0d209f6af10a10bd20ad66b680b7f26",
+    "result": {
+      "fixture": "actual single background Blender inspection, no render",
+      "materialisation": "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/project-a/.proscenium/snapshots/5cdcb385aaf0a6cc4beaf83bf6396eba59ea8a71a0ef27541edd73f453a99c07/af62e59e-58f7-4c86-88a3-caa317f41f77",
+      "before": {
+        "head": "1ecde79257c17f77001db6650cac31103f134f36",
+        "files": {
+          ".git/index": "0d2bf886ced5bc3b619b469721e9a9d561d832c3abe603088abe4c4be9447f79",
+          "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+          "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250",
+          "brief/staged-note.txt": "b0d20ac6670eafc4ce4360fcc086362a079675ddc5c3f781c571156559cf4ce6",
+          "brief/unpublished.txt": "41ef012f5a652c1258aa1e68378c5aef87d771871dfad37be431741c2fa82a6c"
+        },
+        "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  assets/unfinished/asset.blend\nD  assets/unfinished/colour.png\nA  brief/staged-note.txt\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/title.md\n?? brief/unpublished.txt\n?? project.json\n?? scenes/\n"
+      },
+      "after": {
+        "head": "1ecde79257c17f77001db6650cac31103f134f36",
+        "files": {
+          ".git/index": "0d2bf886ced5bc3b619b469721e9a9d561d832c3abe603088abe4c4be9447f79",
+          "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+          "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250",
+          "brief/staged-note.txt": "b0d20ac6670eafc4ce4360fcc086362a079675ddc5c3f781c571156559cf4ce6",
+          "brief/unpublished.txt": "41ef012f5a652c1258aa1e68378c5aef87d771871dfad37be431741c2fa82a6c"
+        },
+        "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  assets/unfinished/asset.blend\nD  assets/unfinished/colour.png\nA  brief/staged-note.txt\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/title.md\n?? brief/unpublished.txt\n?? project.json\n?? scenes/\n"
+      },
+      "report": {
+        "allocation_id": "m02-one-real-old-source-open",
+        "application": "blender",
+        "build_hash": "62c1db4208e8",
+        "dependencies": [
+          "assets/cube/asset.blend",
+          "assets/cube/colour.png"
+        ],
+        "entry_path": "scenes/fixture/scene.blend",
+        "images": [
+          {
+            "height": 8,
+            "name": "colour.png",
+            "packed": false,
+            "width": 8
+          }
+        ],
+        "missing": [],
+        "object_dimensions": {
+          "Blue cube": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Floor": [
+            6.0,
+            6.0,
+            0.20000000298023224
+          ],
+          "Renamed cube": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Wall": [
+            6.0,
+            0.20000000298023224,
+            2.5
+          ]
+        },
+        "objects": 6,
+        "version": "4.5.14 LTS",
+        "source_closure_digest": "5cdcb385aaf0a6cc4beaf83bf6396eba59ea8a71a0ef27541edd73f453a99c07",
+        "threads": 4,
+        "native_exit_code": 0,
+        "executable": "/home/quintin/.local/bin/blender",
+        "source_files": {
+          "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+          "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+          "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+        }
+      },
+      "processes": [
+        {
+          "pid": 3440155,
+          "start": "45781104",
+          "argv": [
+            "/home/quintin/.local/bin/blender",
+            "--background",
+            "--factory-startup",
+            "--disable-autoexec",
+            "--threads",
+            "4",
+            "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/project-a/.proscenium/snapshots/5cdcb385aaf0a6cc4beaf83bf6396eba59ea8a71a0ef27541edd73f453a99c07/af62e59e-58f7-4c86-88a3-caa317f41f77/scenes/fixture/scene.blend",
+            "--python-exit-code",
+            "2",
+            "--python",
+            "/home/quintin/.cache/proscenium-development/fleet/m02-history/apps/backend/src/proscenium/sources/blender_inspect.py",
+            "--",
+            "/home/quintin/.cache/proscenium-development/milestones/m02-20261114T135654Z/project-a/.proscenium/snapshots/5cdcb385aaf0a6cc4beaf83bf6396eba59ea8a71a0ef27541edd73f453a99c07/af62e59e-58f7-4c86-88a3-caa317f41f77",
+            "m02-one-real-old-source-open"
+          ]
+        }
+      ]
+    }
+  },
+  "05-dirty": {
+    "status": "completed",
+    "command": {
+      "action": "dirty"
+    },
+    "fixture_source_sha256": "e43848a6f54773bd7488a7ef0aa7b365c0d209f6af10a10bd20ad66b680b7f26",
+    "result": {
+      "head": "1ecde79257c17f77001db6650cac31103f134f36",
+      "files": {
+        ".git/index": "0d2bf886ced5bc3b619b469721e9a9d561d832c3abe603088abe4c4be9447f79",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250",
+        "brief/staged-note.txt": "b0d20ac6670eafc4ce4360fcc086362a079675ddc5c3f781c571156559cf4ce6",
+        "brief/unpublished.txt": "41ef012f5a652c1258aa1e68378c5aef87d771871dfad37be431741c2fa82a6c"
+      },
+      "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  assets/unfinished/asset.blend\nD  assets/unfinished/colour.png\nA  brief/staged-note.txt\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/title.md\n?? brief/unpublished.txt\n?? project.json\n?? scenes/\n"
+    }
+  },
+  "01-seed": {
+    "status": "failed",
+    "command": {
+      "action": "seed"
+    },
+    "error_type": "DomainError",
+    "code": "invalid_request",
+    "message": "Invalid WorkRecord"
+  },
+  "03-advance": {
+    "status": "completed",
+    "command": {
+      "action": "advance"
+    },
+    "fixture_source_sha256": "b5a1c9b3b7a69e11f7d84db32a96418aa9cde6bcfba316e69bf4fcef8b800a31",
+    "result": {
+      "fixture": "scripted import through production services, not SDK effect",
+      "imports": [
+        {
+          "from": "/tmp/opencode/proscenium-f01-20261114-a/project/assets/cube/asset.blend",
+          "to": "assets/cube/asset.blend",
+          "sha256": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+        },
+        {
+          "from": "/tmp/opencode/proscenium-f01-20261114-a/project/assets/cube/colour.png",
+          "to": "assets/cube/colour.png",
+          "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+        },
+        {
+          "from": "/tmp/opencode/proscenium-f01-20261114-a/project/scenes/fixture/scene.blend",
+          "to": "scenes/fixture/scene.blend",
+          "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+        }
+      ],
+      "checkpoint": {
+        "schema_version": "1.0",
+        "operation_id": "m02-fixture-advance-checkpoint",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "state": "completed",
+        "source_commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+        "parent_commit": "7eabcdf451805eb04ce8cab35ded63082df55aac",
+        "files": [
+          {
+            "path": "assets/cube/asset.blend",
+            "sha256": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+          },
+          {
+            "path": "assets/cube/colour.png",
+            "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+          },
+          {
+            "path": "scenes/fixture/scene.blend",
+            "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+          }
+        ],
+        "replayed": false
+      },
+      "publication": {
+        "schema_version": "1.0",
+        "publication_id": "m02-fixture-advance-publication",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "items": [
+          {
+            "item_id": "asset-cube",
+            "kind": "asset",
+            "name": "Linked cube",
+            "version_id": "asset-cube-v2",
+            "expected_current_version_id": "asset-cube-v1",
+            "source_commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+            "source": {
+              "entry_path": "assets/cube/asset.blend",
+              "files": [
+                {
+                  "destination": "assets/cube/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+                    "path": "assets/cube/asset.blend",
+                    "sha256": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+                  }
+                },
+                {
+                  "destination": "assets/cube/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+                    "path": "assets/cube/colour.png",
+                    "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+                  }
+                }
+              ],
+              "dependencies": [],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "1f546f6c3bfac0654b16908bc99907d91ec051900c98a1b41e875cbf2fa0c53b"
+            },
+            "artifact_ids": [],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          },
+          {
+            "item_id": "scene-main",
+            "kind": "scene",
+            "name": "Linked scene",
+            "version_id": "scene-main-v2",
+            "expected_current_version_id": "scene-main-v1",
+            "source_commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+            "source": {
+              "entry_path": "scenes/fixture/scene.blend",
+              "files": [
+                {
+                  "destination": "assets/cube/asset.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+                    "path": "assets/cube/asset.blend",
+                    "sha256": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+                  }
+                },
+                {
+                  "destination": "assets/cube/colour.png",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+                    "path": "assets/cube/colour.png",
+                    "sha256": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33"
+                  }
+                },
+                {
+                  "destination": "scenes/fixture/scene.blend",
+                  "origin": {
+                    "kind": "git",
+                    "repository_id": "repository-91b3e5fa-8ca4-48ce-844b-454e4edbee32",
+                    "commit": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+                    "path": "scenes/fixture/scene.blend",
+                    "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+                  }
+                }
+              ],
+              "dependencies": [
+                {
+                  "item_id": "asset-cube",
+                  "version_id": "asset-cube-v2"
+                }
+              ],
+              "required_runtime": {
+                "application": "blender",
+                "version": "4.5.14 LTS",
+                "features": [
+                  "linked-libraries",
+                  "external-textures"
+                ]
+              },
+              "digest": "3dfd13b2bf72b78b36695445c394096498ef9b576d419e530501a6b2ca6ab573"
+            },
+            "artifact_ids": [
+              "m02-fixture-advance-explicit-imported-reference"
+            ],
+            "preview_requests": [],
+            "description": "Explicit developmental F01 import. Attached image is an imported M01 reference, NOT a render of this version.",
+            "provenance": {
+              "source_url": null,
+              "creator": "Proscenium developmental fixture",
+              "licence": "Synthetic test fixture"
+            },
+            "tags": [
+              "scripted-fixture-import",
+              "not-model-authored"
+            ]
+          }
+        ]
+      },
+      "receipt": {
+        "schema_version": "1.0",
+        "publication_id": "m02-fixture-advance-publication",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "versions": [
+          {
+            "item_id": "asset-cube",
+            "version_id": "asset-cube-v2"
+          },
+          {
+            "item_id": "scene-main",
+            "version_id": "scene-main-v2"
+          }
+        ],
+        "job_ids": [],
+        "event_sequence": 37,
+        "replayed": false
+      },
+      "media": {
+        "schema_version": "1.0",
+        "artifact_id": "m02-fixture-advance-explicit-imported-reference",
+        "project_id": "project-52956839-2541-401e-b3b4-833c38c79c1e",
+        "kind": "image",
+        "purpose": "reference",
+        "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "bytes": 333890,
+        "media_type": "image/png",
+        "state": "ready",
+        "derived_from": [],
+        "dimensions": {
+          "width": 640,
+          "height": 360
+        }
+      },
+      "state": {
+        "head": "f04f58ec269ab7305f6b6f5e3a02180808c94da5",
+        "files": {
+          "assets/cube/colour.png": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33",
+          "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250"
+        },
+        "status": "D  assets/companion/asset.blend\nD  assets/companion/colour.png\nD  assets/cube/asset.blend\nD  assets/cube/colour.png\nD  scenes/alternate/scene.blend\nD  scenes/fixture/scene.blend\n?? .gitattributes\n?? .gitignore\n?? assets/\n?? brief/\n?? project.json\n?? scenes/\n"
+      },
+      "gate_closed_before_dispatch_lock_released": true
+    }
+  }
+}

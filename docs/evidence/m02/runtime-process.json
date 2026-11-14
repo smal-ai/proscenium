@@ -1,0 +1,8 @@
+{
+  "pid": 3422632,
+  "start": "45762048",
+  "parent_pid": 3399868,
+  "parent_start": "45732614",
+  "binary": "/home/quintin/play/proscenium/node_modules/@github/copilot-linux-x64/copilot",
+  "binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69"
+}
