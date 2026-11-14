@@ -1,0 +1,51 @@
+{
+  "root": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b",
+  "files": [
+    {
+      "path": "report.json",
+      "bytes": 30057,
+      "sha256": "f86950cc63944a248950f4fe856f637c0cfe93e4b831a095930e7932c1233bb3"
+    },
+    {
+      "path": "resource-samples.ndjson",
+      "bytes": 43098,
+      "sha256": "6213a6be11eb127967016c762eb70ca19356e72a925bc11eb98eccfedfcf0561"
+    },
+    {
+      "path": "comfy.log",
+      "bytes": 22780,
+      "sha256": "cab2a5993516571a8169a1fd88b1e9883fd31254038eed01ae56d0347461299a"
+    },
+    {
+      "path": "blender.log",
+      "bytes": 262,
+      "sha256": "b96ca81180575ed74ab06cf44902945e9a7c4a8495ee2df6141225275b6d4f2c"
+    },
+    {
+      "path": "blender-report.json",
+      "bytes": 1148,
+      "sha256": "b96979e9d6efe183b9c1afa4e520b574e86cd0efc0ce3923bf4eab34c8cd68c0"
+    },
+    {
+      "path": "project/assets/e04/original.glb",
+      "bytes": 19860948,
+      "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+    },
+    {
+      "path": "project/assets/e04/asset.blend",
+      "bytes": 61349102,
+      "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+    },
+    {
+      "path": "project/assets/e04/workflow.json",
+      "bytes": 1146,
+      "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+    },
+    {
+      "path": "project/assets/e04/generation-provenance.json",
+      "bytes": 4587,
+      "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+    }
+  ],
+  "binary_media_committed_to_application_repo": false
+}

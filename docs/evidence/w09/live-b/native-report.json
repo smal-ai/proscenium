@@ -1,0 +1,914 @@
+{
+  "allocation": "e04-live-b",
+  "recorded_at": "2026-11-14T15:49:25.813142+02:00",
+  "code_revision": "6d731787a19298d2e4bc5347536e248dd6223c35",
+  "instance_plan": {
+    "argv": [
+      "/home/quintin/.local/opt/ComfyUI/.venv/bin/python",
+      "-B",
+      "/home/quintin/.local/opt/ComfyUI/main.py",
+      "--listen",
+      "127.0.0.1",
+      "--port",
+      "18588",
+      "--base-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b",
+      "--models-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/models",
+      "--user-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/user",
+      "--input-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/input",
+      "--output-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/output",
+      "--temp-directory",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/temp",
+      "--database-url",
+      "sqlite:////home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/user/comfyui.db",
+      "--disable-all-custom-nodes",
+      "--disable-api-nodes",
+      "--disable-auto-launch",
+      "--cache-none"
+    ],
+    "cwd": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b",
+    "create_before_authorised_start": [
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/user",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/input",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/output",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/temp",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/cache",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/cache/torch",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/cache/hf"
+    ],
+    "environment_overrides": {
+      "OMP_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "XDG_CACHE_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/cache",
+      "TORCH_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/cache/torch",
+      "HF_HOME": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/cache/hf",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "TMPDIR": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/temp"
+    },
+    "executed": true,
+    "requires": "parent allocation, heavy-gpu claim, budgeted plugin and recheck of port/revision"
+  },
+  "harness_sha256": "3fb6dc76cbdcf8a052181095269190e5ef1200044e55dbccb027d0534e726275",
+  "baseline": {
+    "monotonic_ns": 456877323882635,
+    "mem_available_bytes": 15768473600,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 0,
+        "mem_info_vram_used": 35046346752,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "independent_queue_before": {
+    "queue_running": [],
+    "queue_pending": []
+  },
+  "independent_stats_before": {
+    "system": {
+      "os": "linux",
+      "ram_total": 65959243776,
+      "ram_free": 15760351232,
+      "comfyui_version": "0.37.4",
+      "required_frontend_version": "1.52.7",
+      "installed_templates_version": "0.11.69",
+      "required_templates_version": "0.11.69",
+      "comfy_package_versions": [
+        {
+          "name": "comfyui-frontend-package",
+          "installed": "1.52.7",
+          "required": "1.52.7"
+        },
+        {
+          "name": "comfyui-workflow-templates",
+          "installed": "0.11.69",
+          "required": "0.11.69"
+        },
+        {
+          "name": "comfyui-embedded-docs",
+          "installed": "0.5.12",
+          "required": "0.5.12"
+        },
+        {
+          "name": "comfy-kitchen",
+          "installed": "0.2.35",
+          "required": "0.2.35"
+        },
+        {
+          "name": "comfy-aimdo",
+          "installed": "0.5.5",
+          "required": "0.5.5"
+        }
+      ],
+      "python_version": "3.12.13 (main, Jul 18 2026, 17:02:19) [Clang 22.1.3 ]",
+      "pytorch_version": "2.13.0+rocm10.0.0",
+      "embedded_python": false,
+      "deploy_environment": "local-git",
+      "argv": [
+        "main.py",
+        "--auto-launch"
+      ]
+    },
+    "devices": [
+      {
+        "name": "cuda:0 AMD Radeon 8060S Graphics : native",
+        "type": "cuda",
+        "index": 0,
+        "vram_total": 68719476736,
+        "vram_free": 37585158144,
+        "torch_vram_total": 2097152,
+        "torch_vram_free": 2097152
+      }
+    ]
+  },
+  "fit_threshold_bytes": 12884901888,
+  "protected_host_headroom_bytes": 4294967296,
+  "maximum_server_seconds": 1800,
+  "sampling_interval_seconds": 0.5,
+  "e04_passed": true,
+  "m10_passed": false,
+  "gpu_inference_submitted": true,
+  "existing_services_mutated": false,
+  "verified_weights": {
+    "path": "/home/quintin/.cache/proscenium-development/image-to-3d/models/checkpoints/hunyuan3d-dit-v2_fp16.safetensors",
+    "size_bytes": 4928151562,
+    "sha256": "360bc281fc956d4acac0c3d36d5ec0ebf8cdddbf4b8892e894d12419388d479b",
+    "tensor_groups": {
+      "conditioner": 727,
+      "model": 652,
+      "vae": 266
+    },
+    "required_prefixes": [
+      "model.",
+      "conditioner.main_image_encoder.model.",
+      "vae."
+    ],
+    "header_bytes": 215424,
+    "metadata": {},
+    "tensor_loading": false
+  },
+  "project": {
+    "name": "Disposable E04 image-to-mesh proof",
+    "native_session_id": null,
+    "path": "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/project",
+    "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+    "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+    "schema_version": "1.0",
+    "state": "inactive",
+    "state_revision": 0
+  },
+  "caller": {
+    "work_id": "e04-work",
+    "invocation_id": "e04-invocation",
+    "owner_epoch": "epoch-b8a89904-ee5e-47fa-a596-ade42ae3ceed"
+  },
+  "command": {
+    "schema_version": "1.0",
+    "job_id": "e04-mesh-job",
+    "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+    "generation_task_id": "e04-generation-task",
+    "target_id": "e04-generation-task",
+    "provider_id": "e04-isolated-comfy",
+    "capability": "image_to_3d",
+    "workflow_artifact_id": "e04-workflow",
+    "prompt_artifact_id": "e04-prompt",
+    "input_artifact_ids": [
+      "e04-conditioning"
+    ],
+    "seed": "1",
+    "model_ids": [
+      "hunyuan3d-dit-v2_fp16.safetensors"
+    ],
+    "settings": {}
+  },
+  "reference": {
+    "schema_version": "1.0",
+    "artifact_id": "e04-conditioning",
+    "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+    "kind": "image",
+    "purpose": "reference",
+    "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73",
+    "bytes": 3693,
+    "media_type": "image/png",
+    "state": "ready",
+    "derived_from": [],
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    }
+  },
+  "job": {
+    "artifact_ids": [
+      "e04-mesh-job-artifact-0",
+      "e04-mesh-job-artifact-provenance"
+    ],
+    "attempt_id": "attempt-a77a40c1-2a35-4f1c-96a0-c5a845c92d0e",
+    "attempt_number": 1,
+    "availability": "complete",
+    "completed_frames": null,
+    "error_code": null,
+    "expected_frames": null,
+    "external_job_id": "ed610c36-0fbc-45f6-8367-d3a1b56fa329",
+    "input_digest": "68b5e5b86bc34a46052a287c1df2e4c9975aab405734a7dcfc7444af26017e05",
+    "job_id": "e04-mesh-job",
+    "kind": "mesh_generation",
+    "owner_epoch": "epoch-b8a89904-ee5e-47fa-a596-ade42ae3ceed",
+    "owner_operation_id": null,
+    "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+    "provider_id": "e04-isolated-comfy",
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "succeeded",
+    "state_revision": 3,
+    "target": {
+      "shot_id": null,
+      "target_id": "e04-generation-task",
+      "version": null
+    },
+    "work_id": "e04-work"
+  },
+  "harness_context": "Synthetic trusted admission context and 2D image. Actual production services and native effects.",
+  "before_server_start": {
+    "monotonic_ns": 456885260419140,
+    "mem_available_bytes": 15939780608,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 1,
+        "mem_info_vram_used": 35046346752,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "owned_server": {
+    "pid": 3375346,
+    "start_ticks": "45688526",
+    "process_group": 3375346,
+    "started_monotonic_ns": 456885262184085,
+    "exit_code": -15
+  },
+  "owned_system_stats": {
+    "system": {
+      "os": "linux",
+      "ram_total": 65959243776,
+      "ram_free": 15174053888,
+      "comfyui_version": "0.37.4",
+      "required_frontend_version": "1.52.7",
+      "installed_templates_version": "0.11.69",
+      "required_templates_version": "0.11.69",
+      "comfy_package_versions": [
+        {
+          "name": "comfyui-frontend-package",
+          "installed": "1.52.7",
+          "required": "1.52.7"
+        },
+        {
+          "name": "comfyui-workflow-templates",
+          "installed": "0.11.69",
+          "required": "0.11.69"
+        },
+        {
+          "name": "comfyui-embedded-docs",
+          "installed": "0.5.12",
+          "required": "0.5.12"
+        },
+        {
+          "name": "comfy-kitchen",
+          "installed": "0.2.35",
+          "required": "0.2.35"
+        },
+        {
+          "name": "comfy-aimdo",
+          "installed": "0.5.5",
+          "required": "0.5.5"
+        }
+      ],
+      "python_version": "3.12.13 (main, Jul 18 2026, 17:02:19) [Clang 22.1.3 ]",
+      "pytorch_version": "2.13.0+rocm10.0.0",
+      "embedded_python": false,
+      "deploy_environment": "local-git",
+      "argv": [
+        "/home/quintin/.local/opt/ComfyUI/main.py",
+        "--listen",
+        "127.0.0.1",
+        "--port",
+        "18588",
+        "--base-directory",
+        "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b",
+        "--models-directory",
+        "/home/quintin/.cache/proscenium-development/image-to-3d/models",
+        "--user-directory",
+        "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/user",
+        "--input-directory",
+        "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/input",
+        "--output-directory",
+        "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/output",
+        "--temp-directory",
+        "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/temp",
+        "--database-url",
+        "sqlite:////home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/user/comfyui.db",
+        "--disable-all-custom-nodes",
+        "--disable-api-nodes",
+        "--disable-auto-launch",
+        "--cache-none"
+      ]
+    },
+    "devices": [
+      {
+        "name": "cuda:0 AMD Radeon 8060S Graphics : native",
+        "type": "cuda",
+        "index": 0,
+        "vram_total": 68719476736,
+        "vram_free": 37419483136,
+        "torch_vram_total": 2097152,
+        "torch_vram_free": 2097152
+      }
+    ]
+  },
+  "before_inference": {
+    "monotonic_ns": 456894781605885,
+    "mem_available_bytes": 15172407296,
+    "gpu_sysfs": {
+      "/sys/class/drm/card1/device": {
+        "gpu_busy_percent": 99,
+        "mem_info_vram_used": 35240402944,
+        "mem_info_vram_total": 68719476736
+      }
+    }
+  },
+  "inference_dispatch_started_monotonic_ns": 456894782244241,
+  "execution": {
+    "client_id": "b833dab6-65e2-41ab-ae5d-932b178c003f",
+    "derived_images": [
+      "e04-mesh-job-artifact-input-0"
+    ],
+    "graph": {
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 8,
+          "denoise": 1,
+          "latent_image": [
+            "66",
+            0
+          ],
+          "model": [
+            "70",
+            0
+          ],
+          "negative": [
+            "80",
+            1
+          ],
+          "positive": [
+            "80",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "normal",
+          "seed": 1,
+          "steps": 20
+        }
+      },
+      "51": {
+        "class_type": "CLIPVisionEncode",
+        "inputs": {
+          "clip_vision": [
+            "54",
+            1
+          ],
+          "crop": "center",
+          "image": [
+            "56",
+            0
+          ]
+        }
+      },
+      "54": {
+        "class_type": "ImageOnlyCheckpointLoader",
+        "inputs": {
+          "ckpt_name": "hunyuan3d-dit-v2_fp16.safetensors"
+        }
+      },
+      "56": {
+        "class_type": "LoadImage",
+        "inputs": {
+          "image": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73.png"
+        }
+      },
+      "61": {
+        "class_type": "VAEDecodeHunyuan3D",
+        "inputs": {
+          "num_chunks": 8000,
+          "octree_resolution": 256,
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "54",
+            2
+          ]
+        }
+      },
+      "66": {
+        "class_type": "EmptyLatentHunyuan3Dv2",
+        "inputs": {
+          "batch_size": 1,
+          "resolution": 3072
+        }
+      },
+      "70": {
+        "class_type": "ModelSamplingAuraFlow",
+        "inputs": {
+          "model": [
+            "54",
+            0
+          ],
+          "sampling": "flow",
+          "shift": 1
+        }
+      },
+      "80": {
+        "class_type": "Hunyuan3Dv2Conditioning",
+        "inputs": {
+          "clip_vision_output": [
+            "51",
+            0
+          ]
+        }
+      },
+      "81": {
+        "class_type": "VoxelToMesh",
+        "inputs": {
+          "algorithm": "surface net",
+          "threshold": 0.6,
+          "voxel": [
+            "61",
+            0
+          ]
+        }
+      },
+      "82": {
+        "class_type": "SaveGLB",
+        "inputs": {
+          "filename_prefix": "mesh/proscenium-e04",
+          "mesh": [
+            "81",
+            0
+          ]
+        }
+      }
+    },
+    "graph_sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875",
+    "phase": "submitting",
+    "prompt_id": "ed610c36-0fbc-45f6-8367-d3a1b56fa329"
+  },
+  "inference_dispatch_ended_monotonic_ns": 456967764105266,
+  "artifacts": [
+    {
+      "artifact_id": "e04-mesh-job-artifact-0",
+      "bytes": 19860948,
+      "derived_from": [],
+      "kind": "source_blob",
+      "media_type": "model/gltf-binary",
+      "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+      "purpose": "concept",
+      "schema_version": "1.0",
+      "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06",
+      "state": "ready"
+    },
+    {
+      "artifact_id": "e04-mesh-job-artifact-provenance",
+      "bytes": 4587,
+      "derived_from": [],
+      "kind": "document",
+      "media_type": "application/json",
+      "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+      "purpose": "metadata",
+      "schema_version": "1.0",
+      "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df",
+      "state": "ready"
+    }
+  ],
+  "blender_start": {
+    "argv": [
+      "/home/quintin/.local/bin/blender",
+      "--background",
+      "--factory-startup",
+      "--disable-autoexec",
+      "--threads",
+      "4",
+      "--python-exit-code",
+      "17",
+      "--python",
+      "/home/quintin/.cache/proscenium-development/fleet/w09-live-b/tests/native/image_to_3d/blender_import.py",
+      "--",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/project/assets/e04/original.glb",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/project/assets/e04/asset.blend",
+      "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b/blender-report.json"
+    ],
+    "script_sha256": "8a0dcf7897657ebd35d36f4f5aa992948fb171daa19190738c1aa322d782ec61",
+    "monotonic_ns": 456968102718047
+  },
+  "blender_process": {
+    "pid": 3382105,
+    "start_ticks": "45696810",
+    "process_group": 3382105
+  },
+  "blender_exit_code": 0,
+  "blender": {
+    "blender_version": "4.5.14 LTS",
+    "build_hash": "62c1db4208e8",
+    "objects": [
+      {
+        "name": "E04_Mesh_001",
+        "object_id": "e04-object-001",
+        "instance_id": "e04-instance-001",
+        "vertices": 350259,
+        "polygons": 1304618,
+        "triangles": 1304618,
+        "world_bounds": [
+          [
+            -0.9667729735374451,
+            -0.6752290725708008,
+            -0.7478082180023193
+          ],
+          [
+            0.9846813678741455,
+            0.6745243072509766,
+            0.7620869874954224
+          ]
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "origin": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "materials": [
+          "Material_0"
+        ],
+        "uv_layers": []
+      }
+    ],
+    "source_glb_sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06",
+    "materials": [
+      "Material_0"
+    ],
+    "images": [],
+    "metres_per_blender_unit": 1.0,
+    "real_world_scale_calibrated": false,
+    "geometry_repaired": false,
+    "textures_generated": false,
+    "retopology_performed": false,
+    "blend_sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+  },
+  "blender_end_monotonic_ns": 456970223827865,
+  "checkpoint": {
+    "schema_version": "1.0",
+    "operation_id": "e04-source-checkpoint",
+    "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+    "state": "completed",
+    "source_commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+    "parent_commit": null,
+    "files": [
+      {
+        "path": ".gitattributes",
+        "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+      },
+      {
+        "path": ".gitignore",
+        "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+      },
+      {
+        "path": "assets/e04/asset.blend",
+        "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+      },
+      {
+        "path": "assets/e04/conditioning.png",
+        "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+      },
+      {
+        "path": "assets/e04/generation-provenance.json",
+        "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+      },
+      {
+        "path": "assets/e04/inspection.json",
+        "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+      },
+      {
+        "path": "assets/e04/model-licence.txt",
+        "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+      },
+      {
+        "path": "assets/e04/original.glb",
+        "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+      },
+      {
+        "path": "assets/e04/workflow.json",
+        "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+      },
+      {
+        "path": "project.json",
+        "sha256": "2f01a5f00107d93ad94df6d9a72a4bf40ec3d10212f20bd7e5da01f8b961bb4b"
+      }
+    ],
+    "replayed": false
+  },
+  "closure": {
+    "entry_path": "assets/e04/asset.blend",
+    "files": [
+      {
+        "destination": "project.json",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "project.json",
+          "sha256": "2f01a5f00107d93ad94df6d9a72a4bf40ec3d10212f20bd7e5da01f8b961bb4b"
+        }
+      },
+      {
+        "destination": ".gitignore",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": ".gitignore",
+          "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+        }
+      },
+      {
+        "destination": ".gitattributes",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": ".gitattributes",
+          "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+        }
+      },
+      {
+        "destination": "assets/e04/asset.blend",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "assets/e04/asset.blend",
+          "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+        }
+      },
+      {
+        "destination": "assets/e04/conditioning.png",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "assets/e04/conditioning.png",
+          "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+        }
+      },
+      {
+        "destination": "assets/e04/generation-provenance.json",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "assets/e04/generation-provenance.json",
+          "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+        }
+      },
+      {
+        "destination": "assets/e04/inspection.json",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "assets/e04/inspection.json",
+          "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+        }
+      },
+      {
+        "destination": "assets/e04/model-licence.txt",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "assets/e04/model-licence.txt",
+          "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+        }
+      },
+      {
+        "destination": "assets/e04/original.glb",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "assets/e04/original.glb",
+          "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+        }
+      },
+      {
+        "destination": "assets/e04/workflow.json",
+        "origin": {
+          "kind": "git",
+          "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+          "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+          "path": "assets/e04/workflow.json",
+          "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+        }
+      }
+    ],
+    "dependencies": [],
+    "required_runtime": {
+      "application": "blender",
+      "version": "4.5.14 LTS",
+      "features": []
+    },
+    "digest": "e721bc147f2f80b1a3b4e7accdc898dce2e386a51f796c3e8748b9fee2e3c0a5"
+  },
+  "publication": {
+    "schema_version": "1.0",
+    "publication_id": "e04-publish-asset",
+    "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+    "versions": [
+      {
+        "item_id": "e04-generated-asset",
+        "version_id": "e04-asset-v1"
+      }
+    ],
+    "job_ids": [],
+    "event_sequence": 5,
+    "replayed": false
+  },
+  "publication_replayed": false,
+  "published_version": {
+    "actor": {
+      "id": "e04-native-harness",
+      "kind": "tool"
+    },
+    "artifact_ids": [
+      "e04-mesh-job-artifact-0",
+      "e04-mesh-job-artifact-provenance"
+    ],
+    "created_at": "2026-11-14T13:50:59.814867+00:00",
+    "description": "Actual Hunyuan image-conditioned untextured shape. Synthetic 2D input. Scale not calibrated.",
+    "item_id": "e04-generated-asset",
+    "kind": "asset",
+    "name": "E04 image-conditioned mug shape",
+    "preview_job_ids": [],
+    "preview_requests": [],
+    "project_id": "project-81e5e7ee-8c36-4dee-b8a1-17c5d9de6610",
+    "provenance": {
+      "creator": "Tencent",
+      "licence": "Tencent Hunyuan Community Licence",
+      "note": "Pinned model and generation hashes retained. No topology or texture claim.",
+      "source_url": "https://huggingface.co/tencent/Hunyuan3D-2"
+    },
+    "publication_id": "e04-publish-asset",
+    "schema_version": "1.0",
+    "source": {
+      "dependencies": [],
+      "digest": "e721bc147f2f80b1a3b4e7accdc898dce2e386a51f796c3e8748b9fee2e3c0a5",
+      "entry_path": "assets/e04/asset.blend",
+      "files": [
+        {
+          "destination": "project.json",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "project.json",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "2f01a5f00107d93ad94df6d9a72a4bf40ec3d10212f20bd7e5da01f8b961bb4b"
+          }
+        },
+        {
+          "destination": ".gitignore",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": ".gitignore",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+          }
+        },
+        {
+          "destination": ".gitattributes",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": ".gitattributes",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+          }
+        },
+        {
+          "destination": "assets/e04/asset.blend",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "assets/e04/asset.blend",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+          }
+        },
+        {
+          "destination": "assets/e04/conditioning.png",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "assets/e04/conditioning.png",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+          }
+        },
+        {
+          "destination": "assets/e04/generation-provenance.json",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "assets/e04/generation-provenance.json",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+          }
+        },
+        {
+          "destination": "assets/e04/inspection.json",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "assets/e04/inspection.json",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+          }
+        },
+        {
+          "destination": "assets/e04/model-licence.txt",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "assets/e04/model-licence.txt",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+          }
+        },
+        {
+          "destination": "assets/e04/original.glb",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "assets/e04/original.glb",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+          }
+        },
+        {
+          "destination": "assets/e04/workflow.json",
+          "origin": {
+            "commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+            "kind": "git",
+            "path": "assets/e04/workflow.json",
+            "repository_id": "repository-9c837e96-44ac-43b1-816b-beeed754c78e",
+            "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+          }
+        }
+      ],
+      "required_runtime": {
+        "application": "blender",
+        "features": [],
+        "version": "4.5.14 LTS"
+      }
+    },
+    "source_commit": "94a17bb13ab6669eb4096473038be8cc8349975a",
+    "version_id": "e04-asset-v1"
+  },
+  "hardware_mesh_import_checkpoint_publication_proven": true,
+  "resource_guard_reasons": [],
+  "sampled_resources": {
+    "samples": 171,
+    "minimum_mem_available_bytes": 6326824960,
+    "maximum_owned_rss_bytes": 10304139264,
+    "exact_allocator_peak": false
+  },
+  "reservations": [
+    {
+      "id": "e04-mesh-job",
+      "task_id": "e04-generation-task",
+      "target_id": "e04-generation-task",
+      "state": "consumed"
+    }
+  ],
+  "remaining_resource_claims": [],
+  "finished_at": "2026-11-14T15:50:59.828814+02:00",
+  "remaining_owned_processes": []
+}

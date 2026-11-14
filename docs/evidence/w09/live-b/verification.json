@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-14",
+  "harness_commit": "6d731787a19298d2e4bc5347536e248dd6223c35",
+  "affected_offline_suite": {
+    "command": ".venv/bin/python -m pytest -q tests/integration/providers/ tests/integration/image_to_3d/",
+    "passed": 112,
+    "warnings": 1,
+    "transport": "Synthetic transport, real SQLite/admission/budget/resource/W02 integration"
+  },
+  "read_only_receipt_suite": {
+    "command": "PROSCENIUM_W09_LIVE_RECEIPT=docs/evidence/w09/live-b/native-report.json PROSCENIUM_W09_RESOURCE_RECEIPT=docs/evidence/w09/execution/native-resource-blocker.json .venv/bin/python -m pytest -q tests/native/image_to_3d/test_live_receipt.py tests/native/image_to_3d/test_resource_receipt.py",
+    "passed": 2,
+    "warnings": 1,
+    "additional_inference_or_blender_processes": 0
+  },
+  "ruff_lint": "passed",
+  "ruff_format": {"status": "passed", "files": 29},
+  "mypy": {"status": "passed", "source_files": 18},
+  "documentation_validator": "passed",
+  "warning": "Existing Starlette/httpx deprecation warning",
+  "actual_native_model_attempts": 1,
+  "actual_native_blender_imports": 1,
+  "actual_source_checkpoint_and_publication": true,
+  "e04_passed": true,
+  "m10_passed": false
+}

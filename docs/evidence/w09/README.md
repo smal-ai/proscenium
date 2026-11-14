@@ -1,6 +1,9 @@
 # W09 preparation evidence
 
-**Preparation only. E04 and M10 have not passed. No GPU inference or Blender startup.**
+**Historical preparation evidence below.** The subsequent [live B hardware proof](live-b/README.md)
+passed E04 with actual model output, Blender import and W02 checkpoint/publication.
+M10 remains incomplete. No GPU inference or Blender startup occurred during this original
+preparation phase.
 
 - `preparation.json`: exact application/runtime/template/model identities, source hashes,
   public availability and allocation. `gated=false` came from the official metadata API.
