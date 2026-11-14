@@ -10,6 +10,7 @@ from uuid import uuid4
 import pytest
 from copilot.tools import ToolInvocation
 from proscenium.catalogue import install as install_catalogue
+from proscenium.copilot.state import key, save
 from proscenium.copilot.tools import Tools
 from test_delivery import PROJECT, context, submit
 from test_delivery import runtime as runtime
@@ -171,6 +172,144 @@ def test_real_checkpoint_handler_still_rejects_excluded_secret_path(runtime):
         assert json.loads(result.text_result_for_llm)["error"] == "scope_denied"
         with runtime.services.registry.project_store(PROJECT).transaction(write=False) as tx:
             assert tx.all("checkpoint_intents") == []
+        await runtime.close()
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        None,
+        "owner_answer",
+        "prior_approval",
+        "checkpoint_intent",
+        "wrong_project",
+        "live_owner",
+        "head_changed",
+        "changed_native_args",
+    ],
+)
+def test_departed_unanswered_checkpoint_wait_can_only_be_interrupted_without_effect(runtime, bad):
+    async def run():
+        request = captured_request()
+        session = await setup(runtime, request)
+        sid = session.session_id
+        native = "native-permission"
+        tool = request["toolCallId"]
+        inv_id = key(sid, "tool", tool)
+        history = [
+            dict(
+                id="a9c0ab74-2a20-4b96-98e1-922514ce7555",
+                type="tool.execution_start",
+                data=dict(
+                    toolCallId=tool,
+                    toolName="checkpoint_sources",
+                    arguments=copy.deepcopy(request["args"]),
+                ),
+            ),
+            dict(
+                id="ca6ff698-1d3a-448f-b284-55afea447991",
+                type="permission.requested",
+                data=dict(
+                    requestId=native, permissionRequest=copy.deepcopy(request), ownerSessionId=sid
+                ),
+            ),
+            dict(
+                id="d35f1be6-dd38-4b29-9bf4-aea761be9004",
+                type="permission.completed",
+                data=dict(
+                    requestId=native,
+                    toolCallId=tool,
+                    result={"kind": "denied-interactively-by-user"},
+                ),
+            ),
+        ]
+        with runtime.services.registry.project_store(PROJECT).transaction() as tx:
+            inv = tx.require("invocations", inv_id)
+            stage = tx.require("copilot.permissions", key(sid, native))
+            save(
+                tx,
+                "copilot.permissions",
+                key(sid, native),
+                {
+                    **stage,
+                    "phase": "reply_prepared",
+                    "reply": "reject",
+                    "authority": "host",
+                    "delivery_state": "outcome_uncertain",
+                },
+            )
+            original_stage = tx.require("copilot.permissions", key(sid, native))
+            decision = dict(
+                schema_version="1.0",
+                decision_id="retained-permission",
+                project_id=PROJECT,
+                work_id=inv["work_id"],
+                kind="permission",
+                state="pending",
+                state_revision=0,
+                fingerprint="a" * 64,
+                prompt="Retained unanswered checkpoint gate",
+                options=["approve_once", "decline"],
+                invocation_id=inv_id,
+                native_decision_id=native,
+                response=None,
+                resolved_by=None,
+                delivery_state="not_sent",
+            )
+            if bad == "owner_answer":
+                decision.update(
+                    state="answered",
+                    response=dict(
+                        schema_version="1.0",
+                        operation_id=str(uuid4()),
+                        project_id=PROJECT,
+                        expected_revision=0,
+                        fingerprint="a" * 64,
+                        action="approve_once",
+                    ),
+                    resolved_by={"kind": "user", "id": "owner"},
+                    delivery_state="pending",
+                )
+            tx.put("decisions", decision["decision_id"], decision, schema="Decision")
+            if bad == "checkpoint_intent":
+                tx.put("checkpoint_intents", request["args"]["operation_id"], {"state": "prepared"})
+            if bad == "prior_approval":
+                history[-1]["data"]["result"] = {"kind": "approved"}
+            if bad == "wrong_project":
+                history[1]["data"]["permissionRequest"]["args"]["project_id"] = "other-project"
+            if bad == "changed_native_args":
+                history[0]["data"]["arguments"]["message"] = "Different native operation"
+            proof = dict(
+                session_id=sid,
+                pid=123,
+                start="old",
+                observed_identity="old" if bad == "live_owner" else None,
+                pending_empty=True,
+                current_send=False,
+                invocation_ids=[inv_id],
+                checkpoint_head={
+                    "verified": True,
+                    "head": "different"
+                    if bad == "head_changed"
+                    else request["args"]["expected_head"],
+                },
+                permission_fingerprints={history[1]["id"]: stage["fingerprint"]},
+            )
+            changed = runtime.state.interrupt_uninvoked_checkpoint(tx, sid, history, proof)
+            assert changed == (1 if bad is None else 0)
+            current = tx.require("decisions", decision["decision_id"])
+            if bad is None:
+                assert (
+                    current["state"] == "cancelled"
+                    and current["response"] is None
+                    and current["resolved_by"] is None
+                    and current["delivery_state"] == "not_sent"
+                )
+                assert tx.require("invocations", inv_id)["state"] == "cancelled"
+                assert runtime.state.interrupt_uninvoked_checkpoint(tx, sid, history, proof) == 0
+            assert tx.require("copilot.permissions", key(sid, native)) == original_stage
         await runtime.close()
 
     asyncio.run(run())

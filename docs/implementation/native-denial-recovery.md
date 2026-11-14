@@ -69,3 +69,25 @@ custom-tool/permission/accepted-service checks pass**, including the actual M11
 argument list and a real checkpoint-handler rejection of excluded `.env` input.
 Ruff and mypy pass. This does not execute the original M11 checkpoint or answer
 its retained decision.
+
+## Departed, unentered checkpoint wait
+
+Read-only inspection found the retained M11 native permission completion
+`d35f1be6-dd38-4b29-9bf4-aea761be9004` denying
+`cc62c65b-eb3b-4f3d-93a4-740a0925207f` after shutdown prepared a **host rejection**.
+The permission decision remains unanswered/not_sent; it is not an owner decline.
+
+A checkpoint-only passive path requires the exact cold/departed session, empty
+pending metadata, no current/unsettled send, original invocation/stage/decision
+bindings, validated exact native CheckpointRequest, the denied native gate, current
+HEAD matching expected_head, and no checkpoint intent or completed operation.
+An owner response, approval, changed HEAD/arguments/project or existing intent
+blocks it. The lost wait and uninvoked checkpoint wrapper can then be cancelled
+with system evidence. No checkpoint effect, successful return or owner answer is
+claimed. The decision's delivery state is preserved. Ordinary native callback
+delivery matching remains unchanged and may acknowledge an actually matching
+prepared host rejection only when its real native completion is observed.
+
+**54 focused denial/custom-tool/permission-stage checks pass**, with production
+mypy and Ruff clean. Metadata-only application to the retained projects follows
+separately after before-copies. No publication continuation is authorised here.

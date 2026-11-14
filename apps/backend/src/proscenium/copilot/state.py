@@ -1105,6 +1105,227 @@ class State:
             )
         )
 
+    def interrupted_custom_stage(self, tx: Transaction, stage: dict[str, Any]) -> bool:
+        observation = tx.get(
+            "copilot.permission_outcomes",
+            key(stage["session_id"], stage["native_id"]),
+            required=False,
+        )
+        return bool(
+            observation
+            and observation.get("kind") == "uninvoked_custom_tool_interrupted"
+            and all(
+                observation.get(k) == stage.get(k)
+                for k in (
+                    "session_id",
+                    "native_id",
+                    "tool_call_id",
+                    "work_id",
+                    "request_id",
+                    "invocation_id",
+                )
+            )
+        )
+
+    def interrupt_uninvoked_checkpoint(
+        self,
+        tx: Transaction,
+        session_id: str,
+        history: list[dict[str, Any]],
+        departed: dict[str, Any],
+    ) -> int:
+        """Cancel a lost unanswered checkpoint permission wait, never claim a checkpoint effect."""
+        if (
+            departed.get("session_id") != session_id
+            or departed.get("observed_identity") == departed.get("start")
+            or departed.get("pending_empty") is not True
+            or departed.get("current_send") is not False
+            or not departed.get("checkpoint_head", {}).get("verified")
+        ):
+            return 0
+        count = 0
+        for invocation in tx.all("invocations"):
+            if (
+                invocation.get("session_id") != session_id
+                or invocation["state"] in TERMINAL
+                or invocation.get("invocation_id") not in departed.get("invocation_ids", [])
+                or invocation.get("kind") != "tool"
+                or invocation.get("name") != "checkpoint_sources"
+            ):
+                continue
+            tool = invocation["native_id"]
+            binding = self.binding(tx, session_id, "tool", tool)
+            work = tx.get("work", invocation["work_id"], required=False)
+            if (
+                not binding
+                or not work
+                or work["native_session_id"] != session_id
+                or work["originating_request_id"] != invocation["request_id"]
+                or any(
+                    binding.get(k) != invocation.get(k)
+                    for k in ("work_id", "request_id", "delivery_id")
+                )
+            ):
+                continue
+            requests = [
+                e
+                for e in history
+                if e["type"] == "permission.requested"
+                and e.get("data", {}).get("permissionRequest", {}).get("toolCallId") == tool
+            ]
+            starts = [
+                e
+                for e in history
+                if e["type"] == "tool.execution_start"
+                and e.get("data", {}).get("toolCallId") == tool
+            ]
+            if len(requests) != 1 or len(starts) != 1:
+                continue
+            event = requests[0]
+            request = event["data"]["permissionRequest"]
+            body = request.get("args")
+            if (
+                request.get("kind") != "custom-tool"
+                or request.get("toolName") != "checkpoint_sources"
+            ):
+                continue
+            try:
+                validate("CheckpointRequest", body)
+            except DomainError:
+                continue
+            if (
+                body["project_id"] != tx.project_id
+                or body["expected_head"] != departed["checkpoint_head"].get("head")
+                or event["data"].get("ownerSessionId") != session_id
+                or starts[0]["data"].get("toolName") != "checkpoint_sources"
+                or canonical(starts[0]["data"].get("arguments")) != canonical(body)
+            ):
+                continue
+            native_id = event["data"]["requestId"]
+            completions = [
+                e
+                for e in history
+                if e["type"] == "permission.completed"
+                and e.get("data", {}).get("requestId") == native_id
+            ]
+            if (
+                len(completions) != 1
+                or completions[0]["data"].get("toolCallId") != tool
+                or completions[0]["data"].get("result", {}).get("kind")
+                != "denied-interactively-by-user"
+                or any(
+                    e["type"]
+                    not in {"tool.execution_start", "permission.requested", "permission.completed"}
+                    and e.get("data", {}).get("toolCallId") == tool
+                    for e in history
+                )
+            ):
+                continue
+            stage = tx.get("copilot.permissions", key(session_id, native_id), required=False)
+            decisions = [
+                d for d in tx.all("decisions") if d["invocation_id"] == invocation["invocation_id"]
+            ]
+            if (
+                not stage
+                or len(decisions) != 1
+                or stage.get("reply") not in {None, "reject"}
+                or stage.get("session_id") != session_id
+                or stage.get("tool_call_id") != tool
+                or stage.get("native_id") != native_id
+                or any(
+                    s.get("native_id") != native_id
+                    for s in tx.all("copilot.permissions")
+                    if s.get("session_id") == session_id and s.get("tool_call_id") == tool
+                )
+                or stage.get("authority") not in {None, "host"}
+                or stage.get("fingerprint")
+                != departed.get("permission_fingerprints", {}).get(event["id"])
+                or any(
+                    stage.get(k) != invocation.get(k)
+                    for k in ("work_id", "request_id", "invocation_id", "delivery_id")
+                )
+            ):
+                continue
+            decision = decisions[0]
+            decision_binding = self.binding(tx, session_id, "decision", native_id)
+            if (
+                not decision_binding
+                or decision_binding.get("invocation_id") != invocation["invocation_id"]
+                or any(
+                    decision_binding.get(k) != invocation.get(k)
+                    for k in ("work_id", "request_id", "delivery_id")
+                )
+                or decision["native_decision_id"] != native_id
+                or decision["kind"] != "permission"
+                or decision["work_id"] != invocation["work_id"]
+                or decision["state"] != "pending"
+                or decision["response"] is not None
+                or decision["resolved_by"] is not None
+                or decision["delivery_state"] != "not_sent"
+                or tx.get("checkpoint_intents", body["operation_id"], required=False)
+                or tx.connection.execute(
+                    "SELECT 1 FROM operations WHERE scope=? AND id=?",
+                    ("sources.checkpoint", body["operation_id"]),
+                ).fetchone()
+            ):
+                continue
+            evidence = {
+                **{
+                    k: invocation[k]
+                    for k in ("work_id", "request_id", "invocation_id", "delivery_id")
+                },
+                "session_id": session_id,
+                "native_id": native_id,
+                "tool_call_id": tool,
+                "kind": "uninvoked_custom_tool_interrupted",
+                "operation_id": body["operation_id"],
+                "source_event_ids": [starts[0]["id"], event["id"], completions[0]["id"]],
+                "departed_process": departed,
+                "native_return_observed": False,
+                "checkpoint_effect_observed": False,
+                "native_exit_code": None,
+                "at": now(),
+            }
+            revision = tx.revision("decisions", decision["decision_id"])
+            decision.update(state="cancelled", state_revision=revision + 1)
+            tx.put(
+                "decisions",
+                decision["decision_id"],
+                decision,
+                expected_revision=revision,
+                schema="Decision",
+            )
+            tx.emit(
+                "decision.resolved",
+                decision,
+                actor=SYSTEM,
+                work_id=invocation["work_id"],
+                request_id=invocation["request_id"],
+            )
+            tx.put("copilot.permission_outcomes", key(session_id, native_id), evidence)
+            save(
+                tx,
+                "invocations",
+                invocation["invocation_id"],
+                {**invocation, "state": "cancelled", "recovery": evidence},
+            )
+            tx.emit(
+                "tool.completed",
+                {
+                    "invocation_id": invocation["invocation_id"],
+                    "name": invocation["name"],
+                    "state": "cancelled",
+                    "summary": "Departed checkpoint permission wait interrupted. No checkpoint intent, successful tool return or owner answer observed.",
+                    "artifact_ids": [],
+                    "model_id": invocation.get("model_id"),
+                },
+                actor=SYSTEM,
+                work_id=invocation["work_id"],
+                request_id=invocation["request_id"],
+            )
+            count += 1
+        return count
+
     def observe_native_denials(
         self,
         tx: Transaction,
@@ -1247,6 +1468,9 @@ class State:
             ]
             if (
                 not stage
+                or stage.get("session_id") != session_id
+                or stage.get("tool_call_id") != tool
+                or stage.get("native_id") != native_id
                 or any(s["native_id"] not in ids for s in related)
                 or stage.get("reply") is not None
                 or stage.get("authority") is not None

@@ -1064,6 +1064,34 @@ class Copilot:
                 if hasattr(session, "get_raw_events")
                 else []
             )
+            checkpoint_head: dict[str, Any] = {"verified": False}
+            for event in raw_history:
+                request = event.get("data", {}).get("permissionRequest", {})
+                if (
+                    event["type"] == "permission.requested"
+                    and request.get("kind") == "custom-tool"
+                    and request.get("toolName") == "checkpoint_sources"
+                ):
+                    try:
+                        self.custom_tool_arguments(project_id, request)
+                        from proscenium.sources.common import git
+
+                        head = (
+                            git(
+                                Path(self.services.registry.get(project_id)["path"]),
+                                "rev-parse",
+                                "--verify",
+                                "HEAD",
+                                required=False,
+                            )
+                            .decode()
+                            .strip()
+                            or None
+                        )
+                        checkpoint_head = {"verified": True, "head": head}
+                    except DomainError:
+                        pass
+                    break
             with self.services.registry.project_store(project_id).transaction() as tx:
                 current_send = any(not task.done() for task in self.sends.values()) or any(
                     s.get("state") in {"dispatching", "outcome_uncertain"}
@@ -1078,6 +1106,25 @@ class Copilot:
                         "invocation_ids": prior_invocations,
                         "pending_empty": True,
                         "current_send": current_send,
+                        "permission_fingerprints": {
+                            e["id"]: hashlib.sha256(
+                                canonical(e["data"]["permissionRequest"])
+                            ).hexdigest()
+                            for e in history
+                            if e["type"] == "permission.requested"
+                        },
+                    },
+                )
+                self.state.interrupt_uninvoked_checkpoint(
+                    tx,
+                    session.session_id,
+                    raw_history,
+                    {
+                        **departed,
+                        "invocation_ids": prior_invocations,
+                        "pending_empty": True,
+                        "current_send": current_send,
+                        "checkpoint_head": checkpoint_head,
                         "permission_fingerprints": {
                             e["id"]: hashlib.sha256(
                                 canonical(e["data"]["permissionRequest"])
@@ -1446,6 +1493,7 @@ class Copilot:
                 and s.get("fingerprint") == fingerprint
                 and s.get("phase") != "completed"
                 and not self.state.native_denied_stage(tx, s)
+                and not self.state.interrupted_custom_stage(tx, s)
             ]
             save(
                 tx,
