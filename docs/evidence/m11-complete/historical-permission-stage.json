@@ -1,0 +1,44 @@
+{
+  "only_cold_restoration_phase_changes": [
+    {
+      "storage_id": "fbd9a5d969c84dd82857ba80d5811d112076572904ba29f6f27a09e384c972ff",
+      "before": {
+        "authority": "host",
+        "claim_id": "0f9d7b3be4234d20aa5c01f8b05a2400",
+        "claimed_at": "2026-11-14T18:01:18.673419+00:00",
+        "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+        "delivery_state": "outcome_uncertain",
+        "fingerprint": "d9572712ce7b46aed27fdf4fd056cb7080b0a3a238f431d746ac84e43c8872c9",
+        "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+        "native_id": "f4cb7f12-085b-42b8-9288-19b946111107",
+        "phase": "reply_prepared",
+        "reply": "reject",
+        "reply_prepared_at": "2026-11-14T18:01:37.601817+00:00",
+        "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "tool_call_id": "call_XcQ3lvQAC0HOmPxz3LBd6jzc",
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      "after": {
+        "authority": "host",
+        "claim_id": "0f9d7b3be4234d20aa5c01f8b05a2400",
+        "claimed_at": "2026-11-14T18:01:18.673419+00:00",
+        "delivery_id": "d962dbe1-279e-44f0-9afc-dae52d4a9e41",
+        "delivery_state": "outcome_uncertain",
+        "fingerprint": "d9572712ce7b46aed27fdf4fd056cb7080b0a3a238f431d746ac84e43c8872c9",
+        "interrupted_at": "2026-11-14T20:18:04.104985+00:00",
+        "invocation_id": "da2eff8b158ef6985d27c842b55f939085ebebbc6d72668678ad1532d9321285",
+        "native_id": "f4cb7f12-085b-42b8-9288-19b946111107",
+        "phase": "outcome_uncertain",
+        "reply": "reject",
+        "reply_prepared_at": "2026-11-14T18:01:37.601817+00:00",
+        "request_id": "1a914aa8-2bbc-461a-a87d-1bb7431de02c",
+        "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+        "tool_call_id": "call_XcQ3lvQAC0HOmPxz3LBd6jzc",
+        "work_id": "work-4a7e644e78514109b4a5232316e3aacc"
+      },
+      "meaning": "Normal cold restoration records interrupted prepared host reply. Delivery remains unknown. No owner answer or ACK."
+    }
+  ],
+  "owner_decisions_byte_identical": true
+}

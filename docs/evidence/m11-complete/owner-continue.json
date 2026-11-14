@@ -1,0 +1,19 @@
+{
+  "status": 202,
+  "command": {
+    "schema_version": "1.0",
+    "operation_id": "e1f76987-4f63-4479-90c6-c86994f9536b",
+    "project_id": "project-6efca2f5-8ccd-49bb-bea1-f552ef065224",
+    "mode": "continue_work",
+    "work_id": "work-4a7e644e78514109b4a5232316e3aacc",
+    "expected_revision": 10
+  },
+  "receipt": {
+    "schema_version": "1.0",
+    "operation_id": "e1f76987-4f63-4479-90c6-c86994f9536b",
+    "resource_id": "work-4a7e644e78514109b4a5232316e3aacc",
+    "state": "accepted",
+    "state_revision": 10,
+    "replayed": false
+  }
+}

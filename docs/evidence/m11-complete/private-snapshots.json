@@ -1,0 +1,20 @@
+{
+  "before": {
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/publication-complete-20261114-a/private-before",
+    "hashes": {
+      "native-process.json": "c7c3559272da636b540d16b74fb7edb4a4dc6c2380d518a8c38e04a993c2788d",
+      "native-events.jsonl": "2d3d6cd3222dbdaf7564d4402b9a6d043559b377516c5bd622d9fe76242224cd",
+      "registry.sqlite3": "9abde2e58e9f22a1478fb162c9fb2e1d6a7a73980b11503413e6680555e46231",
+      "project.sqlite3": "7fa168fae3f60ce6c3e4e3c3c53e3077175fc1e7fc0c8370d07fec98a2403cb6"
+    }
+  },
+  "after": {
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m11-20261114-native-a/publication-complete-20261114-a/private-after",
+    "hashes": {
+      "native-process.json": "1dd8b7a6f16044100a6cbe047b2699698a1f67c40a08969b554c55d253b64cc0",
+      "native-events.jsonl": "21f75daf7f8015d20319388ce66126ef3936fa3d4b3e014956d5b6b53436daf8",
+      "registry.sqlite3": "2faa2b20908a826010729db812385f539a566c27448d85575e64bfeef77f37a6",
+      "project.sqlite3": "d107dee19f6f294f4baffe74ae4a131c0112a63ef8e1768fb4957a3cdf5074a1"
+    }
+  }
+}

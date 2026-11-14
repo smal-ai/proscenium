@@ -1,0 +1,11 @@
+{
+  "session_id": "0cbee1a2-b5ed-4ab8-962b-ccf1d9f8a454",
+  "model": "gpt-6.1-sol",
+  "memory": {
+    "enabled": false
+  },
+  "enable_session_store": false,
+  "continue_pending_work": false,
+  "new_conversations": 0,
+  "children": 0
+}

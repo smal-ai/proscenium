@@ -1,0 +1,7 @@
+{
+  "old_assertion": "app.routes flattens included routers",
+  "actual": "FastAPI uses lazy _IncludedRouter; inspect actual OpenAPI paths",
+  "sdk_sends": 0,
+  "app_stacks": 0,
+  "compiled_output_reused": true
+}
