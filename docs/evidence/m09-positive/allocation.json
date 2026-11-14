@@ -1,0 +1,13 @@
+{
+  "model_loads_max": 1,
+  "normal_vlm_calls": 2,
+  "normal_cloud_roots": 2,
+  "vlm_calls_hard_max": 3,
+  "cloud_roots_hard_max": 3,
+  "third_only_after_concrete_actual_defect": true,
+  "native_children_max": 0,
+  "max_output_tokens": 512,
+  "vlm_timeout_seconds": 120,
+  "cloud_timeout_seconds": 180,
+  "host_headroom_bytes": 4294967296
+}

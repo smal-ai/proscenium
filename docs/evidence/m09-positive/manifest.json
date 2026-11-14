@@ -1,0 +1,102 @@
+{
+  "README.md": {
+    "sha256": "e89ef14098dccdf7c42699995af046ec37d26c41df182dc4f38c9f22225b9e6a",
+    "bytes": 8618
+  },
+  "allocation.json": {
+    "sha256": "64650f8ae594172aaa3288917830ea949a4400070bb9e6167be57c12ed718a82",
+    "bytes": 341
+  },
+  "baseline.json": {
+    "sha256": "bbcc90117fc803628a70ffb277b03c3c639e003b831dc955db855b9c4c1a588e",
+    "bytes": 1142
+  },
+  "browser-amend-and-reject.png": {
+    "sha256": "1f6226e2a0a8e3af041d27864a993d717f1f1e2d39781e10888c7aec84f15ae1",
+    "bytes": 1025168
+  },
+  "browser-approve.png": {
+    "sha256": "40dd972b7dbc8f3bdbf968b253b75d93102d6f9b44b16007784c0d24a37ddb43",
+    "bytes": 1036953
+  },
+  "browser-collect.png": {
+    "sha256": "39d719d9937871a4f2b7fee5361046972823a19c114d046e6205ec292c1cfe13",
+    "bytes": 564660
+  },
+  "browser-native.png": {
+    "sha256": "cdc4348f2144bfb7740345ee2b588196bc0c13ce1220653f5539bfc7b3bd4283",
+    "bytes": 1036838
+  },
+  "browser-owner.png": {
+    "sha256": "52f3b54fb1643fc037d9e75f3459c38d0c7501850dc588c46d8de1eea064fe1a",
+    "bytes": 1047968
+  },
+  "browser-unavailable.png": {
+    "sha256": "1c62a53d0938337a4d8818d652b87cd745aa2f12ef67631417a331ea320e7a2b",
+    "bytes": 564659
+  },
+  "fixture-identities.json": {
+    "sha256": "6e274a59e194808948b59604a932ecb9ff908627dee009068521b7e6d6106d00",
+    "bytes": 3481
+  },
+  "host-cleanup.json": {
+    "sha256": "38b57df1ef3b91a8b3cafaf01c1a699d03e0d54411b14e34b2165a31e06f8ed5",
+    "bytes": 1850
+  },
+  "loaded.json": {
+    "sha256": "35e75371b88b08738c5a496f38ee6ca44a519ef84cf6b4ea695acd84feb499db",
+    "bytes": 2405
+  },
+  "model-cleanup.json": {
+    "sha256": "4f8de51923db2f9f7d8bed445d44566bc77498b27f88aa62ede27231c3047754",
+    "bytes": 2995
+  },
+  "native-delivery.json": {
+    "sha256": "c47a87b44cf79034627304a8be9e0c30aa735405a44b7feb83524d47ae485c53",
+    "bytes": 10725
+  },
+  "native-tool-arguments.json": {
+    "sha256": "9995dbe0a0a27d0abb676302058cebf56300e2a3f4291d49a85ed4f6371fc561",
+    "bytes": 5201
+  },
+  "native-tool-ticket.json": {
+    "sha256": "24a60a27cb00a6315bff2294a45f76549501830ae0f1cf37dee2cb2f13ade2c3",
+    "bytes": 498
+  },
+  "public-approve.json": {
+    "sha256": "866da57059052a28e653bbff1aaea25c847661e13844aa34ab6247800bd40f1c",
+    "bytes": 186112
+  },
+  "public-collect.json": {
+    "sha256": "1a07a7d75deeb716d94ec492a62a313324bd59fbfbfe323971866f0966f72388",
+    "bytes": 190477
+  },
+  "public-native.json": {
+    "sha256": "d75a21b070a299c1fbefd5aefc05662e55f8b3418c33bb9a7f3ba8adcb7fd6ac",
+    "bytes": 89324
+  },
+  "public-owner-commands.json": {
+    "sha256": "0d547fa16f48f5428002535997b13eafa545d082d6be55305b348451845b75a7",
+    "bytes": 16793
+  },
+  "public-owner.json": {
+    "sha256": "5bbe44ba3fea6d27165e5c50c364a7658ba3080e3899a5c9f5470a7373b7cd49",
+    "bytes": 16308
+  },
+  "public-unavailable.json": {
+    "sha256": "17a512655ebba3e6e3166fbc9af4717fb10cf28aba033e2ceddbcf0775ccdb1c",
+    "bytes": 191113
+  },
+  "runtime-identities.json": {
+    "sha256": "1b3388530aa3bf9e7199ae3411cdfccb44a695eed155e8bc5e3217d32fae0b22",
+    "bytes": 1951
+  },
+  "verification.json": {
+    "sha256": "0d7e66abfd1c22e89b7a0dee511a9f69f10db3d45d350fa4cad4b03874649386",
+    "bytes": 1283
+  },
+  "vlm-observations.json": {
+    "sha256": "bf9b7d10d5865f6588768b5216a8ba70b39460337cd41cac5ec6ce3e42b4d9be",
+    "bytes": 8751
+  }
+}

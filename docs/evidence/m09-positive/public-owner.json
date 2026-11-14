@@ -1,0 +1,470 @@
+{
+  "action": "owner",
+  "ticket": {
+    "schema_version": "1.0",
+    "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+    "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+    "status": "pending"
+  },
+  "post_status": 202,
+  "settled": {
+    "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+    "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+    "schema_version": "1.0",
+    "status": "ready"
+  },
+  "state": {
+    "snapshot": {
+      "schema_version": "1.0",
+      "project": {
+        "name": "M09 read-only critique fixture",
+        "native_session_id": null,
+        "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project",
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "repository_id": "repository-5c2bb1f3-509c-46a4-893c-0d4d4de678cd",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 1
+      },
+      "settings": {
+        "default_profile_id": null,
+        "generation_attempt_limit": 3,
+        "state_revision": 0
+      },
+      "event_sequence": 6,
+      "active_work": null,
+      "held_requests": [],
+      "items": [
+        {
+          "current_version_id": "m09-image-version",
+          "description": "Labelled M01 image fixture. No new Blender execution.",
+          "item_id": "m09-image-item",
+          "kind": "asset",
+          "name": "M09 critique target",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "jobs": [
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        }
+      ],
+      "pending_decisions": [],
+      "reviews": [
+        {
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "schema_version": "1.0",
+          "status": "ready"
+        }
+      ]
+    },
+    "requests": {
+      "schema_version": "1.0",
+      "items": [],
+      "next_cursor": null
+    },
+    "jobs": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        }
+      ],
+      "next_cursor": null
+    },
+    "reviews": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "schema_version": "1.0",
+          "status": "ready"
+        }
+      ],
+      "next_cursor": null
+    },
+    "items": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "current_version_id": "m09-image-version",
+          "description": "Labelled M01 image fixture. No new Blender execution.",
+          "item_id": "m09-image-item",
+          "kind": "asset",
+          "name": "M09 critique target",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "next_cursor": null
+    },
+    "annotations": {
+      "schema_version": "1.0",
+      "items": [],
+      "next_cursor": null
+    },
+    "findings": {
+      "a163de50-72c8-448d-9744-0664ac9ba9ec": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "evidence": [
+              {
+                "artifact_id": "m09-clean-target",
+                "description": "The rightmost blue block.",
+                "kind": "visual"
+              }
+            ],
+            "finding_id": "a163de50-72c8-448d-9744-0664ac9ba9ec-finding-0",
+            "observation": "Blue object is a rectangular prism.",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "recommendation": "Observe its solid blue color.",
+            "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "revision": 1,
+            "schema_version": "1.0",
+            "state": "unreviewed",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "reference",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            }
+          },
+          {
+            "evidence": [
+              {
+                "artifact_id": "m09-clean-target",
+                "description": "The leftmost orange block.",
+                "kind": "visual"
+              }
+            ],
+            "finding_id": "a163de50-72c8-448d-9744-0664ac9ba9ec-finding-1",
+            "observation": "Orange object is a rectangular prism.",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "recommendation": "Note its bright orange hue.",
+            "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "revision": 1,
+            "schema_version": "1.0",
+            "state": "unreviewed",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "reference",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            }
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "contexts": {},
+    "attempts": {
+      "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+            "attempt_number": 1,
+            "external_job_id": null,
+            "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+            "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+            "native_exit_code": null,
+            "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "schema_version": "1.0",
+            "state": "succeeded",
+            "trigger_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec"
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "events": [
+      {
+        "actor": {
+          "id": "m09-scripted-test-owner",
+          "kind": "user"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:38:23.455686+00:00",
+        "payload": {
+          "name": "M09 read-only critique fixture",
+          "native_session_id": null,
+          "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "repository_id": "repository-5c2bb1f3-509c-46a4-893c-0d4d4de678cd",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 1,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "m09-fixture-publisher",
+          "kind": "tool"
+        },
+        "event_type": "publication.created",
+        "native_event_id": null,
+        "native_session_id": "fixture-only-no-native-session",
+        "occurred_at": "2026-11-14T14:38:23.580863+00:00",
+        "payload": {
+          "event_sequence": 2,
+          "job_ids": [],
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "publication_id": "m09-fixture-publication",
+          "replayed": false,
+          "schema_version": "1.0",
+          "versions": [
+            {
+              "item_id": "m09-image-item",
+              "version_id": "m09-image-version"
+            }
+          ]
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "m09-fixture-no-native-request",
+        "schema_version": "1.0",
+        "sequence": 2,
+        "work_id": "m09-fixture-work"
+      },
+      {
+        "actor": {
+          "id": "owner-0c288226-8cf2-4621-9335-a16e40c47d92",
+          "kind": "user"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:50.743353+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "planned",
+          "state_revision": 0,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 3,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:50.885758+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "starting",
+          "state_revision": 1,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 4,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "review.ready",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:55.453184+00:00",
+        "payload": {
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "schema_version": "1.0",
+          "status": "ready"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 5,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:55.463828+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 6,
+        "work_id": null
+      }
+    ]
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "images": [
+    {
+      "complete": true,
+      "width": 640,
+      "height": 360
+    }
+  ]
+}

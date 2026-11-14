@@ -1,0 +1,175 @@
+[
+  {
+    "at": 1794667208.590443,
+    "session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+    "prompt": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+    "display_prompt": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+    "mode": "enqueue",
+    "client_turn_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+    "attachments": [
+      {
+        "type": "file",
+        "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project/.proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content"
+      },
+      {
+        "type": "extension_context",
+        "extensionId": "proscenium",
+        "title": "Turn context",
+        "capturedAt": "2026-11-14T14:40:03.794Z",
+        "payload": {
+          "schema_version": "1.0",
+          "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a",
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "delivery_mode": "queue",
+          "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+          "project": {
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project"
+          },
+          "selection": {
+            "item_id": "m09-image-item",
+            "version_id": "m09-image-version",
+            "view_mode": "keyframes",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "reference",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            },
+            "camera": null,
+            "range": null,
+            "selected_objects": []
+          },
+          "annotations": [],
+          "approved_findings": [],
+          "attached_files": [
+            {
+              "artifact_id": "m09-clean-target",
+              "role": "reference",
+              "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "path": ".proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "at": 1794667234.055776,
+    "session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+    "prompt": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+    "display_prompt": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+    "mode": "enqueue",
+    "client_turn_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+    "attachments": [
+      {
+        "type": "file",
+        "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project/.proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content"
+      },
+      {
+        "type": "file",
+        "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project/.proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content"
+      },
+      {
+        "type": "extension_context",
+        "extensionId": "proscenium",
+        "title": "Turn context",
+        "capturedAt": "2026-11-14T14:40:33.975Z",
+        "payload": {
+          "schema_version": "1.0",
+          "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6",
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "delivery_mode": "queue",
+          "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+          "project": {
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project"
+          },
+          "selection": {
+            "item_id": "m09-image-item",
+            "version_id": "m09-image-version",
+            "view_mode": "keyframes",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "concept",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            },
+            "camera": null,
+            "range": null,
+            "selected_objects": []
+          },
+          "annotations": [],
+          "approved_findings": [
+            {
+              "approved_text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+              "finding_id": "m09-positive-native-review-finding-0",
+              "finding_revision": 1,
+              "target": {
+                "artifact_id": "m09-clean-target",
+                "dimensions": {
+                  "height": 360,
+                  "width": 640
+                },
+                "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+                "item_id": "m09-image-item",
+                "media_artifact_id": null,
+                "origin": "concept",
+                "render_job_id": null,
+                "shot_id": null,
+                "source_frame": null,
+                "version_id": "m09-image-version"
+              }
+            }
+          ],
+          "attached_files": [
+            {
+              "artifact_id": "m09-clean-target",
+              "role": "render",
+              "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "path": ".proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              }
+            },
+            {
+              "artifact_id": "m09-clean-target",
+              "role": "concept",
+              "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "path": ".proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

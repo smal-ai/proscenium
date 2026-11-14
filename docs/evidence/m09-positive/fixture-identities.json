@@ -1,0 +1,96 @@
+{
+  "project": {
+    "name": "M09 read-only critique fixture",
+    "native_session_id": null,
+    "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project",
+    "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+    "repository_id": "repository-5c2bb1f3-509c-46a4-893c-0d4d4de678cd",
+    "schema_version": "1.0",
+    "state": "inactive",
+    "state_revision": 0
+  },
+  "artifact": {
+    "schema_version": "1.0",
+    "artifact_id": "m09-clean-target",
+    "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+    "kind": "image",
+    "purpose": "reference",
+    "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+    "bytes": 333890,
+    "media_type": "image/png",
+    "state": "ready",
+    "derived_from": [],
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "telemetry": {
+    "image_artifact_id": "m09-clean-target",
+    "width_pixels": 640,
+    "height_pixels": 360,
+    "pixel_count": 230400,
+    "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+    "measurement": "Pillow decode of the exact registered PNG; these are pixel dimensions, not inferred scene measurements."
+  },
+  "target": {
+    "origin": "concept",
+    "artifact_id": "m09-clean-target",
+    "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "item_id": "m09-image-item",
+    "version_id": "m09-image-version",
+    "shot_id": null,
+    "render_job_id": null,
+    "source_frame": null,
+    "media_artifact_id": null
+  },
+  "publication": {
+    "schema_version": "1.0",
+    "publication_id": "m09-fixture-publication",
+    "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+    "versions": [
+      {
+        "item_id": "m09-image-item",
+        "version_id": "m09-image-version"
+      }
+    ],
+    "job_ids": [],
+    "event_sequence": 2,
+    "replayed": false
+  },
+  "source_commit": "117047d641df77b6131d9c5ab332cbeea037c2c9",
+  "source_path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project/assets/m09-fixture.json",
+  "source_sha256": "e10939f978fda7d331f8561cda716a1e70447a7be997e986a8da851506a1863b",
+  "reviews_after_publication": 0,
+  "native_review": {
+    "schema_version": "1.0",
+    "review_id": "m09-positive-native-review",
+    "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+    "targets": [
+      {
+        "origin": "concept",
+        "artifact_id": "m09-clean-target",
+        "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "dimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "item_id": "m09-image-item",
+        "version_id": "m09-image-version",
+        "shot_id": null,
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      }
+    ],
+    "telemetry_artifact_ids": [
+      "m09-pixel-telemetry"
+    ],
+    "criteria": "Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only."
+  },
+  "fixture_scope": "Fresh project/publication and read-only COPY of accepted M01 image. Old M09 failed data untouched."
+}

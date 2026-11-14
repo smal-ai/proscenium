@@ -1,0 +1,58 @@
+{
+  "at": 1794667454.54071,
+  "host": {
+    "pid": 3546221,
+    "start_ticks": "45981109",
+    "origin": "http://127.0.0.1:18919",
+    "at": 1794667103.5960999,
+    "code_base": "ad47260a922612393896c21ff7186d643037c524"
+  },
+  "native_runtime": {
+    "pid": 3551594,
+    "start": "45991557",
+    "parent_pid": 3546221,
+    "parent_start": "45981109",
+    "binary": "/home/quintin/.cache/proscenium-development/fleet/m09-positive/node_modules/@github/copilot-linux-x64/copilot"
+  },
+  "children_records": 0,
+  "resource_claims": [],
+  "source_fixture_sha256_after": "e10939f978fda7d331f8561cda716a1e70447a7be997e986a8da851506a1863b",
+  "source_unchanged": true,
+  "signal": "SIGTERM",
+  "gemma_not_reloaded": true,
+  "post_unavailable_models": [
+    {
+      "type": "llm",
+      "modelKey": "qwen3.8-27b-uncensored",
+      "format": "gguf",
+      "displayName": "Qwen3.8 27B Uncensored",
+      "publisher": "orcarouter",
+      "path": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "sizeBytes": 16810714496,
+      "indexedModelIdentifier": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "deviceIdentifier": null,
+      "paramsString": "27B",
+      "architecture": "qwen35",
+      "quantization": {
+        "name": "Q4_K_M",
+        "bits": 4
+      },
+      "identifier": "qwen3.8-27b-uncensored",
+      "ttlMs": null,
+      "lastUsedTime": 1794663304597,
+      "vision": false,
+      "trainedForToolUse": true,
+      "maxContextLength": 262144,
+      "contextLength": 131072,
+      "status": "idle",
+      "queued": 0,
+      "parallel": 4
+    }
+  ],
+  "browser_close": "CDP Browser.close",
+  "verified_at": 1794667646.1190658,
+  "host_exited": true,
+  "native_runtime_exited": true,
+  "browser_completion_notified": true,
+  "browser_shell_id": "sh_1da7ff2bc001Q15tgfiLKiUNkk"
+}

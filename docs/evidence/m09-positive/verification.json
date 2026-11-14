@@ -1,0 +1,30 @@
+{
+  "result": "POSITIVE_JOURNEY_PASS_PENDING_COORDINATOR_ACCEPTANCE",
+  "counts": {
+    "model_loads": 1,
+    "vlm_inferences": 2,
+    "cloud_roots": 2,
+    "native_children": 0,
+    "owner_approved_submissions": 1,
+    "exact_queue_replays": 1,
+    "model_unloads": 1
+  },
+  "owner_ready": true,
+  "native_ready": true,
+  "owner_review_did_not_start_native_work": true,
+  "approved_text_exact": true,
+  "target_exact": true,
+  "source_unchanged": true,
+  "rejected_finding_absent_from_native_send": true,
+  "triggering_tool_ticket_only": true,
+  "replay_same_native_message_id": true,
+  "sdk_file_bindings": 2,
+  "unique_sdk_image_sha256": [
+    "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc"
+  ],
+  "sdk_duplicate_binding_disclosure": "W01 attached the same immutable clean PNG as render and concept. One Queue and one unique image, not two deliveries or distinct images.",
+  "unavailable_preflight_no_extra_inference": true,
+  "normal_feedback_saved_after_cleanup": true,
+  "scope": "Scripted owner inputs, actual compiled Full-HD UI and real production services/LM Studio/native SDK. Fixture source is labelled; no generated findings or native responses are seeded.",
+  "private_runtime": "/home/quintin/.cache/proscenium-development/m09-positive-20261114"
+}

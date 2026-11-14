@@ -1,0 +1,266 @@
+[
+  {
+    "at": 1794667190.906397,
+    "phase": "dispatch",
+    "index": 1,
+    "model": "google/gemma-4-e4b",
+    "max_tokens": 512,
+    "reasoning_effort": "none",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findings"
+      ],
+      "properties": {
+        "findings": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_index",
+              "observation",
+              "recommendation",
+              "evidence"
+            ],
+            "properties": {
+              "target_index": {
+                "type": "integer",
+                "enum": [
+                  0
+                ]
+              },
+              "observation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "recommendation": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "artifact_id",
+                        "description"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "visual"
+                        },
+                        "artifact_id": {
+                          "type": "string",
+                          "enum": [
+                            "m09-clean-target"
+                          ]
+                        },
+                        "description": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "body_sha256": "c283386b3df577daaeeda6f35002814dbfe51f80a84c9222b96a48079e397f6b",
+    "image_sha256": [
+      "11e0bed6dc6c18f42813c2a1ac528587cb449541cae90842c7d43684065209fa"
+    ],
+    "mem_available": 13583052800
+  },
+  {
+    "at": 1794667195.4388123,
+    "phase": "response",
+    "status": 200,
+    "seconds": 4.5320921770180576,
+    "response_sha256": "32fe2b2972cd0b64fa6c810e00aa27c83fd2171ebab64fa78d4b2494379a9c05",
+    "body": {
+      "id": "chatcmpl-3x1g6imkztb6qcr9j6q2gb",
+      "object": "chat.completion",
+      "created": 1794667190,
+      "model": "google/gemma-4-e4b",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\n  \"findings\": [\n    {\"target_index\": 0, \"observation\": \"Blue object is a rectangular prism.\", \"recommendation\": \"Observe its solid blue color.\", \"evidence\": [\n      {\"kind\": \"visual\", \"artifact_id\": \"m09-clean-target\", \"description\": \"The rightmost blue block.\"}\n    ]},\n    {\"target_index\": 0, \"observation\": \"Orange object is a rectangular prism.\", \"recommendation\": \"Note its bright orange hue.\", \"evidence\": [\n      {\"kind\": \"visual\", \"artifact_id\": \"m09-clean-target\", \"description\": \"The leftmost orange block.\"}\n    ]}\n  ]\n}",
+            "tool_calls": [],
+            "reasoning_present": false
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 252,
+        "completion_tokens": 162,
+        "total_tokens": 414,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "stats": {},
+      "system_fingerprint": "google/gemma-4-e4b"
+    },
+    "mem_available": 13745577984
+  },
+  {
+    "at": 1794667218.1922452,
+    "phase": "dispatch",
+    "index": 2,
+    "model": "google/gemma-4-e4b",
+    "max_tokens": 512,
+    "reasoning_effort": "none",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findings"
+      ],
+      "properties": {
+        "findings": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_index",
+              "observation",
+              "recommendation",
+              "evidence"
+            ],
+            "properties": {
+              "target_index": {
+                "type": "integer",
+                "enum": [
+                  0
+                ]
+              },
+              "observation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "recommendation": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "artifact_id",
+                        "description"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "visual"
+                        },
+                        "artifact_id": {
+                          "type": "string",
+                          "enum": [
+                            "m09-clean-target"
+                          ]
+                        },
+                        "description": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "kind",
+                        "artifact_id",
+                        "description"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "measured"
+                        },
+                        "artifact_id": {
+                          "type": "string",
+                          "enum": [
+                            "m09-pixel-telemetry"
+                          ]
+                        },
+                        "description": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "body_sha256": "e88d404a52d1caa225689eb00b50e5cf5c0bb56933fa02a58e366c67d27ef4cd",
+    "image_sha256": [
+      "11e0bed6dc6c18f42813c2a1ac528587cb449541cae90842c7d43684065209fa"
+    ],
+    "mem_available": 11930214400
+  },
+  {
+    "at": 1794667223.7797089,
+    "phase": "response",
+    "status": 200,
+    "seconds": 5.587153607979417,
+    "response_sha256": "0e41eee0de62bacfb316e306aa6e660bd0c152c53af3f3c2f59791d9ba97d827",
+    "body": {
+      "id": "chatcmpl-1xgnbp5vo2rb2ycant5b8t",
+      "object": "chat.completion",
+      "created": 1794667218,
+      "model": "google/gemma-4-e4b",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\n  \"findings\": [\n    {\n      \"target_index\": 0,\n      \"observation\": \"Blue object is a vertical rectangle; see m09-clean-target.\",\n      \"recommendation\": \"None needed.\",\n      \"evidence\": [\n        {\"kind\": \"visual\", \"artifact_id\": \"m09-clean-target\", \"description\": \"Visual observation of blue object\"}\n      ]\n    },\n    {\n      \"target_index\": 0,\n      \"observation\": \"Width: 640px; Height: 360px.\",\n      \"recommendation\": \"None needed.\",\n      \"evidence\": [\n        {\"kind\": \"measured\", \"artifact_id\": \"m09-pixel-telemetry\", \"description\": \"Telemetry ID m09-pixel-telemetry\"}\n      ]\n    }\n  ]\n}",
+            "tool_calls": [],
+            "reasoning_present": false
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 417,
+        "completion_tokens": 210,
+        "total_tokens": 627,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "stats": {},
+      "system_fingerprint": "google/gemma-4-e4b"
+    },
+    "mem_available": 12071624704
+  }
+]

@@ -1,0 +1,104 @@
+{
+  "at": 1794667344.1185434,
+  "owned_identifier": "google/gemma-4-e4b",
+  "before": [
+    {
+      "type": "llm",
+      "modelKey": "qwen3.8-27b-uncensored",
+      "format": "gguf",
+      "displayName": "Qwen3.8 27B Uncensored",
+      "publisher": "orcarouter",
+      "path": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "sizeBytes": 16810714496,
+      "indexedModelIdentifier": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "deviceIdentifier": null,
+      "paramsString": "27B",
+      "architecture": "qwen35",
+      "quantization": {
+        "name": "Q4_K_M",
+        "bits": 4
+      },
+      "identifier": "qwen3.8-27b-uncensored",
+      "ttlMs": null,
+      "lastUsedTime": 1794663304597,
+      "vision": false,
+      "trainedForToolUse": true,
+      "maxContextLength": 262144,
+      "contextLength": 131072,
+      "status": "idle",
+      "queued": 0,
+      "parallel": 4
+    },
+    {
+      "type": "llm",
+      "modelKey": "google/gemma-4-e4b",
+      "format": "gguf",
+      "displayName": "Gemma 4 E4B",
+      "publisher": "google",
+      "path": "google/gemma-4-e4b",
+      "sizeBytes": 6326940426,
+      "indexedModelIdentifier": "google/gemma-4-e4b",
+      "deviceIdentifier": null,
+      "paramsString": "7.5B",
+      "architecture": "gemma4",
+      "quantization": {
+        "name": "Q4_K_M",
+        "bits": 4
+      },
+      "variants": [
+        "google/gemma-4-e4b@q4_k_m"
+      ],
+      "selectedVariant": "google/gemma-4-e4b@q4_k_m",
+      "identifier": "google/gemma-4-e4b",
+      "ttlMs": null,
+      "lastUsedTime": 1794667223778,
+      "vision": true,
+      "trainedForToolUse": true,
+      "maxContextLength": 131072,
+      "contextLength": 65536,
+      "status": "idle",
+      "queued": 0,
+      "parallel": 4
+    }
+  ],
+  "after": [
+    {
+      "type": "llm",
+      "modelKey": "qwen3.8-27b-uncensored",
+      "format": "gguf",
+      "displayName": "Qwen3.8 27B Uncensored",
+      "publisher": "orcarouter",
+      "path": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "sizeBytes": 16810714496,
+      "indexedModelIdentifier": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "deviceIdentifier": null,
+      "paramsString": "27B",
+      "architecture": "qwen35",
+      "quantization": {
+        "name": "Q4_K_M",
+        "bits": 4
+      },
+      "identifier": "qwen3.8-27b-uncensored",
+      "ttlMs": null,
+      "lastUsedTime": 1794663304597,
+      "vision": false,
+      "trainedForToolUse": true,
+      "maxContextLength": 262144,
+      "contextLength": 131072,
+      "status": "idle",
+      "queued": 0,
+      "parallel": 4
+    }
+  ],
+  "argv": [
+    "lms",
+    "unload",
+    "google/gemma-4-e4b"
+  ],
+  "exit_code": 0,
+  "last_use_correlated_with_owned_response": true,
+  "qwen_context_ttl_last_used_unchanged": true,
+  "saved_profile_unchanged": true,
+  "own_jobs_settled": true,
+  "mem_available_kib": "15418336 kB"
+}

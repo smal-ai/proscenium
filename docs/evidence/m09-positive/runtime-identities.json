@@ -1,0 +1,26 @@
+{
+  "application_base": "ad47260a922612393896c21ff7186d643037c524",
+  "sdk_version": "1.0.34",
+  "httpx_version": "0.28.1",
+  "pillow_version": "12.3.0",
+  "browser": "159.0.8154.6",
+  "native_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+  "source_sha256": {
+    "apps/backend/src/proscenium/providers/vlm.py": "7ba47a721eb3e386bfd5b6f76ab834a0002b24ac40f69a8a86c911f9cf7be76e",
+    "apps/backend/src/proscenium/providers/service.py": "ef0fe0da07b7cba3ee3a799db070690eacd2e72dadd83e4f6f420dcd0058bde5",
+    "apps/backend/src/proscenium/reviews/store.py": "f799aff024087d0465f75f245461e6a598c0e545cfb25b74563d67976972abbb",
+    "apps/backend/src/proscenium/copilot/tools.py": "e356541582332d3439365254d0c128c599df4fe012c52e0383c3569554393bb1",
+    "tests/native/providers/m09_host.py": "5d64abfb454edab08616a10d26818e0fb28abd0d80ac469c2f843263b271461c",
+    "tests/native/providers/m09_positive_host.py": "b1e15e191dd11c48617ce8ff787a4554359a096d2cb1ffb07b875178d1eb2ee1"
+  },
+  "compiled_sha256": {
+    "apps/frontend/dist/index.html": "34cb19c5921ae7e1a5991545689c8bf5e5f3eaf708f67853af5fa193f250dfbb",
+    "apps/frontend/dist/assets/index-2Gez5YWA.js": "0bd00b6311a8d1b8a16cdfcabb835f8f668e3b989d5e4363685471dcfffce45c",
+    "apps/frontend/dist/assets/index-VG5WV1Cp.css": "8d68faf9412d4fb66e6eba2ff9831a78d7076648dbf12581b45d653eca41d517"
+  },
+  "source_commit": "117047d641df77b6131d9c5ab332cbeea037c2c9",
+  "source_fixture_sha256_after": "e10939f978fda7d331f8561cda716a1e70447a7be997e986a8da851506a1863b",
+  "old_failed_manifest_sha256": "774d457c2ca4b89d8e5af2ed42aedaf5804e1f78e9c8075d68ab33c6db71428e",
+  "old_failed_manifest_base_sha256": "774d457c2ca4b89d8e5af2ed42aedaf5804e1f78e9c8075d68ab33c6db71428e",
+  "note": "No product provider/review fix was needed in this positive allocation. Application sources equal the executed accepted base. Driver hashes describe the maintained post-format files."
+}

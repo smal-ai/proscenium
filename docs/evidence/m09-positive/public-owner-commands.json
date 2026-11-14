@@ -1,0 +1,418 @@
+[
+  {
+    "phase": "owner",
+    "at": 1794667190750,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/reviews",
+    "status": 202,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "targets": [
+        {
+          "origin": "reference",
+          "artifact_id": "m09-clean-target",
+          "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m09-image-item",
+          "version_id": "m09-image-version",
+          "shot_id": null,
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        }
+      ],
+      "criteria": "Return exactly TWO distinct concise visual findings. First describe the blue object on the right. Second describe the orange object on the left. Each observation and recommendation under 10 words. No inferred measurements. No reasoning text. Structured findings only.",
+      "telemetry_artifact_ids": []
+    },
+    "response": {
+      "schema_version": "1.0",
+      "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+      "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+      "status": "pending"
+    }
+  },
+  {
+    "phase": "native",
+    "at": 1794667203817,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/contexts",
+    "status": 201,
+    "method": "POST",
+    "request": {
+      "item_id": "m09-image-item",
+      "version_id": "m09-image-version",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "m09-clean-target",
+        "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m09-image-item",
+        "version_id": "m09-image-version",
+        "shot_id": null,
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m09-clean-target",
+          "role": "reference"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "captured_at": "2026-11-14T14:40:03.794Z"
+    },
+    "response": {
+      "item_id": "m09-image-item",
+      "version_id": "m09-image-version",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "m09-clean-target",
+        "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m09-image-item",
+        "version_id": "m09-image-version",
+        "shot_id": null,
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m09-clean-target",
+          "role": "reference"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "captured_at": "2026-11-14T14:40:03.794Z"
+    }
+  },
+  {
+    "phase": "native",
+    "at": 1794667203839,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/requests",
+    "status": 202,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "text": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+      "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+      "type": "queue"
+    },
+    "response": {
+      "native_message_id": null,
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "replayed": false,
+      "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+      "schema_version": "1.0",
+      "state": "held",
+      "state_revision": 0,
+      "type": "queue",
+      "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+    }
+  },
+  {
+    "phase": "approve",
+    "at": 1794667233590,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/reviews/m09-positive-native-review/findings/m09-positive-native-review-finding-1/reject",
+    "status": 200,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "operation_id": "a8a24735-e7f2-4319-bf9c-0090e87fb416",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "expected_revision": 1
+    },
+    "response": {
+      "schema_version": "1.0",
+      "operation_id": "a8a24735-e7f2-4319-bf9c-0090e87fb416",
+      "resource_id": "m09-positive-native-review-finding-1",
+      "state": "rejected",
+      "state_revision": 2,
+      "replayed": false
+    }
+  },
+  {
+    "phase": "approve",
+    "at": 1794667234006,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/contexts",
+    "status": 201,
+    "method": "POST",
+    "request": {
+      "item_id": "m09-image-item",
+      "version_id": "m09-image-version",
+      "view_mode": "keyframes",
+      "target": {
+        "artifact_id": "m09-clean-target",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "item_id": "m09-image-item",
+        "media_artifact_id": null,
+        "origin": "concept",
+        "render_job_id": null,
+        "shot_id": null,
+        "source_frame": null,
+        "version_id": "m09-image-version"
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m09-clean-target",
+          "role": "render"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [
+        {
+          "finding_id": "m09-positive-native-review-finding-0",
+          "finding_revision": 1,
+          "approved_text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+          "target": {
+            "artifact_id": "m09-clean-target",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+            "item_id": "m09-image-item",
+            "media_artifact_id": null,
+            "origin": "concept",
+            "render_job_id": null,
+            "shot_id": null,
+            "source_frame": null,
+            "version_id": "m09-image-version"
+          }
+        }
+      ],
+      "schema_version": "1.0",
+      "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "captured_at": "2026-11-14T14:40:33.975Z"
+    },
+    "response": {
+      "item_id": "m09-image-item",
+      "version_id": "m09-image-version",
+      "view_mode": "keyframes",
+      "target": {
+        "artifact_id": "m09-clean-target",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "item_id": "m09-image-item",
+        "media_artifact_id": null,
+        "origin": "concept",
+        "render_job_id": null,
+        "shot_id": null,
+        "source_frame": null,
+        "version_id": "m09-image-version"
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m09-clean-target",
+          "role": "render"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [
+        {
+          "finding_id": "m09-positive-native-review-finding-0",
+          "finding_revision": 1,
+          "approved_text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+          "target": {
+            "artifact_id": "m09-clean-target",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+            "item_id": "m09-image-item",
+            "media_artifact_id": null,
+            "origin": "concept",
+            "render_job_id": null,
+            "shot_id": null,
+            "source_frame": null,
+            "version_id": "m09-image-version"
+          }
+        }
+      ],
+      "schema_version": "1.0",
+      "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "captured_at": "2026-11-14T14:40:33.975Z"
+    }
+  },
+  {
+    "phase": "approve",
+    "at": 1794667234035,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/requests",
+    "status": 202,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+      "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+      "type": "queue"
+    },
+    "response": {
+      "native_message_id": null,
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "replayed": false,
+      "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+      "schema_version": "1.0",
+      "state": "held",
+      "state_revision": 0,
+      "type": "queue",
+      "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+    }
+  },
+  {
+    "phase": "approve",
+    "at": 1794667274595,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/requests",
+    "status": 200,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+      "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+      "type": "queue"
+    },
+    "response": {
+      "native_message_id": "21f96e9d-b29f-4722-9ed4-24283dd2ac4b",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "replayed": true,
+      "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+    }
+  },
+  {
+    "phase": "unavailable",
+    "at": 1794667344844,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/reviews",
+    "status": 202,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "review_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "targets": [
+        {
+          "origin": "reference",
+          "artifact_id": "m09-clean-target",
+          "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m09-image-item",
+          "version_id": "m09-image-version",
+          "shot_id": null,
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        }
+      ],
+      "criteria": "Explicit unavailable-model check after owned Gemma cleanup. Do not load any model.",
+      "telemetry_artifact_ids": []
+    },
+    "response": {
+      "schema_version": "1.0",
+      "review_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+      "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+      "status": "pending"
+    }
+  },
+  {
+    "phase": "unavailable",
+    "at": 1794667345465,
+    "path": "/api/v1/projects/project-68bb06fe-810a-4097-ba83-246f11d73c54/annotations",
+    "status": 200,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+      "operation_id": "ccf99c81-c857-4e8e-8189-7c9d2cce856b",
+      "expected_revision": 0,
+      "annotation": {
+        "annotation_id": "5cd17a06-8374-4a5e-9368-278d63ae893b",
+        "saved_revision": null,
+        "target": {
+          "origin": "reference",
+          "artifact_id": "m09-clean-target",
+          "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m09-image-item",
+          "version_id": "m09-image-version",
+          "shot_id": null,
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        },
+        "range": null,
+        "camera": null,
+        "markups": [],
+        "text": "M09 positive manual owner feedback after unavailable VLM. This is not a VLM finding and is not queued.",
+        "spatial_hits": [],
+        "spatial_status": "unavailable",
+        "markup_artifact_id": "8c1df803-0ba7-4327-876b-f255132cadc3"
+      }
+    },
+    "response": {
+      "schema_version": "1.0",
+      "operation_id": "ccf99c81-c857-4e8e-8189-7c9d2cce856b",
+      "resource_id": "5cd17a06-8374-4a5e-9368-278d63ae893b",
+      "state": "saved",
+      "state_revision": 1,
+      "replayed": false
+    }
+  }
+]

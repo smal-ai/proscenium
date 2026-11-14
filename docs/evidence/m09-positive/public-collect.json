@@ -1,0 +1,4835 @@
+{
+  "action": "collect",
+  "state": {
+    "snapshot": {
+      "schema_version": "1.0",
+      "project": {
+        "name": "M09 read-only critique fixture",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project",
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "repository_id": "repository-5c2bb1f3-509c-46a4-893c-0d4d4de678cd",
+        "schema_version": "1.0",
+        "state": "active",
+        "state_revision": 2
+      },
+      "settings": {
+        "default_profile_id": null,
+        "generation_attempt_limit": 3,
+        "state_revision": 0
+      },
+      "event_sequence": 184,
+      "active_work": null,
+      "held_requests": [],
+      "items": [
+        {
+          "current_version_id": "m09-image-version",
+          "description": "Labelled M01 image fixture. No new Blender execution.",
+          "item_id": "m09-image-item",
+          "kind": "asset",
+          "name": "M09 critique target",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "jobs": [
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-8ae4d865-9728-4c03-9193-9405185d6fcf",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "d66f2299bc610cbf52b3a0ac0f360fa7abc813106a6b99f16c6cf66b3794e576",
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": null,
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "m09-positive-native-review",
+            "version": null
+          },
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+        },
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-210a4ce1-35ec-42d7-8d8a-43a2a906dadb",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "error_code": "capability_unavailable",
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "c5588e6992bf315a589a41bf541ead9c8b7bb8ade96a7443279712bb0371ac74",
+          "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "failed",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+            "version": null
+          },
+          "work_id": null
+        }
+      ],
+      "pending_decisions": [],
+      "reviews": [
+        {
+          "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+          "review_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+          "schema_version": "1.0",
+          "status": "failed"
+        },
+        {
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "schema_version": "1.0",
+          "status": "ready"
+        },
+        {
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "review_id": "m09-positive-native-review",
+          "schema_version": "1.0",
+          "status": "ready"
+        }
+      ]
+    },
+    "requests": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "accepted_at": "2026-11-14T14:40:34.029643+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": "21f96e9d-b29f-4722-9ed4-24283dd2ac4b",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+          },
+          "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+            "type": "queue"
+          }
+        },
+        {
+          "accepted_at": "2026-11-14T14:40:03.832014+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": "d65afcbb-95ee-473d-bd76-40eb0c837a03",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+          },
+          "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "text": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+            "type": "queue"
+          }
+        }
+      ],
+      "next_cursor": null
+    },
+    "jobs": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-8ae4d865-9728-4c03-9193-9405185d6fcf",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "d66f2299bc610cbf52b3a0ac0f360fa7abc813106a6b99f16c6cf66b3794e576",
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": null,
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "m09-positive-native-review",
+            "version": null
+          },
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+        },
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        {
+          "artifact_ids": [],
+          "attempt_id": "attempt-210a4ce1-35ec-42d7-8d8a-43a2a906dadb",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "error_code": "capability_unavailable",
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "c5588e6992bf315a589a41bf541ead9c8b7bb8ade96a7443279712bb0371ac74",
+          "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "failed",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+            "version": null
+          },
+          "work_id": null
+        }
+      ],
+      "next_cursor": null
+    },
+    "reviews": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+          "review_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+          "schema_version": "1.0",
+          "status": "failed"
+        },
+        {
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "review_id": "m09-positive-native-review",
+          "schema_version": "1.0",
+          "status": "ready"
+        },
+        {
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "schema_version": "1.0",
+          "status": "ready"
+        }
+      ],
+      "next_cursor": null
+    },
+    "items": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "current_version_id": "m09-image-version",
+          "description": "Labelled M01 image fixture. No new Blender execution.",
+          "item_id": "m09-image-item",
+          "kind": "asset",
+          "name": "M09 critique target",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "selected_version_id": null,
+          "state_revision": 0
+        }
+      ],
+      "next_cursor": null
+    },
+    "annotations": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "annotation_id": "5cd17a06-8374-4a5e-9368-278d63ae893b",
+          "camera": null,
+          "markup_artifact_id": "8c1df803-0ba7-4327-876b-f255132cadc3",
+          "markups": [],
+          "range": null,
+          "saved_revision": 1,
+          "spatial_hits": [],
+          "spatial_status": "unavailable",
+          "target": {
+            "artifact_id": "m09-clean-target",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+            "item_id": "m09-image-item",
+            "media_artifact_id": null,
+            "origin": "reference",
+            "render_job_id": null,
+            "shot_id": null,
+            "source_frame": null,
+            "version_id": "m09-image-version"
+          },
+          "text": "M09 positive manual owner feedback after unavailable VLM. This is not a VLM finding and is not queued."
+        }
+      ],
+      "next_cursor": null
+    },
+    "findings": {
+      "4c8bf631-fe1e-4fd8-849f-2604858df306": {
+        "schema_version": "1.0",
+        "items": [],
+        "next_cursor": null
+      },
+      "m09-positive-native-review": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "evidence": [
+              {
+                "artifact_id": "m09-clean-target",
+                "description": "Visual observation of blue object",
+                "kind": "visual"
+              }
+            ],
+            "finding_id": "m09-positive-native-review-finding-0",
+            "observation": "Blue object is a vertical rectangle; see m09-clean-target.",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "recommendation": "None needed.",
+            "review_id": "m09-positive-native-review",
+            "revision": 2,
+            "schema_version": "1.0",
+            "state": "submitted",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "concept",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            }
+          },
+          {
+            "evidence": [
+              {
+                "artifact_id": "m09-pixel-telemetry",
+                "description": "Telemetry ID m09-pixel-telemetry",
+                "kind": "measured"
+              }
+            ],
+            "finding_id": "m09-positive-native-review-finding-1",
+            "observation": "Width: 640px; Height: 360px.",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "recommendation": "None needed.",
+            "review_id": "m09-positive-native-review",
+            "revision": 2,
+            "schema_version": "1.0",
+            "state": "rejected",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "concept",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            }
+          }
+        ],
+        "next_cursor": null
+      },
+      "a163de50-72c8-448d-9744-0664ac9ba9ec": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "evidence": [
+              {
+                "artifact_id": "m09-clean-target",
+                "description": "The rightmost blue block.",
+                "kind": "visual"
+              }
+            ],
+            "finding_id": "a163de50-72c8-448d-9744-0664ac9ba9ec-finding-0",
+            "observation": "Blue object is a rectangular prism.",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "recommendation": "Observe its solid blue color.",
+            "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "revision": 1,
+            "schema_version": "1.0",
+            "state": "unreviewed",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "reference",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            }
+          },
+          {
+            "evidence": [
+              {
+                "artifact_id": "m09-clean-target",
+                "description": "The leftmost orange block.",
+                "kind": "visual"
+              }
+            ],
+            "finding_id": "a163de50-72c8-448d-9744-0664ac9ba9ec-finding-1",
+            "observation": "Orange object is a rectangular prism.",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "recommendation": "Note its bright orange hue.",
+            "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "revision": 1,
+            "schema_version": "1.0",
+            "state": "unreviewed",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "reference",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            }
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "contexts": {
+      "66fdc701-7873-4c2c-9636-58688bdec306": {
+        "annotations": [],
+        "approved_findings": [
+          {
+            "approved_text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+            "finding_id": "m09-positive-native-review-finding-0",
+            "finding_revision": 1,
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "concept",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            }
+          }
+        ],
+        "attachments": [
+          {
+            "artifact_id": "m09-clean-target",
+            "role": "render"
+          }
+        ],
+        "camera": null,
+        "captured_at": "2026-11-14T14:40:33.975Z",
+        "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+        "item_id": "m09-image-item",
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "range": null,
+        "schema_version": "1.0",
+        "selected_objects": [],
+        "target": {
+          "artifact_id": "m09-clean-target",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+          "item_id": "m09-image-item",
+          "media_artifact_id": null,
+          "origin": "concept",
+          "render_job_id": null,
+          "shot_id": null,
+          "source_frame": null,
+          "version_id": "m09-image-version"
+        },
+        "version_id": "m09-image-version",
+        "view_mode": "keyframes"
+      },
+      "60bc40f0-c9c5-41b5-93bf-a27febee7c19": {
+        "annotations": [],
+        "approved_findings": [],
+        "attachments": [
+          {
+            "artifact_id": "m09-clean-target",
+            "role": "reference"
+          }
+        ],
+        "camera": null,
+        "captured_at": "2026-11-14T14:40:03.794Z",
+        "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+        "item_id": "m09-image-item",
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "range": null,
+        "schema_version": "1.0",
+        "selected_objects": [],
+        "target": {
+          "artifact_id": "m09-clean-target",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+          "item_id": "m09-image-item",
+          "media_artifact_id": null,
+          "origin": "reference",
+          "render_job_id": null,
+          "shot_id": null,
+          "source_frame": null,
+          "version_id": "m09-image-version"
+        },
+        "version_id": "m09-image-version",
+        "view_mode": "keyframes"
+      }
+    },
+    "attempts": {
+      "review-job-006210a8-eda4-4659-bf26-ef399be76192": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "attempt_id": "attempt-8ae4d865-9728-4c03-9193-9405185d6fcf",
+            "attempt_number": 1,
+            "external_job_id": null,
+            "input_digest": "d66f2299bc610cbf52b3a0ac0f360fa7abc813106a6b99f16c6cf66b3794e576",
+            "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+            "native_exit_code": null,
+            "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "schema_version": "1.0",
+            "state": "succeeded",
+            "trigger_operation_id": "m09-positive-native-review"
+          }
+        ],
+        "next_cursor": null
+      },
+      "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+            "attempt_number": 1,
+            "external_job_id": null,
+            "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+            "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+            "native_exit_code": null,
+            "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "schema_version": "1.0",
+            "state": "succeeded",
+            "trigger_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec"
+          }
+        ],
+        "next_cursor": null
+      },
+      "review-job-c648bb34-5180-490d-8ee2-279453c369b7": {
+        "schema_version": "1.0",
+        "items": [
+          {
+            "attempt_id": "attempt-210a4ce1-35ec-42d7-8d8a-43a2a906dadb",
+            "attempt_number": 1,
+            "external_job_id": null,
+            "input_digest": "c5588e6992bf315a589a41bf541ead9c8b7bb8ade96a7443279712bb0371ac74",
+            "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+            "native_exit_code": null,
+            "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "schema_version": "1.0",
+            "state": "failed",
+            "trigger_operation_id": "4c8bf631-fe1e-4fd8-849f-2604858df306"
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "events": [
+      {
+        "actor": {
+          "id": "m09-scripted-test-owner",
+          "kind": "user"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:38:23.455686+00:00",
+        "payload": {
+          "name": "M09 read-only critique fixture",
+          "native_session_id": null,
+          "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "repository_id": "repository-5c2bb1f3-509c-46a4-893c-0d4d4de678cd",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 1,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "m09-fixture-publisher",
+          "kind": "tool"
+        },
+        "event_type": "publication.created",
+        "native_event_id": null,
+        "native_session_id": "fixture-only-no-native-session",
+        "occurred_at": "2026-11-14T14:38:23.580863+00:00",
+        "payload": {
+          "event_sequence": 2,
+          "job_ids": [],
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "publication_id": "m09-fixture-publication",
+          "replayed": false,
+          "schema_version": "1.0",
+          "versions": [
+            {
+              "item_id": "m09-image-item",
+              "version_id": "m09-image-version"
+            }
+          ]
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "m09-fixture-no-native-request",
+        "schema_version": "1.0",
+        "sequence": 2,
+        "work_id": "m09-fixture-work"
+      },
+      {
+        "actor": {
+          "id": "owner-0c288226-8cf2-4621-9335-a16e40c47d92",
+          "kind": "user"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:50.743353+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "planned",
+          "state_revision": 0,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 3,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:50.885758+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "starting",
+          "state_revision": 1,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 4,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "review.ready",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:55.453184+00:00",
+        "payload": {
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "review_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "schema_version": "1.0",
+          "status": "ready"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 5,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:39:55.463828+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-3140c9e5-dcc2-4da9-af59-604f8dde1d03",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "3856d30ac1a01642866887d70b0424f5988fb161275ef401cd001c4bb7564bf1",
+          "job_id": "review-job-7220976a-6e87-49dd-96cd-4d3ca201ea2c",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "a163de50-72c8-448d-9744-0664ac9ba9ec",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 6,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "owner-0c288226-8cf2-4621-9335-a16e40c47d92",
+          "kind": "user"
+        },
+        "event_type": "request.accepted",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:03.832802+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:03.832014+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "state": "held",
+            "state_revision": 0,
+            "type": "queue",
+            "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+          },
+          "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "text": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 7,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "project-host",
+          "kind": "system"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:08.573752+00:00",
+        "payload": {
+          "name": "M09 read-only critique fixture",
+          "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+          "path": "/home/quintin/.cache/proscenium-development/m09-positive-20261114/project",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "repository_id": "repository-5c2bb1f3-509c-46a4-893c-0d4d4de678cd",
+          "schema_version": "1.0",
+          "state": "active",
+          "state_revision": 2
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 8,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:08.584852+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:03.832014+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "state": "dispatching",
+            "state_revision": 1,
+            "type": "queue",
+            "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+          },
+          "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "text": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 9,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:08.586188+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "job_ids": [],
+          "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+          "originating_request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "state": "running",
+          "state_revision": 1,
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 10,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:08.616496+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:03.832014+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": "d65afcbb-95ee-473d-bd76-40eb0c837a03",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "state": "acknowledged",
+            "state_revision": 2,
+            "type": "queue",
+            "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+          },
+          "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "text": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 11,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "81f43c46-0c84-4eb2-8d43-43a8ad5c0733",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:17.688051+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 16819,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 274,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 12,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "24f3ca63-9cb1-418f-97bc-aca39a94a1a7",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:17.715771+00:00",
+        "payload": {
+          "message_id": "59e27c69-b3c8-43ba-9c61-188c726f90e9",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 13,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "225425a0-5a29-4e99-8cf4-1a624ba6a9f0",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:17.722030+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "d519c91c6588489513fbf439da72812c154e18f863d4eab79a5bf21512ca4471",
+          "model_id": "gpt-6.1-sol",
+          "name": "request_vlm_review",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 14,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "call_UpJPjDl3UKz3RgpMOphr3Xeg",
+          "kind": "tool"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:17.882787+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-8ae4d865-9728-4c03-9193-9405185d6fcf",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "d66f2299bc610cbf52b3a0ac0f360fa7abc813106a6b99f16c6cf66b3794e576",
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": null,
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "planned",
+          "state_revision": 0,
+          "target": {
+            "shot_id": null,
+            "target_id": "m09-positive-native-review",
+            "version": null
+          },
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 15,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "cb1a7430-986f-4656-afc8-be21624f0051",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:17.935971+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "d519c91c6588489513fbf439da72812c154e18f863d4eab79a5bf21512ca4471",
+          "model_id": "gpt-6.1-sol",
+          "name": "request_vlm_review",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 16,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:18.167956+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-8ae4d865-9728-4c03-9193-9405185d6fcf",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "d66f2299bc610cbf52b3a0ac0f360fa7abc813106a6b99f16c6cf66b3794e576",
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": null,
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "starting",
+          "state_revision": 1,
+          "target": {
+            "shot_id": null,
+            "target_id": "m09-positive-native-review",
+            "version": null
+          },
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 17,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "28a918e4-f772-48c9-9203-da73b9bb8c34",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.809664+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "{\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 18,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "1b198d02-d303-4ab4-8977-cf71d8581ccf",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.823227+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "job"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 19,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "0147edc8-b70a-4177-98a1-3ec7171fedde",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.834612+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "_id"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 20,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "0c9e57eb-a037-4d5d-bdaf-bb011f83591a",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.849355+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\":\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 21,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "71675bfe-22a7-45bd-b079-9aa128bd209d",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.859251+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "review"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 22,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "4773582f-7474-4f36-a12c-80f0b678057c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.868922+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-job"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 23,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e0b66e47-7cd3-49bf-94c0-1a0713e083cc",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.879548+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 24,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "16104a1b-f72f-4c6e-b81a-d955982c82c9",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.892013+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "006"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 25,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "62810011-a900-425a-9226-3c4aa129cf64",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.908498+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "210"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 26,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "ab661a47-ae05-496a-938e-8d2b681581ac",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.922595+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 27,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "8544fd28-4817-4715-901a-3e740573216f",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.934445+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "8"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 28,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "90ddc473-9edc-4357-9da8-b0377dc60684",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.945463+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 29,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e0cba0b3-087c-4949-867c-c8ac3484d95a",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.961470+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "eda"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 30,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "3b561644-e0fd-4536-8dc0-8e334cc67e17",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.971123+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "4"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 31,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e211509b-3f45-491a-8f37-fcd86448afe4",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:19.986022+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 32,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "4839c0b3-d13b-441e-b97f-9aaa143c95b5",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.014262+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "465"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 33,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "281e991e-48e1-434b-9ad1-a3fdeb534e0b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.029736+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "9"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 34,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "d5f1a095-b513-413f-80c0-16ca1af6bb7d",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.049868+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-b"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 35,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "3541d0f3-5786-4f0e-ba54-75fba951b75f",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.070511+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "f"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 36,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c27b4fe3-9153-43e4-9d4d-c827b17a5561",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.080685+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "26"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 37,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "905c0471-1748-4411-9a0b-c0e49e97f729",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.092507+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 38,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "1ef31ae7-4436-4071-8cbb-5eb4ddcf1369",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.104957+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "ef"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 39,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "126c83ea-eb2f-46df-89e4-912c268ceb7b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.116218+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "399"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 40,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "6900129b-30ae-4be7-a07c-1eff7e0e7338",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.128416+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "be"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 41,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e7352781-df15-46c3-86ba-b595f7738f09",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.138389+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "761"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 42,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "8dc10e77-94eb-48dd-b11c-bd435b6696c7",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.149730+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "92"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 43,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "a65d1874-01dc-4076-a0c9-66f0b9b66630",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.159273+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\",\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 44,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "af935ad9-406f-4e15-a8df-caa18c2c859c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.168551+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "review"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 45,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "8af28660-5cea-4df0-a23d-32f30f038701",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.178069+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "_id"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 46,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2b2bf49c-955f-4f3a-b77d-511d83ca34ea",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.193262+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\":\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 47,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "23f6f954-a4c5-48d5-9a58-d6058ba50c4d",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.212252+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "m"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 48,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "6f16709a-afac-4d50-9b3e-3b149face7f2",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.224875+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "09"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 49,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c68b560b-db4d-4a19-811a-c790aae4efe4",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.236081+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-positive"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 50,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "dbd6e517-16e2-4d9e-afaa-9d504b10ee77",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.247343+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-native"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 51,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "1ee868c9-9177-4160-82e1-ad8ac769d6bd",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.257317+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "-review"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 52,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "385b4270-0141-4f4c-8ac7-ea6ec993dc54",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.266568+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\",\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 53,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e6566de4-47a2-45fb-9928-5884824750cf",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.276771+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "schema"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 54,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "a90dc81c-f0a8-4ab8-a6a8-81b6b9a6d274",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.286638+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "_version"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 55,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "273e6da4-9c59-4711-b453-ae5d09b08923",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.295676+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\":\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 56,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "ab1aae10-c9c5-44d3-b135-607e8879b179",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.311514+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "1"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 57,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c1631a56-c1a1-45a8-b30b-0f4a21061006",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.322136+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "."
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 58,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "7577fb3f-7577-4c39-803b-9546b0d06b3b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.331705+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "0"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 59,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "00c71c9f-dfdb-4f7a-a9bf-b9d64b6b7209",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.342795+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\",\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 60,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "dc8ccc6c-daa8-4e4d-8add-af45129c359a",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.357123+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "status"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 61,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "bfcfd44c-c6b4-45df-ab53-0bc8f728b3c8",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.366443+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\":\""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 62,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "45ed6b10-48ce-4b68-b51b-feb0d5c5496a",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.377149+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "pending"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 63,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "7923a2f5-6f77-47d4-b263-bc8d95dafa36",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.390155+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "\"}"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 64,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "3552cb47-fdd3-4491-81ee-1ccce3f14d57",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.413293+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 17448,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 51,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 65,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "2e00c18b-8b9f-4dde-a7da-03277812ae19",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:20.440572+00:00",
+        "payload": {
+          "message_id": "ad57f7ae-789e-4f22-8c1f-ac9aece88d36",
+          "native_agent_id": null,
+          "text": "{\"job_id\":\"review-job-006210a8-eda4-4659-bf26-ef399be76192\",\"review_id\":\"m09-positive-native-review\",\"schema_version\":\"1.0\",\"status\":\"pending\"}"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 66,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:20.532909+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:03.832014+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": "d65afcbb-95ee-473d-bd76-40eb0c837a03",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+          },
+          "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "60bc40f0-c9c5-41b5-93bf-a27febee7c19",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+            "schema_version": "1.0",
+            "text": "M09 positive bounded read-only acceptance. This request explicitly authorises its host execution gate. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the exact ReviewRequest JSON below. Return ONLY the ticket/status and stop. Do not poll or retry this tool. No other action is requested. {\"schema_version\": \"1.0\", \"review_id\": \"m09-positive-native-review\", \"project_id\": \"project-68bb06fe-810a-4097-ba83-246f11d73c54\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Exactly two concise findings. Finding 1: a visual observation of the blue object's shape/location, citing the image. Finding 2: measured image width and height in pixels, citing the supplied telemetry ID, not the image. Each observation and recommendation under 10 words. No scene-size guesses or reasoning text. Structured JSON only.\"}",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 67,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:20.534248+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-c2c289c736d749f68c33600de3719ce9",
+          "job_ids": [],
+          "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+          "originating_request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 2,
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "7dcd8488-7650-4e0c-bc73-6a8e9f86e05b",
+        "schema_version": "1.0",
+        "sequence": 68,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "review.ready",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:23.797021+00:00",
+        "payload": {
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "review_id": "m09-positive-native-review",
+          "schema_version": "1.0",
+          "status": "ready"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 69,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:23.821407+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-8ae4d865-9728-4c03-9193-9405185d6fcf",
+          "attempt_number": 1,
+          "availability": "complete",
+          "completed_frames": null,
+          "error_code": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "d66f2299bc610cbf52b3a0ac0f360fa7abc813106a6b99f16c6cf66b3794e576",
+          "job_id": "review-job-006210a8-eda4-4659-bf26-ef399be76192",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": null,
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "succeeded",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "m09-positive-native-review",
+            "version": null
+          },
+          "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 70,
+        "work_id": "work-c352f69cc7404fb1bf2cf80b5dffa79a"
+      },
+      {
+        "actor": {
+          "id": "owner-0c288226-8cf2-4621-9335-a16e40c47d92",
+          "kind": "user"
+        },
+        "event_type": "request.accepted",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:34.030135+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:34.029643+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "state": "held",
+            "state_revision": 0,
+            "type": "queue",
+            "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+          },
+          "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 71,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:34.047900+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:34.029643+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": null,
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "state": "dispatching",
+            "state_revision": 1,
+            "type": "queue",
+            "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+          },
+          "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 72,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:34.049375+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "job_ids": [],
+          "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+          "originating_request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "state": "running",
+          "state_revision": 1,
+          "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 73,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:40:34.093214+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:34.029643+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": "21f96e9d-b29f-4722-9ed4-24283dd2ac4b",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "state": "acknowledged",
+            "state_revision": 2,
+            "type": "queue",
+            "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+          },
+          "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 74,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "e3b0808d-c459-414d-86c9-261a5b4939d8",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:37.541127+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 18815,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 45,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 75,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "ae823710-6b94-4d7e-b676-231b5d000b0b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:37.566729+00:00",
+        "payload": {
+          "message_id": "07591f89-a4ba-421b-b713-ab7d26d66d1a",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 76,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "a63ed3ae-6db0-4187-8c17-a4fc50d2250a",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:37.572819+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "f1ebe65221b778034feb4c0bad7652c7fd65a1342bd24f48e2a8b7921172666d",
+          "model_id": "gpt-6.1-sol",
+          "name": "get_artifact",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 77,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "bce8030e-4a55-4bd7-902d-930cb4a4c915",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:37.661926+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "f1ebe65221b778034feb4c0bad7652c7fd65a1342bd24f48e2a8b7921172666d",
+          "model_id": "gpt-6.1-sol",
+          "name": "get_artifact",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 78,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "dab3dcd5-3d69-4cd3-9dbb-0adf1ae8bde1",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:41.138506+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 19281,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 233,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 79,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "289a1ff8-d6b6-47f9-b3a1-609a2e77641b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:41.180392+00:00",
+        "payload": {
+          "message_id": "5fd73755-8479-4f60-a352-2f9daa9b0983",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 80,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "73c79874-0423-43c8-bbee-cf377389b8b5",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:41.191058+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "16d1e79550d7e1b1aeaf19ae15e85acf0f69871f6a70e1b183746b49fb39867b",
+          "model_id": "gpt-6.1-sol",
+          "name": "bash",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 81,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "fcf4dfc5-804b-46e9-876e-271009819c1e",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:41.202751+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "eccc7df0af71ade9384c67c31bb12ce63693380226f427d6c6f6267fe6410720",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 82,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "1019239f-4672-4c38-9cf7-7d86f15d5b40",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:41.410390+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "16d1e79550d7e1b1aeaf19ae15e85acf0f69871f6a70e1b183746b49fb39867b",
+          "model_id": "gpt-6.1-sol",
+          "name": "bash",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 83,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "798315ce-f8ba-457a-b429-3518d75083e9",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:41.456514+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "eccc7df0af71ade9384c67c31bb12ce63693380226f427d6c6f6267fe6410720",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 84,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "0c3c1a29-9579-4e74-993e-ae76d3f88eae",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:47.314377+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 19672,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 125,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 85,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "bb4e880a-9873-4df7-b2b7-79d78b3a429f",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:47.346151+00:00",
+        "payload": {
+          "message_id": "af2673ce-091a-4bff-9929-6c6259dd3c2b",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 86,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "2f40db5c-97d0-4799-a552-4b23402b78a9",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:47.360023+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "7444837f4c4ba4d81c3b2eaceffa87978210c643a05ea27dc91550279f5f37a4",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 87,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "e98e8ee2-9a0d-4289-94f5-542a280abc7e",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:47.460395+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "7444837f4c4ba4d81c3b2eaceffa87978210c643a05ea27dc91550279f5f37a4",
+          "model_id": "gpt-6.1-sol",
+          "name": "view",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 88,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "dce5f331-5d14-4236-9bed-701461171794",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:59.442819+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 19892,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 507,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 89,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "9647bd6e-9935-41e8-824b-5db71b5862a8",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:59.468206+00:00",
+        "payload": {
+          "message_id": "3d6067fe-4e45-43d8-a85b-37d9d22d3f3f",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 90,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "0334e74a-6d92-4f4b-87c8-1675bad041fb",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:59.479310+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "a933b4254571db65c918fc51623e8f8924aa48f0b666566829f5deffcaa1f800",
+          "model_id": "gpt-6.1-sol",
+          "name": "bash",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 91,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "6b81ae50-412d-4ca7-a58e-e31dd999e325",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:40:59.813339+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "a933b4254571db65c918fc51623e8f8924aa48f0b666566829f5deffcaa1f800",
+          "model_id": "gpt-6.1-sol",
+          "name": "bash",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 92,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "d27750e2-6590-4e49-a7aa-0f065830b8cf",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:07.847313+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 20550,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 294,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 93,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "e0cdb673-365c-48c9-bb8c-2c40b975b7b6",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:07.881615+00:00",
+        "payload": {
+          "message_id": "40b67f00-49dc-4ccf-bcce-b4279644d250",
+          "native_agent_id": null,
+          "text": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 94,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.started",
+        "native_event_id": "bba17114-d270-4df5-943e-6f355cc4ce15",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:07.893669+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "072279ab165c2eb08c9e9921e5242cf874596c2ec7459593086dc5fd41a7652c",
+          "model_id": "gpt-6.1-sol",
+          "name": "bash",
+          "state": "running",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 95,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "tool.completed",
+        "native_event_id": "de4e3531-5d20-4c2c-a269-6d76365a4fb9",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:08.066046+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "invocation_id": "072279ab165c2eb08c9e9921e5242cf874596c2ec7459593086dc5fd41a7652c",
+          "model_id": "gpt-6.1-sol",
+          "name": "bash",
+          "state": "completed",
+          "summary": ""
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 96,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "74cd6667-539b-479b-b9ed-b7c9e0b54f98",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:12.998605+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "APP"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 97,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "ac366ad4-8581-4f93-9806-fc891e9d0994",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.013655+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "RO"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 98,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "02974718-b3cd-4128-bdc2-c00fe309fdc3",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.024685+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "VED"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 99,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "d173b85a-ee33-494c-8dfb-3c743d216d64",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.036911+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "_FIND"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 100,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "4bbc13e5-1bb4-4df4-84b8-30c4fc4476ff",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.060110+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "ING"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 101,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "bf15ff8d-5b15-443b-a967-943da3a030e6",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.072022+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "_RECE"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 102,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "b06f8478-25b1-46fb-83a7-15324db4261b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.088705+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "IVED"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 103,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "70636364-ce71-4259-a9b3-24a2feef98d7",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.099342+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "\n"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 104,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "1f704d89-2a25-4e7d-ad2c-dfe9e498bc4b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.112994+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "finding"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 105,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "a93d1c60-7ca4-4d1e-9c22-863fd421f781",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.123783+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "_id"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 106,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "9b82cfc5-b0e5-4d00-acec-67136ec315f0",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.134116+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": ":"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 107,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "3b220ab2-7d0d-492d-976a-40f138f77cbf",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.145821+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " m"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 108,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "35b6520d-2c39-49bf-a5a9-a8f1c78a91f6",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.163067+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "09"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 109,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "ffb34fef-ec62-49e2-90c1-e4d5e0b9e72b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.176669+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "-positive"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 110,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "ecb164e2-71a7-422e-b2d1-4a2acedc5975",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.188945+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "-native"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 111,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "f0443649-b2d2-4685-a6f8-a464a03d0729",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.200585+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "-review"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 112,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "bd703e2e-7de4-4a7a-a10c-ddc09f931769",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.211520+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "-f"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 113,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "5136197e-58ad-4be8-b6d1-c4664e2176cf",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.222543+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "inding"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 114,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "89fbd9cc-9b32-460b-8318-8525e04c7af9",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.232729+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "-"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 115,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2101e023-93fb-4144-a50d-f7ca2952fc1c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.243874+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "0"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 116,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c63bc2a6-d512-4985-88e5-20699c1f0802",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.253998+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "\n"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 117,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "0ab5627d-8da7-4727-b55a-105434fdc0e9",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.264365+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "finding"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 118,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "7c5bd08a-bb0f-4a14-bfc1-8923c1e2c9ec",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.275718+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "_revision"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 119,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "84281c19-fd91-47c5-973f-5f6fc7c9a081",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.287347+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": ":"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 120,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "687bde8d-33b1-42a2-9fcf-5bf66ff0781c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.299855+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " "
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 121,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c0329853-513a-4ff9-9b7d-e35b992f57f2",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.319085+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "1"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 122,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "85f4dbde-ac3c-421c-950b-ac37b1ba9195",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.333261+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "\n"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 123,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2fc6a373-4895-475e-929e-18db236e4e84",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.354278+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "display"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 124,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c01f65f8-5edd-416f-9138-2db014ea2b02",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.368296+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "ed"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 125,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "06b35978-cce2-4599-946d-cbe8e7aecfe7",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.379429+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "_sha"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 126,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "9aeef1a3-b90f-46e5-8543-7f795ac0e7ac",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.391464+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "256"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 127,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "8ae2f378-d3ef-4fd7-b387-809509b34680",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.404708+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": ":"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 128,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "97d708e0-62ac-4cb3-8c89-a68cd81cd246",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.419496+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " fab"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 129,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "95ebef3b-6ef9-45d5-9a7f-07793c1dbc7b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.431714+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "5"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 130,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2a3a8131-0105-4a75-b425-35b9476c051b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.444864+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "fe"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 131,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "09694931-9a9d-4160-bd66-e33e3df050b8",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.458379+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "51"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 132,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "528355cd-3a10-4b95-90ca-b54e1fae51be",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.481221+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "c"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 133,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "b7432c07-7a04-4e34-9bd8-653aa38fcc63",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.496021+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "19"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 134,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "72c463bf-82ae-4963-8901-8db5c09a8ae0",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.509214+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "b"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 135,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c3188779-3828-4a78-a577-f20ba0b7cdd4",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.521876+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "8"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 136,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "d7151cbe-fef2-4205-8327-86e748be2b73",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.536549+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 137,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e4041454-0c0b-46a0-8502-ee1db8adb779",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.546748+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "3"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 138,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "586386d0-5918-4bd6-aad6-0c6637003889",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.557809+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 139,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "a0fb3414-7dbe-4793-94cb-6bb38288b00f",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.570904+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "1"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 140,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "804d8eea-5a96-4fd7-b7ed-1a7f66c58930",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.584384+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "ef"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 141,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "67837d87-8f80-4d25-bcf4-6db96e6a766f",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.607143+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "87"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 142,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "fdc64f72-4f92-467a-b163-48567afd747d",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.630100+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "f"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 143,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "cbcb7c21-1088-4af5-bfc8-895cd9a57d61",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.645756+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "388"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 144,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "64a55e59-5f62-4ca8-9fcd-77fbee07d27c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.662084+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "679"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 145,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "41669729-7e36-4ad6-9470-641b4512b60b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.675248+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "d"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 146,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "4cd7e5a5-64ba-43ee-8dc3-ca52d7ea25f1",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.687975+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "952"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 147,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "7f07952c-c4dc-4086-8959-5f7809c5b659",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.700833+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "0"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 148,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "c5ff56c0-e58d-4543-abe8-b35c646d6b6b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.713977+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "a"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 149,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "857ac76b-6c9f-4fef-87c4-173dac4b899a",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.725860+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "6"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 150,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "ba382133-5d6b-45a1-82e7-b7fd466ea9c5",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.743212+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "b"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 151,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "dd05681f-0f82-40cb-84ef-064d4d4b7115",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.753810+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "6"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 152,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "91dd6165-ea94-441f-b8a7-a1970ff3dc4f",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.764999+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "d"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 153,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "d1b3f973-d17b-4179-9e5a-08adb4005348",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.777448+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "5"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 154,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "71e39acd-8d6c-4832-a9e0-0e6a8cac908e",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.787285+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "bad"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 155,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "17570946-1719-467b-b418-cc927138bd83",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.799561+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "ab"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 156,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2febc326-3e0c-4e70-bec5-2d4984d2991b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.810878+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "ca"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 157,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "9e4af237-3a03-41a4-81cf-02df7351411c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.822129+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "e"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 158,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "6d49fd1b-998a-4003-9a00-1c49fa5a0d13",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.834199+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "9"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 159,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "9f74486e-fcea-4f51-a981-86b4e11c0796",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.849064+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "d"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 160,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "0147b5db-5647-49e3-affe-92628c65e23c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.862288+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "517"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 161,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "f18ef29d-d044-4368-b4b0-f60392d13ee9",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.872293+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "244"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 162,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "dff459dd-7ba7-44fc-af26-908bdbd24a90",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.884473+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "359"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 163,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "60977ed8-27cb-404b-9d7c-f6cfc21fdcea",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.895954+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "782"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 164,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "8c01bca1-ccfb-44d4-90d6-efa99a0c7c0b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.907001+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "bcc"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 165,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "5e88fb35-226c-4609-a940-fba22454145a",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.920929+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "\n\n"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 166,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e3dfe0ec-3078-4d2f-887a-cec6978c44b4",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.933414+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "A"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 167,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "4905afb5-9e08-4d6d-9d37-0c57987424a2",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.944857+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " tall"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 168,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2dd6f5ab-2a32-44a2-8fd7-00eb56619a83",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.957060+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " blue"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 169,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "f390221a-909d-4670-9763-532fbc3ed4dc",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.968489+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " rectangular"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 170,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "f2f65790-fe9b-433b-b33c-73b8e04c96cd",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.978968+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " object"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 171,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "2c9df32a-2d1b-49e0-986b-acb31a019ec6",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:13.992106+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " sits"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 172,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "9717d50d-b894-4791-87ed-de9ca60b246c",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:14.008344+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " right"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 173,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "97aafd1b-f5ce-4214-88ae-b5cdf8cd73ff",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:14.024901+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " of"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 174,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "e42a9cb0-a21e-4d10-bf0d-a979fbda42a0",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:14.040156+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": " center"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 175,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.delta",
+        "native_event_id": "46f076cb-10c9-486c-8a0e-d6368ff2431b",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:14.058381+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "."
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 176,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "usage.recorded",
+        "native_event_id": "7f58a703-4cae-4d57-b5e9-8534dabca1af",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:14.081945+00:00",
+        "payload": {
+          "cost_unit": null,
+          "input_tokens": 20939,
+          "model_id": "gpt-6.1-sol",
+          "output_tokens": 148,
+          "reported_cost": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 177,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-lead",
+          "kind": "lead"
+        },
+        "event_type": "assistant.completed",
+        "native_event_id": "3ac1c082-16fc-4c9c-9244-9db5710e4089",
+        "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+        "occurred_at": "2026-11-14T14:41:14.118440+00:00",
+        "payload": {
+          "message_id": "c7c27019-689f-4e33-9cbc-7ba837ece0cb",
+          "native_agent_id": null,
+          "text": "APPROVED_FINDING_RECEIVED\nfinding_id: m09-positive-native-review-finding-0\nfinding_revision: 1\ndisplayed_sha256: fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\n\nA tall blue rectangular object sits right of center."
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 178,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "request.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:41:14.329506+00:00",
+        "payload": {
+          "accepted_at": "2026-11-14T14:40:34.029643+00:00",
+          "effective_profile_id": "authoring",
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "receipt": {
+            "native_message_id": "21f96e9d-b29f-4722-9ed4-24283dd2ac4b",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "replayed": false,
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "state": "completed",
+            "state_revision": 3,
+            "type": "queue",
+            "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+          },
+          "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "schema_version": "1.0",
+          "submission": {
+            "context_id": "66fdc701-7873-4c2c-9636-58688bdec306",
+            "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+            "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+            "schema_version": "1.0",
+            "text": "M09_POSITIVE_OWNER_AMENDMENT. Read-only acknowledgement only. Do not delegate, edit files, run Blender/Unity/generation, request another review or inspect unapproved findings. Read the host approved_findings, exact target and attached clean image. Reply APPROVED_FINDING_RECEIVED with this finding_id, finding_revision and displayed_sha256, then describe only the blue object. Owner-selected finding: m09-positive-native-review-finding-0; revision 1.",
+            "type": "queue"
+          }
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 179,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "copilot-host",
+          "kind": "system"
+        },
+        "event_type": "work.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:41:14.331349+00:00",
+        "payload": {
+          "directive_request_ids": [],
+          "generation_task_id": "task-cdb3205936644750b32bd6d5f753158c",
+          "job_ids": [],
+          "native_session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+          "originating_request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 2,
+          "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": "5ca5f3e1-377a-445c-ae7a-07e30a79a3bd",
+        "schema_version": "1.0",
+        "sequence": 180,
+        "work_id": "work-207c5ccdd6854246a4d09aa81aff7ec6"
+      },
+      {
+        "actor": {
+          "id": "owner-0c288226-8cf2-4621-9335-a16e40c47d92",
+          "kind": "user"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:42:24.835395+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-210a4ce1-35ec-42d7-8d8a-43a2a906dadb",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "c5588e6992bf315a589a41bf541ead9c8b7bb8ade96a7443279712bb0371ac74",
+          "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "planned",
+          "state_revision": 0,
+          "target": {
+            "shot_id": null,
+            "target_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 181,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:42:24.991349+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-210a4ce1-35ec-42d7-8d8a-43a2a906dadb",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "c5588e6992bf315a589a41bf541ead9c8b7bb8ade96a7443279712bb0371ac74",
+          "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "starting",
+          "state_revision": 1,
+          "target": {
+            "shot_id": null,
+            "target_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 182,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "provider-worker",
+          "kind": "worker"
+        },
+        "event_type": "job.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:42:25.012045+00:00",
+        "payload": {
+          "artifact_ids": [],
+          "attempt_id": "attempt-210a4ce1-35ec-42d7-8d8a-43a2a906dadb",
+          "attempt_number": 1,
+          "availability": "pending",
+          "completed_frames": null,
+          "error_code": "capability_unavailable",
+          "expected_frames": null,
+          "external_job_id": null,
+          "input_digest": "c5588e6992bf315a589a41bf541ead9c8b7bb8ade96a7443279712bb0371ac74",
+          "job_id": "review-job-c648bb34-5180-490d-8ee2-279453c369b7",
+          "kind": "vlm_review",
+          "owner_epoch": "epoch-7d72e81f-ba85-4f48-9497-0dbb38d3277f",
+          "owner_operation_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+          "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+          "provider_id": "m09-positive-vlm",
+          "render_spec": null,
+          "schema_version": "1.0",
+          "state": "failed",
+          "state_revision": 2,
+          "target": {
+            "shot_id": null,
+            "target_id": "4c8bf631-fe1e-4fd8-849f-2604858df306",
+            "version": null
+          },
+          "work_id": null
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 183,
+        "work_id": null
+      },
+      {
+        "actor": {
+          "id": "owner-0c288226-8cf2-4621-9335-a16e40c47d92",
+          "kind": "user"
+        },
+        "event_type": "annotation.saved",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T14:42:25.454336+00:00",
+        "payload": {
+          "operation_id": "ccf99c81-c857-4e8e-8189-7c9d2cce856b",
+          "replayed": false,
+          "resource_id": "5cd17a06-8374-4a5e-9368-278d63ae893b",
+          "schema_version": "1.0",
+          "state": "saved",
+          "state_revision": 1
+        },
+        "project_id": "project-68bb06fe-810a-4097-ba83-246f11d73c54",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 184,
+        "work_id": null
+      }
+    ]
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "images": [
+    {
+      "complete": true,
+      "width": 640,
+      "height": 360
+    }
+  ]
+}

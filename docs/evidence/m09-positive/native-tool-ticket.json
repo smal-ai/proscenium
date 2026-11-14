@@ -1,0 +1,13 @@
+[
+  {
+    "at": 1794667217.8869765,
+    "tool": "request_vlm_review",
+    "result": "{\"job_id\":\"review-job-006210a8-eda4-4659-bf26-ef399be76192\",\"review_id\":\"m09-positive-native-review\",\"schema_version\":\"1.0\",\"status\":\"pending\"}",
+    "sha256": "ff67d370aab458a32e114b9ccd56e7239a5168c5422e021197d65132f02c3830",
+    "invocation": {
+      "tool_call_id": "call_UpJPjDl3UKz3RgpMOphr3Xeg",
+      "session_id": "defb073b-9c1f-41b6-8a62-d7b12ad11b58",
+      "turn_id": null
+    }
+  }
+]
