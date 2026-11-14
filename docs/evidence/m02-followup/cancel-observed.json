@@ -1,0 +1,69 @@
+{
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-d8318bcf-df44-4575-a0e4-973a162f093a",
+    "attempt_number": 1,
+    "availability": "pending",
+    "completed_frames": 0,
+    "expected_frames": 1,
+    "external_job_id": null,
+    "input_digest": "e50363ebc00d991fefd44c7d73a7a4a93c50ec3bdf4720411b69c8688125cec2",
+    "job_id": "preview-52c9ba9470ddbb4a9282175aa1e6be39d2a60899e3a95f443f07e0fa5d3fcfab",
+    "kind": "render",
+    "owner_epoch": "epoch-1e0dc801-1f6e-4c30-b2fe-7e9a85c17225",
+    "owner_operation_id": null,
+    "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+    "provider_id": null,
+    "render_spec": {
+      "camera": null,
+      "colour_management": {
+        "exposure": 0,
+        "gamma": 1,
+        "look": "None",
+        "view_transform": "Standard"
+      },
+      "device": "CPU",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "engine": "CYCLES",
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frames": {
+        "end": 1,
+        "start": 1
+      },
+      "intent_id": "followup-planned-intent",
+      "purpose": "keyframe",
+      "renderer_revision": "proscenium-blender-1",
+      "review_output": {
+        "bit_depth": 8,
+        "encoding": "view_transformed_srgb",
+        "media_type": "image/png"
+      },
+      "samples": 8,
+      "scene_name": "Scene",
+      "shot_id": null,
+      "source_closure_digest": "f2bff42cc8601a48a149dc396de2a6135b872430ca460153bf453853ca7e3e52"
+    },
+    "schema_version": "1.0",
+    "state": "cancelled",
+    "state_revision": 2,
+    "target": {
+      "shot_id": null,
+      "target_id": "followup-scene",
+      "version": {
+        "item_id": "followup-scene",
+        "version_id": "followup-scene-v1"
+      }
+    },
+    "work_id": "followup-fixture-work"
+  },
+  "observed_monotonic_ns": 463310359595874,
+  "gate_is_open": false,
+  "resumes_after_close": [],
+  "lifecycle_errors": {}
+}

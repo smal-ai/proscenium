@@ -1,0 +1,98 @@
+{
+  "projects": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "name": "M02 follow-up A",
+        "native_session_id": "c4278797-c7f1-49ea-8001-eef380313cb6",
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-a",
+        "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+        "repository_id": "repository-85da4b89-bdf5-49fe-87b7-08e9f79ed443",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 4
+      },
+      {
+        "name": "M02 follow-up B",
+        "native_session_id": null,
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-b",
+        "project_id": "project-8fba6ba6-b501-4d23-a98e-d459542a7ea6",
+        "repository_id": "repository-f0c1cdf7-6e6d-4315-b77c-547e29e47465",
+        "schema_version": "1.0",
+        "state": "inactive",
+        "state_revision": 2
+      }
+    ],
+    "next_cursor": null
+  },
+  "snapshot": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "M02 follow-up A",
+      "native_session_id": "c4278797-c7f1-49ea-8001-eef380313cb6",
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-a",
+      "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+      "repository_id": "repository-85da4b89-bdf5-49fe-87b7-08e9f79ed443",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 4
+    },
+    "settings": {
+      "default_profile_id": null,
+      "generation_attempt_limit": 3,
+      "state_revision": 0
+    },
+    "event_sequence": 34,
+    "active_work": null,
+    "held_requests": [],
+    "items": [],
+    "jobs": [],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T15:27:23.323280+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-1558332374604d0e814c69a8d14aaa06",
+        "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+        "receipt": {
+          "native_message_id": "69a46a24-986e-43ce-b7a4-6707a60d82dd",
+          "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+          "replayed": false,
+          "request_id": "a9e48be5-58e1-4a78-9af3-957c576e8530",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-bbfcd3a4d7a14749a74156fce5329ff6"
+        },
+        "request_id": "a9e48be5-58e1-4a78-9af3-957c576e8530",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "ef65376a-07f9-4977-8363-a047e889f8d4",
+          "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+          "request_id": "a9e48be5-58e1-4a78-9af3-957c576e8530",
+          "schema_version": "1.0",
+          "text": "SCRIPTED M02 FOLLOW-UP TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit files, delegate, use providers, or inspect other projects.",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "text": "P\nPROSCENIUM\nM02 follow-up A\n/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-a\nConnected\nServices & models\nShots\nOutliner\nAssets\nSearch assets\nReconcile selection status\nActive-project scope\nproject-4f52d457-b63e-49c8-b78e-e3869e94eb94\nREVIEW WORKSPACE\nStart with a project. Make something worth reviewing.\n\nSelect a published version to review.\n\nNo published version selected\nGit-backed sources · Immutable publications\nCopilot\nCritic\nProject Copilot\nNo active work\nContinue deliberately\n\nHeld requests stay held until explicitly released. Reconcile inspects known outcomes without sending a new prompt.\n\nReconcile only\nContinue original work\nRelease held queue\nResume\nYou\nqueue · completed\n\nSCRIPTED M02 FOLLOW-UP TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit files, delegate, use providers, or inspect other projects.\n\nOriginal captured context\nObserved usage · lead: copilot-lead\nCopilot\ncopilot-lead\n\nTool: view\ncompleted\nCopilot\ncopilot-lead\n\nTitle: R1 project A\nSentinel: M02-followup-A-20261114\n\nObserved usage · lead: copilot-lead\nIndependent jobs\n0\nUsage is shown only when reported by the runtime. Missing usage is unavailable, not zero.\nNext request context · 0 images\nMessage Copilot\nAttach images\nQueue\nSteer\nStop\nCtrl+Enter to queue · Context is captured on submit"
+}

@@ -1,0 +1,237 @@
+{
+  "projects": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "name": "M02 follow-up A",
+        "native_session_id": "c4278797-c7f1-49ea-8001-eef380313cb6",
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-a",
+        "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+        "repository_id": "repository-85da4b89-bdf5-49fe-87b7-08e9f79ed443",
+        "schema_version": "1.0",
+        "state": "awaiting_resume",
+        "state_revision": 4
+      },
+      {
+        "name": "M02 follow-up B",
+        "native_session_id": null,
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-b",
+        "project_id": "project-8fba6ba6-b501-4d23-a98e-d459542a7ea6",
+        "repository_id": "repository-f0c1cdf7-6e6d-4315-b77c-547e29e47465",
+        "schema_version": "1.0",
+        "state": "inactive",
+        "state_revision": 2
+      }
+    ],
+    "next_cursor": null
+  },
+  "snapshot": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "M02 follow-up A",
+      "native_session_id": "c4278797-c7f1-49ea-8001-eef380313cb6",
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-a",
+      "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+      "repository_id": "repository-85da4b89-bdf5-49fe-87b7-08e9f79ed443",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 4
+    },
+    "settings": {
+      "default_profile_id": null,
+      "generation_attempt_limit": 3,
+      "state_revision": 0
+    },
+    "event_sequence": 38,
+    "active_work": null,
+    "held_requests": [],
+    "items": [
+      {
+        "current_version_id": "followup-scene-v1",
+        "item_id": "followup-scene",
+        "kind": "scene",
+        "name": "Unrendered cancellation fixture",
+        "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0
+      }
+    ],
+    "jobs": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-d8318bcf-df44-4575-a0e4-973a162f093a",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": 0,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "e50363ebc00d991fefd44c7d73a7a4a93c50ec3bdf4720411b69c8688125cec2",
+        "job_id": "preview-52c9ba9470ddbb4a9282175aa1e6be39d2a60899e3a95f443f07e0fa5d3fcfab",
+        "kind": "render",
+        "owner_epoch": "epoch-1e0dc801-1f6e-4c30-b2fe-7e9a85c17225",
+        "owner_operation_id": null,
+        "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "followup-planned-intent",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Scene",
+          "shot_id": null,
+          "source_closure_digest": "f2bff42cc8601a48a149dc396de2a6135b872430ca460153bf453853ca7e3e52"
+        },
+        "schema_version": "1.0",
+        "state": "cancelled",
+        "state_revision": 2,
+        "target": {
+          "shot_id": null,
+          "target_id": "followup-scene",
+          "version": {
+            "item_id": "followup-scene",
+            "version_id": "followup-scene-v1"
+          }
+        },
+        "work_id": "followup-fixture-work"
+      }
+    ],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T15:27:23.323280+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-1558332374604d0e814c69a8d14aaa06",
+        "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+        "receipt": {
+          "native_message_id": "69a46a24-986e-43ce-b7a4-6707a60d82dd",
+          "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+          "replayed": false,
+          "request_id": "a9e48be5-58e1-4a78-9af3-957c576e8530",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-bbfcd3a4d7a14749a74156fce5329ff6"
+        },
+        "request_id": "a9e48be5-58e1-4a78-9af3-957c576e8530",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "ef65376a-07f9-4977-8363-a047e889f8d4",
+          "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+          "request_id": "a9e48be5-58e1-4a78-9af3-957c576e8530",
+          "schema_version": "1.0",
+          "text": "SCRIPTED M02 FOLLOW-UP TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit files, delegate, use providers, or inspect other projects.",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-d8318bcf-df44-4575-a0e4-973a162f093a",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": 0,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "e50363ebc00d991fefd44c7d73a7a4a93c50ec3bdf4720411b69c8688125cec2",
+        "job_id": "preview-52c9ba9470ddbb4a9282175aa1e6be39d2a60899e3a95f443f07e0fa5d3fcfab",
+        "kind": "render",
+        "owner_epoch": "epoch-1e0dc801-1f6e-4c30-b2fe-7e9a85c17225",
+        "owner_operation_id": null,
+        "project_id": "project-4f52d457-b63e-49c8-b78e-e3869e94eb94",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "followup-planned-intent",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Scene",
+          "shot_id": null,
+          "source_closure_digest": "f2bff42cc8601a48a149dc396de2a6135b872430ca460153bf453853ca7e3e52"
+        },
+        "schema_version": "1.0",
+        "state": "cancelled",
+        "state_revision": 2,
+        "target": {
+          "shot_id": null,
+          "target_id": "followup-scene",
+          "version": {
+            "item_id": "followup-scene",
+            "version_id": "followup-scene-v1"
+          }
+        },
+        "work_id": "followup-fixture-work"
+      }
+    ],
+    "next_cursor": null
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "text": "P\nPROSCENIUM\nM02 follow-up A\n/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/project-a\nConnected\nServices & models\nShots\nOutliner\nAssets\nSearch assets\nReconcile selection status\nUnrendered cancellation fixture\nSource\nUnknown\nCreator\nUnknown\nLicence\nUnknown\nUnrendered cancellation fixture\nfollowup-scene-v1\n\nCurrent published\n\nTechnical assessment: not recorded. Source published · 0 registered artefacts\n\nSource\nUnknown\nCreator\nUnknown\nLicence\nUnknown\nSelect for item\nActive-project scope\nproject-4f52d457-b63e-49c8-b78e-e3869e94eb94\nREVIEW WORKSPACE\nStart with a project. Make something worth reviewing.\n\nSelect a published version to review.\n\nNo published version selected\nGit-backed sources · Immutable publications\nCopilot\nCritic\nProject Copilot\nNo active work\nContinue deliberately\n\nHeld requests stay held until explicitly released. Reconcile inspects known outcomes without sending a new prompt.\n\nReconcile only\nContinue original work\nRelease held queue\nResume\nYou\nqueue · completed\n\nSCRIPTED M02 FOLLOW-UP TEST USER. Read only brief/title.md in this active project. Reply with its title and sentinel. Do not edit files, delegate, use providers, or inspect other projects.\n\nOriginal captured context\nObserved usage · lead: copilot-lead\nCopilot\ncopilot-lead\n\nTool: view\ncompleted\nCopilot\ncopilot-lead\n\nTitle: R1 project A\nSentinel: M02-followup-A-20261114\n\nObserved usage · lead: copilot-lead\nIndependent jobs\n1\n\nStop Copilot does not stop these jobs.\n\nrender\npreview-52c9ba9470ddbb4a9282175aa1e6be39d2a60899e3a95f443f07e0fa5d3fcfab · cancelled\nUsage is shown only when reported by the runtime. Missing usage is unavailable, not zero.\nNext request context · 0 images\nMessage Copilot\nAttach images\nQueue\nSteer\nStop\nCtrl+Enter to queue · Context is captured on submit"
+}

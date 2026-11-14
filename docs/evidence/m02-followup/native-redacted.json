@@ -1,0 +1,66 @@
+[
+  {
+    "session_id": "c4278797-c7f1-49ea-8001-eef380313cb6",
+    "events": [
+      {
+        "id": "61bf2a23-d8a7-4521-b683-3489686306a5",
+        "type": "session.start",
+        "timestamp": "2026-11-14T15:27:26.197Z",
+        "data": {
+          "sessionId": "c4278797-c7f1-49ea-8001-eef380313cb6",
+          "copilotVersion": "1.0.112",
+          "selectedModel": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "25ab3206-78a0-4446-8578-1c305995355a",
+        "type": "user.message",
+        "timestamp": "2026-11-14T15:27:29.885Z",
+        "data": {
+          "messageId": "69a46a24-986e-43ce-b7a4-6707a60d82dd",
+          "clientTurnId": "a9e48be5-58e1-4a78-9af3-957c576e8530"
+        }
+      },
+      {
+        "id": "25be7ca4-ae49-45e0-abe9-8232a4e8d611",
+        "type": "tool.execution_start",
+        "timestamp": "2026-11-14T15:27:33.706Z",
+        "data": {
+          "toolCallId": "call_No4v2cgdVsoiiBZcZCNM9op1",
+          "toolName": "view",
+          "model": "gpt-6.1-sol"
+        }
+      },
+      {
+        "id": "746c65a3-62c0-4470-bd04-5a9616fab46a",
+        "type": "tool.execution_complete",
+        "timestamp": "2026-11-14T15:27:33.839Z",
+        "data": {
+          "toolCallId": "call_No4v2cgdVsoiiBZcZCNM9op1",
+          "model": "gpt-6.1-sol",
+          "success": true
+        }
+      },
+      {
+        "id": "4842392e-4ded-4b79-81f6-12ff62e723ce",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T15:27:33.843Z",
+        "data": {}
+      },
+      {
+        "id": "b5750055-9da8-43c3-acdd-6b8e7232eae0",
+        "type": "assistant.turn_end",
+        "timestamp": "2026-11-14T15:27:36.746Z",
+        "data": {}
+      },
+      {
+        "id": "a29b513c-f492-4c8f-9193-8e89000bbe90",
+        "type": "session.shutdown",
+        "timestamp": "2026-11-14T15:27:37.409Z",
+        "data": {}
+      }
+    ],
+    "private_history_sha256": "386f4552297717644621de274ec5ed849b83883b27ddba0f3c38148d36093e6d",
+    "cloud_execution_seconds": 6.861
+  }
+]

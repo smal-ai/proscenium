@@ -1,0 +1,22 @@
+{
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z",
+  "origin": "http://127.0.0.1:38669",
+  "cdp": 35373,
+  "temporary": "/home/quintin/.cache/m2f-4T152555",
+  "test_base": "8dd18b86526fda843a62fd0b2056611816308fd0",
+  "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b",
+  "server": {
+    "pid": 3680427,
+    "start": "46266674",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m02-followup/.venv/bin/python",
+      "/home/quintin/.cache/proscenium-development/fleet/m02-followup/tests/native/studio/m02_followup_host.py",
+      "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z"
+    ],
+    "started_monotonic_ns": 462666749279663,
+    "exit_code": 1,
+    "elapsed_seconds": 10.022037082
+  },
+  "prior_evidence_and_private_sources_unchanged": true,
+  "independent_blender_preserved": true
+}

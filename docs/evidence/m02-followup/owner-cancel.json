@@ -1,0 +1,11 @@
+{
+  "status": 202,
+  "receipt": {
+    "schema_version": "1.0",
+    "operation_id": "e6bf6b7b-f452-4c33-9146-673139ac9c4f",
+    "resource_id": "preview-52c9ba9470ddbb4a9282175aa1e6be39d2a60899e3a95f443f07e0fa5d3fcfab",
+    "state": "cancel_requested",
+    "state_revision": 1,
+    "replayed": false
+  }
+}

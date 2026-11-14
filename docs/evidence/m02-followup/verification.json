@@ -1,0 +1,19 @@
+{
+  "strict_m02": "FAIL",
+  "R1": "NOT_PROVEN",
+  "R2": "PASS",
+  "reason": "Driver interruption before B's first Send; subsequent read-only A reattach became outcome_uncertain. No retry or fabricated B execution.",
+  "root_requests": 1,
+  "native_children": 0,
+  "native_inspections": 0,
+  "rendered_frames": 0,
+  "manual_cancellation_dispatch": false,
+  "gate_opened_after_planned_close": false,
+  "prior_evidence_unchanged": true,
+  "cancel_latency_from_gate_close_seconds": 0.473327898,
+  "reused_dependencies": [
+    "milestone/m01",
+    "docs/evidence/m02 positive criteria 2/3/4/6"
+  ],
+  "new_legacy_failure_claim": false
+}

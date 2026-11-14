@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-14",
+  "test_base": "8dd18b86526fda843a62fd0b2056611816308fd0",
+  "strict_m02": "FAIL",
+  "R1": "NOT_PROVEN",
+  "R2": "PASS",
+  "offline_command": ".venv/bin/pytest -q tests/integration/copilot/test_retired_callbacks.py::test_real_a_shutdown_during_disconnect_does_not_fence_fresh_b tests/integration/foundation/test_closed_gate_cancellation.py::test_owner_http_cancel_reaches_actual_adapter_with_closed_gate",
+  "targeted_offline_passed": 3,
+  "retained_evidence_command": ".venv/bin/pytest -q tests/acceptance/m02_followup_evidence_test.py",
+  "retained_evidence_passed": 5,
+  "other_checks": ["uv sync --frozen", "cmp package-lock.json /home/quintin/play/proscenium/package-lock.json", "npm run build", "ruff check and format --check on owned follow-up Python files", "node --check tests/native/studio/m02_followup_browser.mjs", "git diff --cached --check", "exported JSON secret/reasoning-key audit"],
+  "limits": ["Offline and retained-evidence checks are not substituted for B's missing real native execution.", "The actual R2 cancellation was performed by the production watcher, not manually dispatched by the fixture.", "No third cloud root, native child, renderer, GPU/service lifecycle or native inspection was started."]
+}

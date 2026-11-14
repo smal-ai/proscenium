@@ -1,0 +1,40 @@
+{
+  "root": "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z",
+  "origin": "http://127.0.0.1:38669",
+  "cdp": 35373,
+  "temporary": "/home/quintin/.cache/m2f-4T152555",
+  "test_base": "8dd18b86526fda843a62fd0b2056611816308fd0",
+  "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b",
+  "server": {
+    "pid": 3683758,
+    "start": "46275223",
+    "argv": [
+      "/home/quintin/.cache/proscenium-development/fleet/m02-followup/.venv/bin/python",
+      "/home/quintin/.cache/proscenium-development/fleet/m02-followup/tests/native/studio/m02_followup_host.py",
+      "/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z"
+    ],
+    "started_monotonic_ns": 462752237887600,
+    "exit_code": -15,
+    "elapsed_seconds": 29.84998982
+  },
+  "prior_evidence_and_private_sources_unchanged": true,
+  "independent_blender_preserved": true,
+  "browser": {
+    "pid": 3683826,
+    "start": "46275335",
+    "argv": [
+      "/home/quintin/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome",
+      "--headless",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--window-size=1920,1080",
+      "--remote-debugging-port=35373",
+      "--user-data-dir=/home/quintin/.cache/proscenium-development/milestones/m02-followup-20261114T152555Z/browser-profile",
+      "about:blank"
+    ],
+    "started_monotonic_ns": 462753358058302,
+    "exit_code": 0,
+    "elapsed_seconds": 28.761434926
+  },
+  "driver_exit": 1
+}
