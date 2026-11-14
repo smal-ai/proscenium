@@ -15,6 +15,8 @@ import { cadence, digest, glbWorkload, ownedProcesses, processStat, visibleGeome
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
 const root=path.resolve(process.argv[3]??'');
 assert.ok(root.startsWith(`${os.homedir()}/.cache/proscenium-development/milestones/m14-performance-`));
+assert.ok(root.endsWith('-b'),'Only the newly authorised private -b allocation is writable');
+const limits={seconds:240,min_host_available_bytes:4*1024**3,max_browser_summed_rss_bytes:4*1024**3};
 const json=async file=>JSON.parse(await fs.readFile(file,'utf8'));
 const write=(name,value)=>fs.writeFile(path.join(root,name),JSON.stringify(value,null,2)+'\n');
 const git=(...args)=>execFileSync('git',args,{cwd:repo,encoding:'utf8'}).trim();
@@ -70,7 +72,7 @@ async function prepare(){
   await build({root:repo,configFile:false,build:{outDir:`${root}/site`,emptyOutDir:false,
     rollupOptions:{input:`${repo}/tests/acceptance/m14_performance.html`}},
     esbuild:{jsx:'automatic'}});
-  const prepared={base_commit:'0c77d899ce008a6502c2a4a4265d42ab794e3542',build_commit:git('rev-parse','HEAD'),
+  const prepared={base_commit:'544e1b15e86c51a19f398598a601b791a212e22a',build_commit:git('rev-parse','HEAD'),
     sources:await fingerprints(),cases:plans,page_size:pageSize,
     component_scope:'Compiled fixture imports unmodified maintained ProxyView, including useGLTF, Canvas, OrbitControls, CameraObserver and CaptureBinding. Not a complete studio/backend journey or shell benchmark.',
     build_files:await hashesUnder(`${root}/site`,false)};
@@ -88,10 +90,11 @@ async function hashesUnder(directory,excludeFixtures){
 // Observation-only: native rAF and GL calls are forwarded unchanged. No gl.finish,
 // timer-query result, fake frame, target-rate sampling or camera substitution.
 function instrument(){
-  const trace=window.__m14Trace={phase:'idle',rows:[],current:null};
+  const trace=window.__m14Trace={phase:'idle',rows:[],current:null,total_draw_calls:0,raf_callbacks:0};
   const original=requestAnimationFrame;
   window.requestAnimationFrame=function(callback){return original.call(window,timestamp=>{
     const row={raf_timestamp_ms:timestamp,start_ms:performance.now(),draw_calls:0};
+    trace.raf_callbacks++;
     trace.current=row;
     try{return callback(timestamp);}finally{
       row.end_ms=performance.now();trace.current=null;
@@ -102,7 +105,7 @@ function instrument(){
     for(const method of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced']){
       if(!Object.hasOwn(prototype,method))continue;
       const draw=prototype[method];prototype[method]=function(...args){
-        if(trace.current)trace.current.draw_calls++;return Reflect.apply(draw,this,args);
+        trace.total_draw_calls++;if(trace.current)trace.current.draw_calls++;return Reflect.apply(draw,this,args);
       };
     }
   }
@@ -113,13 +116,14 @@ async function measure(){
   assert.deepEqual(await fingerprints(),prepared.sources,'Preflight source changed; rebuild before measurement');
   assert.deepEqual(await hashesUnder(`${root}/site`,false),prepared.build_files);
   assert.ok(await memory()>=4*1024**3,'Four GiB headroom unavailable; do not wait');
-  await fs.writeFile(`${root}/measurement-reservation.json`,JSON.stringify({limit_profiles:1,limit_cases:2,limit_seconds:240,started:new Date().toISOString()}),{flag:'wx',mode:0o600});
+  await fs.writeFile(`${root}/measurement-reservation.json`,JSON.stringify({allocation:'authorised-new-browser-b',limit_profiles:1,limit_cases:2,limits,started:new Date().toISOString()}),{flag:'wx',mode:0o600});
   const began=performance.now(),startedNs=process.hrtime.bigint().toString();
   const journal={status:'running',started_at:new Date().toISOString(),started_monotonic_ns:startedNs,
-    implementation_commit:git('rev-parse','HEAD'),prepared,limits:{seconds:240,min_host_available_bytes:4*1024**3,max_browser_summed_rss_bytes:2*1024**3},
+    implementation_commit:git('rev-parse','HEAD'),prepared,limits,
     identities:{os:await fs.readFile('/etc/os-release','utf8'),kernel:os.release(),arch:os.arch(),
       cpu_model:os.cpus()[0].model,logical_cpus:os.cpus().length,node:process.version},
-    http:[],resources:[],processes:{},cases:[],console_errors:[],cleanup:{}};
+    http:[],resources:[],processes:{},cases:[],console_errors:[],observer_failures:[],cleanup:{}};
+  await write('configured-allocation.json',{allocation:'authorised-new-browser-b',limits,source_hashes:prepared.sources,configured_before_browser_launch:true});
   let browser,chrome,rootIdentity,monitor,busy=false,stopReason=null,server;
   const known=new Map();
   const liveOwned=async()=>rootIdentity?ownedProcesses(await allProcesses(),rootIdentity,[...known.values()]):[];
@@ -140,7 +144,7 @@ async function measure(){
         processes:live.map(p=>({pid:p.pid,start_ticks:p.start_ticks,rss_bytes:p.rss_bytes})),
         harness_rss_bytes:process.memoryUsage().rss});
       if(available<4*1024**3)await terminate('host memory below four-GiB guard');
-      if(rss>2*1024**3)await terminate('attributed browser summed RSS exceeded two-GiB guard');
+      if(rss>limits.max_browser_summed_rss_bytes)await terminate('attributed browser summed RSS exceeded NEW four-GiB guard');
     }finally{busy=false;}
   }
   try{
@@ -190,7 +194,7 @@ async function measure(){
     assert.deepEqual(journal.viewport,{width:1920,height:1080,dpr:1});
     for(const fixture of prepared.cases){
       if(stopReason)break;
-      const record={name:fixture.name,status:'loading',workload:fixture.workload,trace:[]};journal.cases.push(record);
+      const record={name:fixture.name,status:'loading',workload:fixture.workload,trace:[],case_start_elapsed_ms:performance.now()-began};journal.cases.push(record);
       await page.getByRole('button',{name:`Load ${fixture.name}`,exact:true}).click();
       await page.waitForFunction(name=>window.__m14.readyCase===name,fixture.name,{timeout:60000});
       record.loader=await page.evaluate(name=>{
@@ -224,15 +228,31 @@ async function measure(){
         return {...data,sha256:digest(bytes)};
       }
       record.before_orbit=await capture('before');
+      record.draws_before_orbit=await page.evaluate(()=>window.__m14Trace.total_draw_calls);
+      if(!visibleGeometry(record.before_orbit)){
+        journal.observer_failures.push({case:fixture.name,stage:'visibility',observation:record.before_orbit,at:new Date().toISOString(),recovery:'Wait for actual next two animation callbacks and recapture in same browser'});
+        await write('observer-failures.json',journal.observer_failures);
+        await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+        record.before_orbit=await capture('before-recovered');
+      }
       assert.ok(visibleGeometry(record.before_orbit),'No visible non-uniform geometry');
+      assert.ok(record.draws_before_orbit>0,'No actual WebGL draws observed');
       const box=await canvas.boundingBox();
       const x=box.x+box.width*.72,y=box.y+box.height*.52;
       await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+55,y+23,{steps:8});await page.mouse.up();
       record.after_orbit=await capture('after');
+      if(record.before_orbit.sha256===record.after_orbit.sha256||JSON.stringify(record.before_orbit.camera.camera_to_world)===JSON.stringify(record.after_orbit.camera.camera_to_world)){
+        journal.observer_failures.push({case:fixture.name,stage:'orbit',before:record.before_orbit,after:record.after_orbit,at:new Date().toISOString(),recovery:'Additional real pointer orbit and recapture in same browser'});
+        await write('observer-failures.json',journal.observer_failures);
+        await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+90,y+35,{steps:10});await page.mouse.up();
+        record.after_orbit=await capture('after-recovered');
+      }
       assert.notEqual(record.before_orbit.sha256,record.after_orbit.sha256,'Orbit did not change actual pixels');
       assert.notDeepEqual(record.before_orbit.camera.camera_to_world,record.after_orbit.camera.camera_to_world);
       await page.screenshot({path:`${root}/${fixture.name}-fullhd.png`});
       record.status='sampling';record.steady_started_at=new Date().toISOString();
+      record.steady_start_elapsed_ms=performance.now()-began;
+      record.camera_changes_before_sampling=await page.evaluate(()=>window.__m14.cameraChanges);
       await page.evaluate(()=>{window.__m14Trace.rows=[];window.__m14Trace.phase='steady';});
       await page.mouse.move(x,y);await page.mouse.down();
       const target=fixture.name==='small'?120:60;record.requested_callbacks=target;
@@ -248,6 +268,8 @@ async function measure(){
       await page.mouse.up();
       record.trace=await page.evaluate(()=>{window.__m14Trace.phase='idle';return window.__m14Trace.rows;});
       record.steady_finished_at=new Date().toISOString();record.mouse_moves=step;
+      record.case_end_elapsed_ms=performance.now()-began;
+      record.observer_totals=await page.evaluate(()=>({draw_calls:window.__m14Trace.total_draw_calls,raf_callbacks:window.__m14Trace.raf_callbacks,camera_changes:window.__m14.cameraChanges}));
       record.cadence=cadence(record.trace);
       record.status=record.trace.length>=target?'observed_requested_sample_count':'partial_callback_count';
       if(record.status.startsWith('partial')){stopReason='Low cadence: bounded case interval exhausted';journal.guard_stop=stopReason;break;}

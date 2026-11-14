@@ -96,3 +96,11 @@ node --test tests/acceptance/m14_performance_helpers.test.mjs
 **Coordinator decision required:** authorise one replacement measurement after the proven palette-check defect, with the same retained proxies and unchanged time/RSS/headroom guards, or retain this as partial. No replacement was launched. **NFR04.2 cadence and M14/release acceptance remain open.**
 
 Final non-browser verification: five pure Node helper tests and five retained-evidence tests passed, including the actual ten-colour image regression. Fixture TypeScript, Node syntax, Python mypy/Ruff and specification validation passed. The studio/fixture builds passed before the measurement, with existing bundle/Lucide warnings. The Starlette/httpx warning remains. No failed browser stage was rerun to obtain these checks.
+
+## Separately authorised final viewport allocation
+
+The coordinator authorised one new browser/profile/server at base `544e1b15e86c51a19f398598a601b791a212e22a`, using fresh private root `m14-performance-20261114-b`. Its **new** summed attributed browser-RSS ceiling is **4 GiB**, with the same four-GiB host-headroom floor and 240-second total bound. This does not alter the original two-GiB ceiling, result, failure or source/build/test fingerprints above. Final evidence uses a separate `final-` prefix.
+
+Before launch the exclusive reservation and `configured-allocation.json` record the new ceiling. The visibility predicate now uses finite actual non-background pixel area, not palette cardinality. Actual model readiness and forwarded GL draws are checked, followed by changed captured pixels and camera after a real pointer orbit. Recoverable visibility/orbit observations are retained before one same-browser recapture or additional pointer movement. No recovery restarts the browser, changes a resource guard, reloads a source or pads callback samples. Complete steady measurement still requires at least 120 small and 60 heavy actual draw-bearing rAF callbacks.
+
+The original `-a` private root and committed evidence remain untouched. Existing M07 FP16 resource/latency records will be joined without provider execution, with the requested colour-correction **quality failure** and device-wide-not-per-process VRAM limits preserved. Final observations follow only after the new bounded execution.

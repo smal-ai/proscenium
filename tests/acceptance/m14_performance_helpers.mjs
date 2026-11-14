@@ -5,7 +5,7 @@ export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 export function visibleGeometry(stats) {
   // Flat shaded primitive faces need not contain many quantised colours. Require
   // real non-uniform pixels, not an arbitrary palette size or aesthetic score.
-  return stats.quantised_colours>=2&&stats.different_from_corner>100
+  return Number.isFinite(stats.different_from_corner)&&stats.different_from_corner>100
     &&stats.different_from_corner<=stats.sampled_pixels;
 }
 export function summary(values) {

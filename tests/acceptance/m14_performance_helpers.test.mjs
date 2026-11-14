@@ -10,6 +10,7 @@ test('nearest-rank quantiles retain real small samples and empty partial results
 test('actual flat-shaded block is visible with ten quantised colours; blank is not',()=>{
   assert.equal(visibleGeometry({quantised_colours:10,different_from_corner:15554,sampled_pixels:360000}),true);
   assert.equal(visibleGeometry({quantised_colours:1,different_from_corner:0,sampled_pixels:360000}),false);
+  assert.equal(visibleGeometry({different_from_corner:15554,sampled_pixels:360000}),true);
 });
 test('cadence uses actual start timestamps, not manufactured target FPS',()=>{
   assert.deepEqual(cadence([{start_ms:10,end_ms:14,draw_calls:1},{start_ms:30,end_ms:39,draw_calls:2}]),{
