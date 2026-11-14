@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M12 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M13 are accepted with real application/native evidence. Final consolidated M14 acceptance is in progress. [Implementation progress](implementation/progress.md) records evidence and remaining release checks.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -39,7 +39,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M10](#m10-image-to-3d-asset-generation) | Generate and publish a usable Blender mesh from an image | Early feasibility proof, M04, M05. M07 for generated inputs | Accepted, `milestone/m10` |
 | [M11](#m11-playable-unity-scene) | Ask the Unity specialist for a playable scene and test it in Unity | M03, M04, M05. M10 is not required for authored/imported assets | Accepted, `milestone/m11` |
 | [M12](#m12-reconnect-and-explicitly-resume) | Complete cross-provider reconnect/resume and backup acceptance | Delivery/recovery primitives from F00/M01/M03; M07, M08, M11 for representative job types | Accepted, `milestone/m12` |
-| [M13](#m13-assemble-review-and-deliver-a-silent-cinematic) | Review/export an assembled silent sequence | M06, M08, M12 | Planned |
+| [M13](#m13-assemble-review-and-deliver-a-silent-cinematic) | Review/export an assembled silent sequence | M06, M08, M12 | Accepted, `milestone/m13` |
 | [M14](#m14-consolidated-desktop-studio-acceptance) | Use the complete personal studio from a clean configured workspace | All included V1 milestones | Planned |
 
 ### Foundation gate and early proofs
@@ -534,6 +534,10 @@ provider/worker reconciliation and retained unknown outcomes.
 **Reuse:** Blender worker identity/journal recovery, ComfyUI prompt-ID reconciliation and Review Studio outbox/conflict handling. Do not import historical timers, schedules or legacy recovery controllers.
 
 ## M13: Assemble, review and deliver a silent cinematic
+
+**Accepted:** 14 November 2026. [Actual edit/review/delivery evidence](implementation/m13.md)
+records two source-pinned silent edits, complete decoded playback, composite notes,
+stable earlier selection and byte-identical video/manifest downloads.
 
 **User journey:** “I select the shots, review the complete edit and export the silent film with its source references.”
 

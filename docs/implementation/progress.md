@@ -77,6 +77,7 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `9746643`, `17c0a59` | M11's original cold Stop confirmed from actual inactive-main-loop RPC, typed Abort success, empty paused queues and no background/external calls. Original work stopped at revision 10 with zero live invocations. Parent passed 265 Copilot checks. |
 | `7210315`, `milestone/m11` | Original-work native publication and actual Unity catalogue/readback accepted. All 77 files pin the existing checkpoint; actual operator PlayMode evidence stays distinct from generic import not_run. |
 | `milestone/m12` | Cumulative browser/SSH continuity, quiet restart, original-session restoration, accepted-send/provider recovery, detached workers and verified local retry accepted with original unknown outcomes retained. |
+| `milestone/m13` | Both native-authored silent edits, measured encodes, composite-frame review, preserved old selection and exact video/manifest downloads accepted after M12. |
 
 ## Active assignments
 
@@ -205,7 +206,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M10 Image-to-3D | Completed on 2026-11-14 | `milestone/m10` | [Actual mesh, native revision and publication](m10.md) |
 | M11 Playable Unity scene | Completed on 2026-11-14 | `milestone/m11` | [Native specialist, PlayMode, source and publication acceptance](m11.md) |
 | M12 Recovery and backup | Completed on 2026-11-14 | `milestone/m12` | [Cumulative native, provider, worker and backup acceptance](m12.md) |
-| M13 Silent cinematic delivery | All seven targeted criteria passed; dependencies pending | — | [Native edit/review/download proof](m13.md) |
+| M13 Silent cinematic delivery | Completed on 2026-11-14 | `milestone/m13` | [Native edit, composite review and exact delivery acceptance](m13.md) |
 | M14 Consolidated acceptance | Geometry Nodes, SSH, performance and native-fault slices passed; final consolidation pending | — | [SSH](m14-ssh.md), [performance](performance.md), [native faults](m14-native-faults.md) |
 
 ## Host observations
