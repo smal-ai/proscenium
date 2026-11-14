@@ -1,0 +1,124 @@
+{
+  "recorded_at": "2026-11-14T13:34:37.182235+02:00",
+  "allocation_id": "w02-source-native-2026-11-14",
+  "scope": "Actual production resolver, local Git LFS hydration and allocated CPU Blender reopen. No rendering, model or GPU claims.",
+  "original_fixture": "/tmp/opencode/proscenium-f01-20261114-a/project",
+  "disposable_project": "/tmp/opencode/proscenium-w02-native-20261114-c/test_real_historical_resolver_0/project",
+  "fixture_commits": {
+    "historical": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+    "current": "885400de571c3b8d2e7b7dca349601d7b4ec85b1"
+  },
+  "inspections": {
+    "historical": {
+      "allocation_id": "w02-source-native-2026-11-14",
+      "application": "blender",
+      "build_hash": "62c1db4208e8",
+      "dependencies": [
+        "assets/cube/asset.blend",
+        "assets/cube/colour.png"
+      ],
+      "entry_path": "scenes/fixture/scene.blend",
+      "images": [
+        {
+          "height": 8,
+          "name": "colour.png",
+          "packed": false,
+          "width": 8
+        }
+      ],
+      "missing": [],
+      "object_dimensions": {
+        "Blue cube": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "Floor": [
+          6.0,
+          6.0,
+          0.20000000298023224
+        ],
+        "Renamed cube": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "Wall": [
+          6.0,
+          0.20000000298023224,
+          2.5
+        ]
+      },
+      "objects": 6,
+      "version": "4.5.14 LTS",
+      "source_closure_digest": "6ed31234ddae2e0c2af21a625b950270af0d385bff54eb3e2ef4c1957e55d785",
+      "threads": 4,
+      "native_exit_code": 0,
+      "executable": "/home/quintin/.local/bin/blender",
+      "source_files": {
+        "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+        "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+      }
+    },
+    "current": {
+      "allocation_id": "w02-source-native-2026-11-14",
+      "application": "blender",
+      "build_hash": "62c1db4208e8",
+      "dependencies": [
+        "assets/cube/asset.blend",
+        "assets/cube/colour.png"
+      ],
+      "entry_path": "scenes/fixture/scene.blend",
+      "images": [
+        {
+          "height": 8,
+          "name": "colour.png",
+          "packed": false,
+          "width": 8
+        }
+      ],
+      "missing": [],
+      "object_dimensions": {
+        "Blue cube": [
+          1.0,
+          1.0,
+          1.5
+        ],
+        "Floor": [
+          6.0,
+          6.0,
+          0.20000000298023224
+        ],
+        "Renamed cube": [
+          1.0,
+          1.0,
+          1.5
+        ],
+        "Wall": [
+          6.0,
+          0.20000000298023224,
+          2.5
+        ]
+      },
+      "objects": 6,
+      "version": "4.5.14 LTS",
+      "source_closure_digest": "59f3bd02bc14fd6599167ecc9b19c25b1eb1b207d6112dbe94e16c760e424628",
+      "threads": 4,
+      "native_exit_code": 0,
+      "executable": "/home/quintin/.local/bin/blender",
+      "source_files": {
+        "assets/cube/asset.blend": "af5a919f42b73a020454c81eca18c2ae24314c6eb34394b8f79290816932e250",
+        "assets/cube/colour.png": "3262f84ed8eba41952eabe64a35c445b96f25060576e87877940f16251119c33",
+        "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+      }
+    }
+  },
+  "missing_texture_error": "dependency_missing",
+  "source_hashes": {
+    "common.py": "f9d1d55a79d56562b4011511be177587969d80b586c3f2aa34f57b2ceabb37b1",
+    "resolver.py": "ba98a6de7c76edba26cf5a838aadf3130a467ebb7ade6c042d2498d10accd688",
+    "inspection.py": "75e8b0fde148ba7be6a0aa454d7ba0a024cfaa8b961fafb8f49fc36df4e5d22a",
+    "blender_inspect.py": "b04040f312cadbc8887bdd3a04c0cc848c9db4b296ad5bc8ef759680cd3e0ada"
+  }
+}
