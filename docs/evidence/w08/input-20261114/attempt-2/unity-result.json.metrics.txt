@@ -1,0 +1,14 @@
+path=Keyboard.current/Mouse.current->WalkthroughPlayer.Update->CharacterController.Move/Camera virtual_keyboard=3 virtual_mouse=4 focus=False update_mode=ProcessEventsManually background=IgnoreFocus editor_routing=AllDeviceInputAlwaysGoesToGameView physical_OS_input=not_tested
+projection=perspective key=W movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=578 phase=Manual polled_move=(0.00, 1.00)
+projection=perspective key=A movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=600 phase=Manual polled_move=(-1.00, 0.00)
+projection=perspective key=S movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=622 phase=Manual polled_move=(0.00, -1.00)
+projection=perspective key=D movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=644 phase=Manual polled_move=(1.00, 0.00)
+projection=perspective mouse_delta=(80.00, -40.00) current_mouse=4 polled_mouse=4 camera_rotation_deg=8.94275 yaw_deg=8 pitch_deg=4
+projection=perspective input=Keyboard.current/Mouse.current->Update injected=False movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0 camera_rotation_deg=8.94275
+projection=orthographic key=W movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=1142 phase=Manual polled_move=(0.00, 1.00)
+projection=orthographic key=A movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=1164 phase=Manual polled_move=(-1.00, 0.00)
+projection=orthographic key=S movement_m=0.666666746 current_keyboard=3 polled_keyboard=3 poll_frame=1186 phase=Manual polled_move=(0.00, -1.00)
+projection=orthographic key=D movement_m=0.6666667 current_keyboard=3 polled_keyboard=3 poll_frame=1208 phase=Manual polled_move=(1.00, 0.00)
+projection=orthographic mouse_delta=(80.00, -40.00) current_mouse=4 polled_mouse=4 camera_rotation_deg=8.94275 yaw_deg=8 pitch_deg=4
+projection=orthographic input=Keyboard.current/Mouse.current->Update injected=False movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0 camera_rotation_deg=8.94275
+test_settings_restored=True update_mode=ProcessEventsInDynamicUpdate background=ResetAndDisableNonBackgroundDevices editor_routing=PointersAndKeyboardsRespectGameViewFocus capture_delta=0

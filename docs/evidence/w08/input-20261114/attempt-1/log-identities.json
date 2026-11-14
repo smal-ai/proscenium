@@ -1,0 +1,14 @@
+{
+  "editor.log": {
+    "path": "/home/quintin/.cache/proscenium-development/unity-w08-input-20261114/.proscenium/jobs/unity/eade14048826a33c2792829eac3ff93d1d2a06cdc0b45b1d8eb009a3b3544e19/editor.log",
+    "sha256": "158c438d69cd9b7abcbf7e34f597d56fbb6c5a158d31895abce0d8e49dc89fe1"
+  },
+  "console.log": {
+    "path": "/home/quintin/.cache/proscenium-development/unity-w08-input-20261114/.proscenium/jobs/unity/eade14048826a33c2792829eac3ff93d1d2a06cdc0b45b1d8eb009a3b3544e19/console.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "supervisor.log": {
+    "path": "/home/quintin/.cache/proscenium-development/unity-w08-input-20261114/.proscenium/jobs/unity/eade14048826a33c2792829eac3ff93d1d2a06cdc0b45b1d8eb009a3b3544e19/supervisor.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

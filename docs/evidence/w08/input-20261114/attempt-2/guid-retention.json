@@ -1,0 +1,142 @@
+{
+  "Assets/UniversalRenderPipelineGlobalSettings.asset.meta": {
+    "before": "2caca30ce2e927e6840306a64b18b9ae0453e21a211b9a6342edd374183fd36b",
+    "after": "2caca30ce2e927e6840306a64b18b9ae0453e21a211b9a6342edd374183fd36b",
+    "guid": "f098048b753bccfff9d282097cd0a49b"
+  },
+  "Assets/DefaultVolumeProfile.asset.meta": {
+    "before": "64e7dbc35abb38bb145463ce5cd12a25d55f801e262e03dc99cb1163067102e0",
+    "after": "64e7dbc35abb38bb145463ce5cd12a25d55f801e262e03dc99cb1163067102e0",
+    "guid": "4bc724149fa9f1f4191db8990b11efd6"
+  },
+  "Assets/Proscenium.meta": {
+    "before": "c3193781f29aa2c6319a02c3b97572701457b2ae159d96f508651fc8316f36d5",
+    "after": "c3193781f29aa2c6319a02c3b97572701457b2ae159d96f508651fc8316f36d5",
+    "guid": "1ded7c471e6b4cbf1b56ff58e085218f"
+  },
+  "Assets/Proscenium/Tests.meta": {
+    "before": "138596e8e7154068dc24e8be999cad375935b17af4de0b1b6179868ad03bff6e",
+    "after": "138596e8e7154068dc24e8be999cad375935b17af4de0b1b6179868ad03bff6e",
+    "guid": "1908cec8f00ff296194042621b5c4ed8"
+  },
+  "Assets/Proscenium/Editor.meta": {
+    "before": "2c81b278900394806a7ac4498a0fbd832973aafe7907ab9149d6104d7d583ed2",
+    "after": "2c81b278900394806a7ac4498a0fbd832973aafe7907ab9149d6104d7d583ed2",
+    "guid": "b802962b99bf4cc6d9fce6216f736d87"
+  },
+  "Assets/Proscenium/Generated.meta": {
+    "before": "3606d7335b02c480834f4dabf3c2e3f15d13ae62b9c56329e09762e13bcdc4d9",
+    "after": "3606d7335b02c480834f4dabf3c2e3f15d13ae62b9c56329e09762e13bcdc4d9",
+    "guid": "5d0e36585853396709d6d96a3fe58540"
+  },
+  "Assets/Proscenium/Runtime.meta": {
+    "before": "db15aabbcf5855012df9611687bd971c9250356c13c109759de784d3506b4888",
+    "after": "db15aabbcf5855012df9611687bd971c9250356c13c109759de784d3506b4888",
+    "guid": "3cc8d57eb54ea138d95b2eff6a1b3bed"
+  },
+  "Assets/Proscenium/Tests/Proscenium.Unity.PlayMode.asmdef.meta": {
+    "before": "a987d4f255f85824a316861d0a7f7b301250e4315be1bba6cae9431d6f092e09",
+    "after": "a987d4f255f85824a316861d0a7f7b301250e4315be1bba6cae9431d6f092e09",
+    "guid": "948dd3a96cc06010aacea18a08b198eb"
+  },
+  "Assets/Proscenium/Tests/PlayableTests.cs.meta": {
+    "before": "7de46f2083aecab6164d90948c01d0c567fa0188ca861ad43d61d2545f69e333",
+    "after": "7de46f2083aecab6164d90948c01d0c567fa0188ca861ad43d61d2545f69e333",
+    "guid": "49434e56faf1d53799d9b557e87193ed"
+  },
+  "Assets/Proscenium/Runtime/SourceIdentity.cs.meta": {
+    "before": "9115cf6e2faed1a1c7606cbc442fa3a564a008de342dd31800bfeef68e177ec0",
+    "after": "9115cf6e2faed1a1c7606cbc442fa3a564a008de342dd31800bfeef68e177ec0",
+    "guid": "f9e3755ee598e9c16b7462f15a4afd2b"
+  },
+  "Assets/Proscenium/Runtime/WalkthroughPlayer.cs.meta": {
+    "before": "bacc52474ab60d237c1e1a9929f2bc038730f815fe126b0ebdf3488e7559bcfb",
+    "after": "bacc52474ab60d237c1e1a9929f2bc038730f815fe126b0ebdf3488e7559bcfb",
+    "guid": "7a7d02ee4476c16068d8c2b2a4ef9946"
+  },
+  "Assets/Proscenium/Runtime/Proscenium.Unity.Runtime.asmdef.meta": {
+    "before": "d2150f4f469f390779f0b4a8c236353e93e141d1a4de3781bf91e1fe16ce7247",
+    "after": "d2150f4f469f390779f0b4a8c236353e93e141d1a4de3781bf91e1fe16ce7247",
+    "guid": "7250385d0fb1fe18d8e1d4b638ca0382"
+  },
+  "Assets/Proscenium/Editor/Proscenium.Unity.Editor.asmdef.meta": {
+    "before": "beeae2756e4ee392e7775ab90d52e4b2975d24b933e1afb59298751d79ab4e65",
+    "after": "beeae2756e4ee392e7775ab90d52e4b2975d24b933e1afb59298751d79ab4e65",
+    "guid": "f1d20438dd61318c5aa356ca891c5c56"
+  },
+  "Assets/Proscenium/Editor/UnityWorkflow.cs.meta": {
+    "before": "9ea26e338486f73204362bebbd1e6e6ae587702f90a7d2ee7ac2215ad6c3e962",
+    "after": "9ea26e338486f73204362bebbd1e6e6ae587702f90a7d2ee7ac2215ad6c3e962",
+    "guid": "ae03f67e4277a97b0a5c9a23c6b0b297"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d.meta": {
+    "before": "61775d01872729d7062ef04976dcf4815f74dbb7c052df7aa12961375460395d",
+    "after": "61775d01872729d7062ef04976dcf4815f74dbb7c052df7aa12961375460395d",
+    "guid": "5e377ae99a247717ab259cc361c30aaf"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/unity-result.json.meta": {
+    "before": "c5888d43775a71629fdf10f3cb55e8704c1203e00c10964887b87d53ef90330e",
+    "after": "c5888d43775a71629fdf10f3cb55e8704c1203e00c10964887b87d53ef90330e",
+    "guid": "d30945803e9b2f6fe915526d519b51d5"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/4b478ffbea4dbf1d284325cd.mat.meta": {
+    "before": "40b75dcc30bda164c99c6eca7c81ee11ca1a3d5b537de675ced509fdd00f2850",
+    "after": "40b75dcc30bda164c99c6eca7c81ee11ca1a3d5b537de675ced509fdd00f2850",
+    "guid": "b87462265471bf876aa602dfd53d4d5a"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/1dc7755934c90eb11cb22977.asset.meta": {
+    "before": "00b9d60b33d268d14bfb82985b07555ac357f0d971b4c228bdf1a2b0a9c59380",
+    "after": "00b9d60b33d268d14bfb82985b07555ac357f0d971b4c228bdf1a2b0a9c59380",
+    "guid": "180dfefaf8fa0a5219507da38383cec3"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Playable.unity.meta": {
+    "before": "daaca4778f85ea4d319786d3dde828265a005143788357c1f0918ff6fc4e239c",
+    "after": "daaca4778f85ea4d319786d3dde828265a005143788357c1f0918ff6fc4e239c",
+    "guid": "fa9b84079137819b3a554057bb248e60"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/4b478ffbea4dbf1d284325cd.asset.meta": {
+    "before": "715a3005dcadcebbd3455dd3d05c47cf97ec886705da02668d40d5528e2a9721",
+    "after": "715a3005dcadcebbd3455dd3d05c47cf97ec886705da02668d40d5528e2a9721",
+    "guid": "3fdc38d07aaa7d0efb715f589987228b"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Pipeline.asset.meta": {
+    "before": "bc2ec5f485638fa4ddf8f0de27bc6660f01eb7b26d9237c8bf738d45501aa676",
+    "after": "bc2ec5f485638fa4ddf8f0de27bc6660f01eb7b26d9237c8bf738d45501aa676",
+    "guid": "8bbcef92084fd2f5eb5e2685ed9ccc04"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/ad8f72b65846187d4f16b6b1.mat.meta": {
+    "before": "8b14ea85c1aeceb70d0996908c2ea8c5d75833578f4b7f49fdbd03cc89c4557b",
+    "after": "8b14ea85c1aeceb70d0996908c2ea8c5d75833578f4b7f49fdbd03cc89c4557b",
+    "guid": "6a1e81d74b613c0a58be8c2cf2d7a84b"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/50168b3987335ac5b5c54085.mat.meta": {
+    "before": "7122f4c406d12f7f0f6abdb7dfd0efaa2b3fc58aca4ff7e39814f5449d237a3c",
+    "after": "7122f4c406d12f7f0f6abdb7dfd0efaa2b3fc58aca4ff7e39814f5449d237a3c",
+    "guid": "32f49eb5f507b22c4a44fd273eb7c867"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Renderer.asset.meta": {
+    "before": "d783e6425bb659cacc2b49c95552828d110ac1aabf1e433ae816ac44e1e08162",
+    "after": "d783e6425bb659cacc2b49c95552828d110ac1aabf1e433ae816ac44e1e08162",
+    "guid": "40be4a321e7129550a2873d397d6413e"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/1dc7755934c90eb11cb22977.mat.meta": {
+    "before": "f68c0d8f75da0637948c7575dc69665fcc3a91b52bfbe040788b5cc5819ed52a",
+    "after": "f68c0d8f75da0637948c7575dc69665fcc3a91b52bfbe040788b5cc5819ed52a",
+    "guid": "0de39643885f1b008bb81c3be3a2c09b"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/source-manifest.json.meta": {
+    "before": "8c8a703f9f4428fb4b54175d13f0d0e5aeb7a3a277e805da4fa6c62287d8dec1",
+    "after": "8c8a703f9f4428fb4b54175d13f0d0e5aeb7a3a277e805da4fa6c62287d8dec1",
+    "guid": "3b0fe7865e1ecea24be780d4e6b16fa3"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/50168b3987335ac5b5c54085.asset.meta": {
+    "before": "ff1d488d2b620e0cbfe86f5caeb802a5106a838b5e6b7b8fea017f7d58c02a78",
+    "after": "ff1d488d2b620e0cbfe86f5caeb802a5106a838b5e6b7b8fea017f7d58c02a78",
+    "guid": "365b6131b5765f815aff2b23dfca39d0"
+  },
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/ad8f72b65846187d4f16b6b1.asset.meta": {
+    "before": "584ba7232e76bcb48933b256a42a49b3ffd28fe4c9fa429944ffaf35fc3bc748",
+    "after": "584ba7232e76bcb48933b256a42a49b3ffd28fe4c9fa429944ffaf35fc3bc748",
+    "guid": "ae5cb2da80f7aa466bb64860d4f7c523"
+  }
+}

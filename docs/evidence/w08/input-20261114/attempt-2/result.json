@@ -1,0 +1,65 @@
+{
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-833e42f6-daa6-4247-a71e-59e44d36935d",
+    "attempt_number": 1,
+    "availability": "complete",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": "unity-supervisor:2993579:45096532",
+    "input_digest": "05caffd1a420ebdcff7225ee113d9c0bd07d8c859d659d79b8fcb2490907bb6d",
+    "job_id": "unity-input-2",
+    "kind": "unity",
+    "owner_epoch": "epoch-0a69498b-5b01-4ce4-8a5e-8092c4d69f53",
+    "owner_operation_id": null,
+    "project_id": "project-w08-input",
+    "provider_id": null,
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "succeeded",
+    "state_revision": 3,
+    "target": {
+      "shot_id": null,
+      "target_id": "input-playable",
+      "version": {
+        "item_id": "fixture-source",
+        "version_id": "fixture-source-v1"
+      }
+    },
+    "work_id": "work-input",
+    "native_exit_code": 0
+  },
+  "unity": {
+    "editor_version": "6000.3.27f1",
+    "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+    "scene_path": "unity/Fixture/Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Playable.unity",
+    "player_script": "unity/Fixture/Assets/Proscenium/Runtime/WalkthroughPlayer.cs",
+    "validation": {
+      "status": "passed",
+      "notes": "Actual Editor PlayMode test runner. See attempt XML/metrics; no physical OS input proof."
+    }
+  },
+  "evidence": "/home/quintin/.cache/proscenium-development/unity-w08-input-20261114/.proscenium/jobs/unity/7a7e62af6073bcf669655f6c0a1b6ca16ff8c72988ce9d407fc6760aa7cf6f16",
+  "worker": {
+    "job_id": "unity-input-2",
+    "attempt_id": "attempt-833e42f6-daa6-4247-a71e-59e44d36935d",
+    "input_digest": "05caffd1a420ebdcff7225ee113d9c0bd07d8c859d659d79b8fcb2490907bb6d",
+    "request_digest": "1c7941e4aeae88f429319893f15696bc3fa390f3d152dc864f0f6c31f004f166",
+    "source_digest": "8cc1bd3a28c1eeaa3e105dc9f7be388303fef90700fa88225c7ff00da812cbeb",
+    "state": "complete",
+    "supervisor": {
+      "pid": 2993579,
+      "start_ticks": "45096532",
+      "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+    },
+    "native_exit_code": 0,
+    "process": {
+      "pid": 2993580,
+      "start_ticks": "45096536",
+      "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+    }
+  },
+  "remaining_processes": [],
+  "free_bytes_before": 369862770688,
+  "free_bytes_after": 369862926336
+}

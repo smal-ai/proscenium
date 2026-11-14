@@ -1,0 +1,54 @@
+{
+  "source_id": "F01-historical-environment",
+  "source_key": "713fc42da34ae8eb436b3c2d",
+  "source_version": {
+    "item_id": "fixture-source",
+    "version_id": "fixture-source-v1"
+  },
+  "source": {
+    "entry_path": "scenes/fixture/scene.blend",
+    "files": [
+      {
+        "destination": "assets/cube/asset.blend",
+        "origin": {
+          "kind": "retained",
+          "artifact_id": "fixture-252e01a8f718708e1bf1e2de",
+          "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+        }
+      },
+      {
+        "destination": "assets/cube/colour.png",
+        "origin": {
+          "kind": "retained",
+          "artifact_id": "fixture-fcf1e3f027e9b1ea14df033c",
+          "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+        }
+      },
+      {
+        "destination": "scenes/fixture/scene.blend",
+        "origin": {
+          "kind": "retained",
+          "artifact_id": "fixture-17a4dda0efd2ef312d0b14d7",
+          "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+        }
+      }
+    ],
+    "dependencies": [],
+    "required_runtime": {
+      "application": "Blender",
+      "version": "4.5.14 LTS",
+      "features": []
+    },
+    "digest": "8e1fd1e1cea9085c0870ca9045c4364754f14ff86dd7cd97269295e1924ee14c"
+  },
+  "export_path": "environment.json",
+  "export_sha256": "152711c11790f35c1c62ceaa403ba5d1f6708d1a8b3148bfd45ed0121278cd04",
+  "scene_path": "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Playable.unity",
+  "spawn": {
+    "x": 0,
+    "y": 0.92,
+    "z": -2
+  },
+  "camera": "perspective",
+  "pipeline": "urp"
+}

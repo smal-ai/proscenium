@@ -1,0 +1,15 @@
+projection=perspective input=Update:testMove/testLook/testReset movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0
+projection=orthographic input=Update:testMove/testLook/testReset movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0
+queued key=W frame=983 current_keyboard=3 expected_keyboard=3 pressed=True phase=Manual focus=False
+polled key=W frame=984 poll_frame=984 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(0.00, 1.00) poll_phase=Manual current_phase=Manual position=(0, 0.919999838, -1.9666667) injected=False
+polled key=W frame=1033 poll_frame=1033 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(0.00, 1.00) poll_phase=Manual current_phase=Manual position=(0, 0.9199999, -0.333333254) injected=False
+queued key=A frame=1033 current_keyboard=3 expected_keyboard=3 pressed=True phase=Manual focus=False
+polled key=A frame=1034 poll_frame=1034 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(-1.00, 0.00) poll_phase=Manual current_phase=Manual position=(-0.0333333351, 0.919999838, -2) injected=False
+polled key=A frame=1083 poll_frame=1083 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(-1.00, 0.00) poll_phase=Manual current_phase=Manual position=(-1.66666675, 0.9199999, -2) injected=False
+queued key=S frame=1083 current_keyboard=3 expected_keyboard=3 pressed=True phase=Manual focus=False
+polled key=S frame=1084 poll_frame=1084 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(0.00, -1.00) poll_phase=Manual current_phase=Manual position=(0, 0.919999838, -2.0333333) injected=False
+polled key=S frame=1133 poll_frame=1133 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(0.00, -1.00) poll_phase=Manual current_phase=Manual position=(0, -0.226994514, -3.66666675) injected=False
+queued key=D frame=1133 current_keyboard=3 expected_keyboard=3 pressed=True phase=Manual focus=False
+polled key=D frame=1134 poll_frame=1134 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(1.00, 0.00) poll_phase=Manual current_phase=Manual position=(0.0333333351, 0.919999957, -2) injected=False
+polled key=D frame=1183 poll_frame=1183 current_keyboard=3 polled_keyboard=3 expected_keyboard=3 current_pressed=True polled_move=(1.00, 0.00) poll_phase=Manual current_phase=Manual position=(1.66666675, 0.9199999, -2) injected=False
+InputSystem virtual KeyboardState W/A/S/D/R and MouseState delta -> actual Update polling -> CharacterController.Move / camera rotation: passed; physical OS events not tested

@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-14",
+  "implementation_commit": "278d3f616892def8619d58c250275af6046e34f4",
+  "interpreter": "/home/quintin/play/proscenium/.venv/bin/python",
+  "checks": [
+    {"command": "PYTHONPATH=apps/backend/src:. python -m pytest tests/integration/unity -q", "status": "passed", "passed": 31, "warning": "Existing Starlette TestClient/httpx deprecation"},
+    {"command": "python -m ruff check tools/unity tests/integration/unity tests/native/unity", "status": "passed"},
+    {"command": "python -m ruff format --check tools/unity tests/integration/unity tests/native/unity", "status": "passed", "formatted_files": 11},
+    {"command": "MYPYPATH=apps/backend/src:. PYTHONPATH=apps/backend/src:. python -m mypy --explicit-package-bases --follow-imports=silent tools/unity tests/integration/unity tests/native/unity", "status": "passed", "checked_files": 10},
+    {"command": "python -B docs/validate_spec.py", "status": "passed", "summary": "119 JSON/YAML documents, 119 schema definitions, 753 references, 151 local links. Documentation validation is not native execution."},
+    {"command": "git diff --cached --check", "status": "passed"}
+  ],
+  "native_acceptance": "Actual Editor PlayMode XML and metrics are stored separately per invocation. Offline checks are not a substitute."
+}

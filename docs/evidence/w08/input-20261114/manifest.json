@@ -1,0 +1,84 @@
+{
+  "package": "W08 input follow-up",
+  "date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "accepted_base_commit": "0b0d87391e34685632dc56a63bcea636b38068d4",
+  "implementation_commit": "278d3f616892def8619d58c250275af6046e34f4",
+  "status": "live_pass",
+  "production_milestone_accepted": false,
+  "preserved_original_failure": "../native-20261114/attempt-3-playmode.xml",
+  "runtime": {
+    "editor": "/home/quintin/Unity/Hub/Editor/6000.3.27f1/Editor/Unity",
+    "editor_version": "6000.3.27f1",
+    "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+    "input_system": "1.20.1",
+    "urp": "17.3.0",
+    "test_framework": "1.6.0"
+  },
+  "executed_sha256": {
+    "controller": "ddad62009d7cf8979ca520f8fcc7b70b07c3d720d1f2aba3957526026ab39bfa",
+    "final_test": "0616357329be3770268340f93331cb89758d7ca36f00b29653554576d6f7ed29",
+    "saved_scene": "6d91581fadde98edf6b9f330297351e3dc1ff856fd524e268b26005cdd643b6e"
+  },
+  "input_proof": {
+    "path": "QueueStateEvent -> virtual Keyboard/Mouse -> Keyboard.current/Mouse.current -> production WalkthroughPlayer.Update -> CharacterController.Move/PhysX/Camera",
+    "final_suite_uses_testMove_testLook_testReset": false,
+    "final_suite_calls_Tick_or_Respawn_directly": false,
+    "projections": ["perspective", "orthographic"],
+    "keyboard_device_id": 3,
+    "mouse_device_id": 4,
+    "application_is_focused": false,
+    "polled_input_update_phase": "Manual",
+    "routing_settings_restored": true,
+    "physical_os_input": "not_run",
+    "results_each_projection": {
+      "forward_movement_m": 3,
+      "W_movement_m": 0.666666746,
+      "A_movement_m": 0.6666667,
+      "S_movement_m": 0.666666746,
+      "D_movement_m": 0.6666667,
+      "floor_error_m": 0.0199999213,
+      "wall_penetration_m": 0,
+      "maximum_reset_error_m": 0,
+      "camera_rotation_deg": 8.94275,
+      "yaw_deg": 8,
+      "pitch_deg": 4
+    }
+  },
+  "native_results": [
+    {"job_id": "unity-input-1", "attempt_id": "attempt-f141c828-795c-4261-8141-f42aab792292", "state": "succeeded", "native_exit_code": 0, "scope": "Rerun included focus/device correction with diagnostics; initial physics segment still used old injected inputs", "evidence": "attempt-1"},
+    {"job_id": "unity-input-2", "attempt_id": "attempt-833e42f6-daa6-4247-a71e-59e44d36935d", "state": "succeeded", "native_exit_code": 0, "scope": "All control and physics measurements through actual Keyboard/Mouse polling in both projections", "evidence": "attempt-2"}
+  ],
+  "fixture": {
+    "root": "/home/quintin/.cache/proscenium-development/unity-w08-input-20261114",
+    "disposable_marker": "DISPOSABLE-NATIVE-FIXTURE",
+    "scene_path": "unity/Fixture/Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Playable.unity",
+    "scene_guid": "fa9b84079137819b3a554057bb248e60",
+    "preexisting_meta_files": 28,
+    "unchanged_meta_files": 28,
+    "source_services": "Real accepted W02 catalogue.install; SourceService.checkpoint/materialise and Catalogue.publish",
+    "fixture_source_commit": "4a6407c884f104abfad34c42026743218845234f",
+    "source_closure_digest": "8cc1bd3a28c1eeaa3e105dc9f7be388303fef90700fa88225c7ff00da812cbeb",
+    "source_entry": "scenes/fixture/scene.blend",
+    "source_entry_sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+    "fresh_blender_export": false,
+    "fresh_unity_scene_import": false,
+    "note": "Copied source bytes match the original exactly. Reused mesh geometry and saved scene. Only copied export closure metadata was rebound to the actual Git-origin W02 closure. Historical scene import manifest is unchanged."
+  },
+  "allocation": {
+    "unity_invocations": 2,
+    "maximum_unity_seconds_per_invocation": 600,
+    "one_editor_at_a_time": true,
+    "blender_invocations": 0,
+    "reserve_bytes": 5368709120,
+    "free_bytes_before_first": 371535761408,
+    "free_bytes_after_second": 369862926336,
+    "remaining_owned_attempt_processes": [],
+    "cloud_model_calls": 0,
+    "gpu_rendering": false,
+    "xvfb": false,
+    "unrelated_processes_stopped": false,
+    "original_tmp_sources_logs_modified": false
+  },
+  "remaining_scope": ["Parent native SDK specialist composition", "Cumulative M11 journey", "Physical OS input not claimed", "Linux build outside this input follow-up"]
+}

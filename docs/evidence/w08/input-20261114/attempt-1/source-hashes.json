@@ -1,0 +1,10 @@
+{
+  "Assets/Proscenium/Tests/PlayableTests.cs": "54a26eba028ec96729b41999ed8ad9725e11c0acc55c076191c15d5c72375a62",
+  "Assets/Proscenium/Tests/Proscenium.Unity.PlayMode.asmdef": "228d183e5e7150e9706b6d3eae7c1671b3d039270734619b708421d5ba8af23c",
+  "Assets/Proscenium/Runtime/SourceIdentity.cs": "25e8c34369b7a0a194359272e2a1671b1ac16dd8848412e1be76e5804f4904bb",
+  "Assets/Proscenium/Runtime/Proscenium.Unity.Runtime.asmdef": "678654979449b805e332cf0f12745dfa665deb1198bd0071ee3afc69ae6d051a",
+  "Assets/Proscenium/Runtime/WalkthroughPlayer.cs": "ddad62009d7cf8979ca520f8fcc7b70b07c3d720d1f2aba3957526026ab39bfa",
+  "Assets/Proscenium/Editor/Proscenium.Unity.Editor.asmdef": "c05fe2868e64e36337df0e5d00ffe5582862c627bc4aad4af093ad3242d95640",
+  "Assets/Proscenium/Editor/UnityWorkflow.cs": "bcc4756c247d5d45bf18aab37fdb25d3ea9713b85904f55ea056d8acd7ff8ba9",
+  "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Playable.unity": "6d91581fadde98edf6b9f330297351e3dc1ff856fd524e268b26005cdd643b6e"
+}

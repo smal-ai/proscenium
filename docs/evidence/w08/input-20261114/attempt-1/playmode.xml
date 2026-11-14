@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.8468812">
+  <test-suite type="TestSuite" id="1010" name="Fixture" fullname="Fixture" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.846881" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1003" name="Proscenium.Unity.PlayMode.dll" fullname="/home/quintin/.cache/proscenium-development/unity-w08-input-20261114/unity/Fixture/Library/ScriptAssemblies/Proscenium.Unity.PlayMode.dll" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.841453" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="2984043" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1004" name="Proscenium" fullname="Proscenium" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.841069" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1005" name="Unity" fullname="Proscenium.Unity" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.840881" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1006" name="Tests" fullname="Proscenium.Unity.Tests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.840711" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1001" name="PlayableTests" fullname="Proscenium.Unity.Tests.PlayableTests" classname="Proscenium.Unity.Tests.PlayableTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.840087" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1002" name="F05_RealControllerPhysicsAndInput_BothCameraProjections" fullname="Proscenium.Unity.Tests.PlayableTests.F05_RealControllerPhysicsAndInput_BothCameraProjections" methodname="F05_RealControllerPhysicsAndInput_BothCameraProjections" classname="Proscenium.Unity.Tests.PlayableTests" runstate="Runnable" seed="2031902372" result="Passed" start-time="2026-11-14 12:07:45Z" end-time="2026-11-14 12:07:46Z" duration="0.833266" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /home/quintin/.config/unity3d/DefaultCompany/Fixture/TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

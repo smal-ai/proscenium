@@ -1,6 +1,13 @@
 # W08 evidence: 14 November 2026
 
-**Overall native validation: failed. M11 production acceptance remains with the parent.**
+**Latest input validation: passed.** The [two-invocation input follow-up](input-20261114/README.md)
+closed the headless virtual-input defect using actual Keyboard/Mouse polling for every measured
+control in both projections. M11 production acceptance remains with the parent.
+
+## Preserved initial allocation: failed
+
+The table, `manifest.json` and `native-20261114/` below are the original historical result, not the
+latest rerun. The original failed XML, metrics, source hashes and logs have not been replaced.
 
 | Check | Actual result |
 | --- | --- |
@@ -41,10 +48,11 @@ The first template Input System version, 1.12.0, failed compilation against a re
 The Editor-bundled 1.20.1 fixed that concrete failure. Its own stale lock was preserved separately
 after verifying the failed native PID was gone. No second Editor started while another was live.
 
-After the last invocation, the test gained explicit headless focus/device routing overrides and
-additional assertions. Python installer/recovery/cancellation/path qualification also gained offline
-hardening. **These post-native changes have not had another Unity invocation.** The executed test
-snapshot and native failure remain unchanged. Do not cite the corrected source as passing evidence.
+At the original handover, the test had gained explicit headless focus/device routing overrides and
+additional assertions, but those changes had not yet had another Unity invocation. Python
+installer/recovery/cancellation/path qualification also gained offline hardening. The original
+executed test snapshot and failure remain unchanged. The separate input follow-up above now records
+the actual rerun and stricter passing all-polling suite. Do not relabel the old failed XML as passed.
 
 ## Commands
 
