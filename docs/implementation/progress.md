@@ -79,7 +79,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 
 | Milestone | State | Completion commit | Evidence |
 | --- | --- | --- | --- |
-| M01 First Blender authoring loop | Real journey passed, integration acceptance pending | — | [Exact criteria and limitations](m01.md) |
+| M01 First Blender authoring loop | Completed on 2026-11-14 | `milestone/m01` | [Exact criteria and limitations](m01.md), evidence integrated as `a218a65` |
 | M02 Projects and history | Pending | — | — |
 | M03 Discussion and delegation | Pending | — | — |
 | M04 Inspection and markup | Pending | — | — |
