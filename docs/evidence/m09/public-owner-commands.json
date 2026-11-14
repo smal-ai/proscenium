@@ -1,0 +1,179 @@
+[
+  {
+    "phase": "owner",
+    "at": 1794665562696,
+    "path": "/api/v1/projects/project-452f9789-c39e-467d-b506-c32e3540e98f/reviews",
+    "status": 202,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "review_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+      "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+      "targets": [
+        {
+          "origin": "reference",
+          "artifact_id": "m09-clean-target",
+          "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m09-image-item",
+          "version_id": "m09-image-version",
+          "shot_id": null,
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        }
+      ],
+      "criteria": "Return exactly two short distinct visual findings, each observation and recommendation under 12 words. Describe the blue object shape/location, then describe the orange object. Do not reason or invent measurements. This is read-only critique, not authority to change the scene.",
+      "telemetry_artifact_ids": []
+    },
+    "response": {
+      "schema_version": "1.0",
+      "review_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+      "job_id": "review-job-af808a76-8735-42c0-81b9-9ef8b47dea6e",
+      "status": "pending"
+    }
+  },
+  {
+    "phase": "native",
+    "at": 1794665723248,
+    "path": "/api/v1/projects/project-452f9789-c39e-467d-b506-c32e3540e98f/contexts",
+    "status": 201,
+    "method": "POST",
+    "request": {
+      "item_id": "m09-image-item",
+      "version_id": "m09-image-version",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "m09-clean-target",
+        "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m09-image-item",
+        "version_id": "m09-image-version",
+        "shot_id": null,
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m09-clean-target",
+          "role": "reference"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "a5676b7a-98dc-4a2f-a9a0-d6b66ce059e0",
+      "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+      "captured_at": "2026-11-14T14:15:23.220Z"
+    },
+    "response": {
+      "item_id": "m09-image-item",
+      "version_id": "m09-image-version",
+      "view_mode": "keyframes",
+      "target": {
+        "origin": "reference",
+        "artifact_id": "m09-clean-target",
+        "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "item_id": "m09-image-item",
+        "version_id": "m09-image-version",
+        "shot_id": null,
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": null
+      },
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "m09-clean-target",
+          "role": "reference"
+        }
+      ],
+      "annotations": [],
+      "approved_findings": [],
+      "schema_version": "1.0",
+      "context_id": "a5676b7a-98dc-4a2f-a9a0-d6b66ce059e0",
+      "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+      "captured_at": "2026-11-14T14:15:23.220Z"
+    }
+  },
+  {
+    "phase": "native",
+    "at": 1794665723270,
+    "path": "/api/v1/projects/project-452f9789-c39e-467d-b506-c32e3540e98f/requests",
+    "status": 202,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "request_id": "c630c6e4-b6e1-4a8a-b714-24e4e60fcfcc",
+      "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+      "text": "M09 bounded read-only acceptance. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the following exact ReviewRequest JSON, then report only its ticket/status and stop. This is the only requested action. {\"schema_version\": \"1.0\", \"review_id\": \"m09-native-review\", \"project_id\": \"project-452f9789-c39e-467d-b506-c32e3540e98f\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Return exactly two very short findings, under 12 words per observation and recommendation. First use visual evidence: describe the blue object shape/location. Second use measured evidence from the supplied pixel telemetry: state the image width and height in pixels. No hidden reasoning, no scene dimensions, no user approval. Output only structured JSON.\"}",
+      "context_id": "a5676b7a-98dc-4a2f-a9a0-d6b66ce059e0",
+      "type": "queue"
+    },
+    "response": {
+      "native_message_id": null,
+      "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+      "replayed": false,
+      "request_id": "c630c6e4-b6e1-4a8a-b714-24e4e60fcfcc",
+      "schema_version": "1.0",
+      "state": "held",
+      "state_revision": 0,
+      "type": "queue",
+      "work_id": "work-00275b10ed084e0db2fde6d5222c416e"
+    }
+  },
+  {
+    "phase": "unavailable",
+    "at": 1794665880376,
+    "path": "/api/v1/projects/project-452f9789-c39e-467d-b506-c32e3540e98f/reviews",
+    "status": 202,
+    "method": "POST",
+    "request": {
+      "schema_version": "1.0",
+      "review_id": "30692803-134d-4372-806c-4fa689c563c0",
+      "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+      "targets": [
+        {
+          "origin": "reference",
+          "artifact_id": "m09-clean-target",
+          "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "item_id": "m09-image-item",
+          "version_id": "m09-image-version",
+          "shot_id": null,
+          "render_job_id": null,
+          "source_frame": null,
+          "media_artifact_id": null
+        }
+      ],
+      "criteria": "Read-only availability check. The allocated vision instance is now unloaded. Do not load any model.",
+      "telemetry_artifact_ids": []
+    },
+    "response": {
+      "schema_version": "1.0",
+      "review_id": "30692803-134d-4372-806c-4fa689c563c0",
+      "job_id": "review-job-1891a2df-6c14-4960-b862-f464cfa151f2",
+      "status": "pending"
+    }
+  }
+]

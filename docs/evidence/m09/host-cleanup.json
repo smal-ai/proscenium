@@ -1,0 +1,29 @@
+{
+  "at": 1794666088.362227,
+  "host": {
+    "pid": 3481516,
+    "origin": "http://127.0.0.1:18909",
+    "at": 1794665696.5069444,
+    "start_ticks": "45840682"
+  },
+  "native_runtime": {
+    "pid": 3482504,
+    "start": "45843522",
+    "parent_pid": 3481516,
+    "parent_start": "45840682",
+    "binary": "/home/quintin/.cache/proscenium-development/fleet/m09-critique/node_modules/@github/copilot-linux-x64/copilot"
+  },
+  "children_records": 0,
+  "resource_claims": [],
+  "source_fixture_sha256_after": "e10939f978fda7d331f8561cda716a1e70447a7be997e986a8da851506a1863b",
+  "source_unchanged": true,
+  "signal": "SIGTERM",
+  "verified_at": 1794666393.5743215,
+  "host_exited": true,
+  "native_runtime_exited": true,
+  "browser_shutdown": {
+    "method": "CDP Browser.close",
+    "shell_id": "sh_1da672718001Xduc4sBYV6gqIc",
+    "completion_notification_received": true
+  }
+}

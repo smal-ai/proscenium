@@ -1,0 +1,71 @@
+[
+  {
+    "at": 1794665727.187209,
+    "session_id": "d8dae701-2b93-42dd-ae6b-c5c48c483063",
+    "prompt": "M09 bounded read-only acceptance. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the following exact ReviewRequest JSON, then report only its ticket/status and stop. This is the only requested action. {\"schema_version\": \"1.0\", \"review_id\": \"m09-native-review\", \"project_id\": \"project-452f9789-c39e-467d-b506-c32e3540e98f\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Return exactly two very short findings, under 12 words per observation and recommendation. First use visual evidence: describe the blue object shape/location. Second use measured evidence from the supplied pixel telemetry: state the image width and height in pixels. No hidden reasoning, no scene dimensions, no user approval. Output only structured JSON.\"}",
+    "display_prompt": "M09 bounded read-only acceptance. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the following exact ReviewRequest JSON, then report only its ticket/status and stop. This is the only requested action. {\"schema_version\": \"1.0\", \"review_id\": \"m09-native-review\", \"project_id\": \"project-452f9789-c39e-467d-b506-c32e3540e98f\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Return exactly two very short findings, under 12 words per observation and recommendation. First use visual evidence: describe the blue object shape/location. Second use measured evidence from the supplied pixel telemetry: state the image width and height in pixels. No hidden reasoning, no scene dimensions, no user approval. Output only structured JSON.\"}",
+    "mode": "enqueue",
+    "client_turn_id": "c630c6e4-b6e1-4a8a-b714-24e4e60fcfcc",
+    "attachments": [
+      {
+        "type": "file",
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m09-20261114/project/.proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content"
+      },
+      {
+        "type": "extension_context",
+        "extensionId": "proscenium",
+        "title": "Turn context",
+        "capturedAt": "2026-11-14T14:15:23.220Z",
+        "payload": {
+          "schema_version": "1.0",
+          "request_id": "c630c6e4-b6e1-4a8a-b714-24e4e60fcfcc",
+          "work_id": "work-00275b10ed084e0db2fde6d5222c416e",
+          "generation_task_id": "task-345f2da494084a3d866bdb8ab5a0c3a5",
+          "delivery_mode": "queue",
+          "context_id": "a5676b7a-98dc-4a2f-a9a0-d6b66ce059e0",
+          "project": {
+            "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+            "path": "/home/quintin/.cache/proscenium-development/milestones/m09-20261114/project"
+          },
+          "selection": {
+            "item_id": "m09-image-item",
+            "version_id": "m09-image-version",
+            "view_mode": "keyframes",
+            "target": {
+              "artifact_id": "m09-clean-target",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "displayed_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "item_id": "m09-image-item",
+              "media_artifact_id": null,
+              "origin": "reference",
+              "render_job_id": null,
+              "shot_id": null,
+              "source_frame": null,
+              "version_id": "m09-image-version"
+            },
+            "camera": null,
+            "range": null,
+            "selected_objects": []
+          },
+          "annotations": [],
+          "approved_findings": [],
+          "attached_files": [
+            {
+              "artifact_id": "m09-clean-target",
+              "role": "reference",
+              "sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+              "path": ".proscenium/artefacts/sha256/fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc/content",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

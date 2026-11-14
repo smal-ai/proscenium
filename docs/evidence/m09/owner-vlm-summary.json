@@ -1,0 +1,16 @@
+{
+  "id": "chatcmpl-pgtl7cv9zms1tka0habf",
+  "model": "google/gemma-4-e4b",
+  "usage": {
+    "prompt_tokens": 259,
+    "completion_tokens": 512,
+    "total_tokens": 771,
+    "completion_tokens_details": {
+      "reasoning_tokens": 509
+    }
+  },
+  "finish_reason": "length",
+  "content_length": 0,
+  "has_reasoning": true,
+  "seconds": 10.786323715990875
+}

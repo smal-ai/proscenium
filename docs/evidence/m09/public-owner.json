@@ -1,0 +1,65 @@
+{
+  "action": "owner",
+  "post_status": 202,
+  "ticket": {
+    "schema_version": "1.0",
+    "review_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+    "job_id": "review-job-af808a76-8735-42c0-81b9-9ef8b47dea6e",
+    "status": "pending"
+  },
+  "settled": {
+    "job_id": "review-job-af808a76-8735-42c0-81b9-9ef8b47dea6e",
+    "review_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+    "schema_version": "1.0",
+    "status": "failed"
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-599ae18b-891e-4dab-991c-fd002f5c7c7f",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": null,
+        "error_code": "invalid_request",
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "d654992e83d5410cb30505142de4f66a6344b6b03cf7a1c06396bee2426e05b9",
+        "job_id": "review-job-af808a76-8735-42c0-81b9-9ef8b47dea6e",
+        "kind": "vlm_review",
+        "owner_epoch": "epoch-ea033acc-a52f-47e9-beb6-457d527b313d",
+        "owner_operation_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+        "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+        "provider_id": "m09-vlm",
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 2,
+        "target": {
+          "shot_id": null,
+          "target_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+          "version": null
+        },
+        "work_id": null
+      }
+    ],
+    "next_cursor": null
+  },
+  "findings": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6"
+}

@@ -1,0 +1,17 @@
+{
+  "sdk_version": "1.0.34",
+  "httpx_version": "0.28.1",
+  "pillow_version": "12.3.0",
+  "native_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+  "browser": "159.0.8154.6",
+  "initial_vlm_source_sha256": "5ceef8e8ff6908f39c7d135d1b3844f3a550be914c7b2e36544d824a2293d1cb",
+  "second_call_vlm_source": {
+    "at": 1794665790.6950257,
+    "vlm_py_sha256": "fe4cb2866d3e249b12d6e7098a79ae4b869238f3fe040335f8add9db5b1960f1",
+    "scope": "Reasoning-off request fix executed for native-origin second call, before evidence-schema refinement."
+  },
+  "final_vlm_source_sha256": "7ba47a721eb3e386bfd5b6f76ab834a0002b24ac40f69a8a86c911f9cf7be76e",
+  "execution_scope": "Initial owner call used accepted baseline. Native call used only the reasoning-off fix. Role-bound output schema was added afterwards and has offline coverage only.",
+  "loader_command": "uv run --script /home/quintin/.config/opencode/skills/lmstudio/scripts/lms-load.py --config /home/quintin/.config/llmster/models.toml google/gemma-4-e4b",
+  "loader_exit_code": 0
+}

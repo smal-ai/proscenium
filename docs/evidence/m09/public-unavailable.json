@@ -1,0 +1,143 @@
+{
+  "action": "unavailable",
+  "ticket": {
+    "schema_version": "1.0",
+    "review_id": "30692803-134d-4372-806c-4fa689c563c0",
+    "job_id": "review-job-1891a2df-6c14-4960-b862-f464cfa151f2",
+    "status": "pending"
+  },
+  "post_status": 202,
+  "settled": {
+    "job_id": "review-job-1891a2df-6c14-4960-b862-f464cfa151f2",
+    "review_id": "30692803-134d-4372-806c-4fa689c563c0",
+    "schema_version": "1.0",
+    "status": "failed"
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-5b843495-7d8e-4cfd-b0be-a5b11cb953cc",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": null,
+        "error_code": "capability_unavailable",
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "47772275b8f112a4b8dfc99958886535b78d20880cdfac68641c537f4973fa78",
+        "job_id": "review-job-1891a2df-6c14-4960-b862-f464cfa151f2",
+        "kind": "vlm_review",
+        "owner_epoch": "epoch-016a8c4c-86c5-482f-9ba4-795a50a46ec0",
+        "owner_operation_id": "30692803-134d-4372-806c-4fa689c563c0",
+        "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+        "provider_id": "m09-vlm",
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 2,
+        "target": {
+          "shot_id": null,
+          "target_id": "30692803-134d-4372-806c-4fa689c563c0",
+          "version": null
+        },
+        "work_id": null
+      },
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-6e9de76b-73e8-42cf-b991-427b8d9f5f76",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": null,
+        "error_code": "scope_denied",
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "edd83a563753dc30837dcfd1eeffe03cfeb25412db50fb1b64933b23fb6c3d24",
+        "job_id": "review-job-8ffa671e-187a-4638-b84f-326d12feafaa",
+        "kind": "vlm_review",
+        "owner_epoch": "epoch-016a8c4c-86c5-482f-9ba4-795a50a46ec0",
+        "owner_operation_id": null,
+        "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+        "provider_id": "m09-vlm",
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 2,
+        "target": {
+          "shot_id": null,
+          "target_id": "m09-native-review",
+          "version": null
+        },
+        "work_id": "work-00275b10ed084e0db2fde6d5222c416e"
+      },
+      {
+        "artifact_ids": [],
+        "attempt_id": "attempt-599ae18b-891e-4dab-991c-fd002f5c7c7f",
+        "attempt_number": 1,
+        "availability": "pending",
+        "completed_frames": null,
+        "error_code": "invalid_request",
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "d654992e83d5410cb30505142de4f66a6344b6b03cf7a1c06396bee2426e05b9",
+        "job_id": "review-job-af808a76-8735-42c0-81b9-9ef8b47dea6e",
+        "kind": "vlm_review",
+        "owner_epoch": "epoch-ea033acc-a52f-47e9-beb6-457d527b313d",
+        "owner_operation_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+        "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+        "provider_id": "m09-vlm",
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 2,
+        "target": {
+          "shot_id": null,
+          "target_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+          "version": null
+        },
+        "work_id": null
+      }
+    ],
+    "next_cursor": null
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T14:15:23.262936+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-345f2da494084a3d866bdb8ab5a0c3a5",
+        "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+        "receipt": {
+          "native_message_id": "9fd3b4c6-948a-4eec-93f6-12d196dcbb1f",
+          "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+          "replayed": false,
+          "request_id": "c630c6e4-b6e1-4a8a-b714-24e4e60fcfcc",
+          "schema_version": "1.0",
+          "state": "completed",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-00275b10ed084e0db2fde6d5222c416e"
+        },
+        "request_id": "c630c6e4-b6e1-4a8a-b714-24e4e60fcfcc",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "a5676b7a-98dc-4a2f-a9a0-d6b66ce059e0",
+          "project_id": "project-452f9789-c39e-467d-b506-c32e3540e98f",
+          "request_id": "c630c6e4-b6e1-4a8a-b714-24e4e60fcfcc",
+          "schema_version": "1.0",
+          "text": "M09 bounded read-only acceptance. Do not delegate or create children. Do not edit any file, run Blender/Unity, generate images, request extra reviews or access raw findings. Call request_vlm_review exactly ONCE with the following exact ReviewRequest JSON, then report only its ticket/status and stop. This is the only requested action. {\"schema_version\": \"1.0\", \"review_id\": \"m09-native-review\", \"project_id\": \"project-452f9789-c39e-467d-b506-c32e3540e98f\", \"targets\": [{\"origin\": \"concept\", \"artifact_id\": \"m09-clean-target\", \"displayed_sha256\": \"fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc\", \"dimensions\": {\"width\": 640, \"height\": 360}, \"item_id\": \"m09-image-item\", \"version_id\": \"m09-image-version\", \"shot_id\": null, \"render_job_id\": null, \"source_frame\": null, \"media_artifact_id\": null}], \"telemetry_artifact_ids\": [\"m09-pixel-telemetry\"], \"criteria\": \"Return exactly two very short findings, under 12 words per observation and recommendation. First use visual evidence: describe the blue object shape/location. Second use measured evidence from the supplied pixel telemetry: state the image width and height in pixels. No hidden reasoning, no scene dimensions, no user approval. Output only structured JSON.\"}",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "images": [],
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6"
+}

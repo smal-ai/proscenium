@@ -1,0 +1,33 @@
+{
+  "at": 1794666393.909275,
+  "models": [
+    {
+      "type": "llm",
+      "modelKey": "qwen3.8-27b-uncensored",
+      "format": "gguf",
+      "displayName": "Qwen3.8 27B Uncensored",
+      "publisher": "orcarouter",
+      "path": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "sizeBytes": 16810714496,
+      "indexedModelIdentifier": "orcarouter/Qwen3.8-27B-Uncensored-GGUF/Qwen3.8-27B-Uncensored-Q4_K_M.gguf",
+      "deviceIdentifier": null,
+      "paramsString": "27B",
+      "architecture": "qwen35",
+      "quantization": {
+        "name": "Q4_K_M",
+        "bits": 4
+      },
+      "identifier": "qwen3.8-27b-uncensored",
+      "ttlMs": null,
+      "lastUsedTime": 1794663304597,
+      "vision": false,
+      "trainedForToolUse": true,
+      "maxContextLength": 262144,
+      "contextLength": 131072,
+      "status": "idle",
+      "queued": 0,
+      "parallel": 4
+    }
+  ],
+  "gemma_not_reloaded": true
+}

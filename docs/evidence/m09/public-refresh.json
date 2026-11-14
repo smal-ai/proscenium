@@ -1,0 +1,34 @@
+{
+  "action": "refresh",
+  "images": [],
+  "reviews": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "job_id": "review-job-1891a2df-6c14-4960-b862-f464cfa151f2",
+        "review_id": "30692803-134d-4372-806c-4fa689c563c0",
+        "schema_version": "1.0",
+        "status": "failed"
+      },
+      {
+        "job_id": "review-job-8ffa671e-187a-4638-b84f-326d12feafaa",
+        "review_id": "m09-native-review",
+        "schema_version": "1.0",
+        "status": "failed"
+      },
+      {
+        "job_id": "review-job-af808a76-8735-42c0-81b9-9ef8b47dea6e",
+        "review_id": "f3855562-c98c-468d-8ad8-9d9cbca1a988",
+        "schema_version": "1.0",
+        "status": "failed"
+      }
+    ],
+    "next_cursor": null
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6"
+}

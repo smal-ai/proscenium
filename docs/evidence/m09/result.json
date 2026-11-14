@@ -1,0 +1,22 @@
+{
+  "result": "BLOCKED_NOT_COMPLETE",
+  "application_base": "b1fa32c8a73d5aca8243fa82e65837a8acaba75c",
+  "counts": {
+    "model_loads": 1,
+    "vlm_inferences": 2,
+    "cloud_roots": 1,
+    "native_children": 0,
+    "approved_submissions": 0,
+    "model_unloads": 1
+  },
+  "owner_review": "Failed safely: 512 tokens exhausted on reasoning, empty content.",
+  "native_review": "Failed safely: model attributed measured evidence to image, not supplied telemetry.",
+  "actual_runtime_coverage": "Both origins reached actual LM Studio. Native root requested one real review and received only its ticket.",
+  "approval": "NOT_RUN: no valid stored findings. No fabricated approval, rejection or native handoff.",
+  "unavailable": "After exact owned Gemma unload, owner UI requested another review. Metadata preflight failed capability_unavailable without third inference. Image review remained available.",
+  "source_unchanged": true,
+  "original_image_sha256": "fab5fe51c19b8a3a1ef87f388679d9520a6b6d5badabcae9d517244359782bcc",
+  "source_fixture_sha256": "e10939f978fda7d331f8561cda716a1e70447a7be997e986a8da851506a1863b",
+  "private_runtime": "/home/quintin/.cache/proscenium-development/fleet/m09-critique/tests/native/providers/m09_runtime",
+  "runtime_hooks": "Observation-only real HTTP transport, SDK send/event and tool-result wrappers. No mocked provider response or altered native tool return."
+}

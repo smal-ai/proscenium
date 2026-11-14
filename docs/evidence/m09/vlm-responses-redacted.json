@@ -1,0 +1,76 @@
+[
+  {
+    "at": 1794665562.79899,
+    "phase": "dispatch",
+    "index": 1,
+    "model": "google/gemma-4-e4b",
+    "max_tokens": 512,
+    "body_sha256": "450d8c45207c2e9db620576214066e75ea8f328ba875b6d0fbbf554401922eb7",
+    "image_sha256": [
+      "11e0bed6dc6c18f42813c2a1ac528587cb449541cae90842c7d43684065209fa"
+    ],
+    "mem_available": 17291001856
+  },
+  {
+    "at": 1794665573.5858066,
+    "phase": "response",
+    "status": 200,
+    "seconds": 10.786323715990875,
+    "response_sha256": "666e02cad5fb0edc2398c67a3000c6d8fa3928ab91890da1776c35dc949b9542",
+    "mem_available": 16837955584,
+    "id": "chatcmpl-pgtl7cv9zms1tka0habf",
+    "model": "google/gemma-4-e4b",
+    "usage": {
+      "prompt_tokens": 259,
+      "completion_tokens": 512,
+      "total_tokens": 771,
+      "completion_tokens_details": {
+        "reasoning_tokens": 509
+      }
+    },
+    "choices": [
+      {
+        "finish_reason": "length",
+        "content": "",
+        "reasoning_present": true
+      }
+    ]
+  },
+  {
+    "at": 1794665736.1976976,
+    "phase": "dispatch",
+    "index": 2,
+    "model": "google/gemma-4-e4b",
+    "max_tokens": 512,
+    "body_sha256": "de4977f4b08cc545be831153fbeed8d8fb28e2d165fa26f5966eed8820ef6326",
+    "image_sha256": [
+      "11e0bed6dc6c18f42813c2a1ac528587cb449541cae90842c7d43684065209fa"
+    ],
+    "mem_available": 16902098944
+  },
+  {
+    "at": 1794665740.7610147,
+    "phase": "response",
+    "status": 200,
+    "seconds": 4.5630400980007835,
+    "response_sha256": "9ac3961c98c7192a964b39766a19887343e2fca4de1ec58f5bb0bbcee46d2cc0",
+    "mem_available": 16476082176,
+    "id": "chatcmpl-qq50y2o71mj1f2ijgdkths",
+    "model": "google/gemma-4-e4b",
+    "usage": {
+      "prompt_tokens": 412,
+      "completion_tokens": 192,
+      "total_tokens": 604,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    },
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "content": "{\n  \"findings\": [\n    {\n      \"target_index\": 0,\n      \"observation\": \"Blue object is a rectangular prism on the right.\",\n      \"recommendation\": \"Ensure consistent blue object placement.\",\n      \"evidence\": [\n        {\"kind\": \"visual\", \"artifact_id\": \"m09-clean-target\", \"description\": \"Blue object shape/location\"}\n      ]\n    },\n    {\n      \"target_index\": 0,\n      \"observation\": \"Image width is 640 pixels.\",\n      \"recommendation\": \"Verify image dimensions match specifications.\",\n      \"evidence\": [\n        {\"kind\": \"measured\", \"artifact_id\": \"m09-clean-target\", \"description\": \"Width: 640 pixels\"}\n      ]\n    }\n  ]\n}",
+        "reasoning_present": false
+      }
+    ]
+  }
+]

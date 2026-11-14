@@ -1,0 +1,16 @@
+[
+  {
+    "at": 1794665739.5512135,
+    "session_id": "d8dae701-2b93-42dd-ae6b-c5c48c483063",
+    "event": {
+      "data": {
+        "mode": "interactive"
+      },
+      "id": "3dfd1bd8-8193-4d57-9fde-ab94e3eabab1",
+      "timestamp": "2026-11-14T14:15:39.523000+00:00",
+      "type": "session.idle",
+      "ephemeral": true,
+      "parentId": "e2f9b3af-2e54-4049-99c0-ae7319a5a09b"
+    }
+  }
+]
