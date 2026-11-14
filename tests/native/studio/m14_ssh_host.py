@@ -94,7 +94,7 @@ class Audit:
 
 def main():
     root, generation = Path(sys.argv[1]), sys.argv[2]
-    signal.alarm(580)
+    signal.alarm(25 if generation == "preflight" else 580)
     spec = json.loads((root / "allocation.json").read_text())
     settings = Settings.load(root / ("config.json" if generation == "1" else "unavailable.json"))
     services = Services.create(settings)
@@ -252,7 +252,7 @@ def main():
                 root / f"ready-{generation}.json",
                 {"pid": __import__("os").getpid(), "start": identity(__import__("os").getpid())},
             )
-            if generation == "1":
+            if generation in {"1", "preflight"}:
                 write_json(root / "pairing-private.json", {"code": services.auth.issue_pairing()})
             monitor = asyncio.create_task(observe())
             try:

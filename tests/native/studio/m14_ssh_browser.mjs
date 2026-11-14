@@ -2,15 +2,37 @@
 import {chromium} from 'playwright';
 import fs from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
 const root=process.argv[2];
 const spec=JSON.parse(await fs.readFile(`${root}/allocation.json`,'utf8'));
 const p=`/api/v1/projects/${spec.project_id}`;
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const result={status:'incomplete',off_origin:[],websockets:[],responses:[],phases:[]};
+result.observer_failures=[];
 const save=(name,value)=>fs.writeFile(`${root}/${name}.json`,JSON.stringify(value,null,2),{mode:0o600});
 const exists=name=>fs.access(`${root}/${name}`).then(()=>true,()=>false);
 async function wait(name,timeout=200000){const start=Date.now();while(!await exists(name)){if(Date.now()-start>timeout)throw Error(`File deadline: ${name}`);await new Promise(r=>setTimeout(r,50));}}
 let context,page;
+async function observeStage(name,operation){
+  for(let attempt=1;;attempt++){
+    try{return await operation();}catch(error){
+      const failure={stage:name,attempt,error:String(error).split('\n')[0],at:new Date().toISOString()};
+      result.observer_failures.push(failure);await save(`observer-${name}-${attempt}`,failure);
+      await page.screenshot({path:`${root}/observer-${name}-${attempt}.png`}).catch(()=>{});
+      await fs.writeFile(`${root}/observer-${name}-${attempt}-private.txt`,await page.locator('body').innerText().catch(()=>''),{mode:0o600});
+      await wait(`continue-${name}-${attempt}`,120000);
+      const continuation=await fs.readFile(`${root}/continue-${name}-${attempt}`,'utf8');
+      if(continuation.trim().startsWith('{')){
+        const command=JSON.parse(continuation);
+        if(command.observer_module){
+          const module=await import(`${pathToFileURL(command.observer_module).href}?attempt=${attempt}`);
+          return await module.recover({page,context,get,view,note,save,result,spec,root,sha});
+        }
+      }
+      // Only a read/review observer can be retried here. Queue is outside this function.
+    }
+  }
+}
 async function get(path){return page.evaluate(async path=>{const r=await fetch(path);if(!r.ok)throw Error(`GET ${path}: ${r.status}`);return r.json();},path);}
 async function view(){
   await page.getByRole('button').filter({hasText:/^M13 two-shot cinematic.*m13-film-v1$/}).click();
@@ -19,6 +41,8 @@ async function view(){
   await page.locator('video').waitFor();
 }
 async function note(text){
+  const prior=(await get(`${p}/annotations`)).items.find(a=>a.text===text);
+  if(prior)return prior;
   await page.getByLabel('Frame',{exact:true}).fill('5');
   await page.getByText('Sequence frame 5 ·',{exact:false}).waitFor();
   await page.getByRole('button',{name:'Annotate presented sequence frame',exact:true}).click();
@@ -37,6 +61,10 @@ async function note(text){
   await page.reload();await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
   const reloaded=(await get(`${p}/annotations`)).items.find(a=>a.annotation_id===annotation.annotation_id);
   if(JSON.stringify(reloaded)!==JSON.stringify(annotation))throw Error('Annotation changed on reload');
+  await page.getByText('Saved annotations and local drafts',{exact:true}).click();
+  await page.getByRole('button').filter({hasText:new RegExp(`^${text}`)}).click();
+  await page.getByText('Pinned m13-film-v1 · frame 5',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Close draft',exact:true}).click();
   return annotation;
 }
 async function replay(){
@@ -88,31 +116,44 @@ try{
   const requests=result.after_reconnect.requests.items;
   if(requests.length!==1||requests[0].receipt.state!=='completed')throw Error('Original request did not complete exactly once');
   result.replay_after=await replay();result.phases.push('original work completed with SSH/browser disconnected');
+  await save('message-completed',result);
+  await observeStage('review',async()=>{
+  await page.reload();await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
   await view();
+  await page.waitForFunction(()=>document.querySelector('video')?.readyState>=2);
   result.playback=await page.locator('video').evaluate(async element=>{
-    const frames=[];let callback;
-    const observe=(_now,data)=>{frames.push({mediaTime:data.mediaTime,presentedFrames:data.presentedFrames,width:data.width,height:data.height});callback=element.requestVideoFrameCallback(observe);};
-    callback=element.requestVideoFrameCallback(observe);element.currentTime=0;await element.play();
-    await new Promise((resolve,reject)=>{element.addEventListener('ended',resolve,{once:true});setTimeout(()=>reject(Error('Playback deadline')),5000);});
+    const frames=[];let callback;let phase='seek';
+    const observe=(_now,data)=>{frames.push({phase,mediaTime:data.mediaTime,presentedFrames:data.presentedFrames,width:data.width,height:data.height});callback=element.requestVideoFrameCallback(observe);};
+    // Install before any play, not after a short film has already advanced.
+    callback=element.requestVideoFrameCallback(observe);element.pause();element.currentTime=0;
+    if(element.seeking)await new Promise(resolve=>element.addEventListener('seeked',resolve,{once:true}));
+    const ended=new Promise((resolve,reject)=>{element.addEventListener('ended',resolve,{once:true});setTimeout(()=>reject(Error('Playback deadline')),5000);});
+    element.playbackRate=.5;phase='playback';await element.play();await ended;
     element.cancelVideoFrameCallback(callback);return frames;
   });
-  result.presented_ordinals=result.playback.map(f=>1+Math.floor(f.mediaTime*24+1e-4));
+  const presented=result.playback.filter(f=>f.phase==='playback').map(f=>({...f,ordinal:1+Math.floor(f.mediaTime*24+1e-4)}));
+  result.presented_ordinals=presented.map(f=>f.ordinal).filter((f,i,all)=>i===0||f!==all[i-1]);
   if(JSON.stringify(result.presented_ordinals)!==JSON.stringify([1,2,3,4,5,6,7,8,9,10]))throw Error('Not all ten video frames were actually presented');
   result.mapping=await get(`${p}/artifacts/m13-encode-v1-frame-map/content`);
   result.manifest=await get(`${p}/artifacts/m13-encode-v1-manifest/content`);
   if(result.mapping.frame_count!==10||result.mapping.frames.length!==10)throw Error('Wrong film map');
-  result.numbered_identity=result.playback.map((f,i)=>({...f,...result.mapping.frames[i]}));
+  result.numbered_identity=presented.map(f=>({...f,...result.mapping.frames.find(row=>row.sequence_frame===f.ordinal)}));
+  result.catalogue={};
+  for(const id of ['m13-encode-v1-delivery','m13-encode-v1-frame-map','m13-encode-v1-manifest']){
+    result.catalogue[id]=await get(`${p}/artifacts/${id}`);if(result.catalogue[id].state!=='ready')throw Error('Delivery lineage is not ready');
+  }
+  if(presented.some(f=>f.width!==640||f.height!==360))throw Error('Wrong decoded dimensions');
   result.annotation=await note('M14 SSH frame 5 original blend pin');
   await view();result.downloads=[];
-  await fs.mkdir(`${root}/downloads`,{mode:0o700});
+  await fs.mkdir(`${root}/downloads`,{mode:0o700,recursive:true});
   for(const name of ['Download final video','Download delivery manifest']){
     const link=page.getByRole('link',{name,exact:true});const href=await link.getAttribute('href');
     const pending=page.waitForEvent('download');await link.click();const download=await pending;
     const file=`${root}/downloads/${download.suggestedFilename()}`;await download.saveAs(file);
     const bytes=await fs.readFile(file);result.downloads.push({name,href,bytes:bytes.length,sha256:sha(bytes)});
   }
-  if(result.downloads[0].sha256!=='ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e')throw Error('Downloaded video differs');
-  result.range=await page.evaluate(async p=>{const r=await fetch(`${p}/artifacts/m13-encode-v1-delivery/content`,{headers:{Range:'bytes=0-31'},cache:'no-store'});return {status:r.status,headers:Object.fromEntries(r.headers),bytes:[...new Uint8Array(await r.arrayBuffer())]};},p);
+  if(result.downloads[0].sha256!=='ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e'||result.downloads[1].sha256!==result.catalogue['m13-encode-v1-manifest'].sha256)throw Error('Downloaded video/manifest differs from catalogue');
+  result.range=await page.evaluate(async p=>{const r=await fetch(`${p}/artifacts/m13-encode-v1-delivery/content`,{headers:{Range:'bytes=0-31'},cache:'no-store'});return {status:r.status,headers:Object.fromEntries([...r.headers].filter(([key])=>['content-range','content-length','content-type','etag','accept-ranges','cache-control'].includes(key))),bytes:[...new Uint8Array(await r.arrayBuffer())]};},p);
   const video=await fs.readFile(`${root}/downloads/m13-encode-v1-delivery.mp4`).catch(async()=>{const files=await fs.readdir(`${root}/downloads`);return fs.readFile(`${root}/downloads/${files.find(f=>f.endsWith('.mp4'))}`);});
   if(result.range.status!==206||result.range.headers['content-range']!=='bytes 0-31/64876'||!Buffer.from(result.range.bytes).equals(video.subarray(0,32)))throw Error('Exact video range failed');
   const uploadPending=page.waitForResponse(r=>r.request().method()==='PUT'&&r.url().includes('/uploads/'));
@@ -120,10 +161,14 @@ try{
   const upload=await uploadPending;if(upload.status()!==201)throw Error('Actual image upload rejected');
   result.upload=await upload.json();const uploaded=await get(`${p}/artifacts/${result.upload.artifact_id}`);
   result.upload_metadata=uploaded;
+  const actualImage=await fs.readFile(`${root}/upload.png`);
+  if(uploaded.sha256!==sha(actualImage)||uploaded.bytes!==actualImage.length)throw Error('Uploaded image differs from actual bytes');
   await page.screenshot({path:`${root}/ssh-review.png`});
   await save('browser-progress',result);
+  });
   await fs.writeFile(`${root}/review-complete`,'ready for quiet restart',{flag:'wx',mode:0o600});
   await context.setOffline(true);await wait('restarted',60000);
+  await observeStage('unavailable',async()=>{
   await context.setOffline(false);await page.reload();
   await page.getByRole('textbox',{name:'Message Copilot',exact:true}).waitFor();
   await page.getByRole('button',{name:'Services & models',exact:true}).click();
@@ -140,6 +185,7 @@ try{
   result.unavailable_annotation=await note('M14 unavailable-services frame 5 feedback');
   result.requests_after_restart=await get(`${p}/requests`);result.replay_restart=await replay();
   await page.screenshot({path:`${root}/unavailable-review.png`});
+  });
   if(result.off_origin.length)throw Error('Off-origin page traffic');
   result.status='passed';result.phases.push('unavailable-service review and feedback reload');
 }catch(error){

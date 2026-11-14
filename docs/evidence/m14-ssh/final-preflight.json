@@ -1,0 +1,100 @@
+{
+  "synthetic_full_flow": {
+    "scope": "synthetic full driver control flow, not product acceptance",
+    "partial_startup": false,
+    "processes": [
+      {
+        "name": "sshd",
+        "pid": 4138141,
+        "start": "47296912"
+      },
+      {
+        "name": "host-1",
+        "pid": 4138142,
+        "start": "47296912"
+      },
+      {
+        "name": "ssh-1",
+        "pid": 4138143,
+        "start": "47296912"
+      },
+      {
+        "name": "browser",
+        "pid": 4138144,
+        "start": "47296912"
+      },
+      {
+        "name": "ssh-2",
+        "pid": 4138145,
+        "start": "47296913"
+      },
+      {
+        "name": "host-2",
+        "pid": 4138146,
+        "start": "47296913"
+      }
+    ],
+    "all_original_identities_gone": true,
+    "raw_report_sha256": "5f9ccde3e01e6293602fc0473c6e750472147249197c6757603a6c74f0dc0de5",
+    "output_parent_created": true,
+    "original_m13_preserved": true
+  },
+  "synthetic_partial_startup": {
+    "scope": "synthetic full driver control flow, not product acceptance",
+    "partial_startup": true,
+    "processes": [
+      {
+        "name": "sshd",
+        "pid": 4138387,
+        "start": "47297282"
+      }
+    ],
+    "all_original_identities_gone": true,
+    "raw_report_sha256": "ba846d3bc57b8752f2bf4c385bef88a1b9979ce6539b8c1d6702483affccc3de",
+    "output_parent_created": true,
+    "original_m13_preserved": true
+  },
+  "actual_blocked_api": {
+    "scope": "actual composed API, read-only project/config/health, all SDK/provider/native effects blocked",
+    "seconds": 1.414,
+    "pid": 4138530,
+    "start": "47297418",
+    "paths": [
+      {
+        "path": "/api/v1/configuration",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/projects",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/projects/m13-cinematic/snapshot",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/projects/m13-cinematic/requests",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/projects/m13-cinematic/items",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/sequence-map",
+        "status": 200
+      }
+    ],
+    "cleanup": {
+      "component": "actual-blocked-host",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": -15,
+      "original_identity_gone": true
+    },
+    "lifespan_audit_sha256": "ec92862d2aeeaaa462211173ead0321c93fb6b2a7fe4266d60a48765b38a6b27",
+    "sends": 0,
+    "forbidden_attempts": [],
+    "gate_closed": true
+  }
+}

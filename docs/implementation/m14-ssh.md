@@ -1,5 +1,37 @@
 # M14 bounded SSH message/media and unavailable-service proof
 
+## Renewed final allocation, accepted base `c0cdf58`
+
+The coordinator explicitly authorised one new allocation after the retained `s14a`
+failure. That original failure, guard and inventory remain unchanged. The new private
+live root is `s14b`. The original one-send budget consumed zero sends.
+
+Before any real SSH/key/browser/model allocation, the **whole driver control flow**
+ran with six real harmless Python sleep processes substituting for its six roles.
+It exercised both server-ready paths, admission/completion snapshot paths, the
+disconnect/reconnect/restart branches, all six immutable PID/start receipts, final
+report export into a previously missing parent and complete exact-identity cleanup.
+A separate injected partial-startup failure proved cleanup after the first process.
+All synthetic records remain labelled and fail the product's model-send oracle.
+
+One additionally authorised **actual composed API** preflight then ran for **1.414
+seconds** in fresh scratch root `s14pf-host`. SDK construction/resume/send, provider
+HTTP and non-Git/native subprocess effects were blocked. Health, pairing and read-only
+configuration, project, snapshot, requests, item and selected sequence-map routes
+passed. The actual ASGI lifespan persisted its final zero-send/zero-forbidden audit
+before Uvicorn termination. The API's exact PID/start identity was reaped.
+
+See [whole-control-flow and actual API preflight](../evidence/m14-ssh/final-preflight.json).
+No SSH daemon, SSH client, genuine key, browser or model was used by that preflight.
+
+The observer now registers rVFC before first play, derives ordinals from actual media
+PTS, retains raw callback observations and permits repeated consecutive presentations
+of the same frame without falsely inventing a missing frame. A read/review assertion
+failure can pause the same living browser for a narrow observer correction. Queue is
+outside that retry path, with the exclusive per-run reservation still enforced.
+
+Final live result: pending the one authorised execution.
+
 ## Allocation and preflight
 
 Accepted product base `904f73383d6e9a3e0a5daa411f3628efd90bc2cf`, contract unchanged.

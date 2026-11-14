@@ -140,7 +140,7 @@ def run(root, evidence):
     processes, closed = [], set()
     result = {
         "status": "incomplete",
-        "base": "904f73383d6e9a3e0a5daa411f3628efd90bc2cf",
+        "base": "c0cdf58c47d8b8a2a5157b11e4961d594786b7e3",
         "driver_revision": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
         ).strip(),
@@ -263,7 +263,7 @@ def run(root, evidence):
         client2 = spawn("ssh-2", ssh_argv)
         wait_ready(lambda: reachable(spec["forward_port"]), client2)
         (root / "reconnected").write_text("same origin, second and final forwarding client")
-        wait_file(root / "review-complete", browser, 100)
+        wait_file(root / "review-complete", browser, 240)
         close(server)
         wait_file(root / "host-1-audit.json")
         result["closed_endpoints_observed"] = [
@@ -276,7 +276,7 @@ def run(root, evidence):
         server2 = spawn("host-2", [*host_argv, "2"])
         wait_file(root / "ready-2.json")
         (root / "restarted").write_text("quiet unavailable configuration restart")
-        assert browser.process.wait(timeout=100) == 0
+        assert browser.process.wait(timeout=180) == 0
         close(server2)
         result["browser"] = json.loads((root / "browser-result.json").read_text())
         assert result["browser"]["status"] == "passed"
