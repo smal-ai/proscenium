@@ -1,0 +1,64 @@
+{
+  "status": "blocked_no_native_compatibility_claim",
+  "implementation_commit": "bb53a1b5fbe64ca2f6aaec1c5fa5aa270dadefa5",
+  "retained_root": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-a",
+  "fixture_head": "347989950a0c331fa338d9c72c5dd1b92d70f3af",
+  "session_id": "e7784462-b71c-4589-bce4-948ab7c2880d",
+  "selected_model": "gpt-6.1-sol",
+  "sdk_version": "1.0.34",
+  "cli_version": "1.0.112",
+  "request_id": "geometry-nodes-root",
+  "request_state": "completed",
+  "native_permission_id": "3419214f-8f44-46bb-bb5b-0df3f308965d",
+  "tool_call_id": "call_ZTemS18cFxAc51fTjcUtCDf2",
+  "permission_request": {
+    "kind": "read",
+    "toolCallId": "call_ZTemS18cFxAc51fTjcUtCDf2",
+    "intention": "Search for files matching pattern in: /home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-a/project/.proscenium",
+    "path": "/home/quintin/.cache/proscenium-development/milestones/geometry-nodes-20261114-a/project/.proscenium"
+  },
+  "permission_result": {
+    "kind": "denied-interactively-by-user"
+  },
+  "tool": {
+    "toolName": "glob",
+    "arguments": {
+      "pattern": "**/*plan*",
+      "paths": [
+        ".proscenium",
+        "assets",
+        "scenes",
+        "storyboards"
+      ]
+    }
+  },
+  "tool_error": {
+    "message": "The user rejected this tool call.",
+    "code": "rejected"
+  },
+  "permission_completed_at": "2026-11-14T17:56:43.396Z",
+  "owner_decision_count": 0,
+  "allocation": {
+    "roots": 1,
+    "children": 0,
+    "authoring_processes": 0,
+    "proxy_exports": 0,
+    "cpu_stills": 0
+  },
+  "initial_headroom_bytes": 41387429888,
+  "cleanup": {
+    "sdk_process_absent": true,
+    "unrelated_blender_3834895": "not touched",
+    "authoring_mcp": false
+  },
+  "source_worktree_unchanged": true,
+  "harness_defect": "Only pending owner decisions were monitored. The automatic native rejection and terminal root with no publication were missed until the 180-second polling deadline. Driver now fails immediately on failed invocations or completed root without publication. No new root executed.",
+  "remaining_requirement": "Actual model-authored editable graph, checkpoint/publication, production GLB triangle mapping, evaluated bounds, CPU still and source preservation remain unproven.",
+  "coordinator_question": "May one replacement root be allocated after this protected-runtime read refusal, with no permission relaxation and all original Blender/proxy/still limits unchanged? No restart or second root has been attempted.",
+  "retained_sha256": {
+    "root-reservation.json": "0e219d0f9bb4e3ac027c3ff213bf34bea332102f105b5547fd24fd26683b3e80",
+    "public-latest.json": "d4ba62f7814154032452b6e2cf7c341120d5d7e32f89e05db79002c76d113330",
+    "native-result.json": "d855b83ecee000cd5243aa9dac49483949651cd85fe7991a6bdcd721a5bdb676"
+  },
+  "native_history_sha256": "a67fbe042bce90d896f2afad21d23521c302a8039307cb7350ab6895600508c0"
+}
