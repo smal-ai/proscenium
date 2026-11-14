@@ -7,12 +7,10 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from proscenium.api.errors import DomainError
-from proscenium.configuration import Settings
 from proscenium.db import Store
 from proscenium.db.registry import Registry
 
-from tools.operations.recovery import BackupSource, backup, restore, write_json
+from tools.operations.recovery import BackupSource, write_json
 from tools.operations.safety import assert_stopped, locks
 
 ORIGINAL = (
@@ -44,13 +42,15 @@ PROTECTED = (
 
 
 def protected(project):
-    store = BackupSource(project / ".proscenium/state.sqlite3", PROJECT_ID)
-    with store.transaction(write=False) as tx:
-        rows = {name: tx.all(name) for name in PROTECTED}
-        rows["budget_reservations"] = [
-            dict(row)
-            for row in tx.connection.execute("SELECT * FROM budget_reservations ORDER BY rowid")
-        ]
+    with locks([project.parent / "machine/owner.lock", project / ".proscenium/owner.lock"]):
+        assert_stopped([project, project.parent / "machine"])
+        store = BackupSource(project / ".proscenium/state.sqlite3", PROJECT_ID)
+        with store.transaction(write=False) as tx:
+            rows = {name: tx.all(name) for name in PROTECTED}
+            rows["budget_reservations"] = [
+                dict(row)
+                for row in tx.connection.execute("SELECT * FROM budget_reservations ORDER BY rowid")
+            ]
     return {
         name: hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
         for name, value in rows.items()
@@ -74,22 +74,10 @@ def prepare(root):
     root.mkdir(mode=0o700, parents=True, exist_ok=False)
     before = inventory()
     write_json(root / "original-before.private.json", before)
-    try:
-        manifest = backup(
-            Settings(data_directory=ORIGINAL / "machine"), PROJECT_ID, root / "backup"
-        )
-        report = restore(root / "backup", root / "restored", rebind=True)
-        assert not manifest["limits"] and not report["limits"]
-        method = "accepted_backup_restore"
-    except DomainError as exc:
-        if exc.code != "project_busy":
-            raise
-        # The retained harness left its synthetic m07-setup-work invocation running,
-        # despite completing that setup work. Do not repair/falsify its history.
-        # A closed-gate disposable import preserves that record, as well as ALL
-        # actual jobs/requests/attempts/inputs/selections/source/media identities.
-        report = isolated_import(root)
-        method = "read_only_sqlite_backup_and_disposable_import"
+    # The known synthetic setup orphan intentionally remains unchanged. This is
+    # an explicitly authorised read-only import, not an ordinary settled backup.
+    report = isolated_import(root)
+    method = "read_only_sqlite_backup_and_disposable_import"
     config = json.loads((REPO / "config.example.json").read_text())
     config.update(
         data_directory=report["data_directory"],

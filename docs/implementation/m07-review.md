@@ -27,3 +27,9 @@ The single actual app/browser stack at `f6747bb` consumed 17.841484 seconds and 
 The original scripted setup invocation also remains `running`, blocking the ordinary settled backup. A read-only SQLite backup/disposable import preserved this fixture defect unchanged. Protected record/budget hashes and original files were unchanged by readback. The first attempted backup removed two empty WAL sidecars, fully disclosed in the evidence. No backend repair, native send, provider call or model-service lifecycle occurred.
 
 The product fix is covered by the focused actual-browser fixtures and existing review regressions. Parent must allocate and accept the remaining real retained-image readback before treating this follow-up as complete.
+
+## Renewed final follow-up
+
+Parent accepted the original fix and allocated up to two sequential read-only app/browser stacks on base `6c7cec5`, including `cef82ee`'s reproduced empty-WAL preservation correction. New receipts live under `docs/evidence/m07-review/final/`. Earlier failed evidence remains unchanged.
+
+A bounded correction retains the uniquely associated generation job's known shot when constructing an image target. Project/item/version and exact output membership are checked, with null shot for unassociated/ambiguous images. Render-job and source-frame fields remain null for concepts. The one affected new regression passes in all three browser engines.

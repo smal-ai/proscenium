@@ -25,9 +25,13 @@ export function targetJobId(target: FrameTarget | null, jobs: JobRecord[], artif
   return matches.length === 1 ? matches[0].job_id : null;
 }
 
-export function imageTarget(image: Artifact, version: VersionRecord): FrameTarget {
+export function imageTarget(image: Artifact, version: VersionRecord, jobs: JobRecord[] = []): FrameTarget {
   if (!image.dimensions) throw new Error("Review image dimensions unavailable");
-  return {origin: image.purpose === "concept" ? "concept" : "reference", artifact_id: image.artifact_id,
+  const target: FrameTarget = {origin: image.purpose === "concept" ? "concept" : "reference", artifact_id: image.artifact_id,
     displayed_sha256: image.sha256, dimensions: image.dimensions, item_id: version.item_id, version_id: version.version_id,
     shot_id: null, render_job_id: null, source_frame: null, media_artifact_id: null};
+  const candidates = jobs.filter(job => job.project_id === image.project_id &&
+    job.target.version?.item_id === version.item_id && job.target.version.version_id === version.version_id);
+  const identity = targetJobId(target, candidates, [image]);
+  return {...target, shot_id: candidates.find(job => job.job_id === identity)?.target.shot_id ?? null};
 }

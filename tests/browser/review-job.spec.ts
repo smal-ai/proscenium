@@ -1,5 +1,5 @@
 import { expect,test,type Page } from "@playwright/test";
-import { generationOutputs,targetJobId } from "../../apps/frontend/src/features/review/jobIdentity";
+import { generationOutputs,imageTarget,targetJobId } from "../../apps/frontend/src/features/review/jobIdentity";
 import type { Artifact } from "../../apps/frontend/src/api/generated/contracts";
 import { syntheticVersion,syntheticJobs } from "./review-fixtures";
 
@@ -78,4 +78,18 @@ test("membership requires an exact output identity and never resolves ambiguous 
   expect(targetJobId(composite,[job],images)).toBe(job.job_id);
   expect(targetJobId(composite,[job],images,"explicit-sequence-job")).toBe("explicit-sequence-job");
   expect(targetJobId({...target,origin:"reference"},[job],images,"explicit-sequence-job")).toBeNull();
+});
+test("generation dropdown retains its unique pinned shot without inventing render identity",async({page},info)=>{
+  await fixture(page);
+  for(const [id,job] of [["initial","initial-job"],["correction","correction-job"],["initial","initial-job"]]) {
+    await selector(page).selectOption(job);await assertImage(page,id,job);
+    expect((await state(page)).target.shot_id).toBe("shot");
+  }
+  const job={...syntheticJobs[0],kind:"image_generation" as const,artifact_ids:["initial","reference"]};
+  expect(imageTarget(artifact("initial"),syntheticVersion,[job]).shot_id).toBe("shot");
+  expect(imageTarget(artifact("initial"),syntheticVersion,[]).shot_id).toBeNull();
+  expect(imageTarget(artifact("initial"),syntheticVersion,[job,{...job,job_id:"ambiguous"}]).shot_id).toBeNull();
+  expect(imageTarget(artifact("reference"),syntheticVersion,[job]).shot_id).toBeNull();
+  expect(imageTarget(artifact("initial"),syntheticVersion,[{...job,target:{...job.target,version:{item_id:"other",version_id:"v1"}}}]).shot_id).toBeNull();
+  await page.screenshot({path:info.outputPath("generation-pinned-shot.png")});
 });

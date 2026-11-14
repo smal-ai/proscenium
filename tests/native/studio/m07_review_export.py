@@ -14,7 +14,8 @@ def sha(path):
 
 
 def main(root, browser):
-    destination = REPO / "docs/evidence/m07-review"
+    destination = REPO / "docs/evidence/m07-review/final"
+    destination.mkdir(parents=True, exist_ok=True)
     for name in (
         "run.json",
         "browser-result.json",
@@ -33,10 +34,14 @@ def main(root, browser):
         target = regression / path.relative_to(browser)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, target)
+    captures = destination / "actual-captures"
+    captures.mkdir()
+    for path in sorted(root.glob("*.png")):
+        shutil.copyfile(path, captures / path.name)
     browser_result = json.loads((root / "browser-result.json").read_text())
     run = json.loads((root / "run.json").read_text())
     summary = {
-        "actual_readback": "FAILED_BEFORE_EXPLICIT_ACTIVATION",
+        "actual_readback": "PASS" if browser_result.get("pass") and run.get("pass") else "FAILED",
         "actual_source": run["source"],
         "actual_browser": browser_result["browser"],
         "actual_views_verified": len(browser_result["views"]),

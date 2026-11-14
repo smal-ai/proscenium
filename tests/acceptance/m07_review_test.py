@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from proscenium.contracts import validate
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "native/studio"))
 from m07_review_server import ReadOnlyGuard  # noqa: E402
@@ -76,6 +77,7 @@ def test_retained_actual_readback():
     assert result["before"] == result["after"]
     assert result["viewport"] == {"width": 1920, "height": 1080, "dpr": 1}
     for row in result["views"]:
+        validate("ContextSnapshot", row["context_snapshot_ready"])
         assert row["context"]["target"]["displayed_sha256"] == row["content"]["sha256"]
         assert row["context"]["target"]["render_job_id"] is None
         assert row["context"]["target"]["source_frame"] is None
@@ -83,3 +85,5 @@ def test_retained_actual_readback():
             assert row["job"] == "" and row["label"] == "No associated job"
         else:
             assert row["job"] in row["image"]["src"] and row["job"] in row["label"]
+            assert row["context"]["target"]["shot_id"] == "shot-mug"
+            assert row["context"]["target"]["origin"] == "concept"

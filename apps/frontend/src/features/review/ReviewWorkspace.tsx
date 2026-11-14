@@ -194,7 +194,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
           else {
             const image = orderedMedia.find(a => pinned.artifact_ids.includes(a.artifact_id) && a.kind === "image" && a.state === "ready" && a.dimensions)
               ?? versionJobs.flatMap(job => generationOutputs(job, orderedMedia))[0];
-            if (image) setTarget(imageTarget(image, version!));
+            if (image) setTarget(imageTarget(image, version!, versionJobs));
             else initialised.current = false;
           }
         }
@@ -281,7 +281,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     setSequenceJobId(first && version.kind === "sequence" ? identity : null);
     setPlaying(false);setCaptureReady(false);setRange(null);setTargetCamera(null);setError("");
     if(first){const frame=frameTarget(first,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));setRequestedFrame(first.source_frame);}
-    else if(image){setMode("keyframes");setTarget(imageTarget(image,version));setRequestedFrame(1);}
+    else if(image){setMode("keyframes");setTarget(imageTarget(image,version,versionJobs));setRequestedFrame(1);}
   }
 
   function changeMode(next: Mode) {if (mode !== next) {setCaptureReady(false); setPlaying(false); setMode(next);}}

@@ -49,7 +49,8 @@ try {
       const selector=document.querySelector('select[aria-label="Shot / render job"]');
       const context=JSON.parse(localStorage.getItem(`proscenium.owner.view.context.${projectId}`)??'null');
       return image?.complete&&image.naturalWidth===512&&image.getAttribute('src')?.includes(`/artifacts/${id}/content`)
-        &&selector?.value===job&&context?.target?.artifact_id===id;
+        &&selector?.value===job&&context?.target?.artifact_id===id
+        &&[...document.querySelectorAll('button')].some(button=>button.textContent==='Annotate presented frame'&&!button.disabled);
     },{id,job,projectId});
     const image=await page.locator('.review-image img').evaluate(image=>({src:image.getAttribute('src'),complete:image.complete,width:image.naturalWidth,height:image.naturalHeight}));
     const bytes=await page.evaluate(async url=>{
@@ -60,9 +61,16 @@ try {
     const captured=await current();
     assert.equal(captured.target.render_job_id,null);assert.equal(captured.target.source_frame,null);
     assert.equal(captured.target.displayed_sha256,bytes.sha256);
-    if(kind!=='reference') {assert.equal(bytes.sha256,expected[kind]);assert.equal(captured.target.origin,'concept');}
+    if(kind!=='reference') {
+      assert.equal(bytes.sha256,expected[kind]);assert.equal(captured.target.origin,'concept');
+      assert.deepEqual(captured.target,{origin:'concept',artifact_id:id,displayed_sha256:expected[kind],dimensions:{width:512,height:512},
+        item_id:'m07-fp16-storyboard',version_id:'m07-fp16-plan-v1',shot_id:'shot-mug',render_job_id:null,source_frame:null,media_artifact_id:null});
+      assert.equal(captured.attachments.filter(attachment=>attachment.artifact_id===id&&attachment.role==='concept').length,1);
+      assert.ok(!captured.attachments.some(attachment=>attachment.artifact_id.includes('input-')));
+    }
     else {assert.equal(captured.target.origin,'reference');assert.equal(job,'');}
-    const row={name,job:await selector.inputValue(),label:await selector.locator('option:checked').innerText(),image,content:bytes,context:captured};
+    const snapshot={schema_version:'1.0',context_id:`readback-${name}`,project_id:projectId,captured_at:new Date().toISOString(),...captured};
+    const row={name,job:await selector.inputValue(),label:await selector.locator('option:checked').innerText(),image,content:bytes,context:captured,context_snapshot_ready:snapshot};
     result.views.push(row);
     await page.screenshot({path:`${root}/${name}.png`});
   }
