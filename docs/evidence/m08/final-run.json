@@ -1,0 +1,1578 @@
+{
+  "status": "targeted_progressive_and_worker_recovery_pass_dependencies_pending",
+  "retained_root": "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a",
+  "allocation": {
+    "cloud_roots": 3,
+    "native_children": 0,
+    "authoring_processes": 1,
+    "cpu_frames": 17,
+    "proxy_exports": 1,
+    "held_probe_rendered": false
+  },
+  "runtime": {
+    "sdk": "1.0.34",
+    "cli": "1.0.112",
+    "model": "gpt-6.1-sol",
+    "session_id": "b0e5d66e-ff17-476c-98c1-ae4fab4f490c",
+    "blender": {
+      "version": "4.5.14 LTS",
+      "build_hash": "62c1db4208e8",
+      "build_branch": "blender-v4.5-release",
+      "build_date": "2026-09-15",
+      "build_time": "01:31:19"
+    },
+    "browser": "159.0.8154.6",
+    "viewport": [
+      1920,
+      1080,
+      1
+    ],
+    "engine": "CYCLES",
+    "device": "CPU",
+    "samples": 8,
+    "threads": 4,
+    "dimensions": [
+      640,
+      360
+    ],
+    "fps": [
+      24,
+      1
+    ]
+  },
+  "source": {
+    "version": {
+      "actor": {
+        "id": "call_6vWkowtxzFrOY7svaobpuQH1",
+        "kind": "tool"
+      },
+      "artifact_ids": [],
+      "created_at": "2026-11-14T15:38:59.594392+00:00",
+      "description": "New 12-frame cube motion and keyed camera pan over preserved imported F01 fixture inputs.",
+      "item_id": "m08-scene",
+      "kind": "scene",
+      "name": "M08 authored motion",
+      "preview_job_ids": [
+        "preview-47f9bcfc56b85fef25217efcbbcbbdc0e093f4d8a14179a1e5e92078ca30bb14",
+        "preview-2868e95df78b8317dffb4c3e71b4742c796167dc45e2e2c4f684a93475f5e4c4",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60"
+      ],
+      "preview_requests": [
+        {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m08-keyframe",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "M08Motion",
+          "shot_id": "m08-opening",
+          "source_closure_digest": "0522cb2e5f634835c93d0d04c37301883da6a487ce606e630485e7ffb831580f"
+        },
+        {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m08-proxy",
+          "purpose": "proxy",
+          "renderer_revision": "proscenium-blender-1",
+          "samples": 8,
+          "scene_name": "M08Motion",
+          "shot_id": "m08-opening",
+          "source_closure_digest": "0522cb2e5f634835c93d0d04c37301883da6a487ce606e630485e7ffb831580f"
+        },
+        {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 12,
+            "start": 1
+          },
+          "intent_id": "m08-motion",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "M08Motion",
+          "shot_id": "m08-motion",
+          "source_closure_digest": "0522cb2e5f634835c93d0d04c37301883da6a487ce606e630485e7ffb831580f"
+        }
+      ],
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "publication_id": "m08-authored-publication-v1",
+      "schema_version": "1.0",
+      "source": {
+        "dependencies": [],
+        "digest": "0522cb2e5f634835c93d0d04c37301883da6a487ce606e630485e7ffb831580f",
+        "entry_path": "scenes/m08-motion/scene.blend",
+        "files": [
+          {
+            "destination": "assets/cube/asset.blend",
+            "origin": {
+              "commit": "22a882884b721674fa93c954da6eb63a73bb9c63",
+              "kind": "git",
+              "path": "assets/cube/asset.blend",
+              "repository_id": "repository-1c18c117-3a4e-4ece-8405-a5a48fd705eb",
+              "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+            }
+          },
+          {
+            "destination": "assets/cube/colour.png",
+            "origin": {
+              "commit": "22a882884b721674fa93c954da6eb63a73bb9c63",
+              "kind": "git",
+              "path": "assets/cube/colour.png",
+              "repository_id": "repository-1c18c117-3a4e-4ece-8405-a5a48fd705eb",
+              "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+            }
+          },
+          {
+            "destination": "scenes/m08-motion/scene.blend",
+            "origin": {
+              "commit": "22a882884b721674fa93c954da6eb63a73bb9c63",
+              "kind": "git",
+              "path": "scenes/m08-motion/scene.blend",
+              "repository_id": "repository-1c18c117-3a4e-4ece-8405-a5a48fd705eb",
+              "sha256": "14a95dc098aaa3dece1accfc8b4a4aca4f0dbfd40017820a4b9fa2f849344a83"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [
+            "linked-libraries",
+            "external-textures"
+          ],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "source_commit": "22a882884b721674fa93c954da6eb63a73bb9c63",
+      "version_id": "m08-scene-v1"
+    },
+    "working_live_texture_sha256": "77d20c1a1fbe55cb9b0f8c9ea72c922fe8760b9ea5b3539318e8e1e44b12d6a5",
+    "authoring_readback_sha256": "56624b5949f5698d76cbd6e003ec4aa5fdf5d5189e808cc4a9cc0a92db6ecfd9",
+    "probe_pixels_equal_original_main_frames_1_4": [
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "progressive": {
+    "job": {
+      "artifact_ids": [
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f1",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f2",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f3",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f4",
+        "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s1-4",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f5",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f6",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f7",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f8",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f9",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f10",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f11",
+        "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f12",
+        "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s5-8",
+        "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s9-12"
+      ],
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 12,
+      "expected_frames": 12,
+      "external_job_id": null,
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "kind": "render",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-ec374a40-9da2-425f-86d6-47bee178f262",
+      "owner_operation_id": null,
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 12,
+          "start": 1
+        },
+        "intent_id": "m08-motion",
+        "purpose": "draft_motion",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "M08Motion",
+        "shot_id": "m08-motion",
+        "source_closure_digest": "0522cb2e5f634835c93d0d04c37301883da6a487ce606e630485e7ffb831580f"
+      },
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 25,
+      "target": {
+        "shot_id": "m08-motion",
+        "target_id": "m08-scene",
+        "version": {
+          "item_id": "m08-scene",
+          "version_id": "m08-scene-v1"
+        }
+      },
+      "work_id": "work-09413b485c644a0f8c22efcb75a6568d"
+    },
+    "annotation": {
+      "annotation_id": "13efc13b-8542-4ace-8ecf-8c3033055189",
+      "camera": null,
+      "markup_artifact_id": "1a5d6725-7a7f-43c3-a784-59b66170b5f8",
+      "markups": [
+        {
+          "colour": "#ff5555",
+          "id": "1ae9ef79-8636-4390-b631-18f9499d93de",
+          "kind": "pin",
+          "points": [
+            [
+              0.5,
+              0.5
+            ]
+          ],
+          "text": "M08 motion pin",
+          "width_px": 4
+        }
+      ],
+      "range": {
+        "end": 4,
+        "start": 1
+      },
+      "saved_revision": 1,
+      "spatial_hits": [],
+      "spatial_status": "unavailable",
+      "target": {
+        "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f3",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "displayed_sha256": "f10f804ec8aa820e1789bca66847c6b83f20514fdd0041944730b61f3e61a10f",
+        "item_id": "m08-scene",
+        "media_artifact_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s1-4",
+        "origin": "blender_render",
+        "render_job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+        "shot_id": "m08-motion",
+        "source_frame": 3,
+        "version_id": "m08-scene-v1"
+      },
+      "text": "M08 retained motion note. Preserve this exact source frame and range; no source correction requested."
+    },
+    "last_frame_ready_ns": 463463724453244,
+    "annotation_host_ns": 463459420221169,
+    "first_segment_played_host_ns": 463459663532218,
+    "annotation_margin_seconds": 4.304232075,
+    "playback_margin_seconds": 4.060921026,
+    "first_png_ready_seconds": 0.885865996,
+    "first_segment_ready_seconds": 2.954547617,
+    "render_total_seconds": 8.519850502,
+    "throughput_fps": 1.4084754183401513,
+    "frame_median_seconds": 0.6478460155,
+    "frame_p95_nearest_rank_seconds": 0.764986664,
+    "rvfc_order_with_intentional_pause_replay": [
+      1,
+      2,
+      3,
+      1,
+      2,
+      3,
+      4
+    ],
+    "increasing_callback_intervals_ms": [
+      16.69999999999709,
+      33.33200000000943,
+      16.66599999999744,
+      49.93399999999383,
+      49.90000000000873
+    ],
+    "renderer_reported_peak_M": 27.14,
+    "os_rss_and_cpu_percent": "not sampled"
+  },
+  "recovery": {
+    "job": {
+      "artifact_ids": [
+        "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f1",
+        "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f2",
+        "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f3",
+        "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f4",
+        "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1-s1-4"
+      ],
+      "attempt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 4,
+      "expected_frames": 4,
+      "external_job_id": null,
+      "input_digest": "d063c0e59f297f3833fb028eb8bdbb5c7efada7e876a62bd0b15d127a5255803",
+      "job_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34",
+      "kind": "render",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-d8fd488c-1c8e-4040-8128-2fbfbab86013",
+      "owner_operation_id": null,
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 4,
+          "start": 1
+        },
+        "intent_id": "m08-recovery4",
+        "purpose": "draft_motion",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "M08Motion",
+        "shot_id": "m08-motion",
+        "source_closure_digest": "0522cb2e5f634835c93d0d04c37301883da6a487ce606e630485e7ffb831580f"
+      },
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 12,
+      "target": {
+        "shot_id": "m08-motion",
+        "target_id": "m08-scene",
+        "version": {
+          "item_id": "m08-scene",
+          "version_id": "m08-scene-v1"
+        }
+      },
+      "work_id": "m08-labelled-recovery-work"
+    },
+    "backend_kill": {
+      "host_ns": 463808270300022,
+      "identity": {
+        "pid": 3729513,
+        "start_ticks": 46380284,
+        "state": "S",
+        "argv": [
+          "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+          "/home/quintin/.cache/proscenium-development/fleet/m08-motion/tests/native/previews/m08_host.py",
+          "serve",
+          "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a"
+        ]
+      },
+      "signal": "SIGKILL"
+    },
+    "native_pid_start": {
+      "argv": [
+        "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+        "--background",
+        "--factory-startup",
+        "--disable-autoexec",
+        "--threads",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/quintin/.cache/proscenium-development/fleet/m08-motion/apps/backend/src/proscenium/previews/blender_worker.py",
+        "--",
+        "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a/project/.proscenium/jobs/previews/preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34/attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1"
+      ],
+      "pid": 3730145,
+      "start_ticks": 46380671,
+      "state": "R"
+    },
+    "supervisor_pid_start": {
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+        "-m",
+        "proscenium.previews.worker",
+        "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a/project/.proscenium/jobs/previews/preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34/attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1"
+      ],
+      "pid": 3730143,
+      "start_ticks": 46380644,
+      "started_ns": 463806711793440,
+      "state": "R",
+      "task_sha256": "e81d4ef32d2b914e9129430716b6ba2fcb23d4a4e46fc56720edc467af461d48"
+    },
+    "task_sha256": "e81d4ef32d2b914e9129430716b6ba2fcb23d4a4e46fc56720edc467af461d48",
+    "postkill_frame_ready_seconds": [
+      -0.270185913,
+      0.399125621,
+      0.974064679,
+      1.598453315
+    ],
+    "native_exit_code": 0,
+    "closed_gate": true,
+    "no_sdk_object": true,
+    "old_sdk_absent": true,
+    "same_attempt_input": true,
+    "held_job": {
+      "artifact_ids": [],
+      "attempt_id": "attempt-1c0907c0-f379-4ee3-901e-81c395d36e07",
+      "attempt_number": 1,
+      "availability": "pending",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "41ef75b300336b4ca23affad7c63b4791d662ce745efad63c686df84c5d4272d",
+      "job_id": "preview-6ca3f9338ddf191695da90b8538e8508d2e1aba585203551bcbce5d4c2acd419",
+      "kind": "render",
+      "owner_epoch": "epoch-d8fd488c-1c8e-4040-8128-2fbfbab86013",
+      "owner_operation_id": null,
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "m08-held-output",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "M08Motion",
+        "shot_id": "m08-motion",
+        "source_closure_digest": "0522cb2e5f634835c93d0d04c37301883da6a487ce606e630485e7ffb831580f"
+      },
+      "schema_version": "1.0",
+      "state": "cancelled",
+      "state_revision": 2,
+      "target": {
+        "shot_id": "m08-motion",
+        "target_id": "m08-scene",
+        "version": {
+          "item_id": "m08-scene",
+          "version_id": "m08-scene-v1"
+        }
+      },
+      "work_id": "m08-labelled-held-work"
+    },
+    "same_contexts_publications_versions": true,
+    "old_watermark": 367,
+    "reconciled_watermark": 380
+  },
+  "final_movie": {
+    "job": {
+      "artifact_ids": [
+        "m08-final-encode-delivery",
+        "m08-final-encode-frame-map",
+        "m08-final-encode-manifest"
+      ],
+      "attempt_id": "attempt-a9e3f2aa-9bda-4053-9849-63a38e5136bb",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 0,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "571a6dfec43055b97d618a890234037f1527b51564099e99c906755755395ce1",
+      "job_id": "m08-final-encode",
+      "kind": "encode",
+      "owner_epoch": "epoch-b9adbc05-d428-42a8-bfe4-d7e546c35bda",
+      "owner_operation_id": null,
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 4,
+      "target": {
+        "shot_id": null,
+        "target_id": "m08-clip",
+        "version": {
+          "item_id": "m08-clip",
+          "version_id": "m08-clip-v1"
+        }
+      },
+      "work_id": "work-3e3f5a9405de4cf4bdd4ce4fcd80ca6e"
+    },
+    "video": {
+      "artifact_id": "m08-final-encode-delivery",
+      "bytes": 140427,
+      "derived_from": [
+        {
+          "input_artifact_ids": [
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f1",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f10",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f11",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f12",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f2",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f3",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f4",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f5",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f6",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f7",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f8",
+            "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f9"
+          ],
+          "kind": "encode",
+          "parameters": {
+            "blend_space": "linear_rgb",
+            "frame_map_sha256": "79356a5a3dc897a7449ea8453c974a4022da103a2c69f49b29e90bc0ae7c9282"
+          }
+        }
+      ],
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 12,
+      "kind": "video",
+      "media_type": "video/mp4",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "purpose": "final",
+      "schema_version": "1.0",
+      "sha256": "ba70fb80e0b49e0cf49ac663d89ebfea286fc5e9e829830a26f44a9b1eb07499",
+      "source_version_id": "m08-clip-v1",
+      "state": "ready"
+    },
+    "frame_map_artifact": {
+      "artifact_id": "m08-final-encode-frame-map",
+      "bytes": 3016,
+      "derived_from": [],
+      "kind": "frame_map",
+      "media_type": "application/json",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "purpose": "metadata",
+      "schema_version": "1.0",
+      "sha256": "79356a5a3dc897a7449ea8453c974a4022da103a2c69f49b29e90bc0ae7c9282",
+      "source_version_id": "m08-clip-v1",
+      "state": "ready"
+    },
+    "frame_map": {
+      "blend_space": "linear_rgb",
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 12,
+      "frames": [
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 1,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 1
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 2,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 2
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 3,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 3
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 4,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 4
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 5,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 5
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 6,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 6
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 7,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 7
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 8,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 8
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 9,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 9
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 10,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 10
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 11,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 11
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+              "shot_id": "m08-motion",
+              "source_frame": 12,
+              "version_id": "m08-scene-v1",
+              "weight": {
+                "denominator": 1,
+                "numerator": 1
+              }
+            }
+          ],
+          "sequence_frame": 12
+        }
+      ],
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "schema_version": "1.0",
+      "sequence_version_id": "m08-clip-v1"
+    },
+    "verified_stream": {
+      "index": 0,
+      "codec_name": "h264",
+      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+      "profile": "High",
+      "codec_type": "video",
+      "codec_tag_string": "avc1",
+      "codec_tag": "0x31637661",
+      "width": 640,
+      "height": 360,
+      "coded_width": 640,
+      "coded_height": 368,
+      "has_b_frames": 0,
+      "pix_fmt": "yuv420p",
+      "level": 30,
+      "chroma_location": "left",
+      "field_order": "progressive",
+      "refs": 1,
+      "is_avc": "true",
+      "nal_length_size": "4",
+      "id": "0x1",
+      "r_frame_rate": "24/1",
+      "avg_frame_rate": "24/1",
+      "time_base": "1/24",
+      "start_pts": 0,
+      "start_time": "0.000000",
+      "duration_ts": 12,
+      "duration": "0.500000",
+      "bit_rate": "2232624",
+      "bits_per_raw_sample": "8",
+      "nb_frames": "12",
+      "nb_read_frames": "12",
+      "extradata_size": 44,
+      "disposition": {
+        "default": 1,
+        "dub": 0,
+        "original": 0,
+        "comment": 0,
+        "lyrics": 0,
+        "karaoke": 0,
+        "forced": 0,
+        "hearing_impaired": 0,
+        "visual_impaired": 0,
+        "clean_effects": 0,
+        "attached_pic": 0,
+        "timed_thumbnails": 0,
+        "non_diegetic": 0,
+        "captions": 0,
+        "descriptions": 0,
+        "metadata": 0,
+        "dependent": 0,
+        "still_image": 0,
+        "multilayer": 0
+      },
+      "tags": {
+        "language": "und",
+        "handler_name": "VideoHandler",
+        "vendor_id": "[0][0][0][0]",
+        "encoder": "Lavc62.11.100 libx264"
+      }
+    },
+    "actual_browser_readback": {
+      "frames": [
+        {
+          "now": 2230.2,
+          "mediaTime": 0.041667,
+          "presentedFrames": 2
+        },
+        {
+          "now": 2280.2,
+          "mediaTime": 0.083333,
+          "presentedFrames": 3
+        },
+        {
+          "now": 2363.5,
+          "mediaTime": 0.125,
+          "presentedFrames": 4
+        },
+        {
+          "now": 2396.8,
+          "mediaTime": 0.166667,
+          "presentedFrames": 5
+        },
+        {
+          "now": 2430.1,
+          "mediaTime": 0.208333,
+          "presentedFrames": 6
+        },
+        {
+          "now": 2463.5,
+          "mediaTime": 0.25,
+          "presentedFrames": 7
+        },
+        {
+          "now": 2513.5,
+          "mediaTime": 0.291667,
+          "presentedFrames": 8
+        },
+        {
+          "now": 2563.5,
+          "mediaTime": 0.333333,
+          "presentedFrames": 9
+        },
+        {
+          "now": 2613.5,
+          "mediaTime": 0.375,
+          "presentedFrames": 10
+        },
+        {
+          "now": 2646.9,
+          "mediaTime": 0.416667,
+          "presentedFrames": 11
+        },
+        {
+          "now": 2696.8,
+          "mediaTime": 0.458333,
+          "presentedFrames": 12
+        }
+      ],
+      "before_watermark": 627,
+      "after_watermark": 627,
+      "gate_open": false,
+      "sdk_object_created": false
+    }
+  },
+  "actual_shot_cards": {
+    "text": "1. m08-opening\n\nOpening-pose/keyframe reference only, explicitly one source frame and not another delivered animation.\n\nCamera, motion and timing\n\nUse the authored M08 Camera in scene M08Motion at source frame 1, located at (5,-7,4) and looking toward the moving cube plus 0.6 metres in Z.\n\nSource frame 1: opening reference with moving cube at (-1,-0.35,0); hold no additional frames.\n\nScene: m08-scene / m08-scene-v1\n\nSource range: 1\u20131 inclusive\nFPS: 24/1\n\nstart \u00b7 m08-opening-start\nSource frame 1: single-frame opening reference; cube at (-1,-0.35,0), camera at (5,-7,4), retaining the imported floor, second cube and linked blue material.\nAuthored: available \u00b7 Image: ready\nowner_selected: no\n\nRender pinned to authored scene version\n\n2. m08-motion\n\nThe sole 12-frame authored animation: cube sweeps forward and right, then returns left as the camera moves inward and pans to follow.\n\nCamera, motion and timing\n\nUse the animated M08 Camera in scene M08Motion, not a camera override: location (5,-7,4) at frame 1, (4.5,-6.5,4.2) at frame 6 and (4,-6,4) at frame 12; keyed look directions aim at the cube plus 0.6 metres in Z.\n\nSource frame 1: cube (-1,-0.35,0); camera (5,-7,4), looking at (-1,-0.35,0.6).\nSource frame 6: cube (-0.4,0.65,0); camera (4.5,-6.5,4.2), panning toward (-0.4,0.65,0.6).\nSource frame 12: cube (-1.2,0.25,0); camera (4,-6,4), turning toward (-1.2,0.25,0.6) to finish the return.\n\nScene: m08-scene / m08-scene-v1\n\nSource range: 1\u201312 inclusive\nFPS: 24/1\n\nstart \u00b7 m08-motion-start\nSource frame 1: establish the cube at (-1,-0.35,0) from camera (5,-7,4), with the imported fixture geometry and blue material preserved.\nAuthored: available \u00b7 Image: ready\nowner_selected: no\n\nRender pinned to authored scene version\n\nintermediate \u00b7 m08-motion-intermediate\nSource frame 6: cube reaches (-0.4,0.65,0); camera advances to (4.5,-6.5,4.2) and turns to follow the forward-right sweep.\nAuthored: available \u00b7 Image: ready\nowner_selected: no\n\nRender pinned to authored scene version\n\nend \u00b7 m08-motion-end\nSource frame 12: cube returns left to (-1.2,0.25,0); camera completes its inward pan at (4,-6,4), looking toward the final cube pose.\nAuthored: available \u00b7 Image: ready\nowner_selected: no\n\nRender pinned to authored scene version",
+    "plan_id": "m08"
+  },
+  "authoring_process": {
+    "root": "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a/project",
+    "recipe": "tools/author_motion.py",
+    "recipe_sha256": "0d9843de755e830b25c2a710f23a773d89446f3a00ec1c24d143176ca65148f0",
+    "started_ns": 463410444363179,
+    "headroom_bytes": 15167864832,
+    "pid": 3712151,
+    "argv": [
+      "/home/quintin/.local/bin/blender",
+      "--background",
+      "--factory-startup",
+      "--disable-autoexec",
+      "--threads",
+      "4",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a/project/tools/author_motion.py"
+    ],
+    "native_exit_code": 0,
+    "finished_ns": 463411110894080
+  },
+  "frame_receipts": [
+    {
+      "artifact_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f1",
+      "attempt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "d063c0e59f297f3833fb028eb8bdbb5c7efada7e876a62bd0b15d127a5255803",
+      "job_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34",
+      "output_path": "frames/00000001.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1-f1",
+      "schema_version": "1.0",
+      "sha256": "bcdc995a523656fa73da43b3795cad058af6018ea38925dcbc0cb562e53309bf",
+      "shot_id": "m08-motion",
+      "source_frame": 1,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f2",
+      "attempt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "d063c0e59f297f3833fb028eb8bdbb5c7efada7e876a62bd0b15d127a5255803",
+      "job_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34",
+      "output_path": "frames/00000002.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1-f2",
+      "schema_version": "1.0",
+      "sha256": "e0e71ef2318e95f9ebf52c5e0d2cc825f80b46ca30a185da1a16bba32cc9701b",
+      "shot_id": "m08-motion",
+      "source_frame": 2,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f3",
+      "attempt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "d063c0e59f297f3833fb028eb8bdbb5c7efada7e876a62bd0b15d127a5255803",
+      "job_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34",
+      "output_path": "frames/00000003.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1-f3",
+      "schema_version": "1.0",
+      "sha256": "a624abc88a0db4d02f638ca1a93f7012a4e01af4d295e8f185d32977a45e9c6a",
+      "shot_id": "m08-motion",
+      "source_frame": 3,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34-f4",
+      "attempt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "d063c0e59f297f3833fb028eb8bdbb5c7efada7e876a62bd0b15d127a5255803",
+      "job_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34",
+      "output_path": "frames/00000004.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1-f4",
+      "schema_version": "1.0",
+      "sha256": "d8adb771ac65c5ea4f09219a6d17e3db063d2926fa657b273d66398026619a72",
+      "shot_id": "m08-motion",
+      "source_frame": 4,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-47f9bcfc56b85fef25217efcbbcbbdc0e093f4d8a14179a1e5e92078ca30bb14-f1",
+      "attempt_id": "attempt-870d2e1b-2296-417d-aec6-4856df32c616",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "66dcf1e28e7ed47827a8898341240d7117b2dfdeb455311d87a8af889e9f482e",
+      "job_id": "preview-47f9bcfc56b85fef25217efcbbcbbdc0e093f4d8a14179a1e5e92078ca30bb14",
+      "output_path": "frames/00000001.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-870d2e1b-2296-417d-aec6-4856df32c616-f1",
+      "schema_version": "1.0",
+      "sha256": "7ff0f3a043e9b72670ef9c01ff1b2d32b7428ff38dbe2509ff5a2f2fcb000d08",
+      "shot_id": "m08-opening",
+      "source_frame": 1,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f1",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000001.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f1",
+      "schema_version": "1.0",
+      "sha256": "e7e917bf0e59becf972c02cd46d324244a260f9d9c011861a85896ac48e43f3e",
+      "shot_id": "m08-motion",
+      "source_frame": 1,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f10",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000010.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f10",
+      "schema_version": "1.0",
+      "sha256": "675eceee56fcb166f710862a8732533c8d50ea4af6225a82f2d0ac5ffb16d386",
+      "shot_id": "m08-motion",
+      "source_frame": 10,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f11",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000011.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f11",
+      "schema_version": "1.0",
+      "sha256": "43adf417ad4fb114b6dabfb43374ae63ccb0418157149fbbfc2128035452331a",
+      "shot_id": "m08-motion",
+      "source_frame": 11,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f12",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000012.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f12",
+      "schema_version": "1.0",
+      "sha256": "455dcb717691a53a8b2f8a7d60834e77ef4e32e6d3c2f2a0383921d9cb6f043a",
+      "shot_id": "m08-motion",
+      "source_frame": 12,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f2",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000002.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f2",
+      "schema_version": "1.0",
+      "sha256": "a0a50878a7c716401b3b462cf29c506f398e07304a6d9467a4142178e432b641",
+      "shot_id": "m08-motion",
+      "source_frame": 2,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f3",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000003.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f3",
+      "schema_version": "1.0",
+      "sha256": "f10f804ec8aa820e1789bca66847c6b83f20514fdd0041944730b61f3e61a10f",
+      "shot_id": "m08-motion",
+      "source_frame": 3,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f4",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000004.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f4",
+      "schema_version": "1.0",
+      "sha256": "3bd9380674fe7b94c9eface63ff3abf95cb813cb05e9aeb643e0f02f95c818b9",
+      "shot_id": "m08-motion",
+      "source_frame": 4,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f5",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000005.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f5",
+      "schema_version": "1.0",
+      "sha256": "89de53adbd0076c91ab1bc2380446e23b11dc119a4eba6036ecbdbf26c9a1053",
+      "shot_id": "m08-motion",
+      "source_frame": 5,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f6",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000006.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f6",
+      "schema_version": "1.0",
+      "sha256": "c78c9c9b57aa19a5e43095c88df05a3bbe028d4dbe04c1a6fdeb7d76e5647049",
+      "shot_id": "m08-motion",
+      "source_frame": 6,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f7",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000007.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f7",
+      "schema_version": "1.0",
+      "sha256": "cef194e398f885c08a8825ffc98027e355657daae3eeccfbe90d3c1fad2fddd2",
+      "shot_id": "m08-motion",
+      "source_frame": 7,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f8",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000008.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f8",
+      "schema_version": "1.0",
+      "sha256": "309db4537b2b21f8b46f6b00a80b492ba6d83ccebdae8f1b8f19ea0b07215184",
+      "shot_id": "m08-motion",
+      "source_frame": 8,
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60-f9",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "frames/00000009.png",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "receipt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-f9",
+      "schema_version": "1.0",
+      "sha256": "e9b51a7e38ffdc76e70ef20a1eeeeac05b55d4e091d3216d9221ea91e1888053",
+      "shot_id": "m08-motion",
+      "source_frame": 9,
+      "version_id": "m08-scene-v1"
+    }
+  ],
+  "segment_receipts": [
+    {
+      "artifact_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1-s1-4",
+      "attempt_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1",
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 4,
+      "input_digest": "d063c0e59f297f3833fb028eb8bdbb5c7efada7e876a62bd0b15d127a5255803",
+      "job_id": "preview-08d1519cae8be33807466d3a243fc0a7fa363fb38d835cc7e14e6de2df925d34",
+      "output_path": "segment-00000001-00000004.mp4",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "schema_version": "1.0",
+      "segment_id": "attempt-1edc8a79-3b8d-41d6-92f7-448d19d760d1-s1-4",
+      "sha256": "3172426ffbe2c7d21b38d5b8ba47891bc5e2dbb399be2c3befdc22140da63dc0",
+      "shot_id": "m08-motion",
+      "source_frames": {
+        "end": 4,
+        "start": 1
+      },
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "attempt-870d2e1b-2296-417d-aec6-4856df32c616-s1-1",
+      "attempt_id": "attempt-870d2e1b-2296-417d-aec6-4856df32c616",
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 1,
+      "input_digest": "66dcf1e28e7ed47827a8898341240d7117b2dfdeb455311d87a8af889e9f482e",
+      "job_id": "preview-47f9bcfc56b85fef25217efcbbcbbdc0e093f4d8a14179a1e5e92078ca30bb14",
+      "output_path": "segment-00000001-00000001.mp4",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "schema_version": "1.0",
+      "segment_id": "attempt-870d2e1b-2296-417d-aec6-4856df32c616-s1-1",
+      "sha256": "e4a9f04d514c63f5ba5179384fb8253576d09cc2ffff9400b6033b8513d997e3",
+      "shot_id": "m08-opening",
+      "source_frames": {
+        "end": 1,
+        "start": 1
+      },
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s1-4",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 4,
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "segment-00000001-00000004.mp4",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "schema_version": "1.0",
+      "segment_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s1-4",
+      "sha256": "3172426ffbe2c7d21b38d5b8ba47891bc5e2dbb399be2c3befdc22140da63dc0",
+      "shot_id": "m08-motion",
+      "source_frames": {
+        "end": 4,
+        "start": 1
+      },
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s5-8",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 4,
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "segment-00000005-00000008.mp4",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "schema_version": "1.0",
+      "segment_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s5-8",
+      "sha256": "7d1976eaa0c5561f6b3f2f00760767a6c6f4e4ebc301a7d92f72e3a7ac7a8e15",
+      "shot_id": "m08-motion",
+      "source_frames": {
+        "end": 8,
+        "start": 5
+      },
+      "version_id": "m08-scene-v1"
+    },
+    {
+      "artifact_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s9-12",
+      "attempt_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2",
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 4,
+      "input_digest": "248bc2a68e009db137d206aeba535073ce6358e6f3f44c4ed66caf211882465e",
+      "job_id": "preview-de09e7f316137193353d0c584cf867e6295447f8095eb4e908158de24d125c60",
+      "output_path": "segment-00000009-00000012.mp4",
+      "project_id": "project-78ce47e9-d8eb-4e75-9e2e-d5bd33e7d6c5",
+      "schema_version": "1.0",
+      "segment_id": "attempt-c7fde555-bb3e-4932-b9f1-330c4928dae2-s9-12",
+      "sha256": "2b18c3c47818030d27c114dfa1c5e73faf4e9957fc76120db54544d83892b51f",
+      "shot_id": "m08-motion",
+      "source_frames": {
+        "end": 12,
+        "start": 9
+      },
+      "version_id": "m08-scene-v1"
+    }
+  ],
+  "cleanup": {
+    "initial": {
+      "servers": [
+        {
+          "label": "server-initial",
+          "identity": {
+            "pid": 3654952,
+            "start_ticks": 46209093,
+            "state": "R",
+            "argv": [
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/tests/native/previews/m08_host.py",
+              "serve",
+              "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a"
+            ]
+          }
+        }
+      ],
+      "server_exited": true,
+      "browser_driver_exited": true
+    },
+    "correction": {
+      "servers": [
+        {
+          "label": "server-correction",
+          "identity": {
+            "pid": 3709825,
+            "start_ticks": 46335962,
+            "state": "R",
+            "argv": [
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/tests/native/previews/m08_host.py",
+              "serve",
+              "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a"
+            ]
+          }
+        }
+      ],
+      "server_exited": true,
+      "browser_driver_exited": true
+    },
+    "recovery": {
+      "servers": [
+        {
+          "label": "server-recovery",
+          "identity": {
+            "pid": 3729513,
+            "start_ticks": 46380284,
+            "state": "R",
+            "argv": [
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/tests/native/previews/m08_host.py",
+              "serve",
+              "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a"
+            ]
+          },
+          "observed_exit_code": -9
+        },
+        {
+          "label": "server-passive-restart",
+          "identity": {
+            "pid": 3730258,
+            "start_ticks": 46380829,
+            "state": "R",
+            "argv": [
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/tests/native/previews/m08_host.py",
+              "serve",
+              "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a"
+            ]
+          }
+        }
+      ],
+      "server_exited": true,
+      "browser_driver_exited": true
+    },
+    "assembly": {
+      "servers": [
+        {
+          "label": "server-assembly",
+          "identity": {
+            "pid": 3751226,
+            "start_ticks": 46418549,
+            "state": "R",
+            "argv": [
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/tests/native/previews/m08_host.py",
+              "serve",
+              "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a"
+            ]
+          }
+        }
+      ],
+      "server_exited": true,
+      "browser_driver_exited": true
+    },
+    "readback": {
+      "servers": [
+        {
+          "label": "server-readback",
+          "identity": {
+            "pid": 3769350,
+            "start_ticks": 46459547,
+            "state": "R",
+            "argv": [
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/.venv/bin/python",
+              "/home/quintin/.cache/proscenium-development/fleet/m08-motion/tests/native/previews/m08_host.py",
+              "serve",
+              "/home/quintin/.cache/proscenium-development/milestones/m08-motion-20261114-a"
+            ]
+          }
+        }
+      ],
+      "server_exited": true,
+      "browser_driver_exited": true
+    }
+  },
+  "files_sha256": {
+    "failure-initial.json": "4e608f97911c0e2d38e018dd2396f125c3dbc1367fd6378da1c6dba5b10f86ff",
+    "failure-correction.json": "eaa6c75308b57163515d08ed6c7d56d91e93c2a1fdad21331ff0d027f1529d84",
+    "annotation-ready.json": "00d9f42a552b0d853b8c254d81f6b77f3e8e2945689703acb5d98de1ccb45162",
+    "first-segment-played.json": "8e753814dfedeb602fd8e271b3f756dacdd42aef188e507ce6de0b6c704ce7f6",
+    "crash-checkpoint.json": "832860f7bee9f6ff03ef0c5c72133d01e01075986c84103c12c675193ae11a99",
+    "backend-kill.json": "345cc7bb75b8f2ef3c83eebfa1b992b8050e488b4a5f594447ddd75c01aff9ca",
+    "passive-recovery.json": "401df8a81508c61a448ea2de73594d7ce7149cf4c7748af5e8e1f5b08e8445f5",
+    "assembly-complete.json": "9e0e8fed21f1daf15f22336db5fb63bcbce4892008bed79ba4f430cefb2ee1d4",
+    "browser-readback.json": "22d5049ec4de69388ac8f26b0bc18c2dd59acbe36dd38978a753bbc192135b81"
+  },
+  "m08_criteria": {
+    "1": "PASS: actual compiled shot cards, model-authored canonical scene/camera/range/FPS bindings and real ready frame references",
+    "2": "PASS: newly rendered source proxy, native lighting keyframe and progressive animation toggled in one viewer",
+    "3": "PASS: actual saved PNG/rVFC-ordinal pin and first contiguous segment playback strictly before main frame 12",
+    "4": "PASS: actual pending frame-12 seek, no old-version substitution; accepted W05 middle-hole cases remain dependencies",
+    "5": "PASS: drawing paused playback; source-frame-3 clean PNG and segment identity with inclusive range 1..4 retained",
+    "6": "PASS: mounted saved editor/pin DOM and snapshot unchanged across late output/restart/reload/final encode; no unsaved-edit conflict injected",
+    "7": "PASS: fully decoded silent twelve-frame movie with exact same-job/version/shot/frame contributors and unchanged original annotation",
+    "8": "PASS: actual first-ready/latency/throughput/callback intervals and bounded resource observations; not a universal benchmark",
+    "9": "PASS WITH ACCEPTED DEPENDENCIES: W05 three-browser F03/F04 fractional codec/step/hole/cadence matrix not rerun; this actual Chromium journey restored the same job availability after restart"
+  },
+  "limits": [
+    "M04/M06 cumulative dependency acceptance and M08 milestone acceptance remain coordinator-owned.",
+    "M12 worker slice only. No claim for whole native-history/provider/Unity/backup/project-switch recovery.",
+    "Original twelve-frame crash guard refused the shell-launcher-to-Blender exec argv transition; no crash was induced there. Four-frame probe used the fixed worker's PID/start corroboration.",
+    "Four-frame probe uses the same published source/profile but a declared new intent/range and distinct input digest. Its own exact attempt/input digest stayed unchanged through restart.",
+    "Two acknowledged harness admissions initially retained running invocation flags. Only those proven harness calls were settled; the refused Resume record and all SDK/permission history remain retained.",
+    "Resume actions are disclosed owner API calls with fresh project revisions, not a UI Resume pass.",
+    "Animation annotations name the receipted clean PNG corresponding to an rVFC ordinal and segment; not lossless-video-identical pixels.",
+    "Intentional pause/annotation/replay gives repeated rVFC ordinals. No uninterrupted all-twelve-source-frame-once browser claim is substituted for accepted F03/F04 tests.",
+    "Opening reference keyframe and main motion both use allocated CPU8samples640x360; no claim that the draft was measured cheaper than this tiny keyframe."
+  ]
+}

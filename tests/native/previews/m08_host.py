@@ -331,7 +331,12 @@ def serve(root):
         current = state()
         job = services.jobs.get(project_id, body["job_id"])
         job_root = previews.root(job)
-        native = read(job_root / "native-process.json")
+        launched = read(job_root / "native-process.json")
+        # The installed `blender` command is a shell launcher which execs the
+        # pinned binary. Corroborate PID/start against the identity emitted from
+        # INSIDE that fixed Blender worker, rather than treating exec as exit.
+        native = read(job_root / "native-profile.json")["process"]
+        assert native["pid"] == launched["pid"] and native["start_ticks"] == launched["start_ticks"]
         supervisor = read(job_root / "process.json")
         if not alive(native) or not alive(supervisor):
             raise DomainError(
@@ -399,6 +404,13 @@ def serve(root):
             work = tx.require("work", work_id)
             work.update(state="completed", state_revision=1)
             tx.put("work", work_id, work, expected_revision=0, schema="WorkRecord")
+            invocation_record = tx.require("invocations", invocation)
+            tx.put(
+                "invocations",
+                invocation,
+                {**invocation_record, "state": "completed"},
+                expected_revision=tx.revision("invocations", invocation),
+            )
         # Change only a live, owned, native texture after admission. The pinned
         # materialisation must continue using the original blue bytes.
         texture = project / "assets/cube/colour.png"
@@ -415,6 +427,7 @@ def serve(root):
             "live_texture_before": before,
             "live_texture_after": sha(texture.read_bytes()),
             "source_head": git(project, "rev-parse", "HEAD").decode().strip(),
+            "sdk_process": read(root / "machine/copilot-runtime/process.json"),
         }
         assert alive(native), "Do not claim worker survival if it finished during checkpoint"
         write(root / "crash-checkpoint.json", record)
@@ -433,12 +446,132 @@ def serve(root):
         threading.Timer(0.025, terminate).start()
         return {"crash_scheduled": True, "host_ns": record["host_ns"]}
 
-    app = create_app(settings, services=services, routers=[routes], manage_features=True)
-    if not (root / "pairing.private.url").exists():
-        (root / "pairing.private.url").write_text(
-            settings.origin + "/#pair=" + services.auth.issue_pairing()
+    @routes.post("/m08-harness/recovery-probe")
+    def recovery_probe(caller: Caller = Depends(owner)):
+        current = state()
+        original = next(
+            job
+            for job in current["jobs"]
+            if job["render_spec"] and job["render_spec"]["intent_id"] == "m08-motion"
         )
-        (root / "pairing.private.url").chmod(0o600)
+        assert original["state"] == "succeeded" and current["annotations"]
+        store = services.registry.project_store(project_id)
+        work_id, invocation = "m08-labelled-recovery-work", "m08-labelled-recovery-invocation"
+        with store.transaction() as tx:
+            tx.put(
+                "work",
+                work_id,
+                dict(
+                    schema_version="1.0",
+                    project_id=project_id,
+                    work_id=work_id,
+                    originating_request_id="m08-explicit-test-owner-recovery-probe",
+                    directive_request_ids=[],
+                    state="running",
+                    state_revision=0,
+                    native_session_id=services.registry.get(project_id)["native_session_id"],
+                    job_ids=[],
+                    generation_task_id="m08-recovery-probe",
+                ),
+                schema="WorkRecord",
+            )
+            tx.put(
+                "invocations",
+                invocation,
+                {"work_id": work_id, "owner_epoch": services.ownership.epoch, "state": "running"},
+            )
+        spec = {
+            **original["render_spec"],
+            "intent_id": "m08-recovery4",
+            "frames": {"start": 1, "end": 4},
+        }
+        job = previews.request(
+            Caller(
+                "tool",
+                "m08-explicit-test-owner",
+                project_id,
+                work_id,
+                services.ownership.epoch,
+                operations=("requestPreview",),
+                invocation_id=invocation,
+            ),
+            dict(
+                schema_version="1.0",
+                operation_id="m08-recovery4",
+                project_id=project_id,
+                version=original["target"]["version"],
+                spec=spec,
+            ),
+        )[0]
+        with store.transaction() as tx:
+            work = tx.require("work", work_id)
+            work.update(state="completed", state_revision=1)
+            tx.put("work", work_id, work, expected_revision=0, schema="WorkRecord")
+            invocation_record = tx.require("invocations", invocation)
+            tx.put(
+                "invocations",
+                invocation,
+                {**invocation_record, "state": "completed"},
+                expected_revision=tx.revision("invocations", invocation),
+            )
+        write(
+            root / "recovery-probe-admission.json",
+            {
+                "label": "Explicit same-source/profile four-frame recovery allocation, not new model authoring",
+                "original_motion_job": original["job_id"],
+                "job": job,
+            },
+        )
+        return job
+
+    @routes.post("/m08-harness/settle-admission-calls")
+    def settle_admission_calls(caller: Caller = Depends(owner)):
+        # Migration of THIS TEST'S acknowledged in-process admissions only. Never
+        # alter SDK callbacks, permission stages or uncertain native outcomes.
+        references = [
+            (
+                "m08-labelled-recovery-invocation",
+                "m08-labelled-recovery-work",
+                read(root / "recovery-probe-admission.json")["job"],
+            ),
+            (
+                "m08-labelled-held-invocation",
+                "m08-labelled-held-work",
+                read(root / "crash-checkpoint.json")["held_job"],
+            ),
+        ]
+        changes = []
+        with services.registry.project_store(project_id).transaction() as tx:
+            for invocation_id, work_id, acknowledged in references:
+                invocation = tx.require("invocations", invocation_id)
+                work = tx.require("work", work_id)
+                job = tx.require("jobs", acknowledged["job_id"])
+                assert invocation["work_id"] == work_id == job["work_id"]
+                assert (
+                    job["attempt_id"] == acknowledged["attempt_id"]
+                    and job["input_digest"] == acknowledged["input_digest"]
+                )
+                assert work["state"] == "completed" and "session_id" not in invocation
+                if invocation["state"] == "running":
+                    tx.put(
+                        "invocations",
+                        invocation_id,
+                        {**invocation, "state": "completed"},
+                        expected_revision=tx.revision("invocations", invocation_id),
+                    )
+                    changes.append(invocation_id)
+        result = {
+            "label": "Own acknowledged harness admission calls settled, not native-stage approval",
+            "changes": changes,
+        }
+        write(root / "harness-admission-settlement.json", result)
+        return result
+
+    app = create_app(settings, services=services, routers=[routes], manage_features=True)
+    (root / "pairing.private.url").write_text(
+        settings.origin + "/#pair=" + services.auth.issue_pairing()
+    )
+    (root / "pairing.private.url").chmod(0o600)
     try:
         from urllib.parse import urlsplit
 
@@ -466,6 +599,12 @@ def run(root, phase, permission_fix):
         assert not previous["jobs"] and not previous["versions"] and not previous["frames"], (
             "Inspect any existing native/source effects before a correction"
         )
+    elif phase == "recovery":
+        assert (root / "annotation-original.json").exists()
+        assert (root / "first-segment-played.json").exists()
+        assert not (root / "backend-kill.json").exists(), "Never repeat an uncertain crash"
+    elif phase == "readback":
+        assert (root / "assembly-complete.json").exists()
     else:
         assert (root / "passive-recovery.json").is_file(), (
             "Inspect original recovery before explicit continuation"
@@ -563,7 +702,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("run", "serve"))
     parser.add_argument("root", type=Path)
-    parser.add_argument("--phase", choices=("initial", "correction", "assembly"), default="initial")
+    parser.add_argument(
+        "--phase",
+        choices=("initial", "correction", "recovery", "assembly", "readback"),
+        default="initial",
+    )
     parser.add_argument(
         "--permission-fix", help="Exact coordinator-accepted commit, already merged into HEAD"
     )

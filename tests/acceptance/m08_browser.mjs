@@ -30,14 +30,12 @@ try{
   const until=Date.now()+30000;while(true){try{if((await fetch(config.origin+'/health')).ok)break;}catch{}if(Date.now()>until)throw new Error('Host did not become ready');await new Promise(r=>setTimeout(r,80));}
   context=await chromium.launchPersistentContext(`${root}/browser-profile`,{executablePath:path.join(os.homedir(),'.cache/ms-playwright/chromium-1255/chrome-linux64/chrome'),headless:true,viewport:{width:1920,height:1080},deviceScaleFactor:1,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-background-networking']});
   page=context.pages()[0];page.setDefaultTimeout(12000);log.browser=context.browser().version();
+  const pair=page.waitForResponse(r=>r.url().endsWith('/api/v1/owner/session')&&r.request().method()==='POST');
+  await page.goto((await fs.readFile(`${root}/pairing.private.url`,'utf8')).trim());
+  await page.getByRole('button',{name:'Connect this browser'}).click();csrf=(await(await pair).json()).csrf_token;
+  await fs.writeFile(`${root}/csrf.private`,csrf,{mode:0o600});
   if(phase==='initial'||phase==='correction'){
-    if(phase==='initial'){
-      const pair=page.waitForResponse(r=>r.url().endsWith('/api/v1/owner/session')&&r.request().method()==='POST');
-      await page.goto((await fs.readFile(`${root}/pairing.private.url`,'utf8')).trim());
-      await page.getByRole('button',{name:'Connect this browser'}).click();csrf=(await(await pair).json()).csrf_token;
-      await fs.writeFile(`${root}/csrf.private`,csrf,{mode:0o600});
-    }else{
-      csrf=await fs.readFile(`${root}/csrf.private`,'utf8');await page.goto(config.origin);
+    if(phase==='correction'){
       const before=await state();
       assert.equal(before.jobs.length,0);assert.equal(before.versions.length,0);
       assert.ok(before.requests.every(request=>request.receipt.state==='completed'),'Do not replay uncertain original work');
@@ -117,16 +115,86 @@ try{
     await page.getByLabel('Pinned annotation',{exact:true}).waitFor();
     await page.screenshot({path:`${root}/annotation-restored.png`});
     log.status='progressive_note_playback_before_last_and_passive_worker_recovery_pass';
+  }else if(phase==='recovery'){
+    let before=await poll(s=>s.jobs.some(job=>job.render_spec?.intent_id==='m08-motion'&&job.state==='succeeded'),30,'read-only main-job terminal reconciliation');
+    assert.ok(before.requests.every(request=>request.receipt.state==='completed'),'Do not replay uncertain work');
+    const annotation=JSON.parse(await fs.readFile(`${root}/annotation-original.json`,'utf8'));
+    assert.deepEqual(before.annotations[0],annotation);
+    assert.equal(before.gate_open,false);assert.equal(before.sdk_object_created,false);
+    await write('before-recovery-probe.json',before);
+    await explicitOwnerResume('m08-explicit-recovery-resume');
+    await poll(s=>s.gate_open,30,'explicit owner release for four-frame recovery allocation');
+    await page.getByRole('button',{name:'Assets',exact:true}).click();
+    await page.getByRole('button').filter({has:page.locator('small',{hasText:/^m08-scene-v1$/})}).click();
+    await page.getByText('Saved annotations and local drafts',{exact:true}).click();
+    await page.getByRole('button',{name:/M08 retained motion note.*saved/}).click();
+    await page.getByLabel('Pinned annotation',{exact:true}).waitFor();
+    const capturePin=()=>page.evaluate(()=>{const section=document.querySelector('[aria-label="Pinned annotation"]');return {image:section.querySelector('img').getAttribute('src'),pin:[...section.querySelectorAll('svg circle')].map(node=>({cx:node.getAttribute('cx'),cy:node.getAttribute('cy')})),feedback:section.querySelector('textarea').value};});
+    const pinnedBefore=await capturePin();await write('pinned-before-recovery.json',pinnedBefore);
+    const probe=await post('/m08-harness/recovery-probe',{});
+    await poll(s=>s.frames.some(frame=>frame.job_id===probe.job_id&&frame.source_frame===1),15,'actual four-frame probe first receipt');
+    await post('/m08-harness/crash',{job_id:probe.job_id});
+    const recovered=await poll(s=>s.owner_epoch!==probe.owner_epoch&&s.jobs.find(job=>job.job_id===probe.job_id)?.state==='succeeded',60,'same-attempt passive restart');
+    assert.equal(recovered.gate_open,false);assert.equal(recovered.sdk_object_created,false);
+    assert.deepEqual(recovered.annotations[0],annotation);
+    assert.equal(recovered.requests.length,before.requests.length);
+    assert.deepEqual(recovered.contexts,before.contexts);
+    assert.deepEqual(recovered.publications,before.publications);
+    assert.deepEqual(recovered.versions,before.versions);
+    assert.equal(recovered.jobs.find(job=>job.job_id===probe.job_id).attempt_id,probe.attempt_id);
+    assert.equal(recovered.jobs.find(job=>job.job_id===probe.job_id).input_digest,probe.input_digest);
+    assert.equal(recovered.jobs.find(job=>job.render_spec?.intent_id==='m08-held-output').state,'planned');
+    assert.deepEqual(await capturePin(),pinnedBefore);
+    await write('passive-recovery.json',recovered);
+    await page.screenshot({path:`${root}/after-passive-recovery.png`});
+    await page.reload();await page.getByText('Saved annotations and local drafts',{exact:true}).click();
+    await page.getByRole('button',{name:/M08 retained motion note.*saved/}).click();
+    await page.getByLabel('Pinned annotation',{exact:true}).waitFor();
+    assert.deepEqual(await capturePin(),pinnedBefore);
+    await page.screenshot({path:`${root}/annotation-restored.png`});
+    log.status='four_frame_same_source_profile_worker_recovery_pass_no_new_cloud_root';
+  }else if(phase==='readback'){
+    const before=await state();assert.equal(before.gate_open,false);assert.equal(before.sdk_object_created,false);
+    const plan=JSON.parse(await fs.readFile(`${root}/project/storyboards/m08/plan.json`,'utf8'));
+    await page.getByRole('button',{name:'Shots',exact:true}).click();
+    await page.getByLabel('Storyboard version',{exact:true}).selectOption('m08-board-v2');
+    await page.waitForFunction(()=>document.querySelectorAll('.sb-shot').length===2);
+    const cards=await page.locator('.sb-shots').innerText();
+    for(const shot of plan.shots){assert.ok(cards.includes(shot.shot_id));assert.ok(cards.includes('m08-scene / m08-scene-v1'));assert.ok(cards.includes(`${shot.source_range.start}–${shot.source_range.end} inclusive`));assert.ok(cards.includes('24/1'));}
+    assert.ok(!cards.includes('Unbound')&&!cards.includes('Not authored'));
+    await write('actual-shot-cards.json',{text:cards,plan_id:plan.plan_id});
+    await page.screenshot({path:`${root}/actual-authored-shot-cards.png`});
+    await page.getByRole('button',{name:'Assets',exact:true}).click();
+    await page.getByRole('button').filter({has:page.locator('small',{hasText:/^m08-clip-v1$/})}).click();
+    await page.getByRole('button',{name:'3 Animation',exact:true}).click();
+    const video=page.locator('[aria-label="Mapped sequence animation"] video');
+    await video.waitFor();await page.waitForFunction(()=>document.querySelector('[aria-label="Mapped sequence animation"] video')?.readyState>=2);
+    await page.evaluate(()=>{window.__m08MovieFrames=[];const v=document.querySelector('[aria-label="Mapped sequence animation"] video');const collect=(now,meta)=>{window.__m08MovieFrames.push({now,mediaTime:meta.mediaTime,presentedFrames:meta.presentedFrames});v.requestVideoFrameCallback(collect);};v.requestVideoFrameCallback(collect);});
+    await video.hover();const videoBox=await video.boundingBox();
+    await video.click({position:{x:28,y:videoBox.height-28}});
+    await page.waitForFunction(()=>document.querySelector('[aria-label="Mapped sequence animation"] video')?.ended,{},{timeout:10000});
+    const after=await state();assert.equal(after.gate_open,false);assert.equal(after.sdk_object_created,false);
+    assert.equal(after.requests.length,before.requests.length);assert.equal(after.jobs.length,before.jobs.length);
+    assert.deepEqual(after.annotations,before.annotations);
+    await write('actual-movie-readback.json',{frames:await page.evaluate(()=>window.__m08MovieFrames),before_watermark:before.watermark,after_watermark:after.watermark,gate_open:after.gate_open,sdk_object_created:after.sdk_object_created});
+    await page.screenshot({path:`${root}/actual-final-movie.png`});
+    log.status='read_only_authored_shot_cards_and_final_movie_pass';
   }else{
     csrf=await fs.readFile(`${root}/csrf.private`,'utf8');await page.goto(config.origin);
     let before=await state();
+    await post('/m08-harness/settle-admission-calls',{});
     assert.ok(before.requests.every(request=>request.receipt.state==='completed'),'Original work is unresolved. Stop and seek the explicitly scoped continuation, never resend it.');
     const motion=before.jobs.find(job=>job.render_spec?.intent_id==='m08-motion');assert.equal(motion.state,'succeeded');
     const held=before.jobs.find(job=>job.render_spec?.intent_id==='m08-held-output');assert.ok(held);
     if(held.state==='planned')await post(`/api/v1/projects/${fixture.project_id}/jobs/${held.job_id}/cancel`,{schema_version:'1.0',operation_id:'m08-cancel-unlaunched-probe',project_id:fixture.project_id,expected_revision:held.state_revision});
-    await explicitOwnerResume('m08-explicit-assembly-resume');
+    await explicitOwnerResume('m08-explicit-assembly-resume-after-harness-settlement');
     before=await poll(s=>s.gate_open&&s.jobs.find(job=>job.job_id===held.job_id)?.state==='cancelled',30,'explicit owner Resume and prelaunch probe cancellation');
     await write('before-explicit-assembly.json',before);
+    await page.getByRole('button',{name:'Assets',exact:true}).click();
+    await page.getByRole('button').filter({has:page.locator('small',{hasText:/^m08-scene-v1$/})}).click();
+    await page.getByText('Saved annotations and local drafts',{exact:true}).click();
+    await page.getByRole('button',{name:/M08 retained motion note.*saved/}).click();
+    await page.getByLabel('Pinned annotation',{exact:true}).waitFor();
     const task=`Explicit continuation after the worker-recovery read checks. Do NOT repeat the original animation task. All 12 motion frames already exist for job ${motion.job_id}, scene item m08-scene/version m08-scene-v1, shot m08-motion, frames 1..12 at24/1. No source/texture/camera edit, Blender process, rendering, child, GPU or provider work. The green live texture edit is deliberately UNRELATED and must not be staged or included. Use get_version and list_job_frames/get_artifact, never private SQLite.
 Update canonical storyboards/m08/plan.json to link the opening and motion start/intermediate/end roles to their actual ready frame artifact IDs, preserving the existing shot/frame IDs, scene_version/range/FPS and camera/motion bindings. Opening job is the m08-keyframe preview; motion start/middle/end source frames are1/6/12. Publish storyboard item m08-board version m08-board-v2, expected head m08-board-v1, no previews.
 Also author canonical sequences/m08/sequence.json as normative SequenceMap with sequence_version_id m08-clip-v1,project_id ${fixture.project_id},fps24/1,frame_count12,silent:true. ONE identity entry m08-main-entry: shot_id m08-motion,version_id m08-scene-v1,job_id ${motion.job_id},source_frames1..12,sequence_frames1..12,transform identity,mapping_artifact_id:null. This bounded movie is only the motion shot; opening is the separate one-frame review reference. Checkpoint ONLY your plan and sequence JSON through checkpoint_sources with actual expected HEAD, preserve the green working edit. tools/m08_contract.py computes exact closures. Both documents pin m08-scene/m08-scene-v1 as dependency. Publish sequence item m08-clip/version m08-clip-v1 expectedheadnull, no previews, in the same publication as the new storyboard.
