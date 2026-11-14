@@ -27,7 +27,8 @@ def test_standalone_selective_host_import_does_not_start_sdk(tmp_path):
     )
 
 
-def test_ack_before_hook_is_withheld_while_all_other_traffic_flows(tmp_path):
+@pytest.mark.parametrize("buffer_size", [-1, 0])
+def test_ack_before_hook_is_withheld_while_all_other_traffic_flows(tmp_path, buffer_size):
     marker = tmp_path / "accepted.json"
     peer = r"""
 import json,sys
@@ -55,6 +56,7 @@ sys.stdin.buffer.read()
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        bufsize=buffer_size,
     )
 
     async def run():

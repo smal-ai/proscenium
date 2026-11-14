@@ -122,13 +122,14 @@ class SelectiveResponseLoss:
         # BufferedReader.close can deadlock against a blocking reader thread.
         # FileIO.close closes the REAL FD without that buffered-reader lock and
         # marks raw.closed, avoiding later descriptor reuse/double-close hazards.
-        self.stdout.raw.close()
+        raw = getattr(self.stdout, "raw", self.stdout)
+        raw.close()
         try:
             os.fstat(self.descriptor)
             self.facts["os_descriptor_closed"] = False
         except OSError:
             self.facts["os_descriptor_closed"] = True
-        self.facts["raw_file_closed"] = self.stdout.raw.closed
+        self.facts["raw_file_closed"] = raw.closed
         # Linux may keep a blocked read syscall alive after close(fd). Fence the
         # exact owned writer so real pipe EOF unblocks it. Never fabricate SDK EOF.
         process = self.rpc.process
