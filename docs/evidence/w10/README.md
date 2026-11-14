@@ -1,5 +1,11 @@
 # W10 evidence
 
+## Coordinator SSH follow-up
+
+The newly allocated [SSH follow-up](ssh-followup.md) passed with the corrected
+lifespan audit. [Its receipt](ssh-product-b.json) retains actual guard counters,
+transport observations and cleanup. The earlier partial run below is preserved.
+
 ## Integration follow-up on `9720285`
 
 [`integration-checks.json`](integration-checks.json) records the current follow-up,

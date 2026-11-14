@@ -1,0 +1,530 @@
+{
+  "format": "proscenium-w10-ssh-proof-1",
+  "status": "passed_bounded_ssh_product_transport",
+  "transport": "actual_ssh_same_host_loopback",
+  "inference": "forbidden",
+  "application_commit": "c1b2181f864f7d24129ebe0644eefd33790f7351",
+  "commands": [
+    {
+      "argv_redacted": [
+        "ssh-keygen",
+        "-q",
+        "-t",
+        "ed25519",
+        "-N",
+        "",
+        "-f",
+        "<PRIVATE_ROOT>/host_key"
+      ],
+      "redacted_sha256": "480ef8caacced18fc7dbcd22627408836edf08edd7e8b12ce3656dc0ef3b1d58"
+    },
+    {
+      "argv_redacted": [
+        "ssh-keygen",
+        "-q",
+        "-t",
+        "ed25519",
+        "-N",
+        "",
+        "-f",
+        "<PRIVATE_ROOT>/client_key"
+      ],
+      "redacted_sha256": "66f439bc5fcd3c7b244e93d815bae879a8b220011cd5ff51997492f38019cbeb"
+    },
+    {
+      "argv_redacted": [
+        "/usr/sbin/sshd",
+        "-t",
+        "-f",
+        "<PRIVATE_ROOT>/sshd_config"
+      ],
+      "redacted_sha256": "92bf0e28a691ff6bacd79edc441766c2a75cd87441b6f9aeeb517ec34832073d"
+    },
+    {
+      "argv_redacted": [
+        "<CHECKOUT>/.venv/bin/python3",
+        "-m",
+        "tools.operations.ssh_service",
+        "<PRIVATE_ROOT>"
+      ],
+      "redacted_sha256": "4e50a1a306f902ba80dafc235440e817199853fdf1d60b0622de9cc0c9bf4c16"
+    },
+    {
+      "argv_redacted": [
+        "/usr/sbin/sshd",
+        "-D",
+        "-e",
+        "-f",
+        "<PRIVATE_ROOT>/sshd_config"
+      ],
+      "redacted_sha256": "7661bc1b611ad54c0d791771ef890342ffc6f5b955254516b41a9e38ef7ac4fd"
+    },
+    {
+      "argv_redacted": [
+        "ssh",
+        "-F",
+        "/dev/null",
+        "-N",
+        "-T",
+        "-p",
+        "55797",
+        "-i",
+        "<PRIVATE_ROOT>/client_key",
+        "-o",
+        "IdentityAgent=none",
+        "-o",
+        "IdentitiesOnly=yes",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UserKnownHostsFile=<PRIVATE_ROOT>/known_hosts",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
+        "-o",
+        "ExitOnForwardFailure=yes",
+        "-o",
+        "ConnectTimeout=5",
+        "-o",
+        "ServerAliveInterval=5",
+        "-o",
+        "ServerAliveCountMax=2",
+        "-L",
+        "127.0.0.1:55381:127.0.0.1:43873",
+        "quintin@127.0.0.1"
+      ],
+      "redacted_sha256": "e729dfd3cfae1b3020c004dd5116516c0c373caa71aba562112fe9342d99aa45"
+    },
+    {
+      "argv_redacted": [
+        "node",
+        "<CHECKOUT>/tools/operations/ssh_browser.mjs",
+        "<PRIVATE_ROOT>"
+      ],
+      "redacted_sha256": "5532b41e8c9ff7d241dba3fe9bd9d2ec05bcfe0c21f9324b3d26d352797bb41d"
+    }
+  ],
+  "cleanup": [
+    {
+      "component": "browser",
+      "pid_start_checked": true,
+      "signalled_owned_group": false,
+      "exit_code": 0,
+      "original_identity_gone": true
+    },
+    {
+      "component": "ssh-client",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": 0,
+      "original_identity_gone": true
+    },
+    {
+      "component": "sshd",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": 0,
+      "original_identity_gone": true
+    },
+    {
+      "component": "product",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": -15,
+      "original_identity_gone": true
+    }
+  ],
+  "limits": [
+    "Same-host loopback, not a physical remote browser or cumulative M12/M14 journey.",
+    "Compiled UI pairing and scripted browser product API/media/WebSocket traffic, not native authoring."
+  ],
+  "versions": {
+    "ssh": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026",
+    "sshd": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026",
+    "node": "v24.18.0",
+    "chromium": "159.0.8154.6"
+  },
+  "allocation": {
+    "origin": "http://127.0.0.1:55381",
+    "backend_bind": "127.0.0.1:43873",
+    "sshd_bind": "127.0.0.1:55797",
+    "per_process_limit_seconds": 300,
+    "existing_ssh": "operator_strict_known_host_probe_failed_no_trust_store_changes"
+  },
+  "host_origin_checks": "correct_host_accepted_wrong_host_and_origin_rejected",
+  "browser": {
+    "project_open_activate": true,
+    "png_upload": true,
+    "media_sha256": "b2ce3c51de4baeb4a98d84a4cad3fbbfb3b2538ef7414b828fdd236e656d8933",
+    "media_bytes": 82,
+    "range_status": 206,
+    "range_exact_bytes": true,
+    "websocket_replay_sequences": [
+      1
+    ],
+    "websocket_reconnect_sequences": [
+      1
+    ],
+    "owner_pairing": true,
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-BLEqH2u5.css",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-DmwFdBzW.js",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-BLEqH2u5.css",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-DmwFdBzW.js",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/owner/session",
+        "status": 201
+      },
+      {
+        "method": "GET",
+        "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/configuration",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects",
+        "status": 201
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/activate",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects",
+        "status": 201
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/snapshot",
+        "status": 200
+      },
+      {
+        "method": "PUT",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/uploads/4e820aaa-e6b1-49ae-8355-b78d0ca82083",
+        "status": 201
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/artifacts/4e820aaa-e6b1-49ae-8355-b78d0ca82083/content",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/artifacts/4e820aaa-e6b1-49ae-8355-b78d0ca82083/content",
+        "status": 206
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/events",
+        "status": 200
+      }
+    ],
+    "off_origin_requests": 0,
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    },
+    "browser": "159.0.8154.6",
+    "frontend_index_sha256": "0142108e49b88507557b8d9f8da96f06af4a68333401df2ba107864dd8917c61",
+    "browser_context_closed": true,
+    "interaction_scope": "Actual compiled UI pairing, then scripted browser calls to real product routes. Not cumulative UI authoring acceptance."
+  },
+  "source_hashes": {
+    "tools/operations/ssh_proof.py": "0662c91cbeddd76e7852ce5a69da46446f92fe306a087b9c3e506c2da79a2181",
+    "tools/operations/ssh_service.py": "4adeb2f57063a0c460b8501d412648a8af0f92d250c573943f26f3f534de4043",
+    "tools/operations/ssh_browser.mjs": "1889c96d83947b3891eda02eea3ba2648337110a97073a6a9505d37d22678f94"
+  },
+  "owned_descendants_remaining": 0,
+  "execution_guards": {
+    "attempts": {
+      "native": 0,
+      "provider_http": 0,
+      "non_git_process": 0,
+      "sdk_factory": 0
+    },
+    "records": {
+      "jobs": 0,
+      "work": 0,
+      "requests": 0,
+      "copilot.session": 0
+    },
+    "gate_closed": true,
+    "transport_audit": [
+      {
+        "type": "http",
+        "path": "/health",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/health",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/health",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 403
+      },
+      {
+        "type": "http",
+        "path": "/health",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 403
+      },
+      {
+        "type": "http",
+        "path": "/",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-BLEqH2u5.css",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-DmwFdBzW.js",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-BLEqH2u5.css",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/index-DmwFdBzW.js",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/owner/session",
+        "method": "POST",
+        "exact_png_range": false,
+        "status": 201
+      },
+      {
+        "type": "http",
+        "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/configuration",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects",
+        "method": "POST",
+        "exact_png_range": false,
+        "status": 201
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/activate",
+        "method": "POST",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects",
+        "method": "POST",
+        "exact_png_range": false,
+        "status": 201
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/snapshot",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/uploads/4e820aaa-e6b1-49ae-8355-b78d0ca82083",
+        "method": "PUT",
+        "exact_png_range": false,
+        "status": 201
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/artifacts/4e820aaa-e6b1-49ae-8355-b78d0ca82083/content",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/artifacts/4e820aaa-e6b1-49ae-8355-b78d0ca82083/content",
+        "method": "GET",
+        "exact_png_range": true,
+        "status": 206
+      },
+      {
+        "type": "http",
+        "path": "/api/v1/projects/project-55b79adc-d9ba-435d-af71-a1c00794d99c/events",
+        "method": "GET",
+        "exact_png_range": false,
+        "status": 200
+      },
+      {
+        "type": "websocket",
+        "path": "/api/v1/events",
+        "method": null,
+        "exact_png_range": false,
+        "status": 101
+      },
+      {
+        "type": "websocket",
+        "path": "/api/v1/events",
+        "method": null,
+        "exact_png_range": false,
+        "status": 101
+      }
+    ]
+  },
+  "protected_session": {
+    "pid": 3327474,
+    "not_signalled": true,
+    "original_start_still_present": false
+  },
+  "elapsed_seconds": 4.362
+}
