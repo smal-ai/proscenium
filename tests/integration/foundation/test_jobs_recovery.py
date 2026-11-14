@@ -100,6 +100,24 @@ def test_cancellation_race_preserves_observed_success(services, caller, admissio
         services.jobs.retry(caller, retry)
 
 
+def test_admitted_inputs_remain_immutable_across_provider_configuration_changes(
+    services, caller, admission
+):
+    job = admit(services, caller, admission)
+    original = services.jobs.inputs("project-test", job["job_id"])
+    store = services.registry.project_store("project-test")
+    with store.transaction() as tx:
+        revision = tx.revision("job_inputs", job["job_id"])
+        services.jobs.freeze_inputs(tx, job["job_id"], original)
+        assert tx.revision("job_inputs", job["job_id"]) == revision
+    with pytest.raises(DomainError) as error, store.transaction() as tx:
+        services.jobs.freeze_inputs(
+            tx, job["job_id"], {**original, "endpoint": "http://different.invalid"}
+        )
+    assert error.value.code == "idempotency_conflict"
+    assert services.jobs.inputs("project-test", job["job_id"]) == original
+
+
 def test_stale_revisions_retries_and_old_attempt_rejected(services, caller, admission):
     first = admit(services, caller, admission)
     failed, _ = services.jobs.update(

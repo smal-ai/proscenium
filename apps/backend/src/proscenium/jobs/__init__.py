@@ -171,6 +171,22 @@ class JobService:
         return job
 
     @staticmethod
+    def freeze_inputs(tx: Transaction, job_id: str, inputs: dict[str, Any]) -> None:
+        """Freeze a trusted extension's non-secret execution inputs in its admission transaction."""
+        tx.require("jobs", job_id)
+        previous = tx.get("job_inputs", job_id, required=False)
+        if previous is not None:
+            if previous != inputs:
+                raise DomainError("idempotency_conflict", 409)
+            return
+        tx.put("job_inputs", job_id, inputs)
+
+    def inputs(self, project_id: str, job_id: str) -> dict[str, Any]:
+        with self.registry.project_store(project_id).transaction(write=False) as tx:
+            tx.require("jobs", job_id)
+            return tx.require("job_inputs", job_id)
+
+    @staticmethod
     def save_attempt(tx: Transaction, job: dict[str, Any], operation_id: str | None = None) -> None:
         identity = job["attempt_id"]
         old = tx.get("attempts", identity, required=False)

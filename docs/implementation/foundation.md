@@ -129,6 +129,9 @@ exposed by `ConfigurationView`. Configurable input limits are `upload_max_bytes`
 `upload_max_pixels` (40 million), `attachment_max_count` (8) and `attachment_max_bytes`
 (100 MiB). The exact E01 observations and remaining proof limits are in
 `docs/evidence/e01/README.md`.
+`provider_options` is the W07 private adapter configuration, separate from the non-secret
+endpoint/model/capability entries in `services`. It can contain secret **references**, not
+credential copies. Provider modules validate its documented keys.
 
 The integration-owned frontend seams are `apps/frontend/src/api/studio.ts`. W04 exports
 `StudioApp({components}: {components?: StudioComponents})`. W05 supplies `ReviewWorkspace`,
@@ -312,6 +315,8 @@ JobService.create(tx: Transaction, *, job_id: str, kind: str, target: JobTarget 
                   render_spec: RenderSpec JSON | None = None, expected_frames: int | None = None,
                   enqueue_kind: str | None = None) -> JobRecord JSON
 JobService.emit(tx: Transaction, job: JobRecord JSON, caller: Caller) -> None
+JobService.freeze_inputs(tx: Transaction, job_id: str, inputs: dict) -> None
+JobService.inputs(project_id: str, job_id: str) -> dict
 ```
 
 `create` is a trusted extension primitive for W02 publication preview intents and W07
@@ -320,6 +325,10 @@ effective configuration and caller authority before calling it. It durably creat
 1 and optionally its launch intent. Emit the job event in that same transaction. An idle
 owner review passes `work_id=None, owner_operation_id=original_review_id`. It must not
 attach itself to whatever Copilot work happens to be active.
+Use `freeze_inputs` in that same transaction for exact non-secret provider endpoint,
+configuration, graph/input references and execution parameters. Matching calls are no-ops,
+and changed inputs under an existing job are rejected. Extensions do not write `job_inputs`
+directly or replace a previously admitted provider identity after configuration changes.
 
 Admit/retry allocate, but do not launch, a CLI. They return 202 for acceptance and 200 for a
 matching retry. No launch capability is included in JobRecord. The trusted adapter issues

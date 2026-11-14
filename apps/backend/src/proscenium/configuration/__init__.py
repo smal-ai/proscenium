@@ -25,6 +25,7 @@ class Settings:
     revision: int = 0
     runtime: dict[str, Any] = field(default_factory=dict)
     rendering: dict[str, Any] = field(default_factory=dict)
+    provider_options: dict[str, Any] = field(default_factory=dict)
     upload_max_bytes: int = 25 * 1024**2
     upload_max_pixels: int = 40_000_000
     attachment_max_count: int = 8
@@ -74,8 +75,13 @@ class Settings:
             or self.attachment_max_bytes < 1
         ):
             raise ValueError("Invalid configured limit")
-        if not isinstance(self.runtime, dict) or not isinstance(self.rendering, dict):
-            raise ValueError("Runtime and rendering configuration must be objects")
+        if not all(
+            isinstance(value, dict)
+            for value in (self.runtime, self.rendering, self.provider_options)
+        ):
+            raise ValueError(
+                "Private runtime, rendering and provider configuration must be objects"
+            )
         for service in self.services:
             endpoint = urlsplit(service["endpoint"])
             if endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
