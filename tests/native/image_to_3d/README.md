@@ -1,14 +1,18 @@
 # E04 bounded execution allocation
 
-The coordinator explicitly authorised `e04-live-a` after accepting preparation `05c7589`.
-The implementation commit is `8c2a0f7`. Offline tests do not establish native acceptance.
+The active allocation is exactly **`e04-live-b`**, authorised after acceptance `9720285`.
+`e04-live-a` remains immutable report-only zero-effect evidence and is not accepted by the
+current execution CLI. The provider implementation is accepted. Offline tests do not
+establish native acceptance.
 
 ```bash
 PYTHONPATH=apps/backend/src:. .venv/bin/python -u \
-  tests/native/image_to_3d/proof.py --allocation e04-live-a
+  tests/native/image_to_3d/proof.py --allocation e04-live-b
 ```
 
 This command owns one fresh run directory and refuses to repeat an existing run. It is not
+a general-purpose directory selector. The exact allowed root is
+`/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b`. It is not
 a general-purpose inference CLI. It calls the production `ProviderService` exactly as a
 trusted test caller, using a labelled synthetic 2D reference and trusted harness admission
 context. No actual Copilot SDK turn is claimed. W01's frozen allowance record is one, with

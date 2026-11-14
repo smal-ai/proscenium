@@ -1,4 +1,4 @@
-"""ONE explicit e04-live-a allocation. Refuses an existing run, never re-submits inference.
+"""ONE exact named allocation. Refuses an existing run, never re-submits inference.
 
 This is a native test harness, not a product tool or alternative admission service.
 All generation effects run through the actual ProviderService and accepted W02 bridge.
@@ -34,12 +34,32 @@ from tools.image_to_3d.candidate import MODEL_ROOT
 from tools.image_to_3d.instance import plan
 from tools.image_to_3d.weights import inspect_weights
 
-ROOT = MODEL_ROOT.parent / "runs/e04-live-a"
+ALLOCATION = "e04-live-b"
+ROOT = MODEL_ROOT.parent / "runs" / ALLOCATION
 REPO = Path(__file__).resolve().parents[3]
 ENDPOINT = "http://127.0.0.1:18588"
 FIT_BYTES = 12 * 1024**3
 HEADROOM = 4 * 1024**3
 TERMINAL = {"succeeded", "failed", "cancelled"}
+
+
+def allocation_root(name: str) -> Path:
+    if name != ALLOCATION:
+        raise ValueError("Only the explicitly authorised e04-live-b allocation is accepted")
+    return MODEL_ROOT.parent / "runs" / name
+
+
+def remaining_owned_processes(report: dict) -> list[dict]:
+    remaining = []
+    for key in ("owned_server", "blender_process"):
+        identity = report.get(key)
+        if identity:
+            try:
+                if start_ticks(identity["pid"]) == identity["start_ticks"]:
+                    remaining.append({"role": key, **identity})
+            except (FileNotFoundError, ProcessLookupError):
+                pass
+    return remaining
 
 
 def write(path: Path, value: dict) -> None:
@@ -160,7 +180,7 @@ def prepare_services(report: dict):
         },
     )
     services.gate.resume(
-        project_id, reconciliation_evidence="Explicit e04-live-a one-attempt allocation"
+        project_id, reconciliation_evidence=f"Explicit {ALLOCATION} one-attempt allocation"
     )
     caller = Caller(
         "tool",
@@ -430,9 +450,11 @@ def run_import(argv, environment, root, report):
 
 
 def main():
+    global ROOT
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--allocation", required=True, choices=["e04-live-a"])
-    parser.parse_args()
+    parser.add_argument("--allocation", required=True, choices=[ALLOCATION])
+    args = parser.parse_args()
+    ROOT = allocation_root(args.allocation)
     instance = plan(
         ROOT, 18588
     )  # refuses existing root, changed source, occupied port or hidden extra paths
@@ -444,7 +466,7 @@ def main():
         )
     ROOT.mkdir(parents=True)
     report = {
-        "allocation": "e04-live-a",
+        "allocation": args.allocation,
         "recorded_at": datetime.now(timezone(timedelta(hours=2))).isoformat(),
         "code_revision": git(REPO, "rev-parse", "HEAD").decode().strip(),
         "instance_plan": instance,
@@ -485,7 +507,8 @@ def main():
     try:
         services, catalogue, caller, adapter = prepare_services(report)
         # Recheck after hashing/bootstrap and immediately before native process creation.
-        if observe()["mem_available_bytes"] < FIT_BYTES:
+        report["before_server_start"] = observe()
+        if report["before_server_start"]["mem_available_bytes"] < FIT_BYTES:
             report["blocker"] = "Host memory dropped below fit floor before server start"
             return
         with (ROOT / "comfy.log").open("wb") as log:
@@ -505,6 +528,7 @@ def main():
             "process_group": os.getpgid(proc.pid),
             "started_monotonic_ns": time.monotonic_ns(),
         }
+        report["instance_plan"]["executed"] = True
         write(ROOT / "report.json", report)
 
         def terminate_owned():
@@ -552,7 +576,8 @@ def main():
                 stopping.wait(0.5)
             else:
                 raise RuntimeError("Owned ComfyUI startup exceeded bounded readiness interval")
-        if observe()["mem_available_bytes"] < FIT_BYTES:
+        report["before_inference"] = observe()
+        if report["before_inference"]["mem_available_bytes"] < FIT_BYTES:
             report["blocker"] = (
                 "Host memory dropped below fit floor after server startup, before inference"
             )
@@ -627,6 +652,7 @@ def main():
             ]
             import_publish(services, catalogue, caller, report)
             report["hardware_mesh_import_checkpoint_publication_proven"] = True
+            report["e04_passed"] = True
     except Exception as exc:
         report["blocker"] = f"{type(exc).__name__}: {exc}"
     finally:
@@ -673,6 +699,7 @@ def main():
                 ]
             services.close()
         report["finished_at"] = datetime.now(timezone(timedelta(hours=2))).isoformat()
+        report["remaining_owned_processes"] = remaining_owned_processes(report)
         write(ROOT / "report.json", report)
         print(
             json.dumps(

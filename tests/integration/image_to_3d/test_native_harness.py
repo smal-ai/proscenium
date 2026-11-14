@@ -3,7 +3,19 @@
 import asyncio
 import json
 
+import pytest
 from native.image_to_3d import proof
+
+
+def test_only_exact_live_b_name_is_accepted_without_touching_live_a():
+    assert str(proof.allocation_root("e04-live-b")) == (
+        "/home/quintin/.cache/proscenium-development/image-to-3d/runs/e04-live-b"
+    )
+    assert proof.FIT_BYTES == 12 * 1024**3
+    assert proof.HEADROOM == 4 * 1024**3
+    for name in ("e04-live-a", "e04-live-c", "../e04-live-b", "e04-live-b/"):
+        with pytest.raises(ValueError):
+            proof.allocation_root(name)
 
 
 def test_native_harness_uses_actual_project_profile_and_one_shared_reservation(

@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -27,5 +28,15 @@ def test_retained_pre_admission_resource_guard_is_not_mesh_success():
     assert "Immediate" in report["blocker"]
     assert not report["independent_queue_before"]["queue_running"]
     assert not report["independent_queue_before"]["queue_pending"]
-    harness = Path(__file__).with_name("proof.py")
-    assert hashlib.sha256(harness.read_bytes()).hexdigest() == report["harness_sha256"]
+    # The A allocation's source is historical evidence, not the newly authorised B harness.
+    repository = Path(__file__).resolve().parents[3]
+    original = subprocess.check_output(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "show",
+            "97202858b7d032c6d9531b1c747b2aa87ef773d7:tests/native/image_to_3d/proof.py",
+        ]
+    )
+    assert hashlib.sha256(original).hexdigest() == report["harness_sha256"]
