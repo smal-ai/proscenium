@@ -1,0 +1,159 @@
+{
+  "command": "python tools/m05_blender.py history-adopt tools/history_adopt.py",
+  "request_id": "113219f0-a14c-45b5-b740-3f0596d7bd60",
+  "work_id": "work-28be728f76cd4851b56ef075b70a653c",
+  "generation_task_id": "task-11d15a7c6f964a6ab632ed1f716cea21",
+  "context_id": "9c26d0fb-a3c5-4110-b64e-5a3cc2df6fdb",
+  "blender": {
+    "version": "4.5.14 LTS",
+    "build_hash": "62c1db4208e8",
+    "build_branch": "blender-v4.5-release"
+  },
+  "historical_inspections": [
+    {
+      "version_id": "scene-main-v1",
+      "status": "partial_actual_reopen_from_Blender_log",
+      "source_commit": "a4b388c4fdaeda6d6513076ceac86921f1017cad",
+      "source_closure_digest": "0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e",
+      "snapshot_root": ".proscenium/snapshots/0e89e9b70fa0632857e76f6b48edbb6f373cb2364f610cfa0174b9145795402e/4ce4b921-256d-443d-b086-e7e3fbd1d53f",
+      "instances": [
+        {
+          "name": "Blue cube",
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-blue"
+          },
+          "mesh": "Cube",
+          "mesh_ids": {},
+          "library": "//../../assets/cube/asset.blend",
+          "bounds_m": {
+            "min": [
+              0.5,
+              -0.5,
+              0.0
+            ],
+            "max": [
+              1.5,
+              0.5,
+              1.0
+            ]
+          },
+          "dimensions_m": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "location": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "materials": [
+            "Fixture texture"
+          ],
+          "vertices": 8,
+          "polygons": 6
+        },
+        {
+          "name": "Renamed cube",
+          "ids": {
+            "proscenium_object_id": "object-cube-source",
+            "proscenium_instance_id": "instance-renamed"
+          },
+          "mesh": "Cube",
+          "mesh_ids": {},
+          "library": "//../../assets/cube/asset.blend",
+          "bounds_m": {
+            "min": [
+              -1.5,
+              -0.5,
+              0.0
+            ],
+            "max": [
+              -0.5,
+              0.5,
+              1.0
+            ]
+          },
+          "dimensions_m": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "location": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "materials": [
+            "Fixture texture"
+          ],
+          "vertices": 8,
+          "polygons": 6
+        }
+      ],
+      "evidence": "reports/native-allocation/history-adopt.log: AssertionError object observations",
+      "units": null,
+      "texture_validation": "not reached",
+      "saved": false
+    }
+  ],
+  "requested_future_operation": "Adopt asset-cube-v3 only into scene-main-v2",
+  "status": "blocked_final_authoring_attempt_exhausted",
+  "rendered": false,
+  "protected_before": {
+    "assets/cube/asset.blend": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde",
+    "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "assets/companion/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+    "assets/companion/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "scenes/alternate/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+    "research/Box.glb": "ed52f7192b8311d700ac0ce80644e3852cd01537e4d62241b9acba023da3d54e"
+  },
+  "historical_post_failure_hashes": {
+    "scene-main-v1": {
+      "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+      "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+      "scenes/fixture/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+    },
+    "scene-alternate-v1": {
+      "assets/cube/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+      "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+      "scenes/alternate/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+    }
+  },
+  "historical_before_hash_check": {
+    "scene-main-v1": "All closure hashes asserted against the exact materialisation before opening; inspection later aborted",
+    "scene-alternate-v1": "Blender loop not reached; post-failure bytes match pinned closure, not an actual Blender reopen"
+  },
+  "protected_after": {
+    "assets/cube/asset.blend": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde",
+    "assets/cube/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "assets/companion/asset.blend": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+    "assets/companion/colour.png": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+    "scenes/alternate/scene.blend": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+    "research/Box.glb": "ed52f7192b8311d700ac0ce80644e3852cd01537e4d62241b9acba023da3d54e"
+  },
+  "working_main_after_sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+  "failure": {
+    "exception": "AssertionError at tools/history_adopt.py:137",
+    "cause": "Cube-name fallback selected local Floor and Wall alongside the two explicitly ID-tagged linked cube instances",
+    "unexpected_objects": [
+      "Floor",
+      "Wall"
+    ],
+    "guard_exit_code": 0,
+    "application_success": false,
+    "guard_limitation": "Blender process exited zero despite an uncaught Python assertion; report status and log are the authoritative failure evidence",
+    "retry_performed": false
+  },
+  "adoption": {
+    "status": "not_run",
+    "scene_main_v2_published": false
+  },
+  "limitations": [
+    "Only scene-main-v1 was actually reopened; cube dimensions observed, but units and texture checks were not reached",
+    "scene-alternate-v1 was not reopened in Blender",
+    "No scene adoption, publication, render, preview or generation performed",
+    "Third and final guarded Blender attempt exhausted; no alternate Blender launch permitted"
+  ]
+}

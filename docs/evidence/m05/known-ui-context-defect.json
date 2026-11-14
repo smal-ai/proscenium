@@ -1,0 +1,23 @@
+{
+  "status": "remaining",
+  "reproduction": "Click the already-current asset-cube-v3 catalogue version a second time. The central image remains visible but onSelect clears parent target and the reviewer does not emit it again. Navigating to the companion version and back recovers context.",
+  "observed": {
+    "context": {
+      "item_id": "asset-cube",
+      "version_id": "asset-cube-v3",
+      "view_mode": "keyframes",
+      "target": null,
+      "camera": null,
+      "range": null,
+      "selected_objects": [],
+      "attachments": [],
+      "annotations": [],
+      "approved_findings": []
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  }
+}

@@ -31,5 +31,15 @@
 
 Use the smallest relevant checks. Offline planning never starts Blender, model
 services or GPU tests. Unavailable native checks remain explicitly not run.
+For Blender imports, an image-only dependency scan is insufficient. Audit the full
+`bpy.utils.blend_paths(absolute=True, packed=False, local=False)` result, libraries,
+file-backed resources and asset-library/weak references before claiming a portable
+source. An unused essentials-brush reference can still escape a historical source
+materialisation. Remove only genuinely unused imported/default datablocks, or make
+required paths project-relative and pin their actual bytes in the source closure.
+Recheck after saving. Preserve the active project's existing object/instance ID
+properties rather than inventing parallel keys with the same-looking values.
+Use those exact IDs to select validation targets. A broad mesh-name fallback can
+include unrelated objects whose generated datablock names share the same prefix.
 Checkpoint/publication uses accepted source tools and immutable receipts, not this
 ledger as an alternative database. Do not mutate an existing scene on asset revision.

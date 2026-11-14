@@ -1,0 +1,230 @@
+[
+  {
+    "native_event_id": "19a56625-a0ea-40ce-8292-b2a9312c8a87",
+    "type": "user.message",
+    "timestamp": "2026-11-14T14:59:56.916Z",
+    "content": "Use the accepted research skill for this active-project M05 request. Work only in this project, no sibling/original projects, SQLite, vector database, credentials, accounts, installs, native children, Blender UI/MCP, Unity, ComfyUI, VLM, GPU or independent-service changes. Finish this root within 170 seconds. Missing creative choices are fixed below. Keep unrelated work and both existing scene sources/dependencies unchanged.\n\nDiscover the reusable local cube using ACTUAL list_items queries 'amber-cube' (tag), 'tabletop blocking' (description) and 'Reusable fixture cube' (name), following pagination. Read the selected exact asset version with get_version. No filesystem-latest or private database reads. Record which queries found it. Inspect the active project's existing metadata and Git status before changes.\n\nI authorise one free online sample from the official KhronosGroup/glTF-Sample-Assets repository: the small Models/Box glTF-Binary Box.glb. This supplied repository URL is a discovery starting point, NOT a BlendSwap search. BlendSwap MCP is NOT CONFIGURED; report that truthfully and do not install it. Use ordinary permitted HTTP through Python urllib or curl, no auth. Read actual official catalogue metadata/README before downloading. Resolve the current repository commit via the public GitHub API and pin raw.githubusercontent.com URLs to it. Stream with timeouts, an aggregate FIVE MiB cap covering metadata and asset bytes, save to project-scoped temporary targets and atomically promote only complete verified bytes. Reject escaping targets/symlinks and never overwrite an existing original with partial bytes. Read actual file metadata/licence/creator if present; missing values stay null and do not block import/publication. Preserve the README/source URLs and actual hashes/byte sizes in research/box-ledger.json. Keep discovered, acquired, imported and validated observations distinct, with commands/evidence. Do not equate public/free with a cleared licence.\n\nImport the acquired actual GLB through an ordinary Blender Python script that YOU author in this project. Execute it ONCE through `python tools/m05_blender.py import tools/import_box.py`. That fixed guard owns the 180-second/four-thread/OS-claim/headroom and three-authoring-process budget. Do not invoke Blender another way, install an importer or retry an uncertain launch. The installed Blender is 4.5.14 LTS; verify bpy.app identity in the report. Import actual glTF geometry/materials, declare metric units and scale_length=1, apply any necessary transforms, centre the 1-metre Box in X/Y with its base at Z=0. Preserve stable object ID object-cube-source and instance ID instance-asset; name its mesh Cube for later explicit scene adoption. Keep actual imported material(s) available. Save editable source to a temporary sibling of assets/cube/asset.blend, verify and promote only on success. Do not touch assets/cube/colour.png, companion assets or scenes. The old asset/texture bytes are already preserved by their published v1 closure. No geometry may be created by substituting a procedural box for the downloaded file.\n\nFor independent review add an authored camera and area light/world to that asset scene, name the scene AssetReview, aim at the actual imported Box, camera roughly (3,-4,2.5), 45-mm lens, and name/stably identify camera/light. Use CYCLES CPU, four threads, 8 samples, one frame, 640x360, Standard/None colour management. Do not render from this authoring process. Record imported bounds, mesh/object IDs, units, material names/slots, missing external resources and actual Blender build in reports/import-inspection.json. Technical validation is not owner selection or finished rig/motion acceptance.\n\nPublish the imported source as a new version of the discovered asset item asset-cube: version_id asset-cube-v2, expected_current_version_id asset-cube-v1. Use a clear name 'Khronos Box - imported editable asset', tags retaining amber-cube/metre-fixture plus khronos/online-acquired, description explaining the acquired/imported state, and exact known/null provenance. Do NOT republish or adopt either scene. Retain the companion item. Checkpoint only your explicitly owned source/ledger/report/script paths with checkpoint_sources and actual HEAD. The asset SourceClosure must use real hydrated file hashes, repository ID and returned checkpoint commit, include every actual required external source file, and have sha256(canonical(closure_without_digest)) with sorted files/dependencies. Use installed proscenium.contracts for all exact types and validate before publish_outputs.\n\nRequest exactly TWO W03 previews on this first asset publication: one keyframe and one proxy, both one frame, 640x360, AssetReview, camera:null (authored camera), fps 24/1, engine CYCLES, device CPU, samples 8, colour_management {view_transform:'Standard',look:'None',exposure:0,gamma:1}, renderer_revision 'proscenium-blender-1', review_output {media_type:'image/png',encoding:'view_transformed_srgb',bit_depth:8}, extra_outputs:[], exact source_closure_digest and unique intent IDs. Do not wait for background previews inside this root, submit another preview, generate images, claim jobs complete or launch services. Report exact asset/source/publication/job IDs, download bytes, discovered/acquired/imported/validated distinctions, optional BlendSwap unavailable, and any real limitation. Routine authorised acquisition/checkpoint/publication needs no stage approval. Do not render screenshots as if they were Blender outputs.\n"
+  },
+  {
+    "native_event_id": "294e6019-f09e-4247-ae88-05c73beab252",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:00:00.291Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "f2dda71b-632a-4fb5-8595-294aaa411142",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:00:04.246Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "aa08cb91-df51-4315-b0f1-e8b2d984818c",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:00:08.327Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "5237a244-d9bf-4de8-aa60-9a4e5dcfdb28",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:00:35.316Z",
+    "content": "All three catalogue queries found `asset-cube-v1`; none had another page. I\u2019ll pin the official Khronos sample, import its actual geometry, and publish only the asset revision. BlendSwap MCP is unavailable.\n"
+  },
+  {
+    "native_event_id": "4ee04242-46f0-475e-9625-0c3dbda06762",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:00:42.559Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "43c9c11d-2733-48fc-9600-01b64b3db3de",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:00:49.087Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "271f0f58-9821-48ff-ad40-b81e59fe9d60",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:01:03.028Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "caf297f1-ca74-40c6-95f5-bf8ed7d8dd8d",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:01:16.212Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "f9eaa634-b60f-455d-998b-5113bf5f799f",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:01:32.695Z",
+    "content": "The 1,664-byte GLB imported successfully in Blender 4.5.14 LTS with its material, metre-scale bounds, stable IDs, and no external dependencies. One requirement remains unmet: Blender named the mesh `Cube.001`, although the object is `Cube`. I\u2019ll record that limitation without a second Blender launch, then publish and request the two previews.\n"
+  },
+  {
+    "native_event_id": "56944244-406b-4c5e-9b1d-ded2274ffbce",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:01:42.621Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "e2f5e211-df0c-410f-a72e-2823c33b4fc3",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:01:47.767Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "548be98e-871d-44f7-8166-b453ad63029a",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:01:53.927Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "97f96a49-e110-47bc-b624-b381dd944938",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:02:01.458Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "32502d75-e1df-4172-a243-a4d27ada161c",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:02:07.301Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "ee45b035-2431-4025-8ff5-ccc9380b71fe",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:02:13.279Z",
+    "content": "Published **`asset-cube-v2`**, with one unmet requirement: mesh datablock is `Cube.001`, not `Cube`; the object is `Cube`. No second Blender launch occurred.\n\n- **Discovered:** all three requested queries found `asset-cube-v1`; pagination exhausted.\n- **Acquired:** official pinned Box GLB, **1,664 bytes**; aggregate downloads **12,918 bytes**. Metadata records Cesium / CC-BY-4.0\u2014not independent rights clearance.\n- **Imported:** actual geometry/material through Blender **4.5.14 LTS**, build `62c1db4208e8`.\n- **Validated:** metre bounds, positioning, stable IDs, units and dependencies. No visual, rig, motion or owner acceptance claimed.\n\nScenes, companion files and existing texture remain unchanged. BlendSwap MCP is unavailable. Evidence: `research/box-ledger.json`, `reports/import-inspection.json`.\n\n**Exact receipts**\n- Publication: `m05-box-publication-9c9db828`\n- Source commit: `86430967543c9b760a6e3b562d5e02d69fce9b02`\n- Closure: `7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a`\n- Keyframe job: `preview-8c74e8e6ec6a8a797894de0cbad4bb4b4ad64fb60d333287a702774f3c617cfa`\n- Proxy job: `preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7`\n\nExactly two previews requested; neither awaited nor claimed complete."
+  },
+  {
+    "native_event_id": "52b8c609-0376-4a12-b9cf-8d4500d79f13",
+    "type": "user.message",
+    "timestamp": "2026-11-14T15:04:52.403Z",
+    "content": "Ordinary revision of the independently published asset-cube-v2: make the imported Box 50% taller (height 1.5 metres), preserve X/Y one metre and base Z=0, actual imported mesh topology/material, object-cube-source / instance-asset IDs, metres and the same camera/light treatment. This is native authoring, not image generation. Do not touch either scene, companion, existing colour.png, downloaded originals or old published sources. No children, GPU, VLM, ComfyUI, Unity, service changes, installs, purchases, remote sharing or SQLite. Finish this cloud root within 170 seconds. Use the accepted research skill and get_version(asset-cube-v2).\n\nActual W03 jobs from v2 BOTH FAILED KNOWN preflight with dependency_missing/outside_materialisation; no frames or proxy were produced. Do NOT retry, relaunch or modify those original jobs. Their process attempts are finished. The allocated proxy attempt is exhausted: do not request another proxy. Only one new corrected-source keyframe job is permitted on this v3 publication.\n\nAuthor tools/revise_box.py yourself and execute it ONCE through `python tools/m05_blender.py revise tools/revise_box.py` (the second of three guarded Blender authoring processes). Inside that one actual Blender process, open assets/cube/asset.blend; first record complete bpy.utils.blend_paths(absolute=True, packed=False, local=False), actual file-backed images/fonts/libraries and relevant datablock names. The first import's image-only check missed the outside dependency. Correct real source paths to project-relative paths and include required inputs in the source closure, or remove truly unused external datablocks only. Do not weaken W03 validation or conceal required external resources. Recheck all blend_paths and actual referenced files before saving. If a necessary unknown dependency cannot be resolved, report the exact limitation rather than fake success. No manual rendering.\n\nAlso fix the known mesh-name limitation: remove/rename only the unused old Cube mesh datablock so the actual imported mesh is named Cube. Preserve the imported 24-vertex/12-polygon geometry identity and Red material. Add the actual application keys proscenium_object_id='object-cube-source' and proscenium_instance_id='instance-asset' to the Box; keep existing ID keys too. Give camera/light their own stable proscenium keys if necessary. Set scene AssetReview, CYCLES CPU, four threads, eight samples, frame 1, 640x360, Standard/None. Record height/bounds, mesh name, materials, actual IDs/build and before/after dependency audit in reports/revision-inspection.json. Save to a temporary sibling and promote only on verified success; keep reports honest about checks not performed.\n\nUse checkpoint_sources for your exact owned source/script/report/ledger updates with actual HEAD, then publish only asset-cube-v3 on item asset-cube with expected_current_version_id asset-cube-v2. Keep the known Khronos/Cesium/CC-BY-4.0 metadata from actual retained evidence; do not infer owner selection or adoption. SourceClosure must contain exact hydrated required files and actual hashes, pinned checkpoint commit, correct repository ID and canonical digest. Validate using installed proscenium.contracts. Neither scene version/dependency changes until an explicit later adoption.\n\nOn that publication request exactly ONE new W03 keyframe using a NEW intent ID and this v3 source digest: purpose keyframe, AssetReview, camera:null, frames 1..1, fps24/1, 640x360, CYCLES/CPU/8 samples, Standard/None/exposure0/gamma1, renderer_revision proscenium-blender-1, view_transformed_srgb PNG RGB8, extra_outputs:[]. No other preview/render/proxy or generation job. Return actual checkpoint/publication/version/job IDs, the corrected dependency evidence, new height and precise remaining limits; do not wait for or claim that keyframe complete inside this root.\n"
+  },
+  {
+    "native_event_id": "0cdc973a-7a2d-4f13-92c7-2aa7333231f5",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:04:58.726Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "951ff041-bba7-4e1a-8161-77436bac2d1e",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:05:31.174Z",
+    "content": "I\u2019ll audit all Blender-reported dependencies before editing, preserve the imported topology and `Red` material, and publish v3 with one new keyframe request. The failed v2 jobs will remain untouched.\n"
+  },
+  {
+    "native_event_id": "14015e3c-3995-4d7d-9eb9-5185e138a4e7",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:05:40.998Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "9aeca63a-140f-4ac5-827d-0e9fce2ae8c9",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:00.367Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "6be88afc-bacb-45c1-8ce7-dbaacd5163c1",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:11.384Z",
+    "content": "The full audit found an outside Blender essentials-brush reference. Purging unused datablocks removed it; `blend_paths` is now empty both before and after saving. The Box is 1 \u00d7 1 \u00d7 1.5 metres with base Z=0, mesh name `Cube`, and its original topology and `Red` material preserved.\n"
+  },
+  {
+    "native_event_id": "c710a89c-9e7e-49a0-a119-23e9282d51bb",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:17.098Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "8a9b8ee2-b8ee-4ea1-b7b3-ca3deef45774",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:21.415Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "ad66e252-c365-4c93-9622-0aa5af2961bc",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:27.658Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "9b3c69b0-fd5d-4b93-ab9c-02e0850376e1",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:34.419Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "436729eb-61a6-42fa-9141-9083324b88d1",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:40.019Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "f4b115f2-6d13-416e-bc7e-87d80be0268b",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:06:44.779Z",
+    "content": "Published **`asset-cube-v3`**: **1 \u00d7 1 \u00d7 1.5 metres**, base Z=0, mesh `Cube`, original 24 vertices/12 polygons and `Red` material preserved. Added application stable IDs; camera/light treatment retained.\n\nThe audit found an outside `essentials_brushes-gp_draw.blend` reference. Unused-datablock purging removed it; complete `blend_paths` checks were empty before and after saving. Evidence: `reports/revision-inspection.json`.\n\n- Checkpoint operation: `m05-box-v3-checkpoint-99c24f2a`\n- Source commit: `b836298f258967c1c37a1b2521aded58cbaced2e`\n- Publication: `m05-box-v3-publication-99c24f2a`\n- Closure digest: `323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79`\n- Single keyframe job: `preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a`\n\nScenes, companion, texture and downloaded originals remain unchanged. V2 jobs untouched; no proxy requested. Keyframe completion was not awaited or claimed; visual, rig/motion and owner acceptance remain unverified."
+  },
+  {
+    "native_event_id": "2ef1bede-6851-47bf-90a8-eec9cbe617c1",
+    "type": "user.message",
+    "timestamp": "2026-11-14T15:09:19.962Z",
+    "content": "Explicit final M05 request: verify the two OLD published scene snapshots still reopen original one-metre textured cubes, then adopt asset-cube-v3 ONLY into scene-main as a new scene-main-v2 publication. This is the first authorised scene adoption. scene-alternate must stay pinned to asset-cube-v1. The old scene-main-v1 and all old assets/sources remain immutable. No new preview, proxy, render, generation, GPU/VLM/Comfy/Unity, child, service change, install, remote effect or SQLite. Finish this cloud root within 170 seconds.\n\nRead actual get_version for asset-cube-v3, scene-main-v1 and scene-alternate-v1. reports/historical-inputs.json is a labelled operator fixture containing the ACTUAL W02 SourceService.materialise read results for those old versions, with project-relative snapshot roots and exact version records. It contains no fabricated scene or Blender result. Use only these materialisations INSIDE this project, never original F01 or any sibling project.\n\nAuthor tools/history_adopt.py yourself and run it ONCE through `python tools/m05_blender.py history-adopt tools/history_adopt.py`. This is the THIRD AND LAST guarded background Blender authoring/inspection process (four threads, 180 seconds, OS claim and protected headroom). Do not invoke Blender another way or repeat it. In this one process first open each historical scene entry from the supplied materialisation root without saving it. Record actual bpy.app version/build, units, all object-cube-source instances' measured world dimensions/bounds and IDs, actual linked library paths and external texture paths/dimensions/SHA-256. Assert both historical cube instances are one metre tall and the texture SHA-256 is fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568. Rehash historical sources before/after inspection; do not mutate materialisations. Record this actual readback in reports/history-adoption.json; distinguish actual inspected history from the requested future operation.\n\nThen in that SAME process open the working scenes/fixture/scene.blend only for the explicit adoption. Its library path points to current assets/cube/asset.blend; resolve the revised Cube mesh (v3) and preserve both scene object/instance IDs, locations, animation, camera and timeline. Confirm the linked Box instances are now 1.5 metres tall with the actual Red material and metre units. Preserve relative library paths within the project, audit required paths and purge only unused external default datablocks if needed. Save this main scene to a temporary sibling then promote only on success. Never touch scenes/alternate/scene.blend or any asset source. Do not render anything.\n\nCheckpoint only the adopted main-scene source and your owned readback/script metadata with actual HEAD. Publish scene-main-v2 on item scene-main with expected_current_version_id scene-main-v1, a truthful description and pinned source dependency {item_id:'asset-cube',version_id:'asset-cube-v3'}, preview_requests:[]. SourceClosure files must use actual hydrated hashes, correct repository ID/checkpoint commit, and canonical digest; files covering the dependency must use the exact asset-cube-v3 origin hashes/commit instead of blessing altered bytes. The closure must include all actually required files at their correct destinations. Use installed proscenium.contracts for validation and checkpoint_sources -> publish_outputs. No automatic adoption of the alternate scene. Finish with exact old/new source/version/publication IDs, historical versus adopted measurements, texture hash and unchanged alternate/asset evidence. Report honest limitations; no stage approval is needed for this exact owner-authorised adoption.\n"
+  },
+  {
+    "native_event_id": "415fea10-db64-4985-b7a5-50c3d15fcb4f",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:09:24.679Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "46f98ef2-6aba-4abb-8017-d7aa69e3459e",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:09:57.206Z",
+    "content": "I\u2019ll reopen both pinned historical snapshots without saving, then use the same final guarded Blender process to adopt v3 into the main scene only. I\u2019ll compare historical hashes, instance measurements, and the main scene\u2019s preserved state before publication.\n"
+  },
+  {
+    "native_event_id": "92ce7420-0d6b-45e7-b5ed-b3079160ca23",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:10:15.461Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "e0dabcec-b6c1-49d1-87b6-4b46fac6621d",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:10:33.853Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "451b35e1-d788-443e-8b5c-27943f6c1759",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:10:33.854Z",
+    "content": "The final Blender process stopped during the first historical inspection: my selector incorrectly included the floor and wall alongside the two cube instances. The log shows both target cubes at one metre, but texture verification, the alternate-scene inspection, and adoption did not run. I won\u2019t repeat the exhausted process or publish an unchanged scene as adopted.\n"
+  },
+  {
+    "native_event_id": "1534b0e5-3fa9-4d3a-96fe-dd4e07b952ab",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:10:50.356Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "f81e2de8-911c-42ec-8855-5e99fe8bba78",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:10:54.369Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "048b69aa-2e2d-4b54-876a-67a57e8a930b",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:10:58.699Z",
+    "content": ""
+  },
+  {
+    "native_event_id": "e5fb343d-2e17-4f3e-af9a-802797efd9f1",
+    "type": "assistant.message",
+    "timestamp": "2026-11-14T15:11:04.985Z",
+    "content": "**Blocked; no adoption or publication occurred.** My selector incorrectly included Floor and Wall, exhausting the final permitted Blender process.\n\nActual readback showed both `scene-main-v1` cube instances at **1 \u00d7 1 \u00d7 1 metres**. Texture inspection and the `scene-alternate-v1` reopen were not reached. Subsequent hashing confirmed both historical snapshots, working scenes and assets remain unchanged.\n\n- Old scenes: `scene-main-v1`, `scene-alternate-v1`\n- Old source commit: `a4b388c4fdaeda6d6513076ceac86921f1017cad`\n- Asset retained: `asset-cube-v3`, source `b836298f258967c1c37a1b2521aded58cbaced2e`\n- Texture bytes match `fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568`; no Blender texture readback completed.\n- Evidence checkpoint: `m05-history-failure-checkpoint-113219f0`\n- Evidence commit: `a3a3c8ea36bc3e91b88c262d2cdafb5713024845`\n\n`reports/history-adoption.json` records the failure and partial observations. **`scene-main-v2` was not created**; alternate remains published against `asset-cube-v1`. No jobs launched."
+  }
+]

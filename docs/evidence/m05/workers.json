@@ -1,0 +1,362 @@
+[
+  {
+    "task": {
+      "attempt_id": "attempt-1dc63792-38c5-4402-b656-9ac50170e0e5",
+      "closure": {
+        "dependencies": [],
+        "digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a",
+        "entry_path": "assets/cube/asset.blend",
+        "files": [
+          {
+            "destination": "assets/cube/asset.blend",
+            "origin": {
+              "commit": "86430967543c9b760a6e3b562d5e02d69fce9b02",
+              "kind": "git",
+              "path": "assets/cube/asset.blend",
+              "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+              "sha256": "20363a522d6eed2070360cab48b739bb286ab31826e684214340222f411f591c"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "config": {
+        "blender": "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+        "build_hash": "62c1db4208e8",
+        "claim_path": "/home/quintin/.cache/proscenium/native-claims/blender-render.lock",
+        "encode_timeout": 60,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe",
+        "max_frames": 1,
+        "max_pixels": 230400,
+        "max_samples": 8,
+        "profile_id": "blender-cpu",
+        "threads": 4,
+        "timeout": 300
+      },
+      "entrypoint_sha256": "13463cf108810fc7d4f5abab4f49072df183d8d744ec67e5387cd11826d9cbb3",
+      "input_digest": "4399f37e073a1fb68640a2497e59f2204c94d16594a59bfdf7d6d6d94a629ab0",
+      "job_id": "preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "proxy_artifact_id": "preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7-proxy",
+      "source_root": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a/532ba0cc-3fcf-44df-b30e-831148a63252",
+      "spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "extra_outputs": [],
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "m05-box-v2-proxy-9c9db828",
+        "purpose": "proxy",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "AssetReview",
+        "shot_id": null,
+        "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+      },
+      "version_id": "asset-cube-v2"
+    },
+    "process": {
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m05-assets/.venv/bin/python",
+        "-m",
+        "proscenium.previews.worker",
+        "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/jobs/previews/preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7/attempt-1dc63792-38c5-4402-b656-9ac50170e0e5"
+      ],
+      "pid": 3612453,
+      "start_ticks": 46123703,
+      "started_ns": 461237269996035,
+      "state": "R",
+      "task_sha256": "8330530e017393d4e3494a3aa6e64879f48750f7afbfddb5f9b11f98cece7053"
+    },
+    "native-process": {
+      "argv": [
+        "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+        "--background",
+        "--factory-startup",
+        "--disable-autoexec",
+        "--threads",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py",
+        "--",
+        "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/jobs/previews/preview-66f03b56b0e702211471b1f6b30a5dd7615b403b36ea518c605bd6200f9399d7/attempt-1dc63792-38c5-4402-b656-9ac50170e0e5"
+      ],
+      "pid": 3612459,
+      "start_ticks": 46123728,
+      "state": "R"
+    },
+    "terminal": {
+      "error_code": "dependency_missing",
+      "finished_ns": 461237601950961,
+      "native_exit_code": 1,
+      "state": "failed",
+      "task_sha256": "8330530e017393d4e3494a3aa6e64879f48750f7afbfddb5f9b11f98cece7053",
+      "timed_out": false
+    },
+    "native-error": {
+      "error_code": "dependency_missing",
+      "exception": "ValueError"
+    },
+    "blender_log": "Blender 4.5.14 LTS (hash 62c1db4208e8 built 2026-09-15 01:31:19)\nRead blend: \"/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a/532ba0cc-3fcf-44df-b30e-831148a63252/assets/cube/asset.blend\"\nTraceback (most recent call last):\n  File \"/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py\", line 369, in <module>\n    main()\n  File \"/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py\", line 274, in main\n    dependencies(bpy, source, closure, scene)\n  File \"/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py\", line 78, in dependencies\n    raise ValueError(f\"dependency_missing: {sorted(set(missing))}\")\nValueError: dependency_missing: ['outside_materialisation']\n\nError: script failed, file: '/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py', exiting.\n\nBlender quit\n"
+  },
+  {
+    "task": {
+      "attempt_id": "attempt-1db93d12-138e-460a-821e-f7782779e6ae",
+      "closure": {
+        "dependencies": [],
+        "digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79",
+        "entry_path": "assets/cube/asset.blend",
+        "files": [
+          {
+            "destination": "assets/cube/asset.blend",
+            "origin": {
+              "commit": "b836298f258967c1c37a1b2521aded58cbaced2e",
+              "kind": "git",
+              "path": "assets/cube/asset.blend",
+              "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+              "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "config": {
+        "blender": "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+        "build_hash": "62c1db4208e8",
+        "claim_path": "/home/quintin/.cache/proscenium/native-claims/blender-render.lock",
+        "encode_timeout": 60,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe",
+        "max_frames": 1,
+        "max_pixels": 230400,
+        "max_samples": 8,
+        "profile_id": "blender-cpu",
+        "threads": 4,
+        "timeout": 300
+      },
+      "entrypoint_sha256": "13463cf108810fc7d4f5abab4f49072df183d8d744ec67e5387cd11826d9cbb3",
+      "input_digest": "0462e24d9f974f9c69c3f474687522ab6decea77626c8a509e4ba8fee22fc3fe",
+      "job_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "proxy_artifact_id": "preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a-proxy",
+      "source_root": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79/c80054d2-7183-4966-af5c-887b9e5812ff",
+      "spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "extra_outputs": [],
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "m05-box-v3-keyframe-99c24f2a",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "AssetReview",
+        "shot_id": null,
+        "source_closure_digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79"
+      },
+      "version_id": "asset-cube-v3"
+    },
+    "process": {
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m05-assets/.venv/bin/python",
+        "-m",
+        "proscenium.previews.worker",
+        "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/jobs/previews/preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a/attempt-1db93d12-138e-460a-821e-f7782779e6ae"
+      ],
+      "pid": 3624446,
+      "start_ticks": 46150819,
+      "started_ns": 461508528695256,
+      "state": "R",
+      "task_sha256": "be68e7523cb999c95317206910f8707029f17d0003d1b0258e7d67e432d221c2"
+    },
+    "native-process": {
+      "argv": [
+        ""
+      ],
+      "pid": 3624464,
+      "start_ticks": 46150853,
+      "state": "R"
+    },
+    "terminal": {
+      "finished_ns": 461509371217007,
+      "native_exit_code": 0,
+      "state": "succeeded",
+      "task_sha256": "be68e7523cb999c95317206910f8707029f17d0003d1b0258e7d67e432d221c2",
+      "timed_out": false
+    },
+    "blender_log": "Blender 4.5.14 LTS (hash 62c1db4208e8 built 2026-09-15 01:31:19)\nRead blend: \"/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79/c80054d2-7183-4966-af5c-887b9e5812ff/assets/cube/asset.blend\"\nFra:1 Mem:8.44M (Peak 8.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Synchronizing object | Cube\nFra:1 Mem:8.44M (Peak 8.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Synchronizing object | AssetReviewArea\nFra:1 Mem:10.44M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Initializing\nFra:1 Mem:10.25M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Waiting for render to start\nFra:1 Mem:10.25M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Scene\nFra:1 Mem:10.25M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Shaders\nFra:1 Mem:10.25M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Loading render kernels (may take a few minutes the first time)\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Procedurals\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Background\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Camera\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Meshes Flags\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Objects\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Objects | Copying Transformations to device\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Particle Systems\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Particle Systems | Copying Particles to device\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Meshes\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Objects | Applying Static Transformations\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Mesh | Computing attributes\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Mesh | Copying Attributes to device\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Scene BVH | Building\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Scene BVH | Building BVH\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Scene BVH | Building BVH 0%\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Scene BVH | Copying BVH to device\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Mesh | Computing normals\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Mesh | Copying Mesh to device\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Objects Flags\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Primitive Offsets\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Images\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Camera Volume\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | AssetReview, ViewLayer | Updating Lookup Tables\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | AssetReview, ViewLayer | Updating Lights\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | AssetReview, ViewLayer | Updating Lights | Computing tree\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | AssetReview, ViewLayer | Updating Integrator\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | AssetReview, ViewLayer | Updating Film\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.01M, Peak:0.09M | AssetReview, ViewLayer | Updating Lookup Tables\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | AssetReview, ViewLayer | Updating Baking\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | AssetReview, ViewLayer | Updating Device | Writing constant memory\nFra:1 Mem:10.34M (Peak 10.44M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | AssetReview, ViewLayer | Sample 0/8\nFra:1 Mem:18.30M (Peak 18.30M) | Time:00:00.02 | Remaining:00:00.16 | Mem:8.00M, Peak:8.00M | AssetReview, ViewLayer | Sample 1/8\nFra:1 Mem:21.81M (Peak 28.84M) | Time:00:00.21 | Mem:8.00M, Peak:8.00M | AssetReview, ViewLayer | Sample 8/8\nFra:1 Mem:21.81M (Peak 28.84M) | Time:00:00.21 | Mem:8.00M, Peak:8.00M | AssetReview, ViewLayer | Finished\nSaved: '/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/jobs/previews/preview-e72939940fc143dd5d372613e4557a4ff13853ffd9289cf6fa1f952d5092787a/attempt-1db93d12-138e-460a-821e-f7782779e6ae/frames/.pending-00000001.png'\nTime: 00:00.26 (Saving: 00:00.04)\n\nPROSCENIUM_FRAME=1\n\nBlender quit\n"
+  },
+  {
+    "task": {
+      "attempt_id": "attempt-9065ef23-9d20-4f44-b753-e746dc61fe46",
+      "closure": {
+        "dependencies": [],
+        "digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a",
+        "entry_path": "assets/cube/asset.blend",
+        "files": [
+          {
+            "destination": "assets/cube/asset.blend",
+            "origin": {
+              "commit": "86430967543c9b760a6e3b562d5e02d69fce9b02",
+              "kind": "git",
+              "path": "assets/cube/asset.blend",
+              "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+              "sha256": "20363a522d6eed2070360cab48b739bb286ab31826e684214340222f411f591c"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "config": {
+        "blender": "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+        "build_hash": "62c1db4208e8",
+        "claim_path": "/home/quintin/.cache/proscenium/native-claims/blender-render.lock",
+        "encode_timeout": 60,
+        "ffmpeg": "/usr/bin/ffmpeg",
+        "ffprobe": "/usr/bin/ffprobe",
+        "max_frames": 1,
+        "max_pixels": 230400,
+        "max_samples": 8,
+        "profile_id": "blender-cpu",
+        "threads": 4,
+        "timeout": 300
+      },
+      "entrypoint_sha256": "13463cf108810fc7d4f5abab4f49072df183d8d744ec67e5387cd11826d9cbb3",
+      "input_digest": "7784de09b7e5d6e58e82f105bb266dd1c34571611a1f59fe022a7e0ae5b89d67",
+      "job_id": "preview-8c74e8e6ec6a8a797894de0cbad4bb4b4ad64fb60d333287a702774f3c617cfa",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "proxy_artifact_id": "preview-8c74e8e6ec6a8a797894de0cbad4bb4b4ad64fb60d333287a702774f3c617cfa-proxy",
+      "source_root": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a/2e934e7e-dc2b-4a5c-9677-1f05c5267844",
+      "spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "extra_outputs": [],
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "m05-box-v2-keyframe-9c9db828",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "AssetReview",
+        "shot_id": null,
+        "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+      },
+      "version_id": "asset-cube-v2"
+    },
+    "process": {
+      "argv": [
+        "/home/quintin/.cache/proscenium-development/fleet/m05-assets/.venv/bin/python",
+        "-m",
+        "proscenium.previews.worker",
+        "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/jobs/previews/preview-8c74e8e6ec6a8a797894de0cbad4bb4b4ad64fb60d333287a702774f3c617cfa/attempt-9065ef23-9d20-4f44-b753-e746dc61fe46"
+      ],
+      "pid": 3612351,
+      "start_ticks": 46123596,
+      "started_ns": 461236263853188,
+      "state": "R",
+      "task_sha256": "0be3cc5872f908ac4c5d5aed1d2900c94f6d173079aa254ae0e2b07d4e062483"
+    },
+    "native-process": {
+      "argv": [
+        ""
+      ],
+      "pid": 3612355,
+      "start_ticks": 46123626,
+      "state": "R"
+    },
+    "terminal": {
+      "error_code": "dependency_missing",
+      "finished_ns": 461236656287707,
+      "native_exit_code": 1,
+      "state": "failed",
+      "task_sha256": "0be3cc5872f908ac4c5d5aed1d2900c94f6d173079aa254ae0e2b07d4e062483",
+      "timed_out": false
+    },
+    "native-error": {
+      "error_code": "dependency_missing",
+      "exception": "ValueError"
+    },
+    "blender_log": "Blender 4.5.14 LTS (hash 62c1db4208e8 built 2026-09-15 01:31:19)\nRead blend: \"/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/.proscenium/snapshots/7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a/2e934e7e-dc2b-4a5c-9677-1f05c5267844/assets/cube/asset.blend\"\nTraceback (most recent call last):\n  File \"/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py\", line 369, in <module>\n    main()\n  File \"/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py\", line 274, in main\n    dependencies(bpy, source, closure, scene)\n  File \"/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py\", line 78, in dependencies\n    raise ValueError(f\"dependency_missing: {sorted(set(missing))}\")\nValueError: dependency_missing: ['outside_materialisation']\n\nError: script failed, file: '/home/quintin/.cache/proscenium-development/fleet/m05-assets/apps/backend/src/proscenium/previews/blender_worker.py', exiting.\n\nBlender quit\n"
+  }
+]

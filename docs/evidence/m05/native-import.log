@@ -1,0 +1,8 @@
+17:00:50 | INFO: Data are loaded, start creating Blender stuff
+17:00:50 | INFO: Blender create Mesh node Mesh
+17:00:50 | INFO: glTF import finished in 0.01s
+Info: Saved as "asset.importing.blend"
+{"command": "python tools/m05_blender.py import tools/import_box.py", "blender": {"version": "4.5.14 LTS", "version_tuple": [4, 5, 14], "build_hash": "62c1db4208e8", "build_branch": "blender-v4.5-release"}, "imported_from": "research/Box.glb", "input_sha256": "ed52f7192b8311d700ac0ce80644e3852cd01537e4d62241b9acba023da3d54e", "bounds_m": {"min": [-0.5, -0.5000001788139343, 0.0], "max": [0.5, 0.5000001788139343, 1.0000003576278687]}, "mesh_name": "Cube.001", "object_name": "Cube", "object_id": "object-cube-source", "instance_id": "instance-asset", "vertices": 24, "polygons": 12, "units": {"system": "METRIC", "scale_length": 1.0}, "materials": ["Dots Stroke", "Material", "Red"], "material_slots": ["Red"], "external_resources": [], "missing_external_resources": [], "camera": {"name": "AssetReviewCamera", "object_id": "camera-asset-review", "lens_mm": 45.0}, "light": {"name": "AssetReviewArea", "object_id": "light-asset-review"}, "validation": {"status": "passed", "checks": ["actual glTF importer", "one metre bounds", "XY centered", "base Z zero", "metric units", "no missing external resources", "editable BLENDER file header"], "not_validated": ["visual appearance", "rig", "motion", "owner selection"], "rendered": false}}
+Blender 4.5.14 LTS (hash 62c1db4208e8 built 2026-09-15 01:31:19)
+
+Blender quit

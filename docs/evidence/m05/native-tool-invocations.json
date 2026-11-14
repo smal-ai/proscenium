@@ -1,0 +1,708 @@
+[
+  {
+    "native_event_id": "5ab7d3bd-c146-4eb5-97d4-6e5db3ea76b0",
+    "timestamp": "2026-11-14T15:00:00.292Z",
+    "toolCallId": "call_QAGKux6fXOxw7SwANEhOENGz",
+    "toolName": "skill",
+    "arguments": {
+      "skill": "research"
+    }
+  },
+  {
+    "native_event_id": "c45ad28c-f92e-47fc-9044-7de476025c44",
+    "timestamp": "2026-11-14T15:00:04.248Z",
+    "toolCallId": "call_hzGnEH6uqbfvU7DPLk4bwtHo",
+    "toolName": "bash",
+    "arguments": {
+      "command": "pwd && git status --short && git rev-parse HEAD && ls -la && find . -maxdepth 3 -type f -not -path './.git/*' -not -name '.env*' -not -path './.proscenium/*' | head -70",
+      "description": "Inspect active project metadata and Git status"
+    }
+  },
+  {
+    "native_event_id": "57dc04c5-18ae-47d2-8acf-6370a037a21b",
+    "timestamp": "2026-11-14T15:00:04.248Z",
+    "toolCallId": "call_I6w9RkrF1kukxVYJLy2y5NOA",
+    "toolName": "list_items",
+    "arguments": {
+      "query": "amber-cube",
+      "limit": 100
+    }
+  },
+  {
+    "native_event_id": "ddf7a495-10d8-48f9-a70a-2cd6956751dd",
+    "timestamp": "2026-11-14T15:00:04.248Z",
+    "toolCallId": "call_uWCqdOJAZUZ7wFbiXe6TGRsF",
+    "toolName": "list_items",
+    "arguments": {
+      "query": "tabletop blocking",
+      "limit": 100
+    }
+  },
+  {
+    "native_event_id": "3e7ef2c5-4c91-4f55-88d7-af0c5d73040c",
+    "timestamp": "2026-11-14T15:00:04.248Z",
+    "toolCallId": "call_bwwTUppCf33EW7uoIRUv2zbP",
+    "toolName": "list_items",
+    "arguments": {
+      "query": "Reusable fixture cube",
+      "limit": 100
+    }
+  },
+  {
+    "native_event_id": "123c3bab-ee68-44b3-ba78-aee954df0634",
+    "timestamp": "2026-11-14T15:00:08.328Z",
+    "toolCallId": "call_IwpqCVN4HxW70OILqoTxoEM0",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "asset-cube-v1"
+    }
+  },
+  {
+    "native_event_id": "1d92b528-d976-4f93-82b6-f2bf2687344b",
+    "timestamp": "2026-11-14T15:00:08.328Z",
+    "toolCallId": "call_WA1bel4KUWT9RBijxjBI10Er",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/m05_blender.py"
+    }
+  },
+  {
+    "native_event_id": "8b1b6930-2981-4c2b-b41f-49d1fd446068",
+    "timestamp": "2026-11-14T15:00:08.328Z",
+    "toolCallId": "call_9mHap2LG9Bs2yEjR88tldOlG",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/project.json"
+    }
+  },
+  {
+    "native_event_id": "900c9bfc-7a6b-4e2f-b2e7-1f93bbf1a27a",
+    "timestamp": "2026-11-14T15:00:08.329Z",
+    "toolCallId": "call_84RD5eM1wTS7biluovatCPGD",
+    "toolName": "bash",
+    "arguments": {
+      "command": "ls -la brief storyboards .proscenium && python -c \"import proscenium.contracts as c; print(c.__file__); print([n for n in dir(c) if any(s in n.lower() for s in ['closure','publish','preview','provenance','canonical'])])\"",
+      "description": "Read brief inventory and installed contract types"
+    }
+  },
+  {
+    "native_event_id": "5dd27f1d-084b-4fe1-a37d-bf5c92d0fc25",
+    "timestamp": "2026-11-14T15:00:35.317Z",
+    "toolCallId": "custom_call_Ucov2x1702FF0dcWUCZoLVlw",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Add File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/acquire_box.py\n+import hashlib\n+import json\n+import os\n+from pathlib import Path\n+import struct\n+import sys\n+import urllib.request\n+\n+ROOT = Path.cwd().resolve()\n+LEDGER = ROOT / \"research/box-ledger.json\"\n+CAP = 5 * 1024 * 1024\n+\n+\n+def target(name):\n+    p = ROOT / name\n+    assert p.is_relative_to(ROOT) and not any(x.is_symlink() for x in [p, *p.parents])\n+    p.parent.mkdir(parents=True, exist_ok=True)\n+    return p\n+\n+\n+def fetch(url, name, ledger):\n+    p = target(name)\n+    tmp = p.with_name(p.name + \".partial\")\n+    assert not tmp.exists() and not p.exists()\n+    try:\n+        h = hashlib.sha256()\n+        size = 0\n+        with urllib.request.urlopen(urllib.request.Request(url, headers={\"User-Agent\": \"Proscenium-M05\"}), timeout=15) as response, tmp.open(\"xb\") as out:\n+            while True:\n+                data = response.read(65536)\n+                if not data:\n+                    break\n+                size += len(data)\n+                ledger[\"download_bytes\"] += len(data)\n+                assert ledger[\"download_bytes\"] <= CAP, \"Aggregate five-MiB cap exceeded\"\n+                h.update(data)\n+                out.write(data)\n+            out.flush()\n+            os.fsync(out.fileno())\n+        assert size > 0\n+        os.replace(tmp, p)\n+        record = {\"url\": url, \"path\": name, \"bytes\": size, \"sha256\": h.hexdigest()}\n+        ledger[\"downloads\"].append(record)\n+        return p\n+    finally:\n+        if tmp.exists():\n+            tmp.unlink()\n+\n+\n+if sys.argv[1] == \"metadata\":\n+    ledger = {\n+        \"request_id\": \"9c9db828-703a-4dc8-a756-b830426ec935\",\n+        \"work_id\": \"work-0d3d78c995f0451d8630188b4f642041\",\n+        \"generation_task_id\": \"task-16e05b5f7137443e86bfdac23e2ec2b5\",\n+        \"context_id\": \"158df540-cf78-40f5-a491-ba43b22e018c\",\n+        \"download_bytes\": 0, \"aggregate_cap_bytes\": CAP, \"downloads\": [],\n+        \"catalogue_queries\": [{\"query\": q, \"found\": [\"asset-cube\"], \"version_id\": \"asset-cube-v1\", \"next_cursor\": None} for q in [\"amber-cube\", \"tabletop blocking\", \"Reusable fixture cube\"]],\n+        \"coverage\": {\"local_reusable_cube\": \"asset-cube-v1\", \"official_online_sample\": \"Models/Box\", \"optional_blendswap\": \"not configured\"},\n+        \"observations\": {\"discovered\": {\"local\": \"get_version(asset-cube-v1)\", \"online\": \"Official KhronosGroup/glTF-Sample-Assets catalogue\"}},\n+        \"provenance\": {\"source_url\": None, \"creator\": None, \"licence\": None},\n+    }\n+    api = fetch(\"https://api.github.com/repos/KhronosGroup/glTF-Sample-Assets/commits/main\", \"research/box-commit.json\", ledger)\n+    commit = json.loads(api.read_text())[\"sha\"]\n+    ledger[\"repository_commit\"] = commit\n+    base = f\"https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/{commit}/Models/Box\"\n+    for remote, local in [(\"README.md\", \"research/box-README.md\"), (\"metadata.json\", \"research/box-metadata.json\")]:\n+        p = fetch(base + \"/\" + remote, local, ledger)\n+        print(p.read_text())\n+    target(\"research/box-ledger.json\").write_text(json.dumps(ledger, indent=2) + \"\\n\")\n+elif sys.argv[1] == \"acquire\":\n+    ledger = json.loads(LEDGER.read_text())\n+    url = f\"https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/{ledger['repository_commit']}/Models/Box/glTF-Binary/Box.glb\"\n+    p = fetch(url, \"research/Box.glb\", ledger)\n+    data = p.read_bytes()\n+    magic, version, length = struct.unpack_from(\"<4sII\", data)\n+    assert magic == b\"glTF\" and version == 2 and length == len(data)\n+    chunk_length, chunk_type = struct.unpack_from(\"<II\", data, 12)\n+    assert chunk_type == 0x4E4F534A\n+    gltf = json.loads(data[20:20 + chunk_length])\n+    ledger[\"gltf_asset\"] = gltf.get(\"asset\")\n+    ledger[\"provenance\"][\"source_url\"] = url\n+    ledger[\"observations\"][\"acquired\"] = {\"command\": \"python tools/acquire_box.py acquire\", \"evidence\": ledger[\"downloads\"][-1], \"checks\": [\"GLB magic\", \"version 2\", \"declared byte length\", \"JSON chunk\"]}\n+    ledger[\"observations\"][\"imported\"] = None\n+    ledger[\"observations\"][\"validated\"] = {\"acquisition\": \"container checks only; not licence clearance or owner selection\"}\n+    LEDGER.write_text(json.dumps(ledger, indent=2) + \"\\n\")\n+    print(json.dumps({\"bytes\": ledger[\"download_bytes\"], \"asset\": ledger[\"downloads\"][-1], \"gltf_asset\": gltf.get(\"asset\")}))\n*** Add File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/import_box.py\n+import bpy\n+import hashlib\n+import json\n+import os\n+from pathlib import Path\n+from mathutils import Vector\n+\n+root = Path.cwd().resolve()\n+assert bpy.app.version == (4, 5, 14), bpy.app.version_string\n+for p in [root / \"assets/cube/asset.blend\", root / \"research/Box.glb\", root / \"reports/import-inspection.json\"]:\n+    assert not any(x.is_symlink() for x in [p, *p.parents])\n+bpy.ops.object.select_all(action=\"SELECT\")\n+bpy.ops.object.delete(use_global=False)\n+bpy.ops.import_scene.gltf(filepath=str(root / \"research/Box.glb\"))\n+meshes = [o for o in bpy.context.scene.objects if o.type == \"MESH\"]\n+assert len(meshes) == 1\n+obj = meshes[0]\n+obj.name = \"Cube\"\n+obj.data.name = \"Cube\"\n+obj[\"object_id\"] = \"object-cube-source\"\n+obj[\"instance_id\"] = \"instance-asset\"\n+world = obj.matrix_world.copy()\n+obj.parent = None\n+obj.matrix_world = world\n+for o in list(bpy.context.scene.objects):\n+    if o != obj:\n+        bpy.data.objects.remove(o, do_unlink=True)\n+bpy.context.view_layer.objects.active = obj\n+obj.select_set(True)\n+bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)\n+bpy.context.view_layer.update()\n+points = [obj.matrix_world @ Vector(c) for c in obj.bound_box]\n+lo = Vector([min(p[i] for p in points) for i in range(3)])\n+hi = Vector([max(p[i] for p in points) for i in range(3)])\n+assert all(abs((hi - lo)[i] - 1) < 1e-5 for i in range(3)), (lo, hi)\n+obj.location -= Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))\n+bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)\n+scene = bpy.context.scene\n+scene.name = \"AssetReview\"\n+scene.unit_settings.system = \"METRIC\"\n+scene.unit_settings.scale_length = 1\n+camera_data = bpy.data.cameras.new(\"AssetReviewCamera\")\n+camera = bpy.data.objects.new(\"AssetReviewCamera\", camera_data)\n+scene.collection.objects.link(camera)\n+camera[\"object_id\"] = \"camera-asset-review\"\n+camera.location = (3, -4, 2.5)\n+camera.rotation_euler = (Vector((0, 0, 0.5)) - camera.location).to_track_quat(\"-Z\", \"Y\").to_euler()\n+camera_data.lens = 45\n+scene.camera = camera\n+light_data = bpy.data.lights.new(\"AssetReviewArea\", \"AREA\")\n+light_data.energy = 500\n+light_data.shape = \"DISK\"\n+light_data.size = 4\n+light = bpy.data.objects.new(\"AssetReviewArea\", light_data)\n+scene.collection.objects.link(light)\n+light[\"object_id\"] = \"light-asset-review\"\n+light.location = (2, -3, 5)\n+light.rotation_euler = (Vector((0, 0, 0.5)) - light.location).to_track_quat(\"-Z\", \"Y\").to_euler()\n+scene.world = bpy.data.worlds.new(\"AssetReviewWorld\")\n+scene.world.use_nodes = True\n+scene.world.node_tree.nodes[\"Background\"].inputs[\"Strength\"].default_value = 0.3\n+scene.render.engine = \"CYCLES\"\n+scene.cycles.device = \"CPU\"\n+scene.cycles.samples = 8\n+scene.render.threads_mode = \"FIXED\"\n+scene.render.threads = 4\n+scene.render.resolution_x = 640\n+scene.render.resolution_y = 360\n+scene.render.resolution_percentage = 100\n+scene.render.fps = 24\n+scene.frame_start = scene.frame_end = 1\n+scene.view_settings.view_transform = \"Standard\"\n+scene.view_settings.look = \"None\"\n+scene.view_settings.exposure = 0\n+scene.view_settings.gamma = 1\n+missing = []\n+external = []\n+for image in bpy.data.images:\n+    if image.source == \"FILE\" and not image.packed_file and image.filepath:\n+        path = Path(bpy.path.abspath(image.filepath))\n+        external.append(str(path))\n+        if not path.is_file():\n+            missing.append(str(path))\n+assert not missing and not external\n+bpy.context.view_layer.update()\n+points = [obj.matrix_world @ Vector(c) for c in obj.bound_box]\n+bounds = {\"min\": [min(p[i] for p in points) for i in range(3)], \"max\": [max(p[i] for p in points) for i in range(3)]}\n+assert all(abs(bounds[\"min\"][i] - [-0.5, -0.5, 0][i]) < 1e-5 for i in range(3))\n+tmp = root / \"assets/cube/asset.importing.blend\"\n+assert not tmp.exists() and not tmp.is_symlink()\n+bpy.ops.wm.save_as_mainfile(filepath=str(tmp), check_existing=False)\n+assert tmp.is_file() and tmp.stat().st_size > 1000 and tmp.read_bytes()[:7] == b\"BLENDER\"\n+os.replace(tmp, root / \"assets/cube/asset.blend\")\n+report = {\n+    \"command\": \"python tools/m05_blender.py import tools/import_box.py\",\n+    \"blender\": {\"version\": bpy.app.version_string, \"version_tuple\": list(bpy.app.version), \"build_hash\": bpy.app.build_hash.decode(), \"build_branch\": bpy.app.build_branch.decode()},\n+    \"imported_from\": \"research/Box.glb\", \"input_sha256\": hashlib.sha256((root / \"research/Box.glb\").read_bytes()).hexdigest(),\n+    \"bounds_m\": bounds, \"mesh_name\": obj.data.name, \"object_name\": obj.name,\n+    \"object_id\": obj[\"object_id\"], \"instance_id\": obj[\"instance_id\"],\n+    \"vertices\": len(obj.data.vertices), \"polygons\": len(obj.data.polygons),\n+    \"units\": {\"system\": scene.unit_settings.system, \"scale_length\": scene.unit_settings.scale_length},\n+    \"materials\": [m.name for m in bpy.data.materials], \"material_slots\": [s.material.name if s.material else None for s in obj.material_slots],\n+    \"external_resources\": external, \"missing_external_resources\": missing,\n+    \"camera\": {\"name\": camera.name, \"object_id\": camera[\"object_id\"], \"lens_mm\": camera_data.lens},\n+    \"light\": {\"name\": light.name, \"object_id\": light[\"object_id\"]},\n+    \"validation\": {\"status\": \"passed\", \"checks\": [\"actual glTF importer\", \"one metre bounds\", \"XY centered\", \"base Z zero\", \"metric units\", \"no missing external resources\", \"editable BLENDER file header\"], \"not_validated\": [\"visual appearance\", \"rig\", \"motion\", \"owner selection\"], \"rendered\": False},\n+}\n+(root / \"reports\").mkdir(exist_ok=True)\n+(root / \"reports/import-inspection.json\").write_text(json.dumps(report, indent=2) + \"\\n\")\n+ledger_path = root / \"research/box-ledger.json\"\n+ledger = json.loads(ledger_path.read_text())\n+ledger[\"observations\"][\"imported\"] = {\"command\": report[\"command\"], \"report\": \"reports/import-inspection.json\", \"blender\": report[\"blender\"]}\n+ledger[\"observations\"][\"validated\"][\"import\"] = report[\"validation\"]\n+ledger_path.write_text(json.dumps(ledger, indent=2) + \"\\n\")\n+print(json.dumps(report))\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "545b918d-4c10-4e74-9a33-fc3badd73ff2",
+    "timestamp": "2026-11-14T15:00:42.560Z",
+    "toolCallId": "call_Vqv4fg33vmzTeKPS1y0Rz6wN",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/acquire_box.py metadata",
+      "description": "Read pinned official model README and metadata",
+      "initial_wait": 30
+    }
+  },
+  {
+    "native_event_id": "0fef5dd3-c146-4bc3-8e5f-04e45e1dc5df",
+    "timestamp": "2026-11-14T15:00:42.561Z",
+    "toolCallId": "call_QxdjlEpXmsTEdHK2KFI4bb7r",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport proscenium.contracts as c, pkgutil, importlib, inspect\nprint('modules', [m.name for m in pkgutil.iter_modules(c.__path__)])\nfor m in pkgutil.iter_modules(c.__path__):\n if any(s in m.name for s in ['catalog','source','publish','preview']):\n  x=importlib.import_module(c.__name__+'.'+m.name)\n  for n,o in vars(x).items():\n   if inspect.isclass(o) and hasattr(o,'model_fields'): print(m.name,n,list(o.model_fields))\nPY",
+      "description": "Inspect installed exact publication contract models"
+    }
+  },
+  {
+    "native_event_id": "0b3a4e5a-db64-4ddd-af81-9b02266efead",
+    "timestamp": "2026-11-14T15:00:49.088Z",
+    "toolCallId": "call_lhUDdsfJ0oGFC0I1EE8wynQB",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/acquire_box.py acquire && python tools/m05_blender.py import tools/import_box.py && cat reports/import-inspection.json",
+      "description": "Acquire verified GLB and perform single guarded Blender import",
+      "initial_wait": 30
+    }
+  },
+  {
+    "native_event_id": "d141d6a0-13b1-4cdc-9432-e111101f2068",
+    "timestamp": "2026-11-14T15:00:49.088Z",
+    "toolCallId": "call_sYRkXooj2Ks4osgIY0ziZb69",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport proscenium.contracts.generated as g\nprint([n for n in dir(g) if any(s in n.lower() for s in ['closure','publish','preview','provenance','canonical'])])\nfor n in dir(g):\n if any(s in n.lower() for s in ['closure','publish']):\n  x=getattr(g,n)\n  if hasattr(x,'model_fields'): print(n,list(x.model_fields))\nimport proscenium.contracts.canonical as c\nprint('canonical',dir(c))\nPY",
+      "description": "Inspect generated source and publication contracts"
+    }
+  },
+  {
+    "native_event_id": "e61c0b2f-b70d-4791-902f-c5ffa18f19d3",
+    "timestamp": "2026-11-14T15:01:03.029Z",
+    "toolCallId": "call_7kBAAg6O1rHt3dkevvfQVOgt",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport proscenium.contracts as c, proscenium.contracts.generated as g, inspect\nprint('canonical',c.canonical, inspect.signature(c.canonical))\nfor n in ['SourceClosure','PublishedItem','PreviewRequest','Provenance']:\n x=getattr(g,n); print(n, x.model_json_schema())\nPY",
+      "description": "Read exact canonicalisation and model validation schemas",
+      "initial_wait": 30
+    }
+  },
+  {
+    "native_event_id": "117e2101-ffda-443b-93f8-4a83d7fead28",
+    "timestamp": "2026-11-14T15:01:16.213Z",
+    "toolCallId": "call_cuvJXuac1WL8KNCFNxF3oC80",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport proscenium.contracts.generated as g\nfor n in ['SourceClosure','PublishedItem','PreviewRequest','Provenance']:\n d=getattr(g,n).model_json_schema(); print(n,d['$defs'][n])\nPY",
+      "description": "Read concise contract object fields"
+    }
+  },
+  {
+    "native_event_id": "8256fd68-18b4-4799-a176-b176383956ca",
+    "timestamp": "2026-11-14T15:01:32.695Z",
+    "toolCallId": "custom_call_BOFmZi2mISjtvSVrI7xeYxg6",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Add File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/prepare_box_publication.py\n+import hashlib\n+import json\n+from pathlib import Path\n+import sys\n+from proscenium.contracts import canonical\n+from proscenium.contracts.generated import PublishedItem, SourceClosure, Provenance\n+\n+root = Path.cwd().resolve()\n+ledger_path = root / \"research/box-ledger.json\"\n+ledger = json.loads(ledger_path.read_text())\n+if len(sys.argv) == 1:\n+    metadata = json.loads((root / \"research/box-metadata.json\").read_text())\n+    legal = metadata.get(\"legal\", [])\n+    ledger[\"provenance\"][\"creator\"] = legal[0].get(\"artist\") if legal else None\n+    ledger[\"provenance\"][\"licence\"] = legal[0].get(\"license\") if legal else None\n+    ledger[\"provenance\"][\"note\"] = \"Official per-model metadata attribution; public availability is not independent licence clearance.\"\n+    ledger[\"legal_metadata\"] = legal\n+    ledger[\"limitations\"] = [\"BlendSwap MCP not configured\", \"Mesh datablock is Cube.001, not requested Cube; object is Cube. No second Blender execution authorised.\", \"Technical checks are not visual review, owner selection, rig or motion acceptance.\"]\n+    ledger[\"preserved_scope\"] = [\"Both existing scene sources and their published dependencies unchanged\", \"Companion item and files unchanged\", \"assets/cube/colour.png unchanged\", \"Published v1 closure retained\"]\n+    ledger_path.write_text(json.dumps(ledger, indent=2) + \"\\n\")\n+    report_path = root / \"reports/import-inspection.json\"\n+    report = json.loads(report_path.read_text())\n+    report[\"limitations\"] = [ledger[\"limitations\"][1]]\n+    report[\"validation\"][\"status\"] = \"passed_with_naming_limitation\"\n+    report[\"validation\"][\"mesh_name_requirement\"] = False\n+    report[\"output\"] = {\"path\": \"assets/cube/asset.blend\", \"bytes\": (root / \"assets/cube/asset.blend\").stat().st_size, \"sha256\": hashlib.sha256((root / \"assets/cube/asset.blend\").read_bytes()).hexdigest()}\n+    report_path.write_text(json.dumps(report, indent=2) + \"\\n\")\n+    print(json.dumps({\"provenance\": ledger[\"provenance\"], \"output\": report[\"output\"]}))\n+else:\n+    commit = sys.argv[1]\n+    project = json.loads((root / \"project.json\").read_text())\n+    paths = [\"assets/cube/asset.blend\"]\n+    closure = {\n+        \"entry_path\": \"assets/cube/asset.blend\",\n+        \"files\": [{\"destination\": p, \"origin\": {\"kind\": \"git\", \"repository_id\": project[\"repository_id\"], \"commit\": commit, \"path\": p, \"sha256\": hashlib.sha256((root / p).read_bytes()).hexdigest()}} for p in sorted(paths)],\n+        \"dependencies\": [],\n+        \"required_runtime\": {\"application\": \"blender\", \"version\": \"4.5.14 LTS\", \"features\": []},\n+    }\n+    closure[\"digest\"] = hashlib.sha256(canonical(closure)).hexdigest()\n+    SourceClosure.model_validate(closure)\n+    Provenance.model_validate(ledger[\"provenance\"])\n+    previews = [{\n+        \"intent_id\": f\"m05-box-v2-{purpose}-9c9db828\", \"shot_id\": None, \"purpose\": purpose,\n+        \"source_closure_digest\": closure[\"digest\"], \"scene_name\": \"AssetReview\", \"camera\": None,\n+        \"frames\": {\"start\": 1, \"end\": 1}, \"fps\": {\"numerator\": 24, \"denominator\": 1},\n+        \"dimensions\": {\"width\": 640, \"height\": 360}, \"engine\": \"CYCLES\", \"device\": \"CPU\", \"samples\": 8,\n+        \"colour_management\": {\"view_transform\": \"Standard\", \"look\": \"None\", \"exposure\": 0, \"gamma\": 1},\n+        \"renderer_revision\": \"proscenium-blender-1\",\n+        \"review_output\": {\"media_type\": \"image/png\", \"encoding\": \"view_transformed_srgb\", \"bit_depth\": 8},\n+        \"extra_outputs\": [],\n+    } for purpose in [\"keyframe\", \"proxy\"]]\n+    item = {\n+        \"item_id\": \"asset-cube\", \"kind\": \"asset\", \"name\": \"Khronos Box - imported editable asset\",\n+        \"version_id\": \"asset-cube-v2\", \"expected_current_version_id\": \"asset-cube-v1\",\n+        \"source_commit\": commit, \"source\": closure, \"artifact_ids\": [], \"preview_requests\": previews,\n+        \"description\": \"Official Khronos Box GLB acquired and imported as editable geometry/material in Blender 4.5.14 LTS. Metre-scale technical checks passed; mesh datablock naming limitation: Cube.001 (object Cube). Independent previews requested, not completed or owner accepted. No scene adoption.\",\n+        \"tags\": [\"amber-cube\", \"metre-fixture\", \"khronos\", \"online-acquired\"],\n+        \"provenance\": ledger[\"provenance\"],\n+    }\n+    PublishedItem.model_validate(item)\n+    command = {\"schema_version\": \"1.0\", \"publication_id\": \"m05-box-publication-9c9db828\", \"project_id\": project[\"project_id\"], \"items\": [item]}\n+    print(json.dumps(command))\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "e912315b-5041-4bbc-a420-db6016f2c5b2",
+    "timestamp": "2026-11-14T15:01:42.623Z",
+    "toolCallId": "call_4aMRmdrl6Qb6tKVjXroRpG5i",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/prepare_box_publication.py && python - <<'PY'\nimport hashlib,json,subprocess\nfrom pathlib import Path\npaths=['scenes/fixture/scene.blend','scenes/alternate/scene.blend','assets/companion/asset.blend','assets/companion/colour.png','assets/cube/colour.png']\nfor p in paths:\n actual=Path(p).read_bytes(); old=subprocess.check_output(['git','show','HEAD:'+p]); print(p,'unchanged_from_HEAD',actual==old,'sha256',hashlib.sha256(actual).hexdigest())\nPY\n git status --short && git rev-parse HEAD && find reports/native-allocation -maxdepth 1 -type f",
+      "description": "Finalize provenance, report naming limitation and verify preserved files"
+    }
+  },
+  {
+    "native_event_id": "bce0fa6b-7a55-4c60-a508-e132c827227a",
+    "timestamp": "2026-11-14T15:01:47.768Z",
+    "toolCallId": "call_S61GpOkQEoF5cCM2b2RUXubI",
+    "toolName": "checkpoint_sources",
+    "arguments": {
+      "schema_version": "1.0",
+      "operation_id": "m05-box-checkpoint-9c9db828",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "paths": [
+        "assets/cube/asset.blend",
+        "tools/acquire_box.py",
+        "tools/import_box.py",
+        "tools/prepare_box_publication.py",
+        "research/Box.glb",
+        "research/box-commit.json",
+        "research/box-README.md",
+        "research/box-metadata.json",
+        "research/box-ledger.json",
+        "reports/import-inspection.json",
+        "reports/native-allocation/import.claim",
+        "reports/native-allocation/import.json",
+        "reports/native-allocation/import.log"
+      ],
+      "message": "Import pinned official Khronos Box with acquisition ledger and technical report\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+      "expected_head": "a4b388c4fdaeda6d6513076ceac86921f1017cad"
+    }
+  },
+  {
+    "native_event_id": "1b89d3d0-5685-432b-b993-8a2360d3b2d0",
+    "timestamp": "2026-11-14T15:01:53.928Z",
+    "toolCallId": "call_k7cWOleaS3gk4JMPW5hzI3YX",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/prepare_box_publication.py 86430967543c9b760a6e3b562d5e02d69fce9b02 && python - <<'PY'\nimport subprocess,hashlib\nfrom pathlib import Path\nfor p in ['scenes/fixture/scene.blend','scenes/alternate/scene.blend','assets/companion/asset.blend','assets/companion/colour.png','assets/cube/colour.png']:\n b=subprocess.check_output(['git','show','a4b388c4fdaeda6d6513076ceac86921f1017cad:'+p]).decode(); h=hashlib.sha256(Path(p).read_bytes()).hexdigest(); print(p, 'matches_original_hydrated_hash', ('oid sha256:'+h) in b)\nPY",
+      "description": "Validate exact closure/publication models and preserved hydrated originals"
+    }
+  },
+  {
+    "native_event_id": "091564ea-54e3-467f-bdc1-17b5b895fd8a",
+    "timestamp": "2026-11-14T15:02:01.459Z",
+    "toolCallId": "call_bT4l6VFiLYDu3ogMqsM2GMUE",
+    "toolName": "publish_outputs",
+    "arguments": {
+      "schema_version": "1.0",
+      "publication_id": "m05-box-publication-9c9db828",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "items": [
+        {
+          "item_id": "asset-cube",
+          "kind": "asset",
+          "name": "Khronos Box - imported editable asset",
+          "version_id": "asset-cube-v2",
+          "expected_current_version_id": "asset-cube-v1",
+          "source_commit": "86430967543c9b760a6e3b562d5e02d69fce9b02",
+          "source": {
+            "entry_path": "assets/cube/asset.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "kind": "git",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "commit": "86430967543c9b760a6e3b562d5e02d69fce9b02",
+                  "path": "assets/cube/asset.blend",
+                  "sha256": "20363a522d6eed2070360cab48b739bb286ab31826e684214340222f411f591c"
+                }
+              }
+            ],
+            "dependencies": [],
+            "required_runtime": {
+              "application": "blender",
+              "version": "4.5.14 LTS",
+              "features": []
+            },
+            "digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a"
+          },
+          "artifact_ids": [],
+          "preview_requests": [
+            {
+              "intent_id": "m05-box-v2-keyframe-9c9db828",
+              "shot_id": null,
+              "purpose": "keyframe",
+              "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a",
+              "scene_name": "AssetReview",
+              "camera": null,
+              "frames": {
+                "start": 1,
+                "end": 1
+              },
+              "fps": {
+                "numerator": 24,
+                "denominator": 1
+              },
+              "dimensions": {
+                "width": 640,
+                "height": 360
+              },
+              "engine": "CYCLES",
+              "device": "CPU",
+              "samples": 8,
+              "colour_management": {
+                "view_transform": "Standard",
+                "look": "None",
+                "exposure": 0,
+                "gamma": 1
+              },
+              "renderer_revision": "proscenium-blender-1",
+              "review_output": {
+                "media_type": "image/png",
+                "encoding": "view_transformed_srgb",
+                "bit_depth": 8
+              },
+              "extra_outputs": []
+            },
+            {
+              "intent_id": "m05-box-v2-proxy-9c9db828",
+              "shot_id": null,
+              "purpose": "proxy",
+              "source_closure_digest": "7c5f1aaa289c187721470b09c20f943440499c291654c4f7aec6184889b4711a",
+              "scene_name": "AssetReview",
+              "camera": null,
+              "frames": {
+                "start": 1,
+                "end": 1
+              },
+              "fps": {
+                "numerator": 24,
+                "denominator": 1
+              },
+              "dimensions": {
+                "width": 640,
+                "height": 360
+              },
+              "engine": "CYCLES",
+              "device": "CPU",
+              "samples": 8,
+              "colour_management": {
+                "view_transform": "Standard",
+                "look": "None",
+                "exposure": 0,
+                "gamma": 1
+              },
+              "renderer_revision": "proscenium-blender-1",
+              "review_output": {
+                "media_type": "image/png",
+                "encoding": "view_transformed_srgb",
+                "bit_depth": 8
+              },
+              "extra_outputs": []
+            }
+          ],
+          "description": "Official Khronos Box GLB acquired and imported as editable geometry/material in Blender 4.5.14 LTS. Metre-scale technical checks passed; mesh datablock naming limitation: Cube.001 (object Cube). Independent previews requested, not completed or owner accepted. No scene adoption.",
+          "tags": [
+            "amber-cube",
+            "metre-fixture",
+            "khronos",
+            "online-acquired"
+          ],
+          "provenance": {
+            "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb",
+            "creator": "Cesium",
+            "licence": "CC-BY-4.0",
+            "note": "Official per-model metadata attribution; public availability is not independent licence clearance."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "native_event_id": "cbe81d4a-1e28-4803-807f-e67f5c6f6a65",
+    "timestamp": "2026-11-14T15:02:07.302Z",
+    "toolCallId": "call_ZemXBVgPQ61T4M7F6defNdb3",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "asset-cube-v2"
+    }
+  },
+  {
+    "native_event_id": "91387022-821d-40db-991c-5acfca7d9602",
+    "timestamp": "2026-11-14T15:04:58.727Z",
+    "toolCallId": "call_mYjDkCVaOSbv1yd6r3MzB7TY",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "asset-cube-v2"
+    }
+  },
+  {
+    "native_event_id": "b9d8f188-0bc9-4c65-b055-3595953283a0",
+    "timestamp": "2026-11-14T15:04:58.733Z",
+    "toolCallId": "call_LwgorYx4PlnxFyAdSEa9t0bA",
+    "toolName": "bash",
+    "arguments": {
+      "command": "git status --short && git rev-parse HEAD && cat project.json && ls -la brief && sha256sum scenes/fixture/scene.blend scenes/alternate/scene.blend assets/companion/asset.blend assets/companion/colour.png assets/cube/colour.png research/Box.glb",
+      "description": "Inspect active metadata, revision baseline and preserved file hashes"
+    }
+  },
+  {
+    "native_event_id": "1123416d-16e2-425a-a9e1-749139d9646f",
+    "timestamp": "2026-11-14T15:04:58.733Z",
+    "toolCallId": "call_PJzoex9NhSKkwAkKvS43kaio",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/import_box.py"
+    }
+  },
+  {
+    "native_event_id": "5930add3-c30e-442f-9e2b-8d34fcc17d15",
+    "timestamp": "2026-11-14T15:04:58.734Z",
+    "toolCallId": "call_yExPeOwdt2gWsTgifiiaNJ6Q",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/research/box-ledger.json"
+    }
+  },
+  {
+    "native_event_id": "c7a5afb2-8152-44db-82d0-ef76de071b26",
+    "timestamp": "2026-11-14T15:04:58.734Z",
+    "toolCallId": "call_DSasiMAxtZZjUFFAfmSwBVRm",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/m05_blender.py"
+    }
+  },
+  {
+    "native_event_id": "6e636431-45a5-44eb-83f2-662dbd6e3832",
+    "timestamp": "2026-11-14T15:05:31.175Z",
+    "toolCallId": "custom_call_ftoWtD9NCHiSg3MdTMt6qKZe",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Add File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/revise_box.py\n+import bpy\n+import hashlib\n+import json\n+import os\n+from pathlib import Path\n+from mathutils import Vector\n+\n+root = Path.cwd().resolve()\n+source = root / \"assets/cube/asset.blend\"\n+report_path = root / \"reports/revision-inspection.json\"\n+temporary = source.with_name(\"asset.revising.blend\")\n+assert all(not p.is_symlink() for p in [source, temporary, report_path, *source.parents])\n+assert not temporary.exists()\n+assert bpy.app.version == (4, 5, 14)\n+input_hash = hashlib.sha256(source.read_bytes()).hexdigest()\n+assert input_hash == \"20363a522d6eed2070360cab48b739bb286ab31826e684214340222f411f591c\"\n+bpy.ops.wm.open_mainfile(filepath=str(source))\n+\n+\n+def audit():\n+    records = {}\n+    for collection_name in [\"images\", \"fonts\", \"libraries\", \"meshes\", \"materials\", \"objects\", \"brushes\", \"sounds\", \"movieclips\", \"cache_files\", \"volumes\"]:\n+        entries = []\n+        for data in getattr(bpy.data, collection_name):\n+            entry = {\"name\": data.name, \"users\": data.users, \"fake_user\": data.use_fake_user}\n+            if hasattr(data, \"filepath\"):\n+                entry[\"filepath\"] = data.filepath\n+                entry[\"packed\"] = bool(getattr(data, \"packed_file\", None))\n+                if data.filepath and data.filepath != \"<builtin>\":\n+                    entry[\"resolved_path\"] = bpy.path.abspath(data.filepath, library=data.library)\n+            if data.library:\n+                entry[\"library\"] = data.library.filepath\n+            entries.append(entry)\n+        records[collection_name] = entries\n+    return {\"blend_paths\": list(bpy.utils.blend_paths(absolute=True, packed=False, local=False)), \"datablocks\": records}\n+\n+\n+report = {\n+    \"command\": \"python tools/m05_blender.py revise tools/revise_box.py\",\n+    \"request_id\": \"99c24f2a-efde-4322-ad4e-c40104acbbe6\",\n+    \"work_id\": \"work-2ad446d5123e47abbaebde6808a2c015\",\n+    \"generation_task_id\": \"task-4f76c9edec6448e69d6c5e39f9c98d44\",\n+    \"context_id\": \"b6125ce6-edd7-4747-9daa-1c72d00701d7\",\n+    \"input_sha256\": input_hash,\n+    \"before_dependencies\": audit(),\n+    \"blender\": {\"version\": bpy.app.version_string, \"build_hash\": bpy.app.build_hash.decode(), \"build_branch\": bpy.app.build_branch.decode()},\n+    \"status\": \"in_progress\", \"rendered\": False,\n+}\n+report_path.write_text(json.dumps(report, indent=2) + \"\\n\")\n+obj = next(o for o in bpy.data.objects if o.get(\"object_id\") == \"object-cube-source\")\n+assert obj.type == \"MESH\" and obj.get(\"instance_id\") == \"instance-asset\"\n+mesh = obj.data\n+assert len(mesh.vertices) == 24 and len(mesh.polygons) == 12\n+topology = [list(p.vertices) for p in mesh.polygons]\n+original_xy = [(v.co.x, v.co.y) for v in mesh.vertices]\n+original_materials = [slot.material for slot in obj.material_slots]\n+assert [m.name for m in original_materials] == [\"Red\"]\n+old_cube = bpy.data.meshes.get(\"Cube\")\n+if old_cube and old_cube != mesh:\n+    assert old_cube.users == 0\n+    bpy.data.meshes.remove(old_cube)\n+mesh.name = \"Cube\"\n+assert mesh.name == \"Cube\"\n+obj[\"proscenium_object_id\"] = \"object-cube-source\"\n+obj[\"proscenium_instance_id\"] = \"instance-asset\"\n+for v in mesh.vertices:\n+    v.co.z *= 1.5\n+mesh.update()\n+assert topology == [list(p.vertices) for p in mesh.polygons]\n+assert original_xy == [(v.co.x, v.co.y) for v in mesh.vertices]\n+assert original_materials == [slot.material for slot in obj.material_slots]\n+scene = bpy.context.scene\n+scene.name = \"AssetReview\"\n+scene.unit_settings.system = \"METRIC\"\n+scene.unit_settings.scale_length = 1\n+for item, object_id, instance_id in [\n+    (scene.camera, \"camera-asset-review\", \"instance-camera-asset-review\"),\n+    (bpy.data.objects[\"AssetReviewArea\"], \"light-asset-review\", \"instance-light-asset-review\"),\n+]:\n+    item[\"proscenium_object_id\"] = object_id\n+    item[\"proscenium_instance_id\"] = instance_id\n+scene.render.engine = \"CYCLES\"\n+scene.cycles.device = \"CPU\"\n+scene.cycles.samples = 8\n+scene.render.threads_mode = \"FIXED\"\n+scene.render.threads = 4\n+scene.render.resolution_x = 640\n+scene.render.resolution_y = 360\n+scene.render.resolution_percentage = 100\n+scene.render.fps = 24\n+scene.render.fps_base = 1\n+scene.frame_start = scene.frame_end = 1\n+scene.frame_set(1)\n+scene.view_settings.view_transform = \"Standard\"\n+scene.view_settings.look = \"None\"\n+scene.view_settings.exposure = 0\n+scene.view_settings.gamma = 1\n+# Blender's recursive purge removes only unused IDs, including orphan dependency chains.\n+purged = bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)\n+report[\"unused_datablocks_purged\"] = purged\n+required_files = []\n+for collection_name in [\"images\", \"fonts\", \"libraries\", \"sounds\", \"movieclips\", \"cache_files\", \"volumes\"]:\n+    for data in getattr(bpy.data, collection_name):\n+        path = getattr(data, \"filepath\", \"\")\n+        if not path or path == \"<builtin>\" or getattr(data, \"packed_file\", None):\n+            continue\n+        absolute = Path(bpy.path.abspath(path, library=data.library))\n+        assert absolute.is_relative_to(root), f\"Required outside-project dependency: {collection_name}/{data.name}: {absolute}\"\n+        assert not any(p.is_symlink() for p in [absolute, *absolute.parents]), str(absolute)\n+        assert absolute.is_file(), f\"Missing required dependency: {absolute}\"\n+        data.filepath = \"//\" + os.path.relpath(absolute, source.parent)\n+        required_files.append(absolute.relative_to(root).as_posix())\n+after = audit()\n+for path in after[\"blend_paths\"]:\n+    p = Path(path)\n+    assert p.is_relative_to(root), f\"Outside dependency remains: {path}\"\n+    assert p.is_file() and not p.is_symlink(), f\"Missing dependency remains: {path}\"\n+    required_files.append(p.relative_to(root).as_posix())\n+report[\"after_dependencies\"] = after\n+report[\"required_external_files\"] = sorted(set(required_files))\n+bpy.context.view_layer.update()\n+points = [obj.matrix_world @ Vector(c) for c in obj.bound_box]\n+bounds = {\"min\": [min(p[i] for p in points) for i in range(3)], \"max\": [max(p[i] for p in points) for i in range(3)]}\n+dimensions = [bounds[\"max\"][i] - bounds[\"min\"][i] for i in range(3)]\n+assert all(abs(a - b) < 1e-5 for a, b in zip(dimensions, [1, 1, 1.5]))\n+assert all(abs(a - b) < 1e-5 for a, b in zip(bounds[\"min\"], [-0.5, -0.5, 0]))\n+report.update({\n+    \"bounds_m\": bounds, \"dimensions_m\": dimensions,\n+    \"mesh_name\": mesh.name, \"object_name\": obj.name,\n+    \"vertices\": len(mesh.vertices), \"polygons\": len(mesh.polygons),\n+    \"ids\": {key: obj[key] for key in [\"object_id\", \"instance_id\", \"proscenium_object_id\", \"proscenium_instance_id\"]},\n+    \"materials\": [s.material.name if s.material else None for s in obj.material_slots],\n+    \"units\": {\"system\": scene.unit_settings.system, \"scale_length\": scene.unit_settings.scale_length},\n+    \"camera\": {\"name\": scene.camera.name, \"location\": list(scene.camera.location), \"lens_mm\": scene.camera.data.lens, \"ids\": dict(scene.camera.items())},\n+    \"light\": {\"name\": \"AssetReviewArea\", \"location\": list(bpy.data.objects[\"AssetReviewArea\"].location), \"ids\": dict(bpy.data.objects[\"AssetReviewArea\"].items())},\n+    \"validation\": {\"topology_preserved\": True, \"xy_vertices_unchanged\": True, \"material_identity_preserved\": True, \"all_blend_paths_checked\": True, \"not_performed\": [\"render\", \"visual acceptance\", \"rig or motion review\", \"owner selection\", \"scene adoption\"]},\n+})\n+bpy.context.preferences.filepaths.save_version = 0\n+bpy.ops.wm.save_as_mainfile(filepath=str(temporary), check_existing=False)\n+assert temporary.stat().st_size > 1000 and temporary.read_bytes()[:7] == b\"BLENDER\"\n+report[\"saved_dependency_recheck\"] = audit()\n+assert report[\"saved_dependency_recheck\"][\"blend_paths\"] == after[\"blend_paths\"]\n+os.replace(temporary, source)\n+report[\"output\"] = {\"path\": \"assets/cube/asset.blend\", \"sha256\": hashlib.sha256(source.read_bytes()).hexdigest(), \"bytes\": source.stat().st_size}\n+report[\"status\"] = \"passed\"\n+report_path.write_text(json.dumps(report, indent=2) + \"\\n\")\n+ledger_path = root / \"research/box-ledger.json\"\n+ledger = json.loads(ledger_path.read_text())\n+ledger.setdefault(\"revisions\", []).append({\n+    \"version_id\": \"asset-cube-v3\", \"based_on\": \"asset-cube-v2\", \"request_id\": report[\"request_id\"],\n+    \"work_id\": report[\"work_id\"], \"generation_task_id\": report[\"generation_task_id\"], \"context_id\": report[\"context_id\"],\n+    \"report\": \"reports/revision-inspection.json\", \"command\": report[\"command\"],\n+    \"dimensions_m\": dimensions, \"output\": report[\"output\"],\n+    \"dependency_audit\": {\"before\": report[\"before_dependencies\"][\"blend_paths\"], \"after\": after[\"blend_paths\"]},\n+    \"v2_preview_status\": \"Owner supplied: both jobs failed known dependency_missing/outside_materialisation; no outputs. No retry; proxy allocation exhausted.\",\n+    \"validation\": report[\"validation\"],\n+})\n+ledger_path.write_text(json.dumps(ledger, indent=2) + \"\\n\")\n+print(json.dumps(report))\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "67ceae20-640d-42e6-967d-a12315cfa9b1",
+    "timestamp": "2026-11-14T15:05:41.000Z",
+    "toolCallId": "call_w0pv3YK4vdQ1LlAzPPobN8fL",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/m05_blender.py revise tools/revise_box.py && cat reports/native-allocation/revise.log && python - <<'PY'\nimport json\nfrom pathlib import Path\nr=json.loads(Path('reports/revision-inspection.json').read_text()); print(json.dumps(r,indent=2)); assert r['status']=='passed'\nPY",
+      "description": "Execute single guarded revision and read complete dependency evidence",
+      "initial_wait": 30
+    }
+  },
+  {
+    "native_event_id": "d967749e-98f5-4b8d-90f1-3584401c0b9e",
+    "timestamp": "2026-11-14T15:06:00.368Z",
+    "toolCallId": "custom_call_TowoiWd79VXirXbk2jlBbG2u",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Add File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/prepare_box_revision_publication.py\n+import hashlib\n+import json\n+from pathlib import Path\n+import sys\n+from proscenium.contracts import canonical\n+from proscenium.contracts.generated import PublishedItem, SourceClosure, Provenance\n+\n+root = Path.cwd().resolve()\n+commit = sys.argv[1]\n+project = json.loads((root / \"project.json\").read_text())\n+ledger = json.loads((root / \"research/box-ledger.json\").read_text())\n+report = json.loads((root / \"reports/revision-inspection.json\").read_text())\n+assert report[\"status\"] == \"passed\"\n+assert report[\"mesh_name\"] == \"Cube\" and report[\"materials\"] == [\"Red\"]\n+assert report[\"vertices\"] == 24 and report[\"polygons\"] == 12\n+assert not report[\"after_dependencies\"][\"blend_paths\"]\n+assert not report[\"saved_dependency_recheck\"][\"blend_paths\"]\n+assert all(abs(a - b) < 1e-5 for a, b in zip(report[\"dimensions_m\"], [1, 1, 1.5]))\n+paths = sorted(set([\"assets/cube/asset.blend\", *report[\"required_external_files\"]]))\n+files = []\n+for p in paths:\n+    path = root / p\n+    assert path.is_relative_to(root) and not any(x.is_symlink() for x in [path, *path.parents])\n+    digest = hashlib.sha256(path.read_bytes()).hexdigest()\n+    if p == \"assets/cube/asset.blend\":\n+        assert digest == report[\"output\"][\"sha256\"]\n+    files.append({\"destination\": p, \"origin\": {\n+        \"kind\": \"git\", \"repository_id\": project[\"repository_id\"], \"commit\": commit,\n+        \"path\": p, \"sha256\": digest,\n+    }})\n+closure = {\n+    \"entry_path\": \"assets/cube/asset.blend\", \"files\": files, \"dependencies\": [],\n+    \"required_runtime\": {\"application\": \"blender\", \"version\": \"4.5.14 LTS\", \"features\": []},\n+}\n+closure[\"digest\"] = hashlib.sha256(canonical(closure)).hexdigest()\n+SourceClosure.model_validate(closure)\n+Provenance.model_validate(ledger[\"provenance\"])\n+preview = {\n+    \"intent_id\": \"m05-box-v3-keyframe-99c24f2a\", \"shot_id\": None, \"purpose\": \"keyframe\",\n+    \"source_closure_digest\": closure[\"digest\"], \"scene_name\": \"AssetReview\", \"camera\": None,\n+    \"frames\": {\"start\": 1, \"end\": 1}, \"fps\": {\"numerator\": 24, \"denominator\": 1},\n+    \"dimensions\": {\"width\": 640, \"height\": 360}, \"engine\": \"CYCLES\", \"device\": \"CPU\", \"samples\": 8,\n+    \"colour_management\": {\"view_transform\": \"Standard\", \"look\": \"None\", \"exposure\": 0, \"gamma\": 1},\n+    \"renderer_revision\": \"proscenium-blender-1\",\n+    \"review_output\": {\"media_type\": \"image/png\", \"encoding\": \"view_transformed_srgb\", \"bit_depth\": 8},\n+    \"extra_outputs\": [],\n+}\n+item = {\n+    \"item_id\": \"asset-cube\", \"kind\": \"asset\", \"name\": \"Khronos Box - 1.5 metre editable asset\",\n+    \"version_id\": \"asset-cube-v3\", \"expected_current_version_id\": \"asset-cube-v2\",\n+    \"source_commit\": commit, \"source\": closure, \"artifact_ids\": [], \"preview_requests\": [preview],\n+    \"description\": \"Native revision of the imported Khronos Box: 1 x 1 x 1.5 metres, base Z=0; imported 24-vertex/12-polygon topology and Red material preserved. Mesh Cube and application stable IDs corrected. Full blend_paths dependency audit and unused-datablock purge remove the outside brush reference; no external source inputs remain. One new keyframe requested, no proxy or retry. Not owner accepted or scene adopted.\",\n+    \"tags\": [\"amber-cube\", \"metre-fixture\", \"khronos\", \"online-acquired\"],\n+    \"provenance\": ledger[\"provenance\"],\n+    \"derived_from\": [{\"item_id\": \"asset-cube\", \"version_id\": \"asset-cube-v2\"}],\n+}\n+PublishedItem.model_validate(item)\n+print(json.dumps({\n+    \"schema_version\": \"1.0\", \"publication_id\": \"m05-box-v3-publication-99c24f2a\",\n+    \"project_id\": project[\"project_id\"], \"items\": [item],\n+}))\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "c8b4b543-1d8c-4e07-98ba-acc89dca9555",
+    "timestamp": "2026-11-14T15:06:11.386Z",
+    "toolCallId": "call_YqGoPRb8os3S2atkyRkRXBbA",
+    "toolName": "bash",
+    "arguments": {
+      "command": "git rev-parse HEAD && sha256sum scenes/fixture/scene.blend scenes/alternate/scene.blend assets/companion/asset.blend assets/companion/colour.png assets/cube/colour.png research/Box.glb && python - <<'PY'\nfrom pathlib import Path\nimport hashlib,json\nr=json.loads(Path('reports/revision-inspection.json').read_text())\nassert r['status']=='passed' and not r['saved_dependency_recheck']['blend_paths']\nassert hashlib.sha256(Path('assets/cube/asset.blend').read_bytes()).hexdigest()==r['output']['sha256']\nprint('Promoted source hash and complete saved dependency audit verified; no render performed')\nPY",
+      "description": "Verify promoted source and unchanged protected input files"
+    }
+  },
+  {
+    "native_event_id": "4c9d06a3-3220-4690-988f-4196d56535d6",
+    "timestamp": "2026-11-14T15:06:17.099Z",
+    "toolCallId": "call_VMfAsRrdKmIkybde9TwMVL8i",
+    "toolName": "checkpoint_sources",
+    "arguments": {
+      "schema_version": "1.0",
+      "operation_id": "m05-box-v3-checkpoint-99c24f2a",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "paths": [
+        "assets/cube/asset.blend",
+        "tools/revise_box.py",
+        "tools/prepare_box_revision_publication.py",
+        "reports/revision-inspection.json",
+        "reports/native-allocation/revise.claim",
+        "reports/native-allocation/revise.json",
+        "reports/native-allocation/revise.log",
+        "research/box-ledger.json"
+      ],
+      "message": "Revise imported Box height and correct audited source dependencies and stable IDs\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+      "expected_head": "86430967543c9b760a6e3b562d5e02d69fce9b02"
+    }
+  },
+  {
+    "native_event_id": "3b7c409b-6c66-4328-9e3b-85fddc5a15eb",
+    "timestamp": "2026-11-14T15:06:21.415Z",
+    "toolCallId": "call_OA5Hv9hdA6DNiI9VdfaSvXnl",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/prepare_box_revision_publication.py b836298f258967c1c37a1b2521aded58cbaced2e",
+      "description": "Validate v3 hydrated closure and single-keyframe publication contracts"
+    }
+  },
+  {
+    "native_event_id": "9ad1b983-4d7d-4fe1-aacf-fd1fad267123",
+    "timestamp": "2026-11-14T15:06:27.659Z",
+    "toolCallId": "call_281Ej1deiMRTFc6XwEZglOBu",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python - <<'PY'\nimport sys,importlib.util\nprint(sys.executable)\nprint(sys.path)\nprint(importlib.util.find_spec('proscenium'))\nPY\npython -m tools.prepare_box_revision_publication b836298f258967c1c37a1b2521aded58cbaced2e",
+      "description": "Resolve installed contract import using module execution"
+    }
+  },
+  {
+    "native_event_id": "7512c0b4-4159-48d7-9b63-9832ba037c04",
+    "timestamp": "2026-11-14T15:06:34.420Z",
+    "toolCallId": "call_PCD607ojynX8lCWYpCKYxXWF",
+    "toolName": "publish_outputs",
+    "arguments": {
+      "schema_version": "1.0",
+      "publication_id": "m05-box-v3-publication-99c24f2a",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "items": [
+        {
+          "item_id": "asset-cube",
+          "kind": "asset",
+          "name": "Khronos Box - 1.5 metre editable asset",
+          "version_id": "asset-cube-v3",
+          "expected_current_version_id": "asset-cube-v2",
+          "source_commit": "b836298f258967c1c37a1b2521aded58cbaced2e",
+          "source": {
+            "entry_path": "assets/cube/asset.blend",
+            "files": [
+              {
+                "destination": "assets/cube/asset.blend",
+                "origin": {
+                  "kind": "git",
+                  "repository_id": "repository-cee20008-dbe9-4469-bfab-c1d21f052e7e",
+                  "commit": "b836298f258967c1c37a1b2521aded58cbaced2e",
+                  "path": "assets/cube/asset.blend",
+                  "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde"
+                }
+              }
+            ],
+            "dependencies": [],
+            "required_runtime": {
+              "application": "blender",
+              "version": "4.5.14 LTS",
+              "features": []
+            },
+            "digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79"
+          },
+          "artifact_ids": [],
+          "preview_requests": [
+            {
+              "intent_id": "m05-box-v3-keyframe-99c24f2a",
+              "shot_id": null,
+              "purpose": "keyframe",
+              "source_closure_digest": "323f5943b773ca4edc97fe736a1266c7088a23e3327d7e471caf7b25bc602c79",
+              "scene_name": "AssetReview",
+              "camera": null,
+              "frames": {
+                "start": 1,
+                "end": 1
+              },
+              "fps": {
+                "numerator": 24,
+                "denominator": 1
+              },
+              "dimensions": {
+                "width": 640,
+                "height": 360
+              },
+              "engine": "CYCLES",
+              "device": "CPU",
+              "samples": 8,
+              "colour_management": {
+                "view_transform": "Standard",
+                "look": "None",
+                "exposure": 0,
+                "gamma": 1
+              },
+              "renderer_revision": "proscenium-blender-1",
+              "review_output": {
+                "media_type": "image/png",
+                "encoding": "view_transformed_srgb",
+                "bit_depth": 8
+              },
+              "extra_outputs": []
+            }
+          ],
+          "description": "Native revision of the imported Khronos Box: 1 x 1 x 1.5 metres, base Z=0; imported 24-vertex/12-polygon topology and Red material preserved. Mesh Cube and application stable IDs corrected. Full blend_paths dependency audit and unused-datablock purge remove the outside brush reference; no external source inputs remain. One new keyframe requested, no proxy or retry. Not owner accepted or scene adopted.",
+          "tags": [
+            "amber-cube",
+            "metre-fixture",
+            "khronos",
+            "online-acquired"
+          ],
+          "provenance": {
+            "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb",
+            "creator": "Cesium",
+            "licence": "CC-BY-4.0",
+            "note": "Official per-model metadata attribution; public availability is not independent licence clearance."
+          },
+          "derived_from": [
+            {
+              "item_id": "asset-cube",
+              "version_id": "asset-cube-v2"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "native_event_id": "88c8c505-3710-4413-9175-9946b328f2a0",
+    "timestamp": "2026-11-14T15:06:40.020Z",
+    "toolCallId": "call_zkA7neFCbo0TL1VBxlfTf4Dq",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "asset-cube-v3"
+    }
+  },
+  {
+    "native_event_id": "875cf76e-32bb-4069-ba06-39dae5595c23",
+    "timestamp": "2026-11-14T15:09:24.681Z",
+    "toolCallId": "call_SxIWlALzZk2dSdx2BDvvyIFK",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "asset-cube-v3"
+    }
+  },
+  {
+    "native_event_id": "1bdf4146-4ae9-4c62-998b-a6bb26d0a3eb",
+    "timestamp": "2026-11-14T15:09:24.681Z",
+    "toolCallId": "call_6j7xoD7so06P91QNwKFAD1Pw",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "scene-main-v1"
+    }
+  },
+  {
+    "native_event_id": "a1c3e981-ccc2-4567-b3b5-8cbaab045bc7",
+    "timestamp": "2026-11-14T15:09:24.681Z",
+    "toolCallId": "call_QfKCvB4CKit11fOCyupsF6CS",
+    "toolName": "get_version",
+    "arguments": {
+      "version_id": "scene-alternate-v1"
+    }
+  },
+  {
+    "native_event_id": "cf0b789e-afb2-4e42-971c-4de9d7ee7583",
+    "timestamp": "2026-11-14T15:09:24.682Z",
+    "toolCallId": "call_Cf8kYDTT5y57UeL7gxjtZtgU",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/reports/historical-inputs.json"
+    }
+  },
+  {
+    "native_event_id": "03690ca8-dd63-45af-a3a4-7f2fb7ee1530",
+    "timestamp": "2026-11-14T15:09:24.682Z",
+    "toolCallId": "call_83st2VlewVQPFXouMUfUGL5Q",
+    "toolName": "bash",
+    "arguments": {
+      "command": "git status --short && git rev-parse HEAD && cat project.json && sha256sum assets/cube/asset.blend assets/cube/colour.png assets/companion/asset.blend assets/companion/colour.png scenes/fixture/scene.blend scenes/alternate/scene.blend && ls -la brief reports/native-allocation",
+      "description": "Inspect active adoption metadata and protected source baselines"
+    }
+  },
+  {
+    "native_event_id": "dd54b925-73dd-4e2c-abfd-103735b51cfc",
+    "timestamp": "2026-11-14T15:09:57.206Z",
+    "toolCallId": "custom_call_NZOePuKzgDeVpHOLdPtAmmgJ",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Add File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/history_adopt.py\n+import bpy\n+import hashlib\n+import json\n+import os\n+from pathlib import Path\n+from mathutils import Vector\n+\n+root = Path.cwd().resolve()\n+report_path = root / \"reports/history-adoption.json\"\n+fixture = json.loads((root / \"reports/historical-inputs.json\").read_text())\n+texture_hash = \"fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568\"\n+asset_hash = \"da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde\"\n+\n+\n+def safe(path):\n+    p = Path(path)\n+    if not p.is_absolute():\n+        p = root / p\n+    assert p.is_relative_to(root) and not any(x.is_symlink() for x in [p, *p.parents]), str(p)\n+    return p\n+\n+\n+def sha(path):\n+    return hashlib.sha256(safe(path).read_bytes()).hexdigest()\n+\n+\n+def plain(value):\n+    if isinstance(value, (str, int, float, bool)) or value is None:\n+        return value\n+    if hasattr(value, \"to_dict\"):\n+        return {k: plain(v) for k, v in value.to_dict().items()}\n+    return [plain(v) for v in value]\n+\n+\n+def ids(data):\n+    return {k: plain(v) for k, v in data.items()}\n+\n+\n+def cubes():\n+    return [o for o in bpy.context.scene.objects if o.type == \"MESH\" and (\n+        o.data.name.split(\".\")[0] == \"Cube\" or\n+        o.get(\"object_id\") == \"object-cube-source\" or\n+        o.get(\"proscenium_object_id\") == \"object-cube-source\" or\n+        o.data.get(\"object_id\") == \"object-cube-source\" or\n+        o.data.get(\"proscenium_object_id\") == \"object-cube-source\"\n+    )]\n+\n+\n+def measured(o):\n+    points = [o.matrix_world @ Vector(c) for c in o.bound_box]\n+    lo = [min(p[i] for p in points) for i in range(3)]\n+    hi = [max(p[i] for p in points) for i in range(3)]\n+    return {\n+        \"name\": o.name, \"ids\": ids(o), \"mesh\": o.data.name, \"mesh_ids\": ids(o.data),\n+        \"library\": o.data.library.filepath if o.data.library else None,\n+        \"bounds_m\": {\"min\": lo, \"max\": hi}, \"dimensions_m\": [hi[i] - lo[i] for i in range(3)],\n+        \"location\": list(o.location), \"materials\": [s.material.name if s.material else None for s in o.material_slots],\n+        \"vertices\": len(o.data.vertices), \"polygons\": len(o.data.polygons),\n+    }\n+\n+\n+def dependencies(scope):\n+    paths = list(bpy.utils.blend_paths(absolute=True, packed=False, local=False))\n+    for path in paths:\n+        p = safe(path)\n+        assert p.is_relative_to(scope) and p.is_file(), f\"Required path outside inspected source root or missing: {p}\"\n+    libraries = []\n+    for lib in bpy.data.libraries:\n+        p = safe(bpy.path.abspath(lib.filepath))\n+        assert p.is_relative_to(scope) and p.is_file()\n+        libraries.append({\"name\": lib.name, \"filepath\": lib.filepath, \"resolved_path\": str(p), \"sha256\": sha(p)})\n+    textures = []\n+    for image in bpy.data.images:\n+        if image.source != \"FILE\" or not image.filepath or image.packed_file:\n+            continue\n+        p = safe(bpy.path.abspath(image.filepath, library=image.library))\n+        assert p.is_relative_to(scope) and p.is_file()\n+        textures.append({\"name\": image.name, \"filepath\": image.filepath, \"resolved_path\": str(p), \"dimensions\": list(image.size), \"sha256\": sha(p)})\n+    return {\"blend_paths\": paths, \"libraries\": libraries, \"textures\": textures}\n+\n+\n+def animation(o):\n+    data = o.animation_data\n+    if not data:\n+        return None\n+    action = data.action\n+    curves = []\n+    if action:\n+        for curve in action.fcurves:\n+            curves.append({\"path\": curve.data_path, \"index\": curve.array_index, \"keys\": [\n+                {\"co\": list(k.co), \"left\": list(k.handle_left), \"right\": list(k.handle_right), \"interpolation\": k.interpolation}\n+                for k in curve.keyframe_points\n+            ]})\n+    return {\"action\": action.name if action else None, \"curves\": curves,\n+            \"drivers\": [(f.data_path, f.array_index, f.driver.expression) for f in data.drivers],\n+            \"nla\": [(t.name, [(s.name, s.action.name if s.action else None, s.frame_start, s.frame_end) for s in t.strips]) for t in data.nla_tracks]}\n+\n+\n+def scene_state():\n+    scene = bpy.context.scene\n+    return {\n+        \"objects\": {o.name: {\"ids\": ids(o), \"location\": list(o.location), \"rotation\": list(o.rotation_euler),\n+                             \"scale\": list(o.scale), \"animation\": animation(o)} for o in scene.objects},\n+        \"camera\": scene.camera.name if scene.camera else None,\n+        \"timeline\": [scene.frame_start, scene.frame_end, scene.frame_current, scene.render.fps, scene.render.fps_base],\n+    }\n+\n+\n+assert bpy.app.version == (4, 5, 14)\n+protected = [\"assets/cube/asset.blend\", \"assets/cube/colour.png\", \"assets/companion/asset.blend\", \"assets/companion/colour.png\", \"scenes/alternate/scene.blend\", \"research/Box.glb\"]\n+baseline = {p: sha(p) for p in protected}\n+assert baseline[\"assets/cube/asset.blend\"] == asset_hash\n+report = {\n+    \"command\": \"python tools/m05_blender.py history-adopt tools/history_adopt.py\",\n+    \"request_id\": \"113219f0-a14c-45b5-b740-3f0596d7bd60\", \"work_id\": \"work-28be728f76cd4851b56ef075b70a653c\",\n+    \"generation_task_id\": \"task-11d15a7c6f964a6ab632ed1f716cea21\", \"context_id\": \"9c26d0fb-a3c5-4110-b64e-5a3cc2df6fdb\",\n+    \"blender\": {\"version\": bpy.app.version_string, \"build_hash\": bpy.app.build_hash.decode(), \"build_branch\": bpy.app.build_branch.decode()},\n+    \"historical_inspections\": [], \"requested_future_operation\": \"Adopt asset-cube-v3 only into scene-main-v2\",\n+    \"status\": \"in_progress\", \"rendered\": False, \"protected_before\": baseline,\n+}\n+report_path.write_text(json.dumps(report, indent=2) + \"\\n\")\n+for version_id in [\"scene-main-v1\", \"scene-alternate-v1\"]:\n+    entry = fixture[version_id]\n+    snapshot = safe(entry[\"path\"])\n+    version = entry[\"version\"]\n+    assert version[\"version_id\"] == version_id\n+    assert version[\"source_commit\"] == \"a4b388c4fdaeda6d6513076ceac86921f1017cad\"\n+    before = {}\n+    for f in version[\"source\"][\"files\"]:\n+        p = safe(snapshot / f[\"destination\"])\n+        before[f[\"destination\"]] = sha(p)\n+        assert before[f[\"destination\"]] == f[\"origin\"][\"sha256\"]\n+    bpy.ops.wm.open_mainfile(filepath=str(safe(snapshot / version[\"source\"][\"entry_path\"])))\n+    scene = bpy.context.scene\n+    bpy.context.view_layer.update()\n+    observations = [measured(o) for o in cubes()]\n+    assert len(observations) == 2, observations\n+    assert scene.unit_settings.system == \"METRIC\" and scene.unit_settings.scale_length == 1\n+    for o in observations:\n+        assert all(abs(a - 1) < 1e-5 for a in o[\"dimensions_m\"]), o\n+    deps = dependencies(snapshot)\n+    assert deps[\"textures\"], \"Historical textured cube has no actual file-backed texture\"\n+    for t in deps[\"textures\"]:\n+        assert t[\"sha256\"] == texture_hash and all(n > 0 for n in t[\"dimensions\"])\n+    after = {p: sha(snapshot / p) for p in before}\n+    assert before == after\n+    report[\"historical_inspections\"].append({\n+        \"version_id\": version_id, \"source_commit\": version[\"source_commit\"], \"source_closure_digest\": version[\"source\"][\"digest\"],\n+        \"snapshot_root\": entry[\"path\"], \"units\": {\"system\": scene.unit_settings.system, \"scale_length\": scene.unit_settings.scale_length},\n+        \"instances\": observations, \"dependencies\": deps, \"hashes_before\": before, \"hashes_after\": after,\n+        \"saved\": False, \"status\": \"actual_reopen_verified\",\n+    })\n+    report_path.write_text(json.dumps(report, indent=2) + \"\\n\")\n+\n+source = safe(\"scenes/fixture/scene.blend\")\n+temporary = source.with_name(\"scene.adopting.blend\")\n+assert not temporary.exists()\n+bpy.ops.wm.open_mainfile(filepath=str(source))\n+scene = bpy.context.scene\n+bpy.context.view_layer.update()\n+state_before = scene_state()\n+instances = cubes()\n+assert len(instances) == 2\n+assert scene.unit_settings.system == \"METRIC\" and scene.unit_settings.scale_length == 1\n+observations = [measured(o) for o in instances]\n+for o in observations:\n+    assert all(abs(a - b) < 1e-5 for a, b in zip(o[\"dimensions_m\"], [1, 1, 1.5])), o\n+    assert o[\"materials\"] == [\"Red\"], o\n+    assert o[\"mesh\"] == \"Cube\" and o[\"vertices\"] == 24 and o[\"polygons\"] == 12\n+for lib in bpy.data.libraries:\n+    p = safe(bpy.path.abspath(lib.filepath))\n+    assert p == safe(\"assets/cube/asset.blend\") and sha(p) == asset_hash\n+    lib.filepath = \"//\" + os.path.relpath(p, source.parent)\n+before_purge = list(bpy.utils.blend_paths(absolute=True, packed=False, local=False))\n+purged = bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)\n+deps = dependencies(root)\n+state_after = scene_state()\n+assert state_before == state_after, \"Scene identity/transforms/animation/camera/timeline changed\"\n+report[\"adoption\"] = {\n+    \"based_on\": \"scene-main-v1\", \"version_id\": \"scene-main-v2\",\n+    \"dependency\": {\"item_id\": \"asset-cube\", \"version_id\": \"asset-cube-v3\"},\n+    \"instances\": observations, \"units\": {\"system\": scene.unit_settings.system, \"scale_length\": scene.unit_settings.scale_length},\n+    \"state_before\": state_before, \"state_after\": state_after, \"state_preserved\": True,\n+    \"dependency_paths_before_unused_purge\": before_purge, \"unused_datablocks_purged\": purged,\n+    \"dependencies\": deps, \"input_sha256\": sha(source),\n+}\n+bpy.context.preferences.filepaths.save_version = 0\n+bpy.ops.wm.save_as_mainfile(filepath=str(temporary), check_existing=False)\n+assert temporary.stat().st_size > 1000 and temporary.read_bytes()[:7] == b\"BLENDER\"\n+saved_deps = dependencies(root)\n+assert saved_deps == deps\n+os.replace(temporary, source)\n+report[\"adoption\"][\"output\"] = {\"path\": \"scenes/fixture/scene.blend\", \"sha256\": sha(source), \"bytes\": source.stat().st_size}\n+report[\"adoption\"][\"saved_dependency_recheck\"] = saved_deps\n+report[\"protected_after\"] = {p: sha(p) for p in protected}\n+assert baseline == report[\"protected_after\"]\n+for inspection in report[\"historical_inspections\"]:\n+    snapshot = safe(inspection[\"snapshot_root\"])\n+    assert inspection[\"hashes_before\"] == {p: sha(snapshot / p) for p in inspection[\"hashes_before\"]}\n+report[\"status\"] = \"passed\"\n+report[\"limitations\"] = [\"No render, visual review, rig/motion acceptance or new preview performed\", \"Historical readback is verified; scene-main-v2 publication is a separate host operation\"]\n+report_path.write_text(json.dumps(report, indent=2) + \"\\n\")\n+print(json.dumps(report))\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "ff33376e-e591-4e69-acca-0f10a8a87f5a",
+    "timestamp": "2026-11-14T15:10:15.463Z",
+    "toolCallId": "call_S6TXSOTMipQx9yu1eTyEiy8U",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/m05_blender.py history-adopt tools/history_adopt.py && cat reports/native-allocation/history-adopt.log && python - <<'PY'\nimport json\nfrom pathlib import Path\nr=json.loads(Path('reports/history-adoption.json').read_text()); assert r['status']=='passed'; print('Verified historical reopen count:',len(r['historical_inspections'])); print('Adoption:',json.dumps(r['adoption']['output'])); print('Historical dimensions:',[[i['dimensions_m'] for i in h['instances']] for h in r['historical_inspections']]); print('Adopted dimensions:',[i['dimensions_m'] for i in r['adoption']['instances']])\nPY",
+      "description": "Run final guarded process for immutable-history inspection and main-only adoption",
+      "initial_wait": 30
+    }
+  },
+  {
+    "native_event_id": "a50dfc53-5492-49b7-a8c5-a1b0400bf850",
+    "timestamp": "2026-11-14T15:10:33.855Z",
+    "toolCallId": "call_S8x0iclHnzpWpDQa87nvVD42",
+    "toolName": "view",
+    "arguments": {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/reports/history-adoption.json"
+    }
+  },
+  {
+    "native_event_id": "ae946f8a-4805-484c-8235-70189cdfc856",
+    "timestamp": "2026-11-14T15:10:33.855Z",
+    "toolCallId": "call_xWNEXNizyMhIfH9wtaE8lvo9",
+    "toolName": "bash",
+    "arguments": {
+      "command": "git rev-parse HEAD && sha256sum scenes/fixture/scene.blend scenes/alternate/scene.blend assets/cube/asset.blend assets/cube/colour.png assets/companion/asset.blend assets/companion/colour.png && cat reports/native-allocation/history-adopt.json",
+      "description": "Confirm aborted inspection left every retained source unchanged"
+    }
+  },
+  {
+    "native_event_id": "1020fcd3-eda1-40e3-8130-41c5f9524f97",
+    "timestamp": "2026-11-14T15:10:50.357Z",
+    "toolCallId": "custom_call_QbSTNrbcynVu0VjGJgVtDk2f",
+    "toolName": "apply_patch",
+    "arguments": "*** Begin Patch\n*** Add File: /home/quintin/.cache/proscenium-development/milestones/m05-20261114T165850/project/tools/finalize_history_failure.py\n+import ast\n+import hashlib\n+import json\n+from pathlib import Path\n+\n+root = Path.cwd().resolve()\n+report_path = root / \"reports/history-adoption.json\"\n+report = json.loads(report_path.read_text())\n+log_path = root / \"reports/native-allocation/history-adopt.log\"\n+log = log_path.read_text()\n+line = next(line for line in log.splitlines() if line.startswith(\"AssertionError: \"))\n+observed = ast.literal_eval(line.removeprefix(\"AssertionError: \"))\n+targets = [o for o in observed if o[\"ids\"].get(\"proscenium_object_id\") == \"object-cube-source\"]\n+assert len(targets) == 2 and all(o[\"dimensions_m\"] == [1, 1, 1] for o in targets)\n+fixture = json.loads((root / \"reports/historical-inputs.json\").read_text())\n+\n+\n+def sha(path):\n+    p = root / path\n+    assert p.is_relative_to(root) and not any(x.is_symlink() for x in [p, *p.parents])\n+    return hashlib.sha256(p.read_bytes()).hexdigest()\n+\n+\n+report[\"historical_inspections\"] = [{\n+    \"version_id\": \"scene-main-v1\",\n+    \"status\": \"partial_actual_reopen_from_Blender_log\",\n+    \"source_commit\": fixture[\"scene-main-v1\"][\"version\"][\"source_commit\"],\n+    \"source_closure_digest\": fixture[\"scene-main-v1\"][\"version\"][\"source\"][\"digest\"],\n+    \"snapshot_root\": fixture[\"scene-main-v1\"][\"path\"],\n+    \"instances\": targets,\n+    \"evidence\": \"reports/native-allocation/history-adopt.log: AssertionError object observations\",\n+    \"units\": None,\n+    \"texture_validation\": \"not reached\",\n+    \"saved\": False,\n+}]\n+post_hashes = {}\n+for version_id, entry in fixture.items():\n+    files = {}\n+    for f in entry[\"version\"][\"source\"][\"files\"]:\n+        actual = sha(Path(entry[\"path\"]) / f[\"destination\"])\n+        assert actual == f[\"origin\"][\"sha256\"]\n+        files[f[\"destination\"]] = actual\n+    post_hashes[version_id] = files\n+report[\"historical_post_failure_hashes\"] = post_hashes\n+report[\"historical_before_hash_check\"] = {\n+    \"scene-main-v1\": \"All closure hashes asserted against the exact materialisation before opening; inspection later aborted\",\n+    \"scene-alternate-v1\": \"Blender loop not reached; post-failure bytes match pinned closure, not an actual Blender reopen\",\n+}\n+report[\"protected_after\"] = {p: sha(p) for p in report[\"protected_before\"]}\n+assert report[\"protected_before\"] == report[\"protected_after\"]\n+report[\"working_main_after_sha256\"] = sha(\"scenes/fixture/scene.blend\")\n+assert report[\"working_main_after_sha256\"] == \"17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f\"\n+report[\"status\"] = \"blocked_final_authoring_attempt_exhausted\"\n+report[\"failure\"] = {\n+    \"exception\": \"AssertionError at tools/history_adopt.py:137\",\n+    \"cause\": \"Cube-name fallback selected local Floor and Wall alongside the two explicitly ID-tagged linked cube instances\",\n+    \"unexpected_objects\": [o[\"name\"] for o in observed if o not in targets],\n+    \"guard_exit_code\": 0,\n+    \"application_success\": False,\n+    \"guard_limitation\": \"Blender process exited zero despite an uncaught Python assertion; report status and log are the authoritative failure evidence\",\n+    \"retry_performed\": False,\n+}\n+report[\"adoption\"] = {\"status\": \"not_run\", \"scene_main_v2_published\": False}\n+report[\"limitations\"] = [\n+    \"Only scene-main-v1 was actually reopened; cube dimensions observed, but units and texture checks were not reached\",\n+    \"scene-alternate-v1 was not reopened in Blender\",\n+    \"No scene adoption, publication, render, preview or generation performed\",\n+    \"Third and final guarded Blender attempt exhausted; no alternate Blender launch permitted\",\n+]\n+report_path.write_text(json.dumps(report, indent=2) + \"\\n\")\n+print(json.dumps({\"status\": report[\"status\"], \"historical_targets\": targets,\n+                  \"historical_hashes_match\": True, \"protected_sources_unchanged\": True, \"adoption\": report[\"adoption\"]}))\n*** End Patch\n"
+  },
+  {
+    "native_event_id": "b6368f54-121a-45fe-a3d1-83fb09dad59e",
+    "timestamp": "2026-11-14T15:10:54.370Z",
+    "toolCallId": "call_gy9bLXhko11KHwniXryYluQe",
+    "toolName": "bash",
+    "arguments": {
+      "command": "python tools/finalize_history_failure.py && git rev-parse HEAD",
+      "description": "Persist honest partial readback and verify all historical and retained source hashes"
+    }
+  },
+  {
+    "native_event_id": "4a19621a-1071-4c89-9afe-306495bea393",
+    "timestamp": "2026-11-14T15:10:58.701Z",
+    "toolCallId": "call_lfjIwr0i9Tedklt0SPlz5VeV",
+    "toolName": "checkpoint_sources",
+    "arguments": {
+      "schema_version": "1.0",
+      "operation_id": "m05-history-failure-checkpoint-113219f0",
+      "project_id": "project-39e2241d-9db6-495e-bf12-fc539335c498",
+      "paths": [
+        "tools/history_adopt.py",
+        "tools/finalize_history_failure.py",
+        "reports/history-adoption.json",
+        "reports/native-allocation/history-adopt.claim",
+        "reports/native-allocation/history-adopt.json",
+        "reports/native-allocation/history-adopt.log"
+      ],
+      "message": "Record partial historical readback and blocked final authoring attempt; no scene adoption\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+      "expected_head": "b836298f258967c1c37a1b2521aded58cbaced2e"
+    }
+  }
+]

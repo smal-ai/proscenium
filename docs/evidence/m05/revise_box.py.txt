@@ -1,0 +1,159 @@
+import bpy
+import hashlib
+import json
+import os
+from pathlib import Path
+from mathutils import Vector
+
+root = Path.cwd().resolve()
+source = root / "assets/cube/asset.blend"
+report_path = root / "reports/revision-inspection.json"
+temporary = source.with_name("asset.revising.blend")
+assert all(not p.is_symlink() for p in [source, temporary, report_path, *source.parents])
+assert not temporary.exists()
+assert bpy.app.version == (4, 5, 14)
+input_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+assert input_hash == "20363a522d6eed2070360cab48b739bb286ab31826e684214340222f411f591c"
+bpy.ops.wm.open_mainfile(filepath=str(source))
+
+
+def audit():
+    records = {}
+    for collection_name in ["images", "fonts", "libraries", "meshes", "materials", "objects", "brushes", "sounds", "movieclips", "cache_files", "volumes"]:
+        entries = []
+        for data in getattr(bpy.data, collection_name):
+            entry = {"name": data.name, "users": data.users, "fake_user": data.use_fake_user}
+            if hasattr(data, "filepath"):
+                entry["filepath"] = data.filepath
+                entry["packed"] = bool(getattr(data, "packed_file", None))
+                if data.filepath and data.filepath != "<builtin>":
+                    entry["resolved_path"] = bpy.path.abspath(data.filepath, library=data.library)
+            if data.library:
+                entry["library"] = data.library.filepath
+            entries.append(entry)
+        records[collection_name] = entries
+    return {"blend_paths": list(bpy.utils.blend_paths(absolute=True, packed=False, local=False)), "datablocks": records}
+
+
+report = {
+    "command": "python tools/m05_blender.py revise tools/revise_box.py",
+    "request_id": "99c24f2a-efde-4322-ad4e-c40104acbbe6",
+    "work_id": "work-2ad446d5123e47abbaebde6808a2c015",
+    "generation_task_id": "task-4f76c9edec6448e69d6c5e39f9c98d44",
+    "context_id": "b6125ce6-edd7-4747-9daa-1c72d00701d7",
+    "input_sha256": input_hash,
+    "before_dependencies": audit(),
+    "blender": {"version": bpy.app.version_string, "build_hash": bpy.app.build_hash.decode(), "build_branch": bpy.app.build_branch.decode()},
+    "status": "in_progress", "rendered": False,
+}
+report_path.write_text(json.dumps(report, indent=2) + "\n")
+obj = next(o for o in bpy.data.objects if o.get("object_id") == "object-cube-source")
+assert obj.type == "MESH" and obj.get("instance_id") == "instance-asset"
+mesh = obj.data
+assert len(mesh.vertices) == 24 and len(mesh.polygons) == 12
+topology = [list(p.vertices) for p in mesh.polygons]
+original_xy = [(v.co.x, v.co.y) for v in mesh.vertices]
+original_materials = [slot.material for slot in obj.material_slots]
+assert [m.name for m in original_materials] == ["Red"]
+old_cube = bpy.data.meshes.get("Cube")
+if old_cube and old_cube != mesh:
+    assert old_cube.users == 0
+    bpy.data.meshes.remove(old_cube)
+mesh.name = "Cube"
+assert mesh.name == "Cube"
+obj["proscenium_object_id"] = "object-cube-source"
+obj["proscenium_instance_id"] = "instance-asset"
+for v in mesh.vertices:
+    v.co.z *= 1.5
+mesh.update()
+assert topology == [list(p.vertices) for p in mesh.polygons]
+assert original_xy == [(v.co.x, v.co.y) for v in mesh.vertices]
+assert original_materials == [slot.material for slot in obj.material_slots]
+scene = bpy.context.scene
+scene.name = "AssetReview"
+scene.unit_settings.system = "METRIC"
+scene.unit_settings.scale_length = 1
+for item, object_id, instance_id in [
+    (scene.camera, "camera-asset-review", "instance-camera-asset-review"),
+    (bpy.data.objects["AssetReviewArea"], "light-asset-review", "instance-light-asset-review"),
+]:
+    item["proscenium_object_id"] = object_id
+    item["proscenium_instance_id"] = instance_id
+scene.render.engine = "CYCLES"
+scene.cycles.device = "CPU"
+scene.cycles.samples = 8
+scene.render.threads_mode = "FIXED"
+scene.render.threads = 4
+scene.render.resolution_x = 640
+scene.render.resolution_y = 360
+scene.render.resolution_percentage = 100
+scene.render.fps = 24
+scene.render.fps_base = 1
+scene.frame_start = scene.frame_end = 1
+scene.frame_set(1)
+scene.view_settings.view_transform = "Standard"
+scene.view_settings.look = "None"
+scene.view_settings.exposure = 0
+scene.view_settings.gamma = 1
+# Blender's recursive purge removes only unused IDs, including orphan dependency chains.
+purged = bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
+report["unused_datablocks_purged"] = purged
+required_files = []
+for collection_name in ["images", "fonts", "libraries", "sounds", "movieclips", "cache_files", "volumes"]:
+    for data in getattr(bpy.data, collection_name):
+        path = getattr(data, "filepath", "")
+        if not path or path == "<builtin>" or getattr(data, "packed_file", None):
+            continue
+        absolute = Path(bpy.path.abspath(path, library=data.library))
+        assert absolute.is_relative_to(root), f"Required outside-project dependency: {collection_name}/{data.name}: {absolute}"
+        assert not any(p.is_symlink() for p in [absolute, *absolute.parents]), str(absolute)
+        assert absolute.is_file(), f"Missing required dependency: {absolute}"
+        data.filepath = "//" + os.path.relpath(absolute, source.parent)
+        required_files.append(absolute.relative_to(root).as_posix())
+after = audit()
+for path in after["blend_paths"]:
+    p = Path(path)
+    assert p.is_relative_to(root), f"Outside dependency remains: {path}"
+    assert p.is_file() and not p.is_symlink(), f"Missing dependency remains: {path}"
+    required_files.append(p.relative_to(root).as_posix())
+report["after_dependencies"] = after
+report["required_external_files"] = sorted(set(required_files))
+bpy.context.view_layer.update()
+points = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
+bounds = {"min": [min(p[i] for p in points) for i in range(3)], "max": [max(p[i] for p in points) for i in range(3)]}
+dimensions = [bounds["max"][i] - bounds["min"][i] for i in range(3)]
+assert all(abs(a - b) < 1e-5 for a, b in zip(dimensions, [1, 1, 1.5]))
+assert all(abs(a - b) < 1e-5 for a, b in zip(bounds["min"], [-0.5, -0.5, 0]))
+report.update({
+    "bounds_m": bounds, "dimensions_m": dimensions,
+    "mesh_name": mesh.name, "object_name": obj.name,
+    "vertices": len(mesh.vertices), "polygons": len(mesh.polygons),
+    "ids": {key: obj[key] for key in ["object_id", "instance_id", "proscenium_object_id", "proscenium_instance_id"]},
+    "materials": [s.material.name if s.material else None for s in obj.material_slots],
+    "units": {"system": scene.unit_settings.system, "scale_length": scene.unit_settings.scale_length},
+    "camera": {"name": scene.camera.name, "location": list(scene.camera.location), "lens_mm": scene.camera.data.lens, "ids": dict(scene.camera.items())},
+    "light": {"name": "AssetReviewArea", "location": list(bpy.data.objects["AssetReviewArea"].location), "ids": dict(bpy.data.objects["AssetReviewArea"].items())},
+    "validation": {"topology_preserved": True, "xy_vertices_unchanged": True, "material_identity_preserved": True, "all_blend_paths_checked": True, "not_performed": ["render", "visual acceptance", "rig or motion review", "owner selection", "scene adoption"]},
+})
+bpy.context.preferences.filepaths.save_version = 0
+bpy.ops.wm.save_as_mainfile(filepath=str(temporary), check_existing=False)
+assert temporary.stat().st_size > 1000 and temporary.read_bytes()[:7] == b"BLENDER"
+report["saved_dependency_recheck"] = audit()
+assert report["saved_dependency_recheck"]["blend_paths"] == after["blend_paths"]
+os.replace(temporary, source)
+report["output"] = {"path": "assets/cube/asset.blend", "sha256": hashlib.sha256(source.read_bytes()).hexdigest(), "bytes": source.stat().st_size}
+report["status"] = "passed"
+report_path.write_text(json.dumps(report, indent=2) + "\n")
+ledger_path = root / "research/box-ledger.json"
+ledger = json.loads(ledger_path.read_text())
+ledger.setdefault("revisions", []).append({
+    "version_id": "asset-cube-v3", "based_on": "asset-cube-v2", "request_id": report["request_id"],
+    "work_id": report["work_id"], "generation_task_id": report["generation_task_id"], "context_id": report["context_id"],
+    "report": "reports/revision-inspection.json", "command": report["command"],
+    "dimensions_m": dimensions, "output": report["output"],
+    "dependency_audit": {"before": report["before_dependencies"]["blend_paths"], "after": after["blend_paths"]},
+    "v2_preview_status": "Owner supplied: both jobs failed known dependency_missing/outside_materialisation; no outputs. No retry; proxy allocation exhausted.",
+    "validation": report["validation"],
+})
+ledger_path.write_text(json.dumps(ledger, indent=2) + "\n")
+print(json.dumps(report))

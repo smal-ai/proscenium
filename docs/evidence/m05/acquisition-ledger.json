@@ -1,0 +1,199 @@
+{
+  "request_id": "9c9db828-703a-4dc8-a756-b830426ec935",
+  "work_id": "work-0d3d78c995f0451d8630188b4f642041",
+  "generation_task_id": "task-16e05b5f7137443e86bfdac23e2ec2b5",
+  "context_id": "158df540-cf78-40f5-a491-ba43b22e018c",
+  "download_bytes": 12918,
+  "aggregate_cap_bytes": 5242880,
+  "downloads": [
+    {
+      "url": "https://api.github.com/repos/KhronosGroup/glTF-Sample-Assets/commits/main",
+      "path": "research/box-commit.json",
+      "bytes": 9732,
+      "sha256": "bea52b75afc237486e3f943e59091017344f278503504ef29d7a4a49483ff8d0"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/README.md",
+      "path": "research/box-README.md",
+      "bytes": 898,
+      "sha256": "ae63b4ad1c8136b881686e66faf930c9b9e71fa823a7a4b1738076ae06739c35"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/metadata.json",
+      "path": "research/box-metadata.json",
+      "bytes": 624,
+      "sha256": "f5867d1cb319a739e434cce40177c7da65701e747198eef97da025610eac9af6"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb",
+      "path": "research/Box.glb",
+      "bytes": 1664,
+      "sha256": "ed52f7192b8311d700ac0ce80644e3852cd01537e4d62241b9acba023da3d54e"
+    }
+  ],
+  "catalogue_queries": [
+    {
+      "query": "amber-cube",
+      "found": [
+        "asset-cube"
+      ],
+      "version_id": "asset-cube-v1",
+      "next_cursor": null
+    },
+    {
+      "query": "tabletop blocking",
+      "found": [
+        "asset-cube"
+      ],
+      "version_id": "asset-cube-v1",
+      "next_cursor": null
+    },
+    {
+      "query": "Reusable fixture cube",
+      "found": [
+        "asset-cube"
+      ],
+      "version_id": "asset-cube-v1",
+      "next_cursor": null
+    }
+  ],
+  "coverage": {
+    "local_reusable_cube": "asset-cube-v1",
+    "official_online_sample": "Models/Box",
+    "optional_blendswap": "not configured"
+  },
+  "observations": {
+    "discovered": {
+      "local": "get_version(asset-cube-v1)",
+      "online": "Official KhronosGroup/glTF-Sample-Assets catalogue"
+    },
+    "acquired": {
+      "command": "python tools/acquire_box.py acquire",
+      "evidence": {
+        "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb",
+        "path": "research/Box.glb",
+        "bytes": 1664,
+        "sha256": "ed52f7192b8311d700ac0ce80644e3852cd01537e4d62241b9acba023da3d54e"
+      },
+      "checks": [
+        "GLB magic",
+        "version 2",
+        "declared byte length",
+        "JSON chunk"
+      ]
+    },
+    "imported": {
+      "command": "python tools/m05_blender.py import tools/import_box.py",
+      "report": "reports/import-inspection.json",
+      "blender": {
+        "version": "4.5.14 LTS",
+        "version_tuple": [
+          4,
+          5,
+          14
+        ],
+        "build_hash": "62c1db4208e8",
+        "build_branch": "blender-v4.5-release"
+      }
+    },
+    "validated": {
+      "acquisition": "container checks only; not licence clearance or owner selection",
+      "import": {
+        "status": "passed",
+        "checks": [
+          "actual glTF importer",
+          "one metre bounds",
+          "XY centered",
+          "base Z zero",
+          "metric units",
+          "no missing external resources",
+          "editable BLENDER file header"
+        ],
+        "not_validated": [
+          "visual appearance",
+          "rig",
+          "motion",
+          "owner selection"
+        ],
+        "rendered": false
+      }
+    }
+  },
+  "provenance": {
+    "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/8f492390ddc7a2ae221a1369ef560589cf8c70fb/Models/Box/glTF-Binary/Box.glb",
+    "creator": "Cesium",
+    "licence": "CC-BY-4.0",
+    "note": "Official per-model metadata attribution; public availability is not independent licence clearance."
+  },
+  "repository_commit": "8f492390ddc7a2ae221a1369ef560589cf8c70fb",
+  "gltf_asset": {
+    "generator": "COLLADA2GLTF",
+    "version": "2.0"
+  },
+  "legal_metadata": [
+    {
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/legalcode",
+      "artist": "Cesium",
+      "year": "2017",
+      "owner": "Cesium",
+      "what": "Everything",
+      "text": "Creative Commons Attribution 4.0 International",
+      "spdx": "CC-BY-4.0",
+      "icon": "https://licensebuttons.net/l/by/4.0/88x31.png"
+    }
+  ],
+  "limitations": [
+    "BlendSwap MCP not configured",
+    "Mesh datablock is Cube.001, not requested Cube; object is Cube. No second Blender execution authorised.",
+    "Technical checks are not visual review, owner selection, rig or motion acceptance."
+  ],
+  "preserved_scope": [
+    "Both existing scene sources and their published dependencies unchanged",
+    "Companion item and files unchanged",
+    "assets/cube/colour.png unchanged",
+    "Published v1 closure retained"
+  ],
+  "revisions": [
+    {
+      "version_id": "asset-cube-v3",
+      "based_on": "asset-cube-v2",
+      "request_id": "99c24f2a-efde-4322-ad4e-c40104acbbe6",
+      "work_id": "work-2ad446d5123e47abbaebde6808a2c015",
+      "generation_task_id": "task-4f76c9edec6448e69d6c5e39f9c98d44",
+      "context_id": "b6125ce6-edd7-4747-9daa-1c72d00701d7",
+      "report": "reports/revision-inspection.json",
+      "command": "python tools/m05_blender.py revise tools/revise_box.py",
+      "dimensions_m": [
+        1.0,
+        1.0000003576278687,
+        1.5000004768371582
+      ],
+      "output": {
+        "path": "assets/cube/asset.blend",
+        "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde",
+        "bytes": 431900
+      },
+      "dependency_audit": {
+        "before": [
+          "/home/quintin/.local/opt/blender-4.5.14-linux-x64/4.5/datafiles/assets/brushes/essentials_brushes-gp_draw.blend"
+        ],
+        "after": []
+      },
+      "v2_preview_status": "Owner supplied: both jobs failed known dependency_missing/outside_materialisation; no outputs. No retry; proxy allocation exhausted.",
+      "validation": {
+        "topology_preserved": true,
+        "xy_vertices_unchanged": true,
+        "material_identity_preserved": true,
+        "all_blend_paths_checked": true,
+        "not_performed": [
+          "render",
+          "visual acceptance",
+          "rig or motion review",
+          "owner selection",
+          "scene adoption"
+        ]
+      }
+    }
+  ]
+}

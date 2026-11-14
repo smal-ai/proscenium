@@ -1,0 +1,259 @@
+{
+  "command": "python tools/m05_blender.py revise tools/revise_box.py",
+  "request_id": "99c24f2a-efde-4322-ad4e-c40104acbbe6",
+  "work_id": "work-2ad446d5123e47abbaebde6808a2c015",
+  "generation_task_id": "task-4f76c9edec6448e69d6c5e39f9c98d44",
+  "context_id": "b6125ce6-edd7-4747-9daa-1c72d00701d7",
+  "input_sha256": "20363a522d6eed2070360cab48b739bb286ab31826e684214340222f411f591c",
+  "before_dependencies": {
+    "blend_paths": [
+      "/home/quintin/.local/opt/blender-4.5.14-linux-x64/4.5/datafiles/assets/brushes/essentials_brushes-gp_draw.blend"
+    ],
+    "datablocks": {
+      "images": [
+        {
+          "name": "Render Result",
+          "users": 1,
+          "fake_user": false,
+          "filepath": "",
+          "packed": false
+        }
+      ],
+      "fonts": [],
+      "libraries": [],
+      "meshes": [
+        {
+          "name": "Cube.001",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "materials": [
+        {
+          "name": "Material",
+          "users": 0,
+          "fake_user": false
+        },
+        {
+          "name": "Red",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "objects": [
+        {
+          "name": "AssetReviewArea",
+          "users": 1,
+          "fake_user": false
+        },
+        {
+          "name": "AssetReviewCamera",
+          "users": 1,
+          "fake_user": false
+        },
+        {
+          "name": "Cube",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "brushes": [],
+      "sounds": [],
+      "movieclips": [],
+      "cache_files": [],
+      "volumes": []
+    }
+  },
+  "blender": {
+    "version": "4.5.14 LTS",
+    "build_hash": "62c1db4208e8",
+    "build_branch": "blender-v4.5-release"
+  },
+  "status": "passed",
+  "rendered": false,
+  "unused_datablocks_purged": 1,
+  "after_dependencies": {
+    "blend_paths": [],
+    "datablocks": {
+      "images": [
+        {
+          "name": "Render Result",
+          "users": 1,
+          "fake_user": false,
+          "filepath": "",
+          "packed": false
+        }
+      ],
+      "fonts": [],
+      "libraries": [],
+      "meshes": [
+        {
+          "name": "Cube",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "materials": [
+        {
+          "name": "Red",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "objects": [
+        {
+          "name": "AssetReviewArea",
+          "users": 1,
+          "fake_user": false
+        },
+        {
+          "name": "AssetReviewCamera",
+          "users": 1,
+          "fake_user": false
+        },
+        {
+          "name": "Cube",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "brushes": [],
+      "sounds": [],
+      "movieclips": [],
+      "cache_files": [],
+      "volumes": []
+    }
+  },
+  "required_external_files": [],
+  "bounds_m": {
+    "min": [
+      -0.5,
+      -0.5000001788139343,
+      0.0
+    ],
+    "max": [
+      0.5,
+      0.5000001788139343,
+      1.5000004768371582
+    ]
+  },
+  "dimensions_m": [
+    1.0,
+    1.0000003576278687,
+    1.5000004768371582
+  ],
+  "mesh_name": "Cube",
+  "object_name": "Cube",
+  "vertices": 24,
+  "polygons": 12,
+  "ids": {
+    "object_id": "object-cube-source",
+    "instance_id": "instance-asset",
+    "proscenium_object_id": "object-cube-source",
+    "proscenium_instance_id": "instance-asset"
+  },
+  "materials": [
+    "Red"
+  ],
+  "units": {
+    "system": "METRIC",
+    "scale_length": 1.0
+  },
+  "camera": {
+    "name": "AssetReviewCamera",
+    "location": [
+      3.0,
+      -4.0,
+      2.5
+    ],
+    "lens_mm": 45.0,
+    "ids": {
+      "object_id": "camera-asset-review",
+      "proscenium_object_id": "camera-asset-review",
+      "proscenium_instance_id": "instance-camera-asset-review"
+    }
+  },
+  "light": {
+    "name": "AssetReviewArea",
+    "location": [
+      2.0,
+      -3.0,
+      5.0
+    ],
+    "ids": {
+      "object_id": "light-asset-review",
+      "proscenium_object_id": "light-asset-review",
+      "proscenium_instance_id": "instance-light-asset-review"
+    }
+  },
+  "validation": {
+    "topology_preserved": true,
+    "xy_vertices_unchanged": true,
+    "material_identity_preserved": true,
+    "all_blend_paths_checked": true,
+    "not_performed": [
+      "render",
+      "visual acceptance",
+      "rig or motion review",
+      "owner selection",
+      "scene adoption"
+    ]
+  },
+  "saved_dependency_recheck": {
+    "blend_paths": [],
+    "datablocks": {
+      "images": [
+        {
+          "name": "Render Result",
+          "users": 1,
+          "fake_user": false,
+          "filepath": "",
+          "packed": false
+        }
+      ],
+      "fonts": [],
+      "libraries": [],
+      "meshes": [
+        {
+          "name": "Cube",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "materials": [
+        {
+          "name": "Red",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "objects": [
+        {
+          "name": "AssetReviewArea",
+          "users": 1,
+          "fake_user": false
+        },
+        {
+          "name": "AssetReviewCamera",
+          "users": 1,
+          "fake_user": false
+        },
+        {
+          "name": "Cube",
+          "users": 1,
+          "fake_user": false
+        }
+      ],
+      "brushes": [],
+      "sounds": [],
+      "movieclips": [],
+      "cache_files": [],
+      "volumes": []
+    }
+  },
+  "output": {
+    "path": "assets/cube/asset.blend",
+    "sha256": "da0a866f1d389f2b381b99e866d1c096a56d258506efc0c81e53c1491cfc6cde",
+    "bytes": 431900
+  }
+}

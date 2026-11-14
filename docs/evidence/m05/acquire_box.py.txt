@@ -1,0 +1,86 @@
+import hashlib
+import json
+import os
+from pathlib import Path
+import struct
+import sys
+import urllib.request
+
+ROOT = Path.cwd().resolve()
+LEDGER = ROOT / "research/box-ledger.json"
+CAP = 5 * 1024 * 1024
+
+
+def target(name):
+    p = ROOT / name
+    assert p.is_relative_to(ROOT) and not any(x.is_symlink() for x in [p, *p.parents])
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def fetch(url, name, ledger):
+    p = target(name)
+    tmp = p.with_name(p.name + ".partial")
+    assert not tmp.exists() and not p.exists()
+    try:
+        h = hashlib.sha256()
+        size = 0
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Proscenium-M05"}), timeout=15) as response, tmp.open("xb") as out:
+            while True:
+                data = response.read(65536)
+                if not data:
+                    break
+                size += len(data)
+                ledger["download_bytes"] += len(data)
+                assert ledger["download_bytes"] <= CAP, "Aggregate five-MiB cap exceeded"
+                h.update(data)
+                out.write(data)
+            out.flush()
+            os.fsync(out.fileno())
+        assert size > 0
+        os.replace(tmp, p)
+        record = {"url": url, "path": name, "bytes": size, "sha256": h.hexdigest()}
+        ledger["downloads"].append(record)
+        return p
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
+if sys.argv[1] == "metadata":
+    ledger = {
+        "request_id": "9c9db828-703a-4dc8-a756-b830426ec935",
+        "work_id": "work-0d3d78c995f0451d8630188b4f642041",
+        "generation_task_id": "task-16e05b5f7137443e86bfdac23e2ec2b5",
+        "context_id": "158df540-cf78-40f5-a491-ba43b22e018c",
+        "download_bytes": 0, "aggregate_cap_bytes": CAP, "downloads": [],
+        "catalogue_queries": [{"query": q, "found": ["asset-cube"], "version_id": "asset-cube-v1", "next_cursor": None} for q in ["amber-cube", "tabletop blocking", "Reusable fixture cube"]],
+        "coverage": {"local_reusable_cube": "asset-cube-v1", "official_online_sample": "Models/Box", "optional_blendswap": "not configured"},
+        "observations": {"discovered": {"local": "get_version(asset-cube-v1)", "online": "Official KhronosGroup/glTF-Sample-Assets catalogue"}},
+        "provenance": {"source_url": None, "creator": None, "licence": None},
+    }
+    api = fetch("https://api.github.com/repos/KhronosGroup/glTF-Sample-Assets/commits/main", "research/box-commit.json", ledger)
+    commit = json.loads(api.read_text())["sha"]
+    ledger["repository_commit"] = commit
+    base = f"https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/{commit}/Models/Box"
+    for remote, local in [("README.md", "research/box-README.md"), ("metadata.json", "research/box-metadata.json")]:
+        p = fetch(base + "/" + remote, local, ledger)
+        print(p.read_text())
+    target("research/box-ledger.json").write_text(json.dumps(ledger, indent=2) + "\n")
+elif sys.argv[1] == "acquire":
+    ledger = json.loads(LEDGER.read_text())
+    url = f"https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/{ledger['repository_commit']}/Models/Box/glTF-Binary/Box.glb"
+    p = fetch(url, "research/Box.glb", ledger)
+    data = p.read_bytes()
+    magic, version, length = struct.unpack_from("<4sII", data)
+    assert magic == b"glTF" and version == 2 and length == len(data)
+    chunk_length, chunk_type = struct.unpack_from("<II", data, 12)
+    assert chunk_type == 0x4E4F534A
+    gltf = json.loads(data[20:20 + chunk_length])
+    ledger["gltf_asset"] = gltf.get("asset")
+    ledger["provenance"]["source_url"] = url
+    ledger["observations"]["acquired"] = {"command": "python tools/acquire_box.py acquire", "evidence": ledger["downloads"][-1], "checks": ["GLB magic", "version 2", "declared byte length", "JSON chunk"]}
+    ledger["observations"]["imported"] = None
+    ledger["observations"]["validated"] = {"acquisition": "container checks only; not licence clearance or owner selection"}
+    LEDGER.write_text(json.dumps(ledger, indent=2) + "\n")
+    print(json.dumps({"bytes": ledger["download_bytes"], "asset": ledger["downloads"][-1], "gltf_asset": gltf.get("asset")}))

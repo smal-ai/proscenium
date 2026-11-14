@@ -1,0 +1,7 @@
+{
+  "requests_before": 3,
+  "requests_after": 3,
+  "jobs_before": 3,
+  "jobs_after": 3,
+  "automatic_resume_sent": false
+}
