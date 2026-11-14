@@ -13,8 +13,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
+from copilot import CopilotClient
 from fastapi.testclient import TestClient
 from proscenium.app import create_app
 from proscenium.configuration import Settings
@@ -31,6 +33,7 @@ def write(path: Path, value):
 
 def main(root):
     assert root.is_relative_to(Path.home() / ".cache/proscenium-development")
+    assert root.name.endswith("-b"), "Only the separately authorised follow-up project is writable"
     available = (
         int(
             next(
@@ -64,7 +67,7 @@ def main(root):
             "lead_model": "gpt-6.1-sol",
             "worker_model": "gpt-6.1-sol",
             "profile_id": "authoring",
-            "skill_directories": [str(REPO / "agent/skills")],
+            "skill_directories": [],
             "mcp_servers": {},
         },
         rendering={
@@ -79,7 +82,7 @@ def main(root):
     )
     services = Services.create(settings)
     result: dict[str, Any] = {
-        "base_commit": "03dbad1c3c5f3db7bbc735adcba45f4f4327348d",
+        "base_commit": "011ab92d7c0f2a85ce61ea0235ad305d98b317fe",
         "implementation_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
         ).strip(),
@@ -87,18 +90,52 @@ def main(root):
         "initial_headroom_bytes": available,
         "label": "Scripted owner input. No procedural graph/source/media preseeded.",
     }
+    original_create = CopilotClient.create_session
+    creations = 0
+
+    async def allocated_create(client, **kwargs):
+        nonlocal creations
+        assert creations == 0, "Only one fresh SDK session is authorised"
+        creations += 1
+        kwargs.update(
+            excluded_tools=["task"],
+            custom_agents=[],
+            included_builtin_agents=[],
+            enable_skills=False,
+        )
+        write(
+            root / "session-allocation.json",
+            {
+                "create_count": creations,
+                "excluded_tools": kwargs["excluded_tools"],
+                "custom_agents": [],
+                "included_builtin_agents": [],
+                "enable_skills": False,
+                "permission_handler_preserved": kwargs.get("on_permission_request") is not None,
+            },
+        )
+        return await original_create(client, **kwargs)
+
+    async def no_resume(*args, **kwargs):
+        raise RuntimeError("No session resume is authorised for this fresh single-send proof")
+
     try:
-        with TestClient(
-            create_app(settings, services=services, manage_features=True), base_url=settings.origin
-        ) as client:
+        with (
+            patch.object(CopilotClient, "create_session", allocated_create),
+            patch.object(CopilotClient, "resume_session", no_resume),
+            TestClient(
+                create_app(settings, services=services, manage_features=True),
+                base_url=settings.origin,
+            ) as client,
+        ):
             code = services.auth.issue_pairing()
-            headers = {"Origin": settings.origin, "Idempotency-Key": "gn-owner-pair"}
+            headers = {"Origin": settings.origin, "Idempotency-Key": "gn-b-owner-pair"}
             paired = client.post(
                 "/api/v1/owner/session",
                 headers=headers,
                 json={
                     "schema_version": "1.0",
-                    "operation_id": "gn-owner-pair",
+                    "operation_id": "gn-b-owner-pair",
                     "pairing_code": code,
                     "client_nonce": "gn-native-browserless-owner",
                 },
@@ -124,7 +161,7 @@ def main(root):
                 "/api/v1/projects",
                 dict(
                     schema_version="1.0",
-                    operation_id="gn-create",
+                    operation_id="gn-b-create",
                     path=str(root / "project"),
                     create=True,
                     name="Model-authored stateless Geometry Nodes proof",
@@ -137,7 +174,7 @@ def main(root):
                 f"/api/v1/projects/{project_id}/activate",
                 dict(
                     schema_version="1.0",
-                    operation_id="gn-activate",
+                    operation_id="gn-b-activate",
                     project_id=project_id,
                     expected_revision=0,
                 ),
@@ -151,7 +188,7 @@ def main(root):
             (project / "contracts").mkdir()
             shutil.copyfile(REPO / "docs/contracts/schema.json", project / "contracts/schema.json")
             (project / "AGENTS.md").write_text(
-                "# Bounded procedural asset request\nThe project is initially empty: do not claim a seeded graph as authored. Create the actual saved Geometry Nodes graph with the stated parameter bounds. No children or authoring MCP. Only ONE authoring process via python3 tools/asset_author.py tools/asset.py. No renders/exports in authoring. Production previews only, CYCLES CPU8samples640x360 and persistent authored IDs. No simulations, caches, imports, external data, GPU, providers, Unity or software/service changes. All files/reads stay in this project. The project brief folder is brief/ (not briefs/); never search missing guessed folders. No private SQLite or runtime authentication reads. Stop and surface any actual owner question rather than approving it.\n"
+                "# Empty procedural project\nThere is NO storyboard/plan/existing asset/brief to discover. The request is the entire brief. Known readable files: project.json, AGENTS.md, tools/asset_author.py, tools/asset_contract.py, contracts/schema.json. Create only tools/asset.py and assets/procedural files. No root listing, glob, root-wide search, .proscenium/.git/runtime/authentication discovery or sibling access. Use python3 tools/asset_contract.py --head for checkpoint expected_head. The helper handles specific Git/LFS access. One authoring process only via python3 tools/asset_author.py tools/asset.py. This scoped CLI allocation replaces live-MCP/service authoring for this fresh empty project. No skills requiring live services, task tool, custom agents, children, native services, GPU/providers/Unity, software changes or authoring render/export. Production previews only, CPU8samples640x360. Stop on any refusal or required decision.\n"
             )
             git(project, "config", "user.name", "Geometry Nodes scoped owner fixture")
             git(project, "config", "user.email", "geometry-nodes@example.invalid")
@@ -173,7 +210,7 @@ def main(root):
                 "test fixture: empty procedural project and bounded read-only helpers",
             )
             result["fixture_head"] = git(project, "rev-parse", "HEAD").decode().strip()
-            context_id = "geometry-nodes-context"
+            context_id = "geometry-nodes-b-context"
             post(
                 f"/api/v1/projects/{project_id}/contexts",
                 dict(
@@ -197,7 +234,7 @@ def main(root):
             with (root / "root-reservation.json").open("x") as reservation:
                 json.dump(
                     {
-                        "request_id": "geometry-nodes-root",
+                        "request_id": "geometry-nodes-b-root",
                         "limit": 1,
                         "prompt_sha256": sha(prompt.encode()),
                         "started_ns": time.monotonic_ns(),
@@ -208,7 +245,7 @@ def main(root):
                 f"/api/v1/projects/{project_id}/requests",
                 dict(
                     schema_version="1.0",
-                    request_id="geometry-nodes-root",
+                    request_id="geometry-nodes-b-root",
                     project_id=project_id,
                     type="queue",
                     text=prompt,
@@ -247,6 +284,7 @@ def main(root):
                 failed_calls = [call for call in latest["invocations"] if call["state"] == "failed"]
                 if failed_calls:
                     write(root / "blocked-native-call.json", failed_calls)
+                    print("COORDINATOR TOOL FAILURE: " + json.dumps(failed_calls), flush=True)
                     raise RuntimeError(
                         "Native tool failure requires coordinator inspection; no retry"
                     )
@@ -319,7 +357,26 @@ def main(root):
         }
         runtime = root / "machine/copilot-runtime/process.json"
         if runtime.exists():
-            result["cleanup"]["sdk_process_absent"] = identity(read(runtime)["pid"]) is None
+            previous = read(runtime)
+            actual = identity(previous["pid"])
+            result["cleanup"]["sdk_process"] = {"original": previous, "observed": actual}
+            result["cleanup"]["sdk_process_absent"] = (
+                actual is None
+                or actual["start_ticks"] != previous.get("start_ticks")
+                or actual["state"] in {"Z", "X"}
+            )
+        receipts = {}
+        for path in (root / "project/.proscenium/jobs/previews").glob("*/*/native-profile.json"):
+            previous = read(path)["process"]
+            actual = identity(previous["pid"])
+            receipts[str(path.relative_to(root))] = {
+                "original": previous,
+                "observed": actual,
+                "owned_process_gone": actual is None
+                or actual["start_ticks"] != previous["start_ticks"]
+                or actual["state"] in {"Z", "X"},
+            }
+        result["cleanup"]["native_processes"] = receipts
         write(root / "native-result.json", result)
 
 

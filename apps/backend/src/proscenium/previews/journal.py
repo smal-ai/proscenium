@@ -6,9 +6,29 @@ import os
 import tempfile
 from pathlib import Path
 
+RENDERER_FILES = ("blender_worker.py", "geometry_nodes.py", "journal.py")
+
 
 def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def renderer_hashes(directory: Path | None = None) -> dict[str, str]:
+    """Seal the fixed Blender entry point and its complete direct local imports."""
+    directory = directory or Path(__file__).parent
+    return {name: sha((directory / name).read_bytes()) for name in RENDERER_FILES}
+
+
+def verify_renderer(task: dict, directory: Path | None = None) -> dict[str, str]:
+    expected = task.get("renderer_files_sha256")
+    # Legacy tasks were never sealed transitively. Do not invent historical hashes
+    # from today's files. Already-running workers/journals remain reconcilable.
+    if not isinstance(expected, dict) or set(expected) != set(RENDERER_FILES):
+        raise ValueError("Renderer dependency seal missing or incomplete; native spawn refused")
+    actual = renderer_hashes(directory)
+    if actual != expected or actual["blender_worker.py"] != task.get("entrypoint_sha256"):
+        raise ValueError("Installed renderer dependency changed since attempt preparation")
+    return actual
 
 
 def read(path: Path) -> dict:

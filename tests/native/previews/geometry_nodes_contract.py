@@ -8,6 +8,9 @@ from pathlib import Path
 
 
 def main():
+    if sys.argv[1:] == ["--head"]:
+        print(subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip())
+        return
     commit, entry = sys.argv[1:3]
     root = Path.cwd().resolve()
     project = json.loads((root / "project.json").read_bytes())

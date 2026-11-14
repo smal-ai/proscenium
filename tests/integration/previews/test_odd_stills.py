@@ -9,7 +9,7 @@ import pytest
 from proscenium.api.errors import DomainError
 from proscenium.previews import worker
 from proscenium.previews.config import Rendering
-from proscenium.previews.journal import atomic, read, sha
+from proscenium.previews.journal import atomic, read, renderer_hashes, sha
 
 from .conftest import spec
 
@@ -63,6 +63,7 @@ def test_supervisor_eof_for_exact_png_stills(
             "entrypoint_sha256": sha(
                 Path(worker.__file__).with_name("blender_worker.py").read_bytes()
             ),
+            "renderer_files_sha256": renderer_hashes(),
         },
     )
     real_popen = subprocess.Popen

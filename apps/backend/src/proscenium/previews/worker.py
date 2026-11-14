@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .journal import atomic, identity, read, sha
+from .journal import atomic, identity, read, sha, verify_renderer
 from .media import encode, verify_video
 
 
@@ -89,8 +89,15 @@ def supervise(root: Path) -> None:
                 terminal["state"] = "cancelled"
                 return
             worker = Path(__file__).with_name("blender_worker.py")
-            if sha(worker.read_bytes()) != task["entrypoint_sha256"]:
-                raise ValueError("Installed renderer changed since the attempt was prepared")
+            verified = verify_renderer(task)
+            atomic(
+                root / "renderer-verified.json",
+                {
+                    "renderer_files_sha256": verified,
+                    "task_sha256": sha((root / "task.json").read_bytes()),
+                    "verified_ns": time.monotonic_ns(),
+                },
+            )
             argv = [
                 config["blender"],
                 "--background",

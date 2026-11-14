@@ -12,7 +12,7 @@ from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage
 from proscenium.sources.common import fingerprint
 
-from .journal import alive, atomic, read, sha
+from .journal import alive, atomic, read, renderer_hashes, sha
 from .service import worker_caller
 
 RESOURCE = "blender-render-writer"
@@ -130,7 +130,8 @@ def launch(service, project_id: str, body: dict) -> dict:
         source_root=str(source),
         proxy_artifact_id=job["job_id"] + "-proxy",
     )
-    task["entrypoint_sha256"] = sha(Path(__file__).with_name("blender_worker.py").read_bytes())
+    task["renderer_files_sha256"] = renderer_hashes()
+    task["entrypoint_sha256"] = task["renderer_files_sha256"]["blender_worker.py"]
     atomic(root / "task.json", task)
     # Retries reuse only already registered, decoded, same-input immutable frames.
     # No old-attempt journal can inject a new file into this attempt.
