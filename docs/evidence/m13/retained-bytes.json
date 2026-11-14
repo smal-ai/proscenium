@@ -1,0 +1,114 @@
+{
+  "format": "proscenium-m13-portable-bytes-1",
+  "source_report_sha256": "1d500bc3c5e9ce52fdab56ef2fe72c5c71e647c4c9df8007c1c5a2fb58b188e0",
+  "meaning": "Hash-verified copies of actual retained outputs and committed source documents, not new execution",
+  "files": {
+    "175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af": {
+      "bytes": 315809,
+      "record_pointers": [
+        "/annotation/target"
+      ]
+    },
+    "1ab1e69ae6106d468da72b2ba26d171644ff5aec55652cb5f0c2be2e7162880f": {
+      "bytes": 346787,
+      "record_pointers": [
+        "/edits/0/manifest/input_frames/2"
+      ]
+    },
+    "1ec8aaa3c98b760940e84b1089fbcaea5e9cc3bfb999f5e2657868133d3ed659": {
+      "bytes": 345871,
+      "record_pointers": [
+        "/edits/0/manifest/input_frames/4",
+        "/edits/1/manifest/input_frames/2"
+      ]
+    },
+    "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b": {
+      "bytes": 3106,
+      "record_pointers": [
+        "/edits/0/artifacts/1",
+        "/edits/0/version/source/files/0"
+      ]
+    },
+    "3a7f9fc4fe0316cde865634a5d23605586079c346cd465d7b249c1c20129f714": {
+      "bytes": 345281,
+      "record_pointers": [
+        "/edits/0/manifest/input_frames/5",
+        "/edits/1/manifest/input_frames/3"
+      ]
+    },
+    "3ccd9990c4286e1dbb264e2782d517c593e8d8913ffcbfaf997efd100cd1815d": {
+      "bytes": 344537,
+      "record_pointers": [
+        "/edits/0/manifest/input_frames/6",
+        "/edits/1/manifest/input_frames/4"
+      ]
+    },
+    "4617a8b2fd4fda94d1f92bf9220856d71137f70f81cf8e6f61180ccc52f79363": {
+      "bytes": 55861,
+      "record_pointers": [
+        "/edits/1/artifacts/0",
+        "/edits/1/downloads/0"
+      ]
+    },
+    "46d550ab364d2b572fd5fffbf17fe472714b24e6e249f20c9882076215321ef1": {
+      "bytes": 7291,
+      "record_pointers": [
+        "/edits/0/artifacts/2",
+        "/edits/0/downloads/1"
+      ]
+    },
+    "9258c03703cd4101a07f8b3cf0d1241b64c1c10a67e115ffdaf34968d95931f5": {
+      "bytes": 347139,
+      "record_pointers": [
+        "/edits/0/manifest/input_frames/1"
+      ]
+    },
+    "affc7fd547de897b14497248560eecd05ca5ba7c017364d3833442c0c09d7124": {
+      "bytes": 1456,
+      "record_pointers": [
+        "/edits/0/version/source/files/1"
+      ]
+    },
+    "b7bd37ef47a04eb473c7504047cb140054247eb09e0e4ae72ae874b955b1d6e3": {
+      "bytes": 5215,
+      "record_pointers": [
+        "/edits/1/artifacts/2",
+        "/edits/1/downloads/1"
+      ]
+    },
+    "ca9711648177fd59cbca764172e11a7ab78ebb6220052ce5a321e555bdcb7f34": {
+      "bytes": 2050,
+      "record_pointers": [
+        "/edits/1/artifacts/1",
+        "/edits/1/version/source/files/0"
+      ]
+    },
+    "cb73366a76e228b9e0ff61d6c156fe77b2be42f0d28f66f3424745104d2a5b1e": {
+      "bytes": 779,
+      "record_pointers": [
+        "/edits/1/version/source/files/1"
+      ]
+    },
+    "d821a6e51bc425c87681c53b78aa7d3831839ce9a00b28800af017aac0262b81": {
+      "bytes": 347139,
+      "record_pointers": [
+        "/edits/0/manifest/input_frames/0",
+        "/edits/1/manifest/input_frames/0"
+      ]
+    },
+    "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e": {
+      "bytes": 64876,
+      "record_pointers": [
+        "/edits/0/artifacts/0",
+        "/edits/0/downloads/0"
+      ]
+    },
+    "f99a34d598e568ddbcccaee3e865c96af7015f011083321c32d5e69addd7153c": {
+      "bytes": 346430,
+      "record_pointers": [
+        "/edits/0/manifest/input_frames/3",
+        "/edits/1/manifest/input_frames/1"
+      ]
+    }
+  }
+}

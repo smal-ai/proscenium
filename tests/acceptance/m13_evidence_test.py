@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import subprocess
 from pathlib import Path
 
 from PIL import Image
@@ -16,8 +15,10 @@ def result():
     return json.loads((EVIDENCE / "result.json").read_text())
 
 
-def digest(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def retained(identity):
+    path = EVIDENCE / "retained" / identity
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == identity
+    return path
 
 
 def test_m13_c1_exact_pinned_shots_timing_and_fixture_provenance():
@@ -36,11 +37,7 @@ def test_m13_c1_exact_pinned_shots_timing_and_fixture_provenance():
         )
         assert hashlib.sha256(canonical(snapshot)).hexdigest() == edit["job"]["input_digest"]
         for frame in edit["manifest"]["input_frames"]:
-            path = (
-                Path(r["retained_root"])
-                / f"project/.proscenium/artefacts/sha256/{frame['sha256']}/content"
-            )
-            assert digest(path) == frame["sha256"]
+            retained(frame["sha256"])
 
 
 def test_m13_c2_complete_decode_fps_count_dimensions_and_no_resize():
@@ -50,7 +47,8 @@ def test_m13_c2_complete_decode_fps_count_dimensions_and_no_resize():
         assert (stream["width"], stream["height"]) == (640, 360)
         assert stream["avg_frame_rate"] == "24/1" and int(stream["nb_read_frames"]) == count
         assert abs(float(edit["probe"]["format"]["duration"]) - count / 24) < 0.00001
-        assert digest(edit["downloads"][0]["path"]) == edit["artifacts"][0]["sha256"]
+        assert edit["downloads"][0]["sha256"] == edit["artifacts"][0]["sha256"]
+        retained(edit["downloads"][0]["sha256"])
         assert "-vf" not in edit["manifest"]["encode_argv"]
         assert edit["job"]["availability"] == "complete" and edit["job"]["state"] == "succeeded"
 
@@ -69,10 +67,7 @@ def test_m13_c3_actual_fullhd_playback_composite_capture_pin_and_range():
     assert annotation["range"] == {"start": 4, "end": 6}
     assert annotation["markups"][0]["kind"] == "pin"
     assert len(r["edits"][0]["frame_map"]["frames"][4]["contributors"]) == 2
-    image = (
-        Path(r["retained_root"])
-        / f"project/.proscenium/artefacts/sha256/{annotation['target']['displayed_sha256']}/content"
-    )
+    image = retained(annotation["target"]["displayed_sha256"])
     with Image.open(image) as actual:
         assert actual.size == (640, 360)
     with Image.open(EVIDENCE / "annotation-v1.png") as screenshot:
@@ -116,18 +111,13 @@ def test_m13_c6_actual_ui_downloads_trace_registered_media_manifest_and_sources(
         for download, artifact in zip(
             edit["downloads"], (edit["artifacts"][0], edit["artifacts"][2]), strict=True
         ):
-            assert digest(download["path"]) == artifact["sha256"] == download["sha256"]
+            assert artifact["sha256"] == download["sha256"]
+            retained(download["sha256"])
             assert download["href"].endswith(f"/artifacts/{artifact['artifact_id']}/content")
         assert edit["manifest"]["video_sha256"] == edit["artifacts"][0]["sha256"]
         assert edit["manifest"]["frame_map_sha256"] == edit["artifacts"][1]["sha256"]
         for file in edit["version"]["source"]["files"]:
-            data = subprocess.run(
-                ["git", "show", f"{file['origin']['commit']}:{file['origin']['path']}"],
-                cwd=Path(r["retained_root"]) / "project",
-                check=True,
-                capture_output=True,
-            ).stdout
-            assert hashlib.sha256(data).hexdigest() == file["origin"]["sha256"]
+            retained(file["origin"]["sha256"])
     assert r["replay"]["job_count"] == 3 and r["replay"]["dispatches"] == 1
     assert len(r["encode_dispatches"]) == 2
 
@@ -144,3 +134,14 @@ def test_m13_c7_only_explicit_owner_choice_selects_final_delivery():
     assert max(r["dispatch_durations_ms"]) < 180000
     assert r["cleanup"]["services_closed"] and r["cleanup"]["browser_reaped"]
     assert r["dependencies_accepted_here"] == []
+
+
+def test_portable_bytes_keep_original_report_and_every_content_hash():
+    manifest = json.loads((EVIDENCE / "retained-bytes.json").read_bytes())
+    assert (
+        hashlib.sha256((EVIDENCE / "result.json").read_bytes()).hexdigest()
+        == manifest["source_report_sha256"]
+    )
+    for identity, metadata in manifest["files"].items():
+        assert retained(identity).stat().st_size == metadata["bytes"]
+        assert metadata["record_pointers"]
