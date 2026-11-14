@@ -49,6 +49,14 @@ def free_port():
         return sock.getsockname()[1]
 
 
+def import_roots(project, config):
+    # Git cannot preserve empty configured roots. Normal activation requires them.
+    for configured in config["paths"].values():
+        target = project / configured
+        assert target.resolve().is_relative_to(project.resolve())
+        target.mkdir(mode=0o700, parents=True, exist_ok=True)
+
+
 def prepare(root):
     private_directory(root)
     (root / "t").mkdir(mode=0o700)
@@ -123,6 +131,7 @@ def prepare(root):
         subprocess.run(["git", "remote", "remove", "origin"], cwd=project, check=True)
         subprocess.run(["git", "lfs", "checkout"], cwd=project, check=True, capture_output=True)
         identity = json.loads((SOURCE / "project/project.json").read_text())
+        import_roots(project, identity)
         identity["name"] = "M14 imported actual M13 output history"
         (project / "project.json").write_bytes(canonical(identity))
         (project / "m14-marker.txt").write_text(

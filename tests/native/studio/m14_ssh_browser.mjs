@@ -145,7 +145,10 @@ try{
   const uploadPending=page.waitForResponse(r=>r.request().method()==='PUT'&&r.url().includes('/uploads/'));
   await page.getByLabel('Attach images',{exact:true}).setInputFiles(`${root}/upload.png`);
   const upload=await uploadPending;if(upload.status()!==201)throw Error('Actual image upload rejected');
-  result.upload=await upload.json();const uploaded=await get(`${p}/artifacts/${result.upload.artifact_id}`);
+  // Read the durable acknowledged upload identity, not Chromium's evictable
+  // inspector response cache. The product maps upload_id to artifact_id.
+  const uploaded=await get(`${p}/artifacts/${new URL(upload.url()).pathname.split('/').at(-1)}`);
+  result.upload=uploaded;
   result.upload_metadata=uploaded;
   const actualImage=await fs.readFile(`${root}/upload.png`);
   if(uploaded.sha256!==sha(actualImage)||uploaded.bytes!==actualImage.length)throw Error('Uploaded image differs from actual bytes');
@@ -167,7 +170,7 @@ try{
   const accepted=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith('/requests'));
   await page.getByRole('button',{name:'Queue message',exact:true}).click();
   const response=await accepted;if(!response.ok())throw Error('Queue admission rejected');
-  result.ui_admission={status:response.status(),receipt:await response.json()};
+  result.ui_admission={status:response.status(),receipt:(await get(`${p}/requests`)).items.find(r=>r.submission.text===spec.prompt).receipt};
   await context.setOffline(true);
   await fs.writeFile(`${root}/browser-offline`,'actual browser offline',{flag:'wx',mode:0o600});
   await wait('reconnected');

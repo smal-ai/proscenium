@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -83,3 +84,28 @@ def test_shared_exclusive_guard_survives_phase_folder_change(tmp_path):
         json.loads((tmp_path / "sdk-send-reservation.json").read_text())["request_id"] == "original"
     )
     assert not (b / "send-reservation.json").exists()
+
+
+def test_import_restores_empty_configured_directories_for_real_activation_validator(tmp_path):
+    from m14_ssh_prepare import import_roots
+    from proscenium.api.errors import DomainError
+    from proscenium.projects.service import Projects
+
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "--object-format=sha1", str(project)], check=True, capture_output=True)
+    config = {"schema_version": "1.0", "project_id": "imported", "repository_id": "imported-repo", "name": "Labelled import",
+              "paths": {name: name for name in ("assets", "brief", "scenes", "sequences", "storyboards")}}
+    (project / "project.json").write_text(json.dumps(config))
+    with pytest.raises(DomainError) as failure:
+        Projects.config(project)
+    assert failure.value.code == "scope_denied"
+    import_roots(project, config)
+    assert Projects.config(project) == config
+
+
+def test_import_directory_paths_cannot_escape(tmp_path):
+    from m14_ssh_prepare import import_roots
+
+    with pytest.raises(AssertionError):
+        import_roots(tmp_path, {"paths": {"brief": "../other-project"}})

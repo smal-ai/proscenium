@@ -1,0 +1,2253 @@
+{
+  "status": "incomplete",
+  "off_origin": [],
+  "websockets": [
+    {
+      "url": "ws://127.0.0.1:52127/api/v1/events",
+      "received": []
+    },
+    {
+      "url": "ws://127.0.0.1:52127/api/v1/events",
+      "received": [
+        1
+      ]
+    },
+    {
+      "url": "ws://127.0.0.1:52127/api/v1/events",
+      "received": [
+        2
+      ]
+    },
+    {
+      "url": "ws://127.0.0.1:52127/api/v1/events",
+      "received": []
+    }
+  ],
+  "responses": [
+    {
+      "path": "/",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-VG5WV1Cp.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-DtT6Yr5o.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-VG5WV1Cp.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-DtT6Yr5o.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/owner/session",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/configuration",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/activate",
+      "status": 403,
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/activate",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/projects",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/requests",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/snapshot",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/events",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/requests",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/snapshot",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery/content",
+      "status": 206,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/snapshot",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/events",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/requests",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-VG5WV1Cp.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-DtT6Yr5o.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/configuration",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/requests",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/snapshot",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/events",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/requests",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/snapshot",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery/content",
+      "status": 206,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/uploads/27f0432a-c3df-4a53-b424-1f6798557b3d",
+      "status": 201,
+      "method": "PUT"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/27f0432a-c3df-4a53-b424-1f6798557b3d/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/uploads/889a7b6c-cb3a-498e-b299-c3a6a0d2f0a7",
+      "status": 201,
+      "method": "PUT"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-VG5WV1Cp.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/index-DtT6Yr5o.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/configuration",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/requests",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/snapshot",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/events",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/27f0432a-c3df-4a53-b424-1f6798557b3d/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/requests",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/snapshot",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/fixture-scene/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/items/m13-film/versions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/selections",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-frame-map",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/annotations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/versions/m13-film-v1/proxy-mapping",
+      "status": 422,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-map-v1/content",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery/content",
+      "status": 206,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery/content",
+      "status": 206,
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/uploads/df4c8f72-0e50-4f55-8d93-b7925fe007e1",
+      "status": 201,
+      "method": "PUT"
+    },
+    {
+      "path": "/api/v1/projects/m13-cinematic/artifacts/df4c8f72-0e50-4f55-8d93-b7925fe007e1",
+      "status": 200,
+      "method": "GET"
+    }
+  ],
+  "phases": [
+    "forwarded UI pairing and explicit saved-project activation",
+    "ACTUAL browser UI/media preflight passed before any SDK send"
+  ],
+  "observer_failures": [
+    {
+      "stage": "activation",
+      "attempt": 1,
+      "error": "TimeoutError: locator.waitFor: Timeout 15000ms exceeded.",
+      "at": "2026-11-14T18:30:45.879Z"
+    },
+    {
+      "stage": "review",
+      "attempt": 1,
+      "error": "Error: response.json: Protocol error (Network.getResponseBody): Request content was evicted from inspector cache",
+      "at": "2026-11-14T18:32:07.192Z"
+    }
+  ],
+  "browser": "159.0.8154.6",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "initial": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "M14 imported actual M13 output history",
+      "native_session_id": null,
+      "path": "/home/quintin/.cache/proscenium-development/s14c/a/p",
+      "project_id": "m13-cinematic",
+      "repository_id": "w03-repo",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 1
+    },
+    "settings": {
+      "generation_attempt_limit": 3,
+      "default_profile_id": null,
+      "state_revision": 0
+    },
+    "event_sequence": 1,
+    "active_work": null,
+    "held_requests": [],
+    "items": [
+      {
+        "current_version_id": "fixture-v1",
+        "description": "LABELLED imported actual W03 production history, not newly model-rendered shots",
+        "item_id": "fixture-scene",
+        "kind": "scene",
+        "name": "Pinned F01 v1",
+        "project_id": "m13-cinematic",
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0
+      },
+      {
+        "current_version_id": "m13-film-v1",
+        "description": "IMPORTED ACTUAL SELECTED M13 V1 HISTORY. Not newly rendered.",
+        "item_id": "m13-film",
+        "kind": "sequence",
+        "name": "M13 two-shot cinematic",
+        "project_id": "m13-cinematic",
+        "schema_version": "1.0",
+        "selected_version_id": "m13-film-v1",
+        "state_revision": 0
+      }
+    ],
+    "jobs": [
+      {
+        "artifact_ids": [
+          "m13-encode-v1-delivery",
+          "m13-encode-v1-frame-map",
+          "m13-encode-v1-manifest"
+        ],
+        "attempt_id": "attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 0,
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "191a26b361778e085e86431a9493d585d93126b21171a2f2433f4dbb24870529",
+        "job_id": "m13-encode-v1",
+        "kind": "encode",
+        "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+        "owner_operation_id": null,
+        "project_id": "m13-cinematic",
+        "provider_id": null,
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 4,
+        "target": {
+          "shot_id": null,
+          "target_id": "m13-film",
+          "version": {
+            "item_id": "m13-film",
+            "version_id": "m13-film-v1"
+          }
+        },
+        "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+      },
+      {
+        "artifact_ids": [
+          "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+          "attempt-89f4d54c-a95f-419d-af65-b09c30521107-s1-1"
+        ],
+        "attempt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 1,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "c2ea2ba9378d0511948d4e121f3d9e2cdbd4d551984610a7b6de5853c4c7c14f",
+        "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-d66d45ed-1114-4c01-8a55-f766b54f38a6",
+        "owner_operation_id": null,
+        "project_id": "m13-cinematic",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "incoming-shot-native",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Fixture",
+          "shot_id": "incoming-shot",
+          "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 5,
+        "target": {
+          "shot_id": "incoming-shot",
+          "target_id": "fixture-scene",
+          "version": {
+            "item_id": "fixture-scene",
+            "version_id": "fixture-v1"
+          }
+        },
+        "work_id": "work-fixture-import"
+      },
+      {
+        "artifact_ids": [
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+          "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s1-4",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f7",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f8",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f9",
+          "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s5-8",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f10",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f11",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f12",
+          "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s9-12"
+        ],
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 12,
+        "expected_frames": 12,
+        "external_job_id": null,
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-b6047ea5-ef37-4f17-8867-43b6374bd72f",
+        "owner_operation_id": null,
+        "project_id": "m13-cinematic",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 12,
+            "start": 1
+          },
+          "intent_id": "draft-native",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Fixture",
+          "shot_id": "fixture-shot",
+          "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 15,
+        "target": {
+          "shot_id": "fixture-shot",
+          "target_id": "fixture-scene",
+          "version": {
+            "item_id": "fixture-scene",
+            "version_id": "fixture-v1"
+          }
+        },
+        "work_id": "work-fixture-import"
+      }
+    ],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "replay_before": {
+    "sequences": [
+      1
+    ],
+    "event_sha256": "e9eef387f6d051361d72ac7337d2ecaa1f164cab706b9354ecc416fc74b22cc9",
+    "events": [
+      {
+        "actor": {
+          "id": "owner-2d8ba370-cc1f-4be7-b66c-613cd4952cf7",
+          "kind": "user"
+        },
+        "event_type": "project.state_changed",
+        "native_event_id": null,
+        "native_session_id": null,
+        "occurred_at": "2026-11-14T18:32:04.730675+00:00",
+        "payload": {
+          "name": "M14 imported actual M13 output history",
+          "native_session_id": null,
+          "path": "/home/quintin/.cache/proscenium-development/s14c/a/p",
+          "project_id": "m13-cinematic",
+          "repository_id": "w03-repo",
+          "schema_version": "1.0",
+          "state": "awaiting_resume",
+          "state_revision": 1
+        },
+        "project_id": "m13-cinematic",
+        "request_id": null,
+        "schema_version": "1.0",
+        "sequence": 1,
+        "work_id": null
+      }
+    ]
+  },
+  "playback": [
+    {
+      "phase": "playback",
+      "mediaTime": 0,
+      "presentedFrames": 3,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.041667,
+      "presentedFrames": 4,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.083333,
+      "presentedFrames": 5,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.125,
+      "presentedFrames": 6,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.166667,
+      "presentedFrames": 7,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.208333,
+      "presentedFrames": 8,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.25,
+      "presentedFrames": 9,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.291667,
+      "presentedFrames": 10,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.333333,
+      "presentedFrames": 11,
+      "width": 640,
+      "height": 360
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.375,
+      "presentedFrames": 12,
+      "width": 640,
+      "height": 360
+    }
+  ],
+  "presented_ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "mapping": {
+    "blend_space": "linear_rgb",
+    "fps": {
+      "denominator": 1,
+      "numerator": 24
+    },
+    "frame_count": 10,
+    "frames": [
+      {
+        "contributors": [
+          {
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "shot_id": "fixture-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 1
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "shot_id": "fixture-shot",
+            "source_frame": 2,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 2
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "shot_id": "fixture-shot",
+            "source_frame": 3,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 3
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "shot_id": "fixture-shot",
+            "source_frame": 4,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          },
+          {
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 0
+            }
+          }
+        ],
+        "sequence_frame": 4
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "shot_id": "fixture-shot",
+            "source_frame": 5,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 2,
+              "numerator": 1
+            }
+          },
+          {
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 2,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 5
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "shot_id": "fixture-shot",
+            "source_frame": 6,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 0
+            }
+          },
+          {
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 6
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 7
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 8
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 9
+      },
+      {
+        "contributors": [
+          {
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1",
+            "weight": {
+              "denominator": 1,
+              "numerator": 1
+            }
+          }
+        ],
+        "sequence_frame": 10
+      }
+    ],
+    "project_id": "m13-cinematic",
+    "schema_version": "1.0",
+    "sequence_version_id": "m13-film-v1"
+  },
+  "manifest": {
+    "encode_argv": [
+      "/usr/bin/ffmpeg",
+      "-nostdin",
+      "-v",
+      "error",
+      "-n",
+      "-framerate",
+      "24/1",
+      "-start_number",
+      "1",
+      "-i",
+      "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v1/attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198/frames/%08d.png",
+      "-frames:v",
+      "10",
+      "-an",
+      "-c:v",
+      "libx264",
+      "-threads",
+      "2",
+      "-preset",
+      "veryfast",
+      "-crf",
+      "18",
+      "-pix_fmt",
+      "yuv420p",
+      "-g",
+      "10",
+      "-keyint_min",
+      "10",
+      "-sc_threshold",
+      "0",
+      "-bf",
+      "0",
+      "-flags",
+      "+cgop",
+      "-movflags",
+      "+faststart",
+      "-video_track_timescale",
+      "24",
+      "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v1/attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198/delivery.mp4"
+    ],
+    "frame_map_sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b",
+    "input_digest": "191a26b361778e085e86431a9493d585d93126b21171a2f2433f4dbb24870529",
+    "input_frames": [
+      {
+        "artifact_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+        "attempt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "c2ea2ba9378d0511948d4e121f3d9e2cdbd4d551984610a7b6de5853c4c7c14f",
+        "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+        "output_path": "frames/00000001.png",
+        "project_id": "m13-cinematic",
+        "receipt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107-f1",
+        "schema_version": "1.0",
+        "sha256": "d821a6e51bc425c87681c53b78aa7d3831839ce9a00b28800af017aac0262b81",
+        "shot_id": "incoming-shot",
+        "source_frame": 1,
+        "version_id": "fixture-v1"
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "output_path": "frames/00000001.png",
+        "project_id": "m13-cinematic",
+        "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f1",
+        "schema_version": "1.0",
+        "sha256": "9258c03703cd4101a07f8b3cf0d1241b64c1c10a67e115ffdaf34968d95931f5",
+        "shot_id": "fixture-shot",
+        "source_frame": 1,
+        "version_id": "fixture-v1"
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "output_path": "frames/00000002.png",
+        "project_id": "m13-cinematic",
+        "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f2",
+        "schema_version": "1.0",
+        "sha256": "1ab1e69ae6106d468da72b2ba26d171644ff5aec55652cb5f0c2be2e7162880f",
+        "shot_id": "fixture-shot",
+        "source_frame": 2,
+        "version_id": "fixture-v1"
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "output_path": "frames/00000003.png",
+        "project_id": "m13-cinematic",
+        "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f3",
+        "schema_version": "1.0",
+        "sha256": "f99a34d598e568ddbcccaee3e865c96af7015f011083321c32d5e69addd7153c",
+        "shot_id": "fixture-shot",
+        "source_frame": 3,
+        "version_id": "fixture-v1"
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "output_path": "frames/00000004.png",
+        "project_id": "m13-cinematic",
+        "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f4",
+        "schema_version": "1.0",
+        "sha256": "1ec8aaa3c98b760940e84b1089fbcaea5e9cc3bfb999f5e2657868133d3ed659",
+        "shot_id": "fixture-shot",
+        "source_frame": 4,
+        "version_id": "fixture-v1"
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "output_path": "frames/00000005.png",
+        "project_id": "m13-cinematic",
+        "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f5",
+        "schema_version": "1.0",
+        "sha256": "3a7f9fc4fe0316cde865634a5d23605586079c346cd465d7b249c1c20129f714",
+        "shot_id": "fixture-shot",
+        "source_frame": 5,
+        "version_id": "fixture-v1"
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "output_path": "frames/00000006.png",
+        "project_id": "m13-cinematic",
+        "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f6",
+        "schema_version": "1.0",
+        "sha256": "3ccd9990c4286e1dbb264e2782d517c593e8d8913ffcbfaf997efd100cd1815d",
+        "shot_id": "fixture-shot",
+        "source_frame": 6,
+        "version_id": "fixture-v1"
+      }
+    ],
+    "sequence": {
+      "entries": [
+        {
+          "entry_id": "opening",
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "mapping_artifact_id": "m13-map-v1",
+          "sequence_frames": {
+            "end": 3,
+            "start": 1
+          },
+          "shot_id": "fixture-shot",
+          "source_frames": {
+            "end": 3,
+            "start": 1
+          },
+          "transform": "identity",
+          "version_id": "fixture-v1"
+        },
+        {
+          "contributors": [
+            {
+              "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+              "shot_id": "fixture-shot",
+              "source_frames": {
+                "end": 6,
+                "start": 4
+              },
+              "version_id": "fixture-v1"
+            },
+            {
+              "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+              "shot_id": "incoming-shot",
+              "source_frames": {
+                "end": 1,
+                "start": 1
+              },
+              "version_id": "fixture-v1"
+            }
+          ],
+          "entry_id": "blend",
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "mapping_artifact_id": "m13-map-v1",
+          "sequence_frames": {
+            "end": 6,
+            "start": 4
+          },
+          "shot_id": "fixture-shot",
+          "source_frames": {
+            "end": 6,
+            "start": 4
+          },
+          "transform": "transition",
+          "version_id": "fixture-v1"
+        },
+        {
+          "entry_id": "arrival",
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "mapping_artifact_id": "m13-map-v1",
+          "sequence_frames": {
+            "end": 10,
+            "start": 7
+          },
+          "shot_id": "incoming-shot",
+          "source_frames": {
+            "end": 1,
+            "start": 1
+          },
+          "transform": "retime",
+          "version_id": "fixture-v1"
+        }
+      ],
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 10,
+      "project_id": "m13-cinematic",
+      "schema_version": "1.0",
+      "sequence_version_id": "m13-film-v1",
+      "silent": true
+    },
+    "video_sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e"
+  },
+  "numbered_identity": [
+    {
+      "phase": "playback",
+      "mediaTime": 0,
+      "presentedFrames": 3,
+      "width": 640,
+      "height": 360,
+      "ordinal": 1,
+      "contributors": [
+        {
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "shot_id": "fixture-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 1
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.041667,
+      "presentedFrames": 4,
+      "width": 640,
+      "height": 360,
+      "ordinal": 2,
+      "contributors": [
+        {
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "shot_id": "fixture-shot",
+          "source_frame": 2,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 2
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.083333,
+      "presentedFrames": 5,
+      "width": 640,
+      "height": 360,
+      "ordinal": 3,
+      "contributors": [
+        {
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "shot_id": "fixture-shot",
+          "source_frame": 3,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 3
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.125,
+      "presentedFrames": 6,
+      "width": 640,
+      "height": 360,
+      "ordinal": 4,
+      "contributors": [
+        {
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "shot_id": "fixture-shot",
+          "source_frame": 4,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 0
+          }
+        }
+      ],
+      "sequence_frame": 4
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.166667,
+      "presentedFrames": 7,
+      "width": 640,
+      "height": 360,
+      "ordinal": 5,
+      "contributors": [
+        {
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "shot_id": "fixture-shot",
+          "source_frame": 5,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 5
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.208333,
+      "presentedFrames": 8,
+      "width": 640,
+      "height": 360,
+      "ordinal": 6,
+      "contributors": [
+        {
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "shot_id": "fixture-shot",
+          "source_frame": 6,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 0
+          }
+        },
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 6
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.25,
+      "presentedFrames": 9,
+      "width": 640,
+      "height": 360,
+      "ordinal": 7,
+      "contributors": [
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 7
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.291667,
+      "presentedFrames": 10,
+      "width": 640,
+      "height": 360,
+      "ordinal": 8,
+      "contributors": [
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 8
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.333333,
+      "presentedFrames": 11,
+      "width": 640,
+      "height": 360,
+      "ordinal": 9,
+      "contributors": [
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 9
+    },
+    {
+      "phase": "playback",
+      "mediaTime": 0.375,
+      "presentedFrames": 12,
+      "width": 640,
+      "height": 360,
+      "ordinal": 10,
+      "contributors": [
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "source_frame": 1,
+          "version_id": "fixture-v1",
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "sequence_frame": 10
+    }
+  ],
+  "catalogue": {
+    "m13-encode-v1-delivery": {
+      "artifact_id": "m13-encode-v1-delivery",
+      "bytes": 64876,
+      "derived_from": [
+        {
+          "input_artifact_ids": [
+            "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+            "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6"
+          ],
+          "kind": "encode",
+          "parameters": {
+            "blend_space": "linear_rgb",
+            "frame_map_sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b"
+          }
+        }
+      ],
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "fps": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frame_count": 10,
+      "kind": "video",
+      "media_type": "video/mp4",
+      "project_id": "m13-cinematic",
+      "purpose": "final",
+      "schema_version": "1.0",
+      "sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e",
+      "source_version_id": "m13-film-v1",
+      "state": "ready"
+    },
+    "m13-encode-v1-frame-map": {
+      "artifact_id": "m13-encode-v1-frame-map",
+      "bytes": 3106,
+      "derived_from": [],
+      "kind": "frame_map",
+      "media_type": "application/json",
+      "project_id": "m13-cinematic",
+      "purpose": "metadata",
+      "schema_version": "1.0",
+      "sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b",
+      "source_version_id": "m13-film-v1",
+      "state": "ready"
+    },
+    "m13-encode-v1-manifest": {
+      "artifact_id": "m13-encode-v1-manifest",
+      "bytes": 7291,
+      "derived_from": [],
+      "kind": "document",
+      "media_type": "application/json",
+      "project_id": "m13-cinematic",
+      "purpose": "metadata",
+      "schema_version": "1.0",
+      "sha256": "46d550ab364d2b572fd5fffbf17fe472714b24e6e249f20c9882076215321ef1",
+      "source_version_id": "m13-film-v1",
+      "state": "ready"
+    }
+  },
+  "annotation": {
+    "annotation_id": "88657989-4c73-4bda-9c7b-b32c9acdd902",
+    "camera": null,
+    "markup_artifact_id": "889a7b6c-cb3a-498e-b299-c3a6a0d2f0a7",
+    "markups": [
+      {
+        "colour": "#ff5555",
+        "id": "da6914cd-6876-4afe-8289-b3dccba2a0ad",
+        "kind": "pin",
+        "points": [
+          [
+            0.5000000000000001,
+            0.5
+          ]
+        ],
+        "text": "M14 SSH frame 5 original blend pin",
+        "width_px": 4
+      }
+    ],
+    "range": null,
+    "saved_revision": 1,
+    "spatial_hits": [],
+    "spatial_status": "unavailable",
+    "target": {
+      "artifact_id": "27f0432a-c3df-4a53-b424-1f6798557b3d",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "displayed_sha256": "175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af",
+      "frame_map_artifact_id": "m13-encode-v1-frame-map",
+      "item_id": "m13-film",
+      "media_artifact_id": "m13-encode-v1-delivery",
+      "origin": "sequence_render",
+      "render_job_id": null,
+      "sequence_frame": 5,
+      "sequence_version_id": "m13-film-v1",
+      "shot_id": null,
+      "source_frame": null,
+      "version_id": "m13-film-v1"
+    },
+    "text": "M14 SSH frame 5 original blend pin"
+  },
+  "downloads": [
+    {
+      "name": "Download final video",
+      "href": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery/content",
+      "bytes": 64876,
+      "sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e"
+    },
+    {
+      "name": "Download delivery manifest",
+      "href": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest/content",
+      "bytes": 7291,
+      "sha256": "46d550ab364d2b572fd5fffbf17fe472714b24e6e249f20c9882076215321ef1"
+    }
+  ],
+  "range": {
+    "status": 206,
+    "headers": {
+      "accept-ranges": "bytes",
+      "cache-control": "private, max-age=31536000, immutable",
+      "content-length": "32",
+      "content-range": "bytes 0-31/64876",
+      "content-type": "video/mp4",
+      "etag": "\"ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e\""
+    },
+    "bytes": [
+      0,
+      0,
+      0,
+      32,
+      102,
+      116,
+      121,
+      112,
+      105,
+      115,
+      111,
+      109,
+      0,
+      0,
+      2,
+      0,
+      105,
+      115,
+      111,
+      109,
+      105,
+      115,
+      111,
+      50,
+      97,
+      118,
+      99,
+      49,
+      109,
+      112,
+      52,
+      49
+    ]
+  },
+  "upload": {
+    "artifact_id": "df4c8f72-0e50-4f55-8d93-b7925fe007e1",
+    "bytes": 82,
+    "derived_from": [],
+    "dimensions": {
+      "height": 16,
+      "width": 16
+    },
+    "kind": "image",
+    "media_type": "image/png",
+    "project_id": "m13-cinematic",
+    "purpose": "reference",
+    "schema_version": "1.0",
+    "sha256": "b2ce3c51de4baeb4a98d84a4cad3fbbfb3b2538ef7414b828fdd236e656d8933",
+    "state": "ready"
+  },
+  "upload_metadata": {
+    "artifact_id": "df4c8f72-0e50-4f55-8d93-b7925fe007e1",
+    "bytes": 82,
+    "derived_from": [],
+    "dimensions": {
+      "height": 16,
+      "width": 16
+    },
+    "kind": "image",
+    "media_type": "image/png",
+    "project_id": "m13-cinematic",
+    "purpose": "reference",
+    "schema_version": "1.0",
+    "sha256": "b2ce3c51de4baeb4a98d84a4cad3fbbfb3b2538ef7414b828fdd236e656d8933",
+    "state": "ready"
+  },
+  "upload_receipt_recovery": {
+    "observed_upload": {
+      "path": "/api/v1/projects/m13-cinematic/uploads/df4c8f72-0e50-4f55-8d93-b7925fe007e1",
+      "status": 201,
+      "method": "PUT"
+    },
+    "durable_metadata_read": true,
+    "extra_uploads": 0
+  }
+}
