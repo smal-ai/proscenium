@@ -1,0 +1,2061 @@
+{
+  "events": [
+    {
+      "id": "94a966b6-0b8d-44bc-9722-1eded7ca61d4",
+      "type": "session.resume",
+      "timestamp": "2026-11-14T19:15:26.094Z",
+      "parentId": "b001eef5-21b8-4fb3-9ac3-6102ddc8b1a4"
+    },
+    {
+      "id": "3ab5334a-0d5b-49da-a5fa-d7d34a84fb90",
+      "type": "user.message",
+      "timestamp": "2026-11-14T19:16:25.392Z",
+      "parentId": "2f169c3c-73f3-4f86-b4bc-150cbebcbfa8",
+      "data": {
+        "messageId": "a562b5a6-96c2-4252-a3cf-df66f9449aec",
+        "clientTurnId": "a5e231d1-beca-471a-b3fc-d517b5759c07"
+      }
+    },
+    {
+      "id": "2d52f69d-4124-46c0-804b-0d92c5eb7577",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:16:25.405Z",
+      "parentId": "3f37214d-43eb-4ab6-a453-96a9f5b224c2"
+    },
+    {
+      "id": "3e15205c-dd97-44fd-b840-8ed9fc5e832a",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:16:29.129Z",
+      "parentId": "2d52f69d-4124-46c0-804b-0d92c5eb7577",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "c5248527-ddce-48b0-aecd-a8c5ce63809e",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:29.130Z",
+      "parentId": "3e15205c-dd97-44fd-b840-8ed9fc5e832a",
+      "data": {
+        "toolName": "get_version",
+        "toolCallId": "call_8m6kN2G2sM4YCek8adxO2bd2",
+        "arguments": {
+          "version_id": "m10-asset-v1"
+        }
+      }
+    },
+    {
+      "id": "9f5bc790-0054-48bb-aca3-3e624425f682",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:29.186Z",
+      "parentId": "846b16d9-6137-4aef-b2c5-ad26d8155dd4",
+      "data": {
+        "requestId": "643e5ccf-65f7-4d95-8c92-0010a37f9b9d",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_8m6kN2G2sM4YCek8adxO2bd2",
+          "toolName": "get_version",
+          "toolDescription": "Read an exact published version, pinned source closure and registered output associations. Never infer the latest working source.",
+          "args": {
+            "version_id": "m10-asset-v1"
+          }
+        }
+      }
+    },
+    {
+      "id": "5552e1cc-5049-4e6c-9129-5f36791d043a",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:29.212Z",
+      "parentId": "9f5bc790-0054-48bb-aca3-3e624425f682",
+      "data": {
+        "requestId": "643e5ccf-65f7-4d95-8c92-0010a37f9b9d",
+        "toolCallId": "call_8m6kN2G2sM4YCek8adxO2bd2",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "76fdf6b8-de6b-4e66-86fa-6adb26e4e7f4",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:29.256Z",
+      "parentId": "e2d93e6a-4891-470a-80ed-f53692ad40c4",
+      "data": {
+        "toolCallId": "call_8m6kN2G2sM4YCek8adxO2bd2",
+        "success": true
+      }
+    },
+    {
+      "id": "55801ebc-ad74-4b3f-99fc-74611fb3f47d",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:16:29.262Z",
+      "parentId": "76fdf6b8-de6b-4e66-86fa-6adb26e4e7f4"
+    },
+    {
+      "id": "f1ec88e9-c056-43f8-8f0c-abd490adbc91",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:16:29.263Z",
+      "parentId": "55801ebc-ad74-4b3f-99fc-74611fb3f47d"
+    },
+    {
+      "id": "4c95552b-af91-4a6c-adc9-b5b4fad369a6",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:16:32.367Z",
+      "parentId": "f1ec88e9-c056-43f8-8f0c-abd490adbc91",
+      "public_content": "",
+      "tool_requests": 3
+    },
+    {
+      "id": "daf069eb-8cb2-4397-b5c0-b1152baf6d2f",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:32.369Z",
+      "parentId": "4c95552b-af91-4a6c-adc9-b5b4fad369a6",
+      "data": {
+        "toolName": "view",
+        "toolCallId": "call_XKhwvlACXteixngg16nzl1Zt",
+        "arguments": {
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py"
+        }
+      }
+    },
+    {
+      "id": "07e24131-57fd-4304-9113-a64f2a78fc29",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:32.370Z",
+      "parentId": "daf069eb-8cb2-4397-b5c0-b1152baf6d2f",
+      "data": {
+        "toolName": "view",
+        "toolCallId": "call_sRL2GesNac9Q1lBWPwMMGuKb",
+        "arguments": {
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/inspection.json"
+        }
+      }
+    },
+    {
+      "id": "6ef22c6d-abb3-495d-9fd5-79dbea413597",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:32.370Z",
+      "parentId": "07e24131-57fd-4304-9113-a64f2a78fc29",
+      "data": {
+        "toolName": "view",
+        "toolCallId": "call_nNjuXIUKWY1hl6JwIotDy8O4",
+        "arguments": {
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/import-provenance.json"
+        }
+      }
+    },
+    {
+      "id": "2582e4bb-7da4-4940-9a1d-fe272bb917de",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:32.442Z",
+      "parentId": "a0353e9b-55b1-49da-a9bb-d7e3f6e13463",
+      "data": {
+        "requestId": "cdb2df20-94b6-4b50-9f4d-a59a6cbedda3",
+        "permissionRequest": {
+          "kind": "read",
+          "toolCallId": "call_XKhwvlACXteixngg16nzl1Zt",
+          "intention": "Read file: /home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py",
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py"
+        }
+      }
+    },
+    {
+      "id": "dc0b2342-fb0c-4c18-8ae2-416f37bec1c5",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:32.443Z",
+      "parentId": "2582e4bb-7da4-4940-9a1d-fe272bb917de",
+      "data": {
+        "requestId": "c8e09550-0279-4d49-abde-66d40d05858d",
+        "permissionRequest": {
+          "kind": "read",
+          "toolCallId": "call_sRL2GesNac9Q1lBWPwMMGuKb",
+          "intention": "Read file: /home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/inspection.json",
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/inspection.json"
+        }
+      }
+    },
+    {
+      "id": "df0f98a8-3112-4fe8-bee1-d1e4c81735c9",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:32.444Z",
+      "parentId": "dc0b2342-fb0c-4c18-8ae2-416f37bec1c5",
+      "data": {
+        "requestId": "56177d9a-96ce-4b64-ad9d-f6808d5a2d43",
+        "permissionRequest": {
+          "kind": "read",
+          "toolCallId": "call_nNjuXIUKWY1hl6JwIotDy8O4",
+          "intention": "Read file: /home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/import-provenance.json",
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/import-provenance.json"
+        }
+      }
+    },
+    {
+      "id": "96136938-233d-4171-8334-6837e69de8c2",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:32.498Z",
+      "parentId": "df0f98a8-3112-4fe8-bee1-d1e4c81735c9",
+      "data": {
+        "requestId": "cdb2df20-94b6-4b50-9f4d-a59a6cbedda3",
+        "toolCallId": "call_XKhwvlACXteixngg16nzl1Zt",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "f14eba14-2c40-455e-91c5-e208eb3b34be",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:32.499Z",
+      "parentId": "96136938-233d-4171-8334-6837e69de8c2",
+      "data": {
+        "requestId": "c8e09550-0279-4d49-abde-66d40d05858d",
+        "toolCallId": "call_sRL2GesNac9Q1lBWPwMMGuKb",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "78dbf2e4-631d-4880-971c-4c0bb58984a1",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:32.499Z",
+      "parentId": "f14eba14-2c40-455e-91c5-e208eb3b34be",
+      "data": {
+        "requestId": "56177d9a-96ce-4b64-ad9d-f6808d5a2d43",
+        "toolCallId": "call_nNjuXIUKWY1hl6JwIotDy8O4",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "d995e140-dee2-4e9f-a4e8-4bd01a0b8930",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:32.528Z",
+      "parentId": "b9a1917d-17e4-4c82-86d5-243e319174fa",
+      "data": {
+        "toolCallId": "call_XKhwvlACXteixngg16nzl1Zt",
+        "success": true
+      }
+    },
+    {
+      "id": "7ff76cf9-f4c1-42ac-9bfe-dd1fd0f67ca5",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:32.566Z",
+      "parentId": "5f3385ed-2e5d-4492-bbc0-30eb233b0461",
+      "data": {
+        "toolCallId": "call_sRL2GesNac9Q1lBWPwMMGuKb",
+        "success": true
+      }
+    },
+    {
+      "id": "b5708241-c16c-49b3-b7ae-8a98c075e681",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:32.603Z",
+      "parentId": "263b93e5-1c91-485f-a2f5-a44a81439673",
+      "data": {
+        "toolCallId": "call_nNjuXIUKWY1hl6JwIotDy8O4",
+        "success": true
+      }
+    },
+    {
+      "id": "7d44b1ad-cfe0-4d4e-acdd-a557c056db6e",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:16:32.615Z",
+      "parentId": "b5708241-c16c-49b3-b7ae-8a98c075e681"
+    },
+    {
+      "id": "c343174e-56c6-4b2e-a314-ed31682fe0d2",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:16:32.616Z",
+      "parentId": "7d44b1ad-cfe0-4d4e-acdd-a557c056db6e"
+    },
+    {
+      "id": "e3e87d6d-7fe5-4015-a2a0-6141f898aa14",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:16:37.108Z",
+      "parentId": "c343174e-56c6-4b2e-a314-ed31682fe0d2",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "62336422-5ca7-4a7b-b5a5-e524b1cc5aa9",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:37.109Z",
+      "parentId": "e3e87d6d-7fe5-4015-a2a0-6141f898aa14",
+      "data": {
+        "toolName": "apply_patch",
+        "toolCallId": "custom_call_RunIW9xhcZ3lksVJk8JQrP2l",
+        "arguments": "*** Begin Patch\n*** Update File: /home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py\n@@\n originals = {\n-    path.name: hashlib.sha256(path.read_bytes()).hexdigest()\n-    for path in ASSETS.iterdir()\n-    if path.is_file() and path.name != Path(__file__).name\n+    name: hashlib.sha256((ASSETS / name).read_bytes()).hexdigest()\n+    for name in (\n+        \"asset.blend\", \"original.glb\", \"conditioning.png\",\n+        \"generation-provenance.json\", \"import-provenance.json\",\n+        \"inspection.json\", \"model-licence.txt\", \"workflow.json\",\n+    )\n@@\n     \"source\": \"assets/e04/asset.blend\",\n+    \"base_item_id\": \"m10-generated-asset\",\n+    \"base_version_id\": \"m10-asset-v1\",\n@@\n     \"material\": material.name,\n+    \"material_parameters\": {\n+        \"base_color\": list(shader.inputs[\"Base Color\"].default_value),\n+        \"roughness\": shader.inputs[\"Roughness\"].default_value,\n+        \"coat_weight\": shader.inputs[\"Coat Weight\"].default_value,\n+        \"image_textures\": False,\n+    },\n*** End Patch\n"
+      }
+    },
+    {
+      "id": "5bf96939-a2bf-4d1f-9b20-a16db0e4747a",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:38.002Z",
+      "parentId": "dd43083f-c07d-46ad-9322-8e3ed85c22d9",
+      "data": {
+        "requestId": "45c9a2a9-cfa3-43b3-8f8e-6ff897b04d98",
+        "permissionRequest": {
+          "kind": "write",
+          "toolCallId": "custom_call_RunIW9xhcZ3lksVJk8JQrP2l",
+          "intention": "Update file",
+          "fileName": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py",
+          "diff": "\ndiff --git a/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py b/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py\nindex 0000000..0000000 100644\n--- a/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py\n+++ b/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py\n@@ -14,9 +14,12 @@\n MEASUREMENTS = ASSETS / \"revision-measurements.json\"\n assert not OUTPUT.exists() and not MEASUREMENTS.exists(), \"Revision already exists\"\n originals = {\n-    path.name: hashlib.sha256(path.read_bytes()).hexdigest()\n-    for path in ASSETS.iterdir()\n-    if path.is_file() and path.name != Path(__file__).name\n+    name: hashlib.sha256((ASSETS / name).read_bytes()).hexdigest()\n+    for name in (\n+        \"asset.blend\", \"original.glb\", \"conditioning.png\",\n+        \"generation-provenance.json\", \"import-provenance.json\",\n+        \"inspection.json\", \"model-licence.txt\", \"workflow.json\",\n+    )\n }\n bpy.ops.wm.open_mainfile(filepath=str(ASSETS / \"asset.blend\"))\n scene = bpy.context.scene\n@@ -194,6 +197,8 @@\n report = {\n     \"schema_version\": \"1.0\",\n     \"source\": \"assets/e04/asset.blend\",\n+    \"base_item_id\": \"m10-generated-asset\",\n+    \"base_version_id\": \"m10-asset-v1\",\n     \"output\": \"assets/e04/asset-v2.blend\",\n     \"blender_version\": bpy.app.version_string,\n     \"blender_build_hash\": bpy.app.build_hash.decode(\"ascii\"),\n@@ -216,6 +221,12 @@\n     \"camera\": camera.name,\n     \"camera_bounds_ndc\": [[p.x, p.y, p.z] for p in framing],\n     \"material\": material.name,\n+    \"material_parameters\": {\n+        \"base_color\": list(shader.inputs[\"Base Color\"].default_value),\n+        \"roughness\": shader.inputs[\"Roughness\"].default_value,\n+        \"coat_weight\": shader.inputs[\"Coat Weight\"].default_value,\n+        \"image_textures\": False,\n+    },\n     \"limits\": {\n         \"topology_quality\": \"unproven\",\n         \"uvs\": \"unproven\",\n",
+          "newFileContents": "import array\nimport hashlib\nimport json\nimport math\nfrom pathlib import Path\n\nimport bpy\nfrom mathutils import Matrix, Vector\n\n\nROOT = Path(__file__).resolve().parents[2]\nASSETS = ROOT / \"assets/e04\"\nOUTPUT = ASSETS / \"asset-v2.blend\"\nMEASUREMENTS = ASSETS / \"revision-measurements.json\"\nassert not OUTPUT.exists() and not MEASUREMENTS.exists(), \"Revision already exists\"\noriginals = {\n    name: hashlib.sha256((ASSETS / name).read_bytes()).hexdigest()\n    for name in (\n        \"asset.blend\", \"original.glb\", \"conditioning.png\",\n        \"generation-provenance.json\", \"import-provenance.json\",\n        \"inspection.json\", \"model-licence.txt\", \"workflow.json\",\n    )\n}\nbpy.ops.wm.open_mainfile(filepath=str(ASSETS / \"asset.blend\"))\nscene = bpy.context.scene\nassert scene.name == \"Scene\"\nmeshes = [obj for obj in bpy.data.objects if obj.type == \"MESH\"]\nassert len(meshes) == 1\nobj = meshes[0]\nassert obj.name == \"E04_Mesh_001\"\nassert obj.get(\"proscenium_object_id\") == \"e04-object-001\"\nassert obj.get(\"proscenium_instance_id\") == \"e04-instance-001\"\nassert not obj.modifiers and not obj.constraints and obj.parent is None\nmesh = obj.data\n\n\ndef topology():\n    digest = hashlib.sha256()\n    for collection, attribute, size in (\n        (mesh.vertices, \"co\", 3),\n        (mesh.edges, \"vertices\", 2),\n        (mesh.loops, \"vertex_index\", 1),\n        (mesh.polygons, \"loop_start\", 1),\n        (mesh.polygons, \"loop_total\", 1),\n    ):\n        values = array.array(\"f\" if attribute == \"co\" else \"i\", [0]) * (\n            len(collection) * size\n        )\n        collection.foreach_get(attribute, values)\n        digest.update(values.tobytes())\n    return digest.hexdigest()\n\n\ndef counts():\n    mesh.calc_loop_triangles()\n    return {\n        \"vertices\": len(mesh.vertices),\n        \"edges\": len(mesh.edges),\n        \"polygons\": len(mesh.polygons),\n        \"triangles\": len(mesh.loop_triangles),\n    }\n\n\ndef bounds():\n    minimum = [math.inf] * 3\n    maximum = [-math.inf] * 3\n    transform = obj.matrix_world.copy()\n    for vertex in mesh.vertices:\n        point = transform @ vertex.co\n        for axis in range(3):\n            minimum[axis] = min(minimum[axis], point[axis])\n            maximum[axis] = max(maximum[axis], point[axis])\n    return [minimum, maximum]\n\n\nbefore_counts = counts()\nassert before_counts[\"vertices\"] == 350259\nassert before_counts[\"polygons\"] == before_counts[\"triangles\"] == 1304618\nbefore_topology = topology()\nbefore_bounds = bounds()\nheight = before_bounds[1][2] - before_bounds[0][2]\nassert height > 0\nfactor = 0.12 / height\nobj.matrix_world = Matrix.Scale(factor, 4) @ obj.matrix_world\nbpy.context.view_layer.update()\nscaled_bounds = bounds()\nobj.matrix_world = (\n    Matrix.Translation((0, 0, -scaled_bounds[0][2])) @ obj.matrix_world\n)\nbpy.context.view_layer.update()\nafter_bounds = bounds()\nassert abs(after_bounds[0][2]) < 1e-8\nassert abs(after_bounds[1][2] - after_bounds[0][2] - 0.12) < 1e-8\nscene.unit_settings.system = \"METRIC\"\nscene.unit_settings.scale_length = 1.0\n\nmaterial = bpy.data.materials.new(\"M10_Blue_Ceramic\")\nmaterial.use_nodes = True\nmaterial.diffuse_color = (0.025, 0.16, 0.48, 1)\nshader = material.node_tree.nodes.get(\"Principled BSDF\")\nshader.inputs[\"Base Color\"].default_value = material.diffuse_color\nshader.inputs[\"Metallic\"].default_value = 0\nshader.inputs[\"Roughness\"].default_value = 0.23\nshader.inputs[\"Coat Weight\"].default_value = 0.3\nshader.inputs[\"Coat Roughness\"].default_value = 0.16\nmesh.materials.clear()\nmesh.materials.append(material)\nfor polygon in mesh.polygons:\n    polygon.material_index = 0\n\nfor existing in list(scene.objects):\n    if existing.type in {\"CAMERA\", \"LIGHT\"}:\n        bpy.data.objects.remove(existing, do_unlink=True)\n\ncenter = (Vector(after_bounds[0]) + Vector(after_bounds[1])) / 2\nextent = Vector(after_bounds[1]) - Vector(after_bounds[0])\nspan = max(extent)\ncamera_data = bpy.data.cameras.new(\"M10_Presentation_Camera\")\ncamera = bpy.data.objects.new(\"M10_Presentation_Camera\", camera_data)\nscene.collection.objects.link(camera)\ncamera.location = center + Vector((1.1, -1.8, 0.8)).normalized() * span * 3\ncamera.rotation_euler = (center - camera.location).to_track_quat(\"-Z\", \"Y\").to_euler()\ncamera_data.type = \"ORTHO\"\ncamera_data.clip_start = 0.001\ncamera_data.clip_end = 100\nrotation = camera.rotation_euler.to_quaternion().inverted()\ncorners = [\n    rotation @ (Vector((x, y, z)) - center)\n    for x in (after_bounds[0][0], after_bounds[1][0])\n    for y in (after_bounds[0][1], after_bounds[1][1])\n    for z in (after_bounds[0][2], after_bounds[1][2])\n]\nprojected_width = max(p.x for p in corners) - min(p.x for p in corners)\nprojected_height = max(p.y for p in corners) - min(p.y for p in corners)\n# Blender's orthographic scale is the horizontal span for this landscape frame.\ncamera_data.ortho_scale = max(projected_width, projected_height * 640 / 360) * 1.2\nscene.camera = camera\n\nfor name, offset, energy, size in (\n    (\"M10_Key\", (-1.5, -2.0, 2.5), 14, 1.8),\n    (\"M10_Fill\", (2.0, -0.5, 1.0), 6, 2.0),\n    (\"M10_Rim\", (0.2, 1.8, 2.0), 10, 1.3),\n):\n    data = bpy.data.lights.new(name, \"AREA\")\n    data.energy = energy\n    data.shape = \"DISK\"\n    data.size = span * size\n    light = bpy.data.objects.new(name, data)\n    scene.collection.objects.link(light)\n    light.location = center + Vector(offset) * span\n    light.rotation_euler = (center - light.location).to_track_quat(\"-Z\", \"Y\").to_euler()\n\nworld = bpy.data.worlds.new(\"M10_Local_Studio\")\nworld.use_nodes = True\nworld.node_tree.nodes[\"Background\"].inputs[\"Color\"].default_value = (\n    0.12, 0.15, 0.2, 1\n)\nworld.node_tree.nodes[\"Background\"].inputs[\"Strength\"].default_value = 0.4\nscene.world = world\nscene.render.engine = \"CYCLES\"\nscene.cycles.device = \"CPU\"\nscene.cycles.samples = 8\nscene.render.threads_mode = \"FIXED\"\nscene.render.threads = 4\nscene.render.resolution_x = 640\nscene.render.resolution_y = 360\nscene.render.resolution_percentage = 100\nscene.render.fps = 24\nscene.render.fps_base = 1\nscene.frame_start = scene.frame_end = 1\nscene.frame_set(1)\nscene.view_settings.view_transform = \"Standard\"\nscene.view_settings.look = \"None\"\nscene.view_settings.exposure = 0\nscene.view_settings.gamma = 1\nscene.render.film_transparent = False\nbpy.context.view_layer.update()\n\nfrom bpy_extras.object_utils import world_to_camera_view\n\nframing = [\n    world_to_camera_view(scene, camera, Vector((x, y, z)))\n    for x in (after_bounds[0][0], after_bounds[1][0])\n    for y in (after_bounds[0][1], after_bounds[1][1])\n    for z in (after_bounds[0][2], after_bounds[1][2])\n]\nassert all(0.01 < p.x < 0.99 and 0.01 < p.y < 0.99 and p.z > 0 for p in framing)\nafter_counts = counts()\nassert after_counts == before_counts\nassert topology() == before_topology, \"Mesh coordinates or connectivity changed\"\nassert len([o for o in bpy.data.objects if o.type == \"MESH\"]) == 1\nassert all(node.type != \"TEX_IMAGE\" for node in material.node_tree.nodes)\nfor name, digest in originals.items():\n    assert hashlib.sha256((ASSETS / name).read_bytes()).hexdigest() == digest\n\nbpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), check_existing=True)\nreport = {\n    \"schema_version\": \"1.0\",\n    \"source\": \"assets/e04/asset.blend\",\n    \"base_item_id\": \"m10-generated-asset\",\n    \"base_version_id\": \"m10-asset-v1\",\n    \"output\": \"assets/e04/asset-v2.blend\",\n    \"blender_version\": bpy.app.version_string,\n    \"blender_build_hash\": bpy.app.build_hash.decode(\"ascii\"),\n    \"object_name\": obj.name,\n    \"proscenium_object_id\": obj[\"proscenium_object_id\"],\n    \"proscenium_instance_id\": obj[\"proscenium_instance_id\"],\n    \"before\": {\"world_bounds_m\": before_bounds, \"counts\": before_counts},\n    \"after\": {\n        \"world_bounds_m\": after_bounds,\n        \"counts\": after_counts,\n        \"height_m\": after_bounds[1][2] - after_bounds[0][2],\n        \"lowest_world_z_m\": after_bounds[0][2],\n        \"matrix_world\": [list(row) for row in obj.matrix_world],\n    },\n    \"uniform_scale_factor\": factor,\n    \"mesh_coordinates_and_connectivity_sha256\": before_topology,\n    \"mesh_coordinates_and_connectivity_unchanged\": True,\n    \"original_file_sha256\": originals,\n    \"output_sha256\": hashlib.sha256(OUTPUT.read_bytes()).hexdigest(),\n    \"camera\": camera.name,\n    \"camera_bounds_ndc\": [[p.x, p.y, p.z] for p in framing],\n    \"material\": material.name,\n    \"material_parameters\": {\n        \"base_color\": list(shader.inputs[\"Base Color\"].default_value),\n        \"roughness\": shader.inputs[\"Roughness\"].default_value,\n        \"coat_weight\": shader.inputs[\"Coat Weight\"].default_value,\n        \"image_textures\": False,\n    },\n    \"limits\": {\n        \"topology_quality\": \"unproven\",\n        \"uvs\": \"unproven\",\n        \"retopology\": \"unproven\",\n        \"rigging\": \"unproven\",\n    },\n    \"execution\": {\n        \"cpu_threads\": 4,\n        \"timeout_seconds\": 180,\n        \"direct_render_performed\": False,\n        \"inference_operations\": 0,\n    },\n}\nMEASUREMENTS.write_text(json.dumps(report, indent=2) + \"\\n\", encoding=\"utf-8\")\nprint(json.dumps(report, sort_keys=True))\n",
+          "canOfferSessionApproval": true,
+          "fileEdits": [
+            {
+              "before": {
+                "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py",
+                "content": "import array\nimport hashlib\nimport json\nimport math\nfrom pathlib import Path\n\nimport bpy\nfrom mathutils import Matrix, Vector\n\n\nROOT = Path(__file__).resolve().parents[2]\nASSETS = ROOT / \"assets/e04\"\nOUTPUT = ASSETS / \"asset-v2.blend\"\nMEASUREMENTS = ASSETS / \"revision-measurements.json\"\nassert not OUTPUT.exists() and not MEASUREMENTS.exists(), \"Revision already exists\"\noriginals = {\n    path.name: hashlib.sha256(path.read_bytes()).hexdigest()\n    for path in ASSETS.iterdir()\n    if path.is_file() and path.name != Path(__file__).name\n}\nbpy.ops.wm.open_mainfile(filepath=str(ASSETS / \"asset.blend\"))\nscene = bpy.context.scene\nassert scene.name == \"Scene\"\nmeshes = [obj for obj in bpy.data.objects if obj.type == \"MESH\"]\nassert len(meshes) == 1\nobj = meshes[0]\nassert obj.name == \"E04_Mesh_001\"\nassert obj.get(\"proscenium_object_id\") == \"e04-object-001\"\nassert obj.get(\"proscenium_instance_id\") == \"e04-instance-001\"\nassert not obj.modifiers and not obj.constraints and obj.parent is None\nmesh = obj.data\n\n\ndef topology():\n    digest = hashlib.sha256()\n    for collection, attribute, size in (\n        (mesh.vertices, \"co\", 3),\n        (mesh.edges, \"vertices\", 2),\n        (mesh.loops, \"vertex_index\", 1),\n        (mesh.polygons, \"loop_start\", 1),\n        (mesh.polygons, \"loop_total\", 1),\n    ):\n        values = array.array(\"f\" if attribute == \"co\" else \"i\", [0]) * (\n            len(collection) * size\n        )\n        collection.foreach_get(attribute, values)\n        digest.update(values.tobytes())\n    return digest.hexdigest()\n\n\ndef counts():\n    mesh.calc_loop_triangles()\n    return {\n        \"vertices\": len(mesh.vertices),\n        \"edges\": len(mesh.edges),\n        \"polygons\": len(mesh.polygons),\n        \"triangles\": len(mesh.loop_triangles),\n    }\n\n\ndef bounds():\n    minimum = [math.inf] * 3\n    maximum = [-math.inf] * 3\n    transform = obj.matrix_world.copy()\n    for vertex in mesh.vertices:\n        point = transform @ vertex.co\n        for axis in range(3):\n            minimum[axis] = min(minimum[axis], point[axis])\n            maximum[axis] = max(maximum[axis], point[axis])\n    return [minimum, maximum]\n\n\nbefore_counts = counts()\nassert before_counts[\"vertices\"] == 350259\nassert before_counts[\"polygons\"] == before_counts[\"triangles\"] == 1304618\nbefore_topology = topology()\nbefore_bounds = bounds()\nheight = before_bounds[1][2] - before_bounds[0][2]\nassert height > 0\nfactor = 0.12 / height\nobj.matrix_world = Matrix.Scale(factor, 4) @ obj.matrix_world\nbpy.context.view_layer.update()\nscaled_bounds = bounds()\nobj.matrix_world = (\n    Matrix.Translation((0, 0, -scaled_bounds[0][2])) @ obj.matrix_world\n)\nbpy.context.view_layer.update()\nafter_bounds = bounds()\nassert abs(after_bounds[0][2]) < 1e-8\nassert abs(after_bounds[1][2] - after_bounds[0][2] - 0.12) < 1e-8\nscene.unit_settings.system = \"METRIC\"\nscene.unit_settings.scale_length = 1.0\n\nmaterial = bpy.data.materials.new(\"M10_Blue_Ceramic\")\nmaterial.use_nodes = True\nmaterial.diffuse_color = (0.025, 0.16, 0.48, 1)\nshader = material.node_tree.nodes.get(\"Principled BSDF\")\nshader.inputs[\"Base Color\"].default_value = material.diffuse_color\nshader.inputs[\"Metallic\"].default_value = 0\nshader.inputs[\"Roughness\"].default_value = 0.23\nshader.inputs[\"Coat Weight\"].default_value = 0.3\nshader.inputs[\"Coat Roughness\"].default_value = 0.16\nmesh.materials.clear()\nmesh.materials.append(material)\nfor polygon in mesh.polygons:\n    polygon.material_index = 0\n\nfor existing in list(scene.objects):\n    if existing.type in {\"CAMERA\", \"LIGHT\"}:\n        bpy.data.objects.remove(existing, do_unlink=True)\n\ncenter = (Vector(after_bounds[0]) + Vector(after_bounds[1])) / 2\nextent = Vector(after_bounds[1]) - Vector(after_bounds[0])\nspan = max(extent)\ncamera_data = bpy.data.cameras.new(\"M10_Presentation_Camera\")\ncamera = bpy.data.objects.new(\"M10_Presentation_Camera\", camera_data)\nscene.collection.objects.link(camera)\ncamera.location = center + Vector((1.1, -1.8, 0.8)).normalized() * span * 3\ncamera.rotation_euler = (center - camera.location).to_track_quat(\"-Z\", \"Y\").to_euler()\ncamera_data.type = \"ORTHO\"\ncamera_data.clip_start = 0.001\ncamera_data.clip_end = 100\nrotation = camera.rotation_euler.to_quaternion().inverted()\ncorners = [\n    rotation @ (Vector((x, y, z)) - center)\n    for x in (after_bounds[0][0], after_bounds[1][0])\n    for y in (after_bounds[0][1], after_bounds[1][1])\n    for z in (after_bounds[0][2], after_bounds[1][2])\n]\nprojected_width = max(p.x for p in corners) - min(p.x for p in corners)\nprojected_height = max(p.y for p in corners) - min(p.y for p in corners)\n# Blender's orthographic scale is the horizontal span for this landscape frame.\ncamera_data.ortho_scale = max(projected_width, projected_height * 640 / 360) * 1.2\nscene.camera = camera\n\nfor name, offset, energy, size in (\n    (\"M10_Key\", (-1.5, -2.0, 2.5), 14, 1.8),\n    (\"M10_Fill\", (2.0, -0.5, 1.0), 6, 2.0),\n    (\"M10_Rim\", (0.2, 1.8, 2.0), 10, 1.3),\n):\n    data = bpy.data.lights.new(name, \"AREA\")\n    data.energy = energy\n    data.shape = \"DISK\"\n    data.size = span * size\n    light = bpy.data.objects.new(name, data)\n    scene.collection.objects.link(light)\n    light.location = center + Vector(offset) * span\n    light.rotation_euler = (center - light.location).to_track_quat(\"-Z\", \"Y\").to_euler()\n\nworld = bpy.data.worlds.new(\"M10_Local_Studio\")\nworld.use_nodes = True\nworld.node_tree.nodes[\"Background\"].inputs[\"Color\"].default_value = (\n    0.12, 0.15, 0.2, 1\n)\nworld.node_tree.nodes[\"Background\"].inputs[\"Strength\"].default_value = 0.4\nscene.world = world\nscene.render.engine = \"CYCLES\"\nscene.cycles.device = \"CPU\"\nscene.cycles.samples = 8\nscene.render.threads_mode = \"FIXED\"\nscene.render.threads = 4\nscene.render.resolution_x = 640\nscene.render.resolution_y = 360\nscene.render.resolution_percentage = 100\nscene.render.fps = 24\nscene.render.fps_base = 1\nscene.frame_start = scene.frame_end = 1\nscene.frame_set(1)\nscene.view_settings.view_transform = \"Standard\"\nscene.view_settings.look = \"None\"\nscene.view_settings.exposure = 0\nscene.view_settings.gamma = 1\nscene.render.film_transparent = False\nbpy.context.view_layer.update()\n\nfrom bpy_extras.object_utils import world_to_camera_view\n\nframing = [\n    world_to_camera_view(scene, camera, Vector((x, y, z)))\n    for x in (after_bounds[0][0], after_bounds[1][0])\n    for y in (after_bounds[0][1], after_bounds[1][1])\n    for z in (after_bounds[0][2], after_bounds[1][2])\n]\nassert all(0.01 < p.x < 0.99 and 0.01 < p.y < 0.99 and p.z > 0 for p in framing)\nafter_counts = counts()\nassert after_counts == before_counts\nassert topology() == before_topology, \"Mesh coordinates or connectivity changed\"\nassert len([o for o in bpy.data.objects if o.type == \"MESH\"]) == 1\nassert all(node.type != \"TEX_IMAGE\" for node in material.node_tree.nodes)\nfor name, digest in originals.items():\n    assert hashlib.sha256((ASSETS / name).read_bytes()).hexdigest() == digest\n\nbpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), check_existing=True)\nreport = {\n    \"schema_version\": \"1.0\",\n    \"source\": \"assets/e04/asset.blend\",\n    \"output\": \"assets/e04/asset-v2.blend\",\n    \"blender_version\": bpy.app.version_string,\n    \"blender_build_hash\": bpy.app.build_hash.decode(\"ascii\"),\n    \"object_name\": obj.name,\n    \"proscenium_object_id\": obj[\"proscenium_object_id\"],\n    \"proscenium_instance_id\": obj[\"proscenium_instance_id\"],\n    \"before\": {\"world_bounds_m\": before_bounds, \"counts\": before_counts},\n    \"after\": {\n        \"world_bounds_m\": after_bounds,\n        \"counts\": after_counts,\n        \"height_m\": after_bounds[1][2] - after_bounds[0][2],\n        \"lowest_world_z_m\": after_bounds[0][2],\n        \"matrix_world\": [list(row) for row in obj.matrix_world],\n    },\n    \"uniform_scale_factor\": factor,\n    \"mesh_coordinates_and_connectivity_sha256\": before_topology,\n    \"mesh_coordinates_and_connectivity_unchanged\": True,\n    \"original_file_sha256\": originals,\n    \"output_sha256\": hashlib.sha256(OUTPUT.read_bytes()).hexdigest(),\n    \"camera\": camera.name,\n    \"camera_bounds_ndc\": [[p.x, p.y, p.z] for p in framing],\n    \"material\": material.name,\n    \"limits\": {\n        \"topology_quality\": \"unproven\",\n        \"uvs\": \"unproven\",\n        \"retopology\": \"unproven\",\n        \"rigging\": \"unproven\",\n    },\n    \"execution\": {\n        \"cpu_threads\": 4,\n        \"timeout_seconds\": 180,\n        \"direct_render_performed\": False,\n        \"inference_operations\": 0,\n    },\n}\nMEASUREMENTS.write_text(json.dumps(report, indent=2) + \"\\n\", encoding=\"utf-8\")\nprint(json.dumps(report, sort_keys=True))\n"
+              },
+              "after": {
+                "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py",
+                "content": "import array\nimport hashlib\nimport json\nimport math\nfrom pathlib import Path\n\nimport bpy\nfrom mathutils import Matrix, Vector\n\n\nROOT = Path(__file__).resolve().parents[2]\nASSETS = ROOT / \"assets/e04\"\nOUTPUT = ASSETS / \"asset-v2.blend\"\nMEASUREMENTS = ASSETS / \"revision-measurements.json\"\nassert not OUTPUT.exists() and not MEASUREMENTS.exists(), \"Revision already exists\"\noriginals = {\n    name: hashlib.sha256((ASSETS / name).read_bytes()).hexdigest()\n    for name in (\n        \"asset.blend\", \"original.glb\", \"conditioning.png\",\n        \"generation-provenance.json\", \"import-provenance.json\",\n        \"inspection.json\", \"model-licence.txt\", \"workflow.json\",\n    )\n}\nbpy.ops.wm.open_mainfile(filepath=str(ASSETS / \"asset.blend\"))\nscene = bpy.context.scene\nassert scene.name == \"Scene\"\nmeshes = [obj for obj in bpy.data.objects if obj.type == \"MESH\"]\nassert len(meshes) == 1\nobj = meshes[0]\nassert obj.name == \"E04_Mesh_001\"\nassert obj.get(\"proscenium_object_id\") == \"e04-object-001\"\nassert obj.get(\"proscenium_instance_id\") == \"e04-instance-001\"\nassert not obj.modifiers and not obj.constraints and obj.parent is None\nmesh = obj.data\n\n\ndef topology():\n    digest = hashlib.sha256()\n    for collection, attribute, size in (\n        (mesh.vertices, \"co\", 3),\n        (mesh.edges, \"vertices\", 2),\n        (mesh.loops, \"vertex_index\", 1),\n        (mesh.polygons, \"loop_start\", 1),\n        (mesh.polygons, \"loop_total\", 1),\n    ):\n        values = array.array(\"f\" if attribute == \"co\" else \"i\", [0]) * (\n            len(collection) * size\n        )\n        collection.foreach_get(attribute, values)\n        digest.update(values.tobytes())\n    return digest.hexdigest()\n\n\ndef counts():\n    mesh.calc_loop_triangles()\n    return {\n        \"vertices\": len(mesh.vertices),\n        \"edges\": len(mesh.edges),\n        \"polygons\": len(mesh.polygons),\n        \"triangles\": len(mesh.loop_triangles),\n    }\n\n\ndef bounds():\n    minimum = [math.inf] * 3\n    maximum = [-math.inf] * 3\n    transform = obj.matrix_world.copy()\n    for vertex in mesh.vertices:\n        point = transform @ vertex.co\n        for axis in range(3):\n            minimum[axis] = min(minimum[axis], point[axis])\n            maximum[axis] = max(maximum[axis], point[axis])\n    return [minimum, maximum]\n\n\nbefore_counts = counts()\nassert before_counts[\"vertices\"] == 350259\nassert before_counts[\"polygons\"] == before_counts[\"triangles\"] == 1304618\nbefore_topology = topology()\nbefore_bounds = bounds()\nheight = before_bounds[1][2] - before_bounds[0][2]\nassert height > 0\nfactor = 0.12 / height\nobj.matrix_world = Matrix.Scale(factor, 4) @ obj.matrix_world\nbpy.context.view_layer.update()\nscaled_bounds = bounds()\nobj.matrix_world = (\n    Matrix.Translation((0, 0, -scaled_bounds[0][2])) @ obj.matrix_world\n)\nbpy.context.view_layer.update()\nafter_bounds = bounds()\nassert abs(after_bounds[0][2]) < 1e-8\nassert abs(after_bounds[1][2] - after_bounds[0][2] - 0.12) < 1e-8\nscene.unit_settings.system = \"METRIC\"\nscene.unit_settings.scale_length = 1.0\n\nmaterial = bpy.data.materials.new(\"M10_Blue_Ceramic\")\nmaterial.use_nodes = True\nmaterial.diffuse_color = (0.025, 0.16, 0.48, 1)\nshader = material.node_tree.nodes.get(\"Principled BSDF\")\nshader.inputs[\"Base Color\"].default_value = material.diffuse_color\nshader.inputs[\"Metallic\"].default_value = 0\nshader.inputs[\"Roughness\"].default_value = 0.23\nshader.inputs[\"Coat Weight\"].default_value = 0.3\nshader.inputs[\"Coat Roughness\"].default_value = 0.16\nmesh.materials.clear()\nmesh.materials.append(material)\nfor polygon in mesh.polygons:\n    polygon.material_index = 0\n\nfor existing in list(scene.objects):\n    if existing.type in {\"CAMERA\", \"LIGHT\"}:\n        bpy.data.objects.remove(existing, do_unlink=True)\n\ncenter = (Vector(after_bounds[0]) + Vector(after_bounds[1])) / 2\nextent = Vector(after_bounds[1]) - Vector(after_bounds[0])\nspan = max(extent)\ncamera_data = bpy.data.cameras.new(\"M10_Presentation_Camera\")\ncamera = bpy.data.objects.new(\"M10_Presentation_Camera\", camera_data)\nscene.collection.objects.link(camera)\ncamera.location = center + Vector((1.1, -1.8, 0.8)).normalized() * span * 3\ncamera.rotation_euler = (center - camera.location).to_track_quat(\"-Z\", \"Y\").to_euler()\ncamera_data.type = \"ORTHO\"\ncamera_data.clip_start = 0.001\ncamera_data.clip_end = 100\nrotation = camera.rotation_euler.to_quaternion().inverted()\ncorners = [\n    rotation @ (Vector((x, y, z)) - center)\n    for x in (after_bounds[0][0], after_bounds[1][0])\n    for y in (after_bounds[0][1], after_bounds[1][1])\n    for z in (after_bounds[0][2], after_bounds[1][2])\n]\nprojected_width = max(p.x for p in corners) - min(p.x for p in corners)\nprojected_height = max(p.y for p in corners) - min(p.y for p in corners)\n# Blender's orthographic scale is the horizontal span for this landscape frame.\ncamera_data.ortho_scale = max(projected_width, projected_height * 640 / 360) * 1.2\nscene.camera = camera\n\nfor name, offset, energy, size in (\n    (\"M10_Key\", (-1.5, -2.0, 2.5), 14, 1.8),\n    (\"M10_Fill\", (2.0, -0.5, 1.0), 6, 2.0),\n    (\"M10_Rim\", (0.2, 1.8, 2.0), 10, 1.3),\n):\n    data = bpy.data.lights.new(name, \"AREA\")\n    data.energy = energy\n    data.shape = \"DISK\"\n    data.size = span * size\n    light = bpy.data.objects.new(name, data)\n    scene.collection.objects.link(light)\n    light.location = center + Vector(offset) * span\n    light.rotation_euler = (center - light.location).to_track_quat(\"-Z\", \"Y\").to_euler()\n\nworld = bpy.data.worlds.new(\"M10_Local_Studio\")\nworld.use_nodes = True\nworld.node_tree.nodes[\"Background\"].inputs[\"Color\"].default_value = (\n    0.12, 0.15, 0.2, 1\n)\nworld.node_tree.nodes[\"Background\"].inputs[\"Strength\"].default_value = 0.4\nscene.world = world\nscene.render.engine = \"CYCLES\"\nscene.cycles.device = \"CPU\"\nscene.cycles.samples = 8\nscene.render.threads_mode = \"FIXED\"\nscene.render.threads = 4\nscene.render.resolution_x = 640\nscene.render.resolution_y = 360\nscene.render.resolution_percentage = 100\nscene.render.fps = 24\nscene.render.fps_base = 1\nscene.frame_start = scene.frame_end = 1\nscene.frame_set(1)\nscene.view_settings.view_transform = \"Standard\"\nscene.view_settings.look = \"None\"\nscene.view_settings.exposure = 0\nscene.view_settings.gamma = 1\nscene.render.film_transparent = False\nbpy.context.view_layer.update()\n\nfrom bpy_extras.object_utils import world_to_camera_view\n\nframing = [\n    world_to_camera_view(scene, camera, Vector((x, y, z)))\n    for x in (after_bounds[0][0], after_bounds[1][0])\n    for y in (after_bounds[0][1], after_bounds[1][1])\n    for z in (after_bounds[0][2], after_bounds[1][2])\n]\nassert all(0.01 < p.x < 0.99 and 0.01 < p.y < 0.99 and p.z > 0 for p in framing)\nafter_counts = counts()\nassert after_counts == before_counts\nassert topology() == before_topology, \"Mesh coordinates or connectivity changed\"\nassert len([o for o in bpy.data.objects if o.type == \"MESH\"]) == 1\nassert all(node.type != \"TEX_IMAGE\" for node in material.node_tree.nodes)\nfor name, digest in originals.items():\n    assert hashlib.sha256((ASSETS / name).read_bytes()).hexdigest() == digest\n\nbpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), check_existing=True)\nreport = {\n    \"schema_version\": \"1.0\",\n    \"source\": \"assets/e04/asset.blend\",\n    \"base_item_id\": \"m10-generated-asset\",\n    \"base_version_id\": \"m10-asset-v1\",\n    \"output\": \"assets/e04/asset-v2.blend\",\n    \"blender_version\": bpy.app.version_string,\n    \"blender_build_hash\": bpy.app.build_hash.decode(\"ascii\"),\n    \"object_name\": obj.name,\n    \"proscenium_object_id\": obj[\"proscenium_object_id\"],\n    \"proscenium_instance_id\": obj[\"proscenium_instance_id\"],\n    \"before\": {\"world_bounds_m\": before_bounds, \"counts\": before_counts},\n    \"after\": {\n        \"world_bounds_m\": after_bounds,\n        \"counts\": after_counts,\n        \"height_m\": after_bounds[1][2] - after_bounds[0][2],\n        \"lowest_world_z_m\": after_bounds[0][2],\n        \"matrix_world\": [list(row) for row in obj.matrix_world],\n    },\n    \"uniform_scale_factor\": factor,\n    \"mesh_coordinates_and_connectivity_sha256\": before_topology,\n    \"mesh_coordinates_and_connectivity_unchanged\": True,\n    \"original_file_sha256\": originals,\n    \"output_sha256\": hashlib.sha256(OUTPUT.read_bytes()).hexdigest(),\n    \"camera\": camera.name,\n    \"camera_bounds_ndc\": [[p.x, p.y, p.z] for p in framing],\n    \"material\": material.name,\n    \"material_parameters\": {\n        \"base_color\": list(shader.inputs[\"Base Color\"].default_value),\n        \"roughness\": shader.inputs[\"Roughness\"].default_value,\n        \"coat_weight\": shader.inputs[\"Coat Weight\"].default_value,\n        \"image_textures\": False,\n    },\n    \"limits\": {\n        \"topology_quality\": \"unproven\",\n        \"uvs\": \"unproven\",\n        \"retopology\": \"unproven\",\n        \"rigging\": \"unproven\",\n    },\n    \"execution\": {\n        \"cpu_threads\": 4,\n        \"timeout_seconds\": 180,\n        \"direct_render_performed\": False,\n        \"inference_operations\": 0,\n    },\n}\nMEASUREMENTS.write_text(json.dumps(report, indent=2) + \"\\n\", encoding=\"utf-8\")\nprint(json.dumps(report, sort_keys=True))\n"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "02ad54e8-3fa8-49d4-8804-704c777d8ea3",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:38.034Z",
+      "parentId": "5bf96939-a2bf-4d1f-9b20-a16db0e4747a",
+      "data": {
+        "requestId": "45c9a2a9-cfa3-43b3-8f8e-6ff897b04d98",
+        "toolCallId": "custom_call_RunIW9xhcZ3lksVJk8JQrP2l",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "3935d2b9-a99a-4557-85c0-88d781c0c539",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:38.048Z",
+      "parentId": "8089929e-62bc-4b9a-b65d-cb4f77337791",
+      "data": {
+        "toolCallId": "custom_call_RunIW9xhcZ3lksVJk8JQrP2l",
+        "success": true
+      }
+    },
+    {
+      "id": "0db117d3-55c9-44ed-a200-03fb79b3305f",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:16:38.055Z",
+      "parentId": "3935d2b9-a99a-4557-85c0-88d781c0c539"
+    },
+    {
+      "id": "cb3818fe-79e7-4162-99a5-64011df4ec83",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:16:38.055Z",
+      "parentId": "0db117d3-55c9-44ed-a200-03fb79b3305f"
+    },
+    {
+      "id": "e33e4049-a1b6-4328-9a42-bb620e32df9f",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:16:41.066Z",
+      "parentId": "cb3818fe-79e7-4162-99a5-64011df4ec83",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "c6aea809-2a18-434a-af31-afdc89bbdb3a",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:41.082Z",
+      "parentId": "e33e4049-a1b6-4328-9a42-bb620e32df9f",
+      "data": {
+        "toolName": "bash",
+        "toolCallId": "call_UYsXRGskTzJki1YpVFvmbFh9",
+        "arguments": {
+          "command": "python3 tools/m10_complete_author.py assets/e04/revise_asset.py",
+          "description": "Execute newly allocated guarded authoring process",
+          "initial_wait": 190
+        }
+      }
+    },
+    {
+      "id": "e3761442-9e56-41ee-9e3a-576fb6aa80b0",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:41.151Z",
+      "parentId": "452e6603-fd34-4891-ae27-767ca578a25e",
+      "data": {
+        "requestId": "fe94eb76-7407-4cae-a173-261828481ae9",
+        "permissionRequest": {
+          "kind": "shell",
+          "toolCallId": "call_UYsXRGskTzJki1YpVFvmbFh9",
+          "fullCommandText": "python3 tools/m10_complete_author.py assets/e04/revise_asset.py",
+          "shellType": "bash",
+          "intention": "Execute newly allocated guarded authoring process",
+          "commands": [
+            {
+              "identifier": "python3",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            }
+          ],
+          "hasParseErrors": false,
+          "commandSegments": [
+            {
+              "identifier": "python3",
+              "fullCommandText": "python3 tools/m10_complete_author.py assets/e04/revise_asset.py",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "python3",
+                "tools/m10_complete_author.py",
+                "assets/e04/revise_asset.py"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            }
+          ],
+          "possiblePaths": [
+            "tools/m10_complete_author.py",
+            "assets/e04/revise_asset.py"
+          ],
+          "canOfferSessionApproval": true,
+          "hasWriteFileRedirection": false,
+          "possibleUrls": []
+        }
+      }
+    },
+    {
+      "id": "9fd419f0-f521-4d1a-8a66-e033255bf10b",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:41.168Z",
+      "parentId": "e3761442-9e56-41ee-9e3a-576fb6aa80b0",
+      "data": {
+        "requestId": "fe94eb76-7407-4cae-a173-261828481ae9",
+        "toolCallId": "call_UYsXRGskTzJki1YpVFvmbFh9",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "662d15ce-90a2-4b5a-aaaf-d72b32062259",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:46.012Z",
+      "parentId": "e39cbacc-3bcd-4ca7-9660-3403a0272d5a",
+      "data": {
+        "toolCallId": "call_UYsXRGskTzJki1YpVFvmbFh9",
+        "success": true
+      }
+    },
+    {
+      "id": "5c89dc8e-9c98-4057-943c-02d7498af9b2",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:16:46.020Z",
+      "parentId": "662d15ce-90a2-4b5a-aaaf-d72b32062259"
+    },
+    {
+      "id": "dbda51b7-3899-4d81-92e3-31160e381661",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:16:46.021Z",
+      "parentId": "5c89dc8e-9c98-4057-943c-02d7498af9b2"
+    },
+    {
+      "id": "5c6f64b6-d222-447a-bde0-64d7362b4a25",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:16:49.074Z",
+      "parentId": "dbda51b7-3899-4d81-92e3-31160e381661",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "0554d0fb-5c4a-4aad-8bc6-0aa2ee93015c",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:49.077Z",
+      "parentId": "5c6f64b6-d222-447a-bde0-64d7362b4a25",
+      "data": {
+        "toolName": "bash",
+        "toolCallId": "call_Jh8UEQqrQnIeL16p8pRCDGxQ",
+        "arguments": {
+          "command": "git rev-parse HEAD && sha256sum assets/e04/revise_asset.py assets/e04/asset-v2.blend assets/e04/revision-measurements.json && /home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python -c \"import rfc8785; print('rfc8785 available')\"",
+          "description": "Read exact checkpoint base and revised file hashes"
+        }
+      }
+    },
+    {
+      "id": "84e11622-68ee-4ef8-9a99-b599cff004cf",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:49.204Z",
+      "parentId": "bc4567fb-c6fe-4b80-8ef5-5226b5026352",
+      "data": {
+        "requestId": "60705d90-fb83-461b-a1ba-453da8305578",
+        "permissionRequest": {
+          "kind": "shell",
+          "toolCallId": "call_Jh8UEQqrQnIeL16p8pRCDGxQ",
+          "fullCommandText": "git rev-parse HEAD && sha256sum assets/e04/revise_asset.py assets/e04/asset-v2.blend assets/e04/revision-measurements.json && /home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python -c \"import rfc8785; print('rfc8785 available')\"",
+          "shellType": "bash",
+          "intention": "Read exact checkpoint base and revised file hashes",
+          "commands": [
+            {
+              "identifier": "git rev-parse",
+              "readOnly": true,
+              "allowMatchIdentifier": null
+            },
+            {
+              "identifier": "sha256sum",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            },
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            }
+          ],
+          "hasParseErrors": false,
+          "commandSegments": [
+            {
+              "identifier": "git rev-parse",
+              "fullCommandText": "git rev-parse HEAD",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "git",
+                "rev-parse",
+                "HEAD"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            },
+            {
+              "identifier": "sha256sum",
+              "fullCommandText": "sha256sum assets/e04/revise_asset.py assets/e04/asset-v2.blend assets/e04/revision-measurements.json",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "sha256sum",
+                "assets/e04/revise_asset.py",
+                "assets/e04/asset-v2.blend",
+                "assets/e04/revision-measurements.json"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            },
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python -c \"import rfc8785; print('rfc8785 available')\"",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+                "-c",
+                "import rfc8785; print('rfc8785 available')"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            }
+          ],
+          "possiblePaths": [
+            "rev-parse",
+            "assets/e04/revise_asset.py",
+            "assets/e04/asset-v2.blend",
+            "assets/e04/revision-measurements.json",
+            "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+          ],
+          "canOfferSessionApproval": true,
+          "hasWriteFileRedirection": false,
+          "possibleUrls": []
+        }
+      }
+    },
+    {
+      "id": "20ceecb4-a327-4490-9fd9-7b2cbb22b9da",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:49.222Z",
+      "parentId": "84e11622-68ee-4ef8-9a99-b599cff004cf",
+      "data": {
+        "requestId": "60705d90-fb83-461b-a1ba-453da8305578",
+        "toolCallId": "call_Jh8UEQqrQnIeL16p8pRCDGxQ",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "60593208-32e7-48cc-b06e-b13babfe13c3",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:49.224Z",
+      "parentId": "20ceecb4-a327-4490-9fd9-7b2cbb22b9da",
+      "data": {
+        "requestId": "51d09352-c4a7-4efa-ae0f-e69e9cb9137b",
+        "permissionRequest": {
+          "kind": "shell",
+          "toolCallId": "call_Jh8UEQqrQnIeL16p8pRCDGxQ",
+          "fullCommandText": "git rev-parse HEAD && sha256sum assets/e04/revise_asset.py assets/e04/asset-v2.blend assets/e04/revision-measurements.json && /home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python -c \"import rfc8785; print('rfc8785 available')\"",
+          "shellType": "bash",
+          "intention": "Read exact checkpoint base and revised file hashes",
+          "commands": [
+            {
+              "identifier": "git rev-parse",
+              "readOnly": true,
+              "allowMatchIdentifier": null
+            },
+            {
+              "identifier": "sha256sum",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            },
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            }
+          ],
+          "hasParseErrors": false,
+          "commandSegments": [
+            {
+              "identifier": "git rev-parse",
+              "fullCommandText": "git rev-parse HEAD",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "git",
+                "rev-parse",
+                "HEAD"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            },
+            {
+              "identifier": "sha256sum",
+              "fullCommandText": "sha256sum assets/e04/revise_asset.py assets/e04/asset-v2.blend assets/e04/revision-measurements.json",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "sha256sum",
+                "assets/e04/revise_asset.py",
+                "assets/e04/asset-v2.blend",
+                "assets/e04/revision-measurements.json"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            },
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python -c \"import rfc8785; print('rfc8785 available')\"",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+                "-c",
+                "import rfc8785; print('rfc8785 available')"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            }
+          ],
+          "possiblePaths": [
+            "rev-parse",
+            "assets/e04/revise_asset.py",
+            "assets/e04/asset-v2.blend",
+            "assets/e04/revision-measurements.json",
+            "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+          ],
+          "canOfferSessionApproval": true,
+          "hasWriteFileRedirection": false,
+          "possibleUrls": []
+        }
+      }
+    },
+    {
+      "id": "82c376a8-0381-4c22-8caa-e7eab3b490f1",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:49.247Z",
+      "parentId": "60593208-32e7-48cc-b06e-b13babfe13c3",
+      "data": {
+        "requestId": "51d09352-c4a7-4efa-ae0f-e69e9cb9137b",
+        "toolCallId": "call_Jh8UEQqrQnIeL16p8pRCDGxQ",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "c7793688-432f-44e8-ad26-e705eca0fdb1",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:49.385Z",
+      "parentId": "58fb14e0-2e28-43cb-831d-edab67509d1f",
+      "data": {
+        "toolCallId": "call_Jh8UEQqrQnIeL16p8pRCDGxQ",
+        "success": true
+      }
+    },
+    {
+      "id": "94e009f6-24c0-4cb0-bfb9-4661e5b41206",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:16:49.392Z",
+      "parentId": "c7793688-432f-44e8-ad26-e705eca0fdb1"
+    },
+    {
+      "id": "970e4038-206d-4814-9f16-100101c3243c",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:16:49.392Z",
+      "parentId": "94e009f6-24c0-4cb0-bfb9-4661e5b41206"
+    },
+    {
+      "id": "01ba35ed-6b1b-444c-9cf8-f8c008303101",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:16:53.545Z",
+      "parentId": "970e4038-206d-4814-9f16-100101c3243c",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "c70001e7-8772-4799-bf31-7467a56b7696",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:16:53.546Z",
+      "parentId": "01ba35ed-6b1b-444c-9cf8-f8c008303101",
+      "data": {
+        "toolName": "checkpoint_sources",
+        "toolCallId": "call_Sjc47ZlIyWQt3GOVauDBhWzy",
+        "arguments": {
+          "schema_version": "1.0",
+          "operation_id": "m10-v2-complete-checkpoint",
+          "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+          "paths": [
+            "assets/e04/revise_asset.py",
+            "assets/e04/asset-v2.blend",
+            "assets/e04/revision-measurements.json"
+          ],
+          "message": "Author calibrated blue ceramic revision preserving imported mesh\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "expected_head": "cd21a4d52c807d28f579ff37ea392c6567db1fc6"
+        }
+      }
+    },
+    {
+      "id": "29266311-6606-4b1b-8aae-75e85d80d883",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:16:53.671Z",
+      "parentId": "530c9c79-460f-47fe-ae8e-f57e5e89806f",
+      "data": {
+        "requestId": "d3ea887e-d34f-4cf5-b97b-41c1f71595cd",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_Sjc47ZlIyWQt3GOVauDBhWzy",
+          "toolName": "checkpoint_sources",
+          "toolDescription": "Proscenium checkpoint_sources. Active project only. Returns a durable receipt, not fabricated completion.",
+          "args": {
+            "schema_version": "1.0",
+            "operation_id": "m10-v2-complete-checkpoint",
+            "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+            "paths": [
+              "assets/e04/revise_asset.py",
+              "assets/e04/asset-v2.blend",
+              "assets/e04/revision-measurements.json"
+            ],
+            "message": "Author calibrated blue ceramic revision preserving imported mesh\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+            "expected_head": "cd21a4d52c807d28f579ff37ea392c6567db1fc6"
+          }
+        }
+      }
+    },
+    {
+      "id": "0cd9b09f-4649-455e-881d-81db359807de",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:16:53.711Z",
+      "parentId": "29266311-6606-4b1b-8aae-75e85d80d883",
+      "data": {
+        "requestId": "d3ea887e-d34f-4cf5-b97b-41c1f71595cd",
+        "toolCallId": "call_Sjc47ZlIyWQt3GOVauDBhWzy",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "e357fb5d-7172-4227-ad83-6d5cc6f07640",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:16:54.546Z",
+      "parentId": "cbf00468-56ab-41b0-bbe9-3de8925a366f",
+      "data": {
+        "toolCallId": "call_Sjc47ZlIyWQt3GOVauDBhWzy",
+        "success": true
+      }
+    },
+    {
+      "id": "d3eb968d-f388-4e8f-9874-925b040c15d4",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:16:54.557Z",
+      "parentId": "e357fb5d-7172-4227-ad83-6d5cc6f07640"
+    },
+    {
+      "id": "fd056cdb-1b5e-48d7-9d88-43126136139c",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:16:54.557Z",
+      "parentId": "d3eb968d-f388-4e8f-9874-925b040c15d4"
+    },
+    {
+      "id": "63d8bfd7-34e4-4fb3-857c-83379df300fb",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:00.805Z",
+      "parentId": "fd056cdb-1b5e-48d7-9d88-43126136139c",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "75e3e9d7-8dd9-4535-bbe6-a22fa60176ae",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:00.806Z",
+      "parentId": "63d8bfd7-34e4-4fb3-857c-83379df300fb",
+      "data": {
+        "toolName": "bash",
+        "toolCallId": "call_MOyay20zm808rMmIdOkTf42P",
+        "arguments": {
+          "command": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python - <<'PY'\nimport hashlib,json,subprocess,rfc8785\nrepo='repository-0d321287-a9d4-46f6-a0d9-cf7b37984785'\nbase='cd21a4d52c807d28f579ff37ea392c6567db1fc6'\ncommit='b98630210011142af66c92c46d4c86b72a7cdcc3'\nold=['project.json','.gitattributes','.gitignore','assets/e04/asset.blend','assets/e04/conditioning.png','assets/e04/generation-provenance.json','assets/e04/import-provenance.json','assets/e04/inspection.json','assets/e04/model-licence.txt','assets/e04/original.glb','assets/e04/workflow.json']\nnew=['assets/e04/revise_asset.py','assets/e04/asset-v2.blend','assets/e04/revision-measurements.json']\nfiles=[]\nfor path in sorted(old+new):\n c=commit if path in new else base\n data=subprocess.check_output(['git','show',f'{c}:{path}'])\n files.append({'destination':path,'origin':{'kind':'git','repository_id':repo,'commit':c,'path':path,'sha256':hashlib.sha256(data).hexdigest()}})\nsource={'entry_path':'assets/e04/asset-v2.blend','files':files,'dependencies':[],'required_runtime':{'application':'blender','version':'4.5.14 LTS','features':[]}}\nprint('DIGEST',hashlib.sha256(rfc8785.dumps(source)).hexdigest())\nprint(json.dumps(source,separators=(',',':')))\nPY",
+          "description": "Compute canonical source closure from exact committed bytes"
+        }
+      }
+    },
+    {
+      "id": "0a2e4015-6cde-4116-b42f-73a78809b035",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:02.489Z",
+      "parentId": "2cb82b73-b9ab-4e86-ab32-dfac5acec346",
+      "data": {
+        "requestId": "2a46a015-f01c-422c-b64d-d47b46f397b5",
+        "permissionRequest": {
+          "kind": "shell",
+          "toolCallId": "call_MOyay20zm808rMmIdOkTf42P",
+          "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python - <<'PY'\nimport hashlib,json,subprocess,rfc8785\nrepo='repository-0d321287-a9d4-46f6-a0d9-cf7b37984785'\nbase='cd21a4d52c807d28f579ff37ea392c6567db1fc6'\ncommit='b98630210011142af66c92c46d4c86b72a7cdcc3'\nold=['project.json','.gitattributes','.gitignore','assets/e04/asset.blend','assets/e04/conditioning.png','assets/e04/generation-provenance.json','assets/e04/import-provenance.json','assets/e04/inspection.json','assets/e04/model-licence.txt','assets/e04/original.glb','assets/e04/workflow.json']\nnew=['assets/e04/revise_asset.py','assets/e04/asset-v2.blend','assets/e04/revision-measurements.json']\nfiles=[]\nfor path in sorted(old+new):\n c=commit if path in new else base\n data=subprocess.check_output(['git','show',f'{c}:{path}'])\n files.append({'destination':path,'origin':{'kind':'git','repository_id':repo,'commit':c,'path':path,'sha256':hashlib.sha256(data).hexdigest()}})\nsource={'entry_path':'assets/e04/asset-v2.blend','files':files,'dependencies':[],'required_runtime':{'application':'blender','version':'4.5.14 LTS','features':[]}}\nprint('DIGEST',hashlib.sha256(rfc8785.dumps(source)).hexdigest())\nprint(json.dumps(source,separators=(',',':')))\nPY",
+          "shellType": "bash",
+          "intention": "Compute canonical source closure from exact committed bytes",
+          "commands": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            }
+          ],
+          "hasParseErrors": false,
+          "commandSegments": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            }
+          ],
+          "possiblePaths": [
+            "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+          ],
+          "canOfferSessionApproval": true,
+          "hasWriteFileRedirection": false,
+          "possibleUrls": []
+        }
+      }
+    },
+    {
+      "id": "ced0f829-a78c-4ce9-8cc3-1081aca6618a",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:02.522Z",
+      "parentId": "0a2e4015-6cde-4116-b42f-73a78809b035",
+      "data": {
+        "requestId": "2a46a015-f01c-422c-b64d-d47b46f397b5",
+        "toolCallId": "call_MOyay20zm808rMmIdOkTf42P",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "0fc054dc-975d-4ca6-af07-86989c8cfbce",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:02.523Z",
+      "parentId": "ced0f829-a78c-4ce9-8cc3-1081aca6618a",
+      "data": {
+        "requestId": "14ac31aa-681c-42bc-b4c5-f8770a97b39d",
+        "permissionRequest": {
+          "kind": "shell",
+          "toolCallId": "call_MOyay20zm808rMmIdOkTf42P",
+          "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python - <<'PY'\nimport hashlib,json,subprocess,rfc8785\nrepo='repository-0d321287-a9d4-46f6-a0d9-cf7b37984785'\nbase='cd21a4d52c807d28f579ff37ea392c6567db1fc6'\ncommit='b98630210011142af66c92c46d4c86b72a7cdcc3'\nold=['project.json','.gitattributes','.gitignore','assets/e04/asset.blend','assets/e04/conditioning.png','assets/e04/generation-provenance.json','assets/e04/import-provenance.json','assets/e04/inspection.json','assets/e04/model-licence.txt','assets/e04/original.glb','assets/e04/workflow.json']\nnew=['assets/e04/revise_asset.py','assets/e04/asset-v2.blend','assets/e04/revision-measurements.json']\nfiles=[]\nfor path in sorted(old+new):\n c=commit if path in new else base\n data=subprocess.check_output(['git','show',f'{c}:{path}'])\n files.append({'destination':path,'origin':{'kind':'git','repository_id':repo,'commit':c,'path':path,'sha256':hashlib.sha256(data).hexdigest()}})\nsource={'entry_path':'assets/e04/asset-v2.blend','files':files,'dependencies':[],'required_runtime':{'application':'blender','version':'4.5.14 LTS','features':[]}}\nprint('DIGEST',hashlib.sha256(rfc8785.dumps(source)).hexdigest())\nprint(json.dumps(source,separators=(',',':')))\nPY",
+          "shellType": "bash",
+          "intention": "Compute canonical source closure from exact committed bytes",
+          "commands": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            }
+          ],
+          "hasParseErrors": false,
+          "commandSegments": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            }
+          ],
+          "possiblePaths": [
+            "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+          ],
+          "canOfferSessionApproval": true,
+          "hasWriteFileRedirection": false,
+          "possibleUrls": []
+        }
+      }
+    },
+    {
+      "id": "67a844fa-be9c-4a7c-8975-3320bdea3e54",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:02.549Z",
+      "parentId": "0fc054dc-975d-4ca6-af07-86989c8cfbce",
+      "data": {
+        "requestId": "14ac31aa-681c-42bc-b4c5-f8770a97b39d",
+        "toolCallId": "call_MOyay20zm808rMmIdOkTf42P",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "2c75ed93-644f-4834-9af8-dc4c86b16272",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:02.665Z",
+      "parentId": "857db2d2-5a4f-48a3-b412-b129ae5fcb5e",
+      "data": {
+        "toolCallId": "call_MOyay20zm808rMmIdOkTf42P",
+        "success": true
+      }
+    },
+    {
+      "id": "898d1afe-1d39-4c66-97f3-375f3903129f",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:02.671Z",
+      "parentId": "2c75ed93-644f-4834-9af8-dc4c86b16272"
+    },
+    {
+      "id": "2d52569b-6587-4a58-a2fe-98ff0be32f49",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:02.672Z",
+      "parentId": "898d1afe-1d39-4c66-97f3-375f3903129f"
+    },
+    {
+      "id": "8fb4e386-4314-444d-8e1d-b92cc006e4d2",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:09.225Z",
+      "parentId": "2d52569b-6587-4a58-a2fe-98ff0be32f49",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "45a84f65-36a3-44d6-9534-84198fe4b8aa",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:09.227Z",
+      "parentId": "8fb4e386-4314-444d-8e1d-b92cc006e4d2",
+      "data": {
+        "toolName": "bash",
+        "toolCallId": "call_urNCPSh5iGUYPQ6eQPlqXgs4",
+        "arguments": {
+          "command": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python - <<'PY'\nimport hashlib,json,subprocess,rfc8785\nrepo='repository-0d321287-a9d4-46f6-a0d9-cf7b37984785'; base='cd21a4d52c807d28f579ff37ea392c6567db1fc6'; commit='b98630210011142af66c92c46d4c86b72a7cdcc3'\nold=['project.json','.gitattributes','.gitignore','assets/e04/asset.blend','assets/e04/conditioning.png','assets/e04/generation-provenance.json','assets/e04/import-provenance.json','assets/e04/inspection.json','assets/e04/model-licence.txt','assets/e04/original.glb','assets/e04/workflow.json']; new=['assets/e04/revise_asset.py','assets/e04/asset-v2.blend','assets/e04/revision-measurements.json']; files=[]\nfor path in sorted(old+new):\n c=commit if path in new else base; data=subprocess.check_output(['git','show',f'{c}:{path}']); sha=hashlib.sha256(data).hexdigest()\n if data.startswith(b'version https://git-lfs.github.com/spec/v1\\n'):\n  sha=data.decode().split('oid sha256:')[1].splitlines()[0]\n files.append({'destination':path,'origin':{'kind':'git','repository_id':repo,'commit':c,'path':path,'sha256':sha}})\nsource={'entry_path':'assets/e04/asset-v2.blend','files':files,'dependencies':[],'required_runtime':{'application':'blender','version':'4.5.14 LTS','features':[]}}\nprint(hashlib.sha256(rfc8785.dumps(source)).hexdigest())\nPY",
+          "description": "Compute closure digest using resolved LFS content hashes"
+        }
+      }
+    },
+    {
+      "id": "c8379c87-e919-4197-81a7-b78e3df5eb0b",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:09.998Z",
+      "parentId": "e4e859b4-904a-45db-9f17-909e5216fab1",
+      "data": {
+        "requestId": "6f12296a-4770-4c89-a9c7-99802ccb2abd",
+        "permissionRequest": {
+          "kind": "shell",
+          "toolCallId": "call_urNCPSh5iGUYPQ6eQPlqXgs4",
+          "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python - <<'PY'\nimport hashlib,json,subprocess,rfc8785\nrepo='repository-0d321287-a9d4-46f6-a0d9-cf7b37984785'; base='cd21a4d52c807d28f579ff37ea392c6567db1fc6'; commit='b98630210011142af66c92c46d4c86b72a7cdcc3'\nold=['project.json','.gitattributes','.gitignore','assets/e04/asset.blend','assets/e04/conditioning.png','assets/e04/generation-provenance.json','assets/e04/import-provenance.json','assets/e04/inspection.json','assets/e04/model-licence.txt','assets/e04/original.glb','assets/e04/workflow.json']; new=['assets/e04/revise_asset.py','assets/e04/asset-v2.blend','assets/e04/revision-measurements.json']; files=[]\nfor path in sorted(old+new):\n c=commit if path in new else base; data=subprocess.check_output(['git','show',f'{c}:{path}']); sha=hashlib.sha256(data).hexdigest()\n if data.startswith(b'version https://git-lfs.github.com/spec/v1\\n'):\n  sha=data.decode().split('oid sha256:')[1].splitlines()[0]\n files.append({'destination':path,'origin':{'kind':'git','repository_id':repo,'commit':c,'path':path,'sha256':sha}})\nsource={'entry_path':'assets/e04/asset-v2.blend','files':files,'dependencies':[],'required_runtime':{'application':'blender','version':'4.5.14 LTS','features':[]}}\nprint(hashlib.sha256(rfc8785.dumps(source)).hexdigest())\nPY",
+          "shellType": "bash",
+          "intention": "Compute closure digest using resolved LFS content hashes",
+          "commands": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            }
+          ],
+          "hasParseErrors": false,
+          "commandSegments": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            }
+          ],
+          "possiblePaths": [
+            "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+          ],
+          "canOfferSessionApproval": true,
+          "hasWriteFileRedirection": false,
+          "possibleUrls": []
+        }
+      }
+    },
+    {
+      "id": "4a5a645c-4ebf-44ae-868e-638e4b48845c",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:10.018Z",
+      "parentId": "c8379c87-e919-4197-81a7-b78e3df5eb0b",
+      "data": {
+        "requestId": "6f12296a-4770-4c89-a9c7-99802ccb2abd",
+        "toolCallId": "call_urNCPSh5iGUYPQ6eQPlqXgs4",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "de78d570-b6b3-4c99-8755-6fd038c341a5",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:10.020Z",
+      "parentId": "4a5a645c-4ebf-44ae-868e-638e4b48845c",
+      "data": {
+        "requestId": "77579172-bb7c-4603-8e91-7c374ef17cd4",
+        "permissionRequest": {
+          "kind": "shell",
+          "toolCallId": "call_urNCPSh5iGUYPQ6eQPlqXgs4",
+          "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python - <<'PY'\nimport hashlib,json,subprocess,rfc8785\nrepo='repository-0d321287-a9d4-46f6-a0d9-cf7b37984785'; base='cd21a4d52c807d28f579ff37ea392c6567db1fc6'; commit='b98630210011142af66c92c46d4c86b72a7cdcc3'\nold=['project.json','.gitattributes','.gitignore','assets/e04/asset.blend','assets/e04/conditioning.png','assets/e04/generation-provenance.json','assets/e04/import-provenance.json','assets/e04/inspection.json','assets/e04/model-licence.txt','assets/e04/original.glb','assets/e04/workflow.json']; new=['assets/e04/revise_asset.py','assets/e04/asset-v2.blend','assets/e04/revision-measurements.json']; files=[]\nfor path in sorted(old+new):\n c=commit if path in new else base; data=subprocess.check_output(['git','show',f'{c}:{path}']); sha=hashlib.sha256(data).hexdigest()\n if data.startswith(b'version https://git-lfs.github.com/spec/v1\\n'):\n  sha=data.decode().split('oid sha256:')[1].splitlines()[0]\n files.append({'destination':path,'origin':{'kind':'git','repository_id':repo,'commit':c,'path':path,'sha256':sha}})\nsource={'entry_path':'assets/e04/asset-v2.blend','files':files,'dependencies':[],'required_runtime':{'application':'blender','version':'4.5.14 LTS','features':[]}}\nprint(hashlib.sha256(rfc8785.dumps(source)).hexdigest())\nPY",
+          "shellType": "bash",
+          "intention": "Compute closure digest using resolved LFS content hashes",
+          "commands": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "readOnly": false,
+              "allowMatchIdentifier": null
+            }
+          ],
+          "hasParseErrors": false,
+          "commandSegments": [
+            {
+              "identifier": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "fullCommandText": "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python",
+              "allowMatchIdentifier": null,
+              "staticTokens": [
+                "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+              ],
+              "hasUnboundExecutableContent": false,
+              "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+            }
+          ],
+          "possiblePaths": [
+            "/home/quintin/.cache/proscenium-development/fleet/m10-revision-complete/.venv/bin/python"
+          ],
+          "canOfferSessionApproval": true,
+          "hasWriteFileRedirection": false,
+          "possibleUrls": []
+        }
+      }
+    },
+    {
+      "id": "33f2bc18-72e8-42bb-b883-10bb51ad9b08",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:10.040Z",
+      "parentId": "de78d570-b6b3-4c99-8755-6fd038c341a5",
+      "data": {
+        "requestId": "77579172-bb7c-4603-8e91-7c374ef17cd4",
+        "toolCallId": "call_urNCPSh5iGUYPQ6eQPlqXgs4",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "b77db516-f9d9-412d-b275-edcd5c48161d",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:10.151Z",
+      "parentId": "f1490d56-f831-4c45-94ac-a56d989fa44d",
+      "data": {
+        "toolCallId": "call_urNCPSh5iGUYPQ6eQPlqXgs4",
+        "success": true
+      }
+    },
+    {
+      "id": "c47f7724-05b4-4164-8708-a2848bbea4b0",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:10.158Z",
+      "parentId": "b77db516-f9d9-412d-b275-edcd5c48161d"
+    },
+    {
+      "id": "f7c483e6-7fa7-4e81-8c70-80889db1d460",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:10.159Z",
+      "parentId": "c47f7724-05b4-4164-8708-a2848bbea4b0"
+    },
+    {
+      "id": "401c8b4c-ab93-46cb-a603-9eeb22421f72",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:27.042Z",
+      "parentId": "f7c483e6-7fa7-4e81-8c70-80889db1d460",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "5b3c0441-f00b-4647-aa93-318db3f35e82",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:27.045Z",
+      "parentId": "401c8b4c-ab93-46cb-a603-9eeb22421f72",
+      "data": {
+        "toolName": "publish_outputs",
+        "toolCallId": "call_LiioJ2Orr4bS0U4d9rvOj4Vd",
+        "arguments": {
+          "schema_version": "1.0",
+          "publication_id": "m10-v2-complete-publication",
+          "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+          "items": [
+            {
+              "item_id": "m10-generated-asset",
+              "kind": "asset",
+              "name": "Imported Hunyuan mesh",
+              "version_id": "m10-asset-v2",
+              "expected_current_version_id": "m10-asset-v1",
+              "source_commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+              "source": {
+                "entry_path": "assets/e04/asset-v2.blend",
+                "files": [
+                  {
+                    "destination": ".gitattributes",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": ".gitattributes",
+                      "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+                    }
+                  },
+                  {
+                    "destination": ".gitignore",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": ".gitignore",
+                      "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/asset-v2.blend",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+                      "path": "assets/e04/asset-v2.blend",
+                      "sha256": "19d93e0818d7fca58e25fe55add9cfead68972ff2017c41b84124f760e5214cc"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/asset.blend",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/asset.blend",
+                      "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/conditioning.png",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/conditioning.png",
+                      "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/generation-provenance.json",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/generation-provenance.json",
+                      "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/import-provenance.json",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/import-provenance.json",
+                      "sha256": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/inspection.json",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/inspection.json",
+                      "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/model-licence.txt",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/model-licence.txt",
+                      "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/original.glb",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/original.glb",
+                      "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/revise_asset.py",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+                      "path": "assets/e04/revise_asset.py",
+                      "sha256": "028e8c876285a0af5678a083b5d4f6b3d5dc7b566e80c018fc72952c94e4434a"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/revision-measurements.json",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+                      "path": "assets/e04/revision-measurements.json",
+                      "sha256": "a19b131505945a2e15af3c7cb25477dd19521a6b88fb8678d947fc821794f8d2"
+                    }
+                  },
+                  {
+                    "destination": "assets/e04/workflow.json",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "assets/e04/workflow.json",
+                      "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+                    }
+                  },
+                  {
+                    "destination": "project.json",
+                    "origin": {
+                      "kind": "git",
+                      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                      "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                      "path": "project.json",
+                      "sha256": "0e9bd5e6d311eedd0e68db786e8954f7c8575bcf3eb1f6a6ea52854f215e038d"
+                    }
+                  }
+                ],
+                "dependencies": [],
+                "required_runtime": {
+                  "application": "blender",
+                  "version": "4.5.14 LTS",
+                  "features": []
+                },
+                "digest": "6e7506412d5410b3018a53b5df5878dd10518b0fe91eb53dbe938b3041a84224"
+              },
+              "artifact_ids": [
+                "m10-import-original",
+                "m10-import-conditioning",
+                "m10-import-generation-provenance",
+                "m10-import-import-provenance"
+              ],
+              "preview_requests": [
+                {
+                  "intent_id": "m10-v2-proxy",
+                  "shot_id": "m10-asset-shot",
+                  "purpose": "proxy",
+                  "source_closure_digest": "6e7506412d5410b3018a53b5df5878dd10518b0fe91eb53dbe938b3041a84224",
+                  "scene_name": "Scene",
+                  "camera": null,
+                  "frames": {
+                    "start": 1,
+                    "end": 1
+                  },
+                  "fps": {
+                    "numerator": 24,
+                    "denominator": 1
+                  },
+                  "dimensions": {
+                    "width": 640,
+                    "height": 360
+                  },
+                  "engine": "CYCLES",
+                  "device": "CPU",
+                  "samples": 8,
+                  "renderer_revision": "proscenium-blender-1",
+                  "colour_management": {
+                    "view_transform": "Standard",
+                    "look": "None",
+                    "exposure": 0,
+                    "gamma": 1
+                  }
+                },
+                {
+                  "intent_id": "m10-v2-keyframe",
+                  "shot_id": "m10-asset-shot",
+                  "purpose": "keyframe",
+                  "source_closure_digest": "6e7506412d5410b3018a53b5df5878dd10518b0fe91eb53dbe938b3041a84224",
+                  "scene_name": "Scene",
+                  "camera": null,
+                  "frames": {
+                    "start": 1,
+                    "end": 1
+                  },
+                  "fps": {
+                    "numerator": 24,
+                    "denominator": 1
+                  },
+                  "dimensions": {
+                    "width": 640,
+                    "height": 360
+                  },
+                  "engine": "CYCLES",
+                  "device": "CPU",
+                  "samples": 8,
+                  "renderer_revision": "proscenium-blender-1",
+                  "colour_management": {
+                    "view_transform": "Standard",
+                    "look": "None",
+                    "exposure": 0,
+                    "gamma": 1
+                  },
+                  "review_output": {
+                    "media_type": "image/png",
+                    "encoding": "view_transformed_srgb",
+                    "bit_depth": 8
+                  }
+                }
+              ],
+              "derived_from": [
+                {
+                  "item_id": "m10-generated-asset",
+                  "version_id": "m10-asset-v1"
+                }
+              ],
+              "description": "Uniformly calibrated to 0.12 m world height (float measured 0.12000000476837158 m), base Z 0. Original mesh coordinates, connectivity, 350259 vertices, 1304618 triangles and stable IDs preserved. Local blue ceramic material and framed studio camera/lights. Topology quality, UV quality, retopology and rigging remain unproven.",
+              "provenance": {
+                "creator": "Tencent",
+                "licence": "Tencent Hunyuan Community Licence",
+                "source_url": "https://huggingface.co/tencent/Hunyuan3D-2",
+                "note": "Retained original E04 source, image, GLB and generation/model/import provenance. Local revision only; no new inference."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b6626b59-c86c-47c8-9e9a-c80572b15408",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:31.501Z",
+      "parentId": "1a11f11d-a79b-4cad-8b64-7337ffaa6824",
+      "data": {
+        "requestId": "4b6b7dfe-01a3-48ab-b84f-ba14b9f7af37",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_LiioJ2Orr4bS0U4d9rvOj4Vd",
+          "toolName": "publish_outputs",
+          "toolDescription": "Proscenium publish_outputs. Active project only. Returns a durable receipt, not fabricated completion.",
+          "args": {
+            "schema_version": "1.0",
+            "publication_id": "m10-v2-complete-publication",
+            "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+            "items": [
+              {
+                "item_id": "m10-generated-asset",
+                "kind": "asset",
+                "name": "Imported Hunyuan mesh",
+                "version_id": "m10-asset-v2",
+                "expected_current_version_id": "m10-asset-v1",
+                "source_commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+                "source": {
+                  "entry_path": "assets/e04/asset-v2.blend",
+                  "files": [
+                    {
+                      "destination": ".gitattributes",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": ".gitattributes",
+                        "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+                      }
+                    },
+                    {
+                      "destination": ".gitignore",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": ".gitignore",
+                        "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/asset-v2.blend",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+                        "path": "assets/e04/asset-v2.blend",
+                        "sha256": "19d93e0818d7fca58e25fe55add9cfead68972ff2017c41b84124f760e5214cc"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/asset.blend",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/asset.blend",
+                        "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/conditioning.png",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/conditioning.png",
+                        "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/generation-provenance.json",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/generation-provenance.json",
+                        "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/import-provenance.json",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/import-provenance.json",
+                        "sha256": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/inspection.json",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/inspection.json",
+                        "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/model-licence.txt",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/model-licence.txt",
+                        "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/original.glb",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/original.glb",
+                        "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/revise_asset.py",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+                        "path": "assets/e04/revise_asset.py",
+                        "sha256": "028e8c876285a0af5678a083b5d4f6b3d5dc7b566e80c018fc72952c94e4434a"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/revision-measurements.json",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+                        "path": "assets/e04/revision-measurements.json",
+                        "sha256": "a19b131505945a2e15af3c7cb25477dd19521a6b88fb8678d947fc821794f8d2"
+                      }
+                    },
+                    {
+                      "destination": "assets/e04/workflow.json",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "assets/e04/workflow.json",
+                        "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+                      }
+                    },
+                    {
+                      "destination": "project.json",
+                      "origin": {
+                        "kind": "git",
+                        "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                        "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                        "path": "project.json",
+                        "sha256": "0e9bd5e6d311eedd0e68db786e8954f7c8575bcf3eb1f6a6ea52854f215e038d"
+                      }
+                    }
+                  ],
+                  "dependencies": [],
+                  "required_runtime": {
+                    "application": "blender",
+                    "version": "4.5.14 LTS",
+                    "features": []
+                  },
+                  "digest": "6e7506412d5410b3018a53b5df5878dd10518b0fe91eb53dbe938b3041a84224"
+                },
+                "artifact_ids": [
+                  "m10-import-original",
+                  "m10-import-conditioning",
+                  "m10-import-generation-provenance",
+                  "m10-import-import-provenance"
+                ],
+                "preview_requests": [
+                  {
+                    "intent_id": "m10-v2-proxy",
+                    "shot_id": "m10-asset-shot",
+                    "purpose": "proxy",
+                    "source_closure_digest": "6e7506412d5410b3018a53b5df5878dd10518b0fe91eb53dbe938b3041a84224",
+                    "scene_name": "Scene",
+                    "camera": null,
+                    "frames": {
+                      "start": 1,
+                      "end": 1
+                    },
+                    "fps": {
+                      "numerator": 24,
+                      "denominator": 1
+                    },
+                    "dimensions": {
+                      "width": 640,
+                      "height": 360
+                    },
+                    "engine": "CYCLES",
+                    "device": "CPU",
+                    "samples": 8,
+                    "renderer_revision": "proscenium-blender-1",
+                    "colour_management": {
+                      "view_transform": "Standard",
+                      "look": "None",
+                      "exposure": 0,
+                      "gamma": 1
+                    }
+                  },
+                  {
+                    "intent_id": "m10-v2-keyframe",
+                    "shot_id": "m10-asset-shot",
+                    "purpose": "keyframe",
+                    "source_closure_digest": "6e7506412d5410b3018a53b5df5878dd10518b0fe91eb53dbe938b3041a84224",
+                    "scene_name": "Scene",
+                    "camera": null,
+                    "frames": {
+                      "start": 1,
+                      "end": 1
+                    },
+                    "fps": {
+                      "numerator": 24,
+                      "denominator": 1
+                    },
+                    "dimensions": {
+                      "width": 640,
+                      "height": 360
+                    },
+                    "engine": "CYCLES",
+                    "device": "CPU",
+                    "samples": 8,
+                    "renderer_revision": "proscenium-blender-1",
+                    "colour_management": {
+                      "view_transform": "Standard",
+                      "look": "None",
+                      "exposure": 0,
+                      "gamma": 1
+                    },
+                    "review_output": {
+                      "media_type": "image/png",
+                      "encoding": "view_transformed_srgb",
+                      "bit_depth": 8
+                    }
+                  }
+                ],
+                "derived_from": [
+                  {
+                    "item_id": "m10-generated-asset",
+                    "version_id": "m10-asset-v1"
+                  }
+                ],
+                "description": "Uniformly calibrated to 0.12 m world height (float measured 0.12000000476837158 m), base Z 0. Original mesh coordinates, connectivity, 350259 vertices, 1304618 triangles and stable IDs preserved. Local blue ceramic material and framed studio camera/lights. Topology quality, UV quality, retopology and rigging remain unproven.",
+                "provenance": {
+                  "creator": "Tencent",
+                  "licence": "Tencent Hunyuan Community Licence",
+                  "source_url": "https://huggingface.co/tencent/Hunyuan3D-2",
+                  "note": "Retained original E04 source, image, GLB and generation/model/import provenance. Local revision only; no new inference."
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "d66558d3-6c3f-4cce-bce1-9625fadb3f73",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:31.535Z",
+      "parentId": "b6626b59-c86c-47c8-9e9a-c80572b15408",
+      "data": {
+        "requestId": "4b6b7dfe-01a3-48ab-b84f-ba14b9f7af37",
+        "toolCallId": "call_LiioJ2Orr4bS0U4d9rvOj4Vd",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "548f7db7-5a94-4941-afb5-fa5d6e1fe912",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:32.699Z",
+      "parentId": "15a1a0eb-9616-4155-934f-55b65360d066",
+      "data": {
+        "toolCallId": "call_LiioJ2Orr4bS0U4d9rvOj4Vd",
+        "success": true
+      }
+    },
+    {
+      "id": "4787c5d6-c220-4fd5-b296-179ffd1e9061",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:32.705Z",
+      "parentId": "548f7db7-5a94-4941-afb5-fa5d6e1fe912"
+    },
+    {
+      "id": "02aebe0e-2dc8-42c4-b248-eb8cbcfc0686",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:32.706Z",
+      "parentId": "4787c5d6-c220-4fd5-b296-179ffd1e9061"
+    },
+    {
+      "id": "a5f1e806-d2b5-4ff1-ab2b-b8a35597e283",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:35.502Z",
+      "parentId": "02aebe0e-2dc8-42c4-b248-eb8cbcfc0686",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "3b1900c2-f767-4916-8343-b4fc6b701966",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:35.503Z",
+      "parentId": "a5f1e806-d2b5-4ff1-ab2b-b8a35597e283",
+      "data": {
+        "toolName": "get_job",
+        "toolCallId": "call_RVPrMEJkVt6ebr63vwkDdVZm",
+        "arguments": {
+          "job_id": "preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704"
+        }
+      }
+    },
+    {
+      "id": "0e62c524-86e6-4d91-846f-516604327ffc",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:35.570Z",
+      "parentId": "1c5eb1c4-c947-476f-a98c-d3dc44c3fbe4",
+      "data": {
+        "requestId": "a9fed5af-c481-406f-9729-101a92b94106",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_RVPrMEJkVt6ebr63vwkDdVZm",
+          "toolName": "get_job",
+          "toolDescription": "Read an existing job without starting or retrying it.",
+          "args": {
+            "job_id": "preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704"
+          }
+        }
+      }
+    },
+    {
+      "id": "f78551d7-1f9a-4d11-ad17-d73738f79b55",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:35.604Z",
+      "parentId": "0e62c524-86e6-4d91-846f-516604327ffc",
+      "data": {
+        "requestId": "a9fed5af-c481-406f-9729-101a92b94106",
+        "toolCallId": "call_RVPrMEJkVt6ebr63vwkDdVZm",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "970e6b6f-2b8d-4f59-843c-294116937a96",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:35.643Z",
+      "parentId": "dad5fd60-8c26-4159-8bbf-00454e58a84c",
+      "data": {
+        "toolCallId": "call_RVPrMEJkVt6ebr63vwkDdVZm",
+        "success": true
+      }
+    },
+    {
+      "id": "c138745e-e3ec-4bcd-bccb-0ceac1826e52",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:35.651Z",
+      "parentId": "970e6b6f-2b8d-4f59-843c-294116937a96"
+    },
+    {
+      "id": "6fcf7884-f5da-4604-959c-af134e8f1636",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:35.651Z",
+      "parentId": "c138745e-e3ec-4bcd-bccb-0ceac1826e52"
+    },
+    {
+      "id": "931b3a9d-2cd5-427d-81e3-270acba3496b",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:38.498Z",
+      "parentId": "6fcf7884-f5da-4604-959c-af134e8f1636",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "cbea3339-9640-4575-be00-090e5b43859c",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:38.499Z",
+      "parentId": "931b3a9d-2cd5-427d-81e3-270acba3496b",
+      "data": {
+        "toolName": "get_job",
+        "toolCallId": "call_yEsGsELjYtbgUy7VWuSkbutM",
+        "arguments": {
+          "job_id": "preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a"
+        }
+      }
+    },
+    {
+      "id": "107b27c2-7d5c-4e99-a411-eedff498cbc0",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:38.547Z",
+      "parentId": "8dded5eb-2118-43a2-8442-24d386c52578",
+      "data": {
+        "requestId": "b45ebb9f-81f0-4d83-a768-f80fd80057dd",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_yEsGsELjYtbgUy7VWuSkbutM",
+          "toolName": "get_job",
+          "toolDescription": "Read an existing job without starting or retrying it.",
+          "args": {
+            "job_id": "preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a"
+          }
+        }
+      }
+    },
+    {
+      "id": "07cea1ff-0007-4a6e-8470-0d5216831c74",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:38.572Z",
+      "parentId": "107b27c2-7d5c-4e99-a411-eedff498cbc0",
+      "data": {
+        "requestId": "b45ebb9f-81f0-4d83-a768-f80fd80057dd",
+        "toolCallId": "call_yEsGsELjYtbgUy7VWuSkbutM",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "5a6bca9e-3bce-4d7f-bf02-82c2d24c40c9",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:38.612Z",
+      "parentId": "2cc1ca49-77f8-48a9-a33e-806062f6e54c",
+      "data": {
+        "toolCallId": "call_yEsGsELjYtbgUy7VWuSkbutM",
+        "success": true
+      }
+    },
+    {
+      "id": "4cb4d265-ba21-433e-ac6d-09a884c6aa27",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:38.620Z",
+      "parentId": "5a6bca9e-3bce-4d7f-bf02-82c2d24c40c9"
+    },
+    {
+      "id": "a11e46fd-908c-4e9e-a807-d3c541e207a7",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:38.620Z",
+      "parentId": "4cb4d265-ba21-433e-ac6d-09a884c6aa27"
+    },
+    {
+      "id": "14e99bfe-b5df-47db-8c37-c5eb6aadb0ca",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:42.800Z",
+      "parentId": "a11e46fd-908c-4e9e-a807-d3c541e207a7",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "268a0908-acae-4785-8dfb-cdd5ae9ad04c",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:42.802Z",
+      "parentId": "14e99bfe-b5df-47db-8c37-c5eb6aadb0ca",
+      "data": {
+        "toolName": "get_version",
+        "toolCallId": "call_HUjPHpc4zmVo3YefQPwO7uFh",
+        "arguments": {
+          "version_id": "m10-asset-v2"
+        }
+      }
+    },
+    {
+      "id": "c7fa0375-fef4-4d9e-870e-9ea1ed4e9e0e",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:42.858Z",
+      "parentId": "bb2247b7-3143-4006-9fbd-16668b874d50",
+      "data": {
+        "requestId": "dd67fb44-8046-4d7d-b006-3874d2384c2a",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_HUjPHpc4zmVo3YefQPwO7uFh",
+          "toolName": "get_version",
+          "toolDescription": "Read an exact published version, pinned source closure and registered output associations. Never infer the latest working source.",
+          "args": {
+            "version_id": "m10-asset-v2"
+          }
+        }
+      }
+    },
+    {
+      "id": "e7a60b8b-6ee8-4ab5-843a-f933ee8c51b1",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:42.882Z",
+      "parentId": "c7fa0375-fef4-4d9e-870e-9ea1ed4e9e0e",
+      "data": {
+        "requestId": "dd67fb44-8046-4d7d-b006-3874d2384c2a",
+        "toolCallId": "call_HUjPHpc4zmVo3YefQPwO7uFh",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "38ad7bb0-c868-4b2e-bb24-c2031f097c93",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:42.924Z",
+      "parentId": "f724ccb0-0d44-4acf-935b-904d9e50cd23",
+      "data": {
+        "toolCallId": "call_HUjPHpc4zmVo3YefQPwO7uFh",
+        "success": true
+      }
+    },
+    {
+      "id": "5ad238e9-53d2-42ff-a903-3d58f73a9be1",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:42.931Z",
+      "parentId": "38ad7bb0-c868-4b2e-bb24-c2031f097c93"
+    },
+    {
+      "id": "845d95ef-7376-4c8b-8e32-1d30d88eff9b",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:42.931Z",
+      "parentId": "5ad238e9-53d2-42ff-a903-3d58f73a9be1"
+    },
+    {
+      "id": "7644f781-70db-425d-abd3-017a3167f2a4",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:46.620Z",
+      "parentId": "845d95ef-7376-4c8b-8e32-1d30d88eff9b",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "fbe95a39-6364-44ca-8a0f-0bf07b983021",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:46.622Z",
+      "parentId": "7644f781-70db-425d-abd3-017a3167f2a4",
+      "data": {
+        "toolName": "get_job",
+        "toolCallId": "call_Y3J4qgD5nDI3wH682mDEQyeO",
+        "arguments": {
+          "job_id": "preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704"
+        }
+      }
+    },
+    {
+      "id": "91c85557-c664-46e6-90da-3a7950045784",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:46.666Z",
+      "parentId": "1b86391e-0460-4505-adf6-53bc781a68ae",
+      "data": {
+        "requestId": "f7d23cba-6f7b-4cf5-bd53-61e808acdd46",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_Y3J4qgD5nDI3wH682mDEQyeO",
+          "toolName": "get_job",
+          "toolDescription": "Read an existing job without starting or retrying it.",
+          "args": {
+            "job_id": "preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704"
+          }
+        }
+      }
+    },
+    {
+      "id": "b7ace8f3-1c81-4692-ba85-fa1784820caf",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:46.681Z",
+      "parentId": "91c85557-c664-46e6-90da-3a7950045784",
+      "data": {
+        "requestId": "f7d23cba-6f7b-4cf5-bd53-61e808acdd46",
+        "toolCallId": "call_Y3J4qgD5nDI3wH682mDEQyeO",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "71c3e045-05e1-4001-b81c-7699feb0a42e",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:46.713Z",
+      "parentId": "95ef1292-40b5-4119-92a1-3823ce21a0dc",
+      "data": {
+        "toolCallId": "call_Y3J4qgD5nDI3wH682mDEQyeO",
+        "success": true
+      }
+    },
+    {
+      "id": "2e714c6c-a56f-4fa6-a513-e29447737a46",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:46.718Z",
+      "parentId": "71c3e045-05e1-4001-b81c-7699feb0a42e"
+    },
+    {
+      "id": "23cb04bd-0a96-4c62-a4c3-160b339a6012",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:46.719Z",
+      "parentId": "2e714c6c-a56f-4fa6-a513-e29447737a46"
+    },
+    {
+      "id": "49e9756e-af4b-4bc2-ae02-ccf301336c22",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:49.251Z",
+      "parentId": "23cb04bd-0a96-4c62-a4c3-160b339a6012",
+      "public_content": "",
+      "tool_requests": 1
+    },
+    {
+      "id": "947fccf5-e9bd-4cec-bda5-1ac3ff5e7d3e",
+      "type": "tool.execution_start",
+      "timestamp": "2026-11-14T19:17:49.253Z",
+      "parentId": "49e9756e-af4b-4bc2-ae02-ccf301336c22",
+      "data": {
+        "toolName": "get_job",
+        "toolCallId": "call_l8QIFRjvadbS8xo5yvAD8yIS",
+        "arguments": {
+          "job_id": "preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a"
+        }
+      }
+    },
+    {
+      "id": "ea071f31-6bf8-4b26-a6ff-a512b2bbd908",
+      "type": "permission.requested",
+      "timestamp": "2026-11-14T19:17:49.308Z",
+      "parentId": "0daf69ac-9c5d-41aa-840f-0458cd86014d",
+      "data": {
+        "requestId": "30dcbf8d-2cf1-479d-a14d-9a964b9d241a",
+        "permissionRequest": {
+          "kind": "custom-tool",
+          "toolCallId": "call_l8QIFRjvadbS8xo5yvAD8yIS",
+          "toolName": "get_job",
+          "toolDescription": "Read an existing job without starting or retrying it.",
+          "args": {
+            "job_id": "preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a"
+          }
+        }
+      }
+    },
+    {
+      "id": "319188c5-2f36-448d-8109-76876ff95102",
+      "type": "permission.completed",
+      "timestamp": "2026-11-14T19:17:49.330Z",
+      "parentId": "ea071f31-6bf8-4b26-a6ff-a512b2bbd908",
+      "data": {
+        "requestId": "30dcbf8d-2cf1-479d-a14d-9a964b9d241a",
+        "toolCallId": "call_l8QIFRjvadbS8xo5yvAD8yIS",
+        "result": {
+          "kind": "approved"
+        }
+      }
+    },
+    {
+      "id": "5cba6e99-4845-42c5-910d-0a4432000ab1",
+      "type": "tool.execution_complete",
+      "timestamp": "2026-11-14T19:17:49.363Z",
+      "parentId": "2ac6c76b-63c8-4a4b-a50f-7863f33b64b0",
+      "data": {
+        "toolCallId": "call_l8QIFRjvadbS8xo5yvAD8yIS",
+        "success": true
+      }
+    },
+    {
+      "id": "63e762cd-45d8-4d28-a5ac-06eca5deab0e",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:49.369Z",
+      "parentId": "5cba6e99-4845-42c5-910d-0a4432000ab1"
+    },
+    {
+      "id": "9dccaa0f-09a5-4c5f-bdd1-2ebe10032e10",
+      "type": "assistant.turn_start",
+      "timestamp": "2026-11-14T19:17:49.370Z",
+      "parentId": "63e762cd-45d8-4d28-a5ac-06eca5deab0e"
+    },
+    {
+      "id": "eb4bbdfa-47c5-439a-9dfc-f92d1dddc563",
+      "type": "assistant.message",
+      "timestamp": "2026-11-14T19:17:54.095Z",
+      "parentId": "9dccaa0f-09a5-4c5f-bdd1-2ebe10032e10",
+      "public_content": "Published **m10-generated-asset / m10-asset-v2**.\n\n- Checkpoint: `b98630210011142af66c92c46d4c86b72a7cdcc3`\n- Publication: `m10-v2-complete-publication`\n- Proxy **succeeded**: `preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704`\n- Keyframe **succeeded**: `preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a`\n\nSaved `assets/e04/asset-v2.blend` and measurements. Height measures **0.12000000476837158 m**, lowest Z **0**. Preserved all 350259 vertices, 1304618 triangles, mesh coordinates/connectivity, stable IDs and original provenance.\n\nOne successful guarded authoring invocation; four CPU threads, 180-second cap. No inference or preview retries. Topology quality, UV quality, retopology and rigging remain unproven.",
+      "tool_requests": 0
+    },
+    {
+      "id": "c6212dc5-3084-47d4-8ed4-01fe883e6ee2",
+      "type": "assistant.turn_end",
+      "timestamp": "2026-11-14T19:17:54.097Z",
+      "parentId": "eb4bbdfa-47c5-439a-9dfc-f92d1dddc563"
+    },
+    {
+      "id": "0d8a01c5-93f4-4aed-91b9-cee5ddfc319f",
+      "type": "session.shutdown",
+      "timestamp": "2026-11-14T19:20:15.130Z",
+      "parentId": "ac26b2da-f2e2-4569-9fe4-92f55aeff82c"
+    }
+  ],
+  "private_reasoning_excluded": true
+}

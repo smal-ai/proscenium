@@ -1,0 +1,356 @@
+{
+  "files": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.gitattributes",
+      "bytes": 931,
+      "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.gitignore",
+      "bytes": 150,
+      "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/blender.log",
+      "bytes": 677,
+      "sha256": "fef752432394d44c451d5a7f53be370ac06140ee9174e21cda3d2b02fc1619c8"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/launch.claim",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/native-complete.json",
+      "bytes": 18,
+      "sha256": "be0ba73ee2428cfb189f8d1d1c87345e0b69c9628fd647d3f051a2514d38e8ae"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/native-process.json",
+      "bytes": 585,
+      "sha256": "beecfaa0e12225128654dc489a457702432917ae3db969bd95961169d231eef4"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/native-profile.json",
+      "bytes": 1350,
+      "sha256": "790cb1461565aaa6186ff524b3b34fdf4f40557c59ed4d42fe024346f74723dd"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/process.json",
+      "bytes": 528,
+      "sha256": "3e569067b0bdce8d2a6b872af7ed74630cc65cdbf94d623cfcc4dd05af6b56ba"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/proxy-map.json",
+      "bytes": 649,
+      "sha256": "e62e2827f2a14dbb0efdda354fd11945a747af1d7ccbe2d099e83f92f8ff3ad2"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/proxy-ready.json",
+      "bytes": 170,
+      "sha256": "6367ec79b7cd8a115785e57298353c2afe587e636c999481631935783c823ac9"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/proxy.glb",
+      "bytes": 90077960,
+      "sha256": "b540446c2101da07500733170a7d66bbfc580a98c7f1fdac548ff42e5720a987"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/renderer-verified.json",
+      "bytes": 402,
+      "sha256": "33471606dc6ed0e6908da6282a36c952191a43fac169e0f1fc5d895c53b771a0"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/supervisor.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/task.json",
+      "bytes": 6500,
+      "sha256": "008fc98f39105e85136449dc0bc32d1e96cfd352ae1c1d11295685c05c51c8cb"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/terminal.json",
+      "bytes": 180,
+      "sha256": "943a08be7a33b39f51521fcbf33d988561552a06ce8d0bfb88ec6490aa33072a"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-3696635ae589faad73462aa9783b8189c40cf26029a04932f5e51002714b9704/attempt-899c8e6c-79c5-4cf1-aa78-242ec48b47d1/writer.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/blender.log",
+      "bytes": 5693,
+      "sha256": "0b768f2a172e04126124bb9a022b39bbab0ae051fff5b0013e2a92963997fcfb"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/encode-00000001.json",
+      "bytes": 962,
+      "sha256": "3b2c07db677c374c7a10adf25e9896a460bb40e89593ac16b5f4e176addf5e48"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/frame-00000001.json",
+      "bytes": 717,
+      "sha256": "ff16e172beb773bcc3427e8468a700ddbcb3a08b23bd51c8456abb01850a8d5e"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/frames/00000001.png",
+      "bytes": 249085,
+      "sha256": "aab1367144684b2c3091d84a1a3700414e523688a078367f6cec43c4ca5e4b38"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/launch.claim",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/native-complete.json",
+      "bytes": 18,
+      "sha256": "be0ba73ee2428cfb189f8d1d1c87345e0b69c9628fd647d3f051a2514d38e8ae"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/native-process.json",
+      "bytes": 585,
+      "sha256": "a5a6ca36e36a1fb2a7f3718c16ca8f88fe65613e32068bdfe8049f7caf3ee727"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/native-profile.json",
+      "bytes": 1455,
+      "sha256": "f13c10756ffd3e8c4bd45ffc8d4703b91275c6afcf86673f7a90a123190d1802"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/process.json",
+      "bytes": 528,
+      "sha256": "54561760149d86837933ae6ef1329192899b0b39eab66b59cd1fa6828914c2e7"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/renderer-verified.json",
+      "bytes": 402,
+      "sha256": "2bde5fc7ebe52d50c8e20699aa1949ecebed1e058d5c552f143aefa43129eb3f"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/segment-00000001-00000001.json",
+      "bytes": 742,
+      "sha256": "28f63768ae61e578bc5783741274ab36e927fa9c28c69d7ec582fee075f63ace"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/segment-00000001-00000001.mp4",
+      "bytes": 34429,
+      "sha256": "a3ce51232e535f9f9b31e67ef491e451e1c5d66d7151593b04483ea8e6587280"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/supervisor.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/task.json",
+      "bytes": 6605,
+      "sha256": "178ef4579c8abb8ff1b2d382e939d1440a721b70c193642147b01d5c7c9ff345"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/terminal.json",
+      "bytes": 180,
+      "sha256": "e01b0b3ca6ddc8471352fb9ab90cfe10872abde096faf8c1b5fafbcf5dcf74ce"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/timing-00000001.json",
+      "bytes": 363,
+      "sha256": "920880085aac9c7b2bb93baedb93d9c073d4a9de0e29fb3572039debb857e411"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-ea1be84b276a1bdc41fcaa09041793e12415c0e24638d4bbfa58e5b6c64b225a/attempt-e816f84e-571a-4310-b1d4-f86e5bdcc0fe/writer.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/asset-v2.blend",
+      "bytes": 61365550,
+      "sha256": "19d93e0818d7fca58e25fe55add9cfead68972ff2017c41b84124f760e5214cc"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/asset.blend",
+      "bytes": 61349102,
+      "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/conditioning.png",
+      "bytes": 3693,
+      "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/generation-provenance.json",
+      "bytes": 4587,
+      "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/import-provenance.json",
+      "bytes": 2992,
+      "sha256": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/inspection.json",
+      "bytes": 782,
+      "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/model-licence.txt",
+      "bytes": 17830,
+      "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/original.glb",
+      "bytes": 19860948,
+      "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py",
+      "bytes": 8974,
+      "sha256": "028e8c876285a0af5678a083b5d4f6b3d5dc7b566e80c018fc72952c94e4434a"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revision-measurements.json",
+      "bytes": 3995,
+      "sha256": "a19b131505945a2e15af3c7cb25477dd19521a6b88fb8678d947fc821794f8d2"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/workflow.json",
+      "bytes": 1146,
+      "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/project.json",
+      "bytes": 300,
+      "sha256": "0e9bd5e6d311eedd0e68db786e8954f7c8575bcf3eb1f6a6ea52854f215e038d"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/tools/m10-complete-receipts/allocation.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/tools/m10-complete-receipts/blender-1.log",
+      "bytes": 3366,
+      "sha256": "8395d649c629ed4d28d131db8d4e830e41e17e1856e6968ca159dba760c67b33"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/tools/m10-complete-receipts/claim-1.json",
+      "bytes": 550,
+      "sha256": "54c4a01d81483e304196d597c535b70e411968310b8290cf7b6b9966051eff2f"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/tools/m10-complete-receipts/process-1.json",
+      "bytes": 629,
+      "sha256": "50eedfc736127c677ddf46c945f119af8c4bd872007bd563cd2739fc51f48b22"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/tools/m10-complete-receipts/terminal-1.json",
+      "bytes": 681,
+      "sha256": "63d84511acda70297f9dc012d09dc518fc38051bab027a9819efff8c8247e43a"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/before-queue.private.png",
+      "bytes": 225551,
+      "sha256": "58663860940ea59c361f62322b2f5ad5976a04c8a7e245391e4586b53414cc30"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/before.json",
+      "bytes": 73325,
+      "sha256": "32d66aeca747cd4d031477c8ba1c688e454ea44b056f9a9deb6255fb8caae306"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/browser-driver.private.log",
+      "bytes": 140,
+      "sha256": "5cf5cb7adb98491d43d2f418cac8e7593c770d934451288f15077f43632687b5"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/final.private.png",
+      "bytes": 274147,
+      "sha256": "504bb3bf38163c9b00961e1f9732f6566eea2075ca0551949db18eeb5e7fdd6e"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/host-import-failed.json",
+      "bytes": 8517,
+      "sha256": "b49c2663316cb2105deeba3597016d6c3ced286c0e5f4bb27e740d442fed8349"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/host.json",
+      "bytes": 104156,
+      "sha256": "a3bb2e263bb3bbf37e48fa6a1ec20bfe2990444af82abd4343ea4067659de258"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/original-model-script.py",
+      "bytes": 8496,
+      "sha256": "b65ddd7837abe49a00657f8eb5f6a75dd1c0da312ababff15f7ed2f63e3cdb37"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/prompt.txt",
+      "bytes": 4438,
+      "sha256": "7ef773360a966ee58fb271cc6f8b3bb571b6bbe6ed50d0f1cf867de30438ce39"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/publication-replay.json",
+      "bytes": 12344,
+      "sha256": "9d7c78b0978408ef0b4ddc00f680f47dcd7a03a9f3f962b85f26b92a9c13f86f"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/readback-process.json",
+      "bytes": 1692,
+      "sha256": "7a4f2a1b8c1fe7fa5ff0786b93c8091bfa240ecec80457f3b92a594f5c02aa91"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/readback.json",
+      "bytes": 3189,
+      "sha256": "f2c882fa4fc3f9c08b7d14659ad654c411a508be2075031aa2253d04599bec1f"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/result.private.json",
+      "bytes": 132592,
+      "sha256": "643cba4bcfb71b31787e65e5c5c2cf50010245a6619b13a0f19e29145fe04ba9"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/sdk-send-ack.json",
+      "bytes": 122,
+      "sha256": "b313295a7165971b5b3b5e55436270d97d140b3124d2aa5a74439c2b51d93d38"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/sdk-send-claimed.json",
+      "bytes": 106,
+      "sha256": "50098ee4883803d60f9b3e3a8d04f7c84b8ae11e58fb503c366babcf26b94570"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/send-authorised.json",
+      "bytes": 154,
+      "sha256": "9d465f45f20593e4f02489cdf0c9eea028aca5fbf49d4255596375150bdb543d"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/server-import-failed.log",
+      "bytes": 1530,
+      "sha256": "3225897f5ee03a4321dc275bbbeec5660f79da98a8829882256960b2666c9167"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/session-allocation.json",
+      "bytes": 358,
+      "sha256": "5cfde1244b8baed9a6ede8bdd8fb8f1f9d4f41ef5f960dab20d5bb7f511819b7"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/ui-preflight-ready.json",
+      "bytes": 393,
+      "sha256": "d1ebd89be016f76104acf696018daaaa8c83fd01bda156a357e84b43961efc1a"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/v2-inspection.private.png",
+      "bytes": 274147,
+      "sha256": "504bb3bf38163c9b00961e1f9732f6566eea2075ca0551949db18eeb5e7fdd6e"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a/v2-keyframe.private.png",
+      "bytes": 715770,
+      "sha256": "b401ec80110a4879e77135b19f69952f9776aab8af1d9451453d14ea6dbaa9d7"
+    }
+  ],
+  "raw_native_history_authentication_and_pairing_not_exported": true,
+  "private_root_retained": "/home/quintin/.cache/proscenium-development/milestones/m10-complete-a"
+}

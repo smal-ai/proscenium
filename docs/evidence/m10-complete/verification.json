@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-14",
+  "base": "02a3a8d95d99d27afa9f0f707d24af843adbd7a5",
+  "pre_send_harness_commit": "9e01f87",
+  "result": "actual_follow_up_v2_publication_and_review_pass",
+  "source_commit": "b98630210011142af66c92c46d4c86b72a7cdcc3",
+  "publication_id": "m10-v2-complete-publication",
+  "version_id": "m10-asset-v2",
+  "checks": [
+    {"command": "npm run build", "result": "passed", "meaning": "Actual compiled studio"},
+    {"command": ".venv/bin/python -m pytest -q tests/acceptance/m10_complete_preflight_test.py tests/acceptance/m10_complete_retained_test.py tests/integration/image_to_3d tests/integration/copilot/test_native_io_policy.py", "result": "passed", "checks": 100, "meaning": "Pure helper and retained actual-evidence oracles plus affected integration checks; no new native/model launch"},
+    {"command": ".venv/bin/python -m ruff check tests/native/image_to_3d/m10_complete*.py tests/acceptance/m10_complete*.py", "result": "passed"},
+    {"command": ".venv/bin/python -m mypy tests/native/image_to_3d/m10_complete*.py tests/acceptance/m10_complete*.py --ignore-missing-imports", "result": "passed", "source_files": 9},
+    {"command": "node --check tests/native/image_to_3d/m10_complete_browser.mjs", "result": "passed"},
+    {"command": ".venv/bin/python docs/validate_spec.py", "result": "passed", "meaning": "Documentation only, not a substitute for native proof"}
+  ],
+  "actual_allocation": {
+    "new_owner_follow_up_queues": 1,
+    "sdk_sends": 1,
+    "new_sdk_conversations": 0,
+    "native_children": 0,
+    "root_to_nonempty_final_seconds": 92.327266,
+    "root_bound_seconds": 240,
+    "stack_seconds": 353.279091,
+    "stack_bound_seconds": 600,
+    "authoring_processes": 1,
+    "first_authoring_exit": 0,
+    "second_authoring_unused_after_success": true,
+    "independent_readbacks": 1,
+    "proxy_jobs": 1,
+    "keyframe_jobs": 1,
+    "native_preview_exits": [0, 0],
+    "minimum_sampled_headroom_bytes": 22483136512,
+    "new_inference_upload_download_vlm_unity_calls": 0,
+    "meaningful_owner_decisions": 0,
+    "owner_stop_requested": false,
+    "remaining_owned_processes": 0,
+    "resource_claims_after": 0
+  },
+  "preservation": {
+    "old_request_and_completed_revision_6_work_unchanged": true,
+    "old_contexts_permissions_invocations_and_sends_unchanged": true,
+    "e04_v1_sources_media_and_provenance_unchanged": true,
+    "old_selections_frozen_inputs_and_failed_reports_unchanged": true,
+    "old_source_closure_origins_refs_and_ancestry_preserved": true,
+    "native_history_prefix_preserved": true,
+    "source_index_note": "Inherited default-index D/?? presentation existed before this proof. No destructive index repair or source deletion performed.",
+    "initial_import_failure": "Retained before-readiness failure, corrected only by fixture PYTHONPATH with original global deadline. No SDK/native effect occurred before that repair."
+  },
+  "scope": "Assigned M10 remaining revision/publication/review proof. E04 inference is inherited accepted evidence. Parent owns cumulative milestone acceptance. No artistic approval, clean-topology, UV, rigging, new inference recovery or M12/M14 completion claim.",
+  "warnings": ["Existing Starlette/httpx TestClient deprecation", "Existing Vite dependency directives and bundle-size notices"]
+}
