@@ -1,0 +1,84 @@
+{
+  "format": "proscenium-release-checks-1",
+  "application_commit": "abedc19890245ea355aaef9269f0814d498e8982",
+  "frontend_source_tree": "d6cc2d71609c326c103ddbd09d2036fa83b7a46b",
+  "contract_revision": "1.0.0",
+  "specification_revision": "3.2.0",
+  "release_acceptance": "pending final M07/M10/M11/M12/M13/M14 integration",
+  "checks": [
+    {
+      "command": "make lint",
+      "exit_code": 0,
+      "python_files_formatted": 412,
+      "frontend_eslint": "passed"
+    },
+    {
+      "command": "make typecheck",
+      "exit_code": 0,
+      "backend_source_files": 82,
+      "frontend_and_browser_typescript": "passed"
+    },
+    {
+      "command": "make spec-check",
+      "exit_code": 0,
+      "schema_definitions": 119,
+      "http_operations": 53,
+      "positive_negative_schema_examples": 40,
+      "semantic_oracles": 20,
+      "generated_bindings": "passed"
+    },
+    {
+      "command": "uv run pytest -q tests/unit tests/contracts tests/integration -m \"not native\" --ignore=tests/integration/native --basetemp=/home/quintin/.cache/proscenium-development/release-offline-20261114-abedc19 --junitxml=docs/evidence/release-offline-baseline-20261114.xml",
+      "exit_code": 0,
+      "unit": 26,
+      "contracts": 45,
+      "offline_integration": 647,
+      "passed": 718,
+      "failed": 0,
+      "skipped": 0,
+      "artifact": "docs/evidence/release-offline-baseline-20261114.xml",
+      "sha256": "b56c0598cd93798ab9ceadd8af40aa3479ea783941438bc835b6ef336a23d8d5"
+    },
+    {
+      "command": "PROSCENIUM_BROWSER_REPORT=/home/quintin/.cache/proscenium-development/release-browser-20261114-a.json npx playwright test --config playwright.config.ts --output=/home/quintin/.cache/proscenium-development/release-browser-20261114-a --max-failures=1",
+      "exit_code": 0,
+      "started_at": "2026-11-14T19:22:40.072Z",
+      "duration_ms": 185087.68600000002,
+      "passed": 193,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "uninterrupted_run": true,
+      "artifact": "docs/evidence/release-browser-20261114.json",
+      "sha256": "4ce9ed34b06032cd3eaa83fb0df2f939815541600b35387fc18a9ac6045b5cc4",
+      "scope": "Actual maintained frontend and installed browser engines, with controlled HTTP/WebSocket states and retained native media/GLB. No fresh model/provider/native authoring is inferred.",
+      "viewport_css": {"width": 1920, "height": 1080},
+      "graphics": "Explicit ANGLE SwiftShader software WebGL",
+      "projects": {
+        "chromium-shell": 13,
+        "chromium-review": 34,
+        "chromium-storyboards": 6,
+        "brave-shell": 13,
+        "brave-review": 34,
+        "brave-storyboards": 6,
+        "edge-shell": 13,
+        "edge-review": 34,
+        "edge-storyboards": 6,
+        "chromium-review-dpr2": 34
+      },
+      "installed_browser_versions": {
+        "chromium": "Google Chrome for Testing 159.0.8154.6",
+        "brave": "Brave Browser 157.1.99.55",
+        "edge": "Microsoft Edge 157.0.4341.42"
+      }
+    }
+  ],
+  "observed_nonblocking_warnings": [
+    "Starlette TestClient/httpx deprecation",
+    "Lucide use-client directives ignored by the client bundle",
+    "Vite bundle chunk exceeds 500 kB",
+    "Three.js CommonJS deprecation in the browser test harness"
+  ],
+  "historical_evidence": "The earlier 173-case combined browser run and all failed native/fixture allocations remain unchanged. This record does not replace their tested revisions or limitations."
+}
