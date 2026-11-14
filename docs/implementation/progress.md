@@ -75,12 +75,15 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `d5a15ad`, `milestone/m10` | Actual native generated-mesh revision, independent measurement, pinned proxy/still and exact publication replay accepted. Source checkpoint `b98630210011142af66c92c46d4c86b72a7cdcc3`. |
 | `milestone/m07` | Actual reference-conditioned generation, targeted revision, provider recovery, native shared reservation limits and corrected seven-view image/job/shot readback accepted. The colour instruction remains unachieved. |
 | `9746643`, `17c0a59` | M11's original cold Stop confirmed from actual inactive-main-loop RPC, typed Abort success, empty paused queues and no background/external calls. Original work stopped at revision 10 with zero live invocations. Parent passed 265 Copilot checks. |
+| `7210315`, `milestone/m11` | Original-work native publication and actual Unity catalogue/readback accepted. All 77 files pin the existing checkpoint; actual operator PlayMode evidence stays distinct from generic import not_run. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| M11 final publication | `/home/quintin/.cache/proscenium-development/fleet/m11-publication-complete`, `impl/m11-publication-complete` | `17c0a59` | One original-work Continue to publish the existing checkpointed/tested Unity scene after verified Stop. No children, Editors or exports. | `ses_e24cae3afffeduGiWpAGVlgj62` |
+
+All assigned feature/native slices have returned. The coordinator owns final cumulative
+acceptance and release-record activation. No further native/model allocation is active.
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
@@ -124,7 +127,7 @@ and `release-browser-20261114.json`. These preserve their tested revision.
 - M09 is accepted after M03/M04. Both real review origins and exactly-once approved handoff passed; only the owned Gemma instance was unloaded. Qwen and the saved profile remained unchanged.
 - M10 is accepted. Its explicit new same-session follow-up saved/published `m10-asset-v2`, measured 0.120000004768 m high with base Z zero and blue material. The old premature completion, all original source/provenance and the one E04 inference remain unchanged.
 - W10's protected-process blocker is fixed. The final SSH audit passed. Same-host transport/API traffic does not itself close full model-message/video playback or cumulative M12/M14.
-- M11's original Stop is now confirmed from positive native RPC evidence, with no invented read result or permission ACK. Original work is stopped/revision 10, zero live invocations. Its publication-only original continuation is assigned against the accepted recovery. Saved Unity scene, tests and source checkpoint remain unchanged.
+- M11 is accepted. One actual original-work Continue published `m11-playable-v1` from the existing verified checkpoint. Work completed at revision 12 with real final-response/turn-end/idle evidence. All old questions, unknown native read delivery and failed attempts remain retained.
 - M12's accepted-send ACK-loss, same-session backup/continuation, detached renderer, provider-response recovery, partial-output retry and SSH continuity evidence now pass within their recorded scopes. M11's cold Stop/publication and cumulative integration remain open. Original unknown returns and failed recovery attempts are preserved.
 - Earlier M07 windows were constrained by independent SQL Server/Blender workloads. Later FP16 conversion observed at least 35,388,723,200 bytes available. No independent workload was stopped or evicted by this programme. Every new allocation still checks its own unchanged admission threshold.
 - Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
@@ -199,7 +202,7 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M08 Progressive animation | Completed on 2026-11-14 | `milestone/m08` | [Pre-completion review, pinned inputs and final lineage](m08.md) |
 | M09 Requested VLM critique | Completed on 2026-11-14 | `milestone/m09` | [Actual review, owner selection and native handoff](m09.md) |
 | M10 Image-to-3D | Completed on 2026-11-14 | `milestone/m10` | [Actual mesh, native revision and publication](m10.md) |
-| M11 Playable Unity scene | Native import/PlayMode/checkpoint/Stop passed; final publication active | — | [Exact criteria and retained blocker](m11.md) |
+| M11 Playable Unity scene | Completed on 2026-11-14 | `milestone/m11` | [Native specialist, PlayMode, source and publication acceptance](m11.md) |
 | M12 Recovery and backup | Required recovery observations substantially complete; M11/cumulative integration pending | — | [Native recovery](m12.md), [worker recovery](m08.md) |
 | M13 Silent cinematic delivery | All seven targeted criteria passed; dependencies pending | — | [Native edit/review/download proof](m13.md) |
 | M14 Consolidated acceptance | Geometry Nodes, SSH, performance and native-fault slices passed; final consolidation pending | — | [SSH](m14-ssh.md), [performance](performance.md), [native faults](m14-native-faults.md) |

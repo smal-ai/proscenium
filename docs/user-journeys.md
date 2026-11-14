@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M10 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M11 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -37,7 +37,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M08](#m08-author-and-review-animation-progressively) | Review animation and annotate available frames before rendering finishes | M04, M06. M07 when generated concepts are used | Accepted, `milestone/m08` |
 | [M09](#m09-request-and-approve-vlm-critique) | Request local critique and send approved findings with images to Copilot | M03, M04. M08 for motion-review inputs | Accepted, `milestone/m09` |
 | [M10](#m10-image-to-3d-asset-generation) | Generate and publish a usable Blender mesh from an image | Early feasibility proof, M04, M05. M07 for generated inputs | Accepted, `milestone/m10` |
-| [M11](#m11-playable-unity-scene) | Ask the Unity specialist for a playable scene and test it in Unity | M03, M04, M05. M10 is not required for authored/imported assets | Planned |
+| [M11](#m11-playable-unity-scene) | Ask the Unity specialist for a playable scene and test it in Unity | M03, M04, M05. M10 is not required for authored/imported assets | Accepted, `milestone/m11` |
 | [M12](#m12-reconnect-and-explicitly-resume) | Complete cross-provider reconnect/resume and backup acceptance | Delivery/recovery primitives from F00/M01/M03; M07, M08, M11 for representative job types | Planned |
 | [M13](#m13-assemble-review-and-deliver-a-silent-cinematic) | Review/export an assembled silent sequence | M06, M08, M12 | Planned |
 | [M14](#m14-consolidated-desktop-studio-acceptance) | Use the complete personal studio from a clean configured workspace | All included V1 milestones | Planned |
@@ -460,6 +460,10 @@ revision, independent geometry checks and pinned source/proxy/keyframe publicati
 **Reuse:** ComfyUI execution/provenance and Blender import/publication patterns. No working mesh-generation graph currently exists in the inspected references.
 
 ## M11: Playable Unity scene
+
+**Accepted:** 14 November 2026. [Cumulative evidence](implementation/m11.md)
+records the actual native specialist, import and GUID preservation, measured
+PlayMode controls/collision, saved source checkpoint and final Unity publication.
 
 **User journey:** “I ask for this environment to be playable, then open the result in Unity and walk through it.”
 
