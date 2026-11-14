@@ -168,7 +168,10 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       await Promise.all(artifactIds.map(async artifact_id => {
         try { media.push(await api.call("getArtifact", {path: {project_id: projectId, artifact_id}})); } catch (e) {captureError(e);}
       }));
-      const mapArtifact = media.find(a => a.kind === "frame_map" && a.state === "ready");
+      const completeVideo = media.find(a => a.kind === "video" && a.purpose === "final" && a.state === "ready");
+      const encodedParameters = completeVideo?.derived_from.find(t => t.kind === "encode")?.parameters;
+      const encodedMapHash = encodedParameters && "frame_map_sha256" in encodedParameters && typeof encodedParameters.frame_map_sha256 === "string" ? encodedParameters.frame_map_sha256 : null;
+      const mapArtifact = media.find(a => a.kind === "frame_map" && a.state === "ready" && (!encodedMapHash || a.sha256 === encodedMapHash));
       if (mapArtifact) {
         try {
           const bytes = await api.call("getArtifactContent", {path: {project_id: projectId, artifact_id: mapArtifact.artifact_id}});
