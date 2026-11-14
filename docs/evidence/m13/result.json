@@ -1,0 +1,3196 @@
+{
+  "status": "PASS",
+  "scope": "allocated M13 native/UI journey; cumulative dependency acceptance remains parent-owned",
+  "base_revision": "e3cddf8",
+  "retained_root": "/home/quintin/.cache/proscenium-development/c13c",
+  "source_preservation": [
+    {
+      "artifact_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s1-4",
+      "sha256": "3d6413ab9eb01f9eeabaccd346e4ca2f8816e071631b28697a4bfdf6e5f52335",
+      "bytes": 37257
+    },
+    {
+      "artifact_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s5-8",
+      "sha256": "56bb04cb3caffbf4dfe68c618d5a8275aed4de7ccdea6aa4ea6cf868b1c972ef",
+      "bytes": 40106
+    },
+    {
+      "artifact_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s9-12",
+      "sha256": "6dac1621e7b65bd0df94cc0f1af52ff5585379a1cfca05aeccdddaed29e330d8",
+      "bytes": 36071
+    },
+    {
+      "artifact_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107-s1-1",
+      "sha256": "befc3151ce19fce52d7aa8d113bee1f91f599519c40b95c4c44c5461faf90d71",
+      "bytes": 56261
+    },
+    {
+      "artifact_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+      "sha256": "d821a6e51bc425c87681c53b78aa7d3831839ce9a00b28800af017aac0262b81",
+      "bytes": 347139
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+      "sha256": "9258c03703cd4101a07f8b3cf0d1241b64c1c10a67e115ffdaf34968d95931f5",
+      "bytes": 347139
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f10",
+      "sha256": "d4547f8c7258c96de66c7ab19906f3a5a12c1154fda8be954d0a12449213c4e4",
+      "bytes": 340528
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f11",
+      "sha256": "0832d97e9116e4c4e7a52db783ef5c1b80c7d85721a721c81809e2cb61c0b522",
+      "bytes": 339848
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f12",
+      "sha256": "55ea45f10d95fdf349acbd5ec3c7195d38425c4f352bd349c597bc75dc07d487",
+      "bytes": 339671
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+      "sha256": "1ab1e69ae6106d468da72b2ba26d171644ff5aec55652cb5f0c2be2e7162880f",
+      "bytes": 346787
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+      "sha256": "f99a34d598e568ddbcccaee3e865c96af7015f011083321c32d5e69addd7153c",
+      "bytes": 346430
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+      "sha256": "1ec8aaa3c98b760940e84b1089fbcaea5e9cc3bfb999f5e2657868133d3ed659",
+      "bytes": 345871
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+      "sha256": "3a7f9fc4fe0316cde865634a5d23605586079c346cd465d7b249c1c20129f714",
+      "bytes": 345281
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+      "sha256": "3ccd9990c4286e1dbb264e2782d517c593e8d8913ffcbfaf997efd100cd1815d",
+      "bytes": 344537
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f7",
+      "sha256": "0e50fdd4919510f5b5c714796b0935a3e33a8e89498b4b83dc3c0221aa5fb775",
+      "bytes": 343253
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f8",
+      "sha256": "f05e62d8078b7625d34a826feb077f4f3227b4be9ba81e1a3e33c2702a7f3177",
+      "bytes": 342456
+    },
+    {
+      "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f9",
+      "sha256": "35fc7946c1701bdfa73485f0f1eac886fa24fa3a5b83dd9805b7aac26f7f8bc7",
+      "bytes": 341325
+    },
+    {
+      "source_path": "assets/cube/asset.blend",
+      "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+      "bytes": 406277
+    },
+    {
+      "source_path": "assets/cube/colour.png",
+      "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+      "bytes": 74
+    },
+    {
+      "source_path": "scenes/fixture/scene.blend",
+      "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+      "bytes": 453539
+    }
+  ],
+  "fixture_import": {
+    "source": "/tmp/opencode/proscenium-w03-native-a/test_real_progressive_camera_a0/project",
+    "source_proof_sha256": "1dde814137051a6373fc2da9c6c27ec76cee40a897830189c868b67d66240528",
+    "assembly_proof_sha256": "beb07f5fd1938ec5e5d0f26d3b97cad014702be68c8f60495c8d906b4e498ddc",
+    "original_version": {
+      "actor": {
+        "id": "w03-native-tool",
+        "kind": "tool"
+      },
+      "artifact_ids": [],
+      "created_at": "2026-11-14T12:02:10.816485+00:00",
+      "item_id": "fixture-scene",
+      "kind": "scene",
+      "name": "Pinned F01 v1",
+      "preview_job_ids": [
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697"
+      ],
+      "preview_requests": [
+        {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 12,
+            "start": 1
+          },
+          "intent_id": "draft-native",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Fixture",
+          "shot_id": "fixture-shot",
+          "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7"
+        }
+      ],
+      "project_id": "w03-native",
+      "publication_id": "publication-native",
+      "schema_version": "1.0",
+      "source": {
+        "dependencies": [],
+        "digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7",
+        "entry_path": "scenes/fixture/scene.blend",
+        "files": [
+          {
+            "destination": "assets/cube/asset.blend",
+            "origin": {
+              "commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+              "kind": "git",
+              "path": "assets/cube/asset.blend",
+              "repository_id": "w03-repo",
+              "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+            }
+          },
+          {
+            "destination": "assets/cube/colour.png",
+            "origin": {
+              "commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+              "kind": "git",
+              "path": "assets/cube/colour.png",
+              "repository_id": "w03-repo",
+              "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+            }
+          },
+          {
+            "destination": "scenes/fixture/scene.blend",
+            "origin": {
+              "commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+              "kind": "git",
+              "path": "scenes/fixture/scene.blend",
+              "repository_id": "w03-repo",
+              "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [
+            "linked-libraries",
+            "external-textures"
+          ],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "source_commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+      "version_id": "fixture-v1"
+    },
+    "original_jobs": [
+      {
+        "artifact_ids": [
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+          "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s1-4",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f7",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f8",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f9",
+          "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s5-8",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f10",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f11",
+          "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f12",
+          "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s9-12"
+        ],
+        "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 12,
+        "expected_frames": 12,
+        "external_job_id": null,
+        "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+        "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-b6047ea5-ef37-4f17-8867-43b6374bd72f",
+        "owner_operation_id": null,
+        "project_id": "w03-native",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 12,
+            "start": 1
+          },
+          "intent_id": "draft-native",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Fixture",
+          "shot_id": "fixture-shot",
+          "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 15,
+        "target": {
+          "shot_id": "fixture-shot",
+          "target_id": "fixture-scene",
+          "version": {
+            "item_id": "fixture-scene",
+            "version_id": "fixture-v1"
+          }
+        },
+        "work_id": "work-native"
+      },
+      {
+        "artifact_ids": [
+          "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+          "attempt-89f4d54c-a95f-419d-af65-b09c30521107-s1-1"
+        ],
+        "attempt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 1,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "c2ea2ba9378d0511948d4e121f3d9e2cdbd4d551984610a7b6de5853c4c7c14f",
+        "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-d66d45ed-1114-4c01-8a55-f766b54f38a6",
+        "owner_operation_id": null,
+        "project_id": "w03-native",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "incoming-shot-native",
+          "purpose": "keyframe",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "Fixture",
+          "shot_id": "incoming-shot",
+          "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 5,
+        "target": {
+          "shot_id": "incoming-shot",
+          "target_id": "fixture-scene",
+          "version": {
+            "item_id": "fixture-scene",
+            "version_id": "fixture-v1"
+          }
+        },
+        "work_id": "work-native"
+      }
+    ],
+    "hashes": [
+      {
+        "artifact_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s1-4",
+        "sha256": "3d6413ab9eb01f9eeabaccd346e4ca2f8816e071631b28697a4bfdf6e5f52335",
+        "bytes": 37257
+      },
+      {
+        "artifact_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s5-8",
+        "sha256": "56bb04cb3caffbf4dfe68c618d5a8275aed4de7ccdea6aa4ea6cf868b1c972ef",
+        "bytes": 40106
+      },
+      {
+        "artifact_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s9-12",
+        "sha256": "6dac1621e7b65bd0df94cc0f1af52ff5585379a1cfca05aeccdddaed29e330d8",
+        "bytes": 36071
+      },
+      {
+        "artifact_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107-s1-1",
+        "sha256": "befc3151ce19fce52d7aa8d113bee1f91f599519c40b95c4c44c5461faf90d71",
+        "bytes": 56261
+      },
+      {
+        "artifact_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+        "sha256": "d821a6e51bc425c87681c53b78aa7d3831839ce9a00b28800af017aac0262b81",
+        "bytes": 347139
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+        "sha256": "9258c03703cd4101a07f8b3cf0d1241b64c1c10a67e115ffdaf34968d95931f5",
+        "bytes": 347139
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f10",
+        "sha256": "d4547f8c7258c96de66c7ab19906f3a5a12c1154fda8be954d0a12449213c4e4",
+        "bytes": 340528
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f11",
+        "sha256": "0832d97e9116e4c4e7a52db783ef5c1b80c7d85721a721c81809e2cb61c0b522",
+        "bytes": 339848
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f12",
+        "sha256": "55ea45f10d95fdf349acbd5ec3c7195d38425c4f352bd349c597bc75dc07d487",
+        "bytes": 339671
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+        "sha256": "1ab1e69ae6106d468da72b2ba26d171644ff5aec55652cb5f0c2be2e7162880f",
+        "bytes": 346787
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+        "sha256": "f99a34d598e568ddbcccaee3e865c96af7015f011083321c32d5e69addd7153c",
+        "bytes": 346430
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+        "sha256": "1ec8aaa3c98b760940e84b1089fbcaea5e9cc3bfb999f5e2657868133d3ed659",
+        "bytes": 345871
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+        "sha256": "3a7f9fc4fe0316cde865634a5d23605586079c346cd465d7b249c1c20129f714",
+        "bytes": 345281
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+        "sha256": "3ccd9990c4286e1dbb264e2782d517c593e8d8913ffcbfaf997efd100cd1815d",
+        "bytes": 344537
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f7",
+        "sha256": "0e50fdd4919510f5b5c714796b0935a3e33a8e89498b4b83dc3c0221aa5fb775",
+        "bytes": 343253
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f8",
+        "sha256": "f05e62d8078b7625d34a826feb077f4f3227b4be9ba81e1a3e33c2702a7f3177",
+        "bytes": 342456
+      },
+      {
+        "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f9",
+        "sha256": "35fc7946c1701bdfa73485f0f1eac886fa24fa3a5b83dd9805b7aac26f7f8bc7",
+        "bytes": 341325
+      },
+      {
+        "source_path": "assets/cube/asset.blend",
+        "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431",
+        "bytes": 406277
+      },
+      {
+        "source_path": "assets/cube/colour.png",
+        "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568",
+        "bytes": 74
+      },
+      {
+        "source_path": "scenes/fixture/scene.blend",
+        "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f",
+        "bytes": 453539
+      }
+    ],
+    "input_metadata": {
+      "label": "IMPORTED ACTUAL W03 FIXTURE HISTORY, NOT NEW MODEL RENDERS",
+      "project_id": "m13-cinematic",
+      "repository_id": "w03-repo",
+      "source_version": {
+        "item_id": "fixture-scene",
+        "version_id": "fixture-v1"
+      },
+      "closure": {
+        "dependencies": [],
+        "digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7",
+        "entry_path": "scenes/fixture/scene.blend",
+        "files": [
+          {
+            "destination": "assets/cube/asset.blend",
+            "origin": {
+              "commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+              "kind": "git",
+              "path": "assets/cube/asset.blend",
+              "repository_id": "w03-repo",
+              "sha256": "252e01a8f718708e1bf1e2de3fc63dcbc0c94b2d1d0abfa277c92cd0cf4a1431"
+            }
+          },
+          {
+            "destination": "assets/cube/colour.png",
+            "origin": {
+              "commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+              "kind": "git",
+              "path": "assets/cube/colour.png",
+              "repository_id": "w03-repo",
+              "sha256": "fcf1e3f027e9b1ea14df033cba5b5134a7db305f9fc69239f517abb1be932568"
+            }
+          },
+          {
+            "destination": "scenes/fixture/scene.blend",
+            "origin": {
+              "commit": "9d471f07cb1330e02a9bae6e662a4abdcf85a917",
+              "kind": "git",
+              "path": "scenes/fixture/scene.blend",
+              "repository_id": "w03-repo",
+              "sha256": "17a4dda0efd2ef312d0b14d709d453de6cfb2c3986714eaee8042fd1a43dbe9f"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "blender",
+          "features": [
+            "linked-libraries",
+            "external-textures"
+          ],
+          "version": "4.5.14 LTS"
+        }
+      },
+      "shots": [
+        {
+          "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+          "shot_id": "fixture-shot",
+          "frames": {
+            "end": 12,
+            "start": 1
+          },
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          }
+        },
+        {
+          "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+          "shot_id": "incoming-shot",
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          }
+        }
+      ]
+    },
+    "native_history_imported": false
+  },
+  "sdk_version": "1.0.34",
+  "model": "gpt-6.1-sol",
+  "native_association": {
+    "created_at": "2026-11-14T16:05:04.441867+00:00",
+    "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+    "session_id": "bd724185-83d9-43fe-a290-05ff06addbdb"
+  },
+  "cli_version": "1.0.112",
+  "cli_binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+  "reported_models": [
+    "gpt-6.1-sol"
+  ],
+  "observed_usage": [
+    {
+      "cost_unit": null,
+      "input_tokens": 16862,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 232,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 18897,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 131,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 20905,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 1272,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 22215,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 35,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 22401,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 127,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 22637,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 129,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 22831,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 536,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 23960,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 478,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 24510,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 64,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 24825,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 24,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 25099,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 1362,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 26529,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 387,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 26949,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 102,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 28449,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 247,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 32067,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 851,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 32958,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 37,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 33140,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 121,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 33364,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 129,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 33701,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 492,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 34699,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 435,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 35206,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 64,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 35524,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 24,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 35829,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 1539,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 37438,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 755,
+      "reported_cost": 1
+    },
+    {
+      "cost_unit": null,
+      "input_tokens": 38236,
+      "model_id": "gpt-6.1-sol",
+      "output_tokens": 92,
+      "reported_cost": 1
+    }
+  ],
+  "ffmpeg_version": "ffmpeg version 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers",
+  "cloud_dispatches": 3,
+  "dispatch_durations_ms": [
+    46419,
+    49592,
+    74110
+  ],
+  "children": 0,
+  "encode_dispatches": [
+    {
+      "attempt_id": "attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198",
+      "input_digest": "191a26b361778e085e86431a9493d585d93126b21171a2f2433f4dbb24870529",
+      "job_id": "m13-encode-v1"
+    },
+    {
+      "attempt_id": "attempt-24ec1311-5960-4109-86fb-c3a70f59fa85",
+      "input_digest": "47538030e08ac7fcc60525fc71c15c4d2b74bb3f1305b48e8c02f87f8aef96ec",
+      "job_id": "m13-encode-v2"
+    }
+  ],
+  "requests": [
+    {
+      "accepted_at": "2026-11-14T16:05:00.684844+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-6ca29cafac594307a672e1d3b1a78940",
+      "project_id": "m13-cinematic",
+      "receipt": {
+        "detail_code": "provider_unavailable",
+        "native_message_id": "9e1cd29f-1c49-4c8b-954b-57918de4e303",
+        "project_id": "m13-cinematic",
+        "replayed": false,
+        "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 6,
+        "type": "queue",
+        "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+      },
+      "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "26a0b58c-1f21-4bf0-8660-017b2edf4c49",
+        "project_id": "m13-cinematic",
+        "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+        "schema_version": "1.0",
+        "text": "M13 ALLOCATED OWNER BRIEF. Work ONLY in this active project. No children/delegation, Blender, Unity, rendering, image/VLM generation, service/model lifecycle, installation, network downloads or direct FFmpeg. Finish this root within 165 seconds, without asking creative questions. Existing images are imported labelled ACTUAL W03 fixture history, not newly rendered shots. Do not query SQLite or edit .proscenium records. Read m13-inputs.json for this project's real IDs/source provenance.\n\nMaintain canonical SequenceMap in sequences/m13/sequence.json and explicit complete FrameMap in sequences/m13/frame-map.json, using installed proscenium.contracts SCHEMA/validate/canonical. Use exactly the declared frame timing below at 24/1 fps, 640x360 original input dimensions, silent true, blend_space linear_rgb. All choices are agent proposals under this owner brief, not owner visual approval. No owner selection action or finding approval is permitted.\n\nRegister the exact FrameMap JSON bytes through register_artifact, copying them to .proscenium/tool-output/staging/<map-id>.json first. ArtifactRegister uses schema_version 1.0, operation_id, project_id, artifact_id <map-id>, staging_path, kind frame_map, purpose metadata, media_type application/json and the REAL bytes' sha256. Put that map ID in every SequenceMap entry.mapping_artifact_id. FrameMap.frames has every sequence ordinal, each contributor with actual shot_id/version_id/job_id/source_frame and a reduced rational weight. The host resolves frame receipts; never invent their hashes.\n\nUse checkpoint_sources for ONLY these two canonical files, with actual git HEAD expected_head. Build SourceClosure from its actual file hashes/commit, files sorted by destination, dependencies [{item_id:fixture-scene,version_id:fixture-v1}], required_runtime {application:sequence,version:1.0,features:[]}, digest sha256(canonical(closure_without_digest)). Git origins use project.json repository_id. Publish a sequence item m13-film with the declared version/head below, name M13 two-shot cinematic, source_commit exact checkpoint commit, artifact_ids [<map-id>], preview_requests []. Validate PublicationSubmit before publish_outputs. No rerender requests. Call assemble_sequence ONCE with {operation_id:<assemble-id>,job_id:<job-id>,version:{item_id:m13-film,version_id:<version>},execution_profile_id:blender-cpu}. Record its actual result and body in ordinary reports/m13-vN.json. The owner harness will test acknowledgement retry separately under the original invocation. Do not call assembly again under a new invocation to simulate retry. You may get_job to inspect progress, but do not wait indefinitely. End with exact source/version/encode IDs and no claim of owner approval.\n\nV1: version m13-film-v1, expected_current_version_id null, map-id m13-map-v1, assemble-id m13-assemble-v1, job-id m13-encode-v1, frame_count 10.\nOpening entry_id opening: first shot m13-inputs.shots[0], source frames 1..3 -> sequence 1..3 identity, weight 1.\nBlend entry_id blend: same first shot source 4..6 -> sequence 4..6 transition. contributors are first shot frames 4..6 and second shot m13-inputs.shots[1] frame 1..1. At ordinals 4,5,6 the first/second weights are respectively (1,0), (1/2,1/2), (0,1). Retain BOTH contributors including zero weights, not a fictional source frame.\nArrival entry_id arrival: second shot source 1..1 -> sequence 7..10 retime, hold its real frame 1 with weight 1 for each of those four ordinals.\nAll source version_id values are fixture-v1. Use exact job/shot IDs in m13-inputs.json. No other footage or fabricated camera/render changes. Proceed now.\n",
+        "type": "queue"
+      }
+    },
+    {
+      "accepted_at": "2026-11-14T16:12:18.513068+00:00",
+      "effective_profile_id": "authoring",
+      "generation_task_id": "task-489df3b0b5f94068a72bb3ddcad61260",
+      "project_id": "m13-cinematic",
+      "receipt": {
+        "native_message_id": "c7d619c3-6bf6-4e55-b06f-0514f88bc674",
+        "project_id": "m13-cinematic",
+        "replayed": false,
+        "request_id": "f60181b2-db4a-4e22-9d6f-212e9876e63d",
+        "schema_version": "1.0",
+        "state": "completed",
+        "state_revision": 3,
+        "type": "queue",
+        "work_id": "work-1ade229a78cf4abdafd7b0a9d9e84cf1"
+      },
+      "request_id": "f60181b2-db4a-4e22-9d6f-212e9876e63d",
+      "schema_version": "1.0",
+      "submission": {
+        "context_id": "7e9f21d0-1193-418e-b18b-55670ee74659",
+        "project_id": "m13-cinematic",
+        "request_id": "f60181b2-db4a-4e22-9d6f-212e9876e63d",
+        "schema_version": "1.0",
+        "text": "M13 ALLOCATED OWNER BRIEF. Work ONLY in this active project. No children/delegation, Blender, Unity, rendering, image/VLM generation, service/model lifecycle, installation, network downloads or direct FFmpeg. Finish this root within 165 seconds, without asking creative questions. Existing images are imported labelled ACTUAL W03 fixture history, not newly rendered shots. Do not query SQLite or edit .proscenium records. Read m13-inputs.json for this project's real IDs/source provenance.\n\nMaintain canonical SequenceMap in sequences/m13/sequence.json and explicit complete FrameMap in sequences/m13/frame-map.json, using installed proscenium.contracts SCHEMA/validate/canonical. Use exactly the declared frame timing below at 24/1 fps, 640x360 original input dimensions, silent true, blend_space linear_rgb. All choices are agent proposals under this owner brief, not owner visual approval. No owner selection action or finding approval is permitted.\n\nRegister the exact FrameMap JSON bytes through register_artifact, copying them to .proscenium/tool-output/staging/<map-id>.json first. ArtifactRegister uses schema_version 1.0, operation_id, project_id, artifact_id <map-id>, staging_path, kind frame_map, purpose metadata, media_type application/json and the REAL bytes' sha256. Put that map ID in every SequenceMap entry.mapping_artifact_id. FrameMap.frames has every sequence ordinal, each contributor with actual shot_id/version_id/job_id/source_frame and a reduced rational weight. The host resolves frame receipts; never invent their hashes.\n\nUse checkpoint_sources for ONLY these two canonical files, with actual git HEAD expected_head. Build SourceClosure from its actual file hashes/commit, files sorted by destination, dependencies [{item_id:fixture-scene,version_id:fixture-v1}], required_runtime {application:sequence,version:1.0,features:[]}, digest sha256(canonical(closure_without_digest)). Git origins use project.json repository_id. Publish a sequence item m13-film with the declared version/head below, name M13 two-shot cinematic, source_commit exact checkpoint commit, artifact_ids [<map-id>], preview_requests []. Validate PublicationSubmit before publish_outputs. No rerender requests. Call assemble_sequence ONCE with {operation_id:<assemble-id>,job_id:<job-id>,version:{item_id:m13-film,version_id:<version>},execution_profile_id:blender-cpu}. Record its actual result and body in ordinary reports/m13-vN.json. The owner harness will test acknowledgement retry separately under the original invocation. Do not call assembly again under a new invocation to simulate retry. You may get_job to inspect progress, but do not wait indefinitely. End with exact source/version/encode IDs and no claim of owner approval.\n\nSECOND DECLARED EDIT, V2: publish NEW version m13-film-v2, expected_current_version_id m13-film-v1, map-id m13-map-v2, assemble-id m13-assemble-v2, job-id m13-encode-v2, frame_count 8.\nReorder and trim the previous edit: first arrival (stable entry_id arrival), second shot source 1..1 held as retime over sequence 1..4. Then opening (stable entry_id opening), first shot trimmed to source 3..6 as trim over sequence 5..8, weight 1 on each matching frame. Remove the blend entry for this edit. Both entries use the new explicit map. Keep old source commits, v1, its map/delivery and all owner annotations/selections untouched. Existing visual selection of v1, if shown, is not permission to change that owner record. This v2 is a new agent-proposed edit with declared inputs, not an adoption or invention of private owner choices. No rerenders. Proceed now.\n",
+        "type": "queue"
+      }
+    }
+  ],
+  "continuations": [
+    {
+      "message_id": "626a6506-87aa-41fa-bed7-021a29e3a527",
+      "operation_id": "665b040a-168d-4d02-9525-dc04867620c8",
+      "session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+      "state": "acknowledged"
+    }
+  ],
+  "publications": [
+    {
+      "invocation_id": "6f275d6e6fb73d72bebfe332cc9c0bbce3c647714b7e7163015f0e544791f527",
+      "native_session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+      "receipt": {
+        "event_sequence": 55,
+        "job_ids": [],
+        "project_id": "m13-cinematic",
+        "publication_id": "m13-publish-v1",
+        "replayed": false,
+        "schema_version": "1.0",
+        "versions": [
+          {
+            "item_id": "m13-film",
+            "version_id": "m13-film-v1"
+          }
+        ]
+      },
+      "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+      "submission": {
+        "items": [
+          {
+            "artifact_ids": [
+              "m13-map-v1"
+            ],
+            "description": "Agent proposal using imported ACTUAL W03 fixture history, not newly rendered shots. No owner visual approval.",
+            "expected_current_version_id": null,
+            "item_id": "m13-film",
+            "kind": "sequence",
+            "name": "M13 two-shot cinematic",
+            "preview_requests": [],
+            "source": {
+              "dependencies": [
+                {
+                  "item_id": "fixture-scene",
+                  "version_id": "fixture-v1"
+                }
+              ],
+              "digest": "0cd3d407b6cc9824fc9676312a33cbf7b70ee3076bc259b54bf283f40fd50987",
+              "entry_path": "sequences/m13/sequence.json",
+              "files": [
+                {
+                  "destination": "sequences/m13/frame-map.json",
+                  "origin": {
+                    "commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+                    "kind": "git",
+                    "path": "sequences/m13/frame-map.json",
+                    "repository_id": "w03-repo",
+                    "sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b"
+                  }
+                },
+                {
+                  "destination": "sequences/m13/sequence.json",
+                  "origin": {
+                    "commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+                    "kind": "git",
+                    "path": "sequences/m13/sequence.json",
+                    "repository_id": "w03-repo",
+                    "sha256": "affc7fd547de897b14497248560eecd05ca5ba7c017364d3833442c0c09d7124"
+                  }
+                }
+              ],
+              "required_runtime": {
+                "application": "sequence",
+                "features": [],
+                "version": "1.0"
+              }
+            },
+            "source_commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+            "version_id": "m13-film-v1"
+          }
+        ],
+        "project_id": "m13-cinematic",
+        "publication_id": "m13-publish-v1",
+        "schema_version": "1.0"
+      },
+      "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+    },
+    {
+      "invocation_id": "fd69029065a019827cfe7f61a016542315ecdb94e8b98b5390b437aa5c496220",
+      "native_session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+      "receipt": {
+        "event_sequence": 221,
+        "job_ids": [],
+        "project_id": "m13-cinematic",
+        "publication_id": "m13-publish-v2",
+        "replayed": false,
+        "schema_version": "1.0",
+        "versions": [
+          {
+            "item_id": "m13-film",
+            "version_id": "m13-film-v2"
+          }
+        ]
+      },
+      "request_id": "f60181b2-db4a-4e22-9d6f-212e9876e63d",
+      "submission": {
+        "items": [
+          {
+            "artifact_ids": [
+              "m13-map-v2"
+            ],
+            "description": "Agent-proposed reordered and trimmed edit using imported ACTUAL W03 fixture history, not newly rendered shots. No owner visual approval.",
+            "expected_current_version_id": "m13-film-v1",
+            "item_id": "m13-film",
+            "kind": "sequence",
+            "name": "M13 two-shot cinematic",
+            "preview_requests": [],
+            "source": {
+              "dependencies": [
+                {
+                  "item_id": "fixture-scene",
+                  "version_id": "fixture-v1"
+                }
+              ],
+              "digest": "f85c1ffe60cf3885051553b68e1422a2a057548bb4f50d53cd932e59c453d0ef",
+              "entry_path": "sequences/m13/sequence.json",
+              "files": [
+                {
+                  "destination": "sequences/m13/frame-map.json",
+                  "origin": {
+                    "commit": "90fe5a6662f56ea5ac56abab568e151671974090",
+                    "kind": "git",
+                    "path": "sequences/m13/frame-map.json",
+                    "repository_id": "w03-repo",
+                    "sha256": "ca9711648177fd59cbca764172e11a7ab78ebb6220052ce5a321e555bdcb7f34"
+                  }
+                },
+                {
+                  "destination": "sequences/m13/sequence.json",
+                  "origin": {
+                    "commit": "90fe5a6662f56ea5ac56abab568e151671974090",
+                    "kind": "git",
+                    "path": "sequences/m13/sequence.json",
+                    "repository_id": "w03-repo",
+                    "sha256": "cb73366a76e228b9e0ff61d6c156fe77b2be42f0d28f66f3424745104d2a5b1e"
+                  }
+                }
+              ],
+              "required_runtime": {
+                "application": "sequence",
+                "features": [],
+                "version": "1.0"
+              }
+            },
+            "source_commit": "90fe5a6662f56ea5ac56abab568e151671974090",
+            "version_id": "m13-film-v2"
+          }
+        ],
+        "project_id": "m13-cinematic",
+        "publication_id": "m13-publish-v2",
+        "schema_version": "1.0"
+      },
+      "work_id": "work-1ade229a78cf4abdafd7b0a9d9e84cf1"
+    }
+  ],
+  "workflow_invocations": [
+    {
+      "agent_id": null,
+      "delivery_id": "665b040a-168d-4d02-9525-dc04867620c8",
+      "invocation_id": "2a65d3cd49df738fe80de52cc67a1e5d2bad56d7be5965a32a992ba1a29fd27f",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "assemble_sequence",
+      "native_id": "call_N1eMvCN3wyvKa3R7WUBw0P53",
+      "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+      "request_id": "510aa045-3bf0-443a-9889-efe267ca0cfb",
+      "session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+      "state": "completed",
+      "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+    },
+    {
+      "agent_id": null,
+      "delivery_id": "f60181b2-db4a-4e22-9d6f-212e9876e63d",
+      "invocation_id": "a0780ccf007709668eff1f87ec9660235d5d4ff52b0cdf597b7fc8a5d7e327cd",
+      "kind": "tool",
+      "model_id": "gpt-6.1-sol",
+      "name": "assemble_sequence",
+      "native_id": "call_BEGtDaMOV420Y7NbYMR8zLA6",
+      "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+      "request_id": "f60181b2-db4a-4e22-9d6f-212e9876e63d",
+      "session_id": "bd724185-83d9-43fe-a290-05ff06addbdb",
+      "state": "completed",
+      "work_id": "work-1ade229a78cf4abdafd7b0a9d9e84cf1"
+    }
+  ],
+  "edits": [
+    {
+      "version": {
+        "actor": {
+          "id": "call_RwKslwhl0cdgkGPlEWHQe82T",
+          "kind": "tool"
+        },
+        "artifact_ids": [
+          "m13-map-v1",
+          "m13-encode-v1-delivery",
+          "m13-encode-v1-frame-map",
+          "m13-encode-v1-manifest"
+        ],
+        "created_at": "2026-11-14T16:09:29.616270+00:00",
+        "description": "Agent proposal using imported ACTUAL W03 fixture history, not newly rendered shots. No owner visual approval.",
+        "item_id": "m13-film",
+        "kind": "sequence",
+        "name": "M13 two-shot cinematic",
+        "preview_job_ids": [],
+        "preview_requests": [],
+        "project_id": "m13-cinematic",
+        "publication_id": "m13-publish-v1",
+        "schema_version": "1.0",
+        "source": {
+          "dependencies": [
+            {
+              "item_id": "fixture-scene",
+              "version_id": "fixture-v1"
+            }
+          ],
+          "digest": "0cd3d407b6cc9824fc9676312a33cbf7b70ee3076bc259b54bf283f40fd50987",
+          "entry_path": "sequences/m13/sequence.json",
+          "files": [
+            {
+              "destination": "sequences/m13/frame-map.json",
+              "origin": {
+                "commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+                "kind": "git",
+                "path": "sequences/m13/frame-map.json",
+                "repository_id": "w03-repo",
+                "sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b"
+              }
+            },
+            {
+              "destination": "sequences/m13/sequence.json",
+              "origin": {
+                "commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+                "kind": "git",
+                "path": "sequences/m13/sequence.json",
+                "repository_id": "w03-repo",
+                "sha256": "affc7fd547de897b14497248560eecd05ca5ba7c017364d3833442c0c09d7124"
+              }
+            }
+          ],
+          "required_runtime": {
+            "application": "sequence",
+            "features": [],
+            "version": "1.0"
+          }
+        },
+        "source_commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+        "version_id": "m13-film-v1"
+      },
+      "job": {
+        "artifact_ids": [
+          "m13-encode-v1-delivery",
+          "m13-encode-v1-frame-map",
+          "m13-encode-v1-manifest"
+        ],
+        "attempt_id": "attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 0,
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "191a26b361778e085e86431a9493d585d93126b21171a2f2433f4dbb24870529",
+        "job_id": "m13-encode-v1",
+        "kind": "encode",
+        "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+        "owner_operation_id": null,
+        "project_id": "m13-cinematic",
+        "provider_id": null,
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 4,
+        "target": {
+          "shot_id": null,
+          "target_id": "m13-film",
+          "version": {
+            "item_id": "m13-film",
+            "version_id": "m13-film-v1"
+          }
+        },
+        "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+      },
+      "sequence": {
+        "entries": [
+          {
+            "choice": "agent",
+            "entry_id": "opening",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "mapping_artifact_id": "m13-map-v1",
+            "sequence_frames": {
+              "end": 3,
+              "start": 1
+            },
+            "shot_id": "fixture-shot",
+            "source_frames": {
+              "end": 3,
+              "start": 1
+            },
+            "transform": "identity",
+            "version_id": "fixture-v1"
+          },
+          {
+            "choice": "agent",
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frames": {
+                  "end": 6,
+                  "start": 4
+                },
+                "version_id": "fixture-v1"
+              },
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frames": {
+                  "end": 1,
+                  "start": 1
+                },
+                "version_id": "fixture-v1"
+              }
+            ],
+            "entry_id": "blend",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "mapping_artifact_id": "m13-map-v1",
+            "sequence_frames": {
+              "end": 6,
+              "start": 4
+            },
+            "shot_id": "fixture-shot",
+            "source_frames": {
+              "end": 6,
+              "start": 4
+            },
+            "transform": "transition",
+            "version_id": "fixture-v1"
+          },
+          {
+            "choice": "agent",
+            "entry_id": "arrival",
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "mapping_artifact_id": "m13-map-v1",
+            "sequence_frames": {
+              "end": 10,
+              "start": 7
+            },
+            "shot_id": "incoming-shot",
+            "source_frames": {
+              "end": 1,
+              "start": 1
+            },
+            "transform": "retime",
+            "version_id": "fixture-v1"
+          }
+        ],
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frame_count": 10,
+        "project_id": "m13-cinematic",
+        "schema_version": "1.0",
+        "sequence_version_id": "m13-film-v1",
+        "silent": true
+      },
+      "frame_map": {
+        "blend_space": "linear_rgb",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frame_count": 10,
+        "frames": [
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 1
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 2,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 2
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 3,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 3
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 4,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              },
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 0
+                }
+              }
+            ],
+            "sequence_frame": 4
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 5,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 2,
+                  "numerator": 1
+                }
+              },
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 2,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 5
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 6,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 0
+                }
+              },
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 6
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 7
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 8
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 9
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 10
+          }
+        ],
+        "project_id": "m13-cinematic",
+        "schema_version": "1.0",
+        "sequence_version_id": "m13-film-v1"
+      },
+      "artifacts": [
+        {
+          "artifact_id": "m13-encode-v1-delivery",
+          "bytes": 64876,
+          "derived_from": [
+            {
+              "input_artifact_ids": [
+                "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6"
+              ],
+              "kind": "encode",
+              "parameters": {
+                "blend_space": "linear_rgb",
+                "frame_map_sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b"
+              }
+            }
+          ],
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frame_count": 10,
+          "kind": "video",
+          "media_type": "video/mp4",
+          "project_id": "m13-cinematic",
+          "purpose": "final",
+          "schema_version": "1.0",
+          "sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e",
+          "source_version_id": "m13-film-v1",
+          "state": "ready"
+        },
+        {
+          "artifact_id": "m13-encode-v1-frame-map",
+          "bytes": 3106,
+          "derived_from": [],
+          "kind": "frame_map",
+          "media_type": "application/json",
+          "project_id": "m13-cinematic",
+          "purpose": "metadata",
+          "schema_version": "1.0",
+          "sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b",
+          "source_version_id": "m13-film-v1",
+          "state": "ready"
+        },
+        {
+          "artifact_id": "m13-encode-v1-manifest",
+          "bytes": 7291,
+          "derived_from": [],
+          "kind": "document",
+          "media_type": "application/json",
+          "project_id": "m13-cinematic",
+          "purpose": "metadata",
+          "schema_version": "1.0",
+          "sha256": "46d550ab364d2b572fd5fffbf17fe472714b24e6e249f20c9882076215321ef1",
+          "source_version_id": "m13-film-v1",
+          "state": "ready"
+        }
+      ],
+      "worker_terminal": {
+        "finished_ns": 465286418263214,
+        "native_exit_code": null,
+        "state": "succeeded",
+        "task_sha256": "0d6c28a9187d233691697a1acaa05028a6e8ad169001983809e5b5a2143ebc3f"
+      },
+      "worker_process": {
+        "argv": [
+          "/home/quintin/.cache/proscenium-development/fleet/m13-cinematic/.venv/bin/python3",
+          "-m",
+          "proscenium.previews.worker",
+          "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v1/attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198"
+        ],
+        "pid": 3798916,
+        "start_ticks": 46528411,
+        "started_ns": 465284361082033,
+        "state": "R",
+        "task_sha256": "0d6c28a9187d233691697a1acaa05028a6e8ad169001983809e5b5a2143ebc3f"
+      },
+      "historical_native_exit_code": null,
+      "manifest": {
+        "encode_argv": [
+          "/usr/bin/ffmpeg",
+          "-nostdin",
+          "-v",
+          "error",
+          "-n",
+          "-framerate",
+          "24/1",
+          "-start_number",
+          "1",
+          "-i",
+          "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v1/attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198/frames/%08d.png",
+          "-frames:v",
+          "10",
+          "-an",
+          "-c:v",
+          "libx264",
+          "-threads",
+          "2",
+          "-preset",
+          "veryfast",
+          "-crf",
+          "18",
+          "-pix_fmt",
+          "yuv420p",
+          "-g",
+          "10",
+          "-keyint_min",
+          "10",
+          "-sc_threshold",
+          "0",
+          "-bf",
+          "0",
+          "-flags",
+          "+cgop",
+          "-movflags",
+          "+faststart",
+          "-video_track_timescale",
+          "24",
+          "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v1/attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198/delivery.mp4"
+        ],
+        "frame_map_sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b",
+        "input_digest": "191a26b361778e085e86431a9493d585d93126b21171a2f2433f4dbb24870529",
+        "input_frames": [
+          {
+            "artifact_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+            "attempt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "c2ea2ba9378d0511948d4e121f3d9e2cdbd4d551984610a7b6de5853c4c7c14f",
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "output_path": "frames/00000001.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107-f1",
+            "schema_version": "1.0",
+            "sha256": "d821a6e51bc425c87681c53b78aa7d3831839ce9a00b28800af017aac0262b81",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000001.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f1",
+            "schema_version": "1.0",
+            "sha256": "9258c03703cd4101a07f8b3cf0d1241b64c1c10a67e115ffdaf34968d95931f5",
+            "shot_id": "fixture-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000002.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f2",
+            "schema_version": "1.0",
+            "sha256": "1ab1e69ae6106d468da72b2ba26d171644ff5aec55652cb5f0c2be2e7162880f",
+            "shot_id": "fixture-shot",
+            "source_frame": 2,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000003.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f3",
+            "schema_version": "1.0",
+            "sha256": "f99a34d598e568ddbcccaee3e865c96af7015f011083321c32d5e69addd7153c",
+            "shot_id": "fixture-shot",
+            "source_frame": 3,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000004.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f4",
+            "schema_version": "1.0",
+            "sha256": "1ec8aaa3c98b760940e84b1089fbcaea5e9cc3bfb999f5e2657868133d3ed659",
+            "shot_id": "fixture-shot",
+            "source_frame": 4,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000005.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f5",
+            "schema_version": "1.0",
+            "sha256": "3a7f9fc4fe0316cde865634a5d23605586079c346cd465d7b249c1c20129f714",
+            "shot_id": "fixture-shot",
+            "source_frame": 5,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000006.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f6",
+            "schema_version": "1.0",
+            "sha256": "3ccd9990c4286e1dbb264e2782d517c593e8d8913ffcbfaf997efd100cd1815d",
+            "shot_id": "fixture-shot",
+            "source_frame": 6,
+            "version_id": "fixture-v1"
+          }
+        ],
+        "sequence": {
+          "entries": [
+            {
+              "entry_id": "opening",
+              "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+              "mapping_artifact_id": "m13-map-v1",
+              "sequence_frames": {
+                "end": 3,
+                "start": 1
+              },
+              "shot_id": "fixture-shot",
+              "source_frames": {
+                "end": 3,
+                "start": 1
+              },
+              "transform": "identity",
+              "version_id": "fixture-v1"
+            },
+            {
+              "contributors": [
+                {
+                  "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                  "shot_id": "fixture-shot",
+                  "source_frames": {
+                    "end": 6,
+                    "start": 4
+                  },
+                  "version_id": "fixture-v1"
+                },
+                {
+                  "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                  "shot_id": "incoming-shot",
+                  "source_frames": {
+                    "end": 1,
+                    "start": 1
+                  },
+                  "version_id": "fixture-v1"
+                }
+              ],
+              "entry_id": "blend",
+              "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+              "mapping_artifact_id": "m13-map-v1",
+              "sequence_frames": {
+                "end": 6,
+                "start": 4
+              },
+              "shot_id": "fixture-shot",
+              "source_frames": {
+                "end": 6,
+                "start": 4
+              },
+              "transform": "transition",
+              "version_id": "fixture-v1"
+            },
+            {
+              "entry_id": "arrival",
+              "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+              "mapping_artifact_id": "m13-map-v1",
+              "sequence_frames": {
+                "end": 10,
+                "start": 7
+              },
+              "shot_id": "incoming-shot",
+              "source_frames": {
+                "end": 1,
+                "start": 1
+              },
+              "transform": "retime",
+              "version_id": "fixture-v1"
+            }
+          ],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frame_count": 10,
+          "project_id": "m13-cinematic",
+          "schema_version": "1.0",
+          "sequence_version_id": "m13-film-v1",
+          "silent": true
+        },
+        "video_sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e"
+      },
+      "downloads": [
+        {
+          "name": "Download final video",
+          "href": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-delivery/content",
+          "path": "/home/quintin/.cache/proscenium-development/c13c/downloads/m13-film-v1.mp4",
+          "bytes": 64876,
+          "sha256": "ddf01466d4a086bcdae27890e6cbabaa2bf309b62e48bf9353a056d92a60aa8e"
+        },
+        {
+          "name": "Download delivery manifest",
+          "href": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v1-manifest/content",
+          "path": "/home/quintin/.cache/proscenium-development/c13c/downloads/m13-film-v1-manifest.json",
+          "bytes": 7291,
+          "sha256": "46d550ab364d2b572fd5fffbf17fe472714b24e6e249f20c9882076215321ef1"
+        }
+      ],
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+            "profile": "High",
+            "codec_type": "video",
+            "codec_tag_string": "avc1",
+            "codec_tag": "0x31637661",
+            "width": 640,
+            "height": 360,
+            "coded_width": 640,
+            "coded_height": 368,
+            "has_b_frames": 0,
+            "pix_fmt": "yuv420p",
+            "level": 30,
+            "chroma_location": "left",
+            "field_order": "progressive",
+            "refs": 1,
+            "is_avc": "true",
+            "nal_length_size": "4",
+            "id": "0x1",
+            "r_frame_rate": "24/1",
+            "avg_frame_rate": "24/1",
+            "time_base": "1/24",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 10,
+            "duration": "0.416667",
+            "bit_rate": "1228723",
+            "bits_per_raw_sample": "8",
+            "nb_frames": "10",
+            "nb_read_frames": "10",
+            "extradata_size": 44,
+            "disposition": {
+              "default": 1,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            },
+            "tags": {
+              "language": "und",
+              "handler_name": "VideoHandler",
+              "vendor_id": "[0][0][0][0]",
+              "encoder": "Lavc62.11.100 libx264"
+            }
+          }
+        ],
+        "format": {
+          "filename": "/home/quintin/.cache/proscenium-development/c13c/downloads/m13-film-v1.mp4",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+          "format_long_name": "QuickTime / MOV",
+          "start_time": "0.000000",
+          "duration": "0.416667",
+          "size": "64876",
+          "bit_rate": "1245618",
+          "probe_score": 100,
+          "tags": {
+            "major_brand": "isom",
+            "minor_version": "512",
+            "compatible_brands": "isomiso2avc1mp41",
+            "encoder": "Lavf62.3.100"
+          }
+        }
+      },
+      "full_decode_exit": 0,
+      "playback": [
+        {
+          "mediaTime": 0,
+          "presentedFrames": 2,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.041667,
+          "presentedFrames": 3,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.083333,
+          "presentedFrames": 4,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.125,
+          "presentedFrames": 5,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.166667,
+          "presentedFrames": 6,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.208333,
+          "presentedFrames": 7,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.25,
+          "presentedFrames": 8,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.291667,
+          "presentedFrames": 9,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.333333,
+          "presentedFrames": 10,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.375,
+          "presentedFrames": 11,
+          "width": 640,
+          "height": 360
+        }
+      ]
+    },
+    {
+      "version": {
+        "actor": {
+          "id": "call_XDoTPBGCLyZqAirOjniDMwPu",
+          "kind": "tool"
+        },
+        "artifact_ids": [
+          "m13-map-v2",
+          "m13-encode-v2-delivery",
+          "m13-encode-v2-frame-map",
+          "m13-encode-v2-manifest"
+        ],
+        "created_at": "2026-11-14T16:12:57.066601+00:00",
+        "description": "Agent-proposed reordered and trimmed edit using imported ACTUAL W03 fixture history, not newly rendered shots. No owner visual approval.",
+        "item_id": "m13-film",
+        "kind": "sequence",
+        "name": "M13 two-shot cinematic",
+        "preview_job_ids": [],
+        "preview_requests": [],
+        "project_id": "m13-cinematic",
+        "publication_id": "m13-publish-v2",
+        "schema_version": "1.0",
+        "source": {
+          "dependencies": [
+            {
+              "item_id": "fixture-scene",
+              "version_id": "fixture-v1"
+            }
+          ],
+          "digest": "f85c1ffe60cf3885051553b68e1422a2a057548bb4f50d53cd932e59c453d0ef",
+          "entry_path": "sequences/m13/sequence.json",
+          "files": [
+            {
+              "destination": "sequences/m13/frame-map.json",
+              "origin": {
+                "commit": "90fe5a6662f56ea5ac56abab568e151671974090",
+                "kind": "git",
+                "path": "sequences/m13/frame-map.json",
+                "repository_id": "w03-repo",
+                "sha256": "ca9711648177fd59cbca764172e11a7ab78ebb6220052ce5a321e555bdcb7f34"
+              }
+            },
+            {
+              "destination": "sequences/m13/sequence.json",
+              "origin": {
+                "commit": "90fe5a6662f56ea5ac56abab568e151671974090",
+                "kind": "git",
+                "path": "sequences/m13/sequence.json",
+                "repository_id": "w03-repo",
+                "sha256": "cb73366a76e228b9e0ff61d6c156fe77b2be42f0d28f66f3424745104d2a5b1e"
+              }
+            }
+          ],
+          "required_runtime": {
+            "application": "sequence",
+            "features": [],
+            "version": "1.0"
+          }
+        },
+        "source_commit": "90fe5a6662f56ea5ac56abab568e151671974090",
+        "version_id": "m13-film-v2"
+      },
+      "job": {
+        "artifact_ids": [
+          "m13-encode-v2-delivery",
+          "m13-encode-v2-frame-map",
+          "m13-encode-v2-manifest"
+        ],
+        "attempt_id": "attempt-24ec1311-5960-4109-86fb-c3a70f59fa85",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 0,
+        "expected_frames": null,
+        "external_job_id": null,
+        "input_digest": "47538030e08ac7fcc60525fc71c15c4d2b74bb3f1305b48e8c02f87f8aef96ec",
+        "job_id": "m13-encode-v2",
+        "kind": "encode",
+        "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+        "owner_operation_id": null,
+        "project_id": "m13-cinematic",
+        "provider_id": null,
+        "render_spec": null,
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 3,
+        "target": {
+          "shot_id": null,
+          "target_id": "m13-film",
+          "version": {
+            "item_id": "m13-film",
+            "version_id": "m13-film-v2"
+          }
+        },
+        "work_id": "work-1ade229a78cf4abdafd7b0a9d9e84cf1"
+      },
+      "sequence": {
+        "entries": [
+          {
+            "choice": "agent",
+            "entry_id": "arrival",
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "mapping_artifact_id": "m13-map-v2",
+            "sequence_frames": {
+              "end": 4,
+              "start": 1
+            },
+            "shot_id": "incoming-shot",
+            "source_frames": {
+              "end": 1,
+              "start": 1
+            },
+            "transform": "retime",
+            "version_id": "fixture-v1"
+          },
+          {
+            "choice": "agent",
+            "entry_id": "opening",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "mapping_artifact_id": "m13-map-v2",
+            "sequence_frames": {
+              "end": 8,
+              "start": 5
+            },
+            "shot_id": "fixture-shot",
+            "source_frames": {
+              "end": 6,
+              "start": 3
+            },
+            "transform": "trim",
+            "version_id": "fixture-v1"
+          }
+        ],
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frame_count": 8,
+        "project_id": "m13-cinematic",
+        "schema_version": "1.0",
+        "sequence_version_id": "m13-film-v2",
+        "silent": true
+      },
+      "frame_map": {
+        "blend_space": "linear_rgb",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frame_count": 8,
+        "frames": [
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 1
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 2
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 3
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+                "shot_id": "incoming-shot",
+                "source_frame": 1,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 4
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 3,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 5
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 4,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 6
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 5,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 7
+          },
+          {
+            "contributors": [
+              {
+                "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+                "shot_id": "fixture-shot",
+                "source_frame": 6,
+                "version_id": "fixture-v1",
+                "weight": {
+                  "denominator": 1,
+                  "numerator": 1
+                }
+              }
+            ],
+            "sequence_frame": 8
+          }
+        ],
+        "project_id": "m13-cinematic",
+        "schema_version": "1.0",
+        "sequence_version_id": "m13-film-v2"
+      },
+      "artifacts": [
+        {
+          "artifact_id": "m13-encode-v2-delivery",
+          "bytes": 55861,
+          "derived_from": [
+            {
+              "input_artifact_ids": [
+                "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+                "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6"
+              ],
+              "kind": "encode",
+              "parameters": {
+                "blend_space": "linear_rgb",
+                "frame_map_sha256": "ca9711648177fd59cbca764172e11a7ab78ebb6220052ce5a321e555bdcb7f34"
+              }
+            }
+          ],
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frame_count": 8,
+          "kind": "video",
+          "media_type": "video/mp4",
+          "project_id": "m13-cinematic",
+          "purpose": "final",
+          "schema_version": "1.0",
+          "sha256": "4617a8b2fd4fda94d1f92bf9220856d71137f70f81cf8e6f61180ccc52f79363",
+          "source_version_id": "m13-film-v2",
+          "state": "ready"
+        },
+        {
+          "artifact_id": "m13-encode-v2-frame-map",
+          "bytes": 2050,
+          "derived_from": [],
+          "kind": "frame_map",
+          "media_type": "application/json",
+          "project_id": "m13-cinematic",
+          "purpose": "metadata",
+          "schema_version": "1.0",
+          "sha256": "ca9711648177fd59cbca764172e11a7ab78ebb6220052ce5a321e555bdcb7f34",
+          "source_version_id": "m13-film-v2",
+          "state": "ready"
+        },
+        {
+          "artifact_id": "m13-encode-v2-manifest",
+          "bytes": 5215,
+          "derived_from": [],
+          "kind": "document",
+          "media_type": "application/json",
+          "project_id": "m13-cinematic",
+          "purpose": "metadata",
+          "schema_version": "1.0",
+          "sha256": "b7bd37ef47a04eb473c7504047cb140054247eb09e0e4ae72ae874b955b1d6e3",
+          "source_version_id": "m13-film-v2",
+          "state": "ready"
+        }
+      ],
+      "worker_terminal": {
+        "finished_ns": 465492902609399,
+        "native_exit_code": null,
+        "state": "succeeded",
+        "task_sha256": "615fb2f3a622b46e829d44079c200ff1dc4a4eed246e09b8e6b11ee9f6196999"
+      },
+      "worker_process": {
+        "argv": [
+          "/home/quintin/.cache/proscenium-development/fleet/m13-cinematic/.venv/bin/python3",
+          "-m",
+          "proscenium.previews.worker",
+          "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v2/attempt-24ec1311-5960-4109-86fb-c3a70f59fa85"
+        ],
+        "pid": 3807369,
+        "start_ticks": 46549206,
+        "started_ns": 465492312787784,
+        "state": "R",
+        "task_sha256": "615fb2f3a622b46e829d44079c200ff1dc4a4eed246e09b8e6b11ee9f6196999"
+      },
+      "historical_native_exit_code": null,
+      "manifest": {
+        "encode_argv": [
+          "/usr/bin/ffmpeg",
+          "-nostdin",
+          "-v",
+          "error",
+          "-n",
+          "-framerate",
+          "24/1",
+          "-start_number",
+          "1",
+          "-i",
+          "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v2/attempt-24ec1311-5960-4109-86fb-c3a70f59fa85/frames/%08d.png",
+          "-frames:v",
+          "8",
+          "-an",
+          "-c:v",
+          "libx264",
+          "-threads",
+          "2",
+          "-preset",
+          "veryfast",
+          "-crf",
+          "18",
+          "-pix_fmt",
+          "yuv420p",
+          "-g",
+          "8",
+          "-keyint_min",
+          "8",
+          "-sc_threshold",
+          "0",
+          "-bf",
+          "0",
+          "-flags",
+          "+cgop",
+          "-movflags",
+          "+faststart",
+          "-video_track_timescale",
+          "24",
+          "/home/quintin/.cache/proscenium-development/c13c/project/.proscenium/jobs/previews/m13-encode-v2/attempt-24ec1311-5960-4109-86fb-c3a70f59fa85/delivery.mp4"
+        ],
+        "frame_map_sha256": "ca9711648177fd59cbca764172e11a7ab78ebb6220052ce5a321e555bdcb7f34",
+        "input_digest": "47538030e08ac7fcc60525fc71c15c4d2b74bb3f1305b48e8c02f87f8aef96ec",
+        "input_frames": [
+          {
+            "artifact_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+            "attempt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "c2ea2ba9378d0511948d4e121f3d9e2cdbd4d551984610a7b6de5853c4c7c14f",
+            "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+            "output_path": "frames/00000001.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107-f1",
+            "schema_version": "1.0",
+            "sha256": "d821a6e51bc425c87681c53b78aa7d3831839ce9a00b28800af017aac0262b81",
+            "shot_id": "incoming-shot",
+            "source_frame": 1,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000003.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f3",
+            "schema_version": "1.0",
+            "sha256": "f99a34d598e568ddbcccaee3e865c96af7015f011083321c32d5e69addd7153c",
+            "shot_id": "fixture-shot",
+            "source_frame": 3,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000004.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f4",
+            "schema_version": "1.0",
+            "sha256": "1ec8aaa3c98b760940e84b1089fbcaea5e9cc3bfb999f5e2657868133d3ed659",
+            "shot_id": "fixture-shot",
+            "source_frame": 4,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000005.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f5",
+            "schema_version": "1.0",
+            "sha256": "3a7f9fc4fe0316cde865634a5d23605586079c346cd465d7b249c1c20129f714",
+            "shot_id": "fixture-shot",
+            "source_frame": 5,
+            "version_id": "fixture-v1"
+          },
+          {
+            "artifact_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+            "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+            "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+            "output_path": "frames/00000006.png",
+            "project_id": "m13-cinematic",
+            "receipt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-f6",
+            "schema_version": "1.0",
+            "sha256": "3ccd9990c4286e1dbb264e2782d517c593e8d8913ffcbfaf997efd100cd1815d",
+            "shot_id": "fixture-shot",
+            "source_frame": 6,
+            "version_id": "fixture-v1"
+          }
+        ],
+        "sequence": {
+          "entries": [
+            {
+              "entry_id": "arrival",
+              "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+              "mapping_artifact_id": "m13-map-v2",
+              "sequence_frames": {
+                "end": 4,
+                "start": 1
+              },
+              "shot_id": "incoming-shot",
+              "source_frames": {
+                "end": 1,
+                "start": 1
+              },
+              "transform": "retime",
+              "version_id": "fixture-v1"
+            },
+            {
+              "entry_id": "opening",
+              "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+              "mapping_artifact_id": "m13-map-v2",
+              "sequence_frames": {
+                "end": 8,
+                "start": 5
+              },
+              "shot_id": "fixture-shot",
+              "source_frames": {
+                "end": 6,
+                "start": 3
+              },
+              "transform": "trim",
+              "version_id": "fixture-v1"
+            }
+          ],
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frame_count": 8,
+          "project_id": "m13-cinematic",
+          "schema_version": "1.0",
+          "sequence_version_id": "m13-film-v2",
+          "silent": true
+        },
+        "video_sha256": "4617a8b2fd4fda94d1f92bf9220856d71137f70f81cf8e6f61180ccc52f79363"
+      },
+      "downloads": [
+        {
+          "name": "Download final video",
+          "href": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v2-delivery/content",
+          "path": "/home/quintin/.cache/proscenium-development/c13c/downloads/m13-film-v2.mp4",
+          "bytes": 55861,
+          "sha256": "4617a8b2fd4fda94d1f92bf9220856d71137f70f81cf8e6f61180ccc52f79363"
+        },
+        {
+          "name": "Download delivery manifest",
+          "href": "/api/v1/projects/m13-cinematic/artifacts/m13-encode-v2-manifest/content",
+          "path": "/home/quintin/.cache/proscenium-development/c13c/downloads/m13-film-v2-manifest.json",
+          "bytes": 5215,
+          "sha256": "b7bd37ef47a04eb473c7504047cb140054247eb09e0e4ae72ae874b955b1d6e3"
+        }
+      ],
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+            "profile": "High",
+            "codec_type": "video",
+            "codec_tag_string": "avc1",
+            "codec_tag": "0x31637661",
+            "width": 640,
+            "height": 360,
+            "coded_width": 640,
+            "coded_height": 368,
+            "has_b_frames": 0,
+            "pix_fmt": "yuv420p",
+            "level": 30,
+            "chroma_location": "left",
+            "field_order": "progressive",
+            "refs": 1,
+            "is_avc": "true",
+            "nal_length_size": "4",
+            "id": "0x1",
+            "r_frame_rate": "24/1",
+            "avg_frame_rate": "24/1",
+            "time_base": "1/24",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 8,
+            "duration": "0.333333",
+            "bit_rate": "1319736",
+            "bits_per_raw_sample": "8",
+            "nb_frames": "8",
+            "nb_read_frames": "8",
+            "extradata_size": 44,
+            "disposition": {
+              "default": 1,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            },
+            "tags": {
+              "language": "und",
+              "handler_name": "VideoHandler",
+              "vendor_id": "[0][0][0][0]",
+              "encoder": "Lavc62.11.100 libx264"
+            }
+          }
+        ],
+        "format": {
+          "filename": "/home/quintin/.cache/proscenium-development/c13c/downloads/m13-film-v2.mp4",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+          "format_long_name": "QuickTime / MOV",
+          "start_time": "0.000000",
+          "duration": "0.333333",
+          "size": "55861",
+          "bit_rate": "1340665",
+          "probe_score": 100,
+          "tags": {
+            "major_brand": "isom",
+            "minor_version": "512",
+            "compatible_brands": "isomiso2avc1mp41",
+            "encoder": "Lavf62.3.100"
+          }
+        }
+      },
+      "full_decode_exit": 0,
+      "playback": [
+        {
+          "mediaTime": 0,
+          "presentedFrames": 3,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.041667,
+          "presentedFrames": 4,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.083333,
+          "presentedFrames": 5,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.125,
+          "presentedFrames": 6,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.166667,
+          "presentedFrames": 7,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.208333,
+          "presentedFrames": 8,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.25,
+          "presentedFrames": 9,
+          "width": 640,
+          "height": 360
+        },
+        {
+          "mediaTime": 0.291667,
+          "presentedFrames": 10,
+          "width": 640,
+          "height": 360
+        }
+      ]
+    }
+  ],
+  "imported_render_records": [
+    {
+      "artifact_ids": [
+        "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff-f1",
+        "attempt-89f4d54c-a95f-419d-af65-b09c30521107-s1-1"
+      ],
+      "attempt_id": "attempt-89f4d54c-a95f-419d-af65-b09c30521107",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 1,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "c2ea2ba9378d0511948d4e121f3d9e2cdbd4d551984610a7b6de5853c4c7c14f",
+      "job_id": "preview-1f79a1c96a024ba8f16d2f7919bb4606779ac05bcc13bc6d05dd0eec14356eff",
+      "kind": "render",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-d66d45ed-1114-4c01-8a55-f766b54f38a6",
+      "owner_operation_id": null,
+      "project_id": "m13-cinematic",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "incoming-shot-native",
+        "purpose": "keyframe",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Fixture",
+        "shot_id": "incoming-shot",
+        "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7"
+      },
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 5,
+      "target": {
+        "shot_id": "incoming-shot",
+        "target_id": "fixture-scene",
+        "version": {
+          "item_id": "fixture-scene",
+          "version_id": "fixture-v1"
+        }
+      },
+      "work_id": "work-fixture-import"
+    },
+    {
+      "artifact_ids": [
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f1",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f2",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f3",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f4",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f5",
+        "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s1-4",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f6",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f7",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f8",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f9",
+        "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s5-8",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f10",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f11",
+        "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697-f12",
+        "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a-s9-12"
+      ],
+      "attempt_id": "attempt-2e9bd36b-3d3f-47e3-ab72-7e1808f0ec8a",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 12,
+      "expected_frames": 12,
+      "external_job_id": null,
+      "input_digest": "f865ce6142c9846cecb1cf153ccda2e4d0d0a72bc533bb881b72bc5fccee1b48",
+      "job_id": "preview-26469dd84c788167e3dd310d79a0d6dea350785b77509999c6c38ceabd74f697",
+      "kind": "render",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-b6047ea5-ef37-4f17-8867-43b6374bd72f",
+      "owner_operation_id": null,
+      "project_id": "m13-cinematic",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 12,
+          "start": 1
+        },
+        "intent_id": "draft-native",
+        "purpose": "draft_motion",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "Fixture",
+        "shot_id": "fixture-shot",
+        "source_closure_digest": "2817be6894a858b65d1880bedbc8bfa71cb0dec378a206e119ddae80dff382a7"
+      },
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 15,
+      "target": {
+        "shot_id": "fixture-shot",
+        "target_id": "fixture-scene",
+        "version": {
+          "item_id": "fixture-scene",
+          "version_id": "fixture-v1"
+        }
+      },
+      "work_id": "work-fixture-import"
+    }
+  ],
+  "replay": {
+    "body": {
+      "execution_profile_id": "blender-cpu",
+      "job_id": "m13-encode-v1",
+      "operation_id": "m13-assemble-v1",
+      "version": {
+        "item_id": "m13-film",
+        "version_id": "m13-film-v1"
+      }
+    },
+    "invocation_id": "2a65d3cd49df738fe80de52cc67a1e5d2bad56d7be5965a32a992ba1a29fd27f",
+    "result": {
+      "artifact_ids": [
+        "m13-encode-v1-delivery",
+        "m13-encode-v1-frame-map",
+        "m13-encode-v1-manifest"
+      ],
+      "attempt_id": "attempt-6b6a1a8e-e37e-43ae-8e33-9d36dae69198",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 0,
+      "expected_frames": null,
+      "external_job_id": null,
+      "input_digest": "191a26b361778e085e86431a9493d585d93126b21171a2f2433f4dbb24870529",
+      "job_id": "m13-encode-v1",
+      "kind": "encode",
+      "owner_epoch": "epoch-db9f7e9a-2994-4432-b8ba-079d878cf234",
+      "owner_operation_id": null,
+      "project_id": "m13-cinematic",
+      "provider_id": null,
+      "render_spec": null,
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 4,
+      "target": {
+        "shot_id": null,
+        "target_id": "m13-film",
+        "version": {
+          "item_id": "m13-film",
+          "version_id": "m13-film-v1"
+        }
+      },
+      "work_id": "work-5bd8623b033b4df0b6825911b798eaf2"
+    },
+    "job_count": 3,
+    "dispatches": 1,
+    "root_gate_closed": true
+  },
+  "annotation": {
+    "annotation_id": "031cd6f0-e784-43a1-bf7a-749a7628a1b2",
+    "camera": null,
+    "markup_artifact_id": "d28cf3a4-5a21-4ace-9bc6-f2cda868c507",
+    "markups": [
+      {
+        "colour": "#ff5555",
+        "id": "33d05a75-10af-4503-a289-867330b6f848",
+        "kind": "pin",
+        "points": [
+          [
+            0.5000000000000001,
+            0.5
+          ]
+        ],
+        "text": "M13 actual dissolved frame",
+        "width_px": 4
+      }
+    ],
+    "range": {
+      "end": 6,
+      "start": 4
+    },
+    "saved_revision": 1,
+    "spatial_hits": [],
+    "spatial_status": "unavailable",
+    "target": {
+      "artifact_id": "7cebed1e-6549-4290-9465-efb7d1c654c3",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "displayed_sha256": "175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af",
+      "frame_map_artifact_id": "m13-encode-v1-frame-map",
+      "item_id": "m13-film",
+      "media_artifact_id": "m13-encode-v1-delivery",
+      "origin": "sequence_render",
+      "render_job_id": null,
+      "sequence_frame": 5,
+      "sequence_version_id": "m13-film-v1",
+      "shot_id": null,
+      "source_frame": null,
+      "version_id": "m13-film-v1"
+    },
+    "text": "M13 v1 frame 5 / range 4-6: retain the exact original blend mapping"
+  },
+  "owner_selection": {
+    "actor": {
+      "id": "owner-5b37f1de-776b-4df9-9492-3fe3ec295685",
+      "kind": "user"
+    },
+    "choice": {
+      "kind": "version",
+      "version": {
+        "item_id": "m13-film",
+        "version_id": "m13-film-v1"
+      }
+    },
+    "project_id": "m13-cinematic",
+    "schema_version": "1.0",
+    "selection_id": "16e01d5c-7a23-4369-877b-697b40ae28f7",
+    "slot": {
+      "item_id": "m13-film",
+      "kind": "item"
+    },
+    "state": "selected",
+    "state_revision": 1
+  },
+  "before_owner_selection": {
+    "schema_version": "1.0",
+    "items": [],
+    "next_cursor": null
+  },
+  "after_publication_selection": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "actor": {
+          "id": "owner-5b37f1de-776b-4df9-9492-3fe3ec295685",
+          "kind": "user"
+        },
+        "choice": {
+          "kind": "version",
+          "version": {
+            "item_id": "m13-film",
+            "version_id": "m13-film-v1"
+          }
+        },
+        "project_id": "m13-cinematic",
+        "schema_version": "1.0",
+        "selection_id": "16e01d5c-7a23-4369-877b-697b40ae28f7",
+        "slot": {
+          "item_id": "m13-film",
+          "kind": "item"
+        },
+        "state": "selected",
+        "state_revision": 1
+      }
+    ],
+    "next_cursor": null
+  },
+  "annotations_before_revision": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "annotation_id": "031cd6f0-e784-43a1-bf7a-749a7628a1b2",
+        "camera": null,
+        "markup_artifact_id": "d28cf3a4-5a21-4ace-9bc6-f2cda868c507",
+        "markups": [
+          {
+            "colour": "#ff5555",
+            "id": "33d05a75-10af-4503-a289-867330b6f848",
+            "kind": "pin",
+            "points": [
+              [
+                0.5000000000000001,
+                0.5
+              ]
+            ],
+            "text": "M13 actual dissolved frame",
+            "width_px": 4
+          }
+        ],
+        "range": {
+          "end": 6,
+          "start": 4
+        },
+        "saved_revision": 1,
+        "spatial_hits": [],
+        "spatial_status": "unavailable",
+        "target": {
+          "artifact_id": "7cebed1e-6549-4290-9465-efb7d1c654c3",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "displayed_sha256": "175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af",
+          "frame_map_artifact_id": "m13-encode-v1-frame-map",
+          "item_id": "m13-film",
+          "media_artifact_id": "m13-encode-v1-delivery",
+          "origin": "sequence_render",
+          "render_job_id": null,
+          "sequence_frame": 5,
+          "sequence_version_id": "m13-film-v1",
+          "shot_id": null,
+          "source_frame": null,
+          "version_id": "m13-film-v1"
+        },
+        "text": "M13 v1 frame 5 / range 4-6: retain the exact original blend mapping"
+      }
+    ],
+    "next_cursor": null
+  },
+  "annotations_after_revision": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "annotation_id": "031cd6f0-e784-43a1-bf7a-749a7628a1b2",
+        "camera": null,
+        "markup_artifact_id": "d28cf3a4-5a21-4ace-9bc6-f2cda868c507",
+        "markups": [
+          {
+            "colour": "#ff5555",
+            "id": "33d05a75-10af-4503-a289-867330b6f848",
+            "kind": "pin",
+            "points": [
+              [
+                0.5000000000000001,
+                0.5
+              ]
+            ],
+            "text": "M13 actual dissolved frame",
+            "width_px": 4
+          }
+        ],
+        "range": {
+          "end": 6,
+          "start": 4
+        },
+        "saved_revision": 1,
+        "spatial_hits": [],
+        "spatial_status": "unavailable",
+        "target": {
+          "artifact_id": "7cebed1e-6549-4290-9465-efb7d1c654c3",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "displayed_sha256": "175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af",
+          "frame_map_artifact_id": "m13-encode-v1-frame-map",
+          "item_id": "m13-film",
+          "media_artifact_id": "m13-encode-v1-delivery",
+          "origin": "sequence_render",
+          "render_job_id": null,
+          "sequence_frame": 5,
+          "sequence_version_id": "m13-film-v1",
+          "shot_id": null,
+          "source_frame": null,
+          "version_id": "m13-film-v1"
+        },
+        "text": "M13 v1 frame 5 / range 4-6: retain the exact original blend mapping"
+      }
+    ],
+    "next_cursor": null
+  },
+  "view_pinned_after_v2": "m13-film-v1",
+  "restored_view": {
+    "version": {
+      "actor": {
+        "id": "call_RwKslwhl0cdgkGPlEWHQe82T",
+        "kind": "tool"
+      },
+      "artifact_ids": [
+        "m13-map-v1",
+        "m13-encode-v1-delivery",
+        "m13-encode-v1-frame-map",
+        "m13-encode-v1-manifest"
+      ],
+      "created_at": "2026-11-14T16:09:29.616270+00:00",
+      "description": "Agent proposal using imported ACTUAL W03 fixture history, not newly rendered shots. No owner visual approval.",
+      "item_id": "m13-film",
+      "kind": "sequence",
+      "name": "M13 two-shot cinematic",
+      "preview_job_ids": [],
+      "preview_requests": [],
+      "project_id": "m13-cinematic",
+      "publication_id": "m13-publish-v1",
+      "schema_version": "1.0",
+      "source": {
+        "dependencies": [
+          {
+            "item_id": "fixture-scene",
+            "version_id": "fixture-v1"
+          }
+        ],
+        "digest": "0cd3d407b6cc9824fc9676312a33cbf7b70ee3076bc259b54bf283f40fd50987",
+        "entry_path": "sequences/m13/sequence.json",
+        "files": [
+          {
+            "destination": "sequences/m13/frame-map.json",
+            "origin": {
+              "commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+              "kind": "git",
+              "path": "sequences/m13/frame-map.json",
+              "repository_id": "w03-repo",
+              "sha256": "38f087513b7192ff90785f0a7d127a6a1e073612e5a826f60175f1cd7949a68b"
+            }
+          },
+          {
+            "destination": "sequences/m13/sequence.json",
+            "origin": {
+              "commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+              "kind": "git",
+              "path": "sequences/m13/sequence.json",
+              "repository_id": "w03-repo",
+              "sha256": "affc7fd547de897b14497248560eecd05ca5ba7c017364d3833442c0c09d7124"
+            }
+          }
+        ],
+        "required_runtime": {
+          "application": "sequence",
+          "features": [],
+          "version": "1.0"
+        }
+      },
+      "source_commit": "d81a9f8e6f94dfe9d611f438c5f836b1209e2aee",
+      "version_id": "m13-film-v1"
+    },
+    "context": {
+      "item_id": "m13-film",
+      "version_id": "m13-film-v1",
+      "view_mode": "animation",
+      "target": {
+        "origin": "sequence_render",
+        "artifact_id": "7cebed1e-6549-4290-9465-efb7d1c654c3",
+        "displayed_sha256": "175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af",
+        "dimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "item_id": "m13-film",
+        "version_id": "m13-film-v1",
+        "shot_id": null,
+        "render_job_id": null,
+        "source_frame": null,
+        "media_artifact_id": "m13-encode-v1-delivery",
+        "sequence_version_id": "m13-film-v1",
+        "sequence_frame": 5,
+        "frame_map_artifact_id": "m13-encode-v1-frame-map"
+      },
+      "camera": null,
+      "range": {
+        "start": 4,
+        "end": 6
+      },
+      "selected_objects": [],
+      "attachments": [
+        {
+          "artifact_id": "7cebed1e-6549-4290-9465-efb7d1c654c3",
+          "role": "render"
+        },
+        {
+          "artifact_id": "d28cf3a4-5a21-4ace-9bc6-f2cda868c507",
+          "role": "markup"
+        }
+      ],
+      "annotations": [
+        {
+          "annotation_id": "031cd6f0-e784-43a1-bf7a-749a7628a1b2",
+          "saved_revision": 1,
+          "target": {
+            "origin": "sequence_render",
+            "artifact_id": "7cebed1e-6549-4290-9465-efb7d1c654c3",
+            "displayed_sha256": "175388689618d986d241179067b8d8ea20cc819458421191421c978640f847af",
+            "dimensions": {
+              "width": 640,
+              "height": 360
+            },
+            "item_id": "m13-film",
+            "version_id": "m13-film-v1",
+            "shot_id": null,
+            "render_job_id": null,
+            "source_frame": null,
+            "media_artifact_id": "m13-encode-v1-delivery",
+            "sequence_version_id": "m13-film-v1",
+            "sequence_frame": 5,
+            "frame_map_artifact_id": "m13-encode-v1-frame-map"
+          },
+          "range": {
+            "start": 4,
+            "end": 6
+          },
+          "camera": null,
+          "markups": [
+            {
+              "id": "33d05a75-10af-4503-a289-867330b6f848",
+              "kind": "pin",
+              "points": [
+                [
+                  0.5000000000000001,
+                  0.5
+                ]
+              ],
+              "width_px": 4,
+              "colour": "#ff5555",
+              "text": "M13 actual dissolved frame"
+            }
+          ],
+          "text": "M13 v1 frame 5 / range 4-6: retain the exact original blend mapping",
+          "spatial_hits": [],
+          "spatial_status": "unavailable",
+          "markup_artifact_id": "d28cf3a4-5a21-4ace-9bc6-f2cda868c507"
+        }
+      ],
+      "approved_findings": []
+    }
+  },
+  "browser": "159.0.8154.6",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "cleanup": {
+    "browser_reaped": true,
+    "services_closed": true,
+    "encodes": 2
+  },
+  "operating_limits": {
+    "no_new_renders": true,
+    "no_gpu": true,
+    "no_model_service_lifecycle": true,
+    "headroom_observations_mib": [
+      15797,
+      12949
+    ],
+    "continuous_headroom_minimum_measured": false
+  },
+  "errors_and_fixes": [
+    "Harness import initially lacked PYTHONPATH; no root or encode consumed.",
+    "Original fixture project.json was untracked. Created an explicit new project identity retaining source repository IDs.",
+    "Mutable Git working-tree bytes differed from pinned v1. Used W02 historical materialisation and verified original pinned Git/LFS bytes instead.",
+    "Harness server background timeout interrupted cloud dispatch 1 after successful source checkpoint. Retained uncertainty; explicit same-work Resume consumed dispatch 2. No prompt replay or database reset.",
+    "Initial exact-boundary seek to ordinal 5 presented ordinal 4. Corrected the UI to seek inside the sample interval, then verified actual rVFC frame 5 and all playback ordinals.",
+    "Skipped inapplicable render-progress queries for complete encode jobs. No synthetic render availability substituted."
+  ],
+  "criteria": {
+    "1": {
+      "status": "PASS"
+    },
+    "2": {
+      "status": "PASS"
+    },
+    "3": {
+      "status": "PASS"
+    },
+    "4": {
+      "status": "PASS"
+    },
+    "5": {
+      "status": "PASS"
+    },
+    "6": {
+      "status": "PASS"
+    },
+    "7": {
+      "status": "PASS"
+    }
+  },
+  "dependencies_accepted_here": []
+}
