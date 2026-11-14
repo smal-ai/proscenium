@@ -30,8 +30,9 @@ validation. No equivalence is inferred from ancestry alone. Shape example only:
 - `receipt_sha256` is produced by `tools.operations.applicability.receipt_digest`.
   It binds the entire original receipt, including status, evidence hashes and limits.
 - All commit values must identify known **commit objects**, not branch aliases,
-  unknown hashes or unrelated roots. The tested commit must precede the accepted
-  commit, which must precede the target integration commit. Equality is allowed.
+  unknown hashes or unrelated roots. In ancestor modes, the tested commit must
+  precede the accepted commit, which must precede the target integration commit.
+  Equality is allowed. Cherry-picked work uses the explicit mapping below.
   Missing local objects are rejected. Identity queries disable lazy fetch and
   credential prompts, rather than contacting a remote to invent missing history.
 - The coordinator's explicit reason and hash-verified regression artefacts are
@@ -51,6 +52,30 @@ validation. No equivalence is inferred from ancestry alone. Shape example only:
 The generated report includes `validated_applicability`, separately from execution
 observations. No release-ready receipts or applicability claims for unfinished
 milestones have been populated by W10.
+
+### Cherry-picked implementation and proof commits
+
+The fleet integrates isolated branches by cherry-pick. Their actual tested commits
+are often not ancestors of the integration branch. Preserve those original SHAs.
+Use `mode: "reviewed_cherry_pick"` with the normal coordinator reason, receipt digest
+and distinct regression artefacts, plus:
+
+- `common_base`: the exact unique common ancestor of tested and accepted revisions.
+- `patches`: every commit from that base to the tested revision, in order. Each
+  entry contains `tested_commit`, its `integrated_commit`, and `patch_sha256` from
+  `tools.operations.applicability.patch_hash`.
+
+Both histories must be locally present. Tested history must be linear, every mapped
+integration commit must precede the accepted revision, and mappings must preserve
+order. Omitted, reordered, duplicate, unrelated or changed edits are rejected.
+The patch digest ignores only parent blob IDs and hunk coordinates. Changed
+whitespace, paths, file modes and binary payloads remain significant. It deliberately
+does not use whitespace-insensitive Git patch IDs.
+
+Exact edit transfer establishes which changes were integrated. The coordinator's
+regression review still establishes applicability to surrounding changes. This mode
+does not change a receipt's original status, limits or execution identity, and does
+not handle a manually rewritten/conflicting patch by assuming equivalence.
 
 Use the frozen root locks and maintained tools from this checkout. See
 [operator guidance](operator.md) for private stores, service ownership and recovery.
