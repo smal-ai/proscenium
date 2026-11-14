@@ -1,0 +1,235 @@
+{
+  "overall": "BLOCKED_AFTER_ORIGINAL_CONTINUE_NO_V2",
+  "base": "904f73383d6e9a3e0a5daa411f3628efd90bc2cf",
+  "harness_commit": "94be6b4855a8bc73596927d827e279829c6a1ff9",
+  "attempt_root": "/home/quintin/.cache/proscenium-development/milestones/m10-final-a",
+  "original_fixture": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a",
+  "original_ids": {
+    "request": "927cf238-56c2-454e-a063-014e072f9010",
+    "work": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+    "session": "5971843f-f216-40f8-b8cb-995675f48161",
+    "generation_task": "task-248f9ca287ec4d0a81d15444dca62d8f"
+  },
+  "metadata_resume": {
+    "status": 202,
+    "command": {
+      "schema_version": "1.0",
+      "operation_id": "0f39989b-9bce-437c-a04e-ad5aab17acc4",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "mode": "reconcile_only",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+      "expected_revision": 4
+    },
+    "receipt": {
+      "schema_version": "1.0",
+      "operation_id": "0f39989b-9bce-437c-a04e-ad5aab17acc4",
+      "resource_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+      "state": "accepted",
+      "state_revision": 4,
+      "replayed": false
+    }
+  },
+  "metadata_operation": {
+    "body": {
+      "expected_revision": 4,
+      "mode": "reconcile_only",
+      "operation_id": "0f39989b-9bce-437c-a04e-ad5aab17acc4",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "schema_version": "1.0",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    "state": "completed"
+  },
+  "owner_continue": {
+    "status": 202,
+    "command": {
+      "schema_version": "1.0",
+      "operation_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "mode": "continue_work",
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+      "expected_revision": 4
+    },
+    "receipt": {
+      "schema_version": "1.0",
+      "operation_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+      "resource_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+      "state": "accepted",
+      "state_revision": 4,
+      "replayed": false
+    }
+  },
+  "continuation_sends": [
+    {
+      "message_id": "0616732c-cddd-44b1-9875-4e59ff93a202",
+      "operation_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+      "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "state": "acknowledged"
+    }
+  ],
+  "sdk_continuation_sends": 1,
+  "replacement_queue_requests": 0,
+  "native_user_messages_before": 1,
+  "native_user_messages_after": 2,
+  "new_native_children": 0,
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser_version": "159.0.8154.6",
+  "browser_connections": 1,
+  "software_webgl_requested": true,
+  "permission_decisions_reported": [],
+  "owner_decision_rows": {},
+  "automatic_read_rejection": {
+    "authority": "automatic_policy",
+    "claim_id": "2fb0ba8b438e493aa7aaef36518ddb53",
+    "claimed_at": "2026-11-14T18:00:09.705224+00:00",
+    "completed_at": "2026-11-14T18:00:09.734008+00:00",
+    "completions": [
+      {
+        "matches": true,
+        "native_event_id": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+        "result": "denied-interactively-by-user"
+      }
+    ],
+    "delivery_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+    "delivery_state": "acknowledged",
+    "fingerprint": "a577936667509869f1197e98cfb4625fc08f5520c400e1be638cbd55651736a4",
+    "invocation_id": "9755bc3511336ba0dc4959b74f9219ae9a5233e93a32f08a1180a5b3816d48d0",
+    "native_id": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+    "native_result": "denied-interactively-by-user",
+    "phase": "completed",
+    "reply": "reject",
+    "reply_prepared_at": "2026-11-14T18:00:09.708026+00:00",
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "tool_call_id": "call_pKoAp26w293LCPhPJ3iV6uz1",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "rejected_read": {
+    "tool_call_id": "call_pKoAp26w293LCPhPJ3iV6uz1",
+    "native_permission_id": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+    "path": "assets/e04/revision-measurements.json",
+    "file_exists": false,
+    "authority": "automatic_policy",
+    "reply": "reject",
+    "human_denial_inferred": false
+  },
+  "legacy_reply_authority_ack_before": {
+    "authority": null,
+    "reply": null,
+    "delivery_state": "not_sent"
+  },
+  "legacy_reply_authority_ack_after": {
+    "authority": null,
+    "reply": null,
+    "delivery_state": "not_sent"
+  },
+  "actual_guard": "Error: No actual v2 publication",
+  "product_work_after": {
+    "directive_request_ids": [],
+    "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+    "job_ids": [],
+    "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+    "originating_request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "schema_version": "1.0",
+    "state": "completed",
+    "state_revision": 6,
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "product_request_receipt_after": {
+    "detail_code": "attribution_unavailable",
+    "native_message_id": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "replayed": false,
+    "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+    "schema_version": "1.0",
+    "state": "completed",
+    "state_revision": 6,
+    "type": "queue",
+    "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+  },
+  "native_final_nonempty_message_observed": false,
+  "native_task_complete_observed": false,
+  "shutdown_interpretation": "Harness observed production Work.completed and all existing local jobs terminal, then failed its semantic no-v2 guard and closed the owned host. No independent task_complete/final-answer proof exists; natural business completion is not claimed.",
+  "identities": {
+    "versions": {
+      "before": [
+        "m10-asset-v1"
+      ],
+      "after": [
+        "m10-asset-v1"
+      ]
+    },
+    "jobs": {
+      "before": [
+        "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43"
+      ],
+      "after": [
+        "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43"
+      ]
+    },
+    "attempts": {
+      "before": [
+        "attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2"
+      ],
+      "after": [
+        "attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2"
+      ]
+    },
+    "frames": {
+      "before": [],
+      "after": []
+    },
+    "publications": {
+      "before": [
+        "m10-import-publication"
+      ],
+      "after": [
+        "m10-import-publication"
+      ]
+    }
+  },
+  "authoring_processes": 0,
+  "readbacks": 0,
+  "new_proxy_exports": 0,
+  "new_cpu_stills": 0,
+  "v2_exists": false,
+  "generation_reservations_after": [],
+  "e04_generation_reservations_after": [
+    [
+      "e04-mesh-job",
+      "e04-generation-task",
+      "e04-generation-task",
+      "consumed"
+    ]
+  ],
+  "original_context_preserved": true,
+  "original_submission_preserved": true,
+  "original_source_proxy_media_hashes_preserved": true,
+  "failed_reports_preserved": true,
+  "original_git_refs_preserved": true,
+  "e04_hashes_preserved": true,
+  "native_history_prefix_preserved": true,
+  "native_history_sha256_after": "8b00a38a6ee2f95f2e86ca070bc703c44406fdbbf7215193e17eea058d96d172",
+  "remaining_owned_processes": [],
+  "browser_processes_remaining": [],
+  "server_exit": -15,
+  "driver_exit": 0,
+  "protected_blender_start_before": null,
+  "protected_blender_start_after": null,
+  "mem_available_before_host": 37859012608,
+  "mem_available_before_continue": 37214298112,
+  "readback_helper_prepared_but_not_executed": true,
+  "shared_implementation_edits": false,
+  "criteria": {
+    "1": "PASS_ACCEPTED_E04",
+    "2": "PASS_RETAINED_INSPECTION",
+    "3": "REMAINING_NO_NATIVE_REVISION",
+    "4": "PASS_RECORDED_SCOPES",
+    "5": "REMAINING_NO_V2_CHECKPOINT_PUBLICATION_REPLAY"
+  }
+}

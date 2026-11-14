@@ -1,0 +1,26 @@
+{
+  "authority": "automatic_policy",
+  "claim_id": "2fb0ba8b438e493aa7aaef36518ddb53",
+  "claimed_at": "2026-11-14T18:00:09.705224+00:00",
+  "completed_at": "2026-11-14T18:00:09.734008+00:00",
+  "completions": [
+    {
+      "matches": true,
+      "native_event_id": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+      "result": "denied-interactively-by-user"
+    }
+  ],
+  "delivery_id": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739",
+  "delivery_state": "acknowledged",
+  "fingerprint": "a577936667509869f1197e98cfb4625fc08f5520c400e1be638cbd55651736a4",
+  "invocation_id": "9755bc3511336ba0dc4959b74f9219ae9a5233e93a32f08a1180a5b3816d48d0",
+  "native_id": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+  "native_result": "denied-interactively-by-user",
+  "phase": "completed",
+  "reply": "reject",
+  "reply_prepared_at": "2026-11-14T18:00:09.708026+00:00",
+  "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+  "session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+  "tool_call_id": "call_pKoAp26w293LCPhPJ3iV6uz1",
+  "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+}

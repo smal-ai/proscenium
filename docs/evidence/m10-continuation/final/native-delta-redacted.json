@@ -1,0 +1,142 @@
+{
+  "events": [
+    {
+      "type": "tool.execution_complete",
+      "id": "2b19eb79-5aac-49b6-a8ef-aabbf73353a7",
+      "timestamp": "2026-11-14T18:00:01.243Z",
+      "parentId": "9f5fe6b5-d603-4897-b6c2-58539b346b44",
+      "data": {
+        "toolCallId": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+        "success": false,
+        "error": {
+          "message": "Tool execution was interrupted before a result was recorded. Its effects may be absent, partial, or already complete, and other tools may have completed successfully. Check the current state before retrying; do not assume success or replay this operation blindly.",
+          "code": "interrupted"
+        }
+      }
+    },
+    {
+      "type": "user.message",
+      "id": "d6d69484-924f-4471-86c9-20e911cced8f",
+      "timestamp": "2026-11-14T18:00:04.887Z",
+      "parentId": "0c9d1bf4-6c73-4eb9-88f1-c2b4653c5150",
+      "data": {
+        "messageId": "0616732c-cddd-44b1-9875-4e59ff93a202",
+        "clientTurnId": "dae26d99-3ef2-49ff-a5d0-78b2ee82f739"
+      }
+    },
+    {
+      "type": "assistant.turn_start",
+      "id": "71431c25-e106-4632-9615-0a817f017488",
+      "timestamp": "2026-11-14T18:00:04.915Z",
+      "parentId": "ce6d70ee-c56f-47a0-8ce8-ccd7293670cf"
+    },
+    {
+      "type": "assistant.message",
+      "id": "85753930-6c30-4d36-8ed6-c87280cf2bb8",
+      "timestamp": "2026-11-14T18:00:09.635Z",
+      "parentId": "71431c25-e106-4632-9615-0a817f017488",
+      "public_content_empty": true,
+      "tool_requests": 2
+    },
+    {
+      "type": "tool.execution_start",
+      "id": "f4cf979d-1a9e-4383-a8b7-7e7bf41be801",
+      "timestamp": "2026-11-14T18:00:09.637Z",
+      "parentId": "85753930-6c30-4d36-8ed6-c87280cf2bb8",
+      "data": {
+        "toolCallId": "call_pKoAp26w293LCPhPJ3iV6uz1",
+        "toolName": "view",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments": {
+        "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revision-measurements.json"
+      }
+    },
+    {
+      "type": "tool.execution_start",
+      "id": "272a4d62-562b-4922-95c3-5b00032dfa69",
+      "timestamp": "2026-11-14T18:00:09.641Z",
+      "parentId": "f4cf979d-1a9e-4383-a8b7-7e7bf41be801",
+      "data": {
+        "toolCallId": "call_YbIvylEHu9XJe4vS00n9wUtz",
+        "toolName": "bash",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments": {
+        "command": "git --no-pager status --short && git rev-parse HEAD && sha256sum assets/e04/revise_asset.py assets/e04/asset-v2.blend assets/e04/revision-measurements.json",
+        "description": "Recover revision files and exact checkpoint state"
+      }
+    },
+    {
+      "type": "permission.requested",
+      "id": "f7bdb626-a133-42da-a9e8-0485518cad83",
+      "timestamp": "2026-11-14T18:00:09.692Z",
+      "parentId": "97fbea79-282b-4621-a44d-cf4481e8b52d",
+      "data": {
+        "requestId": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+        "permissionRequest": {
+          "kind": "read",
+          "toolCallId": "call_pKoAp26w293LCPhPJ3iV6uz1",
+          "intention": "Read file: /home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revision-measurements.json",
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revision-measurements.json"
+        },
+        "promptRequest": {
+          "kind": "read",
+          "intention": "Read file: /home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revision-measurements.json",
+          "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revision-measurements.json",
+          "toolCallId": "call_pKoAp26w293LCPhPJ3iV6uz1"
+        }
+      }
+    },
+    {
+      "type": "permission.completed",
+      "id": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+      "timestamp": "2026-11-14T18:00:09.712Z",
+      "parentId": "f7bdb626-a133-42da-a9e8-0485518cad83",
+      "data": {
+        "requestId": "67539b84-6fdc-4a6e-89e2-4c802647f66b",
+        "toolCallId": "call_pKoAp26w293LCPhPJ3iV6uz1",
+        "result": {
+          "kind": "denied-interactively-by-user"
+        }
+      }
+    },
+    {
+      "type": "tool.execution_complete",
+      "id": "1cce1389-7750-4f01-bac8-7e228543875e",
+      "timestamp": "2026-11-14T18:00:09.715Z",
+      "parentId": "2388c7ce-d8d5-4179-b966-69b77224a71d",
+      "data": {
+        "toolCallId": "call_pKoAp26w293LCPhPJ3iV6uz1",
+        "success": false,
+        "error": {
+          "message": "The user rejected this tool call.",
+          "code": "rejected"
+        }
+      }
+    },
+    {
+      "type": "tool.execution_complete",
+      "id": "83323727-ea62-4efb-b07f-14dcbf3e7328",
+      "timestamp": "2026-11-14T18:00:09.767Z",
+      "parentId": "a93b5ecc-cd60-44d2-8918-5c4b16976fcd",
+      "data": {
+        "toolCallId": "call_YbIvylEHu9XJe4vS00n9wUtz",
+        "success": true
+      }
+    },
+    {
+      "type": "assistant.turn_end",
+      "id": "3c0c7062-ce70-4e7e-be44-01f7260fbd0e",
+      "timestamp": "2026-11-14T18:00:09.772Z",
+      "parentId": "83323727-ea62-4efb-b07f-14dcbf3e7328"
+    },
+    {
+      "type": "session.shutdown",
+      "id": "b001eef5-21b8-4fb3-9ac3-6102ddc8b1a4",
+      "timestamp": "2026-11-14T18:00:10.432Z",
+      "parentId": "eef78cdd-bb81-4549-abfb-234f03d05299",
+      "shutdown_type": "routine"
+    }
+  ]
+}

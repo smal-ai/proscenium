@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-final-a/before.json",
+      "bytes": 31712,
+      "sha256": "4d5d5f328f25f64cc92010044347473ad2ddea5216ea3b620f95ce25dceb913d"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-final-a/host.json",
+      "bytes": 8953,
+      "sha256": "077edb1cde631c0004f84a6c372342edd345920e1ea88200c367a42d538eb8e1"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-final-a/result.private.json",
+      "bytes": 63148,
+      "sha256": "669237ca6f4ad365784e4f6ab4f65d1399ec61e8131601b81f77e134d43270a9"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-final-a/browser-driver.private.log",
+      "bytes": 115,
+      "sha256": "87cd96ced982fc6f49ca6d723036a7b39673f1f0eeee97bd13dc06e44759f77f"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/machine/copilot-runtime/home/session-state/5971843f-f216-40f8-b8cb-995675f48161/events.jsonl",
+      "bytes": 425767,
+      "sha256": "8b00a38a6ee2f95f2e86ca070bc703c44406fdbbf7215193e17eea058d96d172"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-final-a/before-private/project.sqlite3",
+      "bytes": 4710400,
+      "sha256": "be111e92a06ee34ead0fa77d58060a4930ac721489a882f6e9426c5f0202d4bd"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-final-a/before-private/machine-registry.sqlite3",
+      "bytes": 57344,
+      "sha256": "aecebf585b316a50852be8080e700c584cbda7c0663f64f7d75a601f4a7e9678"
+    }
+  ],
+  "raw_authentication_history_or_private_chat_exported": false
+}
