@@ -1,0 +1,29 @@
+{
+  "repository": "stabilityai/sd-turbo",
+  "revision": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
+  "source_filename": "sd_turbo.safetensors",
+  "source_sha256": "3f067a1b943cf162f2b8f8588f6cf5824bd5b4c7d1d88d87164b9ca123616549",
+  "filename": "sd_turbo-proscenium-fp16-1.safetensors",
+  "sha256": "c1a0a0af943c0c197215fb7cd5bb8b72e342b98461e1c3719d8ba28300ba015e",
+  "bytes": 2607364064,
+  "is_local_derivative_not_official_download": true,
+  "conversion": {
+    "operation": "CPU streaming F32-to-F16, no training or clamping",
+    "converter_sha256": "42e5311f48e85d455b3ccf929da517468a489a21126808d7e4c7fcfca845feb3",
+    "report_sha256": "b44b82b596d3c6caeed02ffd3cf432b11f53a401f5a270c0177e4b61368a824a",
+    "numpy_version": "2.5.3",
+    "rounding": "IEEE binary16 round-to-nearest ties-to-even",
+    "relative_tolerance": 0.00048828125,
+    "absolute_tolerance": 2.9802322387695312e-08,
+    "converted_tensor_count": 1229,
+    "converted_elements": 1303598228,
+    "max_abs_error": 0.0038881301879882812,
+    "max_normal_relative_error": 0.0004880429477794046,
+    "rounded_nonzero_to_zero": 231210,
+    "full_streaming_readback_validated": true,
+    "original_hash_unchanged_after": true
+  },
+  "licence": "Stability AI Community License, 2024-07-05; local precision derivative, no retraining",
+  "fit_floor_formula": "max(12 GiB, actual derivative bytes + 8 GiB)",
+  "fit_floor_bytes": 12884901888
+}

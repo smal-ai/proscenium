@@ -1,0 +1,10 @@
+{
+  "source_sha256": "3f067a1b943cf162f2b8f8588f6cf5824bd5b4c7d1d88d87164b9ca123616549",
+  "converter_sha256": "42e5311f48e85d455b3ccf929da517468a489a21126808d7e4c7fcfca845feb3",
+  "numpy_version": "2.5.3",
+  "seconds_max": 300,
+  "rss_limit_bytes": 1073741824,
+  "protected_host_bytes": 4294967296,
+  "cpu_only": true,
+  "started_epoch": 1794678523.5071762
+}

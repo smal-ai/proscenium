@@ -1,0 +1,47 @@
+{
+  "old_receipts": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/providers-w07-20261114/w07-live-initial-report.json",
+      "sha256": "19dd5cc635dc9ea665910e5336ebe787f192573a521bcda71aefa51e316647ac",
+      "matches_retained_evidence": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/providers-w07-20261114/w07-live-initial-timing.json",
+      "sha256": "7e04338414b5af035acab46389b26a7bd3e113f326fdd1778631d684341c67fe",
+      "matches_retained_evidence": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/providers-w07-20261114/continuations/w07-continuation-b/window.json",
+      "sha256": "b6e192a4236d32a7d7e55d3dd15d87fe945364c1d9c23458b0f73ef14b34619d",
+      "matches_retained_evidence": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/providers-w07-20261114/continuations/w07-continuation-b/report.json",
+      "sha256": "a3dd9e7bee285c6a74bd7dd0fb7833c6fe566c8ea9aa64a6a26ea074b37ba2f5",
+      "matches_retained_evidence": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/providers-w07-20261114/continuations/w07-continuation-b/observations.jsonl",
+      "sha256": "0702d08c27b524422f70dd2f1d59159d5d211cd8a62a1bee0b981aaf04fd67b6",
+      "matches_retained_evidence": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/providers-w07-20261114/continuations/w07-continuation-b/preservation.json",
+      "sha256": "80abc727973d2e280089038ca92a4236e3174180e1faee9c818a0f8e0b0132b8",
+      "matches_retained_evidence": true
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/image-generation-light/runs/m07-lightweight-20261114/admission.json",
+      "sha256": "94f1db249ae25e8254d3030d043c57c598c490f6fd44c5a7d5ee813d421cb1a1",
+      "matches_retained_evidence": true
+    }
+  ],
+  "original_klein_database_sha256": "3ca79e931930e13482957f0c8b9c060d5403276f433a437ae8ead9979d2c6485",
+  "original_klein_database_matches_preserved_anchor": true,
+  "source_mode": "0o400",
+  "derivative_mode": "0o400",
+  "independent_process_or_service_calls": 0,
+  "new_model_downloads": 0,
+  "torch_or_cuda_model_initialisations": 0,
+  "gpu_inferences": 0
+}

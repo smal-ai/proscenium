@@ -1,0 +1,14 @@
+{
+  "official_repository": "stabilityai/sd-turbo",
+  "official_revision": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
+  "model_card_url": "https://huggingface.co/stabilityai/sd-turbo/raw/b261bac6fd2cf515557d5d0707481eafa0485ec2/README.md",
+  "model_card_sha256": "2482ac53e71baf0624ede7aca74122ef60e442360535105cd57bcc9d7138c22e",
+  "float16_img2img_and_text2img_examples_present": true,
+  "installed_comfy_revision": "8ff6dc384ba5c410266b40e137799e049459d4f2",
+  "installed_utils_py_sha256": "9320cf5c624e96acc1d9ec92ff120ed6387a2142707f3194cb21dd0d11ac2500",
+  "runtime_dtype_mapping": "F16 -> torch.float16",
+  "support_scope": "Official model card supports float16 usage; pinned Comfy safetensors loader accepts F16. No checkpoint model load or inference was performed.",
+  "conversion_source_commit": "85e01e9",
+  "licence": "Stability AI Community License, 2024-07-05; derivative precision change only, no retraining",
+  "first_launch_guard_note": "Before any source verification/conversion, inherited getrusage.ru_maxrss was 2382572 KiB even before NumPy import; actual exec VmHWM/VmRSS were 29604 KiB. Corrected guard uses this exec VmHWM/VmRSS with the same 1-GiB limit. One actual checkpoint conversion followed."
+}

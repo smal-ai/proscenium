@@ -1,0 +1,7 @@
+This Stability AI Model is licensed under the Stability AI Community License, Copyright © Stability AI Ltd. All Rights Reserved.
+Powered by Stability AI.
+Proscenium modification: deterministic streaming CPU F32-to-F16 tensor precision conversion, no training.
+Source: stabilityai/sd-turbo @ b261bac6fd2cf515557d5d0707481eafa0485ec2.
+Original SHA256: 3f067a1b943cf162f2b8f8588f6cf5824bd5b4c7d1d88d87164b9ca123616549.
+Derivative SHA256: c1a0a0af943c0c197215fb7cd5bb8b72e342b98461e1c3719d8ba28300ba015e.
+The derivative is not an official downloaded FP16 file. Original licence applies.

@@ -1,0 +1,30 @@
+{
+  "NOTICE.txt": {
+    "sha256": "c2b5c9f100593fd31fc5c3d0c978bbcb0b03fce24d7f2a8d3ef953b951c1ded5",
+    "bytes": 584
+  },
+  "README.md": {
+    "sha256": "3c3bc274206976aed7757cc2e553b2738e7fb78f25e811d8cd01d7f8657abf97",
+    "bytes": 10073
+  },
+  "conversion-report.json": {
+    "sha256": "b44b82b596d3c6caeed02ffd3cf432b11f53a401f5a270c0177e4b61368a824a",
+    "bytes": 1980
+  },
+  "conversion-started.json": {
+    "sha256": "a98cb7a2b2a179634804c116ae1e8f2a33c7341e126c11a3d974d65731d21e23",
+    "bytes": 360
+  },
+  "official-runtime-support.json": {
+    "sha256": "61d1cb87042025a2f475e5bf6cf46a6f4a92189ffa169f9384f3496710e9dd83",
+    "bytes": 1226
+  },
+  "preservation.json": {
+    "sha256": "5df2ca79af143be4d915410b2f0174ccdee8c34a5e0785df524417b55543f0fa",
+    "bytes": 2230
+  },
+  "profile-metadata.json": {
+    "sha256": "1ec93d645e90c78977325faceb8da9d0d23a3d418f1e84094ae2a38b20d4fbe0",
+    "bytes": 1412
+  }
+}
