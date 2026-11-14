@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from proscenium.api.errors import DomainError
 from proscenium.contracts import canonical, validate
@@ -116,6 +117,19 @@ class Store:
 class Transaction:
     def __init__(self, connection: sqlite3.Connection, project_id: str | None):
         self.connection, self.project_id = connection, project_id
+
+    @contextmanager
+    def savepoint(self) -> Iterator[None]:
+        """Nested database-only work, never an independent commit or connection."""
+        name = f"sp_{uuid4().hex}"
+        self.connection.execute(f"SAVEPOINT {name}")
+        try:
+            yield
+        except BaseException:
+            self.connection.execute(f"ROLLBACK TO {name}")
+            raise
+        finally:
+            self.connection.execute(f"RELEASE {name}")
 
     def get(self, namespace: str, identity: str, *, required: bool = True) -> dict[str, Any] | None:
         row = self.connection.execute(

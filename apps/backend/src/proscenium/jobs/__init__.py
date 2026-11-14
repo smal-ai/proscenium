@@ -288,8 +288,22 @@ class JobService:
         self, caller: Caller, body: dict[str, Any], *, evidence: str | None = None
     ) -> tuple[dict[str, Any], bool]:
         validate("JobStateUpdate", body)
-        self.check_caller(caller, "updateJobState", body["project_id"])
         with self.registry.project_store(body["project_id"]).transaction() as tx:
+            return self.update_in_transaction(tx, caller, body, evidence=evidence)
+
+    def update_in_transaction(
+        self, tx: Transaction, caller: Caller, body: dict[str, Any], *, evidence: str | None = None
+    ) -> tuple[dict[str, Any], bool]:
+        """Apply the identical guarded update in the caller's atomic receipt transaction.
+
+        This method never opens or commits a project transaction. The savepoint only
+        scopes its local reduction and propagates failures to the enclosing transaction.
+        """
+        validate("JobStateUpdate", body)
+        self.check_caller(caller, "updateJobState", body["project_id"])
+        if tx.project_id != body["project_id"]:
+            raise DomainError("scope_denied", 403)
+        with tx.savepoint():
             admitted = tx.require("attempts", body["attempt_id"])
             if admitted["job_id"] != body["job_id"]:
                 raise DomainError("scope_denied", 403)
