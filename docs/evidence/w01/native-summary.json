@@ -1,0 +1,45 @@
+{
+  "evidence_kind": "live production SQLite and SDK observations with explicit failed cases",
+  "recorded_date_sast": "2026-11-14",
+  "foundation_revision": "2bc3d5c2c0afe38bf43507d499e8e960855ee3ee",
+  "sdk_version": "1.0.34",
+  "cli_version": "1.0.112",
+  "binary_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+  "lead_model": "gpt-6.1-sol",
+  "worker_model": "gpt-6.1-sol",
+  "worker_model_policy": "required",
+  "reserved_root_requests": 6,
+  "executed_native_children": 2,
+  "child_tool_recordings": 0,
+  "child_hook_deliveries": [
+    {"agent_id": "493887ac-bad0-4054-8cc5-4c9dfc6e8fb2", "context_id": "w01-native-context", "payload_sha256": "6ea1e4ae9f7b99f83e177970b8c105d4879d7bd9d3d6fc8d13eca34e30691987"},
+    {"agent_id": "6f029673-a052-44e7-bd91-f48eafe44699", "context_id": "w01-native-context", "payload_sha256": "92d61357ec5e4154e6ff27d6848c72fc23af2ef670506818a9ac2513055cb935"}
+  ],
+  "native_permission_join_run_03": {
+    "native_request_id": "d25fd84c-ef08-4e99-a3c9-1f210885a544",
+    "invocation_id": "5cee83ff3969ab9ae636b9ab5d5947b49c58d16eb398704eda6c32dd2e1aa262",
+    "delivery_state": "acknowledged",
+    "committed_before_callback_reply": true
+  },
+  "native_input_run_04": {
+    "request_id": "w01-native-decision-minimal",
+    "native_message_id": "f0cc7691-0f56-4a17-a295-ac2c2e7a6943",
+    "native_decision_id": "38f7e79a-cace-480e-9776-927f08da191a",
+    "invocation_id": "62e09e41d1ba17c3e470be807cb47c68545644feac7435298585b855b3ce59f9",
+    "fingerprint": "73a3d6f6702978fc20d337da0361b213495022dfb4fc6e56d708644a659bfed9",
+    "owner_answer": "red",
+    "owner_expected_revision": 0,
+    "decision_state_revision_after_native_delivery": 3,
+    "native_delivery_state": "acknowledged",
+    "root_state": "completed"
+  },
+  "shell_run_02": {"command": "pwd", "exit_code": 0, "sandbox_applied": false, "directory": "/tmp/opencode/proscenium-w01-production-02/project"},
+  "idle_stop_run_02": {"request_id": "w01-native-local-stop", "state": "completed", "detail_code": "already_idle", "cold_pending_empty": true, "root_sends": 0},
+  "backend_sigkill": {"native_pid": 2844403, "native_start_identity": "44783867", "actual_exec_binary_verified": true, "original_native_identity_disappeared": true, "independent_owned_process_preserved": true, "root_sends": 0},
+  "all_owned_native_proc_identities_disappeared": true,
+  "full_product_pass": false,
+  "genuine_transport_loss_tested": false,
+  "live_child_stop_tested": false,
+  "live_child_input_tested": false,
+  "blender_unity_gpu_or_provider_services_changed": false
+}

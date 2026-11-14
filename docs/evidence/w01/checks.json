@@ -1,0 +1,26 @@
+{
+  "recorded_date_sast": "2026-11-14",
+  "foundation_revision": "2bc3d5c2c0afe38bf43507d499e8e960855ee3ee",
+  "accepted_dependency_revision": "66f653bcf1ef036a7473c7784fd15dd94db5a6a7",
+  "branch": "impl/w01",
+  "python": "3.12.13",
+  "checks": [
+    {"command": "make bootstrap", "status": "passed", "notes": "Frozen uv/npm dependencies. No manifest or lock changes."},
+    {"command": "uv run pytest tests/integration/copilot -q", "status": "passed", "passed": 46, "warnings": 1, "duration_seconds": 2.12},
+    {"command": "uv run pytest tests/integration tests/contracts tests/unit -q -m 'not native'", "status": "failed_on_two_stale_accepted_baseline_assertions", "passed": 230, "failed": 2, "duration_seconds": 6.00},
+    {"command": "uv run pytest tests/integration tests/contracts tests/unit -q -m 'not native' --deselect tests/contracts/test_bindings.py::test_http_operation_ownership --deselect tests/integration/foundation/test_auth_http.py::test_json_required_and_unimplemented_feature_not_success", "status": "passed_with_explicit_baseline_deselections", "passed": 230, "deselected": 2, "warnings": 1, "duration_seconds": 6.53},
+    {"command": "uv run ruff check apps/backend/src/proscenium/copilot tests/integration/copilot tests/native/copilot/production*.py", "status": "passed"},
+    {"command": "uv run ruff format --check apps/backend/src/proscenium/copilot tests/integration/copilot tests/native/copilot/production*.py", "status": "passed", "formatted_files": 17},
+    {"command": "uv run mypy apps/backend/src/proscenium", "status": "passed", "source_files": 49},
+    {"command": "make spec-check", "status": "passed", "schema_definitions": 119, "http_operations": 53, "wire_examples": 40, "semantic_oracles": 20, "deterministic_generated_bindings": true}
+  ],
+  "before_dependency_fast_forward": {"revision": "2bc3d5c", "combined_pytest_passed": 132, "w01_owned_tests": 43},
+  "stale_baseline_assertions": ["test_http_operation_ownership expects F00-only routes despite accepted W02/W05 composition", "test_json_required_and_unimplemented_feature_not_success expects 404 instead of 401 for now-implemented protected GET /api/v1/projects"],
+  "warning": "Existing Starlette TestClient httpx transport deprecation.",
+  "native_results": "README.md and native-summary.json preserve separate passed, failed and bounded-timeout live cases. Native child model consumption is not passed.",
+  "cloud_allocation": {"root_requests_used": 6, "root_requests_maximum": 6, "native_children_used": 2, "native_children_maximum": 2, "exhausted": true},
+  "final_python_source_hashes": "implementation-source.sha256",
+  "native_draft_source_hashes_recorded_at_invocation": false,
+  "final_commit_native_acceptance_claimed": false,
+  "full_product_acceptance_claimed": false
+}
