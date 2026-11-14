@@ -87,14 +87,14 @@ async def cancel_job(request: Request, project_id: str, job_id: str, caller: Own
 async def admit_job(request: Request, caller: Tool) -> JSONResponse:
     body = await command(request, "JobAdmission")
     result, replayed = get_services(request).jobs.admit(caller, body)
-    return JSONResponse(result, status_code=200 if replayed else 201)
+    return JSONResponse(result, status_code=200 if replayed else 202)
 
 
 @router.post("/internal/v1/jobs/{job_id}/retry", operation_id="retryToolJob")
 async def retry_job(request: Request, job_id: str, caller: Tool) -> JSONResponse:
     body = await command(request, "JobRetry", job_id=job_id)
     result, replayed = get_services(request).jobs.retry(caller, body)
-    return JSONResponse(result, status_code=200 if replayed else 201)
+    return JSONResponse(result, status_code=200 if replayed else 202)
 
 
 @router.post("/internal/v1/jobs/{job_id}/state", operation_id="updateJobState")

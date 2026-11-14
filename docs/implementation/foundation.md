@@ -298,7 +298,7 @@ effective configuration and caller authority before calling it. It durably creat
 owner review passes `work_id=None, owner_operation_id=original_review_id`. It must not
 attach itself to whatever Copilot work happens to be active.
 
-Admit/retry allocate, but do not launch, a CLI. They return 201 for creation and 200 for a
+Admit/retry allocate, but do not launch, a CLI. They return 202 for acceptance and 200 for a
 matching retry. No launch capability is included in JobRecord. The trusted adapter issues
 the exact worker capability out of band. Admission requires a configured execution profile,
 open execution gate, active work, ready input artefacts and storage reserve. Effective

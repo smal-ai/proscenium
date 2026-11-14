@@ -19,13 +19,15 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | Revision | Meaning |
 | --- | --- |
 | `2f00ebece9c5274ebda553df4c1558d5572669e0` | Corrected specification, contracts and documentation fixtures. |
+| `a52940d` | Accepted F00 offline interfaces, bindings, storage, authentication, jobs and harness. Native SDK acceptance remains E01-owned. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| F00 | `/tmp/opencode/proscenium-fleet/f00`, `impl/f00` | `2f00ebe` | Shared bindings, persistence/auth/jobs, build and offline harness. | `ses_e265d03ceffeyj48VWVjBPn9VN` |
 | E01 | `/tmp/opencode/proscenium-fleet/e01`, `impl/e01` | `2f00ebe` | Official SDK/runtime compatibility probe, lock and redacted evidence. | `ses_e265d033cffeD3sBdXwHgu0JLH` |
+
+F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
 ## Resource allocations
 

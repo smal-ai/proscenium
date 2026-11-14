@@ -11,6 +11,7 @@
     "lint": "eslint apps/frontend/src scripts/*.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "@eslint/js": "9.39.1",
     "eslint": "9.39.1",
     "json-schema-to-typescript": "15.0.4",

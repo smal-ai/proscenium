@@ -50,7 +50,7 @@ def test_job_admission_http_atomic_idempotency(services, client, caller, admissi
     headers = {"Authorization": f"Bearer {token}", "Idempotency-Key": admission["operation_id"]}
     first = client.post("/internal/v1/jobs", json=admission, headers=headers)
     again = client.post("/internal/v1/jobs", json=admission, headers=headers)
-    assert first.status_code == 201 and again.status_code == 200
+    assert first.status_code == 202 and again.status_code == 200
     assert first.json() == again.json()
     validate("JobRecord", first.json())
     conflict = client.post(
