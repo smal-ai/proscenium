@@ -60,6 +60,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
   function onSelect(next: VersionRecord) {
     setVersion(next);
     writePrivate(`view.version.${projectId}`, next);
+    if (version && next.project_id === version.project_id && next.item_id === version.item_id && next.version_id === version.version_id) return;
     onContextChange({ ...emptySelection(), item_id: next.item_id, version_id: next.version_id, view_mode: "keyframes" });
   }
   function onNavigate(next: VersionRecord, context: TurnSelection) {

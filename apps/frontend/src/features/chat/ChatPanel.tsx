@@ -7,6 +7,7 @@ import { DecisionCard } from "./DecisionCard";
 import { ContextPreview } from "./ContextPreview";
 import { Conversation } from "./Conversation";
 import type { useRequestComposer } from "./useRequestComposer";
+import { resumableWork, resumeCommand } from "./resume";
 
 interface Upload { uploadId: string; name: string; file: File; artifact: Artifact | null; busy: boolean; error: string }
 export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, onRefresh }: {
@@ -20,12 +21,18 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [mode, setMode] = useState<"queue" | "steer">("queue");
   const [targetWork, setTargetWork] = useState("");
   const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>("reconcile_only");
+  const [resumeWorkId, setResumeWorkId] = useState("");
+  const [pendingResume, setPendingResume] = useState<ResumeCommand | null>(() => readPrivate(`command.resume.${projectId}`));
   const [error, setError] = useState("");
   const [resuming, setResuming] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const preparingLatch = useRef(false);
   const work = snapshot?.active_work;
   const active = work && !["completed", "failed", "stopped"].includes(work.state);
+  const resumable = resumableWork(snapshot, events);
+  const chosenResumeWork = resumeWorkId
+    ? resumable.find(record => record.work_id === resumeWorkId)
+    : resumable.find(record => record.work_id === work?.work_id) ?? (resumable.length === 1 ? resumable[0] : undefined);
   const currentSelection = { ...selection, attachments: [...selection.attachments, ...attachments] };
   function changeDraft(value: string) { setDraft(value); writePrivate(`draft.${projectId}`, value); }
   function changeAttachments(value: Attachment[]) { setAttachments(value); writePrivate(`attachments.${projectId}`, value); }
@@ -55,19 +62,22 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     } catch (e) { setError(describeError(e)); }
     finally { preparingLatch.current = false; setPreparing(false); }
   }
-  async function resume() {
-    if (!snapshot) return;
+  async function resume(original?: ResumeCommand) {
+    if (!snapshot || resuming) return;
     setResuming(true); setError("");
     try {
-      await durableCommand<ResumeCommand, unknown>(`resume.${projectId}`, () => ({ schema_version: "1.0", operation_id: id(), project_id: projectId, expected_revision: snapshot.project.state_revision, mode: resumeMode, work_id: work?.work_id ?? null }), body => api.call("resumeProjectWork", { path: { project_id: projectId }, body, idempotencyKey: body.operation_id }));
+      const body = original ?? resumeCommand(snapshot, events, resumeMode, chosenResumeWork?.work_id ?? "", id());
+      await durableCommand<ResumeCommand, unknown>(`resume.${projectId}`, () => body, command => api.call("resumeProjectWork", { path: { project_id: projectId }, body: command, idempotencyKey: command.operation_id }));
+      setPendingResume(null);
       await onRefresh();
     } catch (e) { setError(describeError(e)); }
-    finally { setResuming(false); }
+    finally { setPendingResume(readPrivate(`command.resume.${projectId}`)); setResuming(false); }
   }
   return <div className="chat-panel"><div className="chat-scroll">
     <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small>{work ? `Work ${work.work_id} · ${work.state}` : "No active work"}</small></div></div>
     {snapshot?.pending_decisions.map(decision => <DecisionCard key={`${decision.decision_id}.${decision.state_revision}`} api={api} decision={decision} onRefresh={onRefresh} />)}
-    {(snapshot?.project.state === "awaiting_resume" || requests.some(r => r.receipt.state === "held") || (work && ["stopped", "awaiting_resume", "outcome_uncertain"].includes(work.state))) && <section className="resume-card"><h3>Continue deliberately</h3><p>Held requests stay held until explicitly released. Reconcile inspects known outcomes without sending a new prompt.</p><select aria-label="Resume mode" value={resumeMode} disabled={resuming} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work">Continue original work</option><option value="release_held_queue">Release held queue</option></select><button disabled={resuming} onClick={() => void resume()}>Resume</button></section>}
+    {(snapshot?.project.state === "awaiting_resume" || requests.some(r => r.receipt.state === "held") || (work && ["stopped", "awaiting_resume", "outcome_uncertain"].includes(work.state))) && <section className="resume-card"><h3>Continue deliberately</h3><p>Held requests stay held until explicitly released. Reconcile inspects known outcomes without sending a new prompt.</p><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work">Continue original work</option><option value="release_held_queue">Release held queue</option></select>{resumeMode === "continue_work" && <label>Original work<select aria-label="Original work to continue" value={chosenResumeWork?.work_id ?? ""} disabled={resuming || !!pendingResume} onChange={event => setResumeWorkId(event.target.value)}><option value="">Select original work</option>{resumable.map(record => <option key={record.work_id} value={record.work_id}>{record.work_id} · {record.state}</option>)}</select></label>}<button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork)} onClick={() => void resume()}>Resume</button></section>}
+    {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}
     <Conversation api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} />
     <details className="jobs"><summary>Independent jobs <span>{jobs.length}</span></summary><p>Stop Copilot does not stop these jobs.</p>{jobs.map(job => <div className="job-row" key={job.job_id}><strong>{job.kind}</strong><small>{job.job_id} · {job.state}</small>{!["succeeded", "failed", "cancelled"].includes(job.state) && <button onClick={() => void durableCommand<RevisionCommand, unknown>(`job-cancel.${job.job_id}`, () => ({ schema_version: "1.0", operation_id: id(), project_id: projectId, expected_revision: job.state_revision }), body => api.call("requestJobCancellation", { path: { project_id: projectId, job_id: job.job_id }, body, idempotencyKey: body.operation_id })).then(onRefresh).catch(e => setError(describeError(e)))}>Request job cancellation</button>}</div>)}{!jobs.length && <small>No jobs recorded.</small>}</details>
     <small className="usage-note">Usage is shown only when reported by the runtime. Missing usage is unavailable, not zero.</small>

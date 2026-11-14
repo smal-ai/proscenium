@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { permission, project, SyntheticStudio, version } from "./shell.fixture";
 
 test.describe("W04 shell · synthetic HTTP/socket evidence", () => {
@@ -75,6 +77,31 @@ test.describe("W04 shell · synthetic HTTP/socket evidence", () => {
     expect(studio.posts.filter(p => p.path.endsWith("/requests"))).toHaveLength(1);
   });
 
+  test("selecting the already-current version retains its visible target and captured context", async ({ page }) => {
+    const studio = new SyntheticStudio();
+    const selected = {...version("version-new"), artifact_ids: ["selected-image"]};
+    const png = readFileSync("docs/evidence/m01/clean-v1.png");
+    await studio.install(page);
+    await page.route("**/api/v1/projects/*/items/*/versions*", route => route.fulfill({contentType: "application/json", body: JSON.stringify({schema_version: "1.0", items: [selected, version("version-old")], next_cursor: null})}));
+    await page.route("**/api/v1/projects/*/artifacts/selected-image", route => route.fulfill({contentType: "application/json", body: JSON.stringify({
+      schema_version: "1.0", project_id: project.project_id, artifact_id: "selected-image", kind: "image", purpose: "reference", state: "ready",
+      sha256: createHash("sha256").update(png).digest("hex"), bytes: png.length, media_type: "image/png", dimensions: {width: 640, height: 360}, derived_from: [], source_version_id: selected.version_id,
+    })}));
+    await page.route("**/api/v1/projects/*/artifacts/selected-image/content", route => route.fulfill({contentType: "image/png", body: png}));
+    await page.goto("/");
+    await page.getByRole("button", {name: /Lighting study\s+version-new/}).click();
+    await expect(page.getByRole("button", {name: "Annotate presented frame", exact: true})).toBeEnabled();
+    const context = () => page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "null"), `proscenium.owner.view.context.${project.project_id}`);
+    await expect.poll(async () => (await context())?.target?.artifact_id).toBe("selected-image");
+    const before = await context();
+    await page.getByRole("button", {name: /Lighting study\s+version-new/}).click();
+    await expect.poll(context).toEqual(before);
+    await expect(page.getByText("Next request context · 1 images")).toBeVisible();
+    await page.getByLabel("Message Copilot").fill("Keep this exact selected image");
+    await page.getByRole("button", {name: "Queue message", exact: true}).click();
+    await expect.poll(() => [...studio.contexts.values()][0]?.target?.artifact_id).toBe("selected-image");
+  });
+
   test("same-ID retry reads original first, while Stop bypasses an ambiguous Queue", async ({ page }) => {
     const studio = new SyntheticStudio(); studio.rejectNextRequest = true;
     await studio.install(page); await page.goto("/");
@@ -132,7 +159,83 @@ test.describe("W04 shell · synthetic HTTP/socket evidence", () => {
     await page.getByLabel("Resume mode").selectOption("release_held_queue");
     await page.getByRole("button", { name: "Resume", exact: true }).click();
     await expect.poll(() => studio.posts.find(p => p.path.endsWith("/resume"))?.body.mode).toBe("release_held_queue");
-    expect(studio.posts.find(p => p.path.endsWith("/resume"))?.body.work_id).toBe("work-test");
+    expect(studio.posts.find(p => p.path.endsWith("/resume"))?.body).toMatchObject({work_id: null, expected_revision: studio.snapshot.project.state_revision});
+  });
+
+  test("Continue targets stopped work retained in events with its own revision", async ({ page }) => {
+    const studio = new SyntheticStudio();
+    const stopped = {...studio.snapshot.active_work!, state: "stopped" as const, state_revision: 17};
+    studio.snapshot.active_work = null;
+    studio.snapshot.project.state = "awaiting_resume";
+    studio.emit("work.state_changed", stopped, false);
+    await studio.install(page); await page.goto("/");
+    await page.getByLabel("Resume mode").selectOption("continue_work");
+    await expect(page.getByLabel("Original work to continue")).toHaveValue(stopped.work_id);
+    await page.getByRole("button", {name: "Resume", exact: true}).click();
+    await expect.poll(() => studio.posts.find(row => row.path.endsWith("/resume"))?.body).toMatchObject({
+      mode: "continue_work", work_id: stopped.work_id, expected_revision: 17,
+    });
+    expect(studio.posts.some(row => row.path.endsWith("/requests"))).toBe(false);
+  });
+
+  test("work-targeted Reconcile uses the work revision rather than project revision", async ({ page }) => {
+    const studio = new SyntheticStudio();
+    studio.snapshot.project.state = "awaiting_resume";
+    studio.snapshot.active_work = {...studio.snapshot.active_work!, state: "awaiting_resume", state_revision: 23};
+    await studio.install(page); await page.goto("/");
+    await page.getByRole("button", {name: "Resume", exact: true}).click();
+    await expect.poll(() => studio.posts.find(row => row.path.endsWith("/resume"))?.body).toMatchObject({
+      mode: "reconcile_only", work_id: "work-test", expected_revision: 23,
+    });
+  });
+
+  test("multiple stopped works require an explicit Continue target", async ({ page }) => {
+    const studio = new SyntheticStudio();
+    const first = {...studio.snapshot.active_work!, state: "stopped" as const, state_revision: 5};
+    const second = {...first, work_id: "other-work", state_revision: 9};
+    studio.snapshot.active_work = null;
+    studio.snapshot.project.state = "awaiting_resume";
+    studio.emit("work.state_changed", first, false);
+    studio.emit("work.state_changed", second, false);
+    await studio.install(page); await page.goto("/");
+    await page.getByLabel("Resume mode").selectOption("continue_work");
+    await expect(page.getByRole("button", {name: "Resume", exact: true})).toBeDisabled();
+    await page.getByLabel("Original work to continue").selectOption("other-work");
+    await page.getByRole("button", {name: "Resume", exact: true}).click();
+    await expect.poll(() => studio.posts.find(row => row.path.endsWith("/resume"))?.body).toMatchObject({
+      work_id: "other-work", expected_revision: 9,
+    });
+  });
+
+  test("uncertain Resume survives reload and retries its exact original target revision", async ({ page }) => {
+    const studio = new SyntheticStudio();
+    const stopped = {...studio.snapshot.active_work!, state: "stopped" as const, state_revision: 17};
+    studio.snapshot.active_work = null;
+    studio.snapshot.project.state = "awaiting_resume";
+    studio.emit("work.state_changed", stopped, false);
+    await studio.install(page);
+    const attempts: Record<string, unknown>[] = [];
+    await page.route("**/resume", async route => {
+      const body = route.request().postDataJSON(); attempts.push(body);
+      if (attempts.length === 1) {
+        studio.snapshot.project.state = "active";
+        studio.snapshot.active_work = {...stopped, state: "running", state_revision: 18};
+        await route.abort("connectionreset");
+      } else await route.fulfill({contentType: "application/json", body: JSON.stringify({
+        schema_version: "1.0", operation_id: body.operation_id, resource_id: body.work_id,
+        state: "accepted", state_revision: body.expected_revision, replayed: true,
+      })});
+    });
+    await page.goto("/");
+    await page.getByLabel("Resume mode").selectOption("continue_work");
+    await page.getByRole("button", {name: "Resume", exact: true}).click();
+    await expect(page.getByRole("region", {name: "Resume awaiting confirmation"})).toBeVisible();
+    await page.reload();
+    await page.getByRole("button", {name: "Reconcile original Resume", exact: true}).click();
+    await expect.poll(() => attempts.length).toBe(2);
+    expect(attempts[1]).toEqual(attempts[0]);
+    expect(attempts[1]).toMatchObject({work_id: stopped.work_id, expected_revision: 17});
+    await expect(page.getByRole("region", {name: "Resume awaiting confirmation"})).toHaveCount(0);
   });
 
   test("registers workstation folders, rebinds and explicitly activates without sending model work", async ({ page }) => {
