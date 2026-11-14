@@ -2,6 +2,8 @@
 
 **Normative for contract 1.0. Decisions confirmed on 2026-11-14.**
 
+Development authorisation on 2026-11-14 delegates implementation and technical coordination of all milestones to the integration agent, using GPT-6.1-Sol OpenCode subagents. The coordinator resolves development questions and records actual milestone evidence while the owner is away. This delegation does not change the product's caller separation, creative-selection records or independent-service policy. See [implementation progress](implementation/progress.md).
+
 ## 1. Active-project scope
 
 The runtime agent may read relevant files and images in the active project folder without requiring the user to attach every file manually. Those tool accesses are visible in the activity stream. The attachment preview describes the context automatically captured for one request, not all content the agent may subsequently inspect.

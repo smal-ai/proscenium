@@ -1,6 +1,6 @@
 # Development fleet handover
 
-**Baseline:** specification 3.2.0, contract 1.0.0 amended before implementation. **Status:** work packages defined, none dispatched or implemented.
+**Baseline:** specification 3.2.0, contract 1.0.0 amended before implementation. **Status:** implementation authorised on 2026-11-14. F00 and the bounded E01 proof are dispatched. [Implementation progress](implementation/progress.md) records accepted revisions, assignments and milestone evidence.
 
 This document governs agents developing Proscenium. It is separate from the product's native Copilot subagents, which author user projects at runtime. A work-package description is not authority to start agents, install models, alter shared services or modify the reference projects.
 
