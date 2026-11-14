@@ -1,0 +1,508 @@
+{
+  "status": 409,
+  "response": {
+    "schema_version": "1.0",
+    "error": {
+      "code": "source_conflict",
+      "message": "source conflict",
+      "operation_id": null,
+      "retryable": false,
+      "details": {}
+    }
+  },
+  "context": {
+    "item_id": "m10-generated-asset",
+    "version_id": "m10-asset-v1",
+    "view_mode": "3d_inspection",
+    "target": null,
+    "camera": {
+      "space": "blender_world_m",
+      "camera_to_world": [
+        0.9901873188506188,
+        -0.09855950181644522,
+        0.09907117738836595,
+        0.804858049895587,
+        0.13974646180645484,
+        0.6983530573106134,
+        -0.7019785849707214,
+        -5.702900983534149,
+        0,
+        0.7089351394497336,
+        0.705273683085784,
+        5.729670487167961,
+        0,
+        0,
+        0,
+        1
+      ],
+      "projection": [
+        1.0608398247891768,
+        0,
+        0,
+        0,
+        0,
+        2.1445069205095586,
+        0,
+        0,
+        0,
+        0,
+        -1.000002000002,
+        -0.02000002000002,
+        0,
+        0,
+        -1,
+        0
+      ],
+      "aspect": 2.0215181127233244,
+      "near_m": 0.01,
+      "far_m": 10000,
+      "source_camera_id": null,
+      "shift": [
+        0,
+        0
+      ],
+      "kind": "perspective",
+      "vertical_fov_degrees": 50
+    },
+    "range": {
+      "start": 1,
+      "end": 1
+    },
+    "selected_objects": [
+      {
+        "object_id": "e04-object-001",
+        "instance_id": "e04-instance-001"
+      }
+    ],
+    "attachments": [],
+    "annotations": [],
+    "approved_findings": [],
+    "schema_version": "1.0",
+    "context_id": "4b0a5a53-001d-464e-82f2-f7a1949eb593",
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "captured_at": "2026-11-14T14:35:26.912Z"
+  },
+  "requests_before": [],
+  "requests_after": [],
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "raw_version": {
+    "actor": {
+      "id": "m10-owner-import-fixture",
+      "kind": "tool"
+    },
+    "artifact_ids": [
+      "m10-import-original",
+      "m10-import-conditioning",
+      "m10-import-generation-provenance",
+      "m10-import-import-provenance"
+    ],
+    "created_at": "2026-11-14T14:14:51.407217+00:00",
+    "description": "Accepted E04 native mesh. Owner fixture import only. Untextured and uncalibrated scale.",
+    "item_id": "m10-generated-asset",
+    "kind": "asset",
+    "name": "Imported Hunyuan mesh",
+    "preview_job_ids": [
+      "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43"
+    ],
+    "preview_requests": [
+      {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "m10-v1-proxy",
+        "purpose": "proxy",
+        "renderer_revision": "proscenium-blender-1",
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": "m10-asset-shot",
+        "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b"
+      }
+    ],
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "provenance": {
+      "creator": "Tencent",
+      "licence": "Tencent Hunyuan Community Licence",
+      "note": "Original E04 inference/checkpoint/hash retained in import-provenance.json. No new generation.",
+      "source_url": "https://huggingface.co/tencent/Hunyuan3D-2"
+    },
+    "publication_id": "m10-import-publication",
+    "schema_version": "1.0",
+    "source": {
+      "dependencies": [],
+      "digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b",
+      "entry_path": "assets/e04/asset.blend",
+      "files": [
+        {
+          "destination": "project.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "project.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "0e9bd5e6d311eedd0e68db786e8954f7c8575bcf3eb1f6a6ea52854f215e038d"
+          }
+        },
+        {
+          "destination": ".gitattributes",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": ".gitattributes",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+          }
+        },
+        {
+          "destination": ".gitignore",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": ".gitignore",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+          }
+        },
+        {
+          "destination": "assets/e04/asset.blend",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/asset.blend",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+          }
+        },
+        {
+          "destination": "assets/e04/conditioning.png",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/conditioning.png",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+          }
+        },
+        {
+          "destination": "assets/e04/generation-provenance.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/generation-provenance.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+          }
+        },
+        {
+          "destination": "assets/e04/import-provenance.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/import-provenance.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c"
+          }
+        },
+        {
+          "destination": "assets/e04/inspection.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/inspection.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+          }
+        },
+        {
+          "destination": "assets/e04/model-licence.txt",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/model-licence.txt",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+          }
+        },
+        {
+          "destination": "assets/e04/original.glb",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/original.glb",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+          }
+        },
+        {
+          "destination": "assets/e04/workflow.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/workflow.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+          }
+        }
+      ],
+      "required_runtime": {
+        "application": "blender",
+        "features": [],
+        "version": "4.5.14 LTS"
+      }
+    },
+    "source_commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+    "version_id": "m10-asset-v1"
+  },
+  "version_links": {
+    "artifact_ids": [
+      "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+      "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy-map"
+    ]
+  },
+  "public_version": {
+    "actor": {
+      "id": "m10-owner-import-fixture",
+      "kind": "tool"
+    },
+    "artifact_ids": [
+      "m10-import-original",
+      "m10-import-conditioning",
+      "m10-import-generation-provenance",
+      "m10-import-import-provenance",
+      "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+      "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy-map"
+    ],
+    "created_at": "2026-11-14T14:14:51.407217+00:00",
+    "description": "Accepted E04 native mesh. Owner fixture import only. Untextured and uncalibrated scale.",
+    "item_id": "m10-generated-asset",
+    "kind": "asset",
+    "name": "Imported Hunyuan mesh",
+    "preview_job_ids": [
+      "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43"
+    ],
+    "preview_requests": [
+      {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "m10-v1-proxy",
+        "purpose": "proxy",
+        "renderer_revision": "proscenium-blender-1",
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": "m10-asset-shot",
+        "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b"
+      }
+    ],
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "provenance": {
+      "creator": "Tencent",
+      "licence": "Tencent Hunyuan Community Licence",
+      "note": "Original E04 inference/checkpoint/hash retained in import-provenance.json. No new generation.",
+      "source_url": "https://huggingface.co/tencent/Hunyuan3D-2"
+    },
+    "publication_id": "m10-import-publication",
+    "schema_version": "1.0",
+    "source": {
+      "dependencies": [],
+      "digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b",
+      "entry_path": "assets/e04/asset.blend",
+      "files": [
+        {
+          "destination": "project.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "project.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "0e9bd5e6d311eedd0e68db786e8954f7c8575bcf3eb1f6a6ea52854f215e038d"
+          }
+        },
+        {
+          "destination": ".gitattributes",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": ".gitattributes",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+          }
+        },
+        {
+          "destination": ".gitignore",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": ".gitignore",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+          }
+        },
+        {
+          "destination": "assets/e04/asset.blend",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/asset.blend",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+          }
+        },
+        {
+          "destination": "assets/e04/conditioning.png",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/conditioning.png",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+          }
+        },
+        {
+          "destination": "assets/e04/generation-provenance.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/generation-provenance.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+          }
+        },
+        {
+          "destination": "assets/e04/import-provenance.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/import-provenance.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c"
+          }
+        },
+        {
+          "destination": "assets/e04/inspection.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/inspection.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+          }
+        },
+        {
+          "destination": "assets/e04/model-licence.txt",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/model-licence.txt",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+          }
+        },
+        {
+          "destination": "assets/e04/original.glb",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/original.glb",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+          }
+        },
+        {
+          "destination": "assets/e04/workflow.json",
+          "origin": {
+            "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+            "kind": "git",
+            "path": "assets/e04/workflow.json",
+            "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+            "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+          }
+        }
+      ],
+      "required_runtime": {
+        "application": "blender",
+        "features": [],
+        "version": "4.5.14 LTS"
+      }
+    },
+    "source_commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+    "version_id": "m10-asset-v1"
+  },
+  "actual_w03_mapping": {
+    "nodes": [
+      {
+        "display_name": "E04_Mesh_001",
+        "instance_id": "e04-instance-001",
+        "node_path": [
+          0
+        ],
+        "object_id": "e04-object-001",
+        "world_matrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    ],
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "proxy_artifact_id": "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+    "sample_frame": 1,
+    "schema_version": "1.0",
+    "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b",
+    "space": "proxy_world_m",
+    "version_id": "m10-asset-v1"
+  },
+  "root_cause": "Contexts.validate_references checks selected IDs only in stored version.artifact_ids, omitting W03 version_links."
+}

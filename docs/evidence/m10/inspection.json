@@ -1,0 +1,50 @@
+{
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "version": "m10-asset-v1",
+  "orbit_before_sha256": "823ddd0c8c5cb07e1abd7dc49f976f6cd06d4a10454a518add543bd1aed9d07b",
+  "orbit_after_sha256": "209d8642b371906118c4430abe3f9c5d2f3a15b30960a00c3192ab75e93998bf",
+  "selected_title": "e04-object-001 / e04-instance-001",
+  "selected_aria_pressed": "true",
+  "mapping": {
+    "nodes": [
+      {
+        "display_name": "E04_Mesh_001",
+        "instance_id": "e04-instance-001",
+        "node_path": [
+          0
+        ],
+        "object_id": "e04-object-001",
+        "world_matrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    ],
+    "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+    "proxy_artifact_id": "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+    "sample_frame": 1,
+    "schema_version": "1.0",
+    "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b",
+    "space": "proxy_world_m",
+    "version_id": "m10-asset-v1"
+  }
+}

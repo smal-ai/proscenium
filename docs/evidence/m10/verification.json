@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-14",
+  "application_base": "b1fa32c8a73d5aca8243fa82e65837a8acaba75c",
+  "milestone_result": "BLOCKED",
+  "checks": [
+    {"command": "npm run build", "result": "passed", "scope": "Actual compiled studio, no mocked browser API"},
+    {"command": ".venv/bin/python -m pytest -q tests/acceptance/m10_evidence_test.py tests/acceptance/m10_defect_repro_test.py", "result": "passed", "checks": 8, "meaning": "Six retained-partial-evidence checks and two isolated observed-defect diagnostics, not M10 completion"},
+    {"command": ".venv/bin/python -m ruff check tests/native/image_to_3d/m10*.py tests/acceptance/m10*.py", "result": "passed"},
+    {"command": ".venv/bin/python -m mypy tests/native/image_to_3d/m10*.py tests/acceptance/m10*.py --ignore-missing-imports", "result": "passed", "source_files": 10, "note": "bpy is supplied only by the allocated native Blender environment"},
+    {"command": "node --check tests/native/image_to_3d/m10_browser.mjs", "result": "passed"},
+    {"command": ".venv/bin/python docs/validate_spec.py", "result": "passed"}
+  ],
+  "warning": "Existing Starlette/httpx deprecation warning; Vite reported existing dependency directives and bundle size warnings",
+  "real_proxy_exports": 1,
+  "real_cloud_roots": 1,
+  "native_children": 0,
+  "native_authoring_processes": 0,
+  "native_readbacks": 0,
+  "cpu_stills": 0,
+  "new_generation_reservations": 0,
+  "original_e04_consumed_count": 1,
+  "remaining_observed_owned_processes": 0,
+  "shared_implementation_edits": false
+}

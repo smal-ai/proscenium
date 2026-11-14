@@ -1,0 +1,99 @@
+{
+  "tool_call_id": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+  "canonical_payload_sha256": "5c8f0b96b9da83a97e1a9096d22c44813a3ace47f59cbaee05028495e4ddb999",
+  "requests": [
+    {
+      "native_event_id": "efa0bc52-3da5-4074-8f5c-a7e2bc94c7fa",
+      "request_id": "3a0d372b-ecef-4790-b6f4-7c74048a30ee",
+      "prompt_kind": "path",
+      "permission_request": {
+        "kind": "shell",
+        "toolCallId": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+        "fullCommandText": "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 timeout 180s flock -w 170 /tmp/opencode/proscenium-native-claims/blender-render.lock /home/quintin/.local/bin/blender --background --factory-startup --disable-autoexec --threads 4 --python-exit-code 1 --python assets/e04/revise_asset.py",
+        "shellType": "bash",
+        "intention": "Author revised mesh in one locked bounded Blender process",
+        "commands": [
+          {
+            "identifier": "timeout",
+            "readOnly": false,
+            "allowMatchIdentifier": null
+          }
+        ],
+        "hasParseErrors": false,
+        "commandSegments": [
+          {
+            "identifier": "timeout",
+            "fullCommandText": "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 timeout 180s flock -w 170 /tmp/opencode/proscenium-native-claims/blender-render.lock /home/quintin/.local/bin/blender --background --factory-startup --disable-autoexec --threads 4 --python-exit-code 1 --python assets/e04/revise_asset.py",
+            "allowMatchIdentifier": null,
+            "staticTokens": null,
+            "hasUnboundExecutableContent": false,
+            "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+          }
+        ],
+        "possiblePaths": [
+          "timeout",
+          "180s",
+          "flock",
+          "170",
+          "/tmp/opencode/proscenium-native-claims/blender-render.lock",
+          "/home/quintin/.local/bin/blender",
+          "assets/e04/revise_asset.py"
+        ],
+        "canOfferSessionApproval": false,
+        "hasWriteFileRedirection": false,
+        "possibleUrls": []
+      },
+      "completion": {
+        "kind": "approved"
+      }
+    },
+    {
+      "native_event_id": "01ec62fb-3aa3-49e0-ae42-f9b2720bb48d",
+      "request_id": "1fbd60bd-5e63-4553-af72-8b6d50648dc1",
+      "prompt_kind": "commands",
+      "permission_request": {
+        "kind": "shell",
+        "toolCallId": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+        "fullCommandText": "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 timeout 180s flock -w 170 /tmp/opencode/proscenium-native-claims/blender-render.lock /home/quintin/.local/bin/blender --background --factory-startup --disable-autoexec --threads 4 --python-exit-code 1 --python assets/e04/revise_asset.py",
+        "shellType": "bash",
+        "intention": "Author revised mesh in one locked bounded Blender process",
+        "commands": [
+          {
+            "identifier": "timeout",
+            "readOnly": false,
+            "allowMatchIdentifier": null
+          }
+        ],
+        "hasParseErrors": false,
+        "commandSegments": [
+          {
+            "identifier": "timeout",
+            "fullCommandText": "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 timeout 180s flock -w 170 /tmp/opencode/proscenium-native-claims/blender-render.lock /home/quintin/.local/bin/blender --background --factory-startup --disable-autoexec --threads 4 --python-exit-code 1 --python assets/e04/revise_asset.py",
+            "allowMatchIdentifier": null,
+            "staticTokens": null,
+            "hasUnboundExecutableContent": false,
+            "workingDirectory": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+          }
+        ],
+        "possiblePaths": [
+          "timeout",
+          "180s",
+          "flock",
+          "170",
+          "/tmp/opencode/proscenium-native-claims/blender-render.lock",
+          "/home/quintin/.local/bin/blender",
+          "assets/e04/revise_asset.py"
+        ],
+        "canOfferSessionApproval": false,
+        "hasWriteFileRedirection": false,
+        "possibleUrls": []
+      },
+      "completion": {
+        "kind": "denied-interactively-by-user"
+      }
+    }
+  ],
+  "host_fence": "attribution_unavailable",
+  "human_denial": false,
+  "note": "The SDK denial label is a host rejection after correlation fencing, not an actual human decision."
+}

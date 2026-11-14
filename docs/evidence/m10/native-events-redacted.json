@@ -1,0 +1,320 @@
+{
+  "events": [
+    {
+      "id": "ce775010-f613-4173-a45e-6ebe88a78f8e",
+      "type": "session.start",
+      "parentId": null,
+      "timestamp": "2026-11-14T14:36:23.095Z",
+      "data": {
+        "sessionId": "5971843f-f216-40f8-b8cb-995675f48161",
+        "copilotVersion": "1.0.112",
+        "selectedModel": "gpt-6.1-sol",
+        "startTime": "2026-11-14T14:36:23.082Z"
+      }
+    },
+    {
+      "id": "457426f9-f80c-480f-a080-d5b090c01cfd",
+      "type": "user.message",
+      "parentId": "eab03524-8d4b-4f98-b198-a30378df808e",
+      "timestamp": "2026-11-14T14:36:26.942Z",
+      "data": {
+        "messageId": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+        "clientTurnId": "927cf238-56c2-454e-a063-014e072f9010"
+      },
+      "extension_context": [
+        {
+          "schema_version": "1.0",
+          "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+          "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d",
+          "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+          "delivery_mode": "queue",
+          "context_id": "83857a90-4bdc-4617-a558-a5a5739ad1be",
+          "project": {
+            "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+            "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project"
+          },
+          "selection": {
+            "item_id": "m10-generated-asset",
+            "version_id": "m10-asset-v1",
+            "view_mode": "3d_inspection",
+            "target": null,
+            "camera": {
+              "aspect": 2.0215181127233244,
+              "camera_to_world": [
+                0.9901873188506188,
+                -0.09855950181644522,
+                0.09907117738836595,
+                0.804858049895587,
+                0.13974646180645484,
+                0.6983530573106134,
+                -0.7019785849707214,
+                -5.702900983534149,
+                0,
+                0.7089351394497336,
+                0.705273683085784,
+                5.729670487167961,
+                0,
+                0,
+                0,
+                1
+              ],
+              "far_m": 10000,
+              "kind": "perspective",
+              "near_m": 0.01,
+              "projection": [
+                1.0608398247891768,
+                0,
+                0,
+                0,
+                0,
+                2.1445069205095586,
+                0,
+                0,
+                0,
+                0,
+                -1.000002000002,
+                -0.02000002000002,
+                0,
+                0,
+                -1,
+                0
+              ],
+              "shift": [
+                0,
+                0
+              ],
+              "source_camera_id": null,
+              "space": "blender_world_m",
+              "vertical_fov_degrees": 50
+            },
+            "range": {
+              "end": 1,
+              "start": 1
+            },
+            "selected_objects": []
+          },
+          "annotations": [],
+          "approved_findings": [],
+          "attached_files": []
+        }
+      ]
+    },
+    {
+      "id": "b889fb76-dd63-4502-ad94-c0ab1de4b398",
+      "type": "tool.execution_start",
+      "parentId": "c048f804-5e4d-409e-956f-928aa4f8348c",
+      "timestamp": "2026-11-14T14:36:30.420Z",
+      "data": {
+        "toolCallId": "call_J0NeahMY7NHesurQfIdLWIvo",
+        "toolName": "skill",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "8edd406377f12eb77603bf0e91ac2ec9919001a7c4c795c435df267795822c9b"
+    },
+    {
+      "id": "3702fcaa-413f-412f-9070-3c8dff7d20ab",
+      "type": "tool.execution_complete",
+      "parentId": "029a77d4-ac46-42f1-876b-04c2889afda8",
+      "timestamp": "2026-11-14T14:36:30.472Z",
+      "data": {
+        "toolCallId": "call_J0NeahMY7NHesurQfIdLWIvo",
+        "success": true
+      }
+    },
+    {
+      "id": "9d5c6aac-2610-4771-9e89-68b7e98862de",
+      "type": "tool.execution_start",
+      "parentId": "52724843-d799-448c-a256-eb027f705beb",
+      "timestamp": "2026-11-14T14:36:34.712Z",
+      "data": {
+        "toolCallId": "call_PvTlldH5XNpnwzUYpa8jCqAO",
+        "toolName": "glob",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "3ef52f0a76caa086062ee91ed3490537719357a232f8a285f687eddc78e97521"
+    },
+    {
+      "id": "88ab6ebf-d1e3-42fe-a2f4-dc44cd276b3c",
+      "type": "tool.execution_start",
+      "parentId": "9d5c6aac-2610-4771-9e89-68b7e98862de",
+      "timestamp": "2026-11-14T14:36:34.712Z",
+      "data": {
+        "toolCallId": "call_dmN8Hr0zGeY9G69AQ9EUNBmN",
+        "toolName": "glob",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "ede23b58bfcb7f98ad77f890586c8bb0e2e899c7029cd996e384309df6809d60"
+    },
+    {
+      "id": "4e81e39a-fe3a-490b-a0f9-3bacfa742078",
+      "type": "tool.execution_start",
+      "parentId": "88ab6ebf-d1e3-42fe-a2f4-dc44cd276b3c",
+      "timestamp": "2026-11-14T14:36:34.713Z",
+      "data": {
+        "toolCallId": "call_83c3hJZ4G6vDGExsBx5FsQWv",
+        "toolName": "bash",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "5ac792bbd3ae9aa30b7bd76c9670105a71f7da81113d56686b80d5b442762f99"
+    },
+    {
+      "id": "e2388d87-972a-42bb-8b96-4453f4b97ef1",
+      "type": "tool.execution_complete",
+      "parentId": "d99bc3bb-91a1-48d1-9ccf-5cbf18cac0fa",
+      "timestamp": "2026-11-14T14:36:34.823Z",
+      "data": {
+        "toolCallId": "call_83c3hJZ4G6vDGExsBx5FsQWv",
+        "success": true
+      }
+    },
+    {
+      "id": "d0bdc935-0cc5-42a3-8858-38dfc87fb672",
+      "type": "tool.execution_complete",
+      "parentId": "67d7e6a6-c8df-4234-ae0d-11a308cad7dc",
+      "timestamp": "2026-11-14T14:36:34.845Z",
+      "data": {
+        "toolCallId": "call_dmN8Hr0zGeY9G69AQ9EUNBmN",
+        "success": true
+      }
+    },
+    {
+      "id": "42345912-e8fa-4a1f-a9b8-ca38d59c094a",
+      "type": "tool.execution_complete",
+      "parentId": "64dce60c-5988-49b3-b19a-a1bd38318442",
+      "timestamp": "2026-11-14T14:36:34.869Z",
+      "data": {
+        "toolCallId": "call_PvTlldH5XNpnwzUYpa8jCqAO",
+        "success": true
+      }
+    },
+    {
+      "id": "08527b99-95db-4c06-b703-eef756377655",
+      "type": "tool.execution_start",
+      "parentId": "aa2d36bb-e7f4-46f6-bd3c-1c3e582621e7",
+      "timestamp": "2026-11-14T14:36:40.509Z",
+      "data": {
+        "toolCallId": "call_puk2fTVPSet4pzsfdqCi8eRM",
+        "toolName": "view",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "0da749c2e2a2c1571fe043df261f546f9620e4e11188f59fdcf551238067804f"
+    },
+    {
+      "id": "723ff1b0-20ea-4a64-9e0a-cc17bcb340cf",
+      "type": "tool.execution_start",
+      "parentId": "08527b99-95db-4c06-b703-eef756377655",
+      "timestamp": "2026-11-14T14:36:40.509Z",
+      "data": {
+        "toolCallId": "call_YBDmS0wKqsPWJjqSv9KiiNLq",
+        "toolName": "view",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "fb75acc42858533371065e04178bf5a45891ed689db6dddf4b437f758c646bab"
+    },
+    {
+      "id": "340328b3-42fa-4078-90a2-7d20bb034485",
+      "type": "tool.execution_start",
+      "parentId": "723ff1b0-20ea-4a64-9e0a-cc17bcb340cf",
+      "timestamp": "2026-11-14T14:36:40.510Z",
+      "data": {
+        "toolCallId": "call_V6nWUtqIi3JKorGarz25egZC",
+        "toolName": "view",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "a4922f419fea72c34b4a655827e54a02d7ccee894cdc1d13b20e44969b33eafa"
+    },
+    {
+      "id": "dffb4ccf-a281-4a44-857c-aa5ed37700c9",
+      "type": "tool.execution_start",
+      "parentId": "340328b3-42fa-4078-90a2-7d20bb034485",
+      "timestamp": "2026-11-14T14:36:40.510Z",
+      "data": {
+        "toolCallId": "call_Ei49XjIFSAsL5gokNTISwtxa",
+        "toolName": "view",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "65105602b6ab6233b61465d5178858693305597a053ce3e0b793bfbe2c4d3974"
+    },
+    {
+      "id": "9d64b978-6d11-42f2-8166-51ce2d688e90",
+      "type": "tool.execution_complete",
+      "parentId": "d751255b-6752-4a89-833b-057c76269dd5",
+      "timestamp": "2026-11-14T14:36:40.673Z",
+      "data": {
+        "toolCallId": "call_YBDmS0wKqsPWJjqSv9KiiNLq",
+        "success": true
+      }
+    },
+    {
+      "id": "db12df7f-3f89-4106-81e5-63517518f07b",
+      "type": "tool.execution_complete",
+      "parentId": "9e10df48-aa4f-4933-9a1a-4b766f439a20",
+      "timestamp": "2026-11-14T14:36:40.705Z",
+      "data": {
+        "toolCallId": "call_V6nWUtqIi3JKorGarz25egZC",
+        "success": true
+      }
+    },
+    {
+      "id": "da990580-938d-40a1-be50-e4d3984060b5",
+      "type": "tool.execution_complete",
+      "parentId": "18f20e4a-32f1-4187-8f99-8a61725e2ec3",
+      "timestamp": "2026-11-14T14:36:40.731Z",
+      "data": {
+        "toolCallId": "call_Ei49XjIFSAsL5gokNTISwtxa",
+        "success": true
+      }
+    },
+    {
+      "id": "4a088bd7-5fae-41d7-90dd-3ed4bf44ac9c",
+      "type": "tool.execution_complete",
+      "parentId": "51482223-35db-495c-a130-b68a3767a1de",
+      "timestamp": "2026-11-14T14:36:40.757Z",
+      "data": {
+        "toolCallId": "call_puk2fTVPSet4pzsfdqCi8eRM",
+        "success": true
+      }
+    },
+    {
+      "id": "70441b41-8fef-4208-a985-f4fa44dae557",
+      "type": "tool.execution_start",
+      "parentId": "fea08982-a0ef-4b29-8451-fee69ee94fc6",
+      "timestamp": "2026-11-14T14:37:03.598Z",
+      "data": {
+        "toolCallId": "custom_call_2dp8da7wMkWvEJe2l23gOKSo",
+        "toolName": "apply_patch",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "01882f0da2354a3e840a120f09739336d189093530b1a13241b079d6ee4e4037"
+    },
+    {
+      "id": "e7b128e7-c65f-48f9-b879-a54d9d6068d0",
+      "type": "tool.execution_complete",
+      "parentId": "ee5642d7-aa9b-48e9-b615-21718297db98",
+      "timestamp": "2026-11-14T14:37:06.051Z",
+      "data": {
+        "toolCallId": "custom_call_2dp8da7wMkWvEJe2l23gOKSo",
+        "success": true
+      }
+    },
+    {
+      "id": "dbfcd230-d244-4c69-8a2a-cfd39e1d10fc",
+      "type": "tool.execution_start",
+      "parentId": "972b78db-7ffb-4fca-86e5-1a21757478e0",
+      "timestamp": "2026-11-14T14:37:09.355Z",
+      "data": {
+        "toolCallId": "call_Yo8Pyi1HvNYCI5E6CSQxCamx",
+        "toolName": "bash",
+        "model": "gpt-6.1-sol"
+      },
+      "arguments_sha256": "46cd9cd63edeae0f7b9d327ed97575500bd1e956537829d7cc32f67a39117f98"
+    },
+    {
+      "id": "c4783d68-95a3-48b1-ba4d-ddaa9b82c9f4",
+      "type": "session.shutdown",
+      "parentId": "6dbe04d6-7fce-4e9e-889d-f66578a4b6d2",
+      "timestamp": "2026-11-14T14:37:09.467Z",
+      "shutdown_type": "routine"
+    }
+  ]
+}

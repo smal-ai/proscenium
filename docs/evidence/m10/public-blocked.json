@@ -1,0 +1,522 @@
+{
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1
+  },
+  "browser": "159.0.8154.6",
+  "snapshot": {
+    "schema_version": "1.0",
+    "project": {
+      "name": "M10 retained Hunyuan asset",
+      "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 4
+    },
+    "settings": {
+      "default_profile_id": "authoring",
+      "generation_attempt_limit": 3,
+      "state_revision": 1
+    },
+    "event_sequence": 77,
+    "active_work": {
+      "directive_request_ids": [],
+      "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+      "job_ids": [],
+      "native_session_id": "5971843f-f216-40f8-b8cb-995675f48161",
+      "originating_request_id": "927cf238-56c2-454e-a063-014e072f9010",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "schema_version": "1.0",
+      "state": "awaiting_resume",
+      "state_revision": 2,
+      "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+    },
+    "held_requests": [],
+    "items": [
+      {
+        "current_version_id": "m10-asset-v1",
+        "description": "Accepted E04 native mesh. Owner fixture import only. Untextured and uncalibrated scale.",
+        "item_id": "m10-generated-asset",
+        "kind": "asset",
+        "name": "Imported Hunyuan mesh",
+        "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+        "provenance": {
+          "creator": "Tencent",
+          "licence": "Tencent Hunyuan Community Licence",
+          "note": "Original E04 inference/checkpoint/hash retained in import-provenance.json. No new generation.",
+          "source_url": "https://huggingface.co/tencent/Hunyuan3D-2"
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0
+      }
+    ],
+    "jobs": [
+      {
+        "artifact_ids": [
+          "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+          "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy-map"
+        ],
+        "attempt_id": "attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 0,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "d3d4e402922551f8faaaa5ab031a577003a42e46cd9859557e2520d1e4b4f066",
+        "job_id": "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-93c00ae4-f476-4b38-b7f7-a995836be944",
+        "owner_operation_id": null,
+        "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m10-v1-proxy",
+          "purpose": "proxy",
+          "renderer_revision": "proscenium-blender-1",
+          "samples": 8,
+          "scene_name": "Scene",
+          "shot_id": "m10-asset-shot",
+          "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 4,
+        "target": {
+          "shot_id": "m10-asset-shot",
+          "target_id": "m10-generated-asset",
+          "version": {
+            "item_id": "m10-generated-asset",
+            "version_id": "m10-asset-v1"
+          }
+        },
+        "work_id": "m10-import-fixture"
+      }
+    ],
+    "pending_decisions": [],
+    "reviews": []
+  },
+  "requests": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "accepted_at": "2026-11-14T14:36:19.250593+00:00",
+        "effective_profile_id": "authoring",
+        "generation_task_id": "task-248f9ca287ec4d0a81d15444dca62d8f",
+        "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+        "receipt": {
+          "detail_code": "attribution_unavailable",
+          "native_message_id": "aeb54bc0-32e1-409d-b80b-1b85b984cb54",
+          "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+          "replayed": false,
+          "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+          "schema_version": "1.0",
+          "state": "outcome_uncertain",
+          "state_revision": 3,
+          "type": "queue",
+          "work_id": "work-bc19a5da5fcd4aaf9ae552a13d06b20d"
+        },
+        "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+        "schema_version": "1.0",
+        "submission": {
+          "context_id": "83857a90-4bdc-4617-a558-a5a5739ad1be",
+          "profile_id": "authoring",
+          "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+          "request_id": "927cf238-56c2-454e-a063-014e072f9010",
+          "schema_version": "1.0",
+          "text": "SCRIPTED TEST-USER INPUT FOR THE M10 ACCEPTANCE FIXTURE, not a real human creative approval.\n\nRevise the existing imported Hunyuan mesh selected in the current 3D Inspection context.\nProject project-f7d845f4-1910-4099-8578-ce15509690da, item m10-generated-asset, exact base version m10-asset-v1.\nThe actual source is assets/e04/asset.blend; mesh E04_Mesh_001 has stable properties\nproscenium_object_id=e04-object-001 and proscenium_instance_id=e04-instance-001.\nThis is the real accepted Hunyuan output, 350259 vertices and 1304618 triangles.\nOriginal image, GLB and generation/model provenance are already imported into this project.\n\nUse this lead native session directly. NO children, delegation, Task agents or additional models.\nZERO inference/Comfy/VLM/GPU operations. Do not start a live Blender/MCP/UI or use port 9876.\nYou have ONE owned background Blender authoring process, at most 180 seconds and four CPU threads.\nDo not run blender --version or a separate inspection process. An independent final inspection\nis reserved for the test harness. Stay in this active project; do not read other projects or private databases.\n\nAUTHOR THE REVISION YOURSELF with native bash/file tools and your own project-local Python script.\nOpen the existing .blend, preserve its actual mesh topology, vertex/polygon counts and stable IDs.\nUniformly scale the mesh so its WORLD vertical height is exactly 0.12 metres, then translate\nit so its lowest world-space Z is 0. Keep one mesh, do not add geometry, decimate or rebuild it.\nAssign a simple local blue ceramic-like material (no image textures), and add an authored camera\nand local light/world suitable for a 640x360 keyframe. Frame the whole object clearly.\nSave NEW editable source assets/e04/asset-v2.blend. Never overwrite asset.blend, original.glb,\nconditioning.png or any original generation/model/import provenance files.\nRecord actual measured bounds, counts, stable IDs and Blender version in\nassets/e04/revision-measurements.json from your authoring script. State that topology quality,\nUVs, retopology and rigging remain unproven. Do not directly render from the authoring script.\n\nRun only that ONE script in a foreground bounded CLI command. The installed executable is\n/home/quintin/.local/bin/blender. Use --background --factory-startup --disable-autoexec --threads 4\nand a nonzero --python-exit-code on error. Use OMP_NUM_THREADS=4 and MKL_NUM_THREADS=4 and timeout 180s.\nSerialise the command using the existing OS render claim /tmp/opencode/proscenium-native-claims/blender-render.lock\n(flock is permitted for this resource coordination only). No unrelated service/process changes.\n\nThen use get_version for the exact base metadata, checkpoint_sources for your explicitly owned\nnew script/source/measurement files, and publish_outputs for a NEW version m10-asset-v2 of the\nSAME item m10-generated-asset, expected_current_version_id m10-asset-v1, derived_from that version.\nUse the real checkpoint commit and exact hashes. Keep the original retained source/image/GLB/model\nprovenance referenced in the closure/artefacts. No fake source IDs, invented files, manual Git\ncheckpoint wrapper, private SQL or owner-selection calls. No generation reservation is needed.\nSourceClosure digest is SHA-256 of RFC 8785 JSON excluding digest, files sorted by destination,\ndependencies sorted by item_id/version_id. You may invoke the existing application Python\nenvironment for its canonical helper: /home/quintin/.cache/proscenium-development/fleet/m10-asset/.venv/bin/python.\nDo not install anything. All source origins must use this project's repository_id from get_version.\n\nPublish EXACTLY TWO initial preview requests: one static proxy and one keyframe, no animation.\nUse intent IDs m10-v2-proxy and m10-v2-keyframe, shot_id m10-asset-shot, scene_name Scene,\nsource_closure_digest of your actual new closure, camera null (your authored camera),\nframes {start:1,end:1}, fps {numerator:24,denominator:1}, dimensions {width:640,height:360},\nengine CYCLES, device CPU, samples 8, renderer_revision proscenium-blender-1,\ncolour_management {view_transform:'Standard',look:'None',exposure:0,gamma:1}.\nThe proxy purpose is proxy and has no review_output. The keyframe purpose is keyframe and\nreview_output is {media_type:'image/png',encoding:'view_transformed_srgb',bit_depth:8}.\nNo extra outputs. The existing provider/renderer owns launch and reconciliation. Do not\ncall a separate render CLI or duplicate preview admission if it is waiting for the resource.\n\nObserve those original job IDs with get_job. Once your keyframe job is SUCCEEDED, perform\nONE explicit negative retry test: call retry_job on that already-succeeded keyframe with its\nactual current state_revision and operation_id m10-success-retry-must-refuse. The expected\nresult is invalid_state_transition and NO new attempt. Do not retry failed/cancelled jobs,\ncorrected inputs or the refusal. If jobs fail, retain their identities and report the blocker.\nThis diagnostic refusal is explicitly part of the test-user request, not permission to rerender.\n\nFinish with actual checkpoint/version/job identities and limits. Do not ask for routine\nauthoring permission or creative selection. Do not claim that a test-user selected the asset.\n",
+          "type": "queue"
+        }
+      }
+    ],
+    "next_cursor": null
+  },
+  "jobs": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "artifact_ids": [
+          "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+          "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy-map"
+        ],
+        "attempt_id": "attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2",
+        "attempt_number": 1,
+        "availability": "complete",
+        "completed_frames": 0,
+        "expected_frames": 1,
+        "external_job_id": null,
+        "input_digest": "d3d4e402922551f8faaaa5ab031a577003a42e46cd9859557e2520d1e4b4f066",
+        "job_id": "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-93c00ae4-f476-4b38-b7f7-a995836be944",
+        "owner_operation_id": null,
+        "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 1,
+            "start": 1
+          },
+          "intent_id": "m10-v1-proxy",
+          "purpose": "proxy",
+          "renderer_revision": "proscenium-blender-1",
+          "samples": 8,
+          "scene_name": "Scene",
+          "shot_id": "m10-asset-shot",
+          "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 4,
+        "target": {
+          "shot_id": "m10-asset-shot",
+          "target_id": "m10-generated-asset",
+          "version": {
+            "item_id": "m10-generated-asset",
+            "version_id": "m10-asset-v1"
+          }
+        },
+        "work_id": "m10-import-fixture"
+      }
+    ],
+    "next_cursor": null
+  },
+  "items": {
+    "schema_version": "1.0",
+    "items": [
+      {
+        "current_version_id": "m10-asset-v1",
+        "description": "Accepted E04 native mesh. Owner fixture import only. Untextured and uncalibrated scale.",
+        "item_id": "m10-generated-asset",
+        "kind": "asset",
+        "name": "Imported Hunyuan mesh",
+        "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+        "provenance": {
+          "creator": "Tencent",
+          "licence": "Tencent Hunyuan Community Licence",
+          "note": "Original E04 inference/checkpoint/hash retained in import-provenance.json. No new generation.",
+          "source_url": "https://huggingface.co/tencent/Hunyuan3D-2"
+        },
+        "schema_version": "1.0",
+        "selected_version_id": null,
+        "state_revision": 0
+      }
+    ],
+    "next_cursor": null
+  },
+  "versions": {
+    "m10-generated-asset": {
+      "schema_version": "1.0",
+      "items": [
+        {
+          "actor": {
+            "id": "m10-owner-import-fixture",
+            "kind": "tool"
+          },
+          "artifact_ids": [
+            "m10-import-original",
+            "m10-import-conditioning",
+            "m10-import-generation-provenance",
+            "m10-import-import-provenance",
+            "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+            "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy-map"
+          ],
+          "created_at": "2026-11-14T14:14:51.407217+00:00",
+          "description": "Accepted E04 native mesh. Owner fixture import only. Untextured and uncalibrated scale.",
+          "item_id": "m10-generated-asset",
+          "kind": "asset",
+          "name": "Imported Hunyuan mesh",
+          "preview_job_ids": [
+            "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43"
+          ],
+          "preview_requests": [
+            {
+              "camera": null,
+              "colour_management": {
+                "exposure": 0,
+                "gamma": 1,
+                "look": "None",
+                "view_transform": "Standard"
+              },
+              "device": "CPU",
+              "dimensions": {
+                "height": 360,
+                "width": 640
+              },
+              "engine": "CYCLES",
+              "fps": {
+                "denominator": 1,
+                "numerator": 24
+              },
+              "frames": {
+                "end": 1,
+                "start": 1
+              },
+              "intent_id": "m10-v1-proxy",
+              "purpose": "proxy",
+              "renderer_revision": "proscenium-blender-1",
+              "samples": 8,
+              "scene_name": "Scene",
+              "shot_id": "m10-asset-shot",
+              "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b"
+            }
+          ],
+          "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+          "provenance": {
+            "creator": "Tencent",
+            "licence": "Tencent Hunyuan Community Licence",
+            "note": "Original E04 inference/checkpoint/hash retained in import-provenance.json. No new generation.",
+            "source_url": "https://huggingface.co/tencent/Hunyuan3D-2"
+          },
+          "publication_id": "m10-import-publication",
+          "schema_version": "1.0",
+          "source": {
+            "dependencies": [],
+            "digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b",
+            "entry_path": "assets/e04/asset.blend",
+            "files": [
+              {
+                "destination": "project.json",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "project.json",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "0e9bd5e6d311eedd0e68db786e8954f7c8575bcf3eb1f6a6ea52854f215e038d"
+                }
+              },
+              {
+                "destination": ".gitattributes",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": ".gitattributes",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "01942881655479c4fd44201f6c937b59e460f501bbb6510eb9251d7236e7e281"
+                }
+              },
+              {
+                "destination": ".gitignore",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": ".gitignore",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "2fc74c9dfd8d7501e97275b5e0ad6ba97e9fcf87b7855907a50187c154dfa553"
+                }
+              },
+              {
+                "destination": "assets/e04/asset.blend",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/asset.blend",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3"
+                }
+              },
+              {
+                "destination": "assets/e04/conditioning.png",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/conditioning.png",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73"
+                }
+              },
+              {
+                "destination": "assets/e04/generation-provenance.json",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/generation-provenance.json",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df"
+                }
+              },
+              {
+                "destination": "assets/e04/import-provenance.json",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/import-provenance.json",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "31aab8f5fcafb7ab00352bef88600a6dd678697b045fd2764045ca490ef05f5c"
+                }
+              },
+              {
+                "destination": "assets/e04/inspection.json",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/inspection.json",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e"
+                }
+              },
+              {
+                "destination": "assets/e04/model-licence.txt",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/model-licence.txt",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd"
+                }
+              },
+              {
+                "destination": "assets/e04/original.glb",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/original.glb",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06"
+                }
+              },
+              {
+                "destination": "assets/e04/workflow.json",
+                "origin": {
+                  "commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+                  "kind": "git",
+                  "path": "assets/e04/workflow.json",
+                  "repository_id": "repository-0d321287-a9d4-46f6-a0d9-cf7b37984785",
+                  "sha256": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "source_commit": "cd21a4d52c807d28f579ff37ea392c6567db1fc6",
+          "version_id": "m10-asset-v1"
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  "contexts": {
+    "83857a90-4bdc-4617-a558-a5a5739ad1be": {
+      "annotations": [],
+      "approved_findings": [],
+      "attachments": [],
+      "camera": {
+        "aspect": 2.0215181127233244,
+        "camera_to_world": [
+          0.9901873188506188,
+          -0.09855950181644522,
+          0.09907117738836595,
+          0.804858049895587,
+          0.13974646180645484,
+          0.6983530573106134,
+          -0.7019785849707214,
+          -5.702900983534149,
+          0,
+          0.7089351394497336,
+          0.705273683085784,
+          5.729670487167961,
+          0,
+          0,
+          0,
+          1
+        ],
+        "far_m": 10000,
+        "kind": "perspective",
+        "near_m": 0.01,
+        "projection": [
+          1.0608398247891768,
+          0,
+          0,
+          0,
+          0,
+          2.1445069205095586,
+          0,
+          0,
+          0,
+          0,
+          -1.000002000002,
+          -0.02000002000002,
+          0,
+          0,
+          -1,
+          0
+        ],
+        "shift": [
+          0,
+          0
+        ],
+        "source_camera_id": null,
+        "space": "blender_world_m",
+        "vertical_fov_degrees": 50
+      },
+      "captured_at": "2026-11-14T14:36:19.186Z",
+      "context_id": "83857a90-4bdc-4617-a558-a5a5739ad1be",
+      "item_id": "m10-generated-asset",
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "range": {
+        "end": 1,
+        "start": 1
+      },
+      "schema_version": "1.0",
+      "selected_objects": [],
+      "target": null,
+      "version_id": "m10-asset-v1",
+      "view_mode": "3d_inspection"
+    }
+  },
+  "frames": {
+    "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43": {
+      "schema_version": "1.0",
+      "items": [],
+      "next_cursor": null
+    }
+  }
+}

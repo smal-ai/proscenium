@@ -1,0 +1,100 @@
+{
+  "server_closed": true,
+  "browser_closed": true,
+  "remaining_observed_owned_processes": [],
+  "original_e04_preserved": true,
+  "original_e04_after": {
+    "files": {
+      "asset.blend": "36e7b864fa03944f4b260478e79a385660d37eaba7a18744ea57aa79bf9558a3",
+      "original.glb": "166b1a76356067cb71e1f061f0b2217fcae91857576e2f33b0038704ed6c5a06",
+      "conditioning.png": "038ef5c13f1efd904088be7d0753611011b8a30baac621ff914de87af6682c73",
+      "generation-provenance.json": "db46e94a6fa9cad1c42595f1d99786974c4f15fb4b6a5a600b1178f2d4ba56df",
+      "inspection.json": "3ae62d69593d1db58cf40db08dfa84b67fcd40c45139aec494ba9ec55843b48e",
+      "model-licence.txt": "eca02cc10abaf520d85c3c523aef0b88f36b935b85635f1e34370688e93da3dd",
+      "workflow.json": "af61d3da83c7fd6aaf7dfc9294d217b0dd70347888a0cdc4b9cebc638bc4d875"
+    },
+    "report_sha256": "f86950cc63944a248950f4fe856f637c0cfe93e4b831a095930e7932c1233bb3",
+    "git_refs": [
+      "94a17bb13ab6669eb4096473038be8cc8349975a refs/heads/main",
+      "94a17bb13ab6669eb4096473038be8cc8349975a refs/proscenium/checkpoints/b3db71cf7b3d23919be8ea386955e3a8171aad9ca1bb983baee25a074723eee0"
+    ],
+    "reservations": [
+      [
+        "e04-mesh-job",
+        "e04-generation-task",
+        "e04-generation-task",
+        "consumed"
+      ]
+    ],
+    "prompt_id": "ed610c36-0fbc-45f6-8367-d3a1b56fa329",
+    "client_id": "b833dab6-65e2-41ab-ae5d-932b178c003f"
+  },
+  "local_jobs_before_shutdown": [
+    {
+      "artifact_ids": [
+        "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy",
+        "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43-proxy-map"
+      ],
+      "attempt_id": "attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2",
+      "attempt_number": 1,
+      "availability": "complete",
+      "completed_frames": 0,
+      "expected_frames": 1,
+      "external_job_id": null,
+      "input_digest": "d3d4e402922551f8faaaa5ab031a577003a42e46cd9859557e2520d1e4b4f066",
+      "job_id": "preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43",
+      "kind": "render",
+      "native_exit_code": 0,
+      "owner_epoch": "epoch-93c00ae4-f476-4b38-b7f7-a995836be944",
+      "owner_operation_id": null,
+      "project_id": "project-f7d845f4-1910-4099-8578-ce15509690da",
+      "provider_id": null,
+      "render_spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 1,
+          "start": 1
+        },
+        "intent_id": "m10-v1-proxy",
+        "purpose": "proxy",
+        "renderer_revision": "proscenium-blender-1",
+        "samples": 8,
+        "scene_name": "Scene",
+        "shot_id": "m10-asset-shot",
+        "source_closure_digest": "f3f252d0312c1421d6d5cf134d56a9f3dab0dff0b6d8c727d4de99f8a775a00b"
+      },
+      "schema_version": "1.0",
+      "state": "succeeded",
+      "state_revision": 4,
+      "target": {
+        "shot_id": "m10-asset-shot",
+        "target_id": "m10-generated-asset",
+        "version": {
+          "item_id": "m10-generated-asset",
+          "version_id": "m10-asset-v1"
+        }
+      },
+      "work_id": "m10-import-fixture"
+    }
+  ],
+  "model_shutdown_witnessed": true,
+  "independent_services_mutated": false,
+  "native_authoring_executed": false,
+  "new_inference_calls": 0
+}

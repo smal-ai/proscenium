@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/fixture.json",
+      "bytes": 23316,
+      "sha256": "bda7b3615d1fedc3e5dba516d3ba07816daaaea431cbfb47e9bb4e5c25c7a824"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/native-request-result.json",
+      "bytes": 55743,
+      "sha256": "4177bc26c7635dc17a9a81806b6c1b25b3e3f6d261b436171d83d0cfa76e6814"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/machine/copilot-runtime/home/session-state/5971843f-f216-40f8-b8cb-995675f48161/events.jsonl",
+      "bytes": 359022,
+      "sha256": "1f67910478035202cc86bea01b154959daa999573aec6f9521d984e9e00bb7de"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/m10-blocked-fullhd.png",
+      "bytes": 206216,
+      "sha256": "b4c898e52ee08c7eb951cf61a275494424b3a08654d60785a720ce4843b2a5c6"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/context-rejection.json",
+      "bytes": 1909,
+      "sha256": "b2d9144805c40ffeaa670606386f7812dabf6d910c9332ff8defc2e9bcdb93fb"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/cleanup.json",
+      "bytes": 3637,
+      "sha256": "bfc61bce72ecb721dcfa6697d5e0bc9597910334ac5de43565b99822fe3b9830"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/assets/e04/revise_asset.py",
+      "bytes": 8496,
+      "sha256": "b65ddd7837abe49a00657f8eb5f6a75dd1c0da312ababff15f7ed2f63e3cdb37"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy.glb",
+      "bytes": 90077656,
+      "sha256": "7631a575fa9dfb3478fbbb5fa26dcff0f6ff4741956856933f23e6c8be0c219e"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/proxy-map.json",
+      "bytes": 585,
+      "sha256": "f1b9a31436bc664cd7f627fd1d9aea8f4e8d677db9dc4f06b8a67104c1c255cd"
+    },
+    {
+      "path": "/home/quintin/.cache/proscenium-development/milestones/m10-asset-a/project/.proscenium/jobs/previews/preview-38210779927f1a7aab03edb2ebe53df6e9757797fd9a741c7ffdfddcd9c63b43/attempt-fddae35c-a74f-460f-b95b-1f3c5c355dc2/native-profile.json",
+      "bytes": 1314,
+      "sha256": "02d5f2d33e5121af716eead66eb9dd0d890c8f3f658bfa47e7d02b013f241686"
+    }
+  ],
+  "raw_native_history_exported": false,
+  "credentials_or_pairing_exported": false
+}

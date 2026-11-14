@@ -13,9 +13,11 @@ description: Prepare an image-conditioned mesh workflow and use the accepted bud
 - Register the actual conditioning image, trusted API workflow and required prompt
   provenance as project artefacts. Use existing `GenerationSubmit` with capability
   `image_to_3d`, the original task/target, exact model IDs and the accepted target slot policy.
-- The prepared Hunyuan3D 2.0 graph is image-only. Prompt text is provenance, not text
-  conditioning. A textual revision needs a corresponding image change or another proven
-  model capability. Do not claim that a prompt was applied when the model never read it.
+- The Hunyuan3D 2.0 graph is image-only. Prompt text is provenance, not text conditioning.
+  New inferred geometry needs corresponding image conditioning or another proven model
+  capability. Ordinary scale, placement, material, camera and light revisions are Blender
+  authoring of the existing mesh. They need no new inference or generation reservation.
+  Do not regenerate merely because the owner requests an ordinary editable-source revision.
 - Use one shared attempt reservation and resource claim. Wait, inspect history and
   retrieve the original prompt's output without another attempt. Reconcile uncertain
   acceptance before considering a correction. Never reset a budget by renaming a target.
@@ -31,5 +33,7 @@ description: Prepare an image-conditioned mesh workflow and use the accepted bud
 - State observed limitations. This candidate produces untextured shapes, not proven
   clean topology, retopology or rigging. Agent inspection never becomes owner selection.
 
-Preparation commands and the unimplemented provider interface proposal are documented in
-`docs/implementation/w09.md`. Those commands construct/check data and do not submit inference.
+The provider plugin and accepted E04 hardware proof are documented in
+`docs/implementation/w09.md`. Preparation commands construct/check data and do not submit
+inference. Imported source copies retain original mesh/image/model/graph/checkpoint
+provenance. Preserve previous source versions and stable object/instance IDs when revising.
