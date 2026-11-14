@@ -1,0 +1,97 @@
+{
+  "format": "proscenium-w10-integration-evidence-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "base": "9720285",
+  "scope_fix_commit": "78cb875dc3bedaf8df9d6f54e8b0c8243b717d67",
+  "ssh_executed_commit": "62f9b4976fb6cbf70c59f24058fe8b3eaf5ed97a",
+  "ssh_audit_fix_commit": "7d5e1084660b6e883d6ccd56c8dac6c4cae2626f",
+  "receipt_applicability_commit": "708d8992a2887d27351bbcc18748ff24b617449d",
+  "final_code_commit": "50d30a6eedc7fc4f5e2b1289955b9f842437fe21",
+  "contract_revision": "1.0.0",
+  "checks": [
+    {
+      "command": "uv run pytest -q tests/acceptance --basetemp /home/quintin/.cache/proscenium-development/w10-integration-confirmed-20261114 --junitxml docs/evidence/w10/integration-confirmed-junit.xml",
+      "application_commit": "50d30a6eedc7fc4f5e2b1289955b9f842437fe21",
+      "result": "Final committed W10 code: 48 passed, 0 failed, 0 skipped, including local-only identity-query regression.",
+      "exit_code": 0,
+      "evidence_type": "offline_composed_services_and_validator"
+    },
+    {
+      "command": "uv run pytest -q tests/acceptance --basetemp /home/quintin/.cache/proscenium-development/w10-integration-final-20261114 --junitxml docs/evidence/w10/integration-final-junit.xml",
+      "application_commit": "708d8992a2887d27351bbcc18748ff24b617449d",
+      "result": "Final committed W10 code: 47 passed, 0 failed, 0 skipped.",
+      "exit_code": 0,
+      "evidence_type": "offline_composed_services_and_validator"
+    },
+    {
+      "command": "uv run pytest -q tests/integration/providers tests/integration/image_to_3d tests/integration/foundation/test_composed_lifecycle.py tests/acceptance --basetemp /home/quintin/.cache/proscenium-development/w10-integration-fix-02 --junitxml docs/evidence/w10/integration-scope-junit.xml",
+      "result": "153 passed, 0 failed, 0 skipped. Previously reported 18 recovery failures no longer occur.",
+      "exit_code": 0,
+      "evidence_type": "offline_composed_services"
+    },
+    {
+      "command": "uv run pytest -xq tests/acceptance --basetemp /home/quintin/.cache/proscenium-development/w10-applicability-01 --junitxml docs/evidence/w10/integration-acceptance-junit.xml",
+      "result": "47 passed, 0 failed, 0 skipped. Whole W10 subset, including receipt compatibility and ASGI shutdown regression.",
+      "exit_code": 0,
+      "evidence_type": "offline_composed_services"
+    },
+    {
+      "command": "uv run pytest -q tests/acceptance/test_applicability.py tests/acceptance/test_evidence.py tests/acceptance/test_ssh_proof_contract.py --basetemp /home/quintin/.cache/proscenium-development/w10-applicability-02 --junitxml docs/evidence/w10/receipt-ssh-unit-junit.xml",
+      "result": "17 passed on final affected validator/proof unit surfaces after strict accepted-commit and source-hash validation changes.",
+      "exit_code": 0,
+      "evidence_type": "offline_validator_and_proof_contracts"
+    },
+    {"command": "uv run ruff check tools/operations tests/acceptance", "result": "Passed", "exit_code": 0},
+    {"command": "uv run ruff format --check tools/operations tests/acceptance", "result": "13 files already formatted", "exit_code": 0},
+    {"command": "uv run mypy apps/backend/src tools/operations", "result": "Passed, 79 source files", "exit_code": 0},
+    {"command": "npm ci --ignore-scripts", "result": "195 packages installed in this worktree using the accepted lock, 0 audit vulnerabilities. Existing ESLint deprecation warning.", "exit_code": 0},
+    {"command": "npm run build", "result": "Compiled the actual production UI. Existing Lucide use-client directive and large-bundle warnings retained.", "exit_code": 0},
+    {"command": "node --check tools/operations/ssh_browser.mjs", "result": "Passed", "exit_code": 0},
+    {"command": "make spec-check", "result": "Passed specification and Python/TypeScript generated-binding parity. Node dependencies are now installed locally.", "exit_code": 0},
+    {
+      "command": "uv run python -m tools.operations.acceptance --junit docs/evidence/w10/integration-acceptance-junit.xml --output docs/evidence/w10/integration-coverage.json --release",
+      "result": "Expected refusal, release_ready=false, 109 unexecuted/incomplete requirements in this evidence set. Historical proof applicability is supported but no release-ready receipt set was populated.",
+      "exit_code": 1
+    }
+  ],
+  "ssh_allocation": {
+    "existing_probe_command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=5 127.0.0.1 true",
+    "existing_probe_exit_code": 255,
+    "existing_probe_result": "Loopback service reachable, but no trusted ED25519 entry for 127.0.0.1. No trust-store changes made.",
+    "command": "uv run python -m tools.operations.ssh_proof --root /home/quintin/.cache/proscenium-development/w10-ssh-product-20261114-a --frontend-dir /home/quintin/.cache/proscenium-development/fleet/w10-integration/apps/frontend/dist --evidence docs/evidence/w10/ssh-product.json --authorised-temporary-sshd",
+    "exit_code": 2,
+    "transport_assertions": "Actual SSH, compiled UI pairing, real project open/activate, WebSocket replay/reconnect, PNG upload, full hash and exact 206 range bytes all passed.",
+    "scope": "Same-host loopback. One temporary unprivileged sshd, one SSH LocalForward client, one composed product server and one Chromium profile at 1920x1080/DPR1.",
+    "remaining_limit": "Final native/provider/subprocess guard counters and backend transport audit were not persisted before Uvicorn's post-lifespan SIGTERM re-raise. They are NOT fabricated as zero. The raw report remains blocked_missing_execution_guard_receipt.",
+    "correction": "7d5e108 persists the receipt inside ASGI lifespan shutdown. Its ordering regression passes offline. No second sshd/client/browser allocation was started.",
+    "cleanup": "All owned PID/start identities gone, 0 surviving owned descendants, protected PID 3327474 retained its original process-start identity and was never signalled.",
+    "secrets": "Fixture keys/config/known_hosts, owner pairing, cookies and browser profile remain only in the private 0700 disk root. No key material or authentication data is published. Only redacted command hashes and non-secret traffic metadata are retained.",
+    "duration_seconds": 3.522,
+    "versions": {"ssh": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026", "sshd": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026", "chromium": "159.0.8154.6", "node": "24.18.0"}
+  },
+  "current_source_hashes": {
+    "tools/operations/safety.py": "68d4fb93a03ab4ddb9cebdafee116f45aab8069c3bc3bb479fa9aa74c852d77a",
+    "tools/operations/acceptance.py": "66cc71bc46c3ba660547042b0364a2e8bbdcf87262a32740c304942bb14c4e1d",
+    "tools/operations/applicability.py": "2c199b2ec2ae75cee3254927cb91fc13b57d0a325b70f0acb3cddd13000bf9de",
+    "tools/operations/ssh_proof.py": "0662c91cbeddd76e7852ce5a69da46446f92fe306a087b9c3e506c2da79a2181",
+    "tools/operations/ssh_service.py": "4adeb2f57063a0c460b8501d412648a8af0f92d250c573943f26f3f534de4043",
+    "tools/operations/ssh_browser.mjs": "1889c96d83947b3891eda02eea3ba2648337110a97073a6a9505d37d22678f94"
+  },
+  "artifacts": [
+    {"path": "docs/evidence/w10/integration-confirmed-junit.xml", "sha256": "6efdc975edf74bf0aefb3dc351bd65f5584f519def649450af0b92cde1c8a88b"},
+    {"path": "docs/evidence/w10/integration-final-junit.xml", "sha256": "b5804bf43788a15f74a8dfb376b38e8283b2f742f1b40cd974b50b45646f6c79"},
+    {"path": "docs/evidence/w10/integration-scope-junit.xml", "sha256": "aaba5da97da45ac17b75aa16ba76d70279b626dff9ccdc0f2f9373a5395e80f3"},
+    {"path": "docs/evidence/w10/integration-acceptance-junit.xml", "sha256": "b9b5471dc07089a8994802d5a0403acd4817a4b7197b066c3d9feae8108bfc81"},
+    {"path": "docs/evidence/w10/receipt-ssh-unit-junit.xml", "sha256": "e325dccf2bf62fbb624734368c6f6222976a10206a160817b1f401e5a7061d70"},
+    {"path": "docs/evidence/w10/ssh-product.json", "sha256": "ec143799c29db69e72bdc2f27db7798be8edeb31742da9e8eee4fc93ec88c337"},
+    {"path": "docs/evidence/w10/integration-coverage.json", "sha256": "39949179622a07aefcb92aafc5b6052985bc5f77d7a9659b19ec9f2a29385c6c"}
+  ],
+  "limits": [
+    "The SSH transport slice is real but its final guard audit remains incomplete. A corrected live rerun needs a new explicit allocation.",
+    "No physical remote browser, native/cloud/model/GPU authoring workflow, full M12 recovery or cumulative M14 acceptance was claimed.",
+    "No historical application_commit was rewritten. Applicability requires explicit coordinator validation and does not waive receipt limits or M10.",
+    "OS inventories cannot prove absence of arbitrary external writers. Relevant external source/runtime writers must be stopped by the operator.",
+    "All changes remain in the assigned operations/acceptance/documentation paths. No other worktree's uncommitted implementation was consumed."
+  ]
+}

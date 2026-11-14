@@ -1,0 +1,310 @@
+{
+  "format": "proscenium-w10-ssh-proof-1",
+  "status": "blocked_missing_execution_guard_receipt",
+  "transport": "actual_ssh_same_host_loopback",
+  "inference": "forbidden",
+  "application_commit": "62f9b4976fb6cbf70c59f24058fe8b3eaf5ed97a",
+  "commands": [
+    {
+      "argv_redacted": [
+        "ssh-keygen",
+        "-q",
+        "-t",
+        "ed25519",
+        "-N",
+        "",
+        "-f",
+        "<PRIVATE_ROOT>/host_key"
+      ],
+      "redacted_sha256": "480ef8caacced18fc7dbcd22627408836edf08edd7e8b12ce3656dc0ef3b1d58"
+    },
+    {
+      "argv_redacted": [
+        "ssh-keygen",
+        "-q",
+        "-t",
+        "ed25519",
+        "-N",
+        "",
+        "-f",
+        "<PRIVATE_ROOT>/client_key"
+      ],
+      "redacted_sha256": "66f439bc5fcd3c7b244e93d815bae879a8b220011cd5ff51997492f38019cbeb"
+    },
+    {
+      "argv_redacted": [
+        "/usr/sbin/sshd",
+        "-t",
+        "-f",
+        "<PRIVATE_ROOT>/sshd_config"
+      ],
+      "redacted_sha256": "92bf0e28a691ff6bacd79edc441766c2a75cd87441b6f9aeeb517ec34832073d"
+    },
+    {
+      "argv_redacted": [
+        "<CHECKOUT>/.venv/bin/python3",
+        "-m",
+        "tools.operations.ssh_service",
+        "<PRIVATE_ROOT>"
+      ],
+      "redacted_sha256": "4e50a1a306f902ba80dafc235440e817199853fdf1d60b0622de9cc0c9bf4c16"
+    },
+    {
+      "argv_redacted": [
+        "/usr/sbin/sshd",
+        "-D",
+        "-e",
+        "-f",
+        "<PRIVATE_ROOT>/sshd_config"
+      ],
+      "redacted_sha256": "7661bc1b611ad54c0d791771ef890342ffc6f5b955254516b41a9e38ef7ac4fd"
+    },
+    {
+      "argv_redacted": [
+        "ssh",
+        "-F",
+        "/dev/null",
+        "-N",
+        "-T",
+        "-p",
+        "34131",
+        "-i",
+        "<PRIVATE_ROOT>/client_key",
+        "-o",
+        "IdentityAgent=none",
+        "-o",
+        "IdentitiesOnly=yes",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UserKnownHostsFile=<PRIVATE_ROOT>/known_hosts",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
+        "-o",
+        "ExitOnForwardFailure=yes",
+        "-o",
+        "ConnectTimeout=5",
+        "-o",
+        "ServerAliveInterval=5",
+        "-o",
+        "ServerAliveCountMax=2",
+        "-L",
+        "127.0.0.1:54201:127.0.0.1:44517",
+        "quintin@127.0.0.1"
+      ],
+      "redacted_sha256": "313939a82b8ea8525cafe7d484948448041554b9472f8e607671414ff88e1d8b"
+    },
+    {
+      "argv_redacted": [
+        "node",
+        "<CHECKOUT>/tools/operations/ssh_browser.mjs",
+        "<PRIVATE_ROOT>"
+      ],
+      "redacted_sha256": "5532b41e8c9ff7d241dba3fe9bd9d2ec05bcfe0c21f9324b3d26d352797bb41d"
+    }
+  ],
+  "cleanup": [
+    {
+      "component": "browser",
+      "pid_start_checked": true,
+      "signalled_owned_group": false,
+      "exit_code": 0,
+      "original_identity_gone": true
+    },
+    {
+      "component": "ssh-client",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": 0,
+      "original_identity_gone": true
+    },
+    {
+      "component": "sshd",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": 0,
+      "original_identity_gone": true
+    },
+    {
+      "component": "product",
+      "pid_start_checked": true,
+      "signalled_owned_group": true,
+      "exit_code": -15,
+      "original_identity_gone": true
+    }
+  ],
+  "limits": [
+    "Same-host loopback, not a physical remote browser or cumulative M12/M14 journey.",
+    "Compiled UI pairing and scripted browser product API/media/WebSocket traffic, not native authoring."
+  ],
+  "versions": {
+    "ssh": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026",
+    "sshd": "OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026",
+    "node": "v24.18.0",
+    "chromium": "159.0.8154.6"
+  },
+  "allocation": {
+    "origin": "http://127.0.0.1:54201",
+    "backend_bind": "127.0.0.1:44517",
+    "sshd_bind": "127.0.0.1:34131",
+    "per_process_limit_seconds": 300,
+    "existing_ssh": "operator_strict_known_host_probe_failed_no_trust_store_changes"
+  },
+  "host_origin_checks": "correct_host_accepted_wrong_host_and_origin_rejected",
+  "browser": {
+    "project_open_activate": true,
+    "png_upload": true,
+    "media_sha256": "b2ce3c51de4baeb4a98d84a4cad3fbbfb3b2538ef7414b828fdd236e656d8933",
+    "media_bytes": 82,
+    "range_status": 206,
+    "range_exact_bytes": true,
+    "websocket_replay_sequences": [
+      1
+    ],
+    "websocket_reconnect_sequences": [
+      1
+    ],
+    "owner_pairing": true,
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-B7YaH0y5.css",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-qM8o2PXh.js",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-B7YaH0y5.css",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/index-qM8o2PXh.js",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-400-normal-C38fXH4l.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-500-normal-Cerq10X2.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/assets/inter-latin-600-normal-LgqL8muc.woff2",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/owner/session",
+        "status": 201
+      },
+      {
+        "method": "GET",
+        "path": "/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/configuration",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects",
+        "status": 201
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/project-dc0ba228-2948-4085-a521-c7d50d59ef58/activate",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects",
+        "status": 201
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-dc0ba228-2948-4085-a521-c7d50d59ef58/snapshot",
+        "status": 200
+      },
+      {
+        "method": "PUT",
+        "path": "/api/v1/projects/project-dc0ba228-2948-4085-a521-c7d50d59ef58/uploads/6f470d98-d214-44b0-8b3a-5426dad34d99",
+        "status": 201
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-dc0ba228-2948-4085-a521-c7d50d59ef58/artifacts/6f470d98-d214-44b0-8b3a-5426dad34d99/content",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-dc0ba228-2948-4085-a521-c7d50d59ef58/artifacts/6f470d98-d214-44b0-8b3a-5426dad34d99/content",
+        "status": 206
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/project-dc0ba228-2948-4085-a521-c7d50d59ef58/events",
+        "status": 200
+      }
+    ],
+    "off_origin_requests": 0,
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    },
+    "browser": "159.0.8154.6",
+    "frontend_index_sha256": "8a53bfc74c44208a96d462502ca187709010d08601e133468ed0688a1b73dfaf",
+    "browser_context_closed": true,
+    "interaction_scope": "Actual compiled UI pairing, then scripted browser calls to real product routes. Not cumulative UI authoring acceptance."
+  },
+  "source_hashes": {
+    "tools/operations/ssh_proof.py": "e8cfb1ff79143099ef6e4758bd53063424d5d25cbb0bf93611cf9fdd4314af71",
+    "tools/operations/ssh_service.py": "c4dc6a4cb84b5188eb45d65103cda35d9931d10471776ae559587e91626d86ed",
+    "tools/operations/ssh_browser.mjs": "1889c96d83947b3891eda02eea3ba2648337110a97073a6a9505d37d22678f94"
+  },
+  "owned_descendants_remaining": 0,
+  "protected_session": {
+    "pid": 3327474,
+    "not_signalled": true,
+    "original_start_still_present": true
+  },
+  "elapsed_seconds": 3.522
+}

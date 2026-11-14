@@ -32,6 +32,8 @@ validation. No equivalence is inferred from ancestry alone. Shape example only:
 - All commit values must identify known **commit objects**, not branch aliases,
   unknown hashes or unrelated roots. The tested commit must precede the accepted
   commit, which must precede the target integration commit. Equality is allowed.
+  Missing local objects are rejected. Identity queries disable lazy fetch and
+  credential prompts, rather than contacting a remote to invent missing history.
 - The coordinator's explicit reason and hash-verified regression artefacts are
   mandatory. At least one validation artefact must differ from the original proof
   artefacts. This is applicability validation, **not a fresh native execution**.

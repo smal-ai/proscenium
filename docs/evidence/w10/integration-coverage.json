@@ -1,0 +1,705 @@
+{
+  "format": "proscenium-acceptance-report-1",
+  "map_resolved": true,
+  "release_ready": false,
+  "cases": [
+    {
+      "id": "C01",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_native_events_before_ack_and_duplicate_user_echo"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C02",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_lost_ack_closes_gate_and_never_blind_resubmits"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C03",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_submission_timeout_never_blind_retries"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C04",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_stop_pause_fence_late_ack_and_no_retry"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C05",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_child_context_and_late_tools_bind_original_work"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C06",
+      "tests": [
+        "tests/integration/sources/test_sources.py::test_historical_materialisation_copies_committed_bytes"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C07",
+      "tests": [
+        "tests/integration/sources/test_sources.py::test_missing_lfs_is_not_fetched",
+        "tests/integration/sources/test_sources.py::test_missing_retained_and_symlink",
+        "tests/acceptance/test_recovery.py::test_missing_or_corrupt_lfs_refuses_offline_without_fetch"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {
+        "tests/acceptance/test_recovery.py::test_missing_or_corrupt_lfs_refuses_offline_without_fetch": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C08",
+      "tests": [
+        "tests/integration/sources/test_publication.py::test_concurrent_publications_cannot_overwrite_same_head",
+        "tests/integration/sources/test_publication.py::test_publication_job_events_atomic_and_replay_before_current_state"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C09",
+      "tests": [
+        "tests/integration/previews/test_assembly_and_recovery.py::test_closed_gate_passive_journal_reconciliation_and_ambiguous_dispatch"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C10",
+      "tests": [
+        "tests/integration/previews/test_publication.py::test_out_of_order_holes_and_partial_failure"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "limit": "Backend intervals alone do not prove decoded presentation order. Numbered-media browser reports are required.",
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C11",
+      "tests": [
+        "tests/integration/previews/test_assembly_and_recovery.py::test_frame_binding_never_tracks_new_viewport",
+        "tests/integration/reviews/test_review_store.py::test_annotation_cas_and_immutable_target"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C12",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_budget_held_across_child_steer_resume_and_new_job_ids",
+        "tests/integration/providers/test_adapters.py::test_only_recorded_owner_extension_can_raise_same_task_allowance"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C13",
+      "tests": [
+        "tests/integration/copilot/test_delivery.py::test_decision_revision_owner_channel_stop_and_native_delivery_separate"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C14",
+      "tests": [
+        "tests/integration/foundation/test_auth_http.py::test_browser_tool_and_worker_channel_separation",
+        "tests/unit/test_store.py::test_forbidden_paths",
+        "tests/integration/copilot/test_native_configuration.py::test_wire_create_and_resume_both_memory_controls_and_owned_exec_launcher"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C15",
+      "tests": [
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup",
+        "tests/acceptance/test_recovery.py::test_missing_native_history_is_distinct_and_never_replaced",
+        "tests/acceptance/test_recovery.py::test_missing_and_corrupt_required_media_are_not_substituted",
+        "tests/integration/sources/test_projects.py::test_duplicate_project_location_requires_explicit_rebind"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "limit": "W10 native directory bytes are synthetic. Real cold native history read/resume remains unexecuted.",
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup": [
+          "synthetic_verified"
+        ],
+        "tests/acceptance/test_recovery.py::test_missing_native_history_is_distinct_and_never_replaced": [
+          "synthetic_verified"
+        ],
+        "tests/acceptance/test_recovery.py::test_missing_and_corrupt_required_media_are_not_substituted": [
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified",
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C16",
+      "tests": [
+        "tests/integration/previews/test_publication.py::test_receipt_rejects_bad_bytes_and_wrong_attempt",
+        "tests/integration/unity/test_input_proof.py::test_disk_reserve_refuses_below_five_gib"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C17",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_exact_endpoint_frozen_across_changed_defaults",
+        "tests/integration/providers/test_adapters.py::test_actual_reference_upload_graph_and_derivative_provenance",
+        "tests/integration/storyboards/test_plan_tools.py::test_skills_ship_resources_and_no_execution_dependencies"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C18",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_three_findings_only_one_owner_amendment_submitted_once",
+        "tests/integration/copilot/test_accepted_services.py::test_accepted_w05_findings_link_is_atomic_with_real_w02_images"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C19",
+      "tests": [
+        "tests/integration/unity/test_workflow.py::test_prepare_retains_meta_and_unrelated_files",
+        "tests/integration/unity/test_workflow.py::test_prepare_refuses_locally_edited_tool_and_active_editor"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "limit": "Offline helpers do not prove CharacterController input/physics. W08 PlayMode XML and input evidence are separate.",
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C20",
+      "tests": [
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup",
+        "tests/integration/providers/test_adapters.py::test_no_startup_or_read_execution_and_reset_gate",
+        "tests/integration/copilot/test_delivery.py::test_restart_is_quiet_and_existing_work_awaits_resume"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {
+        "tests/acceptance/test_recovery.py::test_private_backup_restores_composed_records_sources_and_closed_startup": [
+          "synthetic_verified"
+        ]
+      }
+    },
+    {
+      "id": "C21",
+      "tests": [
+        "tests/integration/sources/test_projects.py::test_snapshot_contains_full_held_request_and_work_at_watermark",
+        "tests/integration/copilot/test_delivery.py::test_http_history_cancel_replay_and_socket_owner_boundary"
+      ],
+      "required_evidence": [
+        "offline",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C22",
+      "tests": [
+        "tests/integration/sources/test_publication.py::test_unity_provenance_ancestry_and_omissions_survive_service_reload"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C23",
+      "tests": [
+        "tests/integration/reviews/test_review_store.py::test_spatial_mapping_binds_version_source_sample_and_instance"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C24",
+      "tests": [
+        "tests/integration/reviews/test_review_store.py::test_sequence_composite_target_uses_explicit_map_not_source_frame",
+        "tests/integration/sources/test_read_models.py::test_sequence_weighted_map_semantics_and_untrusted_owner_label"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C25",
+      "tests": [
+        "tests/integration/foundation/test_jobs_recovery.py::test_cancellation_race_preserves_observed_success",
+        "tests/integration/foundation/test_jobs_recovery.py::test_stale_revisions_retries_and_old_attempt_rejected",
+        "tests/integration/previews/test_assembly_and_recovery.py::test_late_old_attempt_cannot_mutate_retry"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C26",
+      "tests": [
+        "tests/integration/copilot/test_faults.py::test_stop_withdraws_only_owned_exact_message_and_fences_unknowns",
+        "tests/integration/copilot/test_faults.py::test_stop_requires_observed_native_idle_not_just_empty_queue"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C27",
+      "tests": [
+        "tests/integration/providers/test_adapters.py::test_owner_review_stays_independent_of_active_work_and_findings_private",
+        "tests/integration/unity/test_workflow.py::test_known_job_before_start_and_repeat_no_launch"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C28",
+      "tests": [
+        "tests/integration/sources/test_checkpoint.py::test_lost_git_ack_recovers_exact_commit_after_head_advance",
+        "tests/integration/sources/test_checkpoint.py::test_unborn_checkpoint_preserves_original_index"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C29",
+      "tests": [
+        "tests/integration/copilot/test_native_configuration.py::test_wire_create_and_resume_both_memory_controls_and_owned_exec_launcher"
+      ],
+      "required_evidence": [
+        "offline",
+        "native"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C30",
+      "tests": [
+        "tests/integration/reviews/test_review_store.py::test_selection_slot_unique_and_revisioned",
+        "tests/integration/reviews/test_review_store.py::test_storyboard_exact_version_slot_and_no_source_mutation",
+        "tests/integration/sources/test_read_models.py::test_shot_plan_new_version_does_not_inherit_owner_choice"
+      ],
+      "required_evidence": [
+        "offline",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    },
+    {
+      "id": "C31",
+      "tests": [
+        "tests/integration/sources/test_artifacts.py::test_soft_mask_bytes_and_coverage_round_trip_without_alpha",
+        "tests/integration/foundation/test_composed_review.py::test_composed_mask_save_does_not_reacquire_database_writer"
+      ],
+      "required_evidence": [
+        "offline",
+        "native",
+        "browser:chromium",
+        "browser:brave",
+        "browser:edge"
+      ],
+      "evidence": {
+        "offline": "unexecuted",
+        "native": "unexecuted",
+        "browser:chromium": "unexecuted",
+        "browser:brave": "unexecuted",
+        "browser:edge": "unexecuted"
+      },
+      "offline_test_observations": {}
+    }
+  ],
+  "gaps": [
+    "C01:offline:unexecuted",
+    "C01:native:unexecuted",
+    "C02:offline:unexecuted",
+    "C02:native:unexecuted",
+    "C03:offline:unexecuted",
+    "C03:native:unexecuted",
+    "C04:offline:unexecuted",
+    "C04:native:unexecuted",
+    "C04:browser:chromium:unexecuted",
+    "C04:browser:brave:unexecuted",
+    "C04:browser:edge:unexecuted",
+    "C05:offline:unexecuted",
+    "C05:native:unexecuted",
+    "C06:offline:unexecuted",
+    "C06:native:unexecuted",
+    "C07:offline:unexecuted",
+    "C07:native:unexecuted",
+    "C08:offline:unexecuted",
+    "C08:native:unexecuted",
+    "C09:offline:unexecuted",
+    "C09:native:unexecuted",
+    "C10:offline:unexecuted",
+    "C10:native:unexecuted",
+    "C10:browser:chromium:unexecuted",
+    "C10:browser:brave:unexecuted",
+    "C10:browser:edge:unexecuted",
+    "C11:offline:unexecuted",
+    "C11:native:unexecuted",
+    "C11:browser:chromium:unexecuted",
+    "C11:browser:brave:unexecuted",
+    "C11:browser:edge:unexecuted",
+    "C12:offline:unexecuted",
+    "C12:native:unexecuted",
+    "C13:offline:unexecuted",
+    "C13:native:unexecuted",
+    "C13:browser:chromium:unexecuted",
+    "C13:browser:brave:unexecuted",
+    "C13:browser:edge:unexecuted",
+    "C14:offline:unexecuted",
+    "C14:native:unexecuted",
+    "C15:offline:unexecuted",
+    "C15:native:unexecuted",
+    "C16:offline:unexecuted",
+    "C16:native:unexecuted",
+    "C17:offline:unexecuted",
+    "C17:native:unexecuted",
+    "C18:offline:unexecuted",
+    "C18:native:unexecuted",
+    "C18:browser:chromium:unexecuted",
+    "C18:browser:brave:unexecuted",
+    "C18:browser:edge:unexecuted",
+    "C19:offline:unexecuted",
+    "C19:native:unexecuted",
+    "C20:offline:unexecuted",
+    "C20:native:unexecuted",
+    "C20:browser:chromium:unexecuted",
+    "C20:browser:brave:unexecuted",
+    "C20:browser:edge:unexecuted",
+    "C21:offline:unexecuted",
+    "C21:browser:chromium:unexecuted",
+    "C21:browser:brave:unexecuted",
+    "C21:browser:edge:unexecuted",
+    "C22:offline:unexecuted",
+    "C22:native:unexecuted",
+    "C23:offline:unexecuted",
+    "C23:native:unexecuted",
+    "C23:browser:chromium:unexecuted",
+    "C23:browser:brave:unexecuted",
+    "C23:browser:edge:unexecuted",
+    "C24:offline:unexecuted",
+    "C24:native:unexecuted",
+    "C24:browser:chromium:unexecuted",
+    "C24:browser:brave:unexecuted",
+    "C24:browser:edge:unexecuted",
+    "C25:offline:unexecuted",
+    "C25:native:unexecuted",
+    "C26:offline:unexecuted",
+    "C26:native:unexecuted",
+    "C27:offline:unexecuted",
+    "C27:native:unexecuted",
+    "C28:offline:unexecuted",
+    "C28:native:unexecuted",
+    "C29:offline:unexecuted",
+    "C29:native:unexecuted",
+    "C30:offline:unexecuted",
+    "C30:browser:chromium:unexecuted",
+    "C30:browser:brave:unexecuted",
+    "C30:browser:edge:unexecuted",
+    "C31:offline:unexecuted",
+    "C31:native:unexecuted",
+    "C31:browser:chromium:unexecuted",
+    "C31:browser:brave:unexecuted",
+    "C31:browser:edge:unexecuted",
+    "M01:cumulative_acceptance_unexecuted_or_incomplete",
+    "M02:cumulative_acceptance_unexecuted_or_incomplete",
+    "M03:cumulative_acceptance_unexecuted_or_incomplete",
+    "M04:cumulative_acceptance_unexecuted_or_incomplete",
+    "M05:cumulative_acceptance_unexecuted_or_incomplete",
+    "M06:cumulative_acceptance_unexecuted_or_incomplete",
+    "M07:cumulative_acceptance_unexecuted_or_incomplete",
+    "M08:cumulative_acceptance_unexecuted_or_incomplete",
+    "M09:cumulative_acceptance_unexecuted_or_incomplete",
+    "M11:cumulative_acceptance_unexecuted_or_incomplete",
+    "M12:cumulative_acceptance_unexecuted_or_incomplete",
+    "M13:cumulative_acceptance_unexecuted_or_incomplete",
+    "M14:cumulative_acceptance_unexecuted_or_incomplete",
+    "SSH:cumulative_acceptance_unexecuted_or_incomplete",
+    "PERFORMANCE:cumulative_acceptance_unexecuted_or_incomplete",
+    "M10:blocked_requires_native_mesh_proof_or_explicit_owner_scope_decision"
+  ],
+  "m10": {
+    "status": "blocked_no_owner_scope_decision"
+  },
+  "validated_applicability": [],
+  "limits": [
+    "Function resolution is not execution.",
+    "JUnit proves only offline checks.",
+    "Structured receipts require human review of their actual evidence."
+  ]
+}

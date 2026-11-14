@@ -1,6 +1,6 @@
 # Host-native operator guide
 
-**14 November 2026, SAST. W10 accepted base `d068ed9`.** These are implemented
+**14 November 2026, SAST. Current integration base `9720285`.** These are implemented
 commands and operating preconditions, not M12/M14 release acceptance. Use the
 maintained Proscenium checkout. No old project checkout or reference runtime is
 an application dependency.
@@ -34,12 +34,12 @@ uv run python -m proscenium --origin http://127.0.0.1:8765 --frontend-dir "$PWD/
 - First open a newly chosen workspace through the Projects UI. Opening/restoring
   an existing project does not author source or submit a model request.
 
-**Current composition boundary:** at this base, `api/composition.py` installs
-catalogue/projects/reviews. The parent integration owns all 53 operations, Copilot,
-provider/preview lifecycle and atomic update composition. A running backend is not
-proof those pending bindings exist. Update this paragraph and the command table
-when the parent accepts the composed entry point or new dynamic settings flags.
-Do not work around missing routes with an invented alternative server.
+**Current composition boundary:** accepted integration now composes catalogue,
+projects, reviews, Copilot, providers and previews, with the shared feature
+lifespan. The application is implemented and undergoing cumulative journey
+acceptance. The parent still owns composition and its shared interfaces. A running
+backend or the bounded SSH proof is not full user-journey acceptance. Update the
+command table only when actual new CLI settings flags are accepted.
 
 ## Same-origin SSH access
 
@@ -56,9 +56,20 @@ the backend on `0.0.0.0`, forward the model services to the browser or disable
 Host/Origin checks. API, WebSocket, uploads and range media all use this one origin.
 Closing the browser or tunnel is not backend cancellation. Keep pairing private.
 
-No SSH authentication/crypto or end-to-end forwarded product proof was executed
-by W10. A TCP proxy would not prove those properties. Release evidence must include
-real authenticated SSH plus message/event/upload/byte-range interactions.
+W10 exercised a real, temporary unprivileged OpenSSH daemon with isolated fixture
+keys and strict fixture host verification. Same-host Chromium loaded the compiled
+UI through one LocalForward and passed owner pairing, project open/activate, real
+WebSocket replay/reconnect, PNG upload and exact range-byte checks. Wrong Host and
+Origin were rejected without changing CORS or boundary policy. This is actual SSH,
+not a TCP proxy and not a physical remote-browser or cumulative authoring journey.
+
+The recorded run remains **partial** because its final execution-guard receipt was
+lost when Uvicorn re-raised SIGTERM after lifespan shutdown. All fixture processes
+and descendants were cleaned up and the unrelated protected SSH session retained
+its original PID/start identity. The harness now persists the receipt inside ASGI
+lifespan shutdown, covered by an offline regression. No second temporary daemon
+was started under the one-daemon allocation. See `docs/evidence/w10/ssh-product.json`
+and the integration handover. The corrected live proof needs a new explicit allocation.
 
 ## Configuration and resource bounds
 

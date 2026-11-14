@@ -1,5 +1,37 @@
 # W10 evidence
 
+## Integration follow-up on `9720285`
+
+[`integration-checks.json`](integration-checks.json) records the current follow-up,
+not a blanket replacement of historical evidence below.
+
+- Scoped quiescence fix `78cb875`: the reported combined integration suite passes
+  **153 tests**. Protected unrelated SSH/OS sessions no longer veto backup, while
+  owned journals, corrupt identities, positively scoped writers and native-home
+  ambiguity still block. No daemon-name allowlists remain.
+- Final committed W10 suite: **48 passed**. Earlier affected applicability/proof unit subset:
+  **17 passed**. Ruff, formatting, mypy (79 files), production UI build and full
+  specification/generated-binding checks pass.
+- [`ssh-product.json`](ssh-product.json): **real** same-host loopback OpenSSH and
+  compiled Chromium product traffic. UI pairing, project open/activate, WebSocket
+  replay/reconnect, PNG upload, hash and exact range-byte assertions passed.
+  The run remains **partial/exit 2**, because Uvicorn's final SIGTERM re-raise
+  prevented the original execution-guard receipt from being written. Counters are
+  not invented as zero. All owned processes/descendants were cleaned up and the
+  protected SSH session retained its PID/start identity.
+- `7d5e108` fixes persistence inside lifespan shutdown, with an offline ordering
+  regression. No second temporary sshd/browser allocation was started.
+- `708d899` supports explicit coordinator applicability of historical tested
+  commits without rewriting them or waiving limits. No release-ready receipts were
+  fabricated. [`integration-coverage.json`](integration-coverage.json) still refuses
+  release and leaves M10 and cumulative requirements explicit.
+
+No fixture keys, pairing data, cookies, browser profile or private logs are in this
+directory. They remain only in the private disk allocation. The raw SSH report
+contains redacted command hashes, runtime versions and non-secret request metadata.
+
+## Original W10 package evidence
+
 **14 November 2026, SAST. Tested application commit:**
 `727cb2ff663e669970b2ef79e6d19227cb392459`.
 
