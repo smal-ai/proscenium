@@ -1,5 +1,35 @@
 # Bounded actual C16/C25 renderer fault proof
 
+**Actual result: PASS for C16 failed-writer/partial-output and C25 verified failed-attempt
+same-job retry. No cumulative M12/M14 completion claim.**
+
+## Actual outcome
+
+- Driver `80630a4` preceded worker 1. Reporting-only correction `c624e6e` preceded worker 2.
+  The reporting defect and its original report are retained below, not concealed as a clean run.
+- One logical job
+  `preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0`, same input digest
+  `d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3`.
+- First attempt `attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53`: actual native exit `1`,
+  `render_failed`, job `failed`/`partial`, real frame 1 registered and reviewable, failed range
+  2–3. Exactly 78 labelled operator bytes at frame-2 output, no receipt, unchanged and unavailable.
+- Normal F00 retry after verified terminal failure allocated
+  `attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f`. Exact old receipt replay acknowledged without
+  mutation. Fresh stale receipt and stale state update rejected with `scope_denied`.
+- New attempt adopted only registered/hash-verified frame 1. It rendered only frames 2–3,
+  exited `0`, reached `succeeded`/`complete` and published one normal segment, available and
+  playable range 1–3. Native timings prove three actual renders across the two workers.
+- Selected source version and reviewable frame-1 bytes were unchanged across retry. Actual
+  production content/range route returned 200/206 before and after with identical PNG hash.
+- Both actual Blender identities and supervisors are dead. Resource claims and generation
+  reservations are empty. Original source/Git refs/hash, clone source and both sealed runtime
+  source materialisations are preserved. No production code or independent service changed.
+- Explicitly not proved: actual disk exhaustion/`storage_full`, cancellation-completion race,
+  provider reconnect, backup restore, cumulative M12/M14. No SDK/model/authoring calls occurred.
+
+Full identities, exact bytes, failure/exit, tasks/helper seals, profiles, counts, preservation
+and caveats are in [the retained evidence](../evidence/m14-native-faults/README.md).
+
 ## Allocation and preflight
 
 - Base `04ad1810b5abe1334364b5074fe4123a703c4c2f`, branch `impl/m14-native-faults`.

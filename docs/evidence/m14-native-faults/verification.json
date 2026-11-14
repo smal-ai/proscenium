@@ -1,0 +1,67 @@
+{
+  "date": "2026-11-14",
+  "base": "04ad1810b5abe1334364b5074fe4123a703c4c2f",
+  "first_worker_driver_commit": "80630a4",
+  "second_worker_reporting_correction_commit": "c624e6e",
+  "result": "bounded_C16_failed_writer_C25_same_job_retry_pass",
+  "checks": [
+    {
+      "command": ".venv/bin/python -m pytest -q tests/acceptance/m14_fault_preflight_test.py tests/integration/previews tests/integration/foundation/test_jobs_recovery.py",
+      "result": "passed",
+      "checks": 100,
+      "stage": "Before any native worker",
+      "native_spawns": 0
+    },
+    {
+      "command": ".venv/bin/python tests/native/previews/m14_fault_driver.py admit",
+      "result": "passed",
+      "stage": "Actual W02/F00 admission and exact local source materialisation, before native launch",
+      "native_spawns": 0
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/acceptance/m14_fault_preflight_test.py",
+      "result": "passed",
+      "checks": 6,
+      "stage": "Reporting-only correction before second worker",
+      "native_spawns": 0
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/acceptance/m14_fault_retained_test.py",
+      "result": "passed",
+      "checks": 7,
+      "stage": "Read-only retained actual-result oracles, run once after the two workers",
+      "native_spawns": 0
+    },
+    {
+      "command": ".venv/bin/python -m ruff check tests/native/previews/m14_fault*.py tests/acceptance/m14_fault*.py",
+      "result": "passed"
+    },
+    {
+      "command": ".venv/bin/python -m mypy tests/native/previews/m14_fault*.py tests/acceptance/m14_fault*.py --ignore-missing-imports",
+      "result": "passed",
+      "source_files": 4
+    },
+    {
+      "command": ".venv/bin/python docs/validate_spec.py",
+      "result": "passed",
+      "meaning": "Documentation only, not additional product execution evidence"
+    }
+  ],
+  "actual_native": {
+    "workers": 2,
+    "actual_rendered_frames": 3,
+    "normal_segment_encodes": 1,
+    "first_native_exit": 1,
+    "second_native_exit": 0,
+    "source_or_media_overwrites": 0,
+    "remaining_owned_worker_processes": 0,
+    "resource_claims_after": 0,
+    "generation_reservations": 0,
+    "sdk_model_provider_calls": 0,
+    "authoring_unity_calls": 0,
+    "development_children": 0
+  },
+  "retained_driver_failure": "First worker completed expected native failure. The operator report update then failed on immutable journal semantics. Original report preserved, reporting-only correction committed before one remaining same-job retry worker. No extra native allocation or manually changed runtime state.",
+  "scope": "C16 actual failed-writer/partial-output branch and C25 verified failed-attempt same-job retry only. Not actual disk exhaustion, cancellation-completion race or cumulative M12/M14.",
+  "warning": "Existing Starlette/httpx TestClient deprecation warning"
+}

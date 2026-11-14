@@ -1,0 +1,2071 @@
+{
+  "status": "bounded_C16_failed_writer_C25_same_job_retry_pass",
+  "authority": "Explicit operator fixture, synthetic admission records, zero SDK/model/provider calls",
+  "prepared": {
+    "import": "Exact accepted Git history and local LFS bytes. No runtime database, SDK history or authoring helper executed.",
+    "plan": {
+      "actual_frames_planned": 3,
+      "encodes_planned": 1,
+      "guard": "Unreceipted output requires reconciliation, not overwrite",
+      "injected_hex": "4f50455241544f522d494e4a454354454420554e524543454950544544205041525449414c20504e470a6e6f74206e61746976652d67656e6572617465640a89504e470d0a1a0a7061727469616c",
+      "injected_sha256": "ace66c27d689d84cf4854b4bc56e42863dfc9609e379ef4f33bd146e4017d171",
+      "injection_frame": 2,
+      "renderer_hashes": {
+        "blender_worker.py": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+        "geometry_nodes.py": "72464fc3cab811349eab6b5dfc33af02f1bb6d80dd4c2ba0db610bbc0e6cdf9d",
+        "journal.py": "943310dae86c1575f28438280e555c66f20d256fff9fbfdb3aac89469b05b727"
+      },
+      "spec": {
+        "camera": null,
+        "colour_management": {
+          "exposure": 0,
+          "gamma": 1,
+          "look": "None",
+          "view_transform": "Standard"
+        },
+        "device": "CPU",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "engine": "CYCLES",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": {
+          "end": 3,
+          "start": 1
+        },
+        "intent_id": "m14-failed-writer-same-job-retry",
+        "purpose": "draft_motion",
+        "renderer_revision": "proscenium-blender-1",
+        "review_output": {
+          "bit_depth": 8,
+          "encoding": "view_transformed_srgb",
+          "media_type": "image/png"
+        },
+        "samples": 8,
+        "scene_name": "ProceduralAsset",
+        "shot_id": null,
+        "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+      },
+      "version": {
+        "actor": {
+          "id": "call_qXa5B9ZluaArKisYIaWCE76D",
+          "kind": "tool"
+        },
+        "artifact_ids": [],
+        "created_at": "2026-11-14T18:07:30.369939+00:00",
+        "item_id": "procedural-block",
+        "kind": "asset",
+        "name": "Model-authored stateless Geometry Nodes block",
+        "preview_job_ids": [
+          "preview-c8521fd469ddc108dd8034eba4d357af12f182577d4073983e7bfa8bcff88165",
+          "preview-191940320fd903f113ca34bf2843b2e9df60bf5202e81aed7f576e9c3af6858c"
+        ],
+        "preview_requests": [
+          {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 1,
+              "start": 1
+            },
+            "intent_id": "procedural-proxy",
+            "purpose": "proxy",
+            "renderer_revision": "proscenium-blender-1",
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          },
+          {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 1,
+              "start": 1
+            },
+            "intent_id": "procedural-still",
+            "purpose": "keyframe",
+            "renderer_revision": "proscenium-blender-1",
+            "review_output": {
+              "bit_depth": 8,
+              "encoding": "view_transformed_srgb",
+              "media_type": "image/png"
+            },
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          }
+        ],
+        "project_id": "project-04815835-aa05-40fa-9449-b903420248c8",
+        "publication_id": "publish-procedural-block-v1",
+        "schema_version": "1.0",
+        "source": {
+          "dependencies": [],
+          "digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1",
+          "entry_path": "assets/procedural/asset.blend",
+          "files": [
+            {
+              "destination": "assets/procedural/asset.blend",
+              "origin": {
+                "commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+                "kind": "git",
+                "path": "assets/procedural/asset.blend",
+                "repository_id": "repository-061e26c5-2db1-4f44-9dcb-729d828db283",
+                "sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+              }
+            }
+          ],
+          "required_runtime": {
+            "application": "blender",
+            "features": [
+              "geometry-nodes"
+            ],
+            "version": "4.5.14 LTS"
+          }
+        },
+        "source_commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+        "version_id": "procedural-block-v1"
+      },
+      "workers": 2
+    },
+    "project_head": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+    "project_status": "",
+    "source_before": {
+      "blend_sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8",
+      "head": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+      "refs": "fd6282b0a22725298d5f155181a8b64cabc762e0 refs/heads/main\nfd6282b0a22725298d5f155181a8b64cabc762e0 refs/proscenium/checkpoints/05195f59585741e581be88cd3a56c3bd28c24e118484dad6386ffa54383d13dd"
+    }
+  },
+  "attempts": [
+    {
+      "job": {
+        "artifact_ids": [
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1"
+        ],
+        "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+        "attempt_number": 1,
+        "availability": "partial",
+        "completed_frames": 1,
+        "error_code": "render_failed",
+        "expected_frames": 3,
+        "external_job_id": null,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "kind": "render",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-79075944-9a56-4134-84b2-c4e8fc916f7e",
+        "owner_operation_id": null,
+        "project_id": "m14-native-fault-operator-project",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 3,
+            "start": 1
+          },
+          "intent_id": "m14-failed-writer-same-job-retry",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 6,
+        "target": {
+          "shot_id": null,
+          "target_id": "procedural-block",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "work_id": "m14-synthetic-admission-work"
+      },
+      "root": "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+      "observations": {
+        "headroom_min_bytes": 38885036032,
+        "live_identities": {}
+      },
+      "files": {
+        "native-process.json": {
+          "sha256": "7061f432a5a3f04327dea9a94ba62933dff494d0ec559f431ca6795d7ad31d8b",
+          "bytes": 586
+        },
+        "terminal.json": {
+          "sha256": "08a7f35905d050e046739dfa96bac6f67a9a799cc010a506d1b0aff570e2200f",
+          "bytes": 208
+        },
+        "renderer-verified.json": {
+          "sha256": "4b35b1c4ba09cc7dd6dc941b5c020a869d24b07a8a39ce298290d6db4f2046f7",
+          "bytes": 402
+        },
+        "supervisor.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "process.json": {
+          "sha256": "49982d00da96b3a6282723758162cb9487026767ef82628bad46616b60892075",
+          "bytes": 529
+        },
+        "frame-00000001.json": {
+          "sha256": "115e685de582a78e535a9310918feec51366b129371fcdaa1fdfed0a6c71ed2c",
+          "bytes": 701
+        },
+        "writer.lock": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "native-error.json": {
+          "sha256": "8da17776b2ff47d152619845e1621dff0993d8de1657c7fe64d50a4b620f2d4a",
+          "bytes": 58
+        },
+        "native-profile.json": {
+          "sha256": "c4de7b2697eeb4c9535a0fdefb2c95963a64b27e85280235e50e48944184719a",
+          "bytes": 1750
+        },
+        "timing-00000001.json": {
+          "sha256": "67d690c5cd3022d8b87acdadba9d040c83546d2ae0af01e64084c5d739a8e6bb",
+          "bytes": 317
+        },
+        "task.json": {
+          "sha256": "5be647b1014100a55e1e3feca75d692ed475120a896afa2fa42df9c40a1e1d5b",
+          "bytes": 2638
+        },
+        "blender.log": {
+          "sha256": "adc577484551cb2da9b36265dd442b21b16b13c4a2254ceb84dc3a6679a20c63",
+          "bytes": 6643
+        },
+        "launch.claim": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "frames/00000001.png": {
+          "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+          "bytes": 218900
+        },
+        "frames/00000002.png": {
+          "sha256": "ace66c27d689d84cf4854b4bc56e42863dfc9609e379ef4f33bd146e4017d171",
+          "bytes": 78
+        }
+      },
+      "journals": {
+        "native-process.json": {
+          "argv": [
+            "/bin/sh",
+            "/home/quintin/.local/bin/blender",
+            "--background",
+            "--factory-startup",
+            "--disable-autoexec",
+            "--threads",
+            "4",
+            "--python-exit-code",
+            "1",
+            "--python",
+            "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+            "--",
+            "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53"
+          ],
+          "pid": 943,
+          "start_ticks": 47424240,
+          "state": "R"
+        },
+        "terminal.json": {
+          "error_code": "render_failed",
+          "finished_ns": 474243010861094,
+          "native_exit_code": 1,
+          "state": "failed",
+          "task_sha256": "5be647b1014100a55e1e3feca75d692ed475120a896afa2fa42df9c40a1e1d5b",
+          "timed_out": false
+        },
+        "renderer-verified.json": {
+          "renderer_files_sha256": {
+            "blender_worker.py": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+            "geometry_nodes.py": "72464fc3cab811349eab6b5dfc33af02f1bb6d80dd4c2ba0db610bbc0e6cdf9d",
+            "journal.py": "943310dae86c1575f28438280e555c66f20d256fff9fbfdb3aac89469b05b727"
+          },
+          "task_sha256": "5be647b1014100a55e1e3feca75d692ed475120a896afa2fa42df9c40a1e1d5b",
+          "verified_ns": 474242405592224
+        },
+        "process.json": {
+          "argv": [
+            "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/.venv/bin/python",
+            "-m",
+            "proscenium.previews.worker",
+            "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53"
+          ],
+          "pid": 934,
+          "start_ticks": 47424214,
+          "started_ns": 474242393291636,
+          "state": "R",
+          "task_sha256": "5be647b1014100a55e1e3feca75d692ed475120a896afa2fa42df9c40a1e1d5b"
+        },
+        "frame-00000001.json": {
+          "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+          "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+          "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+          "output_path": "frames/00000001.png",
+          "project_id": "m14-native-fault-operator-project",
+          "receipt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53-f1",
+          "schema_version": "1.0",
+          "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+          "shot_id": null,
+          "source_frame": 1,
+          "version_id": "procedural-block-v1"
+        },
+        "native-error.json": {
+          "error_code": "render_failed",
+          "exception": "ValueError"
+        },
+        "native-profile.json": {
+          "build_hash": "62c1db4208e8",
+          "camera_override": null,
+          "device": "CPU",
+          "procedural_meshes": [
+            {
+              "bounds_max": [
+                1.75,
+                0.75,
+                1.0
+              ],
+              "bounds_min": [
+                -0.25,
+                -0.75,
+                0.0
+              ],
+              "evaluated_polygons": 6,
+              "evaluated_vertices": 8,
+              "instance_id": "instance-procedural-block",
+              "node_groups": [
+                "Block generator",
+                "Block shape"
+              ],
+              "object_id": "object-procedural-block",
+              "source_vertices": 0
+            }
+          ],
+          "process": {
+            "argv": [
+              "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+              "--background",
+              "--factory-startup",
+              "--disable-autoexec",
+              "--threads",
+              "4",
+              "--python-exit-code",
+              "1",
+              "--python",
+              "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+              "--",
+              "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53"
+            ],
+            "pid": 943,
+            "start_ticks": 47424240,
+            "state": "R"
+          },
+          "review_encoding": "view_transformed_srgb PNG RGB8",
+          "samples": 8,
+          "spec": {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 3,
+              "start": 1
+            },
+            "intent_id": "m14-failed-writer-same-job-retry",
+            "purpose": "draft_motion",
+            "renderer_revision": "proscenium-blender-1",
+            "review_output": {
+              "bit_depth": 8,
+              "encoding": "view_transformed_srgb",
+              "media_type": "image/png"
+            },
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          },
+          "threads": 4,
+          "version": "4.5.14 LTS"
+        },
+        "timing-00000001.json": {
+          "camera_matrix_world": [
+            [
+              0.8160244226455688,
+              -0.24843411147594452,
+              0.5219048261642456,
+              5.0
+            ],
+            [
+              0.5780174732208252,
+              0.35073035955429077,
+              -0.7368066310882568,
+              -6.0
+            ],
+            [
+              3.3070641336507833e-08,
+              0.9029223322868347,
+              0.4298037886619568,
+              4.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "ready_ns": 474242917222160,
+          "started_ns": 474242677236912
+        },
+        "task.json": {
+          "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+          "closure": {
+            "dependencies": [],
+            "digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1",
+            "entry_path": "assets/procedural/asset.blend",
+            "files": [
+              {
+                "destination": "assets/procedural/asset.blend",
+                "origin": {
+                  "commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+                  "kind": "git",
+                  "path": "assets/procedural/asset.blend",
+                  "repository_id": "repository-061e26c5-2db1-4f44-9dcb-729d828db283",
+                  "sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [
+                "geometry-nodes"
+              ],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "config": {
+            "blender": "/home/quintin/.local/bin/blender",
+            "build_hash": "62c1db4208e8",
+            "claim_path": "/tmp/opencode/proscenium-native-claims/blender-render.lock",
+            "encode_timeout": 60,
+            "ffmpeg": "/usr/bin/ffmpeg",
+            "ffprobe": "/usr/bin/ffprobe",
+            "max_frames": 3,
+            "max_pixels": 230400,
+            "max_samples": 8,
+            "profile_id": "blender-cpu",
+            "threads": 4,
+            "timeout": 300
+          },
+          "entrypoint_sha256": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+          "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+          "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+          "project_id": "m14-native-fault-operator-project",
+          "proxy_artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-proxy",
+          "renderer_files_sha256": {
+            "blender_worker.py": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+            "geometry_nodes.py": "72464fc3cab811349eab6b5dfc33af02f1bb6d80dd4c2ba0db610bbc0e6cdf9d",
+            "journal.py": "943310dae86c1575f28438280e555c66f20d256fff9fbfdb3aac89469b05b727"
+          },
+          "source_root": "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/snapshots/3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1/7ddbdf6d-7a6a-46b9-9af5-4537463c56c0",
+          "spec": {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 3,
+              "start": 1
+            },
+            "intent_id": "m14-failed-writer-same-job-retry",
+            "purpose": "draft_motion",
+            "renderer_revision": "proscenium-blender-1",
+            "review_output": {
+              "bit_depth": 8,
+              "encoding": "view_transformed_srgb",
+              "media_type": "image/png"
+            },
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          },
+          "version_id": "procedural-block-v1"
+        }
+      },
+      "availability": {
+        "schema_version": "1.0",
+        "project_id": "m14-native-fault-operator-project",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "version_id": "procedural-block-v1",
+        "source_range": {
+          "end": 3,
+          "start": 1
+        },
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "available_ranges": [
+          {
+            "start": 1,
+            "end": 1
+          }
+        ],
+        "playable_ranges": [],
+        "pending_ranges": [],
+        "failed_ranges": [
+          {
+            "start": 2,
+            "end": 3
+          }
+        ],
+        "state_revision": 7
+      },
+      "blender_log": "Blender 4.5.14 LTS (hash 62c1db4208e8 built 2026-09-15 01:31:19)\nRead blend: \"/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/snapshots/3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1/7ddbdf6d-7a6a-46b9-9af5-4537463c56c0/assets/procedural/asset.blend\"\nFra:1 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Synchronizing object | Parametric block\nFra:1 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Synchronizing object | Soft key\nFra:1 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Initializing\nFra:1 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Waiting for render to start\nFra:1 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene\nFra:1 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Shaders\nFra:1 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Loading render kernels (may take a few minutes the first time)\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Procedurals\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Background\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Camera\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Meshes Flags\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects | Copying Transformations to device\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Particle Systems\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Particle Systems | Copying Particles to device\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Meshes\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects | Applying Static Transformations\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Computing attributes\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Copying Attributes to device\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building BVH\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building BVH 0%\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Copying BVH to device\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Computing normals\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Copying Mesh to device\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects Flags\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Primitive Offsets\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Images\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Camera Volume\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Lookup Tables\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.08M, Peak:0.08M | ProceduralAsset, ViewLayer | Updating Lights\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Lights | Computing tree\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Integrator\nFra:1 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Film\nFra:1 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Lookup Tables\nFra:1 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Baking\nFra:1 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Device | Writing constant memory\nFra:1 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Sample 0/8\nFra:1 Mem:18.39M (Peak 18.39M) | Time:00:00.02 | Remaining:00:00.16 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Sample 1/8\nFra:1 Mem:21.91M (Peak 28.94M) | Time:00:00.19 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Sample 8/8\nFra:1 Mem:21.91M (Peak 28.94M) | Time:00:00.19 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Finished\nSaved: '/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53/frames/.pending-00000001.png'\nTime: 00:00.23 (Saving: 00:00.04)\n\nPROSCENIUM_FRAME=1\nTraceback (most recent call last):\n  File \"/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py\", line 409, in <module>\n    main()\n  File \"/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py\", line 372, in main\n    raise ValueError(\"Unreceipted output requires reconciliation, not overwrite\")\nValueError: Unreceipted output requires reconciliation, not overwrite\n\nError: script failed, file: '/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py', exiting.\n\nBlender quit\n"
+    },
+    {
+      "job": {
+        "artifact_ids": [
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f2",
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f3",
+          "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-s1-3"
+        ],
+        "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+        "attempt_number": 2,
+        "availability": "complete",
+        "completed_frames": 3,
+        "expected_frames": 3,
+        "external_job_id": null,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-b762dcde-7f47-4839-8d05-17dfed73943e",
+        "owner_operation_id": null,
+        "project_id": "m14-native-fault-operator-project",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 3,
+            "start": 1
+          },
+          "intent_id": "m14-failed-writer-same-job-retry",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 17,
+        "target": {
+          "shot_id": null,
+          "target_id": "procedural-block",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "work_id": "m14-synthetic-admission-work"
+      },
+      "root": "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+      "observations": {
+        "headroom_min_bytes": 38324477952,
+        "live_identities": {
+          "process.json": {
+            "argv": [
+              "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/.venv/bin/python",
+              "-m",
+              "proscenium.previews.worker",
+              "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+            ],
+            "pid": 6355,
+            "start_ticks": 47437017,
+            "started_ns": 474370417700892,
+            "state": "R",
+            "task_sha256": "b1bfb4002a8e013fa3d2057251e15fbc3894d6a992fa6943b4f64255b3c61d87"
+          }
+        }
+      },
+      "files": {
+        "native-process.json": {
+          "sha256": "2bdc4f849426bef4d2055247f9d8adcc677e139651b695acc36f844dd3785a62",
+          "bytes": 587
+        },
+        "frame-00000003.json": {
+          "sha256": "b1a5388236a00c73298a911f9fb000665c05809a85ca279f41e242fb313ae12b",
+          "bytes": 701
+        },
+        "terminal.json": {
+          "sha256": "448e999fbbf32ebd81ea1ee9e94b58ea5c4460913cd796584d36f600d8807e6a",
+          "bytes": 180
+        },
+        "renderer-verified.json": {
+          "sha256": "23a5ba40a3fc0bb10c61048f1abef24aa996b1d73e28dec752088ad053c6798e",
+          "bytes": 402
+        },
+        "segment-00000001-00000003.json": {
+          "sha256": "3bebcf76ac46102d0ebcb13eb08943c464266d330e3f2f10bb333357d12d17e7",
+          "bytes": 726
+        },
+        "supervisor.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "process.json": {
+          "sha256": "91850d125ea51fae617ac73d9ceec630858088a9362a5f242bab2c25666892d8",
+          "bytes": 530
+        },
+        "frame-00000001.json": {
+          "sha256": "72717b8f97722fca63034c73a43a090759922baa71f4ab9822a77af0ef027408",
+          "bytes": 701
+        },
+        "writer.lock": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "native-complete.json": {
+          "sha256": "be0ba73ee2428cfb189f8d1d1c87345e0b69c9628fd647d3f051a2514d38e8ae",
+          "bytes": 18
+        },
+        "frame-00000002.json": {
+          "sha256": "5d1a76902e55b6d08dc70023a1c2a3df96bf3a2a6c7d5193b3f3673b368f8fe2",
+          "bytes": 701
+        },
+        "native-profile.json": {
+          "sha256": "ca3116c7a6531a107b71a2f3ed21a097321dc140f0bb341ae772a0ad4c5c735d",
+          "bytes": 1751
+        },
+        "timing-00000002.json": {
+          "sha256": "8d8e632e4f20747e3ae90816c345bc96497fd7f8bb2c7335512fa97e8547f3e8",
+          "bytes": 317
+        },
+        "encode-00000001.json": {
+          "sha256": "e7cceedb6f2bdddf9e71497c062ab851d79bbc1cf446bc12197aae395f2a273e",
+          "bytes": 978
+        },
+        "task.json": {
+          "sha256": "b1bfb4002a8e013fa3d2057251e15fbc3894d6a992fa6943b4f64255b3c61d87",
+          "bytes": 2638
+        },
+        "blender.log": {
+          "sha256": "12195410f0aa784fa73c3a156d73eb39e65e2d7b1eeade32f482e165932cc9de",
+          "bytes": 11481
+        },
+        "segment-00000001-00000003.mp4": {
+          "sha256": "a84cc95b28b91ad1b5ac7e18a8f9daac693a04e856563db5c56cc5d9dd793a08",
+          "bytes": 8434
+        },
+        "timing-00000003.json": {
+          "sha256": "5fb8d0f8eabc57ccc27fe33fb163734db18ac1e3d7b1c9ae1d26c43b0a236bcb",
+          "bytes": 317
+        },
+        "launch.claim": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "frames/00000003.png": {
+          "sha256": "cde657993d99412b5468e0454acfec3af210da980562867a7929f98c4ea20c1b",
+          "bytes": 218900
+        },
+        "frames/00000001.png": {
+          "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+          "bytes": 218900
+        },
+        "frames/00000002.png": {
+          "sha256": "b898e27c02dea5e9b2eba57fe441012590ee799bcc8bdab7ba645e32ff4e682f",
+          "bytes": 218900
+        }
+      },
+      "journals": {
+        "native-process.json": {
+          "argv": [
+            "/bin/sh",
+            "/home/quintin/.local/bin/blender",
+            "--background",
+            "--factory-startup",
+            "--disable-autoexec",
+            "--threads",
+            "4",
+            "--python-exit-code",
+            "1",
+            "--python",
+            "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+            "--",
+            "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+          ],
+          "pid": 6360,
+          "start_ticks": 47437043,
+          "state": "R"
+        },
+        "frame-00000003.json": {
+          "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f3",
+          "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+          "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+          "output_path": "frames/00000003.png",
+          "project_id": "m14-native-fault-operator-project",
+          "receipt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-f3",
+          "schema_version": "1.0",
+          "sha256": "cde657993d99412b5468e0454acfec3af210da980562867a7929f98c4ea20c1b",
+          "shot_id": null,
+          "source_frame": 3,
+          "version_id": "procedural-block-v1"
+        },
+        "terminal.json": {
+          "finished_ns": 474371252123140,
+          "native_exit_code": 0,
+          "state": "succeeded",
+          "task_sha256": "b1bfb4002a8e013fa3d2057251e15fbc3894d6a992fa6943b4f64255b3c61d87",
+          "timed_out": false
+        },
+        "renderer-verified.json": {
+          "renderer_files_sha256": {
+            "blender_worker.py": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+            "geometry_nodes.py": "72464fc3cab811349eab6b5dfc33af02f1bb6d80dd4c2ba0db610bbc0e6cdf9d",
+            "journal.py": "943310dae86c1575f28438280e555c66f20d256fff9fbfdb3aac89469b05b727"
+          },
+          "task_sha256": "b1bfb4002a8e013fa3d2057251e15fbc3894d6a992fa6943b4f64255b3c61d87",
+          "verified_ns": 474370429866025
+        },
+        "segment-00000001-00000003.json": {
+          "artifact_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-s1-3",
+          "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frame_count": 3,
+          "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+          "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+          "output_path": "segment-00000001-00000003.mp4",
+          "project_id": "m14-native-fault-operator-project",
+          "schema_version": "1.0",
+          "segment_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-s1-3",
+          "sha256": "a84cc95b28b91ad1b5ac7e18a8f9daac693a04e856563db5c56cc5d9dd793a08",
+          "shot_id": null,
+          "source_frames": {
+            "end": 3,
+            "start": 1
+          },
+          "version_id": "procedural-block-v1"
+        },
+        "process.json": {
+          "argv": [
+            "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/.venv/bin/python",
+            "-m",
+            "proscenium.previews.worker",
+            "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+          ],
+          "pid": 6355,
+          "start_ticks": 47437017,
+          "started_ns": 474370417700892,
+          "state": "R",
+          "task_sha256": "b1bfb4002a8e013fa3d2057251e15fbc3894d6a992fa6943b4f64255b3c61d87"
+        },
+        "frame-00000001.json": {
+          "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+          "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+          "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+          "output_path": "frames/00000001.png",
+          "project_id": "m14-native-fault-operator-project",
+          "receipt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-f1",
+          "schema_version": "1.0",
+          "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+          "shot_id": null,
+          "source_frame": 1,
+          "version_id": "procedural-block-v1"
+        },
+        "native-complete.json": {
+          "complete": true
+        },
+        "frame-00000002.json": {
+          "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f2",
+          "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+          "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+          "output_path": "frames/00000002.png",
+          "project_id": "m14-native-fault-operator-project",
+          "receipt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-f2",
+          "schema_version": "1.0",
+          "sha256": "b898e27c02dea5e9b2eba57fe441012590ee799bcc8bdab7ba645e32ff4e682f",
+          "shot_id": null,
+          "source_frame": 2,
+          "version_id": "procedural-block-v1"
+        },
+        "native-profile.json": {
+          "build_hash": "62c1db4208e8",
+          "camera_override": null,
+          "device": "CPU",
+          "procedural_meshes": [
+            {
+              "bounds_max": [
+                1.75,
+                0.75,
+                1.0
+              ],
+              "bounds_min": [
+                -0.25,
+                -0.75,
+                0.0
+              ],
+              "evaluated_polygons": 6,
+              "evaluated_vertices": 8,
+              "instance_id": "instance-procedural-block",
+              "node_groups": [
+                "Block generator",
+                "Block shape"
+              ],
+              "object_id": "object-procedural-block",
+              "source_vertices": 0
+            }
+          ],
+          "process": {
+            "argv": [
+              "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+              "--background",
+              "--factory-startup",
+              "--disable-autoexec",
+              "--threads",
+              "4",
+              "--python-exit-code",
+              "1",
+              "--python",
+              "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+              "--",
+              "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+            ],
+            "pid": 6360,
+            "start_ticks": 47437043,
+            "state": "R"
+          },
+          "review_encoding": "view_transformed_srgb PNG RGB8",
+          "samples": 8,
+          "spec": {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 3,
+              "start": 1
+            },
+            "intent_id": "m14-failed-writer-same-job-retry",
+            "purpose": "draft_motion",
+            "renderer_revision": "proscenium-blender-1",
+            "review_output": {
+              "bit_depth": 8,
+              "encoding": "view_transformed_srgb",
+              "media_type": "image/png"
+            },
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          },
+          "threads": 4,
+          "version": "4.5.14 LTS"
+        },
+        "timing-00000002.json": {
+          "camera_matrix_world": [
+            [
+              0.8160244226455688,
+              -0.24843411147594452,
+              0.5219048261642456,
+              5.0
+            ],
+            [
+              0.5780174732208252,
+              0.35073035955429077,
+              -0.7368066310882568,
+              -6.0
+            ],
+            [
+              3.3070641336507833e-08,
+              0.9029223322868347,
+              0.4298037886619568,
+              4.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "ready_ns": 474370902870236,
+          "started_ns": 474370675042161
+        },
+        "encode-00000001.json": {
+          "argv": [
+            "/usr/bin/ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-n",
+            "-framerate",
+            "24/1",
+            "-start_number",
+            "1",
+            "-i",
+            "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f/frames/%08d.png",
+            "-frames:v",
+            "3",
+            "-an",
+            "-c:v",
+            "libx264",
+            "-threads",
+            "2",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            "-g",
+            "3",
+            "-keyint_min",
+            "3",
+            "-sc_threshold",
+            "0",
+            "-bf",
+            "0",
+            "-flags",
+            "+cgop",
+            "-movflags",
+            "+faststart",
+            "-video_track_timescale",
+            "24",
+            "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f/segment-00000001-00000003.pending.mp4"
+          ],
+          "last_frame_existed": true,
+          "ready_ns": 474371250748078,
+          "started_ns": 474371129338709
+        },
+        "task.json": {
+          "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+          "closure": {
+            "dependencies": [],
+            "digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1",
+            "entry_path": "assets/procedural/asset.blend",
+            "files": [
+              {
+                "destination": "assets/procedural/asset.blend",
+                "origin": {
+                  "commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+                  "kind": "git",
+                  "path": "assets/procedural/asset.blend",
+                  "repository_id": "repository-061e26c5-2db1-4f44-9dcb-729d828db283",
+                  "sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+                }
+              }
+            ],
+            "required_runtime": {
+              "application": "blender",
+              "features": [
+                "geometry-nodes"
+              ],
+              "version": "4.5.14 LTS"
+            }
+          },
+          "config": {
+            "blender": "/home/quintin/.local/bin/blender",
+            "build_hash": "62c1db4208e8",
+            "claim_path": "/tmp/opencode/proscenium-native-claims/blender-render.lock",
+            "encode_timeout": 60,
+            "ffmpeg": "/usr/bin/ffmpeg",
+            "ffprobe": "/usr/bin/ffprobe",
+            "max_frames": 3,
+            "max_pixels": 230400,
+            "max_samples": 8,
+            "profile_id": "blender-cpu",
+            "threads": 4,
+            "timeout": 300
+          },
+          "entrypoint_sha256": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+          "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+          "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+          "project_id": "m14-native-fault-operator-project",
+          "proxy_artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-proxy",
+          "renderer_files_sha256": {
+            "blender_worker.py": "b5932b289bf85316761e01a7beb20c1f8df6c0d3aaae03b7a415279bf8a8fc84",
+            "geometry_nodes.py": "72464fc3cab811349eab6b5dfc33af02f1bb6d80dd4c2ba0db610bbc0e6cdf9d",
+            "journal.py": "943310dae86c1575f28438280e555c66f20d256fff9fbfdb3aac89469b05b727"
+          },
+          "source_root": "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/snapshots/3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1/a323c90a-dabe-4e42-a1a2-b37c26b7d23d",
+          "spec": {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 3,
+              "start": 1
+            },
+            "intent_id": "m14-failed-writer-same-job-retry",
+            "purpose": "draft_motion",
+            "renderer_revision": "proscenium-blender-1",
+            "review_output": {
+              "bit_depth": 8,
+              "encoding": "view_transformed_srgb",
+              "media_type": "image/png"
+            },
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          },
+          "version_id": "procedural-block-v1"
+        },
+        "timing-00000003.json": {
+          "camera_matrix_world": [
+            [
+              0.8160244226455688,
+              -0.24843411147594452,
+              0.5219048261642456,
+              5.0
+            ],
+            [
+              0.5780174732208252,
+              0.35073035955429077,
+              -0.7368066310882568,
+              -6.0
+            ],
+            [
+              3.3070641336507833e-08,
+              0.9029223322868347,
+              0.4298037886619568,
+              4.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "ready_ns": 474371126750999,
+          "started_ns": 474370905267262
+        }
+      },
+      "availability": {
+        "schema_version": "1.0",
+        "project_id": "m14-native-fault-operator-project",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "version_id": "procedural-block-v1",
+        "source_range": {
+          "end": 3,
+          "start": 1
+        },
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "available_ranges": [
+          {
+            "start": 1,
+            "end": 3
+          }
+        ],
+        "playable_ranges": [
+          {
+            "start": 1,
+            "end": 3
+          }
+        ],
+        "pending_ranges": [],
+        "failed_ranges": [],
+        "state_revision": 22
+      },
+      "blender_log": "Blender 4.5.14 LTS (hash 62c1db4208e8 built 2026-09-15 01:31:19)\nRead blend: \"/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/snapshots/3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1/a323c90a-dabe-4e42-a1a2-b37c26b7d23d/assets/procedural/asset.blend\"\nFra:2 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Synchronizing object | Parametric block\nFra:2 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Synchronizing object | Soft key\nFra:2 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Initializing\nFra:2 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Waiting for render to start\nFra:2 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene\nFra:2 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Shaders\nFra:2 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Loading render kernels (may take a few minutes the first time)\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Procedurals\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Background\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Camera\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Meshes Flags\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects | Copying Transformations to device\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Particle Systems\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Particle Systems | Copying Particles to device\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Meshes\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects | Applying Static Transformations\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Computing attributes\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Copying Attributes to device\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building BVH\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building BVH 0%\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Copying BVH to device\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Computing normals\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Copying Mesh to device\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects Flags\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Primitive Offsets\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Images\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Camera Volume\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Lookup Tables\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.08M, Peak:0.08M | ProceduralAsset, ViewLayer | Updating Lights\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Lights | Computing tree\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Integrator\nFra:2 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Film\nFra:2 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Lookup Tables\nFra:2 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Baking\nFra:2 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Device | Writing constant memory\nFra:2 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Sample 0/8\nFra:2 Mem:18.39M (Peak 18.39M) | Time:00:00.02 | Remaining:00:00.14 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Sample 1/8\nFra:2 Mem:21.91M (Peak 28.94M) | Time:00:00.18 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Sample 8/8\nFra:2 Mem:21.91M (Peak 28.94M) | Time:00:00.18 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Finished\nSaved: '/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f/frames/.pending-00000002.png'\nTime: 00:00.21 (Saving: 00:00.02)\n\nPROSCENIUM_FRAME=2\nFra:3 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Synchronizing object | Parametric block\nFra:3 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Synchronizing object | Soft key\nFra:3 Mem:10.59M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Initializing\nFra:3 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Waiting for render to start\nFra:3 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene\nFra:3 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Shaders\nFra:3 Mem:10.35M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Loading render kernels (may take a few minutes the first time)\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Procedurals\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Background\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Camera\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Meshes Flags\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects | Copying Transformations to device\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Particle Systems\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Particle Systems | Copying Particles to device\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Meshes\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects | Applying Static Transformations\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Computing attributes\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Copying Attributes to device\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Building BVH\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Scene BVH | Copying BVH to device\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Computing normals\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Mesh | Copying Mesh to device\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Objects Flags\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Primitive Offsets\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Images\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Camera Volume\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | ProceduralAsset, ViewLayer | Updating Lookup Tables\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.08M, Peak:0.08M | ProceduralAsset, ViewLayer | Updating Lights\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Lights | Computing tree\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Integrator\nFra:3 Mem:10.43M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Film\nFra:3 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.00M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Lookup Tables\nFra:3 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Baking\nFra:3 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Updating Device | Writing constant memory\nFra:3 Mem:10.44M (Peak 10.59M) | Time:00:00.00 | Mem:0.09M, Peak:0.09M | ProceduralAsset, ViewLayer | Sample 0/8\nFra:3 Mem:18.39M (Peak 18.39M) | Time:00:00.02 | Remaining:00:00.17 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Sample 1/8\nFra:3 Mem:21.91M (Peak 28.94M) | Time:00:00.19 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Sample 8/8\nFra:3 Mem:21.91M (Peak 28.94M) | Time:00:00.19 | Mem:8.00M, Peak:8.00M | ProceduralAsset, ViewLayer | Finished\nSaved: '/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f/frames/.pending-00000003.png'\nTime: 00:00.20 (Saving: 00:00.01)\n\nPROSCENIUM_FRAME=3\n\nBlender quit\n"
+    }
+  ],
+  "reporting_repair": {
+    "original_report_sha256": "60a49eef60bcbc47989e0bc66d0fa6a63d36f4e9f3acdf6e8d4ad84ba109bd24",
+    "defect": "Driver incorrectly used immutable journal writer for a changing operator report after verified worker-1 failure",
+    "scope": "Owned driver reporting and continuation guard only, no product/state/journal edits",
+    "first_live_observations": "Not durably saved before report failure. Actual positive PID/start identities remain in supervisor/native journals.",
+    "first_worker_relaunched": false,
+    "extra_workers_allocated": 0
+  },
+  "injection": {
+    "path": "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53/frames/00000002.png",
+    "hex": "4f50455241544f522d494e4a454354454420554e524543454950544544205041525449414c20504e470a6e6f74206e61746976652d67656e6572617465640a89504e470d0a1a0a7061727469616c",
+    "sha256": "ace66c27d689d84cf4854b4bc56e42863dfc9609e379ef4f33bd146e4017d171",
+    "bytes": 78,
+    "stage": "Before worker 1 launch, frame 2 output, no receipt",
+    "native_generated": false,
+    "disk_exhaustion": false
+  },
+  "reviewable_frame1": {
+    "artifact_path": "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/artefacts/sha256/2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0/content",
+    "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+    "receipt": {
+      "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+      "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+      "dimensions": {
+        "height": 360,
+        "width": 640
+      },
+      "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+      "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+      "output_path": "frames/00000001.png",
+      "project_id": "m14-native-fault-operator-project",
+      "receipt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53-f1",
+      "schema_version": "1.0",
+      "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+      "shot_id": null,
+      "source_frame": 1,
+      "version_id": "procedural-block-v1"
+    },
+    "verified_after_terminal_failure": true
+  },
+  "served_frame1_after_failure": {
+    "mode": "Actual production route and owner-cookie dependency through in-process ASGI, not browser UI",
+    "url": "/api/v1/projects/m14-native-fault-operator-project/artifacts/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1/content",
+    "status": 200,
+    "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+    "bytes": 218900,
+    "etag": "\"2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0\"",
+    "content_type": "image/png",
+    "range_status": 206,
+    "range_bytes": 16
+  },
+  "selection_receipt": {
+    "schema_version": "1.0",
+    "operation_id": "m14-select-source-with-reviewable-frame1",
+    "resource_id": "m14-selected-source",
+    "state": "selected",
+    "state_revision": 1,
+    "replayed": false
+  },
+  "before_retry": {
+    "jobs": [
+      {
+        "artifact_ids": [
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1"
+        ],
+        "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+        "attempt_number": 1,
+        "availability": "partial",
+        "completed_frames": 1,
+        "error_code": "render_failed",
+        "expected_frames": 3,
+        "external_job_id": null,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "kind": "render",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-79075944-9a56-4134-84b2-c4e8fc916f7e",
+        "owner_operation_id": null,
+        "project_id": "m14-native-fault-operator-project",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 3,
+            "start": 1
+          },
+          "intent_id": "m14-failed-writer-same-job-retry",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "schema_version": "1.0",
+        "state": "failed",
+        "state_revision": 6,
+        "target": {
+          "shot_id": null,
+          "target_id": "procedural-block",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "work_id": "m14-synthetic-admission-work"
+      }
+    ],
+    "attempts": [
+      {
+        "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+        "attempt_number": 1,
+        "external_job_id": null,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-79075944-9a56-4134-84b2-c4e8fc916f7e",
+        "project_id": "m14-native-fault-operator-project",
+        "schema_version": "1.0",
+        "state": "failed",
+        "trigger_operation_id": "m14-imported-publication"
+      }
+    ],
+    "job_evidence": [
+      {
+        "evidence": "Owned detached supervisor terminal journal verified",
+        "terminal": true
+      }
+    ],
+    "frames": [
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+        "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "output_path": "frames/00000001.png",
+        "project_id": "m14-native-fault-operator-project",
+        "receipt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53-f1",
+        "schema_version": "1.0",
+        "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+        "shot_id": null,
+        "source_frame": 1,
+        "version_id": "procedural-block-v1"
+      }
+    ],
+    "segments": [],
+    "artifacts": [
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+        "bytes": 218900,
+        "derived_from": [],
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "m14-native-fault-operator-project",
+        "purpose": "draft_motion",
+        "schema_version": "1.0",
+        "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+        "source_version_id": "procedural-block-v1",
+        "state": "ready"
+      }
+    ],
+    "selections": [
+      {
+        "actor": {
+          "id": "m14-scripted-owner",
+          "kind": "user"
+        },
+        "choice": {
+          "kind": "version",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "project_id": "m14-native-fault-operator-project",
+        "schema_version": "1.0",
+        "selection_id": "m14-selected-source",
+        "slot": {
+          "item_id": "procedural-block",
+          "kind": "item"
+        },
+        "state": "selected",
+        "state_revision": 1
+      }
+    ],
+    "versions": [
+      {
+        "actor": {
+          "id": "m14-operator-fixture",
+          "kind": "tool"
+        },
+        "artifact_ids": [],
+        "created_at": "2026-11-14T18:36:52.310784+00:00",
+        "item_id": "procedural-block",
+        "kind": "asset",
+        "name": "Imported actual GeometryNodes-b source / operator fault fixture",
+        "preview_job_ids": [
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0"
+        ],
+        "preview_requests": [
+          {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 3,
+              "start": 1
+            },
+            "intent_id": "m14-failed-writer-same-job-retry",
+            "purpose": "draft_motion",
+            "renderer_revision": "proscenium-blender-1",
+            "review_output": {
+              "bit_depth": 8,
+              "encoding": "view_transformed_srgb",
+              "media_type": "image/png"
+            },
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          }
+        ],
+        "project_id": "m14-native-fault-operator-project",
+        "publication_id": "m14-imported-publication",
+        "schema_version": "1.0",
+        "source": {
+          "dependencies": [],
+          "digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1",
+          "entry_path": "assets/procedural/asset.blend",
+          "files": [
+            {
+              "destination": "assets/procedural/asset.blend",
+              "origin": {
+                "commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+                "kind": "git",
+                "path": "assets/procedural/asset.blend",
+                "repository_id": "repository-061e26c5-2db1-4f44-9dcb-729d828db283",
+                "sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+              }
+            }
+          ],
+          "required_runtime": {
+            "application": "blender",
+            "features": [
+              "geometry-nodes"
+            ],
+            "version": "4.5.14 LTS"
+          }
+        },
+        "source_commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+        "version_id": "procedural-block-v1"
+      }
+    ]
+  },
+  "retry_body": {
+    "schema_version": "1.0",
+    "operation_id": "m14-explicit-owner-authorised-tool-retry",
+    "project_id": "m14-native-fault-operator-project",
+    "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+    "expected_revision": 6
+  },
+  "old_exact_receipt_replay": [
+    {
+      "schema_version": "1.0",
+      "operation_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53-f1",
+      "resource_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53-f1",
+      "state": "ready",
+      "state_revision": 0,
+      "replayed": true
+    },
+    true
+  ],
+  "old_fresh_receipt_rejection": "scope_denied",
+  "old_state_rejection": "scope_denied",
+  "stale_probes_no_mutation": true,
+  "second_pump": [
+    {
+      "intent_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+    }
+  ],
+  "adopted_receipt_before_reconciliation": {
+    "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+    "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+    "dimensions": {
+      "height": 360,
+      "width": 640
+    },
+    "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+    "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+    "output_path": "frames/00000001.png",
+    "project_id": "m14-native-fault-operator-project",
+    "receipt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-f1",
+    "schema_version": "1.0",
+    "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+    "shot_id": null,
+    "source_frame": 1,
+    "version_id": "procedural-block-v1"
+  },
+  "served_frame1_after_retry": {
+    "mode": "Actual production route and owner-cookie dependency through in-process ASGI, not browser UI",
+    "url": "/api/v1/projects/m14-native-fault-operator-project/artifacts/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1/content",
+    "status": 200,
+    "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+    "bytes": 218900,
+    "etag": "\"2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0\"",
+    "content_type": "image/png",
+    "range_status": 206,
+    "range_bytes": 16
+  },
+  "after_retry": {
+    "jobs": [
+      {
+        "artifact_ids": [
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f2",
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f3",
+          "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-s1-3"
+        ],
+        "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+        "attempt_number": 2,
+        "availability": "complete",
+        "completed_frames": 3,
+        "expected_frames": 3,
+        "external_job_id": null,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "kind": "render",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-b762dcde-7f47-4839-8d05-17dfed73943e",
+        "owner_operation_id": null,
+        "project_id": "m14-native-fault-operator-project",
+        "provider_id": null,
+        "render_spec": {
+          "camera": null,
+          "colour_management": {
+            "exposure": 0,
+            "gamma": 1,
+            "look": "None",
+            "view_transform": "Standard"
+          },
+          "device": "CPU",
+          "dimensions": {
+            "height": 360,
+            "width": 640
+          },
+          "engine": "CYCLES",
+          "fps": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": {
+            "end": 3,
+            "start": 1
+          },
+          "intent_id": "m14-failed-writer-same-job-retry",
+          "purpose": "draft_motion",
+          "renderer_revision": "proscenium-blender-1",
+          "review_output": {
+            "bit_depth": 8,
+            "encoding": "view_transformed_srgb",
+            "media_type": "image/png"
+          },
+          "samples": 8,
+          "scene_name": "ProceduralAsset",
+          "shot_id": null,
+          "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+        },
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "state_revision": 17,
+        "target": {
+          "shot_id": null,
+          "target_id": "procedural-block",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "work_id": "m14-synthetic-admission-work"
+      }
+    ],
+    "attempts": [
+      {
+        "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+        "attempt_number": 1,
+        "external_job_id": null,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "native_exit_code": 1,
+        "owner_epoch": "epoch-79075944-9a56-4134-84b2-c4e8fc916f7e",
+        "project_id": "m14-native-fault-operator-project",
+        "schema_version": "1.0",
+        "state": "failed",
+        "trigger_operation_id": "m14-imported-publication"
+      },
+      {
+        "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+        "attempt_number": 2,
+        "external_job_id": null,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "native_exit_code": 0,
+        "owner_epoch": "epoch-b762dcde-7f47-4839-8d05-17dfed73943e",
+        "project_id": "m14-native-fault-operator-project",
+        "schema_version": "1.0",
+        "state": "succeeded",
+        "trigger_operation_id": "m14-explicit-owner-authorised-tool-retry"
+      }
+    ],
+    "job_evidence": [
+      {
+        "evidence": "Owned detached supervisor terminal journal verified",
+        "terminal": true
+      },
+      {
+        "evidence": "Owned detached supervisor terminal journal verified",
+        "terminal": true
+      }
+    ],
+    "frames": [
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+        "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "output_path": "frames/00000001.png",
+        "project_id": "m14-native-fault-operator-project",
+        "receipt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53-f1",
+        "schema_version": "1.0",
+        "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+        "shot_id": null,
+        "source_frame": 1,
+        "version_id": "procedural-block-v1"
+      },
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+        "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "output_path": "frames/00000001.png",
+        "project_id": "m14-native-fault-operator-project",
+        "receipt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-f1",
+        "schema_version": "1.0",
+        "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+        "shot_id": null,
+        "source_frame": 1,
+        "version_id": "procedural-block-v1"
+      },
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f2",
+        "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "output_path": "frames/00000002.png",
+        "project_id": "m14-native-fault-operator-project",
+        "receipt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-f2",
+        "schema_version": "1.0",
+        "sha256": "b898e27c02dea5e9b2eba57fe441012590ee799bcc8bdab7ba645e32ff4e682f",
+        "shot_id": null,
+        "source_frame": 2,
+        "version_id": "procedural-block-v1"
+      },
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f3",
+        "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "output_path": "frames/00000003.png",
+        "project_id": "m14-native-fault-operator-project",
+        "receipt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-f3",
+        "schema_version": "1.0",
+        "sha256": "cde657993d99412b5468e0454acfec3af210da980562867a7929f98c4ea20c1b",
+        "shot_id": null,
+        "source_frame": 3,
+        "version_id": "procedural-block-v1"
+      }
+    ],
+    "segments": [
+      {
+        "artifact_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-s1-3",
+        "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frame_count": 3,
+        "input_digest": "d8642e14cebd1bc5bd07117acab7f3e2b1a3970bf8b37943753090189d1d36c3",
+        "job_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0",
+        "output_path": "segment-00000001-00000003.mp4",
+        "project_id": "m14-native-fault-operator-project",
+        "schema_version": "1.0",
+        "segment_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-s1-3",
+        "sha256": "a84cc95b28b91ad1b5ac7e18a8f9daac693a04e856563db5c56cc5d9dd793a08",
+        "shot_id": null,
+        "source_frames": {
+          "end": 3,
+          "start": 1
+        },
+        "version_id": "procedural-block-v1"
+      }
+    ],
+    "artifacts": [
+      {
+        "artifact_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f-s1-3",
+        "bytes": 8434,
+        "derived_from": [],
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "fps": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frame_count": 3,
+        "kind": "video",
+        "media_type": "video/mp4",
+        "project_id": "m14-native-fault-operator-project",
+        "purpose": "draft_motion",
+        "schema_version": "1.0",
+        "sha256": "a84cc95b28b91ad1b5ac7e18a8f9daac693a04e856563db5c56cc5d9dd793a08",
+        "source_version_id": "procedural-block-v1",
+        "state": "ready"
+      },
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f1",
+        "bytes": 218900,
+        "derived_from": [],
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "m14-native-fault-operator-project",
+        "purpose": "draft_motion",
+        "schema_version": "1.0",
+        "sha256": "2129178e4dc5f6763fc718e228e2555a4262569710e2dead01f0fd324be122f0",
+        "source_version_id": "procedural-block-v1",
+        "state": "ready"
+      },
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f2",
+        "bytes": 218900,
+        "derived_from": [],
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "m14-native-fault-operator-project",
+        "purpose": "draft_motion",
+        "schema_version": "1.0",
+        "sha256": "b898e27c02dea5e9b2eba57fe441012590ee799bcc8bdab7ba645e32ff4e682f",
+        "source_version_id": "procedural-block-v1",
+        "state": "ready"
+      },
+      {
+        "artifact_id": "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0-f3",
+        "bytes": 218900,
+        "derived_from": [],
+        "dimensions": {
+          "height": 360,
+          "width": 640
+        },
+        "kind": "image",
+        "media_type": "image/png",
+        "project_id": "m14-native-fault-operator-project",
+        "purpose": "draft_motion",
+        "schema_version": "1.0",
+        "sha256": "cde657993d99412b5468e0454acfec3af210da980562867a7929f98c4ea20c1b",
+        "source_version_id": "procedural-block-v1",
+        "state": "ready"
+      }
+    ],
+    "selections": [
+      {
+        "actor": {
+          "id": "m14-scripted-owner",
+          "kind": "user"
+        },
+        "choice": {
+          "kind": "version",
+          "version": {
+            "item_id": "procedural-block",
+            "version_id": "procedural-block-v1"
+          }
+        },
+        "project_id": "m14-native-fault-operator-project",
+        "schema_version": "1.0",
+        "selection_id": "m14-selected-source",
+        "slot": {
+          "item_id": "procedural-block",
+          "kind": "item"
+        },
+        "state": "selected",
+        "state_revision": 1
+      }
+    ],
+    "versions": [
+      {
+        "actor": {
+          "id": "m14-operator-fixture",
+          "kind": "tool"
+        },
+        "artifact_ids": [],
+        "created_at": "2026-11-14T18:36:52.310784+00:00",
+        "item_id": "procedural-block",
+        "kind": "asset",
+        "name": "Imported actual GeometryNodes-b source / operator fault fixture",
+        "preview_job_ids": [
+          "preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0"
+        ],
+        "preview_requests": [
+          {
+            "camera": null,
+            "colour_management": {
+              "exposure": 0,
+              "gamma": 1,
+              "look": "None",
+              "view_transform": "Standard"
+            },
+            "device": "CPU",
+            "dimensions": {
+              "height": 360,
+              "width": 640
+            },
+            "engine": "CYCLES",
+            "fps": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "frames": {
+              "end": 3,
+              "start": 1
+            },
+            "intent_id": "m14-failed-writer-same-job-retry",
+            "purpose": "draft_motion",
+            "renderer_revision": "proscenium-blender-1",
+            "review_output": {
+              "bit_depth": 8,
+              "encoding": "view_transformed_srgb",
+              "media_type": "image/png"
+            },
+            "samples": 8,
+            "scene_name": "ProceduralAsset",
+            "shot_id": null,
+            "source_closure_digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1"
+          }
+        ],
+        "project_id": "m14-native-fault-operator-project",
+        "publication_id": "m14-imported-publication",
+        "schema_version": "1.0",
+        "source": {
+          "dependencies": [],
+          "digest": "3760c8a81175dc9d75deed66928c2054331903fc7099c9ec7f338707be5c5ac1",
+          "entry_path": "assets/procedural/asset.blend",
+          "files": [
+            {
+              "destination": "assets/procedural/asset.blend",
+              "origin": {
+                "commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+                "kind": "git",
+                "path": "assets/procedural/asset.blend",
+                "repository_id": "repository-061e26c5-2db1-4f44-9dcb-729d828db283",
+                "sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+              }
+            }
+          ],
+          "required_runtime": {
+            "application": "blender",
+            "features": [
+              "geometry-nodes"
+            ],
+            "version": "4.5.14 LTS"
+          }
+        },
+        "source_commit": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+        "version_id": "procedural-block-v1"
+      }
+    ]
+  },
+  "actual_rendered_frames": 3,
+  "normal_segment_encodes": 1,
+  "source_after": {
+    "head": "fd6282b0a22725298d5f155181a8b64cabc762e0",
+    "refs": "fd6282b0a22725298d5f155181a8b64cabc762e0 refs/heads/main\nfd6282b0a22725298d5f155181a8b64cabc762e0 refs/proscenium/checkpoints/05195f59585741e581be88cd3a56c3bd28c24e118484dad6386ffa54383d13dd",
+    "blend_sha256": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8"
+  },
+  "source_preserved": true,
+  "clone_blend_sha256_after": "fd0d1293080a1cd9f0bfaf3feace1488ec6c85e86705159a046daf07d35e0cd8",
+  "cleanup": {
+    "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53/native-process.json": {
+      "identity": {
+        "argv": [
+          "/bin/sh",
+          "/home/quintin/.local/bin/blender",
+          "--background",
+          "--factory-startup",
+          "--disable-autoexec",
+          "--threads",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+          "--",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53"
+        ],
+        "pid": 943,
+        "start_ticks": 47424240,
+        "state": "R"
+      },
+      "alive": false
+    },
+    "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53/process.json": {
+      "identity": {
+        "argv": [
+          "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/.venv/bin/python",
+          "-m",
+          "proscenium.previews.worker",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53"
+        ],
+        "pid": 934,
+        "start_ticks": 47424214,
+        "started_ns": 474242393291636,
+        "state": "R",
+        "task_sha256": "5be647b1014100a55e1e3feca75d692ed475120a896afa2fa42df9c40a1e1d5b"
+      },
+      "alive": false
+    },
+    "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f/native-process.json": {
+      "identity": {
+        "argv": [
+          "/bin/sh",
+          "/home/quintin/.local/bin/blender",
+          "--background",
+          "--factory-startup",
+          "--disable-autoexec",
+          "--threads",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+          "--",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+        ],
+        "pid": 6360,
+        "start_ticks": 47437043,
+        "state": "R"
+      },
+      "alive": false
+    },
+    "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f/process.json": {
+      "identity": {
+        "argv": [
+          "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/.venv/bin/python",
+          "-m",
+          "proscenium.previews.worker",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+        ],
+        "pid": 6355,
+        "start_ticks": 47437017,
+        "started_ns": 474370417700892,
+        "state": "R",
+        "task_sha256": "b1bfb4002a8e013fa3d2057251e15fbc3894d6a992fa6943b4f64255b3c61d87"
+      },
+      "alive": false
+    }
+  }
+}

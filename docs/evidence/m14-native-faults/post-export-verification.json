@@ -1,0 +1,55 @@
+{
+  "actual_native_identities": [
+    {
+      "attempt_id": "attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53",
+      "kind": "native-profile.json/process",
+      "identity": {
+        "argv": [
+          "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+          "--background",
+          "--factory-startup",
+          "--disable-autoexec",
+          "--threads",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+          "--",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-8654c287-61f3-4b5e-b9da-32cb5f537e53"
+        ],
+        "pid": 943,
+        "start_ticks": 47424240,
+        "state": "R"
+      },
+      "alive_at_export": false
+    },
+    {
+      "attempt_id": "attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f",
+      "kind": "native-profile.json/process",
+      "identity": {
+        "argv": [
+          "/home/quintin/.local/opt/blender-4.5.14-linux-x64/blender",
+          "--background",
+          "--factory-startup",
+          "--disable-autoexec",
+          "--threads",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/quintin/.cache/proscenium-development/fleet/m14-native-faults/apps/backend/src/proscenium/previews/blender_worker.py",
+          "--",
+          "/home/quintin/.cache/proscenium-development/milestones/m14-native-faults-a/project/.proscenium/jobs/previews/preview-2d32402249ac9c855ac3dd8a72c1c9de886987d378223cf35b260a062ca3fae0/attempt-87a964ef-9b82-41ca-ad10-a875511c6a3f"
+        ],
+        "pid": 6360,
+        "start_ticks": 47437043,
+        "state": "R"
+      },
+      "alive_at_export": false
+    }
+  ],
+  "resource_claims_after": [],
+  "generation_reservations_after": [],
+  "native_identity_note": "Initial native-process.json may capture the /bin/sh launcher before exec. The production native-profile records the actual Blender executable with the identical PID/start. Both identities are retained; actual Blender profiles are dead at export."
+}
