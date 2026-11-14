@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01 and M02 are accepted with real application/native evidence. M03–M14 components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M03 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -29,7 +29,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | --- | --- | --- | --- |
 | [M01](#m01-first-blender-authoring-loop) | Direct a scene and give feedback on its first published render | F00 foundation gate, existing toolchain and user Copilot access | Accepted, `milestone/m01` |
 | [M02](#m02-projects-output-catalogue-and-history) | Open projects, browse assets/scenes and inspect their history | M01 | Accepted, `milestone/m02` |
-| [M03](#m03-project-discussion-steering-and-native-delegation) | Queue, steer, stop and observe native specialists and pending decisions | M01, M02 | Planned |
+| [M03](#m03-project-discussion-steering-and-native-delegation) | Queue, steer, stop and observe native specialists and pending decisions | M01, M02 | Accepted, `milestone/m03` |
 | [M04](#m04-spatial-inspection-keyframes-and-markup) | Toggle inspection/keyframes, annotate and render a chosen viewing angle | M02, M03 | Planned |
 | [M05](#m05-research-find-import-and-reuse-assets) | Research and reuse local/online assets | M02, M03, M04 | Planned |
 | [M06](#m06-brief-to-reviewable-storyboard) | Develop a complete narrative and shotboard | M02, M03, M05 | Planned |
@@ -155,6 +155,10 @@ closed-gate owner cancellation. Acceptance reference: `milestone/m02`.
 **Reuse:** Canonical-file/Git LFS practices in both extracted projects and explicit project discovery in `smal/tools/pipeline/project.py`.
 
 ## M03: Project discussion, steering and native delegation
+
+**Accepted:** 14 November 2026. [Cumulative evidence](implementation/m03.md)
+includes live-child Stop, immutable queued context, owner decisions and actual
+same-work UI continuation. Exact unknown-outcome limits remain with M12.
 
 **User journey:** “I keep directing the project while Copilot works, queue later requests, steer the active task, or stop it and continue deliberately.”
 
