@@ -6,8 +6,9 @@ description: Prepare an image-conditioned mesh workflow and use the accepted bud
 # Image to 3D
 
 - Work only in the active project and the current human generation task.
-- Check the configured provider capability. W09 preparation does not enable backend mesh
-  dispatch. If `image_to_3d` is unavailable, report the exact blocker. Do not call ComfyUI
+- Check the configured provider capability. The host-owned Hunyuan plugin supports
+  `image_to_3d` only with its exact trusted graph and model. If unavailable, report the exact
+  blocker. Do not call ComfyUI
   `/prompt` through shell, Python or a diagnostic CLI to bypass the budgeted adapter.
 - Register the actual conditioning image, trusted API workflow and required prompt
   provenance as project artefacts. Use existing `GenerationSubmit` with capability

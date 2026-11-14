@@ -56,7 +56,9 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
                 outputs = schemas.get(source, {}).get("output", [])
                 if type(slot) is not int or not 0 <= slot < len(outputs):
                     raise DomainError("invalid_request", message="Invalid graph link")
-                if isinstance(spec[0], str) and spec[0] not in {outputs[slot], "*"}:
+                if isinstance(spec[0], str) and not (
+                    set(spec[0].split(",")) & {outputs[slot], "*"}
+                ):
                     raise DomainError("invalid_request", message="Graph link type mismatch")
             elif isinstance(spec[0], list) and value not in spec[0]:
                 # LoadImage choices are populated only after the admitted upload.
@@ -231,14 +233,22 @@ class ComfyClient:
             time.sleep(poll)
         raise TimeoutError("Known provider prompt remains pending")
 
-    def download(self, item: dict[str, Any]) -> bytes:
-        response = self.client.get(
+    def download(self, item: dict[str, Any], *, maximum_bytes: int = 256 * 1024**2) -> bytes:
+        with self.client.stream(
+            "GET",
             self.base + "/view",
             params={
                 "filename": item["filename"],
                 "subfolder": item.get("subfolder", ""),
                 "type": item.get("type", "output"),
             },
-        )
-        response.raise_for_status()
-        return response.content
+        ) as response:
+            response.raise_for_status()
+            if int(response.headers.get("content-length", 0)) > maximum_bytes:
+                raise DomainError("unsupported_media_type", 413, "Provider output is too large")
+            data = bytearray()
+            for block in response.iter_bytes(chunk_size=1024**2):
+                if len(data) + len(block) > maximum_bytes:
+                    raise DomainError("unsupported_media_type", 413, "Provider output is too large")
+                data.extend(block)
+            return bytes(data)

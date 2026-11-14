@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-14",
+  "base": "b9079722800613513fa31bf17649f643e0e70411",
+  "scope": "Explicitly delegated W07 capability seam and W09 maintained helpers",
+  "tests": {
+    "command": ".venv/bin/python -m pytest -q tests/integration/providers/ tests/integration/image_to_3d/",
+    "passed": 109,
+    "warnings": 1,
+    "warning": "Existing Starlette/httpx deprecation warning",
+    "transport": "Synthetic HTTP only, real SQLite/admission/budget/resource/W02 bridge in mesh plugin tests"
+  },
+  "mypy": {"status": "passed", "source_files": 18},
+  "ruff_lint": "passed",
+  "ruff_format": "applied and checked on owned changed Python files",
+  "documentation_validator": "passed",
+  "gpu_inference_run_at_this_checkpoint": false,
+  "blender_started_at_this_checkpoint": false,
+  "e04_passed": false,
+  "m10_passed": false
+}

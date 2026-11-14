@@ -1,31 +1,11 @@
 """Pure graph binding/preflight and exact SaveGLB history inspection."""
 
-import copy
 import math
-from pathlib import PurePosixPath
+
+from proscenium.providers.hunyuan import bind as bind
+from proscenium.providers.hunyuan import output_files as output_files
 
 from .candidate import FILENAME, graph
-
-
-def bind(template: dict, reference_artifact_id: str, uploaded_filename: str, seed: str) -> dict:
-    """For a future admitted provider plugin, not an alternative inference route."""
-    if template != graph(reference_artifact_id):
-        raise ValueError("only the pinned trusted Hunyuan image-to-mesh graph is supported")
-    if not seed.isascii() or not seed.isdecimal() or len(seed) > 16 or int(seed) > 2**53 - 1:
-        raise ValueError("seed must be an exact JSON-safe decimal integer")
-    path = PurePosixPath(uploaded_filename)
-    if (
-        not uploaded_filename
-        or path.is_absolute()
-        or any(part in {"..", "."} for part in uploaded_filename.split("/"))
-        or "\\" in uploaded_filename
-        or "\x00" in uploaded_filename
-    ):
-        raise ValueError("unsafe uploaded image filename")
-    bound = copy.deepcopy(template)
-    bound["56"]["inputs"]["image"] = uploaded_filename
-    bound["3"]["inputs"]["seed"] = int(seed)
-    return bound
 
 
 def preflight(bound: dict, catalog: dict) -> None:
@@ -76,28 +56,3 @@ def preflight(bound: dict, catalog: dict) -> None:
                 raise ValueError("invalid primitive input")
     if bound["54"]["inputs"]["ckpt_name"] != FILENAME:
         raise ValueError("unexpected checkpoint")
-
-
-def output_files(history_entry: dict) -> list[dict]:
-    """Inspect an already reconciled exact-prompt history entry, without HTTP."""
-    status = history_entry.get("status", {})
-    if status.get("status_str") != "success" or status.get("completed") is not True:
-        raise ValueError("provider has not reported successful terminal completion")
-    entries = history_entry.get("outputs", {}).get("82", {}).get("3d", [])
-    if len(entries) != 1:
-        raise ValueError("expected exactly one SaveGLB 3d output")
-    for entry in entries:
-        name, folder = entry.get("filename", ""), entry.get("subfolder", "")
-        if (
-            entry.get("type") != "output"
-            or not name.endswith(".glb")
-            or PurePosixPath(name).name != name
-            or "\\" in name
-            or "\x00" in name
-            or PurePosixPath(folder).is_absolute()
-            or "\\" in folder
-            or "\x00" in folder
-            or any(p in {"..", "."} for p in folder.split("/"))
-        ):
-            raise ValueError("unsafe or non-GLB provider output descriptor")
-    return copy.deepcopy(entries)

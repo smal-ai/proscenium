@@ -21,7 +21,8 @@ from proscenium.db import Transaction
 from proscenium.db.paths import project_path
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
-from proscenium.providers.comfy import ComfyClient, bind_graph, endpoint, preflight
+from proscenium.providers.comfy import ComfyClient, endpoint
+from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
 from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.providers.vlm import VLMClient, findings
 from proscenium.services import Services
@@ -186,8 +187,6 @@ class ProviderService:
         self.services.jobs.check_caller(caller, "submitGenerationJob", project_id)
         if caller.channel != "tool":
             raise DomainError("scope_denied", 403)
-        if request["capability"] != "image":
-            raise DomainError("capability_unavailable", 501, "Mesh execution requires E04 adapter")
         store = self.services.registry.project_store(project_id)
         # Replay before reading changed defaults or contacting a service. Fingerprint includes work.
         with store.transaction() as tx:
@@ -196,8 +195,9 @@ class ProviderService:
                 if existing != {"request": request, "work_id": caller.work_id}:
                     raise DomainError("idempotency_conflict", 409)
                 return tx.require("jobs", request["job_id"]), True
+        capability = plugin(request["capability"])
         resolved = resolve_target(self.services, caller, request)
-        provider = self.provider(request["provider_id"], "image")
+        provider = self.provider(request["provider_id"], capability.capability)
         workflow, data = self.artifact_bytes(project_id, request["workflow_artifact_id"])
         prompt_artifact, prompt_bytes = self.artifact_bytes(
             project_id, request["prompt_artifact_id"]
@@ -210,17 +210,28 @@ class ProviderService:
         if not isinstance(graph, dict):
             raise DomainError("invalid_request")
         references: dict[str, JSON] = {}
+        if len(set(request["input_artifact_ids"])) != len(request["input_artifact_ids"]):
+            raise DomainError("invalid_request", message="Duplicate conditioning image")
         for artifact_id in request["input_artifact_ids"]:
             artifact, clean = self.image_bytes(project_id, artifact_id)
             references[artifact_id] = {"sha256": artifact["sha256"], "derived_sha256": sha(clean)}
         try:
-            bound = bind_graph(
-                graph, prompt, request["seed"], {k: "artifact:" + k for k in references}
+            bound = capability.bind_graph(
+                graph,
+                prompt,
+                request["seed"],
+                {k: "artifact:" + k for k in references},
+                request["model_ids"],
             )
-        except (KeyError, TypeError, AttributeError) as exc:
+        except (KeyError, TypeError, AttributeError, ValueError) as exc:
             raise DomainError("invalid_request", message="Malformed API graph") from exc
         inputs = {
             "request": request,
+            "plugin": {
+                "capability": capability.capability,
+                "revision": capability.revision,
+                "expected_model_hashes": capability.expected_model_hashes,
+            },
             "provider": provider,
             "graph": bound,
             "prompt": prompt,
@@ -246,7 +257,7 @@ class ProviderService:
                 job = self.services.jobs.create(
                     tx,
                     job_id=request["job_id"],
-                    kind="image_generation",
+                    kind=capability.job_kind,
                     target=resolved["target"],
                     input_digest=sha(canonical(inputs)),
                     operation_id=request["job_id"],
@@ -513,14 +524,14 @@ class ProviderService:
         data: bytes,
         index: str,
         *,
-        image: bool = True,
+        format: ArtifactFormat = IMAGE,
         derived_from: list[JSON] | None = None,
     ) -> str:
         if self.registrar is None:
             raise DomainError("capability_unavailable", 501, "Artifact registrar is not bound")
         digest = sha(data)
         root = Path(self.services.registry.get(job["project_id"])["path"])
-        relative = f".proscenium/jobs/{job['job_id']}/{digest}.{'png' if image else 'json'}"
+        relative = f".proscenium/jobs/{job['job_id']}/{digest}.{format.suffix}"
         path = project_path(root, relative, managed=True, must_exist=False)
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         try:
@@ -540,10 +551,10 @@ class ProviderService:
             project_id=job["project_id"],
             artifact_id=f"{job['job_id']}-artifact-{index}",
             staging_path=relative,
-            kind="image" if image else "document",
-            purpose="concept" if image else "metadata",
+            kind=format.kind,
+            purpose=format.purpose,
             sha256=digest,
-            media_type="image/png" if image else "application/json",
+            media_type=format.media_type,
         )
         if derived_from:
             request["derived_from"] = derived_from
@@ -583,18 +594,23 @@ class ProviderService:
             return job
         # Provider execution is proved terminal. Download/storage recovery needs no GPU claim.
         self._release(job)
+        capability = self._plugin(inputs)
         artifacts: list[str] = []
-        for output in history.get("outputs", {}).values():
-            for item in output.get("images", []):
-                data = client.download(item)
-                with Image.open(io.BytesIO(data)) as image:
-                    if (
-                        image.format != "PNG"
-                        or image.width * image.height > self.services.settings.upload_max_pixels
-                    ):
-                        raise DomainError("unsupported_media_type", 415)
-                    image.verify()
-                artifacts.append(self._register(job, data, str(len(artifacts))))
+        inspections = []
+        for item in capability.output_descriptors(history):
+            data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
+            inspection = capability.inspect_output(data, self.services.settings.upload_max_pixels)
+            artifacts.append(
+                self._register(
+                    job,
+                    data,
+                    str(len(artifacts)),
+                    format=capability.output_format,
+                )
+            )
+            inspections.append(
+                {"artifact_id": artifacts[-1], "sha256": sha(data), "inspection": inspection}
+            )
         if not artifacts:
             raise DomainError("media_unavailable", 422)
         # Allowlist history evidence. Raw node logs/errors can contain sensitive server data.
@@ -607,12 +623,28 @@ class ProviderService:
             "client_id": execution["client_id"],
             "derived_images": execution.get("derived_images", []),
             "output_artifact_ids": artifacts,
+            "output_inspections": inspections,
         }
-        artifacts.append(self._register(job, canonical(provenance), "provenance", image=False))
+        artifacts.append(self._register(job, canonical(provenance), "provenance", format=METADATA))
         job = self.update(job, "succeeded", availability="complete", artifact_ids=artifacts)
         return job
 
+    @staticmethod
+    def _plugin(inputs: JSON):
+        frozen = inputs.get("plugin")
+        if frozen is None:
+            # Compatibility for accepted pre-plugin IMAGE admissions only. Never infer a mesh revision.
+            if inputs["request"]["capability"] != "image":
+                raise DomainError("capability_unavailable", 501, "Missing frozen mesh plugin")
+            return plugin("image", "comfy-image-1")
+        if frozen["capability"] != inputs["request"]["capability"]:
+            raise DomainError("source_conflict", 409)
+        return plugin(frozen["capability"], frozen["revision"])
+
     def _generation(self, job: JSON, inputs: JSON, execution: JSON) -> JSON:
+        capability = self._plugin(inputs)
+        if capability.job_kind != job["kind"]:
+            raise DomainError("source_conflict", 409)
         client = ComfyClient(inputs["provider"]["endpoint"], self.client)
         if execution.get("phase") == "submitting":
             return self._finish_generation(job, inputs, execution, client)
@@ -622,7 +654,7 @@ class ProviderService:
         if self.registrar is None:
             raise DomainError("capability_unavailable", 501, "Artifact registrar is not bound")
         catalog = client.capabilities()
-        preflight(inputs["graph"], catalog, inputs["request"]["model_ids"])
+        capability.preflight(inputs["graph"], catalog, inputs["request"]["model_ids"])
         if client.busy(inputs["minimum_free_vram_bytes"]) or not self.services.resources.acquire(
             "heavy-gpu", job["project_id"], job["job_id"], job["attempt_id"]
         ):
@@ -649,8 +681,14 @@ class ProviderService:
             )
             derivatives.append(derived_id)
             references[identity] = client.upload(data, sha(data))
-        graph = bind_graph(inputs["graph"], inputs["prompt"], inputs["request"]["seed"], references)
-        preflight(graph, catalog, inputs["request"]["model_ids"])
+        graph = capability.bind_graph(
+            inputs["graph"],
+            inputs["prompt"],
+            inputs["request"]["seed"],
+            references,
+            inputs["request"]["model_ids"],
+        )
+        capability.preflight(graph, catalog, inputs["request"]["model_ids"])
         execution = {
             "phase": "submitting",
             "client_id": str(uuid4()),
@@ -769,7 +807,7 @@ class ProviderService:
                     check_storage(
                         store.path.parent, self.services.settings.free_space_reserve_bytes
                     )
-                    if job["kind"] == "image_generation":
+                    if job["kind"] in {"image_generation", "mesh_generation"}:
                         result = self._generation(job, inputs, execution)
                     elif job["kind"] == "vlm_review":
                         if execution.get("phase") == "review_complete":
@@ -801,7 +839,7 @@ class ProviderService:
                         (ValueError, KeyError, DomainError, TypeError, IndexError, AttributeError),
                     ):
                         uncertain = False
-                    if job["kind"] == "image_generation" and not uncertain:
+                    if job["kind"] in {"image_generation", "mesh_generation"} and not uncertain:
                         self._settle(job, executed=False)
                         if execution.get("phase") == "preparing":
                             self._release(job)
