@@ -6,7 +6,6 @@ Native bytes here are explicit synthetic fixtures, never evidence of SDK resume.
 import asyncio
 import io
 import json
-import os
 import sqlite3
 import subprocess
 from contextlib import closing
@@ -29,7 +28,6 @@ from proscenium.sources.common import git
 from tools.operations.recovery import backup, restore, verify
 from tools.operations.safety import (
     RecoveryError,
-    assert_stopped,
     digest,
     locks,
     native_may_use_roots,
@@ -480,33 +478,6 @@ def test_native_scope_uses_only_exact_official_home_and_refuses_ambiguity(tmp_pa
     for value in (b"", b"COPILOT_HOME=relative\0", b"COPILOT_HOME=/missing\0"):
         environment.write_bytes(value)
         assert native_may_use_roots(process, [first])
-
-
-def test_only_identified_container_initialiser_is_exempt_from_private_proc_reads(
-    tmp_path, monkeypatch
-):
-    process = tmp_path / "123"
-    process.mkdir()
-    (process / "cmdline").write_bytes(b"runc\0init\0")
-    (process / "comm").write_text("runc:[2:INIT]\n")
-    (process / "stat").write_text("123 (runc init) R 0 0\n")
-    original_iterdir = Path.iterdir
-    original_readlink = os.readlink
-
-    def directories(path):
-        return iter([process]) if path == Path("/proc") else original_iterdir(path)
-
-    def denied(path, *args, **kwargs):
-        if Path(path) == process / "cwd":
-            raise PermissionError("Synthetic privileged process")
-        return original_readlink(path, *args, **kwargs)
-
-    monkeypatch.setattr(Path, "iterdir", directories)
-    monkeypatch.setattr("os.readlink", denied)
-    assert_stopped([tmp_path / "project"])
-    (process / "comm").write_text("unknown-worker\n")
-    with pytest.raises(RecoveryError, match="process_inspection_denied"):
-        assert_stopped([tmp_path / "project"])
 
 
 def test_cli_round_trip_and_refusal_exit_codes(saved):

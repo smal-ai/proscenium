@@ -142,14 +142,18 @@ Preconditions are intentionally strict:
 2. No native Copilot process may remain ambiguously attributable. The tool acquires
    and holds the **existing F00 registry and project flock locks**, checks recorded
    settlement/resource claims, and inspects same-user `/proc` argv/cwd/open files.
-   Scoped or ambiguous native processes cause refusal, never signals. The pinned
-   SDK passes its exact base directory as `COPILOT_HOME`. An explicit, canonical,
-   unrelated native home does not block this project. Missing scope still blocks.
-   Known systemd/SSH-agent daemons and observed privileged `runc` namespace
-   initialisers are not Proscenium's host-native workers and are not inspected privately.
+   Known native/preview/Unity PID-and-start journals are inspected under those
+   exact roots. An active or uninspectable associated worker, corrupt journal, or
+   inspectable process positively using a root blocks backup. No daemon-name
+   exceptions are used. A protected SSH/auth/OS process with no association is not
+   evidence about this project and does not veto its backup. The pinned SDK's
+   `COPILOT_HOME` check remains strict for recognisable native Copilot processes:
+   missing/ambiguous or overlapping home still blocks, explicit unrelated home does not.
 3. Do not run external source writers, Git maintenance or manual native-history
    edits concurrently. These advisory application locks are not an OS sandbox for
-   arbitrary programs. The before/after process checks do not replace this condition.
+   arbitrary programs. The OS scan cannot prove the absence of arbitrary user
+   processes with unreadable metadata. The before/after checks do not replace the
+   operator's explicit no-external-writers condition, including manual containers.
 4. Choose a **new absolute directory on persistent disk** outside live project and
    machine stores. Ensure enough space for source history, LFS, retained media and
    native history. No compression/encryption or cloud upload is implicit.
