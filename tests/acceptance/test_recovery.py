@@ -26,7 +26,7 @@ from proscenium.services import Services
 from proscenium.sources.common import git
 
 from tools.operations.recovery import backup, restore, verify
-from tools.operations.safety import RecoveryError, digest
+from tools.operations.safety import RecoveryError, digest, locks
 
 OWNER = Caller("owner", "owner-test")
 
@@ -419,6 +419,26 @@ def test_future_database_refused_without_migration(saved):
     with pytest.raises(RecoveryError, match="unsupported_or_corrupt_database"):
         take(saved)
     assert digest(saved["store"].path) == before
+
+
+def test_git_object_directory_symlink_refused_before_git_reads_it(saved):
+    objects = saved["root"] / ".git/objects"
+    relocated = objects.with_name("relocated-objects")
+    objects.rename(relocated)
+    objects.symlink_to(relocated, target_is_directory=True)
+    with pytest.raises(RecoveryError, match="git_metadata_symlink_refused"):
+        take(saved)
+
+
+def test_lock_parent_directory_symlink_never_opens_external_lock(tmp_path):
+    real = tmp_path / "real"
+    real.mkdir()
+    alias = tmp_path / "alias"
+    alias.symlink_to(real, target_is_directory=True)
+    with pytest.raises(RecoveryError, match="symlink_lock_refused"):
+        with locks([alias / "owner.lock"]):
+            pytest.fail("Lock through symlink must not be acquired")
+    assert not (real / "owner.lock").exists()
 
 
 def test_cli_round_trip_and_refusal_exit_codes(saved):

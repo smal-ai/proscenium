@@ -95,7 +95,7 @@ def locks(paths: list[Path]):
     opened = []
     try:
         for path in paths:
-            if path.is_symlink():
+            if path.is_symlink() or path.parent.resolve(strict=True) != path.parent.absolute():
                 raise RecoveryError("symlink_lock_refused")
             fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
             opened.append(fd)

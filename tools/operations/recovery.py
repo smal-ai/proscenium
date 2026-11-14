@@ -143,6 +143,10 @@ def required_bytes(root: Path, store: Store) -> dict[str, str]:
 def git_snapshot(root: Path, destination: Path, store: Store) -> dict:
     if not (root / ".git").is_dir() or (root / ".git").is_symlink():
         raise RecoveryError("standalone_git_repository_required")
+    # Inspect before invoking Git, which would otherwise follow an object-store
+    # or configuration symlink outside this project's source authority.
+    if any(path.is_symlink() for path in (root / ".git").rglob("*")):
+        raise RecoveryError("git_metadata_symlink_refused")
     for excluded in ("shallow", "objects/info/alternates", "commondir", "info/grafts"):
         if (root / ".git" / excluded).exists():
             raise RecoveryError("partial_or_external_repository_refused")
