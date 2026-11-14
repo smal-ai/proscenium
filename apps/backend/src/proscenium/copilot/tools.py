@@ -199,7 +199,7 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
             renderer_revision="proscenium-blender-1",
             engine="CYCLES",
             device="CPU",
-            dimensions="positive even width and height",
+            dimensions="positive exact PNG dimensions for keyframes; even width and height for H.264 motion",
             samples="explicit positive sample count",
         )
     return ToolResult(

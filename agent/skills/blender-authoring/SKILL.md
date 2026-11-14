@@ -55,7 +55,10 @@ description: Author and inspect Blender content inside the active Proscenium pro
    are a known failure, not permission to guess another file. These reads neither
    launch a job nor change its state. Never inspect private SQLite/runtime stores.
    The accepted preview recipe is `renderer_revision: proscenium-blender-1`,
-   `engine: CYCLES`, `device: CPU`, explicit samples and even image dimensions.
+   `engine: CYCLES`, `device: CPU` and explicit samples. Keyframe PNGs preserve
+   exact positive dimensions, including odd sizes. Keep a captured inspection
+   camera's exact aspect and target dimensions. H.264 motion requires even width
+   and height. Do not silently pad, crop or round a requested still to fit video.
    Respect configured host bounds. `camera: null` uses the authored camera; do not
    invent a camera override. Preview references must identify the exact published
    item/version and source digest, not live working files. Do not silently substitute
