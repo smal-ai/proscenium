@@ -10,7 +10,14 @@ description: Author and inspect Blender content inside the active Proscenium pro
    Preserve every annotation's own frame target, camera, range and object instance.
 2. Use the explicitly configured `mcp-for-blender==2.0.0` server connected to its
    external live add-on. Do not install or replace the add-on. Tool discovery is
-   authoritative. Report `capability_unavailable` if the server/tool is absent.
+   authoritative. If the socket bridge is absent, use the accepted launcher from
+   the installed Proscenium repository: `python3 -m tools.blender doctor --project
+   <actual-active-project>` then `python3 -m tools.blender start --project
+   <actual-active-project>` (add `--virtual-display` only when needed). Do not invent
+   a home-directory project/default. An occupied, dirty, outside-project or uncertain
+   instance is preserved, never force-closed or replaced. A readiness timeout needs
+   inspection of the original launch receipt before any retry. A missing configured
+   MCP server/add-on remains `capability_unavailable`, not permission to install one.
 3. Before mutation inspect `get_addon_status`, `get_scene_info`,
    `bpy.data.filepath` and `bpy.data.is_dirty`. Preserve unsaved work. An unsaved
    scene or a scene outside the active project requires an owner decision, not a
@@ -25,9 +32,26 @@ description: Author and inspect Blender content inside the active Proscenium pro
 6. Call `checkpoint_sources` with the explicitly owned file set before
    `publish_outputs`. Preserve unrelated changes and staging. Never `git add .`.
    Missing accepted services are a limitation, not permission to invent a receipt.
+   Keep the active `project_id` and host work/invocation authority. Assign stable
+   item/version IDs, pin the returned commit and exact source-closure digest, and
+   use head compare-and-swap. Distinct operation/publication/intent/job IDs are not
+   interchangeable. A matching retry keeps its original identity and input.
+   `CheckpointRequest.expected_head` is the observed repository HEAD, not the item
+   version ID. Publish the receipt's `source_commit` and use
+   `expected_current_version_id` for the item head. Before proxy export, authored
+   meshes carry stable `proscenium_object_id` and `proscenium_instance_id` custom
+   properties. Instance IDs are unique, even when instances share an object ID.
+   Do not substitute object names or transient glTF indices for those identities.
 7. Call `request_preview` against the pinned published source. Pass the exact host
    camera for “Render this view”. A preview receipt admits a job, not a finished
    render. Observe its real state and registered outputs.
+   The accepted preview recipe is `renderer_revision: proscenium-blender-1`,
+   `engine: CYCLES`, `device: CPU`, explicit samples and even image dimensions.
+   Respect configured host bounds. `camera: null` uses the authored camera; do not
+   invent a camera override. Preview references must identify the exact published
+   item/version and source digest, not live working files. Do not silently substitute
+   a GPU/engine/profile or call an accepted/planned job a completed render. Inspect
+   actionable tool errors and the original receipt instead of looping on failure.
 8. Use the budgeted generation adapter for inference. Do not install/start/stop
    ComfyUI, LM Studio, Unity or other independent services as a workaround.
 9. A VLM review ticket is not a critique. Do not retrieve unapproved findings into

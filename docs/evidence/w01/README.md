@@ -1,5 +1,11 @@
 # W01 production runtime evidence
 
+**Follow-up:** [Actual native child get_job consumption passed](child-consumption.md)
+on the first newly allocated root/child, based on `d068ed9`. It uses a real stored
+planned job and production service call, not context echoing. The earlier failed
+cases below remain historical evidence. Original `checks.json` and source-hash
+manifest describe the original W01 acceptance; the follow-up pins its own bytes.
+
 **14 November 2026, SAST. Partial live proof, not full product acceptance.**
 
 Foundation base: `2bc3d5c2c0afe38bf43507d499e8e960855ee3ee`. Tests ran against the
@@ -86,7 +92,7 @@ definitions. Counts are 3/20/11/4/1/5/5/2/2 for checkpoint/publication/preview/
 artefact/generation/review/admission/retry/state respectively, rather than nine
 copies of the full 119-definition catalogue.
 
-Outstanding acceptance: model-facing child context/tool execution, live-child
-Stop/restart/input, genuine transport-loss recovery, interrupted-tool continuation,
+Outstanding acceptance: full child authoring and live-child Stop/restart/input,
+genuine transport-loss recovery, interrupted-tool continuation,
 large-output/Autopilot stress, configured Blender MCP, and parent-composed
 source/generation/media/browser journeys. The parent owns those acceptance decisions.

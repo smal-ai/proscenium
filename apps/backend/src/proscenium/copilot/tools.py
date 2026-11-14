@@ -52,6 +52,76 @@ TOOLS = {
     "update_job_state": ("jobs", "update", "JobStateUpdate", "JobRecord", "updateJobState"),
 }
 
+# Only fixed application-authored reasons cross this boundary. DomainError messages
+# can otherwise contain paths, provider bodies or an upstream exception repr.
+SAFE_REASONS = frozenset(
+    {
+        "This installed profile is Cycles CPU. No GPU fallback is permitted",
+        "Render exceeds configured profile bounds",
+        "Rendering profile is not enabled",
+        "Execution profile is not configured",
+        "A proxy is a single static sample",
+        "Extra outputs are not configured",
+        "Original rendering configuration is unavailable",
+        "Original launch must be reconciled",
+        "Binary authoring files require Git LFS tracking",
+        "Invalid Git LFS pointer",
+        "Local Git LFS object missing",
+        "Authored version references must be pinned in the source closure",
+        "Dependency cycle",
+        "Displayed image identity mismatch",
+        "No exact frame receipt",
+        "Spatial mapping mismatch",
+    }
+)
+ERROR_GUIDANCE = {
+    "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
+    "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
+    "hash_mismatch": "Registered bytes or the source digest do not match. Reconcile the original source/artefact identity; do not reuse this operation ID with changed input.",
+    "dependency_missing": "A pinned source dependency is missing. Check the published source closure and dependency versions.",
+    "idempotency_conflict": "This operation ID already binds different input or invocation authority. Inspect its original receipt; do not blindly repeat the effect.",
+    "revision_conflict": "The record revision changed. Read the current record before submitting a corrected command.",
+    "project_busy": "Execution is held or the project is unsettled. Reconcile the existing work and wait for explicit owner Resume.",
+    "attribution_unavailable": "The native invocation cannot be joined safely. Retain the original work and reconcile; do not invent caller IDs.",
+    "permission_denied": "This invocation is not authorised for a new effect. Respect the owner decision and active-project scope.",
+    "invalid_request": "The request does not match the operation's contract or supported input. Correct the existing input rather than blindly retrying.",
+    "not_found": "No record exists under that ID in the active project. Check the immutable selection and original receipt.",
+}
+
+
+def tool_failure(error: DomainError, name: str) -> ToolResult:
+    message = (
+        error.message
+        if error.message in SAFE_REASONS
+        else ERROR_GUIDANCE.get(
+            error.code,
+            "The operation could not complete. Inspect its original durable receipt before retrying; the external outcome may be uncertain.",
+        )
+    )
+    details: dict[str, Any] = {}
+    revision = error.details.get("current_revision")
+    if type(revision) is int and revision >= 0:
+        details["current_revision"] = revision
+    if name == "request_preview" and error.code in {"capability_unavailable", "invalid_request"}:
+        # Public supported recipe, not private executable paths/configuration/MCP data.
+        details.update(
+            renderer_revision="proscenium-blender-1",
+            engine="CYCLES",
+            device="CPU",
+            dimensions="positive even width and height",
+            samples="explicit positive sample count",
+        )
+    return ToolResult(
+        text_result_for_llm=canonical(
+            {
+                "error": error.code,
+                "message": message,
+                "details": details,
+            }
+        ).decode(),
+        result_type="failure",
+    )
+
 
 def tool_schema(name: str) -> dict[str, Any]:
     """The normative definition and its transitive local refs, not 119 defs per tool."""
@@ -152,9 +222,11 @@ class Tools:
             validate(result_schema, result)
             return ToolResult(text_result_for_llm=canonical(result).decode())
         except DomainError as exc:
-            return ToolResult(
-                text_result_for_llm=canonical({"error": exc.code}).decode(), result_type="failure"
-            )
+            return tool_failure(exc, name)
+        except Exception:
+            # Never give SDK callers an upstream exception repr, headers or credentials.
+            # Cancellation still propagates, and existing durable effects are not retried.
+            return tool_failure(DomainError("internal_error", 500), name)
 
     def definitions(self) -> list[Tool]:
         tools = []
