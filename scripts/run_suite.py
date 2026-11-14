@@ -1,0 +1,27 @@
+"""Missing acceptance suites fail explicitly, never become green placeholder evidence."""
+
+import argparse
+import json
+import subprocess
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser()
+parser.add_argument("suite", choices=["browser", "browser-installed", "native"])
+parser.add_argument("--selector", default="")
+args = parser.parse_args()
+if args.suite != "browser" and not args.selector:
+    raise SystemExit("Missing PROFILE/BROWSER. No native/browser acceptance was executed.")
+if args.suite == "browser-installed" and args.selector not in {"brave", "edge"}:
+    raise SystemExit("BROWSER must be brave or edge")
+manifest = json.loads((ROOT / "package.json").read_text())
+script = f"test:{args.suite}"
+if script not in manifest.get("scripts", {}):
+    raise SystemExit(
+        f"Missing {args.suite} acceptance suite ({script}). No acceptance evidence produced."
+    )
+if args.suite == "native":
+    raise SystemExit(
+        "Native runner requires parent-integrated bounded allocation/resource validation."
+    )
+raise SystemExit(subprocess.run(["npm", "run", script, "--", args.selector], cwd=ROOT).returncode)
