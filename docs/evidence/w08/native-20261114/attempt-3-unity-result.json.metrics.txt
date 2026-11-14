@@ -1,0 +1,2 @@
+projection=perspective input=Update:testMove/testLook/testReset movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0
+projection=orthographic input=Update:testMove/testLook/testReset movement_m=3 floor_error_m=0.0199999213 wall_penetration_m=0 reset_error_m=0

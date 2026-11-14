@@ -1,0 +1,19 @@
+{
+  "job_id": "fixture-unity-1",
+  "attempt_id": "attempt-76b44ae3-1e30-4b21-94f7-1373e1bf04cd",
+  "input_digest": "9db487e7ac724aaa0b114622d103d803f027daa01e36bb53e8e6b5f820a3c116",
+  "request_digest": "1eb55843a5f817b7728854b1fbb1a3187aacd938cf5066e355fa8aad914eda00",
+  "source_digest": "8e1fd1e1cea9085c0870ca9045c4364754f14ff86dd7cd97269295e1924ee14c",
+  "state": "complete",
+  "supervisor": {
+    "pid": 2889336,
+    "start_ticks": "44881767",
+    "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+  },
+  "native_exit_code": 1,
+  "process": {
+    "pid": 2889337,
+    "start_ticks": "44881770",
+    "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+  }
+}

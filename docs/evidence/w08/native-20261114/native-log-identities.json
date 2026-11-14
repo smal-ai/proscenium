@@ -1,0 +1,68 @@
+[
+  {
+    "job_id": "fixture-unity-1",
+    "attempt_id": "attempt-76b44ae3-1e30-4b21-94f7-1373e1bf04cd",
+    "state": "failed",
+    "logs": {
+      "editor.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/acc224d2630451b90e4e8428321f50bc2a4494f9c26950bf857cb6bb0d9e3198/editor.log",
+        "sha256": "2063fa4d13168ff6b9ece40f3f73786601bb82c1b647192df86e2f29b6fcbd9d",
+        "bytes": 184182
+      },
+      "console.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/acc224d2630451b90e4e8428321f50bc2a4494f9c26950bf857cb6bb0d9e3198/console.log",
+        "sha256": "a37c1c1e436570b4d07be72152958fddea58dbbc6f3aa9a85d50736cb3902e6f",
+        "bytes": 67
+      },
+      "supervisor.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/acc224d2630451b90e4e8428321f50bc2a4494f9c26950bf857cb6bb0d9e3198/supervisor.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    }
+  },
+  {
+    "job_id": "fixture-unity-2",
+    "attempt_id": "attempt-549bdb0d-ef8a-4026-a6d1-8b2056e472da",
+    "state": "succeeded",
+    "logs": {
+      "editor.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/36fa86c26b42ccb68af744abc27190b695342017a0b02e84c3dbf2e2dd0c3952/editor.log",
+        "sha256": "b8b4a3b6cba486c327a32b5e556124563c951828308c7562d39f3f7854237fa4",
+        "bytes": 676558
+      },
+      "console.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/36fa86c26b42ccb68af744abc27190b695342017a0b02e84c3dbf2e2dd0c3952/console.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "supervisor.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/36fa86c26b42ccb68af744abc27190b695342017a0b02e84c3dbf2e2dd0c3952/supervisor.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    }
+  },
+  {
+    "job_id": "fixture-unity-3",
+    "attempt_id": "attempt-bb470a29-778b-4684-ab43-e50084e995da",
+    "state": "failed",
+    "logs": {
+      "editor.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/0b5808e068ba1414015f42fc4704bc23aa4975dc7276ea3c0f282ae66f606007/editor.log",
+        "sha256": "212aa2f46bca0fa5e496ad6193e61966ad6291821d05467f7337cf5564f3bbf7",
+        "bytes": 168993
+      },
+      "console.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/0b5808e068ba1414015f42fc4704bc23aa4975dc7276ea3c0f282ae66f606007/console.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "supervisor.log": {
+        "path": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/0b5808e068ba1414015f42fc4704bc23aa4975dc7276ea3c0f282ae66f606007/supervisor.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    }
+  }
+]

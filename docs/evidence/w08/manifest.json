@@ -1,0 +1,74 @@
+{
+  "package": "W08",
+  "date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "specification": "3.2.0",
+  "contract": "1.0.0",
+  "accepted_base_commit": "76d845133c44c8759f50299160322b717e60d00a",
+  "implementation_commit": "a4abd0e826713d8f3e065007a715abb01b834a2b",
+  "reference_commit": "65f69c6360fe0bd48f8d4b6d2dc86a22918926b4",
+  "native_overall_status": "failed",
+  "production_milestone_accepted": false,
+  "cases": {
+    "F05": {
+      "status": "failed",
+      "physics_subchecks": "live_pass",
+      "camera_projection_cases": ["perspective", "orthographic"],
+      "input_path_passed": "WalkthroughPlayer.Update injected testMove/testLook/testReset -> real CharacterController.Move/PhysX and Camera rotation",
+      "input_path_failed": "Input System virtual KeyboardState W -> Update device polling; movement was zero",
+      "input_paths_not_reached": ["virtual A/S/D/R", "virtual MouseState delta"],
+      "physical_os_input": "not_run"
+    },
+    "C19": {
+      "repeat_import_status": "live_pass",
+      "unchanged_guid_count": 12,
+      "unrelated_scene_sentinel_preserved": true,
+      "marked_source_root_count": 1,
+      "separate_unsaved_editor_live_fixture": "not_run",
+      "active_editor_and_lock_guards": "synthetic_verified"
+    },
+    "C27_unity_admission_only": {
+      "status": "live_pass",
+      "implementation": "Real accepted F00 JobService and disposable SQLite, durable attempt intent before native launch",
+      "prelaunch_ordering_fault_test": "synthetic_verified",
+      "idle_owner_review": "outside W08"
+    },
+    "C22": {
+      "status": "not_run",
+      "limitation": "Parent must integrate accepted source/publication read models"
+    }
+  },
+  "native_fixture": {
+    "root": "/tmp/opencode/proscenium-unity-w08-20261114-a",
+    "authorised_historical_input": "/tmp/opencode/proscenium-f01-20261114-a/historical",
+    "source_closure_digest": "8e1fd1e1cea9085c0870ca9045c4364754f14ff86dd7cd97269295e1924ee14c",
+    "export_sha256": "152711c11790f35c1c62ceaa403ba5d1f6708d1a8b3148bfd45ed0121278cd04",
+    "source_service": "Explicit fixture adapter over copied native F01 bytes, not production W02 materialisation",
+    "scene_path": "unity/Fixture/Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Playable.unity",
+    "scene_guid": "fa9b84079137819b3a554057bb248e60",
+    "editor_version": "6000.3.27f1",
+    "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+    "blender_version": "4.5.14 LTS",
+    "blender_build": "62c1db4208e8",
+    "unity_invocations": 3,
+    "blender_export_invocations": 1,
+    "prelaunch_blocked_admissions": 1,
+    "owned_attempt_processes_remaining_after_completion": 0,
+    "maximum_unity_seconds_per_invocation": 600,
+    "maximum_blender_seconds": 180,
+    "blender_threads": 4,
+    "xvfb_used": false,
+    "gpu_rendering_used": false,
+    "model_or_cloud_calls_used": false,
+    "private_game_assets_used": false,
+    "linux_build": "not_run"
+  },
+  "post_native_changes_not_native_verified": [
+    "Headless Input System focus/background/device routing correction and direct key-state assertions",
+    "PlayMode runtime observation metadata",
+    "Python installer local-edit protection and bootstrap helper",
+    "Python cancellation/recovery/claim-release hardening and project-relative catalogue paths"
+  ],
+  "evidence_directory": "native-20261114",
+  "offline_checks": "offline-checks.json"
+}

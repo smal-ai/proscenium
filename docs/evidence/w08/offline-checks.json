@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-14",
+  "implementation_commit": "a4abd0e826713d8f3e065007a715abb01b834a2b",
+  "interpreter": "/home/quintin/play/proscenium/.venv/bin/python",
+  "python": "3.12.13 (main, Jul 18 2026, 17:02:19) [Clang 22.1.3 ]",
+  "versions": {"pytest": "8.4.2", "ruff": "0.17.5", "mypy": "1.20.2"},
+  "checks": [
+    {
+      "command": "PYTHONPATH=apps/backend/src:. python -m pytest tests/integration/unity -q",
+      "status": "passed",
+      "passed": 27,
+      "warnings": ["Existing Starlette TestClient/httpx deprecation warning"]
+    },
+    {
+      "command": "python -m ruff check tools/unity tests/integration/unity tests/native/unity",
+      "status": "passed"
+    },
+    {
+      "command": "python -m ruff format --check tools/unity tests/integration/unity tests/native/unity",
+      "status": "passed",
+      "formatted_files": 9
+    },
+    {
+      "command": "MYPYPATH=apps/backend/src:. PYTHONPATH=apps/backend/src:. python -m mypy --explicit-package-bases --follow-imports=silent tools/unity tests/integration/unity tests/native/unity",
+      "status": "passed",
+      "checked_files": 8
+    },
+    {
+      "command": "python -B docs/validate_spec.py",
+      "status": "passed",
+      "summary": "119 schema definitions, 753 references, 40 schema examples, 53 operations, 142 local links, 20 semantic oracles. Documentation validation is not native acceptance."
+    },
+    {"command": "git diff --cached --check", "status": "passed"}
+  ],
+  "limitations": "Offline source/process doubles prove adapter behaviour only. Actual native PlayMode suite remains failed and is recorded separately."
+}

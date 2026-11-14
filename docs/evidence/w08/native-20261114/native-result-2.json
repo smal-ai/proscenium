@@ -1,0 +1,62 @@
+{
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-549bdb0d-ef8a-4026-a6d1-8b2056e472da",
+    "attempt_number": 1,
+    "availability": "complete",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": "unity-supervisor:2915345:44921846",
+    "input_digest": "9db487e7ac724aaa0b114622d103d803f027daa01e36bb53e8e6b5f820a3c116",
+    "job_id": "fixture-unity-2",
+    "kind": "unity",
+    "owner_epoch": "epoch-3bc2222e-9a5c-4d35-a0f4-d447b646a2a9",
+    "owner_operation_id": null,
+    "project_id": "fixture-unity",
+    "provider_id": null,
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "succeeded",
+    "state_revision": 2,
+    "target": {
+      "shot_id": null,
+      "target_id": "fixture-playable",
+      "version": {
+        "item_id": "fixture-source",
+        "version_id": "fixture-source-v1"
+      }
+    },
+    "work_id": "fixture-work",
+    "native_exit_code": 0
+  },
+  "unity": {
+    "editor_version": "6000.3.27f1",
+    "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+    "scene_path": "Assets/Proscenium/Generated/713fc42da34ae8eb436b3c2d/Playable.unity",
+    "player_script": "Assets/Proscenium/Runtime/WalkthroughPlayer.cs",
+    "validation": {
+      "status": "not_run",
+      "notes": "Saved with finite metre-scale meshes, colliders and supported spawn. PlayMode not yet run."
+    }
+  },
+  "evidence": "/tmp/opencode/proscenium-unity-w08-20261114-a/.proscenium/jobs/unity/36fa86c26b42ccb68af744abc27190b695342017a0b02e84c3dbf2e2dd0c3952",
+  "worker": {
+    "job_id": "fixture-unity-2",
+    "attempt_id": "attempt-549bdb0d-ef8a-4026-a6d1-8b2056e472da",
+    "input_digest": "9db487e7ac724aaa0b114622d103d803f027daa01e36bb53e8e6b5f820a3c116",
+    "request_digest": "90bf9fa097ae8bad790c6ab0e1228c803228f3dd7ccccc8ee90738b8db07376c",
+    "source_digest": "8e1fd1e1cea9085c0870ca9045c4364754f14ff86dd7cd97269295e1924ee14c",
+    "state": "complete",
+    "supervisor": {
+      "pid": 2915345,
+      "start_ticks": "44921846",
+      "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+    },
+    "native_exit_code": 0,
+    "process": {
+      "pid": 2915347,
+      "start_ticks": "44921848",
+      "boot_id": "16b15b2d-6346-47d2-977f-3ce58c093e7b"
+    }
+  }
+}

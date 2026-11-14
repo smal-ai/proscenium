@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.3170328">
+  <test-suite type="TestSuite" id="1010" name="Fixture" fullname="Fixture" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.317033" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1003" name="Proscenium.Unity.PlayMode.dll" fullname="/tmp/opencode/proscenium-unity-w08-20261114-a/unity/Fixture/Library/ScriptAssemblies/Proscenium.Unity.PlayMode.dll" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.311510" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="2918306" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1004" name="Proscenium" fullname="Proscenium" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.310818" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1005" name="Unity" fullname="Proscenium.Unity" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.310434" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1006" name="Tests" fullname="Proscenium.Unity.Tests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.310246" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1001" name="PlayableTests" fullname="Proscenium.Unity.Tests.PlayableTests" classname="Proscenium.Unity.Tests.PlayableTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.309556" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1002" name="F05_RealControllerPhysicsAndInput_BothCameraProjections" fullname="Proscenium.Unity.Tests.PlayableTests.F05_RealControllerPhysicsAndInput_BothCameraProjections" methodname="F05_RealControllerPhysicsAndInput_BothCameraProjections" classname="Proscenium.Unity.Tests.PlayableTests" runstate="Runnable" seed="2004023694" result="Failed" start-time="2026-11-14 11:43:22Z" end-time="2026-11-14 11:43:23Z" duration="0.302445" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  W
+  Expected: greater than 0.25f
+  But was:  0.0f
+]]></message>
+                  <stack-trace><![CDATA[at Proscenium.Unity.Tests.PlayableTests+<F05_RealControllerPhysicsAndInput_BothCameraProjections>d__3.MoveNext () [0x00666] in /tmp/opencode/proscenium-unity-w08-20261114-a/unity/Fixture/Assets/Proscenium/Tests/PlayableTests.cs:92
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in ./Library/PackageCache/com.unity.test-framework@0bd5c5194236/UnityEngine.TestRunner/NUnitExtensions/Attributes/TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: /home/quintin/.config/unity3d/DefaultCompany/Fixture/TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

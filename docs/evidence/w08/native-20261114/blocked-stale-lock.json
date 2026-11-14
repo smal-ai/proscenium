@@ -1,0 +1,32 @@
+{
+  "job": {
+    "artifact_ids": [],
+    "attempt_id": "attempt-549bdb0d-ef8a-4026-a6d1-8b2056e472da",
+    "attempt_number": 1,
+    "availability": "pending",
+    "completed_frames": null,
+    "expected_frames": null,
+    "external_job_id": null,
+    "input_digest": "9db487e7ac724aaa0b114622d103d803f027daa01e36bb53e8e6b5f820a3c116",
+    "job_id": "fixture-unity-2",
+    "kind": "unity",
+    "owner_epoch": "epoch-3bc2222e-9a5c-4d35-a0f4-d447b646a2a9",
+    "owner_operation_id": null,
+    "project_id": "fixture-unity",
+    "provider_id": null,
+    "render_spec": null,
+    "schema_version": "1.0",
+    "state": "planned",
+    "state_revision": 0,
+    "target": {
+      "shot_id": null,
+      "target_id": "fixture-playable",
+      "version": {
+        "item_id": "fixture-source",
+        "version_id": "fixture-source-v1"
+      }
+    },
+    "work_id": "fixture-work"
+  },
+  "blocked": "Editor missing or this project is already open/locked"
+}

@@ -1,0 +1,102 @@
+{
+  "sha256": "152711c11790f35c1c62ceaa403ba5d1f6708d1a8b3148bfd45ed0121278cd04",
+  "blender_version": "4.5.14 LTS",
+  "closure_digest": "8e1fd1e1cea9085c0870ca9045c4364754f14ff86dd7cd97269295e1924ee14c",
+  "units": "metres",
+  "axes": "XZY",
+  "objects": [
+    {
+      "name": "Blue cube",
+      "object_id": "object-cube-source",
+      "instance_id": "instance-blue",
+      "vertex_count": 8,
+      "triangle_count": 12,
+      "bounds_min": [
+        0.5,
+        0.0,
+        -0.5
+      ],
+      "bounds_max": [
+        1.5,
+        1.0,
+        0.5
+      ],
+      "colour": {
+        "r": 0.800000011920929,
+        "g": 0.800000011920929,
+        "b": 0.800000011920929,
+        "a": 1.0
+      }
+    },
+    {
+      "name": "Floor",
+      "object_id": "object-floor",
+      "instance_id": "instance-floor",
+      "vertex_count": 8,
+      "triangle_count": 12,
+      "bounds_min": [
+        -3.0,
+        -0.20000000298023224,
+        -3.0
+      ],
+      "bounds_max": [
+        3.0,
+        0.0,
+        3.0
+      ],
+      "colour": {
+        "r": 0.18000000715255737,
+        "g": 0.20000000298023224,
+        "b": 0.23000000417232513,
+        "a": 1.0
+      }
+    },
+    {
+      "name": "Renamed cube",
+      "object_id": "object-cube-source",
+      "instance_id": "instance-renamed",
+      "vertex_count": 8,
+      "triangle_count": 12,
+      "bounds_min": [
+        -1.5,
+        0.0,
+        -0.5
+      ],
+      "bounds_max": [
+        -0.5,
+        1.0,
+        0.5
+      ],
+      "colour": {
+        "r": 0.800000011920929,
+        "g": 0.800000011920929,
+        "b": 0.800000011920929,
+        "a": 1.0
+      }
+    },
+    {
+      "name": "Wall",
+      "object_id": "object-wall",
+      "instance_id": "instance-wall",
+      "vertex_count": 8,
+      "triangle_count": 12,
+      "bounds_min": [
+        -3.0,
+        0.0,
+        2.4000000953674316
+      ],
+      "bounds_max": [
+        3.0,
+        2.5,
+        2.5999999046325684
+      ],
+      "colour": {
+        "r": 0.30000001192092896,
+        "g": 0.3199999928474426,
+        "b": 0.3499999940395355,
+        "a": 1.0
+      }
+    }
+  ],
+  "note": "Actual Blender evaluated mesh export. These exact bytes were consumed by the successful Unity API import."
+}
