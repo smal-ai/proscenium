@@ -26,7 +26,7 @@ export function captureCamera(camera: PerspectiveCamera | OrthographicCamera): C
   const common = {space: "blender_world_m" as const, camera_to_world: rowMajor(world), projection,
     aspect: camera instanceof PerspectiveCamera ? camera.aspect : (camera.right-camera.left)/(camera.top-camera.bottom),
     near_m: camera.near, far_m: camera.far, source_camera_id: null,
-    shift: [-projection[2] / 2, projection[6] / 2] as [number, number]};
+    shift: (camera instanceof PerspectiveCamera ? [-projection[2] / 2, projection[6] / 2] : [projection[3] / 2, -projection[7] / 2]) as [number, number]};
   return camera instanceof PerspectiveCamera
     ? {...common, kind: "perspective", vertical_fov_degrees: camera.getEffectiveFOV()}
     : {...common, kind: "orthographic", orthographic_height_m: (camera.top-camera.bottom)/camera.zoom};

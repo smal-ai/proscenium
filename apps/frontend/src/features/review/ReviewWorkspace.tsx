@@ -9,7 +9,9 @@ import { SequencePlayer } from "./SequencePlayer";
 import { ProxyView, type ProxyCapture } from "./ProxyView";
 import { readProxyCapture, writeProxyCapture, type PendingProxyCapture } from "./proxyCaptureStore";
 import { allPages } from "./records";
-import { annotationContext } from "./context";
+import { annotationContext, cleanTargetRole } from "./context";
+import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
+import { frameCamera } from "./frameCamera";
 import { useReviewSelection } from "./state";
 import "./review.css";
 
@@ -39,6 +41,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [target, setTarget] = useState<FrameTarget | null>(null);
   const [captureReady, setCaptureReady] = useState(false);
+  const [decodedImage, setDecodedImage] = useState<string | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
   const [targetCamera, setTargetCamera] = useState<Camera | null>(null);
   const [range, setRange] = useState<FrameRange | null>(null);
@@ -74,6 +77,8 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
   const availability=availabilityByJob[reviewJobId ?? ""] ?? null;
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
+  const readyToCapture = mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady;
+  const imageFailure = useCallback((message: string) => setError(message), []);
 
   useEffect(() => {
     let active = true;
@@ -92,11 +97,13 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   useEffect(() => {
     if (!external?.target || externalPrimary === emittedPrimary.current) return;
     initialised.current = true; setPlaying(false); setCaptureReady(false);
-    setTarget(structuredClone(external.target)); setTargetCamera(external.camera); setRange(external.range);
+    const annotation = external.annotations.find(a => a.target.artifact_id === external.target?.artifact_id);
+    setTarget(structuredClone(external.target));
+    setTargetCamera(annotation ? structuredClone(annotation.camera) : external.target.render_job_id ? frameCamera(external.target, jobs) : structuredClone(external.camera));
+    setRange(external.range);
     setRequestedFrame(external.target.sequence_frame ?? external.target.source_frame ?? 1);
     setMode(external.view_mode === "animation" ? "animation" : "keyframes");
     choice.select(scope, external.selected_objects);
-    const annotation = external.annotations.find(a => a.target.artifact_id === external.target?.artifact_id);
     if (annotation) {
       const restored: Draft = {key: annotation.annotation_id, projectId, annotation: structuredClone(annotation), state: annotation.saved_revision ? "saved" : "browser-local"};
       setDrafts(previous => {
@@ -173,7 +180,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
         setFrames(receipts); setSegments(clips); setArtifacts(media);
         if (!initialised.current && (receipts.length || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
           initialised.current = true;
-          if (receipts[0]) {setTarget(frameTarget(receipts[0], version!)); setRequestedFrame(receipts[0].source_frame);}
+          if (receipts[0]) {const first=frameTarget(receipts[0],version!);setTarget(first);setTargetCamera(frameCamera(first,jobs));setRequestedFrame(receipts[0].source_frame);}
           else {
             const image = media.find(a => a.kind === "image" && a.state === "ready" && a.dimensions)!;
             setTarget({origin: image.purpose === "concept" ? "concept" : "reference", artifact_id: image.artifact_id,
@@ -208,15 +215,16 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       try {next = sequenceTarget(next.source_frame!, next, frameMap.map, frameMap.id);} catch {setError("Sequence mapping unavailable for presented frame"); return;}
     }
     setTarget(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
+    setTargetCamera(frameCamera(next,jobs));
     setCaptureReady(true);
-  }, [draftId, frameMap, version?.kind]);
+  }, [draftId, frameMap, version?.kind,jobs]);
 
   const context: TurnSelection = draft ? {...annotationContext(draft.annotation), annotations: draft.state === "saved" ? [draft.annotation] : [],
-    attachments: draft.state === "saved" ? annotationContext(draft.annotation).attachments : [{artifact_id: draft.annotation.target.artifact_id, role: "render"}]} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
-    view_mode: mode, target: mode === "3d_inspection" || !captureReady ? null : target,
+    attachments: draft.state === "saved" ? annotationContext(draft.annotation).attachments : [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}]} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
+    view_mode: mode, target: mode === "3d_inspection" || !readyToCapture ? null : target,
     camera: mode === "3d_inspection" ? camera : targetCamera, selected_objects: selected,
     range: mode === "3d_inspection" && mapping ? {start: mapping.sample_frame, end: mapping.sample_frame} : range,
-    attachments: mode !== "3d_inspection" && target ? [{artifact_id: target.artifact_id, role: target.origin === "concept" ? "concept" : target.origin === "reference" ? "reference" : "render"}] : []};
+    attachments: mode !== "3d_inspection" && target ? [{artifact_id: target.artifact_id, role: cleanTargetRole(target)}] : []};
   const contextKey = JSON.stringify(context);
   const prepareState = useRef({context, draftKey: draft?.key});
   prepareState.current = {context, draftKey: draft?.key};
@@ -251,14 +259,14 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     if (!ordinal) return;
     setRequestedFrame(ordinal); setCaptureReady(false);
     const next = currentFrames.find(f => f.source_frame === ordinal);
-    if (mode === "keyframes" && version && next) setTarget(frameTarget(next, version));
+    if (mode === "keyframes" && version && next) {const frame=frameTarget(next,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));}
     else if (!next) setError(`Frame ${ordinal} is pending. Last identified image retained.`);
   }
 
   function chooseJob(identity:string) {
     setSelectedJobId(identity);setPlaying(false);setCaptureReady(false);setRange(null);setTargetCamera(null);
     const first=frames.find(f=>f.job_id===identity);
-    if(first && version){setTarget(frameTarget(first,version));setRequestedFrame(first.source_frame);}
+    if(first && version){const frame=frameTarget(first,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));setRequestedFrame(first.source_frame);}
     else setError(`No ready frames for ${identity}`);
   }
 
@@ -319,14 +327,14 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
 
   async function annotate() {
     setPlaying(false);
-    if (!target || !captureReady || mode === "3d_inspection") return;
+    if (!target || !readyToCapture || mode === "3d_inspection") return;
     // The target comes from a decoded image or rVFC-confirmed animation presentation.
     await startDraft(target);
   }
 
   async function startDraft(pinned: FrameTarget) {
     const annotation: AnnotationSnapshot = {annotation_id: crypto.randomUUID(), saved_revision: null,
-      target: structuredClone(pinned), range, camera: targetCamera, markups: [], text: "", spatial_hits: [], spatial_status: "unavailable"};
+      target: structuredClone(pinned), range, camera: pinned.render_job_id ? frameCamera(pinned,jobs) : pinned.origin === "sequence_render" ? null : structuredClone(targetCamera), markups: [], text: "", spatial_hits: [], spatial_status: "unavailable"};
     const next: Draft = {key: annotation.annotation_id, projectId, annotation, state: "browser-local"};
     try {await saveDraft(next); changeDraft(next); setDraftId(next.key);} catch (e) {setError(String(e));}
   }
@@ -336,6 +344,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     setRequestedFrame(annotation.target.sequence_frame ?? annotation.target.source_frame ?? 1);
     const local = drafts.find(d => d.key === annotation.annotation_id);
     const next: Draft = local ?? {key: annotation.annotation_id, projectId, annotation, state: "saved"};
+    setTargetCamera(structuredClone(next.annotation.camera));setRange(next.annotation.range);
     changeDraft(next); setDraftId(next.key);
     try {await saveDraft(next);} catch (e) {setError(String(e)); return;}
     if (onNavigate && annotation.target.version_id && annotation.target.item_id) {
@@ -343,7 +352,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
         const targetVersion = version?.version_id === annotation.target.version_id ? version :
           (await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: annotation.target.item_id!}, query: {cursor, limit: 100}}))).find(v => v.version_id === annotation.target.version_id);
         if (!targetVersion) throw new Error(`Version unavailable: ${annotation.target.version_id}`);
-        onNavigate(targetVersion, annotationContext(annotation));
+        onNavigate(targetVersion, annotationContext(next.annotation));
       } catch (e) {setError(String(e));}
     }
   }
@@ -351,20 +360,20 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   if (!version) return <section className="review-workspace"><p>Select a published version to review.</p></section>;
   return <section className="review-workspace" aria-label="Review workspace">
     <nav className="review-toolbar" aria-label="Review mode">{([['3d_inspection','3D Inspection'],['keyframes','Keyframes'],['animation','Animation']] as const).map(([id,label], index) => <button key={id} disabled={!!draft} aria-pressed={mode === id} onClick={() => changeMode(id)}>{index+1} {label}</button>)}
-      <button disabled={!target || !captureReady || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
+      <button disabled={!target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
       {mode === "3d_inspection" && <button disabled={!proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>}
     </nav>
     {draft ? <AnnotationEditor key={draft.key} api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onContextPreparer={registerEditorPreparer} onClose={() => setDraftId(null)}/>
-      : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
+      : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
         : mode === "animation" ? assembly && frameMap ? <SequencePlayer projectId={projectId} artifact={assembly} mapping={frameMap.map} onCapture={async (blob,frame,width,height) => {
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
         }}/> : <ProgressivePlayer key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
-          : target ? <div className="review-image"><img src={mediaUrl(projectId, target.artifact_id)} alt={`${target.origin}, frame ${target.sequence_frame ?? target.source_frame ?? "image"}`} onLoad={event => {if (event.currentTarget.naturalWidth === target.dimensions.width && event.currentTarget.naturalHeight === target.dimensions.height) setCaptureReady(true); else {setCaptureReady(false); setError("Decoded image dimensions do not match target");}}} onError={() => {setCaptureReady(false); setError(`media_unavailable: ${target.artifact_id}`);}}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
+          : target ? <div className="review-image"><DecodedReviewImage projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
     <div className="review-toolbar"><button onClick={() => step(-1)}>Previous frame</button><button onClick={() => step(1)}>Next frame</button>
       <label>Shot / render job<select aria-label="Shot / render job" disabled={!!draft} value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>
-      <label>Frame<input type="number" min="1" value={requestedFrame} disabled={!!draft} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) setTarget(frameTarget(frame, version)); else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
+      <label>Frame<input type="number" min="1" value={requestedFrame} disabled={!!draft} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
       <span>{target ? `${target.dimensions.width} × ${target.dimensions.height} · ${target.origin} · frame ${target.sequence_frame ?? target.source_frame ?? "image"}` : "No presented target"}</span>
       <span>{activeJob?.render_spec ? `${activeJob.render_spec.engine} · ${activeJob.render_spec.purpose} · ${activeJob.render_spec.samples} samples` : "No render profile reported"}</span>
     </div>

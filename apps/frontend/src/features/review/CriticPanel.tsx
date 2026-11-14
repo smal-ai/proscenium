@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReviewFinding, ReviewRequest, ReviewTicket } from "../../api/generated/contracts";
+import type { Attachment, ReviewFinding, ReviewRequest, ReviewTicket } from "../../api/generated/contracts";
+import { cleanTargetRole } from "./context";
 import type { CriticSurfaceProps } from "../../api/studio";
 import { mediaUrl } from "./media";
 import { allPages } from "./records";
@@ -59,13 +60,22 @@ export function CriticPanel({api, projectId, selection, refreshRevision, onQueue
     if (queueLatch.current) return;
     const selected = findings.filter(f => approved[f.finding_id]?.trim() && f.state !== "submitted" && !submitted.current.has(`${f.finding_id}:${f.revision}`));
     if (!selected.length) return;
-    const associated = new Set(selected.flatMap(f => [f.target.artifact_id, ...f.evidence.filter(e => e.kind === "visual").map(e => e.artifact_id)]));
+    const clean = new Map<string, Attachment>();
+    for (const finding of selected) {
+      const target = finding.target;
+      const explicit = selection.attachments.find(a => a.artifact_id === target.artifact_id && ["render","reference","concept"].includes(a.role));
+      clean.set(target.artifact_id, {...explicit, artifact_id: target.artifact_id, role: cleanTargetRole(target)});
+    }
+    const attachments = [...clean.values(), ...selection.attachments.filter(a => !clean.has(a.artifact_id) || a.role === "markup" || a.role === "mask")];
+    for (const finding of selected) for (const evidence of finding.evidence) {
+      if (evidence.kind === "visual" && !attachments.some(a => a.artifact_id === evidence.artifact_id)) attachments.push({artifact_id: evidence.artifact_id, role: "reference"});
+    }
     queueLatch.current = true; setBusy(true); setError("");
     const target = selected[0].target;
     try {await (steer && onSteer ? onSteer : onQueue)(selected.map(f => approved[f.finding_id]).join("\n\n"), {...selection,
       item_id: target.item_id, version_id: target.version_id, target: structuredClone(target), camera: null,
       view_mode: target.media_artifact_id ? "animation" : "keyframes", range: null, selected_objects: [], annotations: [],
-      attachments: [...associated].map(artifact_id => ({artifact_id, role: "render"})),
+      attachments,
       approved_findings: selected.map(f => ({finding_id: f.finding_id, finding_revision: f.revision, approved_text: approved[f.finding_id], target: structuredClone(f.target)})),
     });
       for (const finding of selected) submitted.current.add(`${finding.finding_id}:${finding.revision}`);
