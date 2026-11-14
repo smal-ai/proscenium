@@ -4,7 +4,7 @@
 
 **Updated:** 2026-11-14
 
-**Status:** M01–M03 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
+**Status:** M01–M04 are accepted with real application/native evidence. Remaining components are implemented and undergoing cumulative acceptance. [Implementation progress](implementation/progress.md) records active work, evidence and blockers.
 
 Read with [requirements](requirements.md), [architecture](architecture.md), [owner policy](owner-policy.md), [contracts](contracts/README.md) and [fleet handover](development-fleet.md). The [acceptance pack](acceptance/README.md) supplies named fixture and fault-scenario oracles.
 
@@ -30,7 +30,7 @@ Read with [requirements](requirements.md), [architecture](architecture.md), [own
 | [M01](#m01-first-blender-authoring-loop) | Direct a scene and give feedback on its first published render | F00 foundation gate, existing toolchain and user Copilot access | Accepted, `milestone/m01` |
 | [M02](#m02-projects-output-catalogue-and-history) | Open projects, browse assets/scenes and inspect their history | M01 | Accepted, `milestone/m02` |
 | [M03](#m03-project-discussion-steering-and-native-delegation) | Queue, steer, stop and observe native specialists and pending decisions | M01, M02 | Accepted, `milestone/m03` |
-| [M04](#m04-spatial-inspection-keyframes-and-markup) | Toggle inspection/keyframes, annotate and render a chosen viewing angle | M02, M03 | Planned |
+| [M04](#m04-spatial-inspection-keyframes-and-markup) | Toggle inspection/keyframes, annotate and render a chosen viewing angle | M02, M03 | Accepted, `milestone/m04` |
 | [M05](#m05-research-find-import-and-reuse-assets) | Research and reuse local/online assets | M02, M03, M04 | Planned |
 | [M06](#m06-brief-to-reviewable-storyboard) | Develop a complete narrative and shotboard | M02, M03, M05 | Planned |
 | [M07](#m07-generate-and-revise-concept-images) | Generate/revise selected storyboard and reference images through ComfyUI | M04, M06 | Planned |
@@ -197,6 +197,10 @@ same-work UI continuation. Exact unknown-outcome limits remain with M12.
 **Reuse:** Existing creative/application skills, adapted into native Copilot profiles and skill directories. SDK semantics are linked in the [architecture references](architecture.md#16-external-api-references-and-implementation-proofs).
 
 ## M04: Spatial inspection, keyframes and markup
+
+**Accepted:** 14 November 2026. [Cumulative evidence](implementation/m04.md)
+includes actual GLB picking, exact-size camera-to-render correspondence and
+saved review context, with the integrated installed-browser regression matrix.
 
 **User journey:** “I inspect an asset in 3D, switch to its rendered keyframe, mark a change and ask for a render from my chosen viewing angle.”
 
