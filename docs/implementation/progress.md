@@ -36,30 +36,39 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `4e8b233`, `milestone/m01` | Coordinator acceptance of all M01 criteria with retained execution limitations. |
 | `7b1f837` | Actual proxy framebuffer/camera capture, GLB picking and catalogue search/provenance. |
 | `80ff7bf` | E04 actual Hunyuan mesh, Blender import and W02 checkpoint/publication. M10 user interaction remains separate. |
+| `583e550`, `6c02885` | Native catalogue/Unity/assembly tools, required Unity specialist, awaited lifecycle and preparation/cancellation ownership. All 92 scoped workflow tests passed in the parent. |
+| `f96e78b`, `a46c9ba` | Retired-session isolation, late proxy context associations and distinct native permission stages. |
+| `a2a2097` | Actual browser/SDK camera renders at 1031×569 and 2063×1138, maximum measured framing error 0.145 px. |
+| `7114824`, `2295602` | Decoded-image readiness, saved-camera and clean-image role fixes; actual guarded M06 shared-reference review passed. |
+| `069a854` | Both real VLM review origins, owner amendment/rejection and exactly-once approved-finding native handoff passed. |
+| `5333468`, `2f4258a` | Correct Resume work targets/revisions, preserved current-version context and accurate PNG/video guidance. Seven focused browser cases passed. |
+| `e3cddf8` | Actual SSH product-transport follow-up passed with final guard/cleanup audit. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
-| Native workflows | `/home/quintin/.cache/proscenium-development/fleet/native-workflows`, `impl/native-workflows` | `b907972` | Unity specialist, tracked nonblocking Unity jobs, sequence assembly and catalogue-discovery tools. | `ses_e262dde9cffevqHbPSmMm5CYKL` |
-| M02 history | `/home/quintin/.cache/proscenium-development/fleet/m02-history`, `impl/m02-history` | `4e8b233` | Two real native project associations, catalogue/history browsing and historical source reopening. | `ses_e25c79de3ffeZX0P1VpUbkumLC` |
-| M03 runtime | `/home/quintin/.cache/proscenium-development/fleet/m03-runtime`, `impl/m03-runtime` | `4e8b233` | Real Queue/Steer/live-child Stop/Resume and durable owner decisions. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
-| M04 camera | `/home/quintin/.cache/proscenium-development/fleet/m04-camera`, `impl/m04-camera` | `7b1f837` | Preserve odd-sized still captures and prove browser Queue-to-Blender framing correspondence. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
-| M06 storyboards | `/home/quintin/.cache/proscenium-development/fleet/m06-storyboards`, `impl/m06-storyboards` | `b1fa32c` | Actual SDK-authored plan, targeted planning-only revision and Full-HD shotboard review. | `ses_e263d813fffefNumtCvVqwR169` |
-| M09 critique | `/home/quintin/.cache/proscenium-development/fleet/m09-critique`, `impl/m09-critique` | `b1fa32c` | Configured vision-model load, requested owner/native reviews and approved-finding handoff. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
-| M10 asset | `/home/quintin/.cache/proscenium-development/fleet/m10-asset`, `impl/m10-asset` | `b1fa32c` | Static inspection and ordinary native revision of the actual E04 asset, with no new inference. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
-| Recovery/SSH | `/home/quintin/.cache/proscenium-development/fleet/w10-integration`, `impl/w10-integration` | `9720285` | Fix unrelated protected-process backup blocker and prove actual SSH-forwarded application traffic. | `ses_e25df843bffetn697vChzMs1dn` |
+| M07 generation | `/home/quintin/.cache/proscenium-development/fleet/m07-generation`, `impl/m07-generation` | `069a854` | Original image-job continuation, then native generation/correction and UI acceptance if resources fit. | `ses_e262de015ffe8DXqhgJPJyyt0K` |
+| M13 cinematic | `/home/quintin/.cache/proscenium-development/fleet/m13-cinematic`, `impl/m13-cinematic` | `e3cddf8` | Native sequence assembly, actual playback/annotation/download and a revised edit using retained source frames. | `ses_e265d03ceffeyj48VWVjBPn9VN` |
 
 F00 returned `c0c31ec` and was integrated as `a52940d`. Integration corrected job admission/retry HTTP responses to the contract's 202 status and pinned shared image, WebSocket, browser-test and 3D/frontend dependencies before feature dispatch. The combined baseline passed specification/generated-binding checks, lint, types, 23 unit tests, 45 contract tests, 21 offline integration tests and a production frontend build.
 
 The later composed F00 baseline passed 26 unit, 45 contract and 292 offline integration tests, plus lint/types/specification/build and a real pairing/project/WebSocket CLI startup smoke with external execution blocked. Package test counts describe their recorded revisions, not a new full release run.
 
+The subsequent integrated run at `e3cddf8` passed **26 unit, 45 contract and 488 offline integration tests**. Recovery-Stop admission changes additionally passed 31 targeted delivery/fault/cancellation tests. No native execution was inferred from those checks.
+
 ## Current acceptance blockers
 
 - W07's original `w07-live-initial` remains planned with one reservation and no prompt/client ID. Its 600-second allocation ended before inference because host RAM stayed below 20,427,268,612 bytes. Preserve that identity for a separately allocated continuation.
 - E04 `e04-live-a` created no project, job, reservation or native process. The distinct `e04-live-b` passed hardware execution under the unchanged guards. M10 still needs static inspection and normal revision/reuse acceptance.
-- LM Studio's original resident model is non-vision. M09 has a bounded allocation to load the existing vision-capable Gemma E4B through its saved profile, preserving Qwen. No VLM journey pass is claimed yet.
-- Parent integration found 18 W10 checks blocked by an unrelated protected `sshd-session` process. The 127 other checks in that affected run passed. Recovery/SSH owns the scoped-process correction.
+- M02 is accepted. Its clean A→B run and real closed-gate cancellation supplement the preserved historical-source proof.
+- M03 proved active-child Stop, economical native delegation, queued context and durable owner input. Corrected Resume commands are accepted, but retained interrupted invocations still block continuation. Recovery Stop now records its control intent without taking an illegal work-state edge; native quiescence is still required.
+- M05 proved metadata discovery, real Khronos acquisition, editable import/revision and a real asset render. A test selector included floor/wall geometry and stopped its adoption script. The explicit scene-adoption continuation remains unexecuted. Re-selecting the current version is fixed.
+- M06's actual planning/revision/selection proof is retained. The shared-reference readiness defect now passes an actual guarded application replay without further model calls.
+- M09's positive journey passed after two narrowly scoped VLM fixes. Only the owned Gemma instance was unloaded; Qwen and the saved profile remained unchanged. Milestone acceptance still depends on M03/M04.
+- M10 has actual proxy inspection but its original revision request was fenced before Blender launch. Late proxy association and duplicate permission-stage defects are fixed. Preserve request `927cf238-56c2-454e-a063-014e072f9010` and session `5971843f-f216-40f8-b8cb-995675f48161` for explicit continuation; no replacement Queue or manual script execution.
+- W10's protected-process blocker is fixed. The final SSH audit passed. Same-host transport/API traffic does not itself close full model-message/video playback or cumulative M12/M14.
+- New M08, M11 and M12 reports are awaiting integration: progressive annotation/worker survival passed; Unity import/PlayMode passed but publication is blocked; native-history restore/continuation passed but accepted-send ACK-loss remains unproved.
 - Remaining milestones require their cumulative application journeys. Component/browser/native fixture passes alone do not close them.
 
 ## Resource allocations
@@ -85,25 +94,32 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M03 | M03 agent | Six cloud roots and three native children maximum, 180 seconds per root. Harmless project-local native activity has a 90-second self-timeout. No Blender/Unity/provider/GPU work. |
 | M04 | M04 agent | Two cloud roots, no children, 180 seconds each. Three CPU stills maximum at the exact captured dimensions, eight samples/four threads, 300-second worker bounds, plus at most one static proxy. No GPU/model-service work. |
 | M06 | M06 agent | Two cloud roots, no children, 180 seconds each. Actual browser/SDK planning only; no rendering, provider or native editor execution. |
-| M09 | W07 agent, active exclusive GPU allocation | One saved-profile load of `google/gemma-4-e4b`, no settings override. Two VLM calls maximum, 512 output tokens and 120 seconds each. Two cloud roots maximum. Only the newly owned Gemma instance may be unloaded after settlement; original Qwen remains resident. |
+| M09 positive | W07 agent, completed | One saved-profile Gemma load, two real VLM calls, two cloud roots, no children. Exactly approved findings/image delivered once. Owned Gemma and all proof processes stopped; Qwen preserved. |
 | M10 | W09 agent | No inference. Two cloud roots, one authoring process, one readback, two proxy exports and two 640×360 CPU keyframes maximum. Four threads/eight samples; preserve four-GiB host headroom and the original E04 project. |
+| M02 follow-up | M02 agent | Two small read-only roots maximum, no children/native authoring/rendering. Actual UI project switch and planned-preview cancellation only. |
+| M03 Resume | W01 agent | One SDK continuation send and at most one product child; 180-second root and 90-second harmless helper bounds. No replacement Queue, renderer or provider. |
+| M07 continuation/native | W07 agent, active exclusive GPU allocation | Preserve original job/attempt/task/reservation in append-only window `w07-continuation-b`, with unchanged cold-fit threshold. At most three Comfy executions total: original 64×64 plus two native 256×256/four-step image cases. Three cloud roots maximum, no children. No service lifecycle changes. |
+| M08 | W03 agent | Three roots/one child maximum, eighteen 640×360 CPU frames/eight samples/four threads, one proxy and two bounded authoring/inspection processes. One owned-backend kill tests detached-worker recovery. |
+| M11 | W08 agent | Three roots/two product children maximum, three bounded Unity invocations and one Blender export. Actual import/PlayMode/result publication; no GPU inference. |
+| M12 native | W10 agent | Two read-only SDK sends maximum, no children/native authoring/providers. Exact native-history recovery and one owned transport interruption only. |
+| M13 | F00 agent | Three cloud roots and three short tracked FFmpeg encodes maximum, 60-second encoder bounds. Existing verified frame inputs only; no Blender, Unity or GPU/model-service execution. |
 
 ## Milestones
 
 | Milestone | State | Completion commit | Evidence |
 | --- | --- | --- | --- |
 | M01 First Blender authoring loop | Completed on 2026-11-14 | `milestone/m01` | [Exact criteria and limitations](m01.md), evidence integrated as `a218a65` |
-| M02 Projects and history | Integrated journey running | — | — |
-| M03 Discussion and delegation | Native control journey running | — | — |
-| M04 Inspection and markup | Exact camera/still integration running | — | [Accepted capture proof](../evidence/w05/camera-readme.md) |
-| M05 Asset research and reuse | Pending | — | — |
-| M06 Storyboards | Real planning/review journey running | — | — |
-| M07 Concept generation | Pending | — | — |
-| M08 Progressive animation | Pending | — | — |
-| M09 Requested VLM critique | Real review/approval journey running | — | — |
-| M10 Image-to-3D | Hardware proof passed, inspection/revision journey running | — | [E04 live result](../evidence/w09/live-b/README.md) |
-| M11 Playable Unity scene | Pending | — | — |
-| M12 Recovery and backup | Pending | — | — |
+| M02 Projects and history | Completed on 2026-11-14 | `milestone/m02` | [Accepted criteria and retained failures](m02.md) |
+| M03 Discussion and delegation | Stop/decision proof passed; Resume follow-up running | — | [Exact criteria](m03.md) |
+| M04 Inspection and markup | Native framing and UI corrections passed; dependencies pending | — | [Native correspondence](m04.md) |
+| M05 Asset research and reuse | Acquisition/revision passed; adoption continuation pending | — | [Exact criteria](m05.md) |
+| M06 Storyboards | Planning/selection and corrected review passed; dependencies pending | — | [Original proof](m06.md), [review follow-up](../evidence/w05/readiness-readme.md) |
+| M07 Concept generation | Original-job continuation running under resource guard | — | — |
+| M08 Progressive animation | Real progressive/recovery journey running | — | — |
+| M09 Requested VLM critique | Positive journey passed; dependencies pending | — | [Positive evidence](../evidence/m09-positive/README.md) |
+| M10 Image-to-3D | Hardware/inspection passed; original revision awaits continuation | — | [E04](../evidence/w09/live-b/README.md), [M10](m10.md) |
+| M11 Playable Unity scene | Native specialist journey running | — | — |
+| M12 Recovery and backup | Native history/transport and worker recovery running | — | [SSH transport slice](../evidence/w10/ssh-followup.md) |
 | M13 Silent cinematic delivery | Pending | — | — |
 | M14 Consolidated acceptance | Pending | — | — |
 
