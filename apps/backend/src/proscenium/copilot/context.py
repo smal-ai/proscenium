@@ -186,9 +186,11 @@ class Contexts:
             if target:
                 append(
                     target["artifact_id"],
-                    {"concept": "concept", "reference": "reference"}.get(
-                        target["origin"], "render"
-                    ),
+                    {
+                        "concept": "concept",
+                        "reference": "reference",
+                        "proxy_capture": "reference",
+                    }.get(target["origin"], "render"),
                 )
         for annotation in context["annotations"]:
             if annotation.get("markup_artifact_id"):
