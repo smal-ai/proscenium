@@ -1,0 +1,390 @@
+{
+  "format": "proscenium-m12-native-recovery-evidence-1",
+  "status": "native_continuity_pass_transport_admission_recovery_unproved",
+  "m12_complete": false,
+  "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+  "native_session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+  "source_base": "ad47260",
+  "export_commit": "95a93a50b3f7b78531095982a4b5944bd750469a",
+  "executed_continuity_commit": "a620049",
+  "executed_transport_commit": "6c5999f",
+  "runtime": {
+    "sdk": "1.0.34",
+    "cli_package": "1.0.112",
+    "cli_sha256": "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69",
+    "sdk_jsonrpc_source_sha256": "d1133b6a35f90875885156862617db59ffb920630c8727c5437bc6ebaa3d6af2",
+    "model_requested": "gpt-6.1-sol",
+    "browser_viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1
+    }
+  },
+  "backup": {
+    "commands": [
+      {
+        "command": [
+          "/home/quintin/.cache/proscenium-development/fleet/m12-native-recovery/.venv/bin/python3",
+          "-m",
+          "tools.operations.recovery",
+          "backup",
+          "--config",
+          "/home/quintin/.cache/proscenium-development/milestones/m01-20261114T132348Z/config.json",
+          "--project-id",
+          "project-90687708-fe6d-465d-8e11-cd881eced35e",
+          "--target",
+          "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/backup"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "/home/quintin/.cache/proscenium-development/fleet/m12-native-recovery/.venv/bin/python3",
+          "-m",
+          "tools.operations.recovery",
+          "verify",
+          "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/backup"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "/home/quintin/.cache/proscenium-development/fleet/m12-native-recovery/.venv/bin/python3",
+          "-m",
+          "tools.operations.recovery",
+          "restore",
+          "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/backup",
+          "--target",
+          "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/restored",
+          "--rebind-fresh-registry"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "files": 22,
+    "manifest_limits": [],
+    "restored_native_ids": [
+      "d939999f-bff2-448c-9d24-028c1dcff527"
+    ],
+    "private_disk_root": "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d",
+    "no_private_native_bytes_in_git": true
+  },
+  "original_preservation": {
+    "initial": {
+      "head": "9cc229fe2d19c762d8a86576f75eb973d0a1860e",
+      "index_sha256": null,
+      "index_present": false,
+      "project_database_sha256": "a18c8a5e0c3c16d94e5bf166b9d1c405c39c8537e3e2d64d85902e95ceeb0212",
+      "registry_database_sha256": "6bb861c87f24dc2a52fcca71928a0a6b78a51e0a21728b044a522fe4e923800b",
+      "project_tree_sha256": "fb3b134be7860f5e1feb049e62c206cacc74c542d2fd50499567a25119203af8",
+      "native_tree_sha256": "3c9f86af1b66047be9b48032b6396a49cae71fb31c34a1ec931582b9f6deb73c",
+      "project_files": 116,
+      "native_files": 4
+    },
+    "final": {
+      "head": "9cc229fe2d19c762d8a86576f75eb973d0a1860e",
+      "index_sha256": null,
+      "index_present": false,
+      "project_database_sha256": "a18c8a5e0c3c16d94e5bf166b9d1c405c39c8537e3e2d64d85902e95ceeb0212",
+      "registry_database_sha256": "6bb861c87f24dc2a52fcca71928a0a6b78a51e0a21728b044a522fe4e923800b",
+      "project_tree_sha256": "84f2da0be695e4758a89a13a7d54f2868b8b3325adb63efca3ea7aa2bac1d3a0",
+      "native_tree_sha256": "3c9f86af1b66047be9b48032b6396a49cae71fb31c34a1ec931582b9f6deb73c",
+      "project_files": 114,
+      "native_files": 4
+    },
+    "initial_whole_project_tree_unchanged": false,
+    "initial_deviation_changed_paths": [
+      ".proscenium/state.sqlite3-shm",
+      ".proscenium/state.sqlite3-wal"
+    ],
+    "only_initial_auxiliary_sidecars_removed": true,
+    "durable_project_bytes_unchanged": true,
+    "initial_registry_main_unchanged": true,
+    "initial_native_history_unchanged": true,
+    "corrected_backup_through_final_all_measured_files_unchanged": true,
+    "registry_auxiliary_files_in_first_baseline": "not separately inventoried"
+  },
+  "restoration": {
+    "namespace_hashes_unchanged": {
+      "items": true,
+      "versions": true,
+      "annotations": true,
+      "selections": true,
+      "publications": true,
+      "artifacts": true,
+      "retained_sources": true,
+      "jobs": true
+    },
+    "original_request_submissions_and_native_ids_unchanged": true,
+    "backed_up_working_source_bytes_unchanged": true,
+    "media_http_checks": [
+      {
+        "artifact_id": "preview-b4996a7ef2fc870b6735a93c90cb23e906736c36bb6d04712698a2d41bd0e41b-f1",
+        "status": 200,
+        "sha256": "083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd",
+        "matches": true
+      }
+    ],
+    "actual_sdk_image_files": [
+      {
+        "project_relative_path": ".proscenium/artefacts/sha256/083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd/content",
+        "sha256": "083845967c529ed1ad4613ef9d514e5d65850c9c389d695ea384decb25acb4cd"
+      },
+      {
+        "project_relative_path": ".proscenium/artefacts/sha256/a5df5d2a6fcc55167366a7e59a5d533536650fdbb0e4ac826a11d954eda78bc7/content",
+        "sha256": "a5df5d2a6fcc55167366a7e59a5d533536650fdbb0e4ac826a11d954eda78bc7"
+      }
+    ],
+    "actual_sdk_annotation_extension_matches_captured_context": true
+  },
+  "native_continuity": {
+    "old_public_message_ids_restored": true,
+    "held_restart": {
+      "same_submission": true,
+      "request_id": "ed8cb740-e8f0-4a8e-8e25-ac0fb7f28975",
+      "context_id": "caebb650-3580-4672-8753-eec5ce7cddd8",
+      "startup_sdk_absent": true,
+      "sends": 0
+    },
+    "explicit_release": {
+      "operation_id": "cbde258f-5dc3-4e47-9aff-c8fbb547b787",
+      "state": "completed"
+    },
+    "request_receipt": {
+      "native_message_id": "521907a9-d6a8-4d0e-b6fc-70e4e35b9c31",
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "replayed": false,
+      "request_id": "ed8cb740-e8f0-4a8e-8e25-ac0fb7f28975",
+      "schema_version": "1.0",
+      "state": "completed",
+      "state_revision": 3,
+      "type": "queue",
+      "work_id": "work-dc45549978234df49ead753e536ee62b"
+    },
+    "checks": {
+      "same_session": true,
+      "marker_observed": true,
+      "relocated_cwd_observed": true,
+      "blue_history_observed": true,
+      "pinned_version_observed": true,
+      "request_completed": true
+    },
+    "native_prompt_hook_cwd_matches_restored_root": true
+  },
+  "native_resume_options": [
+    {
+      "working_directory": "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/restored/project",
+      "memory": {
+        "enabled": false
+      },
+      "enable_session_store": false,
+      "continue_pending_work": false,
+      "available_tools": [
+        "view",
+        "bash"
+      ],
+      "custom_agents": []
+    },
+    {
+      "working_directory": "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/restored/project",
+      "memory": {
+        "enabled": false
+      },
+      "enable_session_store": false,
+      "continue_pending_work": false,
+      "available_tools": [
+        "view",
+        "bash"
+      ],
+      "custom_agents": []
+    },
+    {
+      "working_directory": "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/restored/project",
+      "memory": {
+        "enabled": false
+      },
+      "enable_session_store": false,
+      "continue_pending_work": false,
+      "available_tools": [
+        "view",
+        "bash"
+      ],
+      "custom_agents": []
+    },
+    {
+      "working_directory": "/home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d/restored/project",
+      "memory": {
+        "enabled": false
+      },
+      "enable_session_store": false,
+      "continue_pending_work": false,
+      "available_tools": [
+        "view",
+        "bash"
+      ],
+      "custom_agents": []
+    }
+  ],
+  "cloud_send_reservations": [
+    {
+      "request_id": "ed8cb740-e8f0-4a8e-8e25-ac0fb7f28975",
+      "session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "prompt_sha256": "b61202de6a9eb1c899ac25847c232b6bf284d6ecf20e8ebe39864cd9098a9533",
+      "before_real_send_ns": 461922076634231
+    },
+    {
+      "request_id": "2a4f8f1f-4cf7-483d-bb2b-36266720bb1c",
+      "session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "prompt_sha256": "9daa2198954a605fd2d5c478c651321c9430f87dcc39b8704a7a41d839be0201",
+      "before_real_send_ns": 462450679633410
+    }
+  ],
+  "total_new_sdk_send_calls": 2,
+  "new_native_user_messages_confirmed": 1,
+  "native_public_user_metadata": [
+    {
+      "messageId": "009e3fc2-4977-4ace-90c0-e5f8763ca766",
+      "clientTurnId": "57f2b8c1-be75-48d5-b730-92cd5b8a5de3"
+    },
+    {
+      "messageId": "07714493-2c5c-4d2d-bd80-a89029e3cfd5",
+      "clientTurnId": "ddac4977-3c7d-4a54-b390-6d2aee617b1b"
+    },
+    {
+      "messageId": "4cc19f1d-36e4-4cc9-8519-81abea92c40b",
+      "clientTurnId": "8506a2ab-9745-4fe2-94e5-f5011c86ad9f"
+    },
+    {
+      "messageId": "521907a9-d6a8-4d0e-b6fc-70e4e35b9c31",
+      "clientTurnId": "ed8cb740-e8f0-4a8e-8e25-ac0fb7f28975"
+    }
+  ],
+  "children_observed": 0,
+  "fresh_session_attempts": 0,
+  "provider_http_attempts": 0,
+  "transport_loss": {
+    "physical_cut": {
+      "session_id": "d939999f-bff2-448c-9d24-028c1dcff527",
+      "native_users_observed_before_cut": [],
+      "send_pending_before_cut": true,
+      "actual_stdout_fd_closed": true,
+      "pending_rpc_count_before_release": 2,
+      "reader_pause_expired": false,
+      "native_pid_before_cut": 3671520,
+      "native_start_before_cut": "46244924",
+      "sdk_transport_closed": true,
+      "observed_after_actual_send_ns": 462459996041452
+    },
+    "quiet_restart": {
+      "sdk_absent": true,
+      "gate_closed": true,
+      "sends": 2
+    },
+    "reconcile": {
+      "operation_id": "764860b9-d5dc-4bcd-ba1f-df91d36a61f3",
+      "state": "outcome_uncertain"
+    },
+    "original_request_receipt": {
+      "detail_code": "provider_unavailable",
+      "native_message_id": null,
+      "project_id": "project-90687708-fe6d-465d-8e11-cd881eced35e",
+      "replayed": false,
+      "request_id": "2a4f8f1f-4cf7-483d-bb2b-36266720bb1c",
+      "schema_version": "1.0",
+      "state": "outcome_uncertain",
+      "state_revision": 2,
+      "type": "queue",
+      "work_id": "work-a37a99ce28c948ac9bfac1eb616cd7fb"
+    },
+    "native_match_count": 0,
+    "matching_user_prompt_hooks": [
+      {
+        "event_id": "f8f2c4fe-7eb2-4823-b21c-cae0b635ae1f",
+        "hook_type": "userPromptSubmitted",
+        "hook_invocation_id": "a8bc2b61-5132-4f25-95fb-cc64d0e8bd94",
+        "matches_second_public_input": true
+      }
+    ],
+    "accepted_native_admission_ack_loss_proved": false,
+    "request_reposted": false,
+    "sdk_send_retried": false,
+    "reason": "Actual stdout loss interrupted a pending session.send, but the registered userPromptSubmitted hook required the paused reader before native user.message admission. No message ID/history match exists. Outcome stays uncertain; no retry."
+  },
+  "cleanup": {
+    "server_and_sdk_identities": [
+      {
+        "pid": 3645967,
+        "start": "46191401",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3646440,
+        "start": "46192104",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3671520,
+        "start": "46244924",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3672226,
+        "start": "46246179",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3645798,
+        "start": "46191172",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3646379,
+        "start": "46191959",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3647563,
+        "start": "46194178",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3671355,
+        "start": "46244671",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3672095,
+        "start": "46246027",
+        "original_identity_gone": true
+      },
+      {
+        "pid": 3672226,
+        "start": "46246179",
+        "original_identity_gone": true
+      }
+    ],
+    "browser_context_closes_awaited": true,
+    "browser_pid_start_receipts": "not captured; do not claim independent OS-PID verification of browser children",
+    "independent_blender_9876": "not accessed or signalled"
+  },
+  "source_hashes_at_export": {
+    "tools/operations/recovery.py": "971545fe04791a461e20f00a44127f94d8486ee446d7daa29964c663c043d834",
+    "tests/native/studio/m12_browser.mjs": "79d75e64d7665b6eebba49eafd376e457c92f8c7caa804fef8504ebdba321019",
+    "tests/native/studio/m12_client.mjs": "080fc4384bc81124995e71575a24f47ac09bbe6e3e7faca8f664e16064f24941",
+    "tests/native/studio/m12_export.py": "67390884596932028f4868b306fa6c24b0811159f85115c42024e5c626a6322d",
+    "tests/native/studio/m12_host.py": "63d881721b19f7865f0c5162ce707b0b5aa29077b9f49d1d86db3854e5c7043c",
+    "tests/native/studio/m12_loss_finish.mjs": "73433bd05c987c59f877818fd0dd4c93bc1d61d128deb1f6f6a12b8550d7a094",
+    "tests/native/studio/m12_plan.py": "274147b725ef2546a0e1c6014f82f3d1984581a6040db76ad30e632656f0b5a0",
+    "tests/native/studio/m12_prepare.py": "5ea2e61b71a9ff08c54a6bb4d2a3c495c6f6f23fd23644a6c4dd3b9b730ac63d",
+    "tests/acceptance/m12_backup_test.py": "fb3d722418158efec1e51135a9bbd2b15b041bf4efece760397ba08c5f6600c4",
+    "tests/acceptance/m12_transport_test.py": "c77dcb56f3ef7ee6c2b77ebbd4465e0e5647e3c2896df234224e14d3ed6ed63f"
+  },
+  "limits": [
+    "Original main DB/Git/media/native bytes stayed intact, but the first old-tool backup removed two transient project SQLite sidecars. That first attempt is not called read-only.",
+    "The corrected Linux unix-none/EXCLUSIVE reader requires the external registry/project locks and fully stopped external writers. No immutable SQLite mode or raw database copy is used.",
+    "The genuine transport disconnect was pre-admission/hook-blocked, not proven accepted-send ACK loss. Original uncertain request is not resubmitted and the two-send allocation is exhausted.",
+    "A late fixture get_events after an uncertain Resume raced SDK shutdown and returned JsonRpcError -32000. No native admission join was inferred from it.",
+    "Browser contexts were closed by Playwright, but browser PID/start receipts were not persisted.",
+    "No provider/render/Unity restart, pending-decision/child recovery or whole M12 acceptance is claimed. Those require separate allocations and accepted milestone inputs."
+  ]
+}

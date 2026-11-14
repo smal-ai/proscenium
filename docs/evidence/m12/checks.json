@@ -1,0 +1,110 @@
+{
+  "format": "proscenium-m12-checks-1",
+  "recorded_date": "2026-11-14",
+  "timezone": "Africa/Johannesburg",
+  "base": "ad47260",
+  "recovery_fix_commit": "38844c1325899e49f07d860b7605936ee115c502",
+  "harness_commit": "ce62098002a0a84fe4e5e2f457ab4c52a164ba75",
+  "executed_continuity_commit": "a6200494130b2802837ce0465dd67466729f05a3",
+  "executed_transport_commit": "6c5999fb965ede7061f42be2e2fc20cab54121a5",
+  "export_code_commit": "95a93a50b3f7b78531095982a4b5944bd750469a",
+  "result": "Same-session relocation/held-Queue/explicit continuation passed. Accepted-native-send ACK-loss join unproved. Whole M12 not complete.",
+  "allocation": {
+    "sdk_send_call_limit": 2,
+    "sdk_send_calls_reserved_and_attempted": 2,
+    "new_native_user_messages_confirmed": 1,
+    "new_children": 0,
+    "fresh_session_attempts": 0,
+    "native_authoring_or_local_provider_calls": 0,
+    "per_send_guard": "174-second watchdog fences only its owned native process, plus bounded termination wait under 180 seconds",
+    "remaining_sends": 0
+  },
+  "commands": [
+    {"command": "npm ci --ignore-scripts", "exit_code": 0, "result": "Accepted pinned dependencies installed only in the owned worktree. No root manifest/lock edits."},
+    {"command": "npm run build", "exit_code": 0, "result": "Actual compiled production UI. Existing Lucide directive and large-bundle warnings retained."},
+    {
+      "command": "uv run python tests/native/studio/m12_prepare.py /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-a",
+      "exit_code": 1,
+      "result": "All accepted CLI operations completed, then source fingerprint assertion exposed removal of empty project WAL/transient SHM. Main DB/Git/source/media/native hashes stayed intact. No SDK/model was opened."
+    },
+    {
+      "command": "uv run python tests/native/studio/m12_prepare.py /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-b",
+      "exit_code": 1,
+      "result": "Corrected backup/verify/restore and source equality passed. Private summary formatter then failed because original Git index is absent, not a file. No model or SDK was opened."
+    },
+    {
+      "command": "uv run python tests/native/studio/m12_prepare.py /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-c",
+      "exit_code": 0,
+      "result": "Corrected actual CLI backup/verify/restore completed with byte-identical source checks. Index absence retained. Zero sends."
+    },
+    {
+      "command": "uv run python tests/native/studio/m12_plan.py /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-c",
+      "exit_code": 0,
+      "result": "Only restored marker/private inputs written. Original untouched, zero sends."
+    },
+    {
+      "command": "node tests/native/studio/m12_browser.mjs /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-c",
+      "exit_code": 2,
+      "result": "Actual native old-history read restored all three public IDs and image hash with zero sends. Browser fixture used context ID as Queue idempotency key, rejected before admission. No new request or send record. All owned processes closed."
+    },
+    {
+      "command": "uv run python tests/native/studio/m12_prepare.py /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d",
+      "exit_code": 0,
+      "result": "Final fresh private backup/verify/restore through actual accepted tools. Full corrected-source fingerprint remains equal through final export."
+    },
+    {
+      "command": "uv run python tests/native/studio/m12_plan.py /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d",
+      "exit_code": 0,
+      "result": "New marker only in restored active project. Original image/annotation context retained, two send IDs allocated privately."
+    },
+    {
+      "command": "node tests/native/studio/m12_browser.mjs /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d",
+      "exit_code": 2,
+      "result": "Real continuation passed every strict continuity predicate under same session ID. One SDK send. Initial loss placement blocked the scheduler's control-plane pending read, so second Queue stayed held and undispatched. That control-plane cut is not claimed as admission-ACK loss."
+    },
+    {
+      "command": "node tests/native/studio/m12_loss_finish.mjs /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d",
+      "exit_code": 2,
+      "result": "Existing proven-undispatched second request released without repost/new ID. Second real SDK send paused at actual send boundary; real stdout FD closed while pending. Native userPromptSubmitted hook could not complete before admission because the reader was paused. Zero native message matches; reconciliation retained outcome_uncertain. Two-send budget exhausted."
+    },
+    {
+      "command": "uv run python tests/native/studio/m12_export.py /home/quintin/.cache/proscenium-development/milestones/m12-native-20261114-d docs/evidence/m12/native-recovery.json",
+      "exit_code": 0,
+      "result": "Allowlisted evidence only. Native continuity true, two SDK sends, one confirmed new native user message, accepted-send ACK-loss false, original durable bytes unchanged."
+    },
+    {
+      "command": "uv run pytest -q tests/acceptance/m12_backup_test.py tests/acceptance/m12_transport_test.py tests/acceptance/m12_evidence_test.py --basetemp /home/quintin/.cache/proscenium-development/m12-final-offline-01 --junitxml docs/evidence/m12/offline-junit.xml",
+      "exit_code": 0,
+      "result": "9 passed, 0 skipped. Deterministic SQLite/WAL, actual SDK JSON-RPC pipe, send budget/idempotency and retained-evidence/privacy checks. No cloud recertification. Existing Starlette/httpx warning remains."
+    },
+    {"command": "uv run ruff check tools/operations/recovery.py tests/native/studio/m12*.py tests/acceptance/m12*.py", "exit_code": 0, "result": "Passed"},
+    {"command": "uv run ruff format --check tools/operations/recovery.py tests/native/studio/m12*.py tests/acceptance/m12*.py", "exit_code": 0, "result": "8 files formatted"},
+    {"command": "uv run mypy apps/backend/src tools/operations/recovery.py", "exit_code": 0, "result": "Passed, 78 source files"},
+    {"command": "make spec-check", "exit_code": 0, "result": "Specification, ownership, local links and Python/TypeScript generated bindings passed. Documentation checks do not recertify native acceptance."},
+    {"command": "node --check tests/native/studio/m12_browser.mjs", "exit_code": 0, "result": "Passed"},
+    {"command": "node --check tests/native/studio/m12_loss_finish.mjs", "exit_code": 0, "result": "Passed"}
+  ],
+  "post_run_checks": {
+    "original_durable_main_db_git_source_media_native_bytes": "All initial hashes preserved",
+    "first_attempt_whole_project_tree": "Not identical: empty WAL and transient SHM removed. No bytes recreated to hide the deviation.",
+    "original_empty_wal_proved_by_initial_sha256": true,
+    "corrected_backup_through_final_all_measured_original_files": "Byte-identical",
+    "positively_scoped_live_processes_in_four_owned_fixture_roots": [],
+    "known_server_and_sdk_pid_start_identities": "All gone",
+    "browser_cleanup": "Playwright context closes awaited; browser OS PID/start receipts not persisted, so that stronger assertion is not made",
+    "independent_blender_9876": "Not accessed, used or signalled",
+    "new_ssh_daemons": 0,
+    "new_local_model_gpu_services": 0
+  },
+  "artifacts": [
+    {"path": "docs/evidence/m12/native-recovery.json", "sha256": "f39470d8f8e2288a7d70643b304a12ffd0971114f973eeb8d48062558a9dc96c"},
+    {"path": "docs/evidence/m12/offline-junit.xml", "sha256": "7bad3724ab8ded8d58138f0bf05c4268ea2d2ba4c8b4555b00a8b5bf0bf61606"}
+  ],
+  "limits": [
+    "Accepted-native-send ACK-loss join is not established. The exact uncertain request remains unmodified and was not resent. No further send is authorised or available in this allocation.",
+    "A callback-aware real reader boundary after hooks.invoke dispatch requires a separate allocation. No hook/approval ACK was forged and no core service/state was edited.",
+    "Original retained directory stayed present read-only; a second-machine recovery with all old absolute attachment paths absent was not tested.",
+    "Browser OS PID/start receipts were not persisted, although context closes completed and no positive-scope processes remain.",
+    "Provider/render/Unity recovery, child/decision recovery, cross-provider busy switching and cumulative M12 remain separate."
+  ]
+}
