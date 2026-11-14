@@ -330,6 +330,7 @@ JobService.create(tx: Transaction, *, job_id: str, kind: str, target: JobTarget 
 JobService.emit(tx: Transaction, job: JobRecord JSON, caller: Caller) -> None
 JobService.freeze_inputs(tx: Transaction, job_id: str, inputs: dict) -> None
 JobService.inputs(project_id: str, job_id: str) -> dict
+JobService.dispatch_cancellations(project_id: str) -> list[dict]
 ```
 
 `create` is a trusted extension primitive for W02 publication preview intents and W07
@@ -463,11 +464,18 @@ The previous optional/eventual job projection is not accepted completion evidenc
 Callers still own closing their supplied container after the ASGI lifespan exits.
 
 `FeatureLifecycle` awaits W01 `start`/`close`, and runs independent provider-pump,
-preview-dispatch and passive-preview-receipt tasks. Every iteration resolves the current active
+preview-dispatch, recorded-cancellation and passive-preview-receipt tasks. Every iteration resolves the current active
 project rather than capturing the first project forever. Provider and preview launch pumps run
 only under the explicitly open F00 gate. Receipt reconciliation may continue with the gate closed.
 A blocked provider HTTP thread does not block preview progress. Worker errors are retained as
 redacted codes in `extensions['lifecycle'].errors`, not printed repeatedly or relabelled success.
+
+`JobService.dispatch_cancellations` consumes only pending `job.cancel` intents through the
+existing exact-attempt adapters. It works with admission closed, so Stop/awaiting-Resume cannot
+starve a subsequent explicit owner cancellation. A launch claim without terminal evidence
+remains `cancel_requested`; a delivered marker is not proof of process exit. Ambiguous adapter
+acknowledgements are not retried automatically, and an old terminal attempt cannot cancel a
+new retry. The actual ASGI lifespan/owner HTTP regression starts no renderer or provider.
 
 Shutdown closes admission and fences/reaps W01's owned Copilot runtime, stops the watchers,
 **waits for all in-flight thread work**, and only then closes the provider client. It does not

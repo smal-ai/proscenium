@@ -9,6 +9,7 @@ from proscenium.auth import Caller
 from proscenium.configuration import Settings
 from proscenium.contracts import validate
 from proscenium.db import Transaction
+from proscenium.db.outbox import dispatch_one
 from proscenium.db.registry import Registry
 from proscenium.jobs.gate import ExecutionGate
 from proscenium.jobs.resources import check_storage
@@ -227,6 +228,60 @@ class JobService:
     def get(self, project_id: str, job_id: str) -> dict[str, Any]:
         with self.registry.project_store(project_id).transaction(write=False) as tx:
             return tx.require("jobs", job_id)
+
+    def dispatch_cancellations(self, project_id: str) -> list[dict[str, Any]]:
+        """Deliver recorded owner cancellations without opening the execution gate.
+
+        Only pending exact-attempt cancellation intents are eligible. An uncertain
+        adapter acknowledgement remains uncertain until its own receipt reconciliation.
+        Returning from a canceller proves delivery, not a successful native exit.
+        """
+        if self.registry.active_id() != project_id:
+            raise DomainError("scope_denied", 403)
+        store = self.registry.project_store(project_id)
+        with store.transaction(write=False) as tx:
+            pending = [
+                row[0]
+                for row in tx.connection.execute(
+                    "SELECT id FROM outbox WHERE kind='job.cancel' AND state='pending' ORDER BY rowid"
+                )
+            ]
+
+        def deliver(body: dict[str, Any]) -> dict[str, Any]:
+            with store.transaction(write=False) as tx:
+                job = tx.require("jobs", body["job_id"])
+                attempt = tx.require("attempts", body["attempt_id"])
+                if attempt["job_id"] != job["job_id"] or attempt["project_id"] != project_id:
+                    raise DomainError("scope_denied", 403)
+                if attempt["state"] in TERMINAL:
+                    return {
+                        "job_id": job["job_id"],
+                        "attempt_id": attempt["attempt_id"],
+                        "observed_state": attempt["state"],
+                        "adapter_called": False,
+                    }
+                if job["attempt_id"] != body["attempt_id"] or job["state"] != "cancel_requested":
+                    raise DomainError("scope_denied", 403)
+                canceller = self.cancellers.get(job["kind"])
+                if canceller is None:
+                    raise DomainError(
+                        "capability_unavailable", 501, "Cancellation adapter unavailable"
+                    )
+            canceller(job)
+            with store.transaction(write=False) as tx:
+                observed = tx.require("attempts", attempt["attempt_id"])
+            return {
+                "job_id": job["job_id"],
+                "attempt_id": attempt["attempt_id"],
+                "observed_state": observed["state"],
+                "adapter_called": True,
+            }
+
+        results = []
+        for identity in pending:
+            dispatch_one(store, identity, self.gate, {"job.cancel": deliver})
+            results.append({"operation_id": identity})
+        return results
 
     def retry(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         validate("JobRetry", body)

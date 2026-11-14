@@ -20,6 +20,7 @@ class FeatureLifecycle:
         if runtime is not None:
             await runtime.start()  # SQLite restoration only. No SDK client/session.
         for name, operation, gated in (
+            ("job-cancellations", self.services.jobs.dispatch_cancellations, False),
             ("providers", self.services.extension("providers").pump, True),
             ("preview-dispatch", self.services.extension("previews").pump, True),
             ("preview-receipts", self.services.extension("previews").reconcile, False),
