@@ -146,6 +146,14 @@ class Copilot:
                         ):
                             decision["delivery_state"] = "outcome_uncertain"
                             self.save_decision(tx, decision)
+                    for stage in tx.all("copilot.permissions"):
+                        if stage.get("phase") in {"pending", "claimed", "reply_prepared"}:
+                            save(
+                                tx,
+                                "copilot.permissions",
+                                key(stage["session_id"], stage["native_id"]),
+                                {**stage, "phase": "outcome_uncertain", "interrupted_at": now()},
+                            )
         self.checked_projects.add(project_id)
 
     async def start(self) -> None:
@@ -1260,6 +1268,8 @@ class Copilot:
         while not self.closing:
             with store.transaction() as tx:
                 decision = tx.require("decisions", decision_id)
+                if kind == "permission" and self.state.control(tx)["fenced"]:
+                    return None
                 if decision["state"] != "pending":
                     if decision["state"] not in {"answered", "declined"}:
                         return None
@@ -1280,34 +1290,86 @@ class Copilot:
             return PermissionDecisionReject()
         sid = invocation.get("session_id")
         tool_id = request.get("toolCallId")
+        fingerprint = hashlib.sha256(canonical(request)).hexdigest()
+        claim_id = uuid4().hex
         with self.services.registry.project_store(project_id).transaction() as tx:
             binding = self.state.binding(tx, str(sid), "tool", tool_id)
-            if not binding or self.state.control(tx)["fenced"]:
+            matches = [
+                s
+                for s in tx.all("copilot.permissions")
+                if s.get("session_id") == sid
+                and s.get("tool_call_id") == tool_id
+                and s.get("fingerprint") == fingerprint
+                and s.get("phase") != "completed"
+            ]
+            save(
+                tx,
+                "copilot.permission_callbacks",
+                claim_id,
+                {
+                    "session_id": sid,
+                    "tool_call_id": tool_id,
+                    "fingerprint": fingerprint,
+                    "state": "rejected_correlation",
+                    "authority": "host",
+                },
+            )
+            if (
+                not binding
+                or self.state.control(tx)["fenced"]
+                or len(matches) != 1
+                or matches[0].get("phase") != "pending"
+                or any(matches[0].get(k) != v for k, v in binding.items())
+                or tx.require("work", binding["work_id"])["state"]
+                not in {"running", "awaiting_user"}
+            ):
                 self.state.fence(tx, "attribution_unavailable")
                 return PermissionDecisionReject()
             binding = {**binding, "invocation_id": key(str(sid), "tool", str(tool_id))}
-            # The callback itself omits requestId. Join the preceding native permission event.
-            permission_id = self.state.binding(
-                tx,
-                str(sid),
-                "permission",
-                key(str(tool_id), hashlib.sha256(canonical(request)).hexdigest()),
-            )
-            if permission_id is None:
-                self.state.fence(tx, "attribution_unavailable")
-                return PermissionDecisionReject()
-            native_id = permission_id["native_id"]
+            stage = matches[0]
+            native_id = stage["native_id"]
+            stage_id = key(str(sid), native_id)
+            stage = {**stage, "phase": "claimed", "claim_id": claim_id, "claimed_at": now()}
+            save(tx, "copilot.permissions", stage_id, stage)
             save(
                 tx,
-                "copilot.permissions",
-                native_id,
+                "copilot.permission_callbacks",
+                claim_id,
                 {
-                    **binding,
-                    "session_id": sid,
-                    "native_id": native_id,
-                    "fingerprint": hashlib.sha256(canonical(request)).hexdigest(),
+                    **stage,
+                    "state": "claimed",
+                    "authority": None,
                 },
             )
+
+        def reply(approve: bool, authority: str) -> Any:
+            # Commit the exact claim/result before handing control back to the SDK.
+            # Completion, not callback return, acknowledges native delivery.
+            with self.services.registry.project_store(project_id).transaction() as tx:
+                current = tx.require("copilot.permissions", stage_id)
+                if (
+                    current.get("claim_id") != claim_id
+                    or current["phase"] != "claimed"
+                    or self.state.control(tx)["fenced"]
+                ):
+                    approve, authority = False, "host"
+                prepared = {
+                    **current,
+                    "phase": "reply_prepared",
+                    "authority": authority,
+                    "reply": "approve" if approve else "reject",
+                    "reply_prepared_at": now(),
+                    "delivery_state": "outcome_uncertain",
+                }
+                save(tx, "copilot.permissions", stage_id, prepared)
+                save(
+                    tx,
+                    "copilot.permission_callbacks",
+                    claim_id,
+                    {**prepared, "state": "reply_prepared"},
+                )
+            return PermissionDecisionApproveOnce() if approve else PermissionDecisionReject()
+
         text = canonical(request).decode()
         # This is the owner's pragmatic tool policy, not an OS/network sandbox. Shell remains enabled.
         denied = re.search(
@@ -1319,7 +1381,7 @@ class Copilot:
             text,
         )
         if denied:
-            return PermissionDecisionReject()
+            return reply(False, "automatic_policy")
         if request.get("kind") in {"read", "write"}:
             root = Path(self.services.registry.get(project_id)["path"]).resolve()
             candidate = Path(request.get("resolvedPath") or request.get("path", ""))
@@ -1334,7 +1396,7 @@ class Copilot:
                     must_exist=request["kind"] == "read",
                 )
             except (ValueError, DomainError):
-                return PermissionDecisionReject()
+                return reply(False, "automatic_policy")
         if not consequential and request.get("kind") in {
             "read",
             "write",
@@ -1343,7 +1405,7 @@ class Copilot:
             "mcp",
             "url",
         }:
-            return PermissionDecisionApproveOnce()
+            return reply(True, "automatic_policy")
         answer = await self.decision(
             project_id,
             str(sid),
@@ -1353,10 +1415,8 @@ class Copilot:
             text,
             ["approve_once", "decline"],
         )
-        return (
-            PermissionDecisionApproveOnce()
-            if answer and answer["action"] == "approve_once"
-            else PermissionDecisionReject()
+        return reply(
+            bool(answer and answer["action"] == "approve_once"), "owner" if answer else "host"
         )
 
     async def user_input(self, project_id: str, request: dict[str, Any], invocation: Any) -> Any:

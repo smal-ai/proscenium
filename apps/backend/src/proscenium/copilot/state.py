@@ -354,6 +354,14 @@ class State:
             )
 
     def cancel_decisions(self, tx: Transaction, work_id: str) -> None:
+        for stage in tx.all("copilot.permissions"):
+            if stage["work_id"] == work_id and stage.get("phase") in {"pending", "claimed"}:
+                save(
+                    tx,
+                    "copilot.permissions",
+                    key(stage["session_id"], stage["native_id"]),
+                    {**stage, "phase": "cancelled", "cancelled_at": now()},
+                )
         for decision in tx.all("decisions"):
             if decision["work_id"] == work_id and decision["state"] == "pending":
                 revision = tx.revision("decisions", decision["decision_id"])
@@ -504,6 +512,18 @@ class State:
                 or self.binding(tx, session_id, "message", data.get("originatingMessageId"))
                 or self.binding(tx, session_id, "tool", data.get("parentToolCallId"))
                 or self.binding(tx, session_id, "tool", data.get("toolCallId"))
+                or (
+                    self.binding(
+                        tx, session_id, "tool", data.get("permissionRequest", {}).get("toolCallId")
+                    )
+                    if kind == "permission.requested"
+                    else None
+                )
+                or (
+                    self.binding(tx, session_id, "decision", data.get("requestId"))
+                    if kind in {"permission.completed", "user_input.completed"}
+                    else None
+                )
                 or self.binding(tx, session_id, "event", event.get("parentId"))
             )
             if binding:
@@ -545,18 +565,30 @@ class State:
                     if not permission_binding or not tool_call:
                         self.fence(tx, "attribution_unavailable")
                         return
-                    fingerprint = hashlib.sha256(canonical(permission)).hexdigest()
-                    self.bind(
-                        tx,
-                        session_id,
-                        "permission",
-                        key(tool_call, fingerprint),
-                        {
-                            **permission_binding,
-                            "native_id": data["requestId"],
-                            "invocation_id": key(session_id, "tool", tool_call),
-                        },
-                    )
+                    stage_id = key(session_id, data["requestId"])
+                    attribution = {
+                        **permission_binding,
+                        "native_id": data["requestId"],
+                        "session_id": session_id,
+                        "tool_call_id": tool_call,
+                        "fingerprint": hashlib.sha256(canonical(permission)).hexdigest(),
+                        "invocation_id": key(session_id, "tool", tool_call),
+                    }
+                    stage = tx.get("copilot.permissions", stage_id, required=False)
+                    if stage and any(stage.get(k) != v for k, v in attribution.items()):
+                        raise DomainError("attribution_unavailable", 409)
+                    if not stage:
+                        tx.put(
+                            "copilot.permissions",
+                            stage_id,
+                            {
+                                **attribution,
+                                "phase": "pending",
+                                "authority": None,
+                                "reply": None,
+                                "delivery_state": "not_sent",
+                            },
+                        )
                     self.bind(
                         tx,
                         session_id,
@@ -585,7 +617,9 @@ class State:
             )
             if missing_start or (
                 not binding
-                and kind.startswith(("tool.", "subagent.", "user_input.", "assistant.message"))
+                and kind.startswith(
+                    ("tool.", "subagent.", "user_input.", "permission.", "assistant.message")
+                )
             ):
                 allowed = {
                     "messageId",
@@ -647,15 +681,54 @@ class State:
                 native_event_id=identity,
             )
             if kind in {"permission.completed", "user_input.completed"} and data.get("requestId"):
-                automatic_permission = tx.get(
-                    "copilot.permissions", data["requestId"], required=False
-                )
-                if automatic_permission:
+                if kind == "permission.completed":
+                    stage_id = key(session_id, data["requestId"])
+                    stage = tx.get("copilot.permissions", stage_id, required=False)
+                    result = data.get("result", {}).get("kind")
+                    approved = result in {"approved", "approve-once"}
+                    rejected = result in {"rejected", "reject", "denied-interactively-by-user"}
+                    matches = bool(
+                        stage
+                        and stage.get("phase") in {"reply_prepared", "completed"}
+                        and stage["work_id"] == work_id
+                        and stage["request_id"] == request_id
+                        and (
+                            stage.get("reply") == "approve"
+                            and approved
+                            or stage.get("reply") == "reject"
+                            and rejected
+                        )
+                    )
+                    if stage:
+                        stage = {
+                            **stage,
+                            "completions": [
+                                *stage.get("completions", []),
+                                {"native_event_id": identity, "result": result, "matches": matches},
+                            ],
+                        }
+                    if not matches:
+                        self.fence(tx, "outcome_uncertain")
+                        if stage:
+                            save(
+                                tx,
+                                "copilot.permissions",
+                                stage_id,
+                                {**stage, "phase": "outcome_uncertain", "native_result": result},
+                            )
+                        return
+                    assert stage is not None
                     save(
                         tx,
                         "copilot.permissions",
-                        data["requestId"],
-                        {**automatic_permission, "delivery_state": "acknowledged"},
+                        stage_id,
+                        {
+                            **stage,
+                            "phase": "completed",
+                            "delivery_state": "acknowledged",
+                            "native_result": result,
+                            "completed_at": stage.get("completed_at") or now(),
+                        },
                     )
                 decision_id = "decision-" + key(session_id, data["requestId"])
                 decision = tx.get("decisions", decision_id, required=False)

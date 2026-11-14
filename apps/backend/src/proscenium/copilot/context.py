@@ -11,6 +11,7 @@ from typing import Any
 from PIL import Image
 
 from proscenium.api.errors import DomainError
+from proscenium.catalogue.service import Catalogue
 from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.db.paths import project_path
@@ -101,7 +102,7 @@ class Contexts:
                 raise DomainError("source_conflict", 409)
             version = tx.require("versions", context["version_id"])
             nodes = []
-            for artifact_id in version["artifact_ids"]:
+            for artifact_id in Catalogue.version_view(tx, version)["artifact_ids"]:
                 artifact, path = self.artifact(tx, artifact_id)
                 if artifact["kind"] == "proxy_map":
                     mapping = validate("ProxyMapping", json.loads(path.read_text()))
