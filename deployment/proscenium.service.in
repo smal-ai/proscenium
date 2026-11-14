@@ -1,4 +1,4 @@
-# TEMPLATE ONLY. Replace @CHECKOUT@ and @CONFIG_HOME@ with reviewed absolute paths.
+# TEMPLATE ONLY. Replace @CHECKOUT@ and @CONFIG_FILE@ with reviewed absolute paths.
 # No automatic pairing output, execution Resume, model-service or editor lifecycle.
 [Unit]
 Description=Proscenium private host-native studio
@@ -7,10 +7,9 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=@CHECKOUT@
-Environment=XDG_CONFIG_HOME=@CONFIG_HOME@
 Environment=PYTHONUNBUFFERED=1
 UMask=0077
-ExecStart=@CHECKOUT@/.venv/bin/python -m proscenium --origin http://127.0.0.1:8765 --frontend-dir @CHECKOUT@/apps/frontend/dist
+ExecStart=@CHECKOUT@/.venv/bin/python -m proscenium --config @CONFIG_FILE@ --frontend-dir @CHECKOUT@/apps/frontend/dist
 Restart=no
 KillMode=process
 TimeoutStopSec=30

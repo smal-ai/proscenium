@@ -1,9 +1,9 @@
 # Host-native operator guide
 
-**14 November 2026, SAST. Current integration base `9720285`.** These are implemented
-commands and operating preconditions, not M12/M14 release acceptance. Use the
-maintained Proscenium checkout. No old project checkout or reference runtime is
-an application dependency.
+**14 November 2026, SAST.** These are implemented commands and operating
+preconditions. [Implementation progress](implementation/progress.md) records the
+accepted revisions and remaining release checks. Use the maintained Proscenium
+checkout and its pinned tools.
 
 ## Bootstrap and foreground run
 
@@ -15,18 +15,25 @@ uv sync --frozen --python 3.12
 npm ci --ignore-scripts
 npm run build
 uv run python -m proscenium --help
-uv run python -m proscenium --origin http://127.0.0.1:8765 --frontend-dir "$PWD/apps/frontend/dist" --pair
+uv run python -m proscenium --config /absolute/private/operator.json --pair
 ```
+
+Start the private JSON from [`config.example.json`](../config.example.json), then
+set the installed Unity executable, native models, MCP configuration and independent
+service endpoints. `make run CONFIG=/absolute/private/operator.json ARGS=--pair`
+builds the frontend and runs the same backend command.
 
 - Exactly one ASGI worker owns the registry and active project. Do not add
   `--workers`, `--reload` or a second backend instance.
-- The current backend CLI supports only `--origin`, `--frontend-dir` and `--pair`.
-  There is **no backend `--config`, `--data-dir`, `--model` or render-profile flag**.
-  Recovery CLI flags below belong to that separate maintained tool.
+- Backend flags are `--config`, `--origin`, `--frontend-dir` and `--pair`.
+  `--origin` and `--frontend-dir` override their JSON settings. Models, data paths
+  and rendering profiles are configured in JSON. Recovery has its own CLI below.
 - `Settings.load()` reads
   `${XDG_CONFIG_HOME:-$HOME/.config}/proscenium/config.json`. Without that file,
   defaults apply. Data defaults to
-  `${XDG_DATA_HOME:-$HOME/.local/share}/proscenium`.
+  `${XDG_DATA_HOME:-$HOME/.local/share}/proscenium`. An explicit `--config` file
+  takes precedence and must exist. JSON strings support `${HOME}`, `${CONFIG_DIR}`
+  and `${APP_ROOT}` substitutions. Unknown substitutions are rejected.
 - Pair only through the URL printed to your trusted foreground terminal. Its
   fragment is private and expires after 15 minutes. Do not paste it into tickets,
   shell transcripts, evidence or a service unit. Browser pairing stores a private
@@ -34,12 +41,8 @@ uv run python -m proscenium --origin http://127.0.0.1:8765 --frontend-dir "$PWD/
 - First open a newly chosen workspace through the Projects UI. Opening/restoring
   an existing project does not author source or submit a model request.
 
-**Current composition boundary:** accepted integration now composes catalogue,
-projects, reviews, Copilot, providers and previews, with the shared feature
-lifespan. The application is implemented and undergoing cumulative journey
-acceptance. The parent still owns composition and its shared interfaces. A running
-backend or the bounded SSH proof is not full user-journey acceptance. Update the
-command table only when actual new CLI settings flags are accepted.
+The backend composes catalogue, projects, reviews, Copilot, providers and previews
+under one shared lifecycle. Startup restores read models with execution held.
 
 ## Same-origin SSH access
 
@@ -63,13 +66,10 @@ WebSocket replay/reconnect, PNG upload and exact range-byte checks. Wrong Host a
 Origin were rejected without changing CORS or boundary policy. This is actual SSH,
 not a TCP proxy and not a physical remote-browser or cumulative authoring journey.
 
-The recorded run remains **partial** because its final execution-guard receipt was
-lost when Uvicorn re-raised SIGTERM after lifespan shutdown. All fixture processes
-and descendants were cleaned up and the unrelated protected SSH session retained
-its original PID/start identity. The harness now persists the receipt inside ASGI
-lifespan shutdown, covered by an offline regression. No second temporary daemon
-was started under the one-daemon allocation. See `docs/evidence/w10/ssh-product.json`
-and the integration handover. The corrected live proof needs a new explicit allocation.
+The [corrected transport proof](evidence/w10/ssh-followup.md) passed with its final
+lifecycle audit and process cleanup recorded. The earlier partial receipt remains
+unchanged. Full message and film use over SSH has a separate
+[M14 journey record](implementation/m14-ssh.md).
 
 ## Configuration and resource bounds
 
@@ -82,10 +82,10 @@ Paths below are deliberately operator-chosen, not inherited from a reference pro
 | `data_directory`, `origin`, `frontend_directory` | Machine state, exact loopback origin, compiled Vite assets. |
 | `generation_attempt_limit` | Default 3 per admitted human task/target. Does not reset existing reservations. |
 | `profiles`, `execution_profiles` | Public profile descriptions and admitted execution-profile IDs. A listed profile is not proof of device availability. |
-| `runtime` | W01 private keys: `cli_path`, `lead_model`, **explicit `worker_model`**, `worker_tools`, `profile_id`, `skill_directories`, `mcp_servers`, `max_continues`. Unknown keys fail. See [W01](implementation/w01.md). |
+| `runtime` | W01 private keys: `cli_path`, `lead_model`, **explicit `worker_model`**, `unity_worker_model`, `unity_editor`, `worker_tools`, `profile_id`, `skill_directories`, `mcp_servers`, `max_continues`. Unknown keys fail. See [W01](implementation/w01.md). |
 | `rendering` | W03 `Rendering` keys: executable paths `blender`, `ffmpeg`, `ffprobe`, pinned `build_hash`, `profile_id`, `threads`, `timeout`, `encode_timeout`, `max_frames`, `max_pixels`, `max_samples`, `claim_path`. |
 | `services` | Explicit provider ID, endpoint, capabilities and exact loaded model instance ID where required. No embedded endpoint credentials or query tokens. |
-| `provider_options` | Only `review_provider_id`, `minimum_free_vram_bytes` (default 256 MiB), `vlm_max_tokens` (maximum 512). See [W07](implementation/w07.md). |
+| `provider_options` | `review_provider_id`, `minimum_free_vram_bytes` (default 256 MiB), `vlm_max_tokens` (maximum 512) and `image_profiles` mapping provider IDs to installed versioned image profiles. |
 | `free_space_reserve_bytes` | Default 5 GiB. Unknown output estimates still require the reserve. |
 | Upload/attachment limits | `upload_max_bytes`: 25 MiB. `upload_max_pixels`: 40,000,000. `attachment_max_count`: 8. `attachment_max_bytes`: 100 MiB. |
 
@@ -93,6 +93,10 @@ Paths below are deliberately operator-chosen, not inherited from a reference pro
   timeout, 60-second encode timeout, and bounded frames/pixels/samples. It is not a
   proven HIP/GPU profile. A missing executable, build mismatch or unsupported device
   must remain unavailable, not silently select something else.
+- Saved stateless Geometry Nodes graphs are supported, including nested groups and
+  realised mesh output. Simulation, bake/cache and external import nodes remain
+  explicit unsupported dependencies. Unresolved instances require authored mappings.
+  [The native proof](implementation/w03.md) records the supported path.
 - Copilot create **and** resume disable `memory.enabled` and `enable_session_store`.
   Infinite sessions remain enabled, Autopilot `max_continues` is at least five,
   sandbox remains off, and large output spills to project `.proscenium/tool-output`.
@@ -107,8 +111,37 @@ Paths below are deliberately operator-chosen, not inherited from a reference pro
   claim. The 256 MiB floor is not a model-fit guarantee.
 - Their unavailability must leave saved catalogue/media/feedback available. New
   inference reports the missing capability. No fallback model or replacement media
-  is fabricated. Image-to-3D remains blocked until its real proof or an explicit
-  owner scope decision. M10 is not silently removed from acceptance.
+  is fabricated. Hunyuan has a [real mesh/import proof](evidence/w09/live-b/README.md).
+  Its full generated-asset journey is tracked under [M10](implementation/m10.md).
+
+### Versioned image profiles
+
+The host chooses a profile through private configuration. New requests freeze that
+profile, endpoint, model hashes and conditioning graph. Changing configuration
+does not reinterpret an admitted job.
+
+| Image profile | Required model and input |
+| --- | --- |
+| `comfy-image-1` | Original FLUX.2 Klein graph and configured model choices. |
+| `comfy-sd-turbo-img2img-1` | Verified official SD-Turbo F32 checkpoint, one exact 512×512 reference image. |
+| `comfy-sd-turbo-img2img-fp16-1` | Separately identified local FP16 derivative, one exact 512×512 reference image. |
+
+For an already prepared SD-Turbo FP16 service, the relevant private option is:
+
+```json
+{"image_profiles": {"local-comfy": "comfy-sd-turbo-img2img-fp16-1"}}
+```
+
+Merge that key into `provider_options`, retaining the other required options.
+The derivative's exact filename, hash, conversion provenance and measured preparation
+are in [the profile record](evidence/m07-fp16/README.md). Preparation alone does not
+prove inference fit. The current execution result is tracked in [M07](implementation/m07.md).
+The service must already expose the selected model and graph nodes. The generic
+256 MiB preflight floor is not a model-specific RAM/VRAM budget.
+
+`services[].available` and `profiles[].scope_status` are configured capability
+metadata. `available: null` displays Unknown. A configured Available label is not
+a live health probe. Actual generation/review calls verify the required capabilities.
 
 ## Quiet restart, Resume and project switching
 
@@ -179,7 +212,8 @@ uv run python -m tools.operations.recovery verify \
 
 Use recovery's `--config /absolute/config.json` or `--data-directory /absolute/data`
 when inspecting an alternate stopped installation. Both SQLite stores use F00's
-`Store.backup()`, including committed WAL content. Only the current known schema
+`Store.backup()`, including committed WAL content. Read-only source handles use a
+private WAL index under the quiescence locks. Only the current known schema
 revision is accepted. Source databases are not migrated by this tool.
 
 The manifest records project/repository/native session IDs, DB revisions, Git HEAD
@@ -238,25 +272,25 @@ The explicit flag reconciles the original location to `TARGET/project` **only in
 `TARGET/machine/registry.sqlite3`**, records `awaiting_resume`, retains stable IDs
 and writes `TARGET/recovery-report.json`. It does not mutate the original registry
 or duplicate a live conversation. The generated `TARGET/config.json` selects this
-isolated machine directory. To review it with today's backend CLI, create a private
-XDG configuration home and copy that generated file to
-`CONFIG_HOME/proscenium/config.json`. Use a fresh loopback port if the original
-backend is still available for unrelated work, editing the origin explicitly.
+isolated machine directory. Pass that file directly to the backend. Use a fresh
+loopback port if another backend is serving unrelated work, configuring the exact
+origin explicitly.
 
 ```bash
-XDG_CONFIG_HOME=/absolute/recovery-config-home \
-  uv run python -m proscenium --origin http://127.0.0.1:8876 \
+uv run python -m proscenium --config /absolute/recovery/config.json \
+  --origin http://127.0.0.1:8876 \
   --frontend-dir "$PWD/apps/frontend/dist" --pair
 ```
 
 Before any continuation, inspect original request text, catalogue source commits,
 selections, saved annotations/targets and actual media. Read native history under
 the recorded session ID using the composed **reconcile-only** owner operation.
-Do not fabricate a new session when it is missing. W10 has not proved real native
-history read/inference continuation after relocation. Absolute paths embedded in
-opaque native bytes are retained unchanged, not rewritten and rehashed by guesswork.
-The parent native allocation must verify their relocation behaviour before claiming
-full recovery. Working source executable bits are conservatively private in the
+Do not fabricate a new session when it is missing. [M12's actual restoration](implementation/m12.md)
+verified cold history, same-session continuation, relocated current-turn images and
+held Queue persistence. The original source directory remained present during that
+proof. Absolute paths embedded in opaque older native history are retained unchanged.
+Their behaviour on a second machine with every old path absent remains unproved.
+Working source executable bits are conservatively private in the
 restored copy. Git's committed modes remain in the restored index/history.
 
 Promoting the disposable restoration to the sole active installation is a separate
@@ -267,8 +301,8 @@ the ordinary create/import flow.
 ## User service template
 
 [`deployment/proscenium.service.in`](../deployment/proscenium.service.in) describes
-one loopback backend with compiled frontend assets. Replace both absolute path
-placeholders after reviewing the accepted composition/configuration. It does not
+one loopback backend with compiled frontend assets. Replace the checkout and private
+configuration-file placeholders after reviewing the accepted configuration. It does not
 start independent services, print pairing secrets, open the execution gate or
 install itself. W10 performed no systemd install/start/stop operation. Installation
 and lifecycle changes require the operator's separate explicit instruction.
