@@ -296,7 +296,7 @@ MUST identifies a V1 requirement. Proposed field names, library choices and impl
 
 ## 6. Journey and milestone coverage
 
-The full workflow, dependencies, tests and failure cases are in [user journeys and implementation milestones](user-journeys.md). All milestones are planned, not implemented.
+The full workflow, dependencies, tests and failure cases are in [user journeys and implementation milestones](user-journeys.md). [Implementation progress](implementation/progress.md) records accepted milestones and the remaining cumulative checks.
 
 | Milestone | User outcome | Primary coverage |
 | --- | --- | --- |

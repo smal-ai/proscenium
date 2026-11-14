@@ -361,7 +361,7 @@ def main():
     print(f"PASS: {semantic_count} positive/negative semantic oracles; {state_count} transition cases; {mask_count} mask cases; complete endpoint/tool ownership.")
     if args.check_references:
         print(f"PASS: committed source hashes in {len(pins['references'])} reference repositories.")
-    print(f"Specified, not executed: {len(scenarios)} future application fault scenarios and native/browser fixture acceptance.")
+    print(f"Documentation validation only: {len(scenarios)} application fault scenarios. Native/browser execution evidence is recorded separately in docs/implementation/progress.md.")
 
 
 if __name__ == "__main__":

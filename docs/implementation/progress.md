@@ -33,13 +33,17 @@ The owner requested the complete M01–M14 system, a fleet of OpenCode agents us
 | `65358d1` | All 53 normative operations, quiet application lifecycle, native association projection and copy/rebind coordination. |
 | `2920201` | W10 backup/restore tooling and evidence validator, including retained incomplete-release results. |
 | `a218a65` | Actual M01 browser/SDK/Blender visual-feedback journey, source correction and replay/restart evidence. |
+| `4e8b233`, `milestone/m01` | Coordinator acceptance of all M01 criteria with retained execution limitations. |
+| `7b1f837` | Actual proxy framebuffer/camera capture, GLB picking and catalogue search/provenance. |
 
 ## Active assignments
 
 | Package | Worktree / branch | Base | Scope | Agent |
 | --- | --- | --- | --- | --- |
 | Native workflows | `/home/quintin/.cache/proscenium-development/fleet/native-workflows`, `impl/native-workflows` | `b907972` | Unity specialist, tracked nonblocking Unity jobs, sequence assembly and catalogue-discovery tools. | `ses_e262dde9cffevqHbPSmMm5CYKL` |
-| Inspection/catalogue | `/home/quintin/.cache/proscenium-development/fleet/review-camera`, `impl/review-camera` | `b907972` | Actual GLB picking/capture, Render this view context, provenance/search and pinned metadata refresh. | `ses_e264897f0ffe99g7L7VPZVpjjv` |
+| M02 history | `/home/quintin/.cache/proscenium-development/fleet/m02-history`, `impl/m02-history` | `4e8b233` | Two real native project associations, catalogue/history browsing and historical source reopening. | `ses_e25c79de3ffeZX0P1VpUbkumLC` |
+| M03 runtime | `/home/quintin/.cache/proscenium-development/fleet/m03-runtime`, `impl/m03-runtime` | `4e8b233` | Real Queue/Steer/live-child Stop/Resume and durable owner decisions. | `ses_e26448247ffeeKMC5WS8LrMSV5` |
+| M04 camera | `/home/quintin/.cache/proscenium-development/fleet/m04-camera`, `impl/m04-camera` | `7b1f837` | Preserve odd-sized still captures and prove browser Queue-to-Blender framing correspondence. | `ses_e263fa96bffeElxNsPQlQ6n0j1` |
 | E04 live-b | `/home/quintin/.cache/proscenium-development/fleet/w09-live-b`, `impl/w09-live-b` | `9720285` | Renewed one-attempt mesh execution after reclaiming build-owned tmpfs caches. | `ses_e25ed774effeLrmFIM6D17Qv1x` |
 | Recovery/SSH | `/home/quintin/.cache/proscenium-development/fleet/w10-integration`, `impl/w10-integration` | `9720285` | Fix unrelated protected-process backup blocker and prove actual SSH-forwarded application traffic. | `ses_e25df843bffetn697vChzMs1dn` |
 
@@ -74,15 +78,18 @@ Earlier rows record consumed allocations. Only the explicitly active assignments
 | M01 | M01 agent, completed | Three cloud roots, no children, two rendered frames. All 18 observed owned processes exited. Independent Blender on 9876 preserved. |
 | E04 live-b | W09 agent, active exclusive GPU allocation | One temporary ComfyUI on free loopback 18588, one fixed Hunyuan attempt, 1800-second server bound, four CPU threads. Unchanged 12 GiB fit floor and four-GiB protected headroom. One Blender import, 180 seconds. Fresh disk-backed run directory. |
 | Recovery/SSH | W10 agent | One temporary unprivileged loopback sshd, one SSH client, one disposable application server and Chromium profile, 300-second process bounds. Fixture keys only. No native/model/GPU work. |
+| M02 | M02 agent | Two small cloud roots, no children, 120 seconds each. One historical Blender CPU inspection, four threads, 180 seconds. Disposable Full-HD browser and server. |
+| M03 | M03 agent | Six cloud roots and three native children maximum, 180 seconds per root. Harmless project-local native activity has a 90-second self-timeout. No Blender/Unity/provider/GPU work. |
+| M04 | M04 agent | Two cloud roots, no children, 180 seconds each. Three CPU stills maximum at the exact captured dimensions, eight samples/four threads, 300-second worker bounds, plus at most one static proxy. No GPU/model-service work. |
 
 ## Milestones
 
 | Milestone | State | Completion commit | Evidence |
 | --- | --- | --- | --- |
 | M01 First Blender authoring loop | Completed on 2026-11-14 | `milestone/m01` | [Exact criteria and limitations](m01.md), evidence integrated as `a218a65` |
-| M02 Projects and history | Pending | — | — |
-| M03 Discussion and delegation | Pending | — | — |
-| M04 Inspection and markup | Pending | — | — |
+| M02 Projects and history | Integrated journey running | — | — |
+| M03 Discussion and delegation | Native control journey running | — | — |
+| M04 Inspection and markup | Exact camera/still integration running | — | [Accepted capture proof](../evidence/w05/camera-readme.md) |
 | M05 Asset research and reuse | Pending | — | — |
 | M06 Storyboards | Pending | — | — |
 | M07 Concept generation | Pending | — | — |

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Proscenium application and tool protocol
   version: 1.0.0
-  description: Normative specification only. Implementation is planned. See http-api.md for semantic invariants and caller capabilities.
+  description: Normative contract implemented by the host-native application. See http-api.md for semantic invariants and caller capabilities, and ../implementation/progress.md for execution evidence and acceptance status.
 servers:
   - url: /
 security:
