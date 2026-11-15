@@ -28,6 +28,17 @@ test("DPR 2 bottom-right live status and Chat-focus click-to-review geometry", a
   await expect(page.locator("main.review-panel")).toBeVisible();
   await expect(page.locator("main.review-panel h1")).toHaveText("Asset A v2");
   await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
+  const review = page.locator("main.review-panel");
+  expect((await review.getByRole("navigation", { name: "Review mode", exact: true }).boundingBox())!.height).toBeLessThanOrEqual(52);
+  expect((await review.locator('[aria-label="Review transport"]').boundingBox())!.height).toBeLessThanOrEqual(52);
+  await review.getByRole("button", { name: "Annotate presented frame" }).click();
+  await expect(review.getByRole("navigation", { name: "Review mode", exact: true })).toHaveCount(0);
+  await expect(review.locator('[aria-label="Review transport"]')).toHaveCount(0);
+  await expect(review.getByRole("button", { name: "Stroke", exact: true })).toBeVisible();
+  expect((await review.locator(".annotation-dock").boundingBox())!.height).toBeLessThanOrEqual(120);
+  await review.getByRole("button", { name: "Close draft", exact: true }).click();
+  const surface = review.locator(".review-surface");
+  expect(await surface.evaluate(element => element.scrollHeight <= element.clientHeight)).toBe(true);
   await page.getByRole("button", { name: "Critic", exact: true }).click();
   await expect(page.locator(".assistant-footer .assistant-status")).toHaveAttribute("aria-label", "Working · Preparing image…");
   await page.getByRole("button", { name: "Collapse Assistant" }).click();

@@ -42,7 +42,7 @@ test("hidden decoded Review preserves mode, frame and local annotation draft", a
   for (const key of ["1", "2", "3", "Space", "ArrowLeft", "ArrowRight"]) await page.keyboard.press(key);
   await page.getByRole("button", { name: "Restore split view" }).click();
   expect(await review.innerText()).toBe(before);
-  await expect(page.getByRole("button", { name: "2 Keyframes" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Keyframes" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Annotate presented frame" }).click();
   const annotation = page.getByRole("textbox", { name: "Feedback" });
   // The real editor's labelled input is inspected, rather than injecting app state.

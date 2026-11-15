@@ -76,7 +76,7 @@ test("Assets item header exits Chat focus and opens the current published versio
   await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   await expect(page.locator("main.review-panel")).toBeVisible();
   await expect(page.locator("main.review-panel h1")).toHaveText("Asset A v2");
-  await expect(page.getByRole("button", { name: "2 Keyframes" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Keyframes" })).toHaveAttribute("aria-pressed", "true");
   studio.assertHermetic();
 });
 
@@ -125,7 +125,7 @@ test("published storyboard displays and steps ready ShotPlan panels without Blen
   await page.locator(".catalogue-item-header").filter({ hasText: "Storyboard B" }).click();
   const review = page.locator("main.review-panel");
   await expect(review).toBeVisible();
-  await expect(review.getByRole("button", { name: "2 Keyframes" })).toHaveAttribute("aria-pressed", "true");
+  await expect(review.getByRole("button", { name: "Keyframes" })).toHaveAttribute("aria-pressed", "true");
   for (const [label, id, direction] of [["shot-1 · frame-1 (1 of 2)", "verified", "Next frame"], ["shot-1 · frame-2 (2 of 2)", "legacy", "Previous frame"], ["shot-1 · frame-1 (1 of 2)", "verified", null]] as const) {
     await expect(review.getByText(label, { exact: true })).toBeVisible();
     await expect(review.locator("img")).toHaveAttribute("src", `${base}/artifacts/${id}/content`);
@@ -187,6 +187,66 @@ test("Jobs badge updates empty, active, failed attention and all-succeeded histo
   await expect(badge).toHaveClass("done-jobs"); await expect(badge).toHaveText("Jobs2 done");
   await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
   await expect(panel.getByText("Failure: corrupt_provider_output")).toHaveCount(0);
+  studio.assertHermetic();
+});
+
+test("Review uses compact mode and transport bars with a single annotation editor", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  const review = page.locator("main.review-panel");
+  const modes = review.getByRole("navigation", { name: "Review mode", exact: true });
+  await expect(modes).toBeVisible();
+  expect((await modes.boundingBox())!.height).toBeLessThanOrEqual(52);
+  const modeNames = ["3D Inspection", "Keyframes", "Animation"];
+  const boxes = [];
+  for (const [index, name] of modeNames.entries()) {
+    const button = modes.getByRole("button", { name, exact: true });
+    await expect(button).toHaveAttribute("aria-keyshortcuts", String(index + 1));
+    await expect(button).toHaveAttribute("title", `${name} (${index + 1})`);
+    boxes.push((await button.boundingBox())!);
+    await page.locator(".brand").click(); await page.keyboard.press(String(index + 1));
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+  }
+  expect(new Set(boxes.map(box => box.y)).size).toBe(1);
+  expect(boxes[0].x).toBeLessThan(boxes[1].x);
+  expect(boxes[1].x).toBeLessThan(boxes[2].x);
+  await page.keyboard.press("2");
+  const transport = review.locator('[aria-label="Review transport"]');
+  const aligned = async () => {
+    await expect(transport).toBeVisible();
+    expect((await transport.boundingBox())!.height).toBeLessThanOrEqual(52);
+    const bounds = await Promise.all([
+      transport.getByRole("button", { name: "Previous frame", exact: true }),
+      transport.getByRole("spinbutton", { name: "Frame", exact: true }),
+      transport.getByRole("button", { name: "Next frame", exact: true }),
+    ].map(control => control.boundingBox()));
+    expect(new Set(bounds.map(box => box!.y)).size).toBe(1);
+    expect(bounds[0]!.x).toBeLessThan(bounds[1]!.x);
+    expect(bounds[1]!.x).toBeLessThan(bounds[2]!.x);
+  };
+  await aligned();
+  await expect(review.getByRole("combobox", { name: "Shot / render job" })).toHaveCount(0);
+  await expect(review.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
+  await review.getByRole("button", { name: "Annotate presented frame" }).click();
+  await expect(modes).toHaveCount(0); await expect(transport).toHaveCount(0);
+  const editor = review.getByRole("region", { name: "Pinned annotation", exact: true });
+  await expect(editor.locator(":scope > .review-bar")).toHaveCount(1);
+  for (const name of ["Stroke", "Arrow", "Region", "Pin", "Eraser", "Mask", "Close draft"]) await expect(editor.getByRole("button", { name, exact: true })).toBeVisible();
+  const width = editor.getByRole("spinbutton", { name: "Width (image px)", exact: true });
+  await expect(width).toBeVisible();
+  expect(await width.locator("..").evaluate(label => getComputedStyle(label).flexDirection)).toBe("row");
+  await expect(editor.locator(".annotation-dock .review-transport-bar")).toHaveCount(1);
+  expect((await editor.locator(".annotation-dock").boundingBox())!.height).toBeLessThanOrEqual(120);
+  await editor.getByRole("textbox", { name: "Feedback", exact: true }).fill("Do not switch modes while typing");
+  await page.keyboard.press("1");
+  await expect(editor).toBeVisible();
+  await editor.getByRole("button", { name: "Close draft", exact: true }).click();
+  await expect(modes.getByRole("button", { name: "Keyframes", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(editor).toHaveCount(0); await aligned();
+  const surface = review.locator(".review-surface");
+  expect(await surface.evaluate(element => element.scrollHeight <= element.clientHeight)).toBe(true);
+  expect(studio.guard!.calls.filter(call => call.method === "POST")).toEqual([]);
   studio.assertHermetic();
 });
 

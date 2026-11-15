@@ -1,4 +1,5 @@
 import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, Info, Pause, PenLine, Play, X } from "lucide-react";
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, PreviewSegment, ProxyMapping, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { AnnotationEditor } from "./AnnotationEditor";
@@ -14,6 +15,7 @@ import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
 import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
 import { useReviewSelection } from "./state";
+import { RetainedReview, ReviewEmpty, ReviewModeSwitcher } from "./ReviewChrome";
 import "./review.css";
 
 type Mode = "3d_inspection" | "keyframes" | "animation";
@@ -36,6 +38,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
   const version = refreshedVersion ?? suppliedVersion;
   const [mode, setMode] = useState<Mode>("keyframes");
+  const [drawer, setDrawer] = useState<"annotations" | "details" | null>(null);
   const [frames, setFrames] = useState<FrameReceipt[]>([]);
   const [segments, setSegments] = useState<PreviewSegment[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
@@ -402,51 +405,60 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     }
   }
 
-  if (inspectedArtifact) return <section className="review-workspace retained-review" aria-label="Review workspace">
-    <div className="review-toolbar retained-review-toolbar"><strong>Retained output preview</strong><span>Unpublished retained output · Concept images are not 3D meshes</span>
-      {inspectedArtifactSummary && <span className="attribution-badge">{inspectedArtifactSummary.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</span>}
-      <a href={mediaUrl(projectId, inspectedArtifact.artifact_id)} download={inspectedArtifact.artifact_id}>Download image</a>
-      {onClearArtifact && <button onClick={onClearArtifact}>{version ? "Back to pinned version" : "Clear preview"}</button>}
-    </div>
-    {inspectedArtifact.state === "ready" && inspectedArtifact.kind === "image" && ["image/png", "image/jpeg", "image/webp"].includes(inspectedArtifact.media_type) ? <div className="review-image"><img src={mediaUrl(projectId, inspectedArtifact.artifact_id)} alt={`Retained ${inspectedArtifact.purpose} image ${inspectedArtifact.artifact_id}`} /></div> : <p>No safe ready image preview available.</p>}
-    <footer className="review-toolbar retained-review-metadata">{inspectedArtifact.dimensions && <span>{inspectedArtifact.dimensions.width} × {inspectedArtifact.dimensions.height}</span>}<span>{inspectedArtifact.purpose}</span><code>SHA-256 {inspectedArtifact.sha256.slice(0, 12)}</code><span>{inspectedArtifactSummary?.published_versions.length ? `Published to ${inspectedArtifactSummary.published_versions.length} catalogue version(s)` : "Not published to catalogue"}</span></footer>
-  </section>;
-  if (!version) return <section className="review-workspace"><p>Select a published version to review.</p></section>;
+  if (inspectedArtifact) return <RetainedReview {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  if (!version) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
   const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
   const storyboardIndex = activeStoryboardPanel && target && activeStoryboardPanel.target.artifact_id === target.artifact_id && activeStoryboardPanel.shot_id === target.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
   const storyboardPanel = storyboardIndex >= 0 ? storyboardTargets[storyboardIndex] : undefined;
+  const mappedSequence = mode === "animation" && !!assembly && !!frameMap;
+  const unsavedCount = saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).length;
   return <section className="review-workspace" aria-label="Review workspace">
-    <nav className="review-toolbar" aria-label="Review mode">{([['3d_inspection','3D Inspection'],['keyframes','Keyframes'],['animation','Animation']] as const).map(([id,label], index) => <button key={id} disabled={!!draft} aria-pressed={mode === id} onClick={() => changeMode(id)}>{index+1} {label}</button>)}
-      <button disabled={!visible || !target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
-      {mode === "3d_inspection" && <button disabled={!visible || !proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>}
-    </nav>
-    {assembly?.purpose === "final" && deliveryJob && deliveryManifest && <nav className="review-toolbar" aria-label="Sequence delivery">
-      <span>Final encode · technical completion is not owner selection</span>
-      <a href={mediaUrl(projectId,assembly.artifact_id)} download={`${version.version_id}.mp4`}>Download final video</a>
-      <a href={mediaUrl(projectId,deliveryManifest.artifact_id)} download={`${version.version_id}-manifest.json`}>Download delivery manifest</a>
-    </nav>}
+    {!draft && <>
+      <nav className="review-bar" aria-label="Review mode"><ReviewModeSwitcher mode={mode} onChange={changeMode}/>
+        <div className="toolbar-spacer"/><div className="toolbar-group review-command-actions">
+          {assembly?.purpose === "final" && deliveryJob && deliveryManifest && <>
+            <a className="toolbar-btn" title="Final encode · technical completion is not owner selection" href={mediaUrl(projectId,assembly.artifact_id)} download={`${version.version_id}.mp4`}><Download size={13}/>Download final video</a>
+            <a className="toolbar-btn" title="Final encode · technical completion is not owner selection" href={mediaUrl(projectId,deliveryManifest.artifact_id)} download={`${version.version_id}-manifest.json`}><Download size={13}/>Download delivery manifest</a>
+          </>}
+          <button className="toolbar-btn" aria-pressed={drawer === "annotations"} onClick={() => setDrawer(drawer === "annotations" ? null : "annotations")}><Bookmark size={13}/>Annotations{drafts.length + unsavedCount > 0 && <span className="toolbar-count">{drafts.length + unsavedCount}</span>}</button>
+          <button className="toolbar-btn" aria-pressed={drawer === "details"} onClick={() => setDrawer(drawer === "details" ? null : "details")}><Info size={13}/>Details</button>
+          {mode === "3d_inspection" ? <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || !proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>
+            : !mappedSequence && <button className="toolbar-btn toolbar-btn-accent" aria-label="Annotate presented frame" disabled={!visible || !target || !readyToCapture} onClick={() => void annotate()}><PenLine size={14}/>Annotate</button>}
+        </div>
+      </nav>
+      {drawer && <section className="review-drawer" aria-label={drawer === "annotations" ? "Saved annotations and local drafts" : "Pinned version details"}>
+        <button className="toolbar-btn toolbar-icon-btn drawer-close" aria-label="Close review drawer" onClick={() => setDrawer(null)}><X size={14}/></button>
+        {drawer === "annotations" ? <div className="review-drawer-items">
+          {!drafts.length && !saved.length && <span className="toolbar-meta">No saved annotations or local drafts</span>}
+          {drafts.map(d => <button className="toolbar-btn" key={d.key} onClick={() => void restore(d.annotation)}>{d.annotation.text || d.annotation.annotation_id} · {d.state} · {d.annotation.target.version_id}</button>)}
+          {saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).map(a => <button className="toolbar-btn" key={a.annotation_id} onClick={() => void restore(a)}>{a.text || a.annotation_id} · revision {a.saved_revision}</button>)}
+        </div> : <><p>Pinned version: {version.name} · {version.version_id} · {version.artifact_ids.length} version artefacts</p><div className="review-drawer-items"><strong>Published image artefacts</strong>{artifacts.filter(a => a.kind === "image").map(a => <span className="toolbar-chip" key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose}</span>)}</div></>}
+      </section>}
+    </>}
     {draft ? <AnnotationEditor key={draft.key} api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onContextPreparer={registerEditorPreparer} onClose={() => setDraftId(null)}/>
-       : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView visible={visible} url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
+       : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView visible={visible} url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <div className="viewer-empty">Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</div>
          : mode === "animation" ? assembly && frameMap ? <SequencePlayer visible={visible} key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={frameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
          }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
-           : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
-    <div className="review-toolbar"><button onClick={() => step(-1)}>Previous frame</button><button onClick={() => step(1)}>Next frame</button>
-      {!currentFrames.length && storyboardPanel && <span title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
-      <label>Shot / render job<select aria-label="Shot / render job" disabled={!!draft} value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>
-      <label>Frame<input type="number" min="1" value={requestedFrame} disabled={!!draft} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
-      <span>{target ? `${target.dimensions.width} × ${target.dimensions.height} · ${target.origin} · frame ${target.sequence_frame ?? target.source_frame ?? "image"}` : "No presented target"}</span>
-      <span>{activeJob?.render_spec ? `${activeJob.render_spec.engine} · ${activeJob.render_spec.purpose} · ${activeJob.render_spec.samples} samples` : "No render profile reported"}</span>
-    </div>
-    <details><summary>Saved annotations and local drafts</summary>
-      {drafts.map(d => <button key={d.key} onClick={() => restore(d.annotation)}>{d.annotation.text || d.annotation.annotation_id} · {d.state} · {d.annotation.target.version_id}</button>)}
-      {saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).map(a => <button key={a.annotation_id} onClick={() => restore(a)}>{a.text || a.annotation_id} · revision {a.saved_revision}</button>)}
-    </details>
-    <p>Pinned version: {version.name} · {version.version_id} · {version.artifact_ids.length} version artefacts</p>
-    <details><summary>Published image artefacts</summary>{artifacts.filter(a => a.kind === "image").map(a => <span key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose} </span>)}</details>
-    {pendingCapture && <section aria-label="Retained inspection capture"><p>Capture {pendingCapture.uploadId} · {pendingCapture.dimensions.width} × {pendingCapture.dimensions.height} · {pendingCapture.phase}</p>{pendingCapture.phase !== "upload" && <><p>Inspect and resolve the retained request in Copilot. This capture is not automatically queued again.</p><button disabled={queueingView} onClick={async () => {try {await writeProxyCapture(pendingCapture.key, null, pendingCapture.uploadId); pendingCaptureRef.current = null; setPendingCapture(null);} catch (e) {setError(String(e));}}}>Dismiss capture after resolving Copilot request</button></>}</section>}
-    {error && <p role="status">{error}</p>}
+           : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">No ready review image. Rendering is an explicit Queue request.</div>}
+    {!draft && <div className="review-bar review-transport-bar" aria-label="Review transport">
+      {mode === "3d_inspection" ? <><span className="toolbar-chip">Sample frame {mapping?.sample_frame ?? 1}</span>{selected.length > 0 && <span className="toolbar-chip">{selected.length} object(s) selected</span>}<div className="toolbar-spacer"/><span className="toolbar-meta">Static inspection proxy · orbit / click to select</span></> : <>
+        <div className="toolbar-group">
+          {mode === "animation" && !mappedSequence && <button className="toolbar-btn toolbar-icon-btn" aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"} disabled={!visible} onClick={() => setPlaying(!playing)}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button>}
+          <button className="toolbar-btn toolbar-icon-btn" aria-label="Previous frame" title="Previous frame (←)" onClick={() => step(-1)}><ChevronLeft size={15}/></button>
+          <label className="toolbar-field"><span>Frame</span><input aria-label="Frame" type="number" min="1" value={requestedFrame} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
+          <button className="toolbar-btn toolbar-icon-btn" aria-label="Next frame" title="Next frame (→)" onClick={() => step(1)}><ChevronRight size={15}/></button>
+        </div>
+        {!currentFrames.length && storyboardPanel && <span className="toolbar-chip" title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
+        {versionJobs.length > 0 && <label className="toolbar-field"><span>Pass</span><select aria-label="Shot / render job" value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>}
+        <div className="toolbar-spacer"/>
+        {target && <span className="toolbar-chip">{target.dimensions.width} × {target.dimensions.height} · {target.origin} · {target.sequence_frame ?? target.source_frame ? `f${target.sequence_frame ?? target.source_frame}` : "still"}</span>}
+        {activeJob?.render_spec && <span className="toolbar-meta">{activeJob.render_spec.engine} · {activeJob.render_spec.purpose} · {activeJob.render_spec.samples} spp</span>}
+      </>}
+    </div>}
+    {pendingCapture && <section className="review-status-banner" aria-label="Retained inspection capture"><span>Capture {pendingCapture.uploadId} · {pendingCapture.dimensions.width} × {pendingCapture.dimensions.height} · {pendingCapture.phase}</span>{pendingCapture.phase !== "upload" && <><span>Inspect and resolve the retained request in Copilot. This capture is not automatically queued again.</span><button className="toolbar-btn" disabled={queueingView} onClick={async () => {try {await writeProxyCapture(pendingCapture.key, null, pendingCapture.uploadId); pendingCaptureRef.current = null; setPendingCapture(null);} catch (e) {setError(String(e));}}}>Dismiss capture after resolving Copilot request</button></>}</section>}
+    {error && <div className="review-status-banner" role="status">{error}</div>}
   </section>;
 }

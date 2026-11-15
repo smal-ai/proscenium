@@ -15,10 +15,9 @@
 .assistant-heading .panel-tabs{border-bottom:0;padding:0 4px;flex:1}
 .assistant-heading>button{border:0;background:transparent;padding:5px;min-width:28px}
 .assistant-status{color:#c5c5ce}
-.review-fallback.retained-review{display:flex;flex-direction:column;min-height:0;height:100%;gap:8px}
-.review-fallback.retained-review .review-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px;border-bottom:1px solid var(--border)}
-.review-fallback.retained-review .review-image{flex:1;min-height:0;overflow:hidden}
-.review-fallback.retained-review .review-image img{display:block;width:100%;height:100%;object-fit:contain}
+.review-heading{padding:10px 16px;min-height:54px;flex-shrink:0}
+.review-surface{display:flex;flex-direction:column;overflow:hidden}
+.review-workspace .viewer-empty{margin:16px;min-height:0;overflow:auto}
 .assistant-starter{padding:10px 13px;border-bottom:1px solid var(--border);color:#a1a1aa;font-size:11px}
 .assistant-starter>div{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 .assistant-starter button{font-size:11px}

@@ -98,7 +98,9 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
       : isolated ? <img src={mediaUrl(projectId, isolated.artifact_id)} alt={`Available frame ${activeFrame}`} onLoad={() => {const target = frameTarget(isolated, version); presented.current = target; onPresentedRef.current(target);}}/>
       : <p role="status">Frame {activeFrame} pending. No later interval substituted.</p>}
     {next && <video key={next.segment_id} ref={nextVideo} src={mediaUrl(projectId, next.artifact_id)} muted preload="auto" className="review-prebuffer" aria-hidden="true"/>}
-    <div className="review-toolbar"><button disabled={!visible} onClick={() => onPlaying(!playing)}>{playing ? "Pause" : "Play"}</button><output aria-live="polite">{message}</output></div>
-    <div className="review-intervals" aria-label="Available, pending and failed intervals">{availability ? ([['Available',availability.available_ranges],['Playable',availability.playable_ranges],['Pending',availability.pending_ranges],['Failed',availability.failed_ranges]] as const).map(([label,ranges])=><div key={label}>{label}: {ranges.map(r=>`${r.start}–${r.end}`).join(", ")||"none"}</div>) : "Availability not yet reported"}</div>
+    {(availability || message) && <div className="review-player-status">
+      {message && <output aria-live="polite">{message}</output>}
+      {availability && <div className="review-intervals" aria-label="Available, pending and failed intervals">{([['Available',availability.available_ranges],['Playable',availability.playable_ranges],['Pending',availability.pending_ranges],['Failed',availability.failed_ranges]] as const).map(([label,ranges])=><span key={label}>{label}: {ranges.map(r=>`${r.start}–${r.end}`).join(", ")||"none"}</span>)}</div>}
+    </div>}
   </section>;
 }

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Film, Image, Layers, PanelLeft, PanelRight, Maximize2 as Maximise2, Minimize2 as Minimise2, RefreshCw, Sparkles } from "lucide-react";
 import { ApiClient, ApiError } from "../api";
 import type { Artifact, ConfigurationView, ProjectRecord, VersionRecord } from "../api";
-import { mediaUrl } from "../features/review/media";
+import { RetainedReview, ReviewEmpty } from "../features/review/ReviewChrome";
+import { typingTarget } from "../features/review/media";
 import type { ComposerSeedIntent, ContextPreparer, ReviewSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
 import { emptySelection } from "../api/studio";
 import { ProjectMenu } from "../features/projects/ProjectMenu";
@@ -148,7 +149,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>
-      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} image · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>{inspectedArtifact ? <div className="source-identity"><span>Unpublished retained media · Not a catalogue version</span>{version && <button onClick={onClearArtifact}>Back to pinned version</button>}</div> : version && <div className="source-identity"><code>Git {version.source_commit.slice(0, 10)}</code><span title={version.version_id}>Pinned · {version.version_id}</span></div>}</div>
+      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} image · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>{inspectedArtifact ? <div className="source-identity"><span>Unpublished retained media · Not a catalogue version</span></div> : version && <div className="source-identity"><code>Git {version.source_commit.slice(0, 10)}</code><span title={version.version_id}>Pinned · {version.version_id}</span></div>}</div>
         {(rootError || data.error) && <div className="metadata-error" role="alert">{rootError || data.error} <span>Reads do not start models or regenerate media.</span></div>}
         <div className="review-surface">{projectId && Review ? <Review {...reviewProps} /> : <ReviewFallback {...reviewProps} hasProject={!!projectId} />}</div>
         <footer className="review-footer"><span>{inspectedArtifact ? "Unpublished retained media · Not a catalogue version" : version ? `${version.kind} · ${version.version_id}` : "No published version selected"}</span><span>{version ? "New publications do not move this view" : "Git-backed sources · Immutable publications"}</span></footer>
@@ -175,14 +176,14 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, inspec
   const pinnedContext = useRef(readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection());
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
-      if (!visible) return;
-      if (event.target instanceof HTMLElement && (event.target.closest("input,textarea,select,button,[contenteditable=true]") || event.ctrlKey || event.altKey || event.metaKey)) return;
+      if (!visible || inspectedArtifact) return;
+      if (typingTarget(event.target) || event.ctrlKey || event.altKey || event.metaKey) return;
       const modes = { "1": "3d_inspection", "2": "keyframes", "3": "animation" } as const;
       if (event.key in modes) { event.preventDefault(); setMode(modes[event.key as keyof typeof modes]); }
     }
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [visible]);
+  }, [visible, inspectedArtifact]);
   useEffect(() => {
     if (inspectedArtifact) {
       const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: [{ artifact_id: inspectedArtifact.artifact_id, role: "reference" }] };
@@ -195,14 +196,6 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, inspec
     pinnedContext.current = context;
     onContextChange(context);
   }, [mode, version, projectId, inspectedArtifact, onContextChange, onContextPreparer]);
-  if (inspectedArtifact) return <section className="review-fallback retained-review" aria-label="Review workspace">
-    <div className="review-toolbar"><strong>Retained output preview</strong><span>Unpublished retained output · Concept images are not 3D meshes</span>
-      {inspectedArtifactSummary && <span>{inspectedArtifactSummary.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</span>}
-      <a href={mediaUrl(projectId, inspectedArtifact.artifact_id)} download={inspectedArtifact.artifact_id}>Download image</a>
-      {onClearArtifact && <button onClick={onClearArtifact}>{version ? "Back to pinned version" : "Clear preview"}</button>}
-    </div>
-    {inspectedArtifact.state === "ready" && inspectedArtifact.kind === "image" && ["image/png", "image/jpeg", "image/webp"].includes(inspectedArtifact.media_type) ? <div className="review-image"><img src={mediaUrl(projectId, inspectedArtifact.artifact_id)} alt={`Retained ${inspectedArtifact.purpose} image ${inspectedArtifact.artifact_id}`} /></div> : <p>No safe ready image preview available.</p>}
-    <footer className="review-toolbar">{inspectedArtifact.dimensions && <span>{inspectedArtifact.dimensions.width} × {inspectedArtifact.dimensions.height}</span>}<span>{inspectedArtifact.purpose}</span><code>SHA-256 {inspectedArtifact.sha256.slice(0, 12)}</code><span>{inspectedArtifactSummary?.published_versions.length ? `Published to ${inspectedArtifactSummary.published_versions.length} catalogue version(s)` : "Not published to catalogue"}</span></footer>
-  </section>;
-  return <div className="review-fallback"><nav className="review-modes" aria-label="Review mode">{([{ id: "3d_inspection", label: "3D Inspection", icon: Box }, { id: "keyframes", label: "Keyframes", icon: Image }, { id: "animation", label: "Animation", icon: Film }] as const).map(({ id, label, icon: Icon }) => <button key={id} aria-selected={mode === id} onClick={() => setMode(id)}><Icon size={14} />{label}</button>)}</nav><div className="viewer-empty" data-review-mode={mode}><div className="viewer-symbol"><Layers size={34} strokeWidth={1} /></div><h2>{!hasProject ? "Your next production starts here" : !version ? "Choose a published item" : "Review surface unavailable"}</h2><p>{!hasProject ? "Create or open a project on the workstation, then activate it to begin." : !version ? "Select a source version from Assets. Older publications stay pinned while new work arrives." : "This shell does not include the media review component. Your selected source version is retained."}</p><small>{mode === "3d_inspection" ? "3D Inspection" : mode === "keyframes" ? "Keyframes" : "Animation"} · No render starts when changing mode</small></div></div>;
+  if (inspectedArtifact) return <RetainedReview {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  return <ReviewEmpty {...{mode, hasProject, version}} onChange={setMode}/>;
 }
