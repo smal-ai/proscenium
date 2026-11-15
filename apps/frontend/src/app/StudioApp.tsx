@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Film, Image, Layers, PanelLeft, PanelRight, Maximize2 as Maximise2, Minimize2 as Minimise2, RefreshCw, Sparkles } from "lucide-react";
 import { ApiClient, ApiError } from "../api";
-import type { ConfigurationView, ProjectRecord, VersionRecord } from "../api";
+import type { Artifact, ConfigurationView, ProjectRecord, VersionRecord } from "../api";
+import { mediaUrl } from "../features/review/media";
 import type { ComposerSeedIntent, ContextPreparer, ReviewSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
 import { emptySelection } from "../api/studio";
 import { ProjectMenu } from "../features/projects/ProjectMenu";
@@ -64,6 +65,9 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
   const [leftTab, setLeftTab] = useState<"Shots" | "Outliner" | "Assets">("Assets");
   const [rightTab, setRightTab] = useState<"Copilot" | "Critic">("Copilot");
   const [version, setVersion] = useState<VersionRecord | null>(() => projectId ? readPrivate(`view.version.${projectId}`) : null);
+  const [inspectedArtifact, setInspectedArtifact] = useState<Artifact | null>(null);
+  const inspectedArtifactSummary = inspectedArtifact ? data.retainedArtifacts.find(r => r.artifact.artifact_id === inspectedArtifact.artifact_id) ?? null : null;
+  const onClearArtifact = useCallback(() => setInspectedArtifact(null), []);
   const [selection, setSelection] = useState<TurnSelection>(() => projectId ? readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection() : emptySelection());
   const contextPreparer = useRef<ContextPreparer | null>(null);
   const onContextPreparer = useCallback((prepare: ContextPreparer | null) => { contextPreparer.current = prepare; }, []);
@@ -85,15 +89,24 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
     if (projectId) writePrivate(`view.context.${projectId}`, captured);
   }, [projectId]);
   function onSelect(next: VersionRecord) {
+    setInspectedArtifact(null);
+    setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
     setVersion(next);
     writePrivate(`view.version.${projectId}`, next);
     if (version && next.project_id === version.project_id && next.item_id === version.item_id && next.version_id === version.version_id) return;
     onContextChange({ ...emptySelection(), item_id: next.item_id, version_id: next.version_id, view_mode: "keyframes" });
   }
   function onNavigate(next: VersionRecord, context: TurnSelection) {
+    setInspectedArtifact(null);
+    setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
     setVersion(next);
     writePrivate(`view.version.${projectId}`, next);
     onContextChange(context);
+  }
+  function onInspectArtifact(artifact: Artifact) {
+    setInspectedArtifact(artifact);
+    setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
+    if (!version) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: [{ artifact_id: artifact.artifact_id, role: "reference" }] });
   }
   async function onQueue(text: string, context: TurnSelection) {
     setRightTab("Copilot");
@@ -110,7 +123,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
       throw new Error("Steer is not confirmed. Inspect the retained request in Copilot before retrying.");
     }
   }
-  const reviewProps: ReviewSurfaceProps = { visible: !chatFocus, api, projectId: projectId ?? "", version, selection, jobs: data.jobs, refreshRevision: data.revision, onContextChange, onContextPreparer, onNavigate, onQueue };
+  const reviewProps: ReviewSurfaceProps = { visible: !chatFocus, api, projectId: projectId ?? "", version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, selection, jobs: data.jobs, refreshRevision: data.revision, onContextChange, onContextPreparer, onNavigate, onQueue };
   const Review = components.review;
   const Outliner = components.outliner;
   const Catalogue = components.catalogue ?? CatalogueFallback;
@@ -120,7 +133,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
   const uncertain = activeWork?.state === "outcome_uncertain" || (!!composer.pendingStop && !composer.stopping) || data.requests.some(request => request.receipt.state === "outcome_uncertain");
   const stopping = composer.stopping || unsettledStop || activeWork?.state === "stop_requested" || data.requests.some(request => request.receipt.state === "stop_requested");
   const fallbackStatus = !data.hydrated ? "Loading" : uncertain ? "Needs recovery" : stopping ? "Stopping" : composer.busy ? "Sending" : data.snapshot?.execution?.fenced || data.snapshot?.project.state === "awaiting_resume" ? `Paused${data.snapshot?.execution?.hold_reason ? `: ${data.snapshot.execution.hold_reason}` : ""}` : data.snapshot?.pending_decisions.length || activeWork?.state === "awaiting_user" ? "Needs your input" : activeWork?.state === "running" ? "Working" : "Ready";
-  const renderAssistantStatus = (compact: boolean) => AssistantStatus ? <AssistantStatus snapshot={data.snapshot} requests={data.requests} events={data.events} connection={data.connection} hydrated={data.hydrated} submitting={composer.busy} stopping={composer.stopping} compact={compact} /> : <span className="assistant-status" role="status">{fallbackStatus}{data.hydrated && data.connection !== "Connected" ? " · Last known" : ""}</span>;
+  const renderAssistantStatus = (compact: boolean) => AssistantStatus ? <AssistantStatus jobs={data.jobs} snapshot={data.snapshot} requests={data.requests} events={data.events} connection={data.connection} hydrated={data.hydrated} submitting={composer.busy} stopping={composer.stopping} compact={compact} /> : <span className="assistant-status" role="status">{fallbackStatus}{data.hydrated && data.connection !== "Connected" ? " · Last known" : ""}</span>;
   return <div className="studio-shell">
     <header className="studio-header"><div className="brand"><span className="brand-mark">P</span><strong>PROSCENIUM</strong></div><div className="header-divider" /><ProjectMenu api={api} projects={projects} activeId={projectId} onRefresh={onRefreshProjects} />
       <code className="workspace-path" title={data.snapshot?.project.path}>{data.snapshot?.project.path ?? "No active workstation folder"}</code>
@@ -130,22 +143,23 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
       <aside className={`left-panel${layout.navigatorCollapsed ? " collapsed" : ""}`} aria-label="Navigator">
         {layout.navigatorCollapsed && <div className="panel-rail"><button aria-label="Expand Navigator" title="Expand Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: false }))}><PanelLeft size={17} /></button>{(["Shots", "Outliner", "Assets"] as const).map(tab => { const Icon = tab === "Shots" ? Film : tab === "Outliner" ? Layers : Box; return <button key={tab} aria-label={tab} title={tab} onClick={() => { setLeftTab(tab); setLayout(previous => ({ ...previous, navigatorCollapsed: false })); }}><Icon size={17} /></button>; })}</div>}
         <div className="panel-expanded" hidden={layout.navigatorCollapsed}><nav className="panel-tabs" aria-label="Navigator tabs">{(["Shots", "Outliner", "Assets"] as const).map(tab => <button key={tab} aria-selected={leftTab === tab} onClick={() => setLeftTab(tab)}>{tab}</button>)}<button className="panel-control" aria-label="Collapse Navigator" title="Collapse Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: true }))}><PanelLeft size={15} /></button></nav>
-        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.revision} onSelect={onSelect} onCreateAsset={() => seedNewItem("asset")} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
+        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.revision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={() => seedNewItem("asset")} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
         <footer className="panel-footer"><span>Active-project scope</span><code>{projectId ?? "Not selected"}</code></footer>
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>
-      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>{version && <div className="source-identity"><code>Git {version.source_commit.slice(0, 10)}</code><span title={version.version_id}>Pinned · {version.version_id}</span></div>}</div>
+      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} image · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>{inspectedArtifact ? <div className="source-identity"><span>Unpublished retained media · Not a catalogue version</span>{version && <button onClick={onClearArtifact}>Back to pinned version</button>}</div> : version && <div className="source-identity"><code>Git {version.source_commit.slice(0, 10)}</code><span title={version.version_id}>Pinned · {version.version_id}</span></div>}</div>
         {(rootError || data.error) && <div className="metadata-error" role="alert">{rootError || data.error} <span>Reads do not start models or regenerate media.</span></div>}
         <div className="review-surface">{projectId && Review ? <Review {...reviewProps} /> : <ReviewFallback {...reviewProps} hasProject={!!projectId} />}</div>
-        <footer className="review-footer"><span>{version ? `${version.kind} · ${version.version_id}` : "No published version selected"}</span><span>{version ? "New publications do not move this view" : "Git-backed sources · Immutable publications"}</span></footer>
+        <footer className="review-footer"><span>{inspectedArtifact ? "Unpublished retained media · Not a catalogue version" : version ? `${version.kind} · ${version.version_id}` : "No published version selected"}</span><span>{version ? "New publications do not move this view" : "Git-backed sources · Immutable publications"}</span></footer>
       </main>
       {!chatFocus && <div className="splitter-slot">{!layout.assistantCollapsed && <Splitter label="Resize Assistant" direction={-1} value={assistantWidth} min={320} max={assistantMax} onChange={width => setLayout(previous => ({ ...previous, assistantWidth: width }))} />}</div>}
       <aside className={`right-panel${layout.assistantCollapsed ? " collapsed" : ""}`} style={chatFocus && layout.assistantCollapsed ? { gridColumn: 4 } : undefined} aria-label="Assistant panel">
-        {layout.assistantCollapsed && <div className="panel-rail"><button aria-label="Expand Assistant" title="Expand Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: false }))}><PanelRight size={17} /></button>{renderAssistantStatus(true)}<button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={17} /> : <Maximise2 size={17} />}</button></div>}
-        <div className="panel-expanded" hidden={layout.assistantCollapsed}><header className="assistant-heading"><nav className="panel-tabs" aria-label="Assistant tabs"><button aria-selected={rightTab === "Copilot"} onClick={() => setRightTab("Copilot")}><Sparkles size={13} />Copilot{data.snapshot?.pending_decisions.length ? <span className="tab-count">{data.snapshot.pending_decisions.length}</span> : null}</button><button aria-selected={rightTab === "Critic"} onClick={() => setRightTab("Critic")}>Critic</button></nav>{renderAssistantStatus(false)}<button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={15} /> : <Maximise2 size={15} />}</button><button aria-label="Collapse Assistant" title="Collapse Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: true }))}><PanelRight size={15} /></button></header>
-        <div data-seed-nonce={seedIntent?.nonce} className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} onRefresh={data.refresh} items={data.items} retainedArtifacts={data.retainedArtifacts} seedIntent={seedIntent} hydrated={data.hydrated} connection={data.connection} showHeaderStatus={false} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
+        {layout.assistantCollapsed && <div className="panel-rail"><button aria-label="Expand Assistant" title="Expand Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: false }))}><PanelRight size={17} /></button><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={17} /> : <Maximise2 size={17} />}</button><div className="panel-rail-status">{renderAssistantStatus(true)}</div></div>}
+        <div className="panel-expanded" hidden={layout.assistantCollapsed}><header className="assistant-heading"><nav className="panel-tabs" aria-label="Assistant tabs"><button aria-selected={rightTab === "Copilot"} onClick={() => setRightTab("Copilot")}><Sparkles size={13} />Copilot{data.snapshot?.pending_decisions.length ? <span className="tab-count">{data.snapshot.pending_decisions.length}</span> : null}</button><button aria-selected={rightTab === "Critic"} onClick={() => setRightTab("Critic")}>Critic</button></nav><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={15} /> : <Maximise2 size={15} />}</button><button aria-label="Collapse Assistant" title="Collapse Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: true }))}><PanelRight size={15} /></button></header>
+        <div data-seed-nonce={seedIntent?.nonce} className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} onRefresh={data.refresh} items={data.items} retainedArtifacts={data.retainedArtifacts} onInspectArtifact={onInspectArtifact} seedIntent={seedIntent} hydrated={data.hydrated} connection={data.connection} showHeaderStatus={false} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
         {rightTab === "Critic" && <div className="critic-content">{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.revision} onQueue={onQueue} onSteer={canSteer ? onSteer : undefined} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>}
+        {(rightTab === "Critic" || !projectId) && <footer className="assistant-footer">{renderAssistantStatus(false)}</footer>}
         </div>
       </aside>
     </div>
@@ -156,8 +170,9 @@ function Empty({ icon, title, text }: { icon: React.ReactNode; title: string; te
   return <div className="empty-panel">{icon}<h3>{title}</h3><p>{text}</p></div>;
 }
 
-function ReviewFallback({ visible = true, version, projectId, hasProject, onContextChange }: ReviewSurfaceProps & { hasProject: boolean }) {
+function ReviewFallback({ visible = true, version, projectId, hasProject, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, onContextChange, onContextPreparer }: ReviewSurfaceProps & { hasProject: boolean }) {
   const [mode, setMode] = useState<"3d_inspection" | "keyframes" | "animation">("keyframes");
+  const pinnedContext = useRef(readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection());
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
       if (!visible) return;
@@ -169,8 +184,25 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, onCont
     return () => window.removeEventListener("keydown", keydown);
   }, [visible]);
   useEffect(() => {
-    const previous = readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection();
-    onContextChange({ ...previous, item_id: version?.item_id ?? null, version_id: version?.version_id ?? null, view_mode: mode });
-  }, [mode, version, projectId, onContextChange]);
+    if (inspectedArtifact) {
+      const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: [{ artifact_id: inspectedArtifact.artifact_id, role: "reference" }] };
+      onContextChange(context);
+      onContextPreparer?.(async () => structuredClone(context));
+      return () => onContextPreparer?.(null);
+    }
+    const previous = pinnedContext.current.version_id === (version?.version_id ?? null) ? pinnedContext.current : emptySelection();
+    const context = { ...previous, item_id: version?.item_id ?? null, version_id: version?.version_id ?? null, view_mode: mode };
+    pinnedContext.current = context;
+    onContextChange(context);
+  }, [mode, version, projectId, inspectedArtifact, onContextChange, onContextPreparer]);
+  if (inspectedArtifact) return <section className="review-fallback retained-review" aria-label="Review workspace">
+    <div className="review-toolbar"><strong>Retained output preview</strong><span>Unpublished retained output · Concept images are not 3D meshes</span>
+      {inspectedArtifactSummary && <span>{inspectedArtifactSummary.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</span>}
+      <a href={mediaUrl(projectId, inspectedArtifact.artifact_id)} download={inspectedArtifact.artifact_id}>Download image</a>
+      {onClearArtifact && <button onClick={onClearArtifact}>{version ? "Back to pinned version" : "Clear preview"}</button>}
+    </div>
+    {inspectedArtifact.state === "ready" && inspectedArtifact.kind === "image" && ["image/png", "image/jpeg", "image/webp"].includes(inspectedArtifact.media_type) ? <div className="review-image"><img src={mediaUrl(projectId, inspectedArtifact.artifact_id)} alt={`Retained ${inspectedArtifact.purpose} image ${inspectedArtifact.artifact_id}`} /></div> : <p>No safe ready image preview available.</p>}
+    <footer className="review-toolbar">{inspectedArtifact.dimensions && <span>{inspectedArtifact.dimensions.width} × {inspectedArtifact.dimensions.height}</span>}<span>{inspectedArtifact.purpose}</span><code>SHA-256 {inspectedArtifact.sha256.slice(0, 12)}</code><span>{inspectedArtifactSummary?.published_versions.length ? `Published to ${inspectedArtifactSummary.published_versions.length} catalogue version(s)` : "Not published to catalogue"}</span></footer>
+  </section>;
   return <div className="review-fallback"><nav className="review-modes" aria-label="Review mode">{([{ id: "3d_inspection", label: "3D Inspection", icon: Box }, { id: "keyframes", label: "Keyframes", icon: Image }, { id: "animation", label: "Animation", icon: Film }] as const).map(({ id, label, icon: Icon }) => <button key={id} aria-selected={mode === id} onClick={() => setMode(id)}><Icon size={14} />{label}</button>)}</nav><div className="viewer-empty" data-review-mode={mode}><div className="viewer-symbol"><Layers size={34} strokeWidth={1} /></div><h2>{!hasProject ? "Your next production starts here" : !version ? "Choose a published item" : "Review surface unavailable"}</h2><p>{!hasProject ? "Create or open a project on the workstation, then activate it to begin." : !version ? "Select a source version from Assets. Older publications stay pinned while new work arrives." : "This shell does not include the media review component. Your selected source version is retained."}</p><small>{mode === "3d_inspection" ? "3D Inspection" : mode === "keyframes" ? "Keyframes" : "Animation"} · No render starts when changing mode</small></div></div>;
 }
