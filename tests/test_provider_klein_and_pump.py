@@ -603,3 +603,25 @@ def test_prepare_canonicalises_unpublished_target_alias_onto_active_intent(runti
     assert kind1 != "failure" and kind2 != "failure"
     assert first["submit_request"]["target_id"] == "intent-board"
     assert second["submit_request"]["target_id"] == "intent-board"
+
+
+def test_bounded_get_accepts_large_comfy_object_info_catalog(runtime):
+    from types import SimpleNamespace
+
+    from proscenium.providers.preparation import MAX_CATALOG_BYTES, bounded_get
+
+    large_catalog = {
+        **runtime.catalog,
+        "PaddingNode": {"description": "x" * (3 * 1024**2)},
+    }
+    payload = json.dumps(large_catalog).encode()
+    assert 2 * 1024**2 < len(payload) < MAX_CATALOG_BYTES
+    client = httpx.Client(
+        transport=httpx.MockTransport(lambda req: httpx.Response(200, content=payload))
+    )
+    try:
+        provider = SimpleNamespace(client=client)
+        parsed = bounded_get(provider, {"endpoint": "http://127.0.0.1:8188"}, "/object_info")
+        assert "UNETLoader" in parsed and "PaddingNode" in parsed
+    finally:
+        client.close()

@@ -18,7 +18,7 @@ from proscenium.sources.common import active, admitted, binding, replay, sha
 
 AMBIGUOUS = "Multiple compatible image model tuples exist; configure provider_options.image_recipes"
 UNAVAILABLE = "Image recipe nodes or models are unavailable"
-MAX_CATALOG_BYTES = 2 * 1024**2
+MAX_CATALOG_BYTES = 16 * 1024**2
 
 
 def validate_recipes(options: dict[str, Any]) -> None:
