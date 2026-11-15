@@ -82,7 +82,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     : resumable.find(record => record.work_id === work?.work_id) ?? (resumable.length === 1 ? resumable[0] : undefined);
   const resolvedTarget = resolveTarget(draftTarget, selection);
   const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
-  const currentSelection: TurnSelection = draftTarget === "current_view" && (selection.version_id || selection.annotations.length) ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] } : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
+  const currentSelection: TurnSelection = draftTarget === "current_view" && (selection.version_id || selection.annotations.length || selection.attachments.length) ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] } : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
   function changeDraft(value: string) { setDraft(value); writePrivate(`draft.${projectId}`, value); }
   function changeTarget(target: DraftTarget) { setDraftTarget(target); writePrivate(`target.${projectId}`, target); }
   function changeReferences(versions: VersionRef[]) { setReferences(versions); writePrivate(`ref_versions.${projectId}`, versions); }

@@ -49,7 +49,9 @@ export async function verifyLayout(page: Page, origin: string, dpr: number) {
   await expect(page.getByRole("button", { name: "Critic", exact: true })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("button", { name: "Copilot", exact: true }).click();
   for (let i = 0; i < 40; i++) studio.emit("assistant.completed", { message_id: `message-${i}`, text: `Synthetic message ${i}. ${"Long paragraph. ".repeat(20)}`, native_agent_id: null });
+  await expect(page.locator(".assistant-message")).toHaveCount(40);
   const scroll = page.locator(".chat-scroll");
+  await expect.poll(() => scroll.evaluate(e => e.scrollHeight > e.clientHeight + 200)).toBe(true);
   const atBottom = () => scroll.evaluate(e => e.scrollHeight - e.scrollTop - e.clientHeight);
   await expect.poll(atBottom).toBeLessThan(4);
   await scroll.evaluate(e => { e.scrollTop = 0; e.dispatchEvent(new Event("scroll")); });

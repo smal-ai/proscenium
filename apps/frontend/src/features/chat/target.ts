@@ -27,9 +27,12 @@ export async function prepareSubmissionContext(input: { target: DraftTarget; sel
   // Clone synchronously. Preparation may await a capture while Review navigates.
   const frozen = structuredClone(input);
   const target = resolveTarget(frozen.target, frozen.selection);
-  if (frozen.target !== "current_view" || (!frozen.selection.version_id && !frozen.selection.annotations.length)) return cleanTargetContext(target, frozen.references, frozen.attachments);
+  const hasCurrentView = Boolean(frozen.selection.version_id || frozen.selection.annotations.length || frozen.selection.attachments.length);
+  if (frozen.target !== "current_view" || !hasCurrentView) return cleanTargetContext(target, frozen.references, frozen.attachments);
   const captured = prepare ? await prepare() : frozen.selection;
-  if (captured.item_id !== frozen.selection.item_id || captured.version_id !== frozen.selection.version_id || (captured.target?.shot_id ?? null) !== (frozen.selection.target?.shot_id ?? null)) throw new Error("Review changed during context capture. The draft and original target are retained. Submit again after checking the target.");
+  const standaloneChanged = !frozen.selection.version_id && !frozen.selection.annotations.length
+    && captured.attachments.map(a => a.artifact_id).join("\0") !== frozen.selection.attachments.map(a => a.artifact_id).join("\0");
+  if (captured.item_id !== frozen.selection.item_id || captured.version_id !== frozen.selection.version_id || (captured.target?.shot_id ?? null) !== (frozen.selection.target?.shot_id ?? null) || standaloneChanged) throw new Error("Review changed during context capture. The draft and original target are retained. Submit again after checking the target.");
   return { ...captured, request_target: target, reference_versions: frozen.references, attachments: [...captured.attachments, ...frozen.attachments] };
 }
 export function contextCount(selection: TurnSelection): number {

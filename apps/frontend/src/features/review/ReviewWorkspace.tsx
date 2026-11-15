@@ -286,8 +286,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     if (!currentFrames.length && storyboardTargets.length) {
       if (draftId) return;
       const activePanel = storyboardTargets[storyboardPanelIndex];
-      const index = activePanel?.target.artifact_id === target?.artifact_id && activePanel.shot_id === target?.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
-      const next = storyboardTargets[index + delta];
+      const index = activePanel && target && activePanel.target.artifact_id === target.artifact_id && activePanel.shot_id === target.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
+      const next = index >= 0 ? storyboardTargets[index + delta] : undefined;
       if (next) {setTarget(next.target);setStoryboardPanelIndex(index + delta);setRequestedFrame(index + delta + 1);setTargetCamera(null);setCaptureReady(false);setMode("keyframes");}
       return;
     }
@@ -413,8 +413,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   </section>;
   if (!version) return <section className="review-workspace"><p>Select a published version to review.</p></section>;
   const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
-  const storyboardIndex = activeStoryboardPanel?.target.artifact_id === target?.artifact_id && activeStoryboardPanel.shot_id === target?.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
-  const storyboardPanel = storyboardTargets[storyboardIndex];
+  const storyboardIndex = activeStoryboardPanel && target && activeStoryboardPanel.target.artifact_id === target.artifact_id && activeStoryboardPanel.shot_id === target.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
+  const storyboardPanel = storyboardIndex >= 0 ? storyboardTargets[storyboardIndex] : undefined;
   return <section className="review-workspace" aria-label="Review workspace">
     <nav className="review-toolbar" aria-label="Review mode">{([['3d_inspection','3D Inspection'],['keyframes','Keyframes'],['animation','Animation']] as const).map(([id,label], index) => <button key={id} disabled={!!draft} aria-pressed={mode === id} onClick={() => changeMode(id)}>{index+1} {label}</button>)}
       <button disabled={!visible || !target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
