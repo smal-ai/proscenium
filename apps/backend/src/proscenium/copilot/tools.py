@@ -244,6 +244,7 @@ SAFE_REASONS = frozenset(
 )
 ERROR_GUIDANCE = {
     "corrupt_provider_output": "The provider returned a corrupted raster image. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
+    "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
     "scope_denied": "The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on prepare_image_generation, or use an existing published item/slot.",
     "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",

@@ -65,7 +65,9 @@ description: Generate or correct project concept images with the configured, bud
 - Publish a standalone `asset` without requiring a storyboard. Validate publications
   with `validate_authored_document` before `checkpoint_sources`/`publish_outputs`.
   Use `checkpoint_sources(entry_path=...)` with dependencies/`required_runtime`
-  when needed, then pass its receipt's `source_closure` directly to `publish_outputs`.
+  when needed (omit `retained_files`; registered image artefacts belong in
+  `PublishedItem.artifact_ids`, never in `retained_files`), then pass its receipt's
+  `source_closure` directly to `publish_outputs`.
   Never script source-closure sorting or SHA-256 digests.
   Dependent scenes/storyboards retain exact version pins until explicit adoption.
   Never silently replace requested inference with SVG/vector drawings or use relative

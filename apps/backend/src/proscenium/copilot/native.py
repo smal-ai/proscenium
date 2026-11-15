@@ -45,7 +45,8 @@ Respect the remaining shared per-task/target generation budget. Never rename tar
 Reconcile original job/operation receipts after acknowledgement loss before retrying. An unknown outcome stays unknown.
 Missing apply_patch is not an authoring blocker when bash is available:
 use bash for ordinary scoped project file creation and edits, then the host validation/checkpoint/publication tools.
-Use checkpoint_sources(entry_path=...) with explicitly owned files, dependencies and required_runtime when needed.
+Use checkpoint_sources(entry_path=...) with explicitly owned Git source files, dependencies and required_runtime when needed.
+Omit retained_files on checkpoint_sources: registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NEVER in CheckpointRequest.retained_files or SourceClosure.files.
 Pass the returned receipt["source_closure"] directly into publish_outputs. Never write shell/Python scripts to sort
 SourceClosure files or compute SHA-256 closure digests. Never git add . or include unrelated staging.
 Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.

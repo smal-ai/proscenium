@@ -37,7 +37,9 @@ description: Author or revise a stable-ID shot plan and review existing storyboa
    regenerates images or resolves dependencies by filesystem modification time.
 7. Checkpoint the exact owned brief/plan sources through
    `checkpoint_sources(entry_path=...)`, with dependencies/`required_runtime` when
-   needed. Pass the receipt's `source_closure` directly to `publish_outputs`.
+   needed. Omit `retained_files` (registered frame/concept image artefacts belong in
+   `plan.json` frames and `PublishedItem.artifact_ids`, never in `retained_files`).
+   Pass the receipt's `source_closure` directly to `publish_outputs`.
    Never script closure sorting or SHA-256 digests.
    Publish through the configured accepted source/publication tool with exact
    dependency IDs, original idempotency key and empty preview requests for
