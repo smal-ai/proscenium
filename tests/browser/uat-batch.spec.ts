@@ -124,6 +124,40 @@ test("send mode is deliberate, stale Steer stays guarded, held cancellation and 
   studio.assertHermetic();
 });
 
+test("Resume stays visible above the Composer while scrolling a long conversation", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work("awaiting_resume");
+  studio.snapshot.execution!.fenced = true;
+  studio.requests = Array.from({ length: 40 }, (_, i) => request(`history-${i}`, `Earlier prompt ${i}. ${"Storyboard detail. ".repeat(25)}`));
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  const resume = page.getByRole("button", { name: "Resume", exact: true });
+  const scroll = page.locator(".chat-scroll");
+  await input.fill("Keep this UAT draft");
+  await expect.poll(() => scroll.evaluate(element => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(2);
+  await expect(resume).toBeInViewport();
+  const before = await resume.boundingBox();
+  await scroll.hover(); await page.mouse.wheel(0, -700);
+  await expect(page.getByRole("button", { name: "Jump to latest" })).toBeVisible();
+  await expect(resume).toBeInViewport();
+  expect((await resume.boundingBox())!.y).toBeCloseTo(before!.y, 0);
+  await page.getByRole("button", { name: /^Context/ }).click();
+  await expect(resume).toBeInViewport();
+  await page.getByRole("button", { name: "Back to message" }).click();
+  await expect(input).toHaveValue("Keep this UAT draft");
+  await page.getByLabel("Resume mode").selectOption("continue_work");
+  await expect(resume).toBeInViewport();
+  await resume.click();
+  const pending = page.getByRole("region", { name: "Resume awaiting confirmation" });
+  await expect(pending).toBeInViewport();
+  await expect.poll(() => studio.resumePolls).toBeGreaterThan(0);
+  studio.resumeComplete = true;
+  await expect(pending).toHaveCount(0);
+  await expect(input).toHaveValue("Keep this UAT draft");
+  expect(studio.submissions).toEqual([]);
+  studio.assertHermetic();
+});
+
 test("fixed status header and collapsed rail retain work on disconnect", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();

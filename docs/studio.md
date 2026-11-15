@@ -64,7 +64,7 @@ The **Target** picker above the Composer separates what you are viewing from wha
 ## Stopping, holding and explicit Resume
 
 - **Queue holds:** When execution is paused or awaiting reconciliation, the Composer shows the hold reason before submission. Held Queue requests can be cancelled individually with **Cancel held request**.
-- **Stop vs Resume:** **Stop** cancels Copilot work through verified native barriers without stopping independent external jobs. After a restart, native abort or uncertain Stop, use **Continue deliberately**:
+- **Stop vs Resume:** **Stop** cancels Copilot work through verified native barriers without stopping independent external jobs. After a restart, native abort or uncertain Stop, the **Resume Copilot** controls stay visible directly above the Composer, outside the scrollable Conversation. Choose a mode, then click **Resume**:
   - **Reconcile only:** Inspects native state and settles proven barriers without sending a prompt.
   - **Continue original work:** Resumes the selected work with its latest acknowledged request context and original generation budget.
   - **Release held queue:** Unfences an idle project so held Queue requests can dispatch.

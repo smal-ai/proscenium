@@ -1,5 +1,13 @@
 .chat-scroll-content{display:flow-root}
 .chat-jump{align-self:center;flex-shrink:0;margin:0 0 8px;font-size:11px;color:#a1a1aa}
+.chat-recovery{flex-shrink:0;padding:0 13px 8px}
+.chat-recovery:empty{display:none}
+.chat-recovery .resume-card,.chat-recovery .retry-card{margin:0;padding:9px;gap:6px}
+.chat-recovery .retry-card{margin-top:6px}
+.chat-recovery h3,.chat-recovery p{font-size:11px}
+.resume-controls{display:flex;align-items:center;gap:8px}
+.resume-controls select{min-width:0;flex:1;font-size:11px}
+.resume-controls button{flex-shrink:0}
 .usage-credit{margin:8px 0 12px;text-align:right;color:#85858f;font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px;line-height:1.6}
 .composer-links{display:flex;gap:12px;margin:0 0 8px}
 .composer-links button{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:3px 7px;border:1px solid #363640;border-radius:12px;background:#202027;font-size:11px;color:#aaaab6;cursor:pointer}
