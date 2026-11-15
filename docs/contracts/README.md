@@ -42,6 +42,16 @@ same-ID capture receipts. Consumers must accept historical records without them.
   return structured issues rather than rejecting those fields at transport admission.
   Schema, semantic and preflight results are distinct. Preparation does not submit
   inference or consume an attempt.
+- `ProviderCapabilitySummary` optionally reports nullable `default_dimensions`,
+  `default_steps` and `max_pixels`. `ImageGenerationPrepare` permits omitted
+  `project_id` and `generation_task_id`, while preserving supplied historical identities.
+- `CheckpointRequest` optionally declares `entry_path`, `dependencies`,
+  `required_runtime` and `retained_files`. Closure inputs require an entry path and
+  are validated before checkpoint intent or Git ref changes. Completed receipts
+  include a canonical `source_closure`, with sorted files and pinned dependencies,
+  reusable `RuntimeRequirement` and `RetainedClosureFile` definitions, and a verified
+  digest. Omitted runtime requirements default to Proscenium `1.0` with no features.
+  Legacy receipts omit the closure. Uncertain receipts never claim a completed closure.
 
 JSON HTTP bodies and successful JSON responses reference named normative definitions.
 Query parameters use explicit string/integer schemas, with string enums preserved in

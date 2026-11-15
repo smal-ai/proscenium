@@ -132,6 +132,7 @@ export type CheckpointReceipt = {
     }[]
   ];
   replayed: boolean;
+  source_closure?: SourceClosure | null;
 };
 export type Commit = string;
 export type Timestamp = string;
@@ -523,6 +524,7 @@ export interface ContractDefinitions {
   ResumeOperationStatus: ResumeOperationStatus;
   RetainedArtifactPage: RetainedArtifactPage;
   RetainedArtifactSummary: RetainedArtifactSummary;
+  RetainedClosureFile: RetainedClosureFile;
   RetainedFile: RetainedFile;
   ReviewComplete: ReviewComplete;
   ReviewFinding: ReviewFinding;
@@ -532,6 +534,7 @@ export interface ContractDefinitions {
   ReviewTicket: ReviewTicket;
   Revision: Revision;
   RevisionCommand: RevisionCommand;
+  RuntimeRequirement: RuntimeRequirement;
   SegmentPage: SegmentPage;
   SelectionChoice: SelectionChoice;
   SelectionPage: SelectionPage;
@@ -745,16 +748,15 @@ export interface ShotFrame {
   artifact_id: NullableId;
   state: "missing" | "proposed" | "available" | "selected";
 }
-export interface CheckpointRequest {
-  schema_version: "1.0";
-  operation_id: Id;
-  project_id: Id;
+export interface SourceClosure {
+  entry_path: RelativePath;
   /**
    * @minItems 1
    */
-  paths: [RelativePath, ...RelativePath[]];
-  message: string;
-  expected_head: Commit | null;
+  files: [ClosureFile, ...ClosureFile[]];
+  dependencies: VersionRef[];
+  required_runtime: RuntimeRequirement;
+  digest: Sha256;
 }
 export interface ClosureFile {
   destination: RelativePath;
@@ -771,6 +773,30 @@ export interface RetainedFile {
   kind: "retained";
   artifact_id: Id;
   sha256: Sha256;
+}
+export interface RuntimeRequirement {
+  application: string;
+  version: string;
+  features: string[];
+}
+export interface CheckpointRequest {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  /**
+   * @minItems 1
+   */
+  paths: [RelativePath, ...RelativePath[]];
+  message: string;
+  expected_head: Commit | null;
+  entry_path?: RelativePath;
+  dependencies?: VersionRef[];
+  required_runtime?: RuntimeRequirement;
+  retained_files?: RetainedClosureFile[];
+}
+export interface RetainedClosureFile {
+  destination: RelativePath;
+  origin: RetainedFile;
 }
 export interface CommandReceipt {
   schema_version: "1.0";
@@ -995,8 +1021,8 @@ export interface GenerationSubmit {
 export interface ImageGenerationPrepare {
   schema_version: "1.0";
   operation_id: Id;
-  project_id: Id;
-  generation_task_id: Id;
+  project_id?: Id;
+  generation_task_id?: Id;
   prompt: string;
   seed: string;
   provider_id?: NullableId;
@@ -1201,6 +1227,9 @@ export interface ProviderCapabilitySummary {
   reference_dimensions: Dimensions | null;
   reason_code: string | null;
   summary: string;
+  default_dimensions?: Dimensions | null;
+  default_steps?: number | null;
+  max_pixels?: number | null;
 }
 export interface ProjectConfig {
   schema_version: "1.0";
@@ -1354,20 +1383,6 @@ export interface PublicationSubmit {
    * @minItems 1
    */
   items: [PublishedItem, ...PublishedItem[]];
-}
-export interface SourceClosure {
-  entry_path: RelativePath;
-  /**
-   * @minItems 1
-   */
-  files: [ClosureFile, ...ClosureFile[]];
-  dependencies: VersionRef[];
-  required_runtime: {
-    application: string;
-    version: string;
-    features: string[];
-  };
-  digest: Sha256;
 }
 export interface UnityResult {
   editor_version: string;

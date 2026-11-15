@@ -11,6 +11,7 @@ export interface ComposerSeedIntent {
 }
 
 export interface AssistantStatusProps {
+  jobs?: JobRecord[];
   snapshot: ProjectSnapshot | null;
   requests: RequestRecord[];
   events: Event[];
@@ -38,6 +39,9 @@ export const emptySelection = (): TurnSelection => ({
 });
 
 export interface ReviewSurfaceProps {
+  inspectedArtifact?: Artifact | null;
+  inspectedArtifactSummary?: RetainedArtifactSummary | null;
+  onClearArtifact?: () => void;
   visible?: boolean;
   api: ApiClient;
   projectId: string;

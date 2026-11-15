@@ -18,11 +18,12 @@ from proscenium.sources.common import (
     binding,
     fingerprint,
     git,
+    managed,
     relative,
     replay,
     sha,
 )
-from proscenium.sources.resolver import Resolver
+from proscenium.sources.resolver import Resolver, closure_digest
 
 
 class Checkpoints:
@@ -40,6 +41,7 @@ class Checkpoints:
             os.open(lockpath, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600), "a+b"
         ) as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
+            self.validate_closure_inputs(project_id, root, request)
             with store.transaction() as tx:
                 previous = replay(tx, "sources.checkpoint", identity, immutable)
                 if previous:
@@ -49,6 +51,10 @@ class Checkpoints:
                     if committed != previous["source_commit"]:
                         raise DomainError("source_conflict", 409)
                     self.verify(project_id, request, saved, committed)
+                    closure = self.source_closure(project_id, root, request, saved, committed)
+                    if closure is not None and previous.get("source_closure") != closure:
+                        raise DomainError("source_conflict", 409)
+                    validate("CheckpointReceipt", previous)
                     return {**previous, "replayed": True}
                 intent = tx.get("checkpoint_intents", identity, required=False)
                 recovering = intent is not None
@@ -154,6 +160,9 @@ class Checkpoints:
                 files=intent["files"],
                 replayed=False,
             )
+            closure = self.source_closure(project_id, root, request, intent, commit)
+            if closure is not None:
+                receipt["source_closure"] = closure
             validate("CheckpointReceipt", receipt)
             with store.transaction() as tx:
                 result, repeated = tx.operation(
@@ -167,6 +176,99 @@ class Checkpoints:
                     expected_revision=tx.revision("checkpoint_intents", identity),
                 )
             return {**result, "replayed": repeated or recovering}
+
+    def validate_closure_inputs(self, project_id: str, root: Path, request: dict[str, Any]) -> None:
+        if "entry_path" not in request:
+            if any(
+                key in request for key in ("dependencies", "required_runtime", "retained_files")
+            ):
+                raise DomainError(
+                    "invalid_request",
+                    message="entry_path is required when building a source closure",
+                )
+            return
+        relative(root, request["entry_path"])
+        if request["entry_path"].split("/")[0] == ".receipt.json":
+            raise DomainError("scope_denied", 403)
+        retained_files = request.get("retained_files", [])
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            for ref in request.get("dependencies", []):
+                version = tx.get("versions", ref["version_id"], required=False)
+                if not version:
+                    raise DomainError("dependency_missing", 422, version_id=ref["version_id"])
+                if version["project_id"] != project_id or version["item_id"] != ref["item_id"]:
+                    raise DomainError("scope_denied", 403)
+            for row in retained_files:
+                relative(root, row["destination"])
+                if row["destination"].split("/")[0] == ".receipt.json":
+                    raise DomainError("scope_denied", 403)
+                origin = row["origin"]
+                retained = tx.get("retained_sources", origin["artifact_id"], required=False)
+                path = managed(root, f".proscenium/retained/{origin['sha256']}/content")
+                try:
+                    valid = (
+                        retained is not None
+                        and retained["sha256"] == origin["sha256"]
+                        and sha(path.read_bytes()) == origin["sha256"]
+                    )
+                except OSError:
+                    valid = False
+                if not valid:
+                    raise DomainError(
+                        "retained_source_missing",
+                        422,
+                        artifact_id=origin["artifact_id"],
+                        sha256=origin["sha256"],
+                    )
+        destinations = list(request["paths"]) + [row["destination"] for row in retained_files]
+        for name in destinations:
+            if destinations.count(name) > 1 or any(
+                other != name and (other.startswith(name + "/") or name.startswith(other + "/"))
+                for other in destinations
+            ):
+                raise DomainError("dependency_collision", 409, destination=name)
+        if request["entry_path"] not in destinations:
+            raise DomainError("dependency_missing", 422, path=request["entry_path"])
+
+    def source_closure(
+        self,
+        project_id: str,
+        root: Path,
+        request: dict[str, Any],
+        intent: dict[str, Any],
+        commit: str,
+    ) -> dict[str, Any] | None:
+        self.validate_closure_inputs(project_id, root, request)
+        if "entry_path" not in request:
+            return None
+        repository_id = self.services.registry.get(project_id)["repository_id"]
+        files = [
+            {
+                "destination": row["path"],
+                "origin": {
+                    "kind": "git",
+                    "repository_id": repository_id,
+                    "commit": commit,
+                    "path": row["path"],
+                    "sha256": row["sha256"],
+                },
+            }
+            for row in intent["files"]
+        ] + request.get("retained_files", [])
+        closure = {
+            "entry_path": request["entry_path"],
+            "files": sorted(files, key=lambda row: row["destination"]),
+            "dependencies": sorted(
+                request.get("dependencies", []),
+                key=lambda row: (row["item_id"], row["version_id"]),
+            ),
+            "required_runtime": request.get(
+                "required_runtime", {"application": "proscenium", "version": "1.0", "features": []}
+            ),
+        }
+        closure["digest"] = closure_digest(closure)
+        validate("SourceClosure", closure)
+        return closure
 
     @staticmethod
     def uncertain(
@@ -282,6 +384,7 @@ class Checkpoints:
         self, project_id: str, request: dict[str, Any], intent: dict[str, Any], commit: str
     ) -> None:
         root = Path(self.services.registry.get(project_id)["path"])
+        self.validate_closure_inputs(project_id, root, request)
         parents = git(root, "rev-list", "--parents", "-n", "1", commit).decode().split()[1:]
         expected = [intent["parent"]] if intent["parent"] else []
         message = git(root, "show", "-s", "--format=%B", commit).decode()

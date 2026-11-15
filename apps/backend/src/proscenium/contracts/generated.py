@@ -306,6 +306,9 @@ class RetainedArtifactPage(ContractModel):
 class RetainedArtifactSummary(ContractModel):
     definition = "RetainedArtifactSummary"
 
+class RetainedClosureFile(ContractModel):
+    definition = "RetainedClosureFile"
+
 class RetainedFile(ContractModel):
     definition = "RetainedFile"
 
@@ -332,6 +335,9 @@ class Revision(ContractModel):
 
 class RevisionCommand(ContractModel):
     definition = "RevisionCommand"
+
+class RuntimeRequirement(ContractModel):
+    definition = "RuntimeRequirement"
 
 class SegmentPage(ContractModel):
     definition = "SegmentPage"
