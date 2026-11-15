@@ -18,14 +18,17 @@ def graph(
     height: int,
     reference_artifact_id: str | None = None,
     steps: int = 4,
+    tiled_vae: bool = False,
+    reference_megapixels: float = 1.0,
 ) -> dict[str, Any]:
-    if not (
-        64 <= width <= 4096
-        and 64 <= height <= 4096
-        and width % 16 == height % 16 == 0
-        and 1 <= steps <= 50
-    ):
+    if not (64 <= width <= 4096 and 64 <= height <= 4096 and width % 16 == height % 16 == 0):
+        raise DomainError(
+            "invalid_request",
+            message="Image width and height must be multiples of 16 between 64 and 4096",
+        )
+    if not 1 <= steps <= 50 or not 0.01 <= reference_megapixels <= 4.0:
         raise DomainError("invalid_request")
+    tiles = {"tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
     result: dict[str, Any] = {
         "model": {
             "class_type": "UNETLoader",
@@ -71,8 +74,8 @@ def graph(
             },
         },
         "decode": {
-            "class_type": "VAEDecode",
-            "inputs": {"samples": ["sample", 0], "vae": ["vae", 0]},
+            "class_type": "VAEDecodeTiled" if tiled_vae else "VAEDecode",
+            "inputs": {"samples": ["sample", 0], "vae": ["vae", 0], **(tiles if tiled_vae else {})},
         },
         "save": {
             "class_type": "SaveImage",
@@ -86,9 +89,22 @@ def graph(
                     "class_type": "LoadImage",
                     "inputs": {"image": "artifact:" + reference_artifact_id},
                 },
+                "reference_scale": {
+                    "class_type": "ImageScaleToTotalPixels",
+                    "inputs": {
+                        "image": ["reference", 0],
+                        "upscale_method": "lanczos",
+                        "megapixels": reference_megapixels,
+                        "resolution_steps": 16,
+                    },
+                },
                 "reference_encode": {
-                    "class_type": "VAEEncode",
-                    "inputs": {"pixels": ["reference", 0], "vae": ["vae", 0]},
+                    "class_type": "VAEEncodeTiled" if tiled_vae else "VAEEncode",
+                    "inputs": {
+                        "pixels": ["reference_scale", 0],
+                        "vae": ["vae", 0],
+                        **(tiles if tiled_vae else {}),
+                    },
                 },
                 "reference_positive": {
                     "class_type": "ReferenceLatent",

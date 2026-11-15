@@ -12,17 +12,33 @@
     "worker_model": "gpt-6.1-sol",
     "unity_worker_model": "gpt-6.1-sol",
     "unity_editor": "/absolute/path/to/Unity",
-    "worker_tools": ["view", "bash", "checkpoint_sources", "publish_outputs", "request_preview", "register_artifact", "submit_generation", "request_vlm_review", "admit_job", "retry_job", "update_job_state", "get_job", "get_artifact", "get_version", "list_job_frames", "list_items", "assemble_sequence", "run_unity_workflow", "get_unity_result"],
+    "worker_tools": ["view", "bash", "skill", "get_project_capabilities", "validate_authored_document", "prepare_image_generation", "checkpoint_sources", "publish_outputs", "request_preview", "register_artifact", "submit_generation", "request_vlm_review", "admit_job", "retry_job", "update_job_state", "get_job", "get_artifact", "get_version", "list_job_frames", "list_items", "assemble_sequence", "run_unity_workflow", "get_unity_result", "blender-get_addon_status", "blender-disable_telemetry", "blender-get_scene_info", "blender-execute_blender_code", "blender-look", "blender-search_assets", "blender-import_asset", "blendswap-search_assets", "blendswap-get_asset", "blendswap-download_asset", "blendswap-get_balance", "blendswap-list_studio_tools", "blendswap-quote_generation", "blendswap-create_generation", "blendswap-get_generation"],
     "profile_id": "authoring",
     "skill_directories": ["${APP_ROOT}/agent/skills"],
     "max_continues": 5,
-    "mcp_servers": {}
+    "mcp_servers": {
+      "blender": {
+        "type": "stdio",
+        "command": "uvx",
+        "args": ["--python", "3.11", "mcp-for-blender==2.3.0", "--host", "127.0.0.1", "--port", "9876"],
+        "env": {"DISABLE_TELEMETRY": "1"},
+        "tools": ["get_addon_status", "disable_telemetry", "get_scene_info", "execute_blender_code", "look", "search_assets", "import_asset"],
+        "timeout": 180000
+      },
+      "blendswap": {
+        "type": "http",
+        "url": "https://blendswap.com/api/mcp",
+        "bearer_token_env": "BLENDSWAP_KEY",
+        "tools": ["search_assets", "get_asset", "download_asset", "get_balance", "list_studio_tools", "quote_generation", "create_generation", "get_generation"],
+        "timeout": 30000
+      }
+    }
   },
   "rendering": {
     "blender": "blender",
     "ffmpeg": "ffmpeg",
     "ffprobe": "ffprobe",
-    "build_hash": "62c1db4208e8",
+    "build_hash": "3f6797307da5",
     "profile_id": "blender-cpu",
     "threads": 4,
     "timeout": 300,
@@ -33,5 +49,5 @@
     {"provider_id": "local-comfy", "endpoint": "http://127.0.0.1:8188", "capabilities": ["image"], "model_id": null, "available": null},
     {"provider_id": "local-vlm", "endpoint": "http://127.0.0.1:1234", "capabilities": ["vlm"], "model_id": null, "available": null}
   ],
-  "provider_options": {"review_provider_id": "local-vlm", "minimum_free_vram_bytes": 268435456, "vlm_max_tokens": 512}
+  "provider_options": {"review_provider_id": "local-vlm", "minimum_free_vram_bytes": 268435456, "vlm_max_tokens": 512, "image_recipes": {"local-comfy": {"profile_revision": "comfy-image-1", "unet": "flux-2-klein-4b.safetensors", "clip": "qwen_3_4b.safetensors", "vae": "flux2-vae.safetensors", "width": 512, "height": 512, "steps": 4, "max_pixels": 1048576}}}
 }

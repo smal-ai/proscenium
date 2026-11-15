@@ -138,11 +138,18 @@ def bind_graph(
                 ):
                     raise DomainError("invalid_request", message="Unbound conditioning image")
                 node["inputs"][key] = references[artifact_id]
-                # Require LoadImage -> VAEEncode -> ReferenceLatent -> CFGGuider positive.
+                # Retain admitted unscaled graphs alongside scaled/tiled reference paths.
+                pixels = {identity} | {
+                    k
+                    for k, n in graph.items()
+                    if n["class_type"] == "ImageScaleToTotalPixels"
+                    and n["inputs"].get("image") == [identity, 0]
+                }
                 encodes = {
                     k
                     for k, n in graph.items()
-                    if n["class_type"] == "VAEEncode" and n["inputs"].get("pixels") == [identity, 0]
+                    if n["class_type"] in {"VAEEncode", "VAEEncodeTiled"}
+                    and any(n["inputs"].get("pixels") == [source, 0] for source in pixels)
                 }
                 refs = {
                     k

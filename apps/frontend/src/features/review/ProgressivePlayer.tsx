@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FrameAvailability, FrameReceipt, FrameTarget, PreviewSegment, VersionRecord } from "../../api/generated/contracts";
 import { frameCentre, frameTarget, mediaUrl, presentedFrame, segmentAt } from "./media";
 
 /** Two independently decoded elements, at most current + immediate next interval.
  * Identity is admitted from rVFC mediaTime, never video.currentTime or a requested seek.
  */
-export function ProgressivePlayer({projectId, version, frames, segments, availability, requestedFrame, playing, onPlaying, onPresented}: {
+export function ProgressivePlayer({visible = true, projectId, version, frames, segments, availability, requestedFrame, playing, onPlaying, onPresented}: {
+  visible?: boolean;
   projectId: string; version: VersionRecord; frames: FrameReceipt[]; segments: PreviewSegment[];
   availability: FrameAvailability | null; requestedFrame: number; playing: boolean;
   onPlaying: (playing: boolean) => void; onPresented: (target: FrameTarget) => void;
@@ -14,7 +15,7 @@ export function ProgressivePlayer({projectId, version, frames, segments, availab
   const [message, setMessage] = useState("");
   const video = useRef<HTMLVideoElement>(null);
   const nextVideo = useRef<HTMLVideoElement>(null);
-  const wantsPlay = useRef(playing); wantsPlay.current = playing;
+  const wantsPlay = useRef(playing); wantsPlay.current = visible && playing;
   const presented = useRef<FrameTarget | null>(null);
   const confirmedSegment = useRef("");
   const awaitingFirstPresentation = useRef(true);
@@ -22,6 +23,9 @@ export function ProgressivePlayer({projectId, version, frames, segments, availab
   const previousRequest = useRef(requestedFrame);
   const segment = segmentAt(segments, activeFrame);
   const next = segment ? segmentAt(segments, segment.source_frames.end + 1) : undefined;
+  useLayoutEffect(() => {
+    if (!visible) { video.current?.pause(); nextVideo.current?.pause(); confirmedSegment.current = ""; awaitingFirstPresentation.current = true; }
+  }, [visible]);
 
   useEffect(() => {
     if (previousRequest.current !== requestedFrame) {
@@ -35,7 +39,7 @@ export function ProgressivePlayer({projectId, version, frames, segments, availab
 
   useEffect(() => {
     const element = video.current;
-    if (!element || !segment) return;
+    if (!visible || !element || !segment) return;
     if (!element.requestVideoFrameCallback) { setMessage("Frame provenance unavailable in this browser. Use receipted keyframes for annotation."); return; }
     let callback = 0; let disposed = false;
     const observe: VideoFrameRequestCallback = (_now, metadata) => {
@@ -61,18 +65,18 @@ export function ProgressivePlayer({projectId, version, frames, segments, availab
       element.currentTime = frameCentre(activeFrame, segment);
     }
     return () => {disposed = true; element.cancelVideoFrameCallback(callback);};
-  }, [segment, frames, version]);
+  }, [segment, frames, version, visible]);
 
   useEffect(() => {
     const element = video.current;
     if (!element) return;
-    if (playing && segment && element.readyState >= 2 && confirmedSegment.current === segment.segment_id && !awaitingFirstPresentation.current) void element.play().catch(e => setMessage(String(e)));
-    else if (!playing) element.pause();
-  }, [playing, segment]);
+    if (visible && playing && segment && element.readyState >= 2 && confirmedSegment.current === segment.segment_id && !awaitingFirstPresentation.current) void element.play().catch(e => setMessage(String(e)));
+    else element.pause();
+  }, [playing, segment, visible]);
 
   function ready() {
     const element = video.current;
-    if (!element || !segment) return;
+    if (!visible || !element || !segment) return;
     awaitingFirstPresentation.current = true;
     // A new segment already decodes frame zero. Seeking it and immediately playing
     // can discard that first presentation. The rVFC acknowledgement starts playback.
@@ -94,7 +98,9 @@ export function ProgressivePlayer({projectId, version, frames, segments, availab
       : isolated ? <img src={mediaUrl(projectId, isolated.artifact_id)} alt={`Available frame ${activeFrame}`} onLoad={() => {const target = frameTarget(isolated, version); presented.current = target; onPresentedRef.current(target);}}/>
       : <p role="status">Frame {activeFrame} pending. No later interval substituted.</p>}
     {next && <video key={next.segment_id} ref={nextVideo} src={mediaUrl(projectId, next.artifact_id)} muted preload="auto" className="review-prebuffer" aria-hidden="true"/>}
-    <div className="review-toolbar"><button onClick={() => onPlaying(!playing)}>{playing ? "Pause" : "Play"}</button><output aria-live="polite">{message}</output></div>
-    <div className="review-intervals" aria-label="Available, pending and failed intervals">{availability ? ([['Available',availability.available_ranges],['Playable',availability.playable_ranges],['Pending',availability.pending_ranges],['Failed',availability.failed_ranges]] as const).map(([label,ranges])=><div key={label}>{label}: {ranges.map(r=>`${r.start}–${r.end}`).join(", ")||"none"}</div>) : "Availability not yet reported"}</div>
+    {(availability || message) && <div className="review-player-status">
+      {message && <output aria-live="polite">{message}</output>}
+      {availability && <div className="review-intervals" aria-label="Available, pending and failed intervals">{([['Available',availability.available_ranges],['Playable',availability.playable_ranges],['Pending',availability.pending_ranges],['Failed',availability.failed_ranges]] as const).map(([label,ranges])=><span key={label}>{label}: {ranges.map(r=>`${r.start}–${r.end}`).join(", ")||"none"}</span>)}</div>}
+    </div>}
   </section>;
 }

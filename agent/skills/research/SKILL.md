@@ -5,6 +5,22 @@ description: Research an active-project creative brief, find reusable local or c
 
 # Research for the active brief
 
+Call `get_project_capabilities` first. Honour host `request_target`, `reference_versions`
+and `execution_scope`. Planning-only work performs no inference, previews or scene
+execution. Use `validate_authored_document` for plans, sequences and publications
+before checkpoint/publication. Plan impact uses `compare_to_path` and `changed_ids`.
+Requested image inference uses `prepare_image_generation` then `submit_generation`.
+Omit preparation `project_id`/`generation_task_id`, which the host binds. Omit
+width/height/steps for capability recipe defaults unless the user requested valid
+multiple-of-16 dimensions within `max_pixels`. Wait with
+`get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid polling.
+Inspect images using `get_artifact(artifact_id=..., include_image=true)`, never
+copy managed artefact content just to call `view`. Request `request_vlm_review`
+for produced visual outputs when a `configured` or `ready` VLM provider is reported.
+Only owner-approved findings become revision instructions.
+Acquire/import and publish a standalone `asset` without requiring a storyboard.
+Dependent scenes/storyboards remain pinned until an explicit adoption edit.
+
 1. Read the active project's instructions, canonical brief and selected treatment,
    current request, pinned catalogue versions and owner selections. Check Git status
    before edits. Do not inherit unfinished creative work from a reference project.
@@ -17,6 +33,13 @@ description: Research an active-project creative brief, find reusable local or c
    available. Missing credentials, endpoint or tool means optional capability
    unavailable, not failed local research. Do not install services or seek credentials.
    Prefer original publishers, useful views, scale anchors and construction evidence.
+   When exposed, use `blendswap-search_assets`, `blendswap-get_asset`,
+   `blendswap-download_asset` and `blendswap-get_balance`. Inspect
+   `blendswap-get_balance` before downloading. Free daily-allowance downloads proceed
+   automatically into the active project. Credit-consuming downloads when
+   `free_downloads_remaining == 0` and paid Studio generations through
+   `blendswap-create_generation` require explicit owner confirmation under owner policy
+   (Section 2).
 4. Distinguish **discovered** (a lead), **acquired** (actual verified local bytes),
    **imported** (observed application import) and **validated** (named checks with
    evidence). A thumbnail is not an acquired model. Import success is not visual,
@@ -29,8 +52,10 @@ description: Research an active-project creative brief, find reusable local or c
    unsaved work and inspect actual units/materials/dependencies. Use configured
    native tools only when authorised and available. Never call an unrun import
    validated. Keep exact failures and a viable authoring fallback visible.
-7. Checkpoint only owned sources through the accepted `checkpoint_sources` tool,
-   then hand its receipt and exact source/version dependencies to the configured
+7. Checkpoint only owned sources through `checkpoint_sources(entry_path=...)`,
+   with dependencies/`required_runtime` when needed. Pass the receipt's
+   `source_closure` directly to `publish_outputs`, never script closure sorting
+   or SHA-256 digests. Retain exact source/version dependencies in the configured
    publication tool. Use its generated command contract and original operation ID
    on acknowledgement loss. Do not write a database, make a parallel catalogue,
    resolve by mtime, or claim publication without its receipt. Empty preview requests

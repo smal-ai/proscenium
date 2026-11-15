@@ -90,6 +90,25 @@ export type Point2 = [number, number];
 export type Vector3 = [number, number, number];
 export type Revision = number;
 export type RelativePath = string;
+export type AuthoredDocumentValidationRequest = {
+  schema_version: "1.0";
+  project_id: Id;
+  document_kind: "authored_shot_plan" | "sequence_map" | "publication_submit";
+  path?: RelativePath;
+  document?: {
+    /**
+     * This interface was referenced by `undefined`'s JSON-Schema definition
+     * via the `patternProperty` "^.*$".
+     */
+    [k: string]: unknown;
+  };
+  compare_to_path?: RelativePath;
+  changed_ids?: Id[];
+} & AuthoredDocumentValidationRequest1;
+export type AuthoredDocumentValidationRequest1 = {
+  [k: string]: unknown;
+};
+export type CapabilityStatus = "ready" | "configured" | "unavailable" | "untested" | "ambiguous";
 export type CheckpointReceipt = {
   [k: string]: unknown;
 } & {
@@ -113,9 +132,30 @@ export type CheckpointReceipt = {
     }[]
   ];
   replayed: boolean;
+  source_closure?: SourceClosure | null;
 };
 export type Commit = string;
 export type Timestamp = string;
+export type RequestTarget =
+  | {
+      kind: "project";
+    }
+  | {
+      kind: "item";
+      version: VersionRef;
+    }
+  | {
+      kind: "shot";
+      storyboard_version: VersionRef;
+      shot_id: Id;
+    }
+  | {
+      kind: "new_item";
+      item_kind: "asset" | "scene" | "storyboard";
+      intent_id: Id;
+      name?: string;
+    };
+export type ExecutionScope = "default" | "planning_only";
 export type DecisionAnswer = {
   [k: string]: unknown;
 } & {
@@ -169,6 +209,22 @@ export type FindingPage = RecordPage & {
 export type FramePage = RecordPage & {
   items?: FrameReceipt[];
 };
+export type SelectionSlot =
+  | {
+      kind: "item";
+      item_id: Id;
+    }
+  | {
+      kind: "storyboard_frame";
+      storyboard_version: VersionRef;
+      shot_id: Id;
+      frame_id: Id;
+    }
+  | {
+      kind: "assembly_shot";
+      sequence_version: VersionRef;
+      entry_id: Id;
+    };
 export type ItemPage = RecordPage & {
   items?: ItemRecord[];
 };
@@ -278,6 +334,9 @@ export type PublishedItem = {
 export type RequestPage = RecordPage & {
   items?: RequestRecord[];
 };
+export type RetainedArtifactPage = RecordPage & {
+  items?: RetainedArtifactSummary[];
+};
 export type ReviewPage = RecordPage & {
   items?: ReviewTicket[];
 };
@@ -296,22 +355,6 @@ export type SelectionChoice =
 export type SelectionPage = RecordPage & {
   items?: SelectionRecord[];
 };
-export type SelectionSlot =
-  | {
-      kind: "item";
-      item_id: Id;
-    }
-  | {
-      kind: "storyboard_frame";
-      storyboard_version: VersionRef;
-      shot_id: Id;
-      frame_id: Id;
-    }
-  | {
-      kind: "assembly_shot";
-      sequence_version: VersionRef;
-      entry_id: Id;
-    };
 export type SelectionSave = {
   [k: string]: unknown;
 } & {
@@ -395,13 +438,19 @@ export interface ContractDefinitions {
   Artifact: Artifact;
   ArtifactRegister: ArtifactRegister;
   Attachment: Attachment;
+  AuthoredDocumentValidationRequest: AuthoredDocumentValidationRequest;
+  AuthoredDocumentValidationResult: AuthoredDocumentValidationResult;
   AuthoredShotPlan: AuthoredShotPlan;
+  AuthoringProfileDelete: AuthoringProfileDelete;
+  AuthoringProfileUpsert: AuthoringProfileUpsert;
   Camera: Camera;
+  CapabilityStatus: CapabilityStatus;
   CheckpointReceipt: CheckpointReceipt;
   CheckpointRequest: CheckpointRequest;
   ClosureFile: ClosureFile;
   CommandReceipt: CommandReceipt;
   Commit: Commit;
+  ConfigurationStatus: ConfigurationStatus;
   ConfigurationView: ConfigurationView;
   ContextSnapshot: ContextSnapshot;
   ConversationEventData: ConversationEventData;
@@ -411,6 +460,8 @@ export interface ContractDefinitions {
   Error: Error;
   Event: Event;
   EventPage: EventPage;
+  ExecutionScope: ExecutionScope;
+  ExecutionStatus: ExecutionStatus;
   FindingPage: FindingPage;
   Fps: Fps;
   FrameAvailability: FrameAvailability;
@@ -423,6 +474,8 @@ export interface ContractDefinitions {
   GenerationSubmit: GenerationSubmit;
   GitFile: GitFile;
   Id: Id;
+  ImageGenerationPrepare: ImageGenerationPrepare;
+  ImageGenerationPrepared: ImageGenerationPrepared;
   ItemPage: ItemPage;
   ItemRecord: ItemRecord;
   JobAdmission: JobAdmission;
@@ -437,6 +490,7 @@ export interface ContractDefinitions {
   MaskEncoding: MaskEncoding;
   Matrix4: Matrix4;
   MessageSubmit: MessageSubmit;
+  NativeAgentActivity: NativeAgentActivity;
   NullableId: NullableId;
   ObjectSelection: ObjectSelection;
   OwnerBootstrap: OwnerBootstrap;
@@ -444,6 +498,7 @@ export interface ContractDefinitions {
   Point2: Point2;
   PreviewRequest: PreviewRequest;
   PreviewSegment: PreviewSegment;
+  ProjectCapabilities: ProjectCapabilities;
   ProjectConfig: ProjectConfig;
   ProjectDirectory: ProjectDirectory;
   ProjectOpen: ProjectOpen;
@@ -454,6 +509,7 @@ export interface ContractDefinitions {
   ProjectSettingsRecord: ProjectSettingsRecord;
   ProjectSnapshot: ProjectSnapshot;
   Provenance: Provenance;
+  ProviderCapabilitySummary: ProviderCapabilitySummary;
   ProxyMapping: ProxyMapping;
   PublicationReceipt: PublicationReceipt;
   PublicationSubmit: PublicationSubmit;
@@ -466,7 +522,12 @@ export interface ContractDefinitions {
   RequestReceipt: RequestReceipt;
   RequestRecord: RequestRecord;
   RequestState: RequestState;
+  RequestTarget: RequestTarget;
   ResumeCommand: ResumeCommand;
+  ResumeOperationStatus: ResumeOperationStatus;
+  RetainedArtifactPage: RetainedArtifactPage;
+  RetainedArtifactSummary: RetainedArtifactSummary;
+  RetainedClosureFile: RetainedClosureFile;
   RetainedFile: RetainedFile;
   ReviewComplete: ReviewComplete;
   ReviewFinding: ReviewFinding;
@@ -476,6 +537,7 @@ export interface ContractDefinitions {
   ReviewTicket: ReviewTicket;
   Revision: Revision;
   RevisionCommand: RevisionCommand;
+  RuntimeRequirement: RuntimeRequirement;
   SegmentPage: SegmentPage;
   SelectionChoice: SelectionChoice;
   SelectionPage: SelectionPage;
@@ -489,6 +551,7 @@ export interface ContractDefinitions {
   Shot: Shot;
   ShotFrame: ShotFrame;
   ShotPlan: ShotPlan;
+  ShotPlanImpact: ShotPlanImpact;
   SocketControl: SocketControl;
   SourceClosure: SourceClosure;
   SpatialHit: SpatialHit;
@@ -499,11 +562,13 @@ export interface ContractDefinitions {
   Transformation: Transformation;
   UnityResult: UnityResult;
   UsageEventData: UsageEventData;
+  ValidationIssue: ValidationIssue;
   Vector3: Vector3;
   VersionPage: VersionPage;
   VersionRecord: VersionRecord;
   VersionRef: VersionRef;
   Weight: Weight;
+  WorkOutputSummary: WorkOutputSummary;
   WorkRecord: WorkRecord;
 }
 export interface ActivityEventData {
@@ -513,6 +578,14 @@ export interface ActivityEventData {
   summary: string;
   artifact_ids: Id[];
   model_id: string | null;
+  exit_code?: number | null;
+  display_name?: string | null;
+  output_status?: "published" | "retained_unpublished" | "publication_blocked" | null;
+  published_versions?: VersionRef[];
+}
+export interface VersionRef {
+  item_id: Id;
+  version_id: Id;
 }
 export interface Actor {
   kind: "user" | "lead" | "subagent" | "tool" | "worker" | "system";
@@ -621,6 +694,33 @@ export interface Attachment {
   role: "reference" | "concept" | "render" | "markup" | "mask";
   use?: string;
 }
+export interface AuthoredDocumentValidationResult {
+  schema_version: "1.0";
+  project_id: Id;
+  document_kind: "authored_shot_plan" | "sequence_map" | "publication_submit";
+  valid: boolean;
+  schema_valid: boolean;
+  semantic_valid: boolean;
+  issues: ValidationIssue[];
+  impact?: ShotPlanImpact | null;
+}
+export interface ValidationIssue {
+  phase: "source" | "json" | "schema" | "semantic" | "preflight";
+  code: string;
+  path: string;
+  message: string;
+}
+export interface ShotPlanImpact {
+  changed_shot_ids: Id[];
+  removed_shot_ids: Id[];
+  removed_frame_ids: Id[];
+  shot_order_changed: boolean;
+  stable_plan_id: boolean;
+  affected_shot_ids: Id[];
+  affected_frame_ids: Id[];
+  downstream_artifact_ids: Id[];
+  downstream_scene_version_ids: Id[];
+}
 export interface AuthoredShotPlan {
   schema_version: "1.0";
   plan_id: Id;
@@ -633,10 +733,6 @@ export interface AuthoredShotPlan {
    */
   shots: [Shot, ...Shot[]];
   unresolved: string[];
-}
-export interface VersionRef {
-  item_id: Id;
-  version_id: Id;
 }
 export interface Shot {
   shot_id: Id;
@@ -655,16 +751,34 @@ export interface ShotFrame {
   artifact_id: NullableId;
   state: "missing" | "proposed" | "available" | "selected";
 }
-export interface CheckpointRequest {
+export interface AuthoringProfileDelete {
   schema_version: "1.0";
   operation_id: Id;
-  project_id: Id;
+  expected_revision: Revision;
+  profile_id: Id;
+}
+export interface AuthoringProfileUpsert {
+  schema_version: "1.0";
+  operation_id: Id;
+  expected_revision: Revision;
+  profile_id: Id;
+  name: string;
+  lead_model_id: string;
+  /**
+   * @minItems 1
+   * @maxItems 2
+   */
+  worker_model_ids: [string] | [string, string];
+}
+export interface SourceClosure {
+  entry_path: RelativePath;
   /**
    * @minItems 1
    */
-  paths: [RelativePath, ...RelativePath[]];
-  message: string;
-  expected_head: Commit | null;
+  files: [ClosureFile, ...ClosureFile[]];
+  dependencies: VersionRef[];
+  required_runtime: RuntimeRequirement;
+  digest: Sha256;
 }
 export interface ClosureFile {
   destination: RelativePath;
@@ -682,6 +796,30 @@ export interface RetainedFile {
   artifact_id: Id;
   sha256: Sha256;
 }
+export interface RuntimeRequirement {
+  application: string;
+  version: string;
+  features: string[];
+}
+export interface CheckpointRequest {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  /**
+   * @minItems 1
+   */
+  paths: [RelativePath, ...RelativePath[]];
+  message: string;
+  expected_head: Commit | null;
+  entry_path?: RelativePath;
+  dependencies?: VersionRef[];
+  required_runtime?: RuntimeRequirement;
+  retained_files?: RetainedClosureFile[];
+}
+export interface RetainedClosureFile {
+  destination: RelativePath;
+  origin: RetainedFile;
+}
 export interface CommandReceipt {
   schema_version: "1.0";
   operation_id: Id;
@@ -689,6 +827,29 @@ export interface CommandReceipt {
   state: string;
   state_revision: Revision;
   replayed: boolean;
+}
+export interface ConfigurationStatus {
+  schema_version: "1.0";
+  observed_at: Timestamp;
+  rendering_ready: boolean;
+  blender_mcp_configured: boolean;
+  blendswap_mcp_configured: boolean;
+  unity_configured: boolean;
+  providers: ProviderCapabilitySummary[];
+}
+export interface ProviderCapabilitySummary {
+  provider_id: Id;
+  capability: "image" | "image_to_3d" | "vlm";
+  status: CapabilityStatus;
+  profile_revision: string | null;
+  selected_models: string[];
+  compatible_models: string[];
+  reference_dimensions: Dimensions | null;
+  reason_code: string | null;
+  summary: string;
+  default_dimensions?: Dimensions | null;
+  default_steps?: number | null;
+  max_pixels?: number | null;
 }
 export interface ConfigurationView {
   schema_version: "1.0";
@@ -724,6 +885,9 @@ export interface ContextSnapshot {
   attachments: Attachment[];
   annotations: AnnotationSnapshot[];
   approved_findings: ApprovedFinding[];
+  request_target?: RequestTarget | null;
+  reference_versions?: VersionRef[];
+  execution_scope?: ExecutionScope;
 }
 export interface ObjectSelection {
   object_id: Id;
@@ -766,6 +930,38 @@ export interface EventPage {
   events: Event[];
   next_after: number;
   last_available: number;
+}
+export interface ExecutionStatus {
+  fenced: boolean;
+  fence_reason: string | null;
+  queue_released: boolean;
+  can_steer_work_id: NullableId;
+  can_stop_work_id: NullableId;
+  hold_reason_code: string | null;
+  hold_reason: string | null;
+  active_agents: NativeAgentActivity[];
+  work_outputs: WorkOutputSummary[];
+}
+export interface NativeAgentActivity {
+  invocation_id: Id;
+  native_agent_id: string;
+  name: string;
+  display_name: string | null;
+  model_id: string | null;
+  work_id: NullableId;
+  request_id: NullableId;
+  state: "running" | "completed" | "failed" | "cancelled" | "outcome_uncertain";
+  freshness: "live" | "last_known" | "uncertain";
+  updated_at: Timestamp | null;
+}
+export interface WorkOutputSummary {
+  work_id: Id;
+  request_id: NullableId;
+  status: "none" | "retained_unpublished" | "published" | "publication_blocked";
+  artifact_ids: Id[];
+  published_versions: VersionRef[];
+  reason_code: string | null;
+  summary: string | null;
 }
 export interface ReviewFinding {
   schema_version: "1.0";
@@ -866,6 +1062,38 @@ export interface GenerationSubmit {
    */
   model_ids: [string, ...string[]];
   settings: {};
+}
+export interface ImageGenerationPrepare {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id?: Id;
+  generation_task_id?: Id;
+  prompt: string;
+  seed: string;
+  provider_id?: NullableId;
+  target_id?: NullableId;
+  target_slot?: SelectionSlot | null;
+  reference_artifact_ids?: Id[];
+  width?: number;
+  height?: number;
+  steps?: number;
+}
+export interface ImageGenerationPrepared {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  replayed: boolean;
+  provider_id: Id;
+  profile_revision: string;
+  /**
+   * @minItems 1
+   */
+  model_ids: [string, ...string[]];
+  dimensions: Dimensions;
+  workflow_artifact_id: Id;
+  prompt_artifact_id: Id;
+  input_artifact_ids: Id[];
+  submit_request: GenerationSubmit;
 }
 export interface ItemRecord {
   schema_version: "1.0";
@@ -1021,6 +1249,19 @@ export interface PreviewSegment {
   sha256: Sha256;
   input_digest: Sha256;
 }
+export interface ProjectCapabilities {
+  schema_version: "1.0";
+  project_id: Id;
+  observed_at: Timestamp;
+  exposed_tools: string[];
+  missing_worker_tools: string[];
+  available_skills: string[];
+  skill_loader_exposed: boolean;
+  providers: ProviderCapabilitySummary[];
+  rendering_ready: boolean;
+  blender_mcp_configured: boolean;
+  unity_configured: boolean;
+}
 export interface ProjectConfig {
   schema_version: "1.0";
   project_id: Id;
@@ -1083,6 +1324,7 @@ export interface ProjectSnapshot {
   jobs: JobRecord[];
   pending_decisions: Decision[];
   reviews?: ReviewTicket[];
+  execution?: ExecutionStatus;
 }
 export interface WorkRecord {
   schema_version: "1.0";
@@ -1173,20 +1415,6 @@ export interface PublicationSubmit {
    */
   items: [PublishedItem, ...PublishedItem[]];
 }
-export interface SourceClosure {
-  entry_path: RelativePath;
-  /**
-   * @minItems 1
-   */
-  files: [ClosureFile, ...ClosureFile[]];
-  dependencies: VersionRef[];
-  required_runtime: {
-    application: string;
-    version: string;
-    features: string[];
-  };
-  digest: Sha256;
-}
 export interface UnityResult {
   editor_version: string;
   pipeline: string;
@@ -1204,6 +1432,25 @@ export interface ResumeCommand {
   expected_revision: Revision;
   mode: "continue_work" | "release_held_queue" | "reconcile_only";
   work_id: NullableId;
+}
+export interface ResumeOperationStatus {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  mode: "continue_work" | "release_held_queue" | "reconcile_only";
+  work_id: NullableId;
+  state: "pending" | "dispatching" | "completed" | "outcome_uncertain";
+  detail_code: string | null;
+}
+export interface RetainedArtifactSummary {
+  schema_version: "1.0";
+  artifact: Artifact;
+  attribution_status: "verified" | "unrecorded";
+  request_id: NullableId;
+  work_id: NullableId;
+  invocation_id: NullableId;
+  job_id: NullableId;
+  published_versions: VersionRef[];
 }
 export interface ReviewComplete {
   schema_version: "1.0";

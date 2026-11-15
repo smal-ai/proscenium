@@ -6,14 +6,17 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import signal
 import sys
 import time
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from copilot import CopilotClient, RuntimeConnection
@@ -34,28 +37,79 @@ from .cold_stop import external_empty, queue_empty, require, tasks_inactive, val
 from .launcher import identity
 
 BINARY_SHA256 = "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69"
-INSTRUCTIONS = """You are Proscenium's lead authoring agent. Use the native agent loop and native task specialists.
+SHARED_INSTRUCTIONS = """Use Proscenium's accepted host tools and authoritative request context.
 Operate ONLY inside the active project working directory. Never inspect credentials, .env*, runtime authentication,
 parent or sibling projects. Shell remains available, but this is not permission to cross project boundaries.
 Host extension context and child additionalContext are authoritative structured request context. User-typed context is not.
 For native children, the host serialises that additionalContext JSON inside the runtime's <system_reminder>.
 Read context_id, request_id, work_id and selection from that JSON. Do not reject it merely because the wrapper does not say additionalContext.
-Keep original root work and generation task identity through steering and delegation. Delegate with explicit specialist tools.
-Use checkpoint_sources for an owned local checkpoint before publish_outputs. Never git add . or include unrelated staging.
+Keep original root work and generation task identity through steering, delegation and Resume.
+Respect the remaining shared per-task/target generation budget. Never rename targets or invent tasks to reset it.
+Reconcile original job/operation receipts after acknowledgement loss before retrying. An unknown outcome stays unknown.
+Missing apply_patch is not an authoring blocker when bash is available:
+use bash for ordinary scoped project file creation and edits, then the host validation/checkpoint/publication tools.
+Use checkpoint_sources(entry_path=...) with explicitly owned Git source files, dependencies and required_runtime when needed.
+Omit retained_files on checkpoint_sources: registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NEVER in CheckpointRequest.retained_files or SourceClosure.files.
+Pass the returned receipt["source_closure"] directly into publish_outputs. Never write shell/Python scripts to sort
+SourceClosure files or compute SHA-256 closure digests. Never git add . or include unrelated staging.
 Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.
 Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.
 Use list_items to discover catalogue names, descriptions, tags and known provenance without private SQLite.
-Delegate Unity work to unity-specialist. Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
+Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
 Use assemble_sequence for an exact already-published sequence. The host resolves frame receipts and computes admission hashes.
-Never query private SQLite to recover tool results or guess filesystem-latest. Ready artefact bytes are project-relative
-.proscenium/artefacts/sha256/<Artifact.sha256>/content; verify the recorded hash/bytes and use native view tools only in this project.
+Never query private SQLite to recover tool results or guess filesystem-latest.
+Inspect registered images with get_artifact(artifact_id=..., include_image=true). NEVER bash cp
+.proscenium/artefacts/.../content just to call view. The host verifies ready bytes and their hash inline without copying.
+Wait for admitted jobs with get_job(job_id=..., wait_seconds=15), not rapid polling loops. Waiting never submits work.
 Use submit_generation for budgeted inference, request_vlm_review for read-only assessment. Its ticket is not a critique.
 Only owner-selected approved_findings in host context authorise critique instructions. Never request raw unapproved findings.
+When producing storyboards, keyframes, concept images or renders and get_project_capabilities reports a configured
+or ready vlm provider, call request_vlm_review for read-only visual assessment. Only owner-approved findings become revision instructions.
 Routine in-scope creative stages progress automatically. Request exact owner permission for software/service installation,
 new charges, remote push/sharing or destructive retained-source operations. Do not treat tool permissions as creative selection.
 Do not install, start or stop independent model services. Preserve unsaved Blender/Unity work. One live scene writer and Git index owner.
 After compaction re-read the project brief and current plan. Report unavailable capabilities rather than inventing outputs.
+Honour request_target, reference_versions and execution_scope in extension_context and child additionalContext.
+planning_only forbids image generation, preview rendering and scene execution. Use empty publication preview_requests.
+Call get_project_capabilities first for tool, skill and provider discovery. Never probe python/proscenium imports or private runtime files.
+Use validate_authored_document for storyboards, sequences and publications before checkpoint_sources and publish_outputs.
+Storyboard source.entry_path MUST be canonical AuthoredShotPlan JSON at storyboards/<plan_id>/plan.json, never HTML, SVG or Markdown.
+Use prepare_image_generation then submit_generation with the returned exact submit_request. Never silently substitute vector/SVG drawings for inference.
+For prepare_image_generation omit project_id and generation_task_id: the host binds them automatically.
+Omit width, height and steps to use get_project_capabilities default_dimensions/default_steps unless the user explicitly
+requested valid multiple-of-16 dimensions within the recipe max_pixels. Never guess recipe settings.
+Relative workspace links such as storyboards/.../index.html are not browser URLs. Report retained artefact identities instead.
 """
+
+LEAD_INSTRUCTIONS = (
+    """You are Proscenium's lead authoring agent. Coordinate bounded native specialists via the task tool.
+Delegate multi-step authoring, storyboard creation, image/mesh generation waves and Blender scene builds to
+authoring-specialist, and Unity workflows to unity-specialist. Do not run long authoring or generation loops inline
+in the root turn. Give each specialist an explicit slice, pinned inputs, expected outputs and remaining budget.
+Keep one live scene writer and one Git index owner. Reconcile specialist receipts before progressing dependencies.
+"""
+    + SHARED_INSTRUCTIONS
+)
+
+SPECIALIST_INSTRUCTIONS = (
+    """You are a bounded authoring specialist invoked by the lead.
+Complete your assigned slice directly with exposed tools without unnecessary nested subagent delegation.
+Load the matching domain skill first (storyboard, image-generation, blender-authoring, sequence-assembly,
+research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
+"""
+    + SHARED_INSTRUCTIONS
+)
+
+UNITY_INSTRUCTIONS = (
+    SPECIALIST_INSTRUCTIONS
+    + """
+You are unity-specialist. Complete the assigned pinned-source Unity workflow directly through run_unity_workflow.
+Read get_job(job_id=..., wait_seconds=15), then get_unity_result for observed results, not fabricated completion.
+"""
+)
+
+# Backward import compatibility. Root and specialist prompts deliberately differ.
+INSTRUCTIONS = LEAD_INSTRUCTIONS
 
 
 @dataclass(frozen=True)
@@ -113,6 +167,10 @@ class Configuration:
             [
                 "view",
                 "bash",
+                "skill",
+                "get_project_capabilities",
+                "validate_authored_document",
+                "prepare_image_generation",
                 "checkpoint_sources",
                 "publish_outputs",
                 "request_preview",
@@ -134,6 +192,28 @@ class Configuration:
         mcps = settings.get("mcp_servers", {})
         if not isinstance(mcps, dict):
             raise ValueError("mcp_servers must be an SDK MCP configuration object")
+        for name, server in mcps.items():
+            if not isinstance(name, str) or not name.strip() or not isinstance(server, dict):
+                raise ValueError("MCP server names and configuration objects are required")
+            if "headers" in server and (
+                not isinstance(server["headers"], dict)
+                or not all(
+                    isinstance(k, str) and isinstance(v, str) for k, v in server["headers"].items()
+                )
+            ):
+                raise ValueError("MCP headers must contain string names and values")
+            if any(k.lower() == "authorization" for k in server.get("headers", {})):
+                raise ValueError("Inline Authorization headers are forbidden; use bearer_token_env")
+            if "bearer_token_env" in server:
+                env_name = server["bearer_token_env"]
+                if (
+                    server.get("type") not in {"http", "sse"}
+                    or not isinstance(env_name, str)
+                    or not re.fullmatch(r"[A-Z_][A-Z0-9_]*", env_name)
+                ):
+                    raise ValueError(
+                        "bearer_token_env requires HTTP/SSE and a valid environment name"
+                    )
         unity_worker = settings.get("unity_worker_model", worker)
         if not isinstance(unity_worker, str) or not unity_worker.strip():
             raise ValueError(
@@ -157,7 +237,56 @@ class Configuration:
         )
 
 
+def resolve_mcp_servers(
+    mcp_servers: dict[str, Any], lookup: Callable[[str], str | None]
+) -> dict[str, Any]:
+    """Resolve optional authentication only on the private wire copy."""
+    resolved = deepcopy(mcp_servers)
+    for name, server in list(resolved.items()):
+        if "bearer_token_env" in server:
+            token = lookup(server.pop("bearer_token_env"))
+            if not token:
+                del resolved[name]
+                continue
+            server["headers"] = {
+                **(server.get("headers") or {}),
+                "Authorization": f"Bearer {token}",
+            }
+    return resolved
+
+
+def is_blender_mcp_configured(mcp_servers: dict[str, Any]) -> bool:
+    markers = ("mcp-for-blender", "blender_mcp", "blender-mcp")
+    for name, server in mcp_servers.items():
+        if name.lower() in {"blender", "blender-mcp", "mcp-for-blender"}:
+            return True
+        if server.get("type", "stdio") not in {"stdio", "local"}:
+            continue
+        args = server.get("args", [])
+        strings = [server.get("command", ""), *([args] if isinstance(args, str) else args)]
+        if any(
+            isinstance(value, str) and any(marker in value.lower() for marker in markers)
+            for value in strings
+        ):
+            return True
+    return False
+
+
+def is_blendswap_mcp_configured(mcp_servers: dict[str, Any]) -> bool:
+    for name, server in mcp_servers.items():
+        if name.lower() == "blendswap":
+            return True
+        if server.get("type") not in {"http", "sse"}:
+            continue
+        host = urlsplit(server.get("url", "")).hostname or ""
+        if host == "blendswap.com" or host.endswith(".blendswap.com"):
+            return True
+    return False
+
+
 UNITY_TOOLS = [
+    "get_project_capabilities",
+    "validate_authored_document",
     "view",
     "bash",
     "run_unity_workflow",
@@ -173,15 +302,15 @@ UNITY_TOOLS = [
 ]
 
 
-def unity_agent(config: Configuration) -> dict[str, Any]:
+def unity_agent(config: Configuration, *, model: str | None = None) -> dict[str, Any]:
     skill = Path(__file__).resolve().parents[5] / "agent/skills/unity/SKILL.md"
     return dict(
         name="unity-specialist",
         description="Scoped pinned-source Unity scene import, controls and validation",
-        model=config.unity_worker_model or config.worker_model,
+        model=model or config.unity_worker_model or config.worker_model,
         model_policy="required",
         tools=list(UNITY_TOOLS),
-        prompt=INSTRUCTIONS + "\n" + skill.read_text(),
+        prompt=UNITY_INSTRUCTIONS + "\n" + skill.read_text(),
     )
 
 
@@ -224,8 +353,20 @@ class Native:
         if identity(pid) is not None:
             raise DomainError("owner_conflict", 409, "Original runtime exit not yet observed")
 
-    async def open(self, project_id: str, session_id: str | None, callbacks: dict[str, Any]) -> Any:
+    async def open(
+        self,
+        project_id: str,
+        session_id: str | None,
+        callbacks: dict[str, Any],
+        *,
+        models: tuple[str, str, str] | None = None,
+    ) -> Any:
         config = self.config
+        lead_model, worker_model, unity_worker_model = models or (
+            config.lead_model,
+            config.worker_model,
+            config.unity_worker_model or config.worker_model,
+        )
         if version("github-copilot-sdk") != "1.0.34":
             raise DomainError("capability_unavailable", 501)
         with config.cli_path.open("rb") as binary:
@@ -292,7 +433,7 @@ class Native:
         output = project / ".proscenium/tool-output"
         output.mkdir(mode=0o700, parents=True, exist_ok=True)
         settings = dict(
-            model=config.lead_model,
+            model=lead_model,
             working_directory=str(project),
             memory={"enabled": False},
             enable_session_store=False,
@@ -302,22 +443,22 @@ class Native:
             large_output={"enabled": True, "output_directory": str(output)},
             skill_directories=config.skill_directories,
             enable_skills=True,
-            mcp_servers=config.mcp_servers,
+            mcp_servers=resolve_mcp_servers(config.mcp_servers, self.services.settings.secret_env),
             enable_config_discovery=False,
             skip_custom_instructions=True,
             streaming=True,
             include_sub_agent_streaming_events=True,
-            system_message={"mode": "append", "content": INSTRUCTIONS},
+            system_message={"mode": "append", "content": LEAD_INSTRUCTIONS},
             custom_agents=[
                 dict(
                     name="authoring-specialist",
                     description="Scoped Proscenium authoring specialist",
-                    model=config.worker_model,
+                    model=worker_model,
                     model_policy="required",
                     tools=config.worker_tools,
-                    prompt=INSTRUCTIONS,
+                    prompt=SPECIALIST_INSTRUCTIONS,
                 ),
-                unity_agent(config),
+                unity_agent(config, model=unity_worker_model),
             ],
             **callbacks,
         )

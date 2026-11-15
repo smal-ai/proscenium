@@ -2,6 +2,7 @@
 
 import asyncio
 from contextlib import suppress
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request, WebSocket, WebSocketDisconnect
@@ -50,16 +51,24 @@ def list_requests(
 ) -> dict:
     services = get_services(request)
     with services.registry.project_store(project_id).transaction(write=False) as tx:
-        return validate(
-            "RequestPage",
-            services.cursors.page(
-                f"{project_id}:requests",
-                tx.all("requests"),
-                "request_id",
-                cursor=cursor,
-                limit=limit,
-            ),
-        )  # type: ignore[no-any-return]
+        keyed = []
+        for record in tx.all("requests"):
+            accepted = datetime.fromisoformat(
+                record["accepted_at"].replace("Z", "+00:00")
+            ).astimezone(UTC)
+            elapsed = accepted - datetime(1970, 1, 1, tzinfo=UTC)
+            epoch_ns = (
+                elapsed.days * 86400 + elapsed.seconds
+            ) * 1_000_000_000 + elapsed.microseconds * 1000
+            keyed.append({"order": f"{epoch_ns:024d}:{record['request_id']}", "record": record})
+        page = services.cursors.page(
+            f"{project_id}:requests:accepted:v2",
+            keyed,
+            "order",
+            cursor=cursor,
+            limit=limit,
+        )
+        return validate("RequestPage", {**page, "items": [row["record"] for row in page["items"]]})  # type: ignore[no-any-return]
 
 
 @router.get("/api/v1/projects/{project_id}/requests/{request_id}", operation_id="getRequest")
@@ -100,6 +109,31 @@ async def answer_decision(
     result, replayed = service.state.answer(caller, decision_id, body)
     service.notify()
     return JSONResponse({**result, "replayed": replayed})
+
+
+@router.get(
+    "/api/v1/projects/{project_id}/resumes/{operation_id}", operation_id="getResumeOperation"
+)
+def get_resume_operation(
+    request: Request, project_id: str, operation_id: str, caller: Owner
+) -> dict:
+    with get_services(request).registry.project_store(project_id).transaction(write=False) as tx:
+        record = tx.require("copilot.resumes", operation_id)
+        body = record["body"]
+        if body["project_id"] != project_id:
+            raise DomainError("scope_denied", 403)
+        return validate(
+            "ResumeOperationStatus",
+            dict(
+                schema_version="1.0",
+                operation_id=operation_id,
+                project_id=project_id,
+                mode=body["mode"],
+                work_id=body["work_id"],
+                state=record["state"],
+                detail_code=record.get("detail_code"),
+            ),
+        )  # type: ignore[no-any-return]
 
 
 @router.get("/api/v1/projects/{project_id}/events", operation_id="replayProjectEvents")

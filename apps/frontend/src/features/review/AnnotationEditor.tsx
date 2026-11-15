@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { Eraser, Layers, MapPin, MoveUpRight, Pencil, Square, X } from "lucide-react";
 import type { AnnotationSnapshot, Markup } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
@@ -10,6 +11,7 @@ import { allPages } from "./records";
 
 type Tool = Markup["kind"] | "eraser";
 const tools: Tool[] = ["stroke", "arrow", "region", "pin", "eraser", "mask"];
+const toolIcons = {stroke: Pencil, arrow: MoveUpRight, region: Square, pin: MapPin, eraser: Eraser, mask: Layers};
 
 function paint(ctx: CanvasRenderingContext2D, markups: Markup[], width: number, height: number, mask: boolean) {
   ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -174,10 +176,14 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onCont
   }
 
   return <section className="review-annotation" aria-label="Pinned annotation">
-    <div className="review-toolbar">{tools.map(t => <button key={t} aria-pressed={tool === t} disabled={busy} onClick={() => setTool(t)}>{t}</button>)}
-      <label>Width (image px)<input disabled={busy} type="number" min="1" max="256" value={width} onChange={e => setWidth(Math.max(1, Number(e.target.value)))} /></label>
-      {tool === "pin" && <input aria-label="Pin text" value={pinText} onChange={e => setPinText(e.target.value)} />}
-      <button disabled={saving || queueState === "submitting"} onClick={onClose}>Close draft</button>
+    <div className="review-bar" aria-label="Annotation drawing tools"><span className="toolbar-badge accent">Annotating</span>
+      <div className="segmented-control">{tools.map(t => {const Icon = toolIcons[t]; return <button key={t} aria-pressed={tool === t} disabled={busy} onClick={() => setTool(t)}><Icon size={14}/>{t[0].toUpperCase() + t.slice(1)}</button>;})}</div>
+      <div className="toolbar-divider"/>
+      <label className="toolbar-field"><span>Size</span><input aria-label="Width (image px)" disabled={busy} type="number" min="1" max="256" value={width} onChange={e => setWidth(Math.min(256, Math.max(1, Number(e.target.value))))} /><span>px</span></label>
+      {tool === "pin" && <input className="toolbar-inline-input" aria-label="Pin text" placeholder="Pin label…" value={pinText} onChange={e => setPinText(e.target.value)} />}
+      <div className="toolbar-spacer"/>
+      <output className="toolbar-chip" aria-live="polite">{draft.state}{draft.error ? `: ${draft.error}` : ""}</output>
+      <button className="toolbar-btn" disabled={saving || queueState === "submitting"} onClick={onClose}><X size={14}/>Close draft</button>
     </div>
     <div className="review-canvas" ref={host} onPointerDown={start} onPointerMove={move} onPointerUp={() => {active.current = null;}} onPointerCancel={() => {active.current = null;}}>
       <img ref={image} src={mediaUrl(draft.projectId, annotation.target.artifact_id)} alt="Pinned clean annotation target" draggable={false} onError={() => setError(`media_unavailable: ${annotation.target.artifact_id}`)} />
@@ -189,16 +195,21 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onCont
         </g>)}</g>
       </svg>
     </div>
-    <label>Feedback<textarea aria-label="Feedback" disabled={busy} value={annotation.text} onChange={e => edit({...annotation, text: e.target.value})}/></label>
-    <div className="review-toolbar">
-      <span>Pinned {annotation.target.version_id ?? annotation.target.artifact_id} · frame {annotation.target.sequence_frame ?? annotation.target.source_frame ?? "image"}</span>
-      <label>Range start<input disabled={busy} type="number" min="1" value={annotation.range?.start ?? ""} onChange={e => edit({...annotation, range: e.target.value ? {start: Number(e.target.value), end: Math.max(Number(e.target.value), annotation.range?.end ?? Number(e.target.value))} : null})}/></label>
-      <label>Range end<input disabled={busy || !annotation.range} type="number" min={annotation.range?.start ?? 1} value={annotation.range?.end ?? ""} onChange={e => annotation.range && edit({...annotation, range: {...annotation.range, end: Math.max(annotation.range.start, Number(e.target.value))}})}/></label>
-      <output aria-live="polite">{draft.state}{draft.error ? `: ${draft.error}` : ""}</output>
-      <button disabled={saving || queueState === "submitting" || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>
-      <button disabled={saving || draft.state !== "saved" || queueState !== "idle"} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : "Queue feedback"}</button>
+    <div className="annotation-dock">
+      <div className="annotation-feedback"><label className="sr-only" htmlFor="annotation-feedback">Feedback</label><textarea id="annotation-feedback" aria-label="Feedback" placeholder="Describe the change for Copilot on this pinned frame…" disabled={busy} value={annotation.text} onChange={e => edit({...annotation, text: e.target.value})}/></div>
+      <div className="review-bar review-transport-bar">
+        <span className="toolbar-chip">Pinned {annotation.target.version_id ?? annotation.target.artifact_id} · frame {annotation.target.sequence_frame ?? annotation.target.source_frame ?? "image"}</span>
+        <div className="toolbar-group">
+          <label className="toolbar-field"><span>Range</span><input aria-label="Range start" placeholder="Start" disabled={busy} type="number" min="1" value={annotation.range?.start ?? ""} onChange={e => edit({...annotation, range: e.target.value ? {start: Number(e.target.value), end: Math.max(Number(e.target.value), annotation.range?.end ?? Number(e.target.value))} : null})}/></label><span>–</span>
+          <label className="toolbar-field"><span className="sr-only">Range end</span><input aria-label="Range end" placeholder="End" disabled={busy || !annotation.range} type="number" min={annotation.range?.start ?? 1} value={annotation.range?.end ?? ""} onChange={e => annotation.range && edit({...annotation, range: {...annotation.range, end: Math.max(annotation.range.start, Number(e.target.value))}})}/></label>
+        </div>
+        <div className="toolbar-spacer"/><div className="toolbar-group">
+          <button className="toolbar-btn" disabled={saving || queueState === "submitting" || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>
+          <button className="toolbar-btn toolbar-btn-accent" disabled={saving || draft.state !== "saved" || queueState !== "idle"} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : "Queue feedback"}</button>
+        </div>
+      </div>
     </div>
-    {(error || draft.state === "conflict") && <p role="alert">{error || "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit."}</p>}
+    {(error || draft.state === "conflict") && <div className="review-status-banner" role="alert">{error || "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit."}</div>}
     {draft.state === "conflict" && <button onClick={() => {
       void allPages(cursor => api.call("listAnnotations",{path:{project_id:draft.projectId},query:{cursor,limit:100,version_id:annotation.target.version_id ?? undefined}}))
         .then(items => {const current=items.find(a=>a.annotation_id===annotation.annotation_id);if (!current) throw new Error("Current annotation unavailable");setServerRevision(current);}).catch(e=>setError(String(e)));

@@ -6,7 +6,7 @@
 | --- | --- |
 | Studio and saved-output review | Linux x86-64 with glibc, Python 3.12, uv, Node.js >=22.12, npm, Make, Git and Git LFS. |
 | Cloud authoring | Existing supported GitHub Copilot authentication and access to the configured model. The verified login mechanism is GitHub CLI authentication. |
-| Blender authoring and previews | Blender 4.5.14 LTS, build `62c1db4208e8`, FFmpeg/FFprobe, and the configured Blender MCP client/add-on for interactive authoring. |
+| Blender authoring and previews | Blender 4.5.16 LTS, build `3f6797307da5`, FFmpeg/FFprobe, and the configured Blender MCP client (`mcp-for-blender==2.3.0`) and installed add-on (2.0, protocol 16) for interactive authoring. |
 | Playable Unity scenes | Unity Editor `6000.3.27f1`, with the packages declared by `tools/unity/workflow.py`. |
 | Image/mesh generation | An independently running ComfyUI service with the selected model and workflow nodes. |
 | Visual critique | An independently running LM Studio vision model, identified by its exact loaded model ID. |
@@ -29,11 +29,14 @@ chmod 600 "$HOME/.config/proscenium/config.json"
 Edit the private configuration to match this workstation:
 
 - `runtime.lead_model`, `worker_model` and `unity_worker_model` select available Copilot models.
+- `runtime.worker_tools` lists the native and host tools exposed to `authoring-specialist`. Include `skill`, `get_project_capabilities`, `validate_authored_document` and `prepare_image_generation` when overriding the default list; `get_project_capabilities` reports any omitted recommended names under `missing_worker_tools` without silently widening your override.
 - `runtime.unity_editor` must be the installed Editor executable's absolute path when using Unity.
-- `runtime.mcp_servers` configures the existing MCP integrations. The [Blender bridge guide](../tools/blender/README.md) shows the pinned client and socket setup.
+- `runtime.mcp_servers.blender` configures the existing stdio integration with `uvx --python 3.11 mcp-for-blender==2.3.0 --host 127.0.0.1 --port 9876` and `DISABLE_TELEMETRY=1`. The [Blender bridge guide](../tools/blender/README.md) shows the installed add-on and socket setup. Do not reinstall or overwrite the add-on.
+- `runtime.mcp_servers.blendswap` configures hosted HTTP MCP with `type: "http"`, `url: "https://blendswap.com/api/mcp"` and `bearer_token_env: "BLENDSWAP_KEY"`. The backend reads the key privately from the process environment, `${CONFIG_DIR}/.env`, then `${APP_ROOT}/.env`, taking the first non-empty value. Dotenv files must be regular, non-symlink files no larger than 64 KiB. Values are never exported into the process environment or exposed in configuration views. Missing credentials omit this optional server without preventing a session. Never put inline tokens in `config.json` or combine this setting with an inline `Authorization` header.
+- Include the matching model-facing `blender-*` and `blendswap-*` tool names in `runtime.worker_tools` so `authoring-specialist` can use delegated Blender builds and asset research. `config.example.json` lists the supported tools. Ordinary Blender authoring and free acquisition are automatic. Chargeable cloud generation tools require an explicit owner `approve_once` or `decline` decision under [owner policy, Section 2](owner-policy.md#2-automatic-operations-and-confirmations).
 - `rendering.blender`, `ffmpeg` and `ffprobe` select installed executables. The default preview profile is four-thread Cycles CPU with a 300-second worker limit.
 - `services` selects provider IDs, endpoints, capabilities and loaded model IDs.
-- `provider_options.image_profiles` selects a versioned image profile for each Comfy provider.
+- `provider_options.image_profiles` selects a versioned image profile for each Comfy provider, and optional `provider_options.image_recipes` pins exact model filenames when multiple compatible checkpoints exist on the ComfyUI server.
 
 JSON path strings expand `${HOME}`, `${CONFIG_DIR}` and `${APP_ROOT}`. Credentials
 stay in the existing supported authentication stores. Do not paste tokens into
@@ -64,20 +67,50 @@ feedback remain accessible when a configured service is unavailable.
 | `comfy-sd-turbo-img2img-1` | Pinned SD-Turbo F32 checkpoint and one exact 512×512 reference. |
 | `comfy-sd-turbo-img2img-fp16-1` | Pinned separately prepared FP16 derivative and one exact 512×512 reference. |
 
-For example, add this key to `provider_options` for an already prepared FP16 service:
+For example, select an explicit FLUX.2 Klein 4B recipe when a ComfyUI server hosts multiple checkpoints, or select an already prepared SD-Turbo FP16 profile:
+
+```json
+{
+  "image_recipes": {
+    "local-comfy": {
+      "profile_revision": "comfy-image-1",
+      "unet": "flux-2-klein-4b.safetensors",
+      "clip": "qwen_3_4b.safetensors",
+      "vae": "flux2-vae.safetensors",
+      "width": 512,
+      "height": 512,
+      "steps": 4,
+      "max_pixels": 1048576
+    }
+  }
+}
+```
 
 ```json
 {"image_profiles": {"local-comfy": "comfy-sd-turbo-img2img-fp16-1"}}
 ```
 
 The required checkpoint hashes and graphs are defined in
-`apps/backend/src/proscenium/providers/`. Add `image_to_3d` to the Comfy provider's
-capabilities when the Hunyuan model/nodes are installed. New requests freeze the
-profile, endpoint, graph and input hashes. Configuration changes do not reinterpret
-admitted jobs. The default attempt budget is three per human task and target.
+`apps/backend/src/proscenium/providers/`. FLUX.2 Klein reference conditioning scales
+input images through `ImageScaleToTotalPixels` (`resolution_steps: 16`, capped at 1 MP)
+and uses tiled VAE encode/decode when available in ComfyUI `/object_info`; corrupted
+scanline or noise rasters are rejected as `corrupt_provider_output`. Add `image_to_3d`
+to the Comfy provider's capabilities when the Hunyuan model/nodes are installed. New
+requests freeze the profile, endpoint, graph and input hashes. Configuration changes do
+not reinterpret admitted jobs. The default attempt budget is three per human task and
+target.
 
-`services[].available` and `profiles[].scope_status` are configured metadata.
-Unknown availability is shown explicitly. The 256 MiB free-VRAM check is a
+**Services & models** shows bounded live provider catalogue/recipe observations,
+configured workstation bridges and a manual **Refresh status** control. These reads
+do not start services, perform inference or reserve generation budgets. A listed
+VLM model is not proof of vision inference. Failed probes leave profile editing available.
+Create, edit and select owner-controlled Copilot lead/worker profiles in the same
+menu. Profiles persist privately in `registry.sqlite3`, independently of source
+configuration. New Queue requests freeze their selected model identities. A profile
+selected by any registered project cannot be deleted, and one authoring profile must remain.
+
+`services[].available` and `profiles[].scope_status` remain configured metadata.
+The 256 MiB free-VRAM check is a
 capability preflight, not a guarantee that a model fits in memory.
 
 The accepted SD-Turbo correction workflow did not achieve its requested blue
@@ -100,8 +133,8 @@ Browser/tunnel disconnection leaves admitted work running.
 - The machine registry defaults to `${XDG_DATA_HOME:-$HOME/.local/share}/proscenium`.
 - Each project keeps its application records and retained media under `.proscenium/`.
 - Git/Git LFS retain authored source and pinned dependencies. They do not replace backups of annotations, published media or native conversation history.
-- Restart restores read models with execution held. Use **Resume** deliberately to reconcile original work or release held Queue requests.
-- **Stop** controls Copilot. External jobs have separate cancellation support. A missing native result stays unknown.
+- Restart and unsolicited native aborts restore read models with execution held. Use **Resume** deliberately (`Reconcile only`, `Continue original work` or `Release held queue`) and await `getResumeOperation` completion.
+- **Stop** controls Copilot, including post-restart cold RPC inactivity reconciliation when prior tool invocations have settled. External jobs have separate cancellation support. A missing native result stays unknown.
 
 ## Backup and restore
 
@@ -124,6 +157,9 @@ identity. Backup preserves the original source files and copies associated
 Git/LFS, SQLite, media and native history through validated read-only paths.
 Incomplete/corrupt or busy stores are reported explicitly. Backups are private
 material and are not automatically encrypted or uploaded.
+Owner-created profile definitions are retained in the backed-up machine registry
+alongside the selected project's profile preference. Authentication and unrelated
+project records remain excluded.
 
 The runtime identity manifest at `docs/implementation/runtime-lock.json` is retained
 because the backup tool reads it. The verified native relocation used the same

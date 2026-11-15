@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Proscenium application and tool protocol
   version: 1.0.0
-  description: Normative contract implemented by the host-native application. See http-api.md for semantic invariants and caller capabilities, and ../implementation/progress.md for execution evidence and acceptance status.
+  description: Normative host-native protocol. README.md describes compatible extensions, and ../owner-policy.md defines caller capabilities and execution identity.
 servers:
   - url: /
 security:
@@ -41,6 +41,52 @@ paths:
       responses:
         '200':
           description: Non-secret configuration and known capability state. Does not start services.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ConfigurationView'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/configuration/status:
+    get:
+      operationId: getConfigurationStatus
+      responses:
+        '200':
+          description: Bounded read-only provider and workstation bridge status. Does not start services or reserve budgets.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ConfigurationStatus'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/configuration/profiles/{profile_id}:
+    parameters:
+      - {name: profile_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    put:
+      operationId: upsertAuthoringProfile
+      parameters: *ownerWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/AuthoringProfileUpsert'}
+      responses:
+        '200':
+          description: Updated owner authoring profiles.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ConfigurationView'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/configuration/profiles/{profile_id}/delete:
+    parameters:
+      - {name: profile_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    post:
+      operationId: deleteAuthoringProfile
+      parameters: *ownerWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/AuthoringProfileDelete'}
+      responses:
+        '200':
+          description: Updated owner authoring profiles.
           content:
             application/json:
               schema: {$ref: './schema.json#/$defs/ConfigurationView'}
@@ -192,6 +238,19 @@ paths:
         '202': {$ref: '#/components/responses/CommandReceipt'}
         '200': {$ref: '#/components/responses/CommandReceipt'}
         default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/resumes/{operation_id}:
+    parameters:
+      - {$ref: '#/components/parameters/ProjectId'}
+      - {name: operation_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    get:
+      operationId: getResumeOperation
+      responses:
+        '200':
+          description: Observed status of the original admitted Resume operation.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ResumeOperationStatus'}
+        default: {$ref: '#/components/responses/Error'}
   /api/v1/projects/{project_id}/settings:
     parameters: [{$ref: '#/components/parameters/ProjectId'}]
     put:
@@ -212,7 +271,7 @@ paths:
       parameters:
         - {$ref: '#/components/parameters/Cursor'}
         - {$ref: '#/components/parameters/Limit'}
-        - {name: kind, in: query, schema: {enum: [asset, scene, storyboard, sequence, unity_result]}}
+        - {name: kind, in: query, schema: {type: string, enum: [asset, scene, storyboard, sequence, unity_result]}}
       responses:
         '200':
           description: Item catalogue.
@@ -386,6 +445,22 @@ paths:
         '201': {$ref: '#/components/responses/Artifact'}
         '200': {$ref: '#/components/responses/Artifact'}
         default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/artifacts:
+    parameters: [{$ref: '#/components/parameters/ProjectId'}]
+    get:
+      operationId: listRetainedArtifacts
+      parameters:
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/Limit'}
+        - {name: kind, in: query, schema: {type: string, enum: [image, mask, proxy, proxy_map, video, frame_map, document, source_blob, log]}}
+        - {name: purpose, in: query, schema: {type: string, enum: [reference, concept, keyframe, draft_motion, final, inspection, metadata, mask, log]}}
+      responses:
+        '200':
+          description: Registered retained artefacts with recorded attribution, including unpublished and legacy outputs.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/RetainedArtifactPage'}
+        default: {$ref: '#/components/responses/Error'}
   /api/v1/projects/{project_id}/artifacts/{artifact_id}:
     parameters:
       - {$ref: '#/components/parameters/ProjectId'}
@@ -421,7 +496,7 @@ paths:
       parameters:
         - {$ref: '#/components/parameters/Cursor'}
         - {$ref: '#/components/parameters/Limit'}
-        - {name: version_id, in: query, schema: {$ref: './schema.json#/$defs/Id'}}
+        - {name: version_id, in: query, schema: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'}}
       responses:
         '200':
           description: Saved annotations with exact targets and revisions.
@@ -542,7 +617,7 @@ paths:
   /api/v1/events:
     get:
       operationId: connectProjectEvents
-      description: WebSocket upgrade. Subscription and SocketControl schemas and replay behaviour are defined in events.md.
+      description: WebSocket upgrade using Subscription and SocketControl definitions in schema.json with ordered project event replay.
       responses:
         '101': {description: Authenticated WebSocket upgraded.}
         default: {$ref: '#/components/responses/Error'}
@@ -741,7 +816,7 @@ components:
           schema: {$ref: './schema.json#/$defs/ReviewRequest'}
   responses:
     Error:
-      description: Structured failure. Specific status/error combinations are normative in http-api.md.
+      description: Structured failure with bounded reason codes and operation attribution.
       content:
         application/json:
           schema: {$ref: './schema.json#/$defs/Error'}

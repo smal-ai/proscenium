@@ -2,22 +2,31 @@
   "name": "proscenium-workspace",
   "private": true,
   "version": "0.1.0",
-  "engines": {"node": ">=22.12.0"},
-  "workspaces": ["apps/frontend"],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "apps/frontend"
+  ],
   "scripts": {
     "generate": "node scripts/generate-types.mjs",
     "build": "npm run build --workspace apps/frontend",
-    "typecheck": "npm run typecheck --workspace apps/frontend",
-    "lint": "eslint apps/frontend/src scripts/*.mjs"
+    "typecheck": "npm run typecheck --workspace apps/frontend && tsc --noEmit -p tsconfig.browser.json",
+    "test:unit": "node --test apps/frontend/src/features/review/surfaceTargets.test.mjs && node --import ./scripts/register-tsx.mjs --test ./apps/frontend/src/features/chat/chat.test.tsx",
+    "test:browser": "playwright test --config playwright.config.ts --project=chromium-*",
+    "lint": "eslint apps/frontend/src scripts/*.mjs playwright.config.ts tests/browser"
   },
   "devDependencies": {
-    "@types/node": "24.19.2",
-    "@github/copilot": "1.0.112",
     "@eslint/js": "9.39.1",
+    "@github/copilot": "1.0.112",
+    "@playwright/test": "1.65.1",
+    "@types/node": "24.19.2",
     "eslint": "9.39.1",
     "json-schema-to-typescript": "15.0.4",
-    "typescript-eslint": "8.72.2",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.2"
   },
-  "overrides": {"minimatch": "11.0.1"}
+  "overrides": {
+    "minimatch": "11.0.1"
+  }
 }

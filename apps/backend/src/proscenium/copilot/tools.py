@@ -2,17 +2,25 @@
 
 from __future__ import annotations
 
+import asyncio
+import base64
 import copy
+import hashlib
 import inspect
+import json
+import re
+import time
 from typing import Any
 
-from copilot.tools import Tool, ToolInvocation, ToolResult
+from copilot.tools import Tool, ToolBinaryResult, ToolInvocation, ToolResult
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
+from proscenium.catalogue.validation import safe_schema_guidance
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.services import Services
 
+from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
 from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
@@ -20,6 +28,20 @@ from .workflows import parameters as workflow_parameters
 
 # Extension, method, normative input, normative result, capability operation.
 TOOLS = {
+    "validate_authored_document": (
+        "authoring_validation",
+        "validate",
+        "AuthoredDocumentValidationRequest",
+        "AuthoredDocumentValidationResult",
+        "validateAuthoredDocument",
+    ),
+    "prepare_image_generation": (
+        "image_preparation",
+        "prepare",
+        "ImageGenerationPrepare",
+        "ImageGenerationPrepared",
+        "prepareImageGeneration",
+    ),
     "checkpoint_sources": (
         "sources",
         "checkpoint",
@@ -57,11 +79,15 @@ TOOLS = {
 
 # Native argument wrappers around existing reads, not additional public wire DTOs.
 READ_TOOLS = {
-    "get_job": ("job_id", "JobRecord", "Read an existing job without starting or retrying it."),
+    "get_job": (
+        "job_id",
+        "JobRecord",
+        "Read an admitted job without starting or retrying it. Use wait_seconds (0..30) for bounded waiting instead of busy-polling.",
+    ),
     "get_artifact": (
         "artifact_id",
         "Artifact",
-        "Read registered artefact metadata by ID. Inspect only ready bytes at the documented SHA-256 managed path.",
+        "Read registered artefact metadata by ID. Use include_image=true for inline image inspection without copying .proscenium/artefacts/.../content.",
     ),
     "get_version": (
         "version_id",
@@ -75,6 +101,11 @@ READ_TOOLS = {
     ),
 }
 DISCOVERY_READS = {
+    "get_project_capabilities": (
+        "",
+        "ProjectCapabilities",
+        "Read exposed tools, installed skills and observed provider recipes. No inference or service lifecycle actions.",
+    ),
     "list_items": (
         "",
         "ItemPage",
@@ -84,6 +115,12 @@ DISCOVERY_READS = {
 
 
 def read_parameters(name: str) -> dict[str, Any]:
+    if name == "get_project_capabilities":
+        return dict(
+            type="object",
+            properties={"project_id": copy.deepcopy(SCHEMA["$defs"]["Id"])},
+            additionalProperties=False,
+        )
     if name == "list_items":
         return dict(
             type="object",
@@ -97,6 +134,10 @@ def read_parameters(name: str) -> dict[str, Any]:
     identity, _, _ = READ_TOOLS[name]
     assert identity is not None
     properties = {identity: copy.deepcopy(SCHEMA["$defs"]["Id"])}
+    if name == "get_artifact":
+        properties["include_image"] = {"type": "boolean", "default": False}
+    elif name == "get_job":
+        properties["wait_seconds"] = {"type": "integer", "minimum": 0, "maximum": 30, "default": 0}
     if name == "list_job_frames":
         properties.update(
             cursor={"type": ["string", "null"]},
@@ -111,6 +152,12 @@ def read_parameters(name: str) -> dict[str, Any]:
 
 
 def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
+    if name == "get_project_capabilities":
+        if not isinstance(arguments, dict) or set(arguments) - {"project_id"}:
+            raise DomainError("invalid_request")
+        if "project_id" in arguments:
+            validate("Id", arguments["project_id"])
+        return arguments
     if name == "list_items":
         if not isinstance(arguments, dict) or set(arguments) - {"query", "cursor", "limit"}:
             raise DomainError("invalid_request")
@@ -127,9 +174,19 @@ def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
     identity, _, _ = READ_TOOLS[name]
     assert identity is not None
     allowed = {identity, "cursor", "limit"} if name == "list_job_frames" else {identity}
+    if name == "get_artifact":
+        allowed.add("include_image")
+    elif name == "get_job":
+        allowed.add("wait_seconds")
     if not isinstance(arguments, dict) or identity not in arguments or set(arguments) - allowed:
         raise DomainError("invalid_request")
     validate("Id", arguments[identity])
+    if name == "get_artifact" and type(arguments.get("include_image", False)) is not bool:
+        raise DomainError("invalid_request")
+    if name == "get_job":
+        wait_seconds = arguments.get("wait_seconds", 0)
+        if type(wait_seconds) is not int or not 0 <= wait_seconds <= 30:
+            raise DomainError("invalid_request")
     if name == "list_job_frames":
         limit = arguments.get("limit", 50)
         cursor = arguments.get("cursor")
@@ -160,9 +217,36 @@ SAFE_REASONS = frozenset(
         "Displayed image identity mismatch",
         "No exact frame receipt",
         "Spatial mapping mismatch",
+        "Storyboard source must be AuthoredShotPlan JSON",
+        "Authored catalogue source is not JSON",
+        "Storyboard source failed AuthoredShotPlan validation",
+        "Sequence source failed SequenceMap validation",
+        "Multiple compatible image model tuples exist; configure provider_options.image_recipes",
+        "Configure one explicit provider",
+        "Image recipe nodes or models are unavailable",
+        "Provider catalogue could not be read",
+        "Selected image profile requires one exact 512x512 reference",
+        "SD-Turbo image recipes require 512x512 and four steps",
+        "Image preparation accepts at most one reference",
+        "Graph node is not installed",
+        "Model/choice is unavailable",
+        "An exact JSON-safe decimal seed is required",
+        "Image width and height must be multiples of 16 between 64 and 4096",
+        "Requested image dimensions exceed the configured provider pixel limit",
+        "generation_task_id does not match the active work; omit generation_task_id to use the active task",
+        "entry_path is required when building a source closure",
+        "Provider returned a corrupted scanline or noise image",
+        "Image artefact is not ready for inline inspection",
+        "Inline image inspection supports ready PNG, JPEG or WebP artefacts only",
+        "Image artefact exceeds inline inspection bounds",
+        "Unstructured target must name its task",
     }
 )
 ERROR_GUIDANCE = {
+    "corrupt_provider_output": "The provider returned a corrupted raster image. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
+    "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
+    "scope_denied": "The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on prepare_image_generation, or use an existing published item/slot.",
+    "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
     "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
     "hash_mismatch": "Registered bytes or the source digest do not match. Reconcile the original source/artefact identity; do not reuse this operation ID with changed input.",
@@ -188,6 +272,55 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
         )
     )
     details: dict[str, Any] = {}
+    if (
+        name in {"prepare_image_generation", "validate_authored_document"}
+        and error.code == "invalid_request"
+        and error.message not in SAFE_REASONS
+    ):
+        message = (
+            "Preflight validation rejected the request before any external job or inference was submitted. "
+            + message
+        )
+    issues = error.details.get("issues", [])
+    if isinstance(issues, list) and issues:
+        # Accept only canonical host-validator diagnostics, never upstream strings.
+        safe = []
+        for issue in issues[:25]:
+            try:
+                validate("ValidationIssue", issue)
+            except DomainError:
+                continue
+            if (
+                issue["code"]
+                in {
+                    "required",
+                    "type",
+                    "enum",
+                    "const",
+                    "additionalProperties",
+                    "oneOf",
+                    "anyOf",
+                    "not",
+                    "minItems",
+                    "maxItems",
+                    "minLength",
+                    "maxLength",
+                    "minimum",
+                    "maximum",
+                    "pattern",
+                    "uniqueItems",
+                    "format",
+                }
+                and safe_schema_guidance(issue["code"], issue["message"])
+                and len(issue["path"]) <= 512
+                and re.fullmatch(
+                    r"\$|[A-Za-z_][A-Za-z_0-9]*(?:\[[0-9]+\]|\.[A-Za-z_][A-Za-z_0-9]*)*",
+                    issue["path"],
+                )
+            ):
+                safe.append(issue)
+        if safe:
+            details["issues"] = safe
     if name == "get_unity_result" and error.code == "project_busy":
         message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
     revision = error.details.get("current_revision")
@@ -278,6 +411,12 @@ class Tools:
 
     def _read(self, name: str, invocation: ToolInvocation) -> tuple[dict[str, Any], str]:
         args = read_arguments(name, invocation.arguments)
+        if name == "get_project_capabilities":
+            from .capabilities import get_project_capabilities
+
+            if args.get("project_id", self.project_id) != self.project_id:
+                raise DomainError("scope_denied", 403)
+            return get_project_capabilities(self.services, self.project_id), "ProjectCapabilities"
         if name == "list_items":
             from proscenium.sources.common import fingerprint
 
@@ -363,6 +502,8 @@ class Tools:
                     "checkpoint_sources",
                     "publish_outputs",
                     "register_artifact",
+                    "prepare_image_generation",
+                    "validate_authored_document",
                     *READ_TOOLS,
                     *DISCOVERY_READS,
                     *WORKFLOW_TOOLS,
@@ -370,6 +511,43 @@ class Tools:
             )
             if name in READ_TOOLS or name in DISCOVERY_READS:
                 result, result_schema = self._read(name, invocation)
+                if name == "get_job" and invocation.arguments.get("wait_seconds", 0) > 0:
+                    assert caller.work_id is not None
+                    deadline = time.monotonic() + invocation.arguments["wait_seconds"]
+                    while result["state"] not in {
+                        "succeeded",
+                        "failed",
+                        "cancelled",
+                        "outcome_uncertain",
+                    }:
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            break
+                        try:
+                            self.services.gate.require(self.project_id)
+                        except DomainError:
+                            break
+                        with self.services.registry.project_store(self.project_id).transaction(
+                            write=False
+                        ) as tx:
+                            work = tx.require("work", caller.work_id)
+                            held = self.state.control(tx)["fenced"] or work["state"] in {
+                                "stop_requested",
+                                "stopped",
+                                "awaiting_resume",
+                                "outcome_uncertain",
+                            }
+                        if held:
+                            break
+                        await asyncio.sleep(min(0.5, remaining))
+                        result, result_schema = self._read(name, invocation)
+            elif name == "validate_authored_document":
+                from .capabilities import validate_authored_document
+
+                result = validate_authored_document(
+                    self.services, self.project_id, invocation.arguments
+                )
+                result_schema = "AuthoredDocumentValidationResult"
             elif name in WORKFLOW_TOOLS:
                 method, result_schema, _ = WORKFLOW_TOOLS[name]
                 body = workflow_arguments(name, invocation.arguments)
@@ -383,9 +561,18 @@ class Tools:
                 result = await getattr(service, method)(caller, body)
             else:
                 extension, method, schema, result_schema, _ = TOOLS[name]
-                body = validate(schema, invocation.arguments)
-                if body.get("project_id") != self.project_id:
+                body = copy.deepcopy(validate(schema, invocation.arguments))
+                if body.get("project_id", self.project_id) != self.project_id:
                     raise DomainError("scope_denied", 403)
+                body.setdefault("project_id", self.project_id)
+                if name == "prepare_image_generation" and "generation_task_id" not in body:
+                    assert caller.work_id is not None
+                    with self.services.registry.project_store(self.project_id).transaction(
+                        write=False
+                    ) as tx:
+                        body["generation_task_id"] = tx.require("work", caller.work_id)[
+                            "generation_task_id"
+                        ]
                 service = (
                     self.services.jobs
                     if extension == "jobs"
@@ -394,6 +581,10 @@ class Tools:
                 function = getattr(service, method, None)
                 if function is None:
                     raise DomainError("capability_unavailable", 501)
+                if name == "prepare_image_generation" and not self.services.extension(
+                    "image_preparation"
+                ).replayable(caller, body):
+                    self.caller(invocation, admit=True)
                 result = function(caller, body)
                 if inspect.isawaitable(result):
                     result = await result
@@ -401,13 +592,136 @@ class Tools:
                     result = result[0]
             # ReviewTicket validation forbids findings in the model response.
             validate(result_schema, result)
+            if name == "get_artifact" and invocation.arguments.get("include_image") is True:
+                return self._inline_image(result)
+            outcome: dict[str, Any] = {}
+            if name == "register_artifact":
+                outcome["artifact_ids"] = [result["artifact_id"]]
+            elif name == "prepare_image_generation":
+                outcome["artifact_ids"] = [
+                    result["workflow_artifact_id"],
+                    result["prompt_artifact_id"],
+                ]
+            elif name == "publish_outputs":
+                outcome.update(
+                    publication_id=result["publication_id"],
+                    published_versions=result["versions"],
+                    job_ids=result["job_ids"],
+                    artifact_ids=[
+                        aid for item in body["items"] for aid in item.get("artifact_ids", [])
+                    ],
+                )
+            elif name in {
+                "submit_generation",
+                "request_preview",
+                "assemble_sequence",
+                "run_unity_workflow",
+            }:
+                outcome.update(
+                    job_ids=[result["job_id"]], artifact_ids=result.get("artifact_ids", [])
+                )
+            if outcome:
+                self._outcome(invocation, name, status="succeeded", **outcome)
             return ToolResult(text_result_for_llm=canonical(result).decode())
         except DomainError as exc:
-            return tool_failure(exc, name)
+            failure = tool_failure(exc, name)
+            diagnostic = json.loads(failure.text_result_for_llm)
+            issues = diagnostic["details"].get("issues", [])
+            self._outcome(
+                invocation,
+                name,
+                status="failed",
+                error_code=exc.code,
+                phase=issues[0]["phase"]
+                if issues
+                else "json"
+                if exc.message
+                in {
+                    "Storyboard source must be AuthoredShotPlan JSON",
+                    "Authored catalogue source is not JSON",
+                }
+                else "preflight",
+                safe_summary=diagnostic["message"],
+                issues=issues,
+            )
+            return failure
         except Exception:
             # Never give SDK callers an upstream exception repr, headers or credentials.
             # Cancellation still propagates, and existing durable effects are not retried.
             return tool_failure(DomainError("internal_error", 500), name)
+
+    def _inline_image(self, result: dict[str, Any]) -> ToolResult:
+        if result["state"] != "ready":
+            raise DomainError(
+                "media_unavailable", 422, "Image artefact is not ready for inline inspection"
+            )
+        if result["kind"] != "image" or result["media_type"] not in {
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+        }:
+            raise DomainError(
+                "invalid_request",
+                message="Inline image inspection supports ready PNG, JPEG or WebP artefacts only",
+            )
+        dimensions = result.get("dimensions")
+        maximum = self.services.settings.upload_max_bytes
+        if result["bytes"] > maximum or (
+            dimensions
+            and dimensions["width"] * dimensions["height"]
+            > self.services.settings.upload_max_pixels
+        ):
+            raise DomainError(
+                "invalid_request", message="Image artefact exceeds inline inspection bounds"
+            )
+        path = self.services.extension("artifacts").ready_path(
+            self.project_id, result["artifact_id"]
+        )
+        with path.open("rb") as stream:
+            raw = stream.read(maximum + 1)
+        if len(raw) != result["bytes"] or hashlib.sha256(raw).hexdigest() != result["sha256"]:
+            raise DomainError("hash_mismatch", 422)
+        return ToolResult(
+            text_result_for_llm=canonical(result).decode(),
+            binary_results_for_llm=[
+                ToolBinaryResult(
+                    type="image",
+                    mime_type=result["media_type"],
+                    data=base64.b64encode(raw).decode("ascii"),
+                    description=result["artifact_id"],
+                )
+            ],
+        )
+
+    def _outcome(self, invocation: ToolInvocation, name: str, **values: Any) -> None:
+        store = self.services.registry.project_store(self.project_id)
+        with store.transaction() as tx:
+            record = tx.get(
+                "invocations",
+                key(invocation.session_id, "tool", invocation.tool_call_id),
+                required=False,
+            )
+            if (
+                record is None
+                or record["session_id"] != invocation.session_id
+                or record["agent_id"] != invocation.agent_id
+            ):
+                return
+            previous = get_tool_outcome(tx, record["invocation_id"])
+            if previous and values.get("status") == "failed":
+                # A rejected retry cannot erase artefacts already proven by this invocation.
+                for field in ("artifact_ids", "job_ids", "publication_id", "published_versions"):
+                    values[field] = previous[field]
+            record_tool_outcome(
+                tx,
+                invocation_id=record["invocation_id"],
+                session_id=record["session_id"],
+                project_id=self.project_id,
+                work_id=record["work_id"],
+                request_id=record["request_id"],
+                tool_name=name,
+                **values,
+            )
 
     def definitions(self) -> list[Tool]:
         tools = []

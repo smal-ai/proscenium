@@ -23,13 +23,13 @@ make run CONFIG="$HOME/.config/proscenium/config.json" ARGS=--pair
 
 Open the private pairing URL printed in the terminal. The studio serves its UI, API, WebSocket and media at **http://127.0.0.1:8765**. Use one backend process and a desktop Chromium, Brave or Edge browser.
 
-[Operator guide](docs/operator.md) · [Runtime specification](docs/specification.md) · [Owner policy](docs/owner-policy.md)
+[Studio guide](docs/studio.md) · [Operator guide](docs/operator.md) · [Runtime specification](docs/specification.md) · [Owner policy](docs/owner-policy.md)
 
 ## Included capabilities
 
-- Persistent project discussion with immutable message context, Queue, Steer, Stop and explicit Resume.
-- Blender authoring, static 3D inspection, rendered keyframes and progressive animation review.
-- Reference research, storyboards, ComfyUI image generation and actual image-to-3D mesh generation.
+- Resizable Split view and Chat focus studio with persistent project Conversation, independent Request targeting, Reference versions, Queue, Steer, Stop and explicit Resume.
+- Asset-first, scene-first and storyboard-first workflows with Blender authoring, static 3D inspection, rendered keyframes and progressive animation review.
+- Host-validated canonical storyboards, deterministic ComfyUI image workflow preparation, budgeted image generation, actual image-to-3D mesh generation and retained-output previews when publication is blocked.
 - Requested VLM critique with owner-approved feedback, silent cinematic assembly and playable Unity scenes.
 - Git/Git LFS source versions, pinned dependencies, local backup/restore and SSH access.
 
@@ -39,8 +39,9 @@ Copilot access and the native/model tools are workstation prerequisites. ComfyUI
 
 ```bash
 make check
+make test-browser
 ```
 
-This checks formatting, lint, types, generated contracts, the frontend build and isolated local-runtime smoke tests. It makes no model requests or native authoring runs. Use a topic branch and a pull request for changes to protected `main`.
+`make check` verifies formatting, lint, types, generated contracts, the frontend build, frontend unit tests and offline Python/runtime tests. `make test-browser` runs the isolated Playwright Chromium suite against a hermetic fake API with external execution blocked. Use a topic branch and a pull request for changes to protected `main`.
 
-`main` is a selective runtime import of [`6b714c0`](https://github.com/smal-ai/proscenium/commit/6b714c0dd574abe3995cf7020b988190336cefdf). The original [milestone history and release evidence](https://github.com/smal-ai/proscenium/tree/impl/studio/docs/evidence/release) remain on `impl/studio`. The application source, packaged schemas and native tools retain that implementation's bytes.
+`main` originated as a selective runtime import of [`6b714c0`](https://github.com/smal-ai/proscenium/commit/6b714c0dd574abe3995cf7020b988190336cefdf), evolved through reviewed pull requests. Historical milestone proofs and release evidence remain on [`impl/studio`](https://github.com/smal-ai/proscenium/tree/impl/studio/docs/evidence/release).

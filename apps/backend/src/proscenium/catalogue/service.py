@@ -233,13 +233,28 @@ class Catalogue:
             if row["kind"] in {"storyboard", "sequence"}:
                 try:
                     document = json.loads((materialised / row["source"]["entry_path"]).read_bytes())
-                except ValueError as exc:
+                    if not isinstance(document, dict):
+                        raise ValueError("Authored source must be an object")
+                except (ValueError, UnicodeError) as exc:
                     raise DomainError(
-                        "source_unavailable", 422, "Authored catalogue source is not JSON"
+                        "source_unavailable",
+                        422,
+                        "Storyboard source must be AuthoredShotPlan JSON"
+                        if row["kind"] == "storyboard"
+                        else "Authored catalogue source is not JSON",
                     ) from exc
-                validate(
+                issues = validation.schema_issues(
                     "AuthoredShotPlan" if row["kind"] == "storyboard" else "SequenceMap", document
                 )
+                if issues:
+                    raise DomainError(
+                        "invalid_request",
+                        422,
+                        "Storyboard source failed AuthoredShotPlan validation"
+                        if row["kind"] == "storyboard"
+                        else "Sequence source failed SequenceMap validation",
+                        issues=issues,
+                    )
                 documents[row["version_id"]] = document
                 if row["kind"] == "storyboard":
                     for identity in document["brief_artifact_ids"] + [

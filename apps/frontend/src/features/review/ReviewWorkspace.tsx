@@ -1,4 +1,5 @@
 import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, Info, Pause, PenLine, Play, X } from "lucide-react";
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, PreviewSegment, ProxyMapping, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { AnnotationEditor } from "./AnnotationEditor";
@@ -14,9 +15,12 @@ import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
 import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
 import { useReviewSelection } from "./state";
+import { RetainedReview, ReviewEmpty, ReviewModeSwitcher } from "./ReviewChrome";
 import "./review.css";
 
 type Mode = "3d_inspection" | "keyframes" | "animation";
+type StoryboardPanel = { shot_id: string; frame_id: string; role: string; composition: string; artifact_id: string };
+type StoryboardTarget = StoryboardPanel & { target: FrameTarget };
 
 class MediaBoundary extends Component<{children: ReactNode}, {error: string}> {
   state = {error: ""};
@@ -29,13 +33,17 @@ export function ReviewWorkspace(props: ReviewSurfaceProps) {
   return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props}/>;
 }
 
-function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+function Workspace({visible: surfaceVisible = true, api, projectId, version: suppliedVersion, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+  const visible = surfaceVisible && !inspectedArtifact;
   const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
   const version = refreshedVersion ?? suppliedVersion;
   const [mode, setMode] = useState<Mode>("keyframes");
+  const [drawer, setDrawer] = useState<"annotations" | "details" | null>(null);
   const [frames, setFrames] = useState<FrameReceipt[]>([]);
   const [segments, setSegments] = useState<PreviewSegment[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [storyboardTargets, setStoryboardTargets] = useState<StoryboardTarget[]>([]);
+  const [storyboardPanelIndex, setStoryboardPanelIndex] = useState(0);
   const [mapping, setMapping] = useState<ProxyMapping | null>(null);
   const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap} | null>(null);
   const [availabilityByJob, setAvailabilityByJob] = useState<Record<string,FrameAvailability>>({});
@@ -48,6 +56,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const [range, setRange] = useState<FrameRange | null>(null);
   const [requestedFrame, setRequestedFrame] = useState(1);
   const [playing, setPlaying] = useState(false);
+  useEffect(() => { if (!visible) { setPlaying(false); setCaptureReady(false); } }, [visible]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [saved, setSaved] = useState<AnnotationSnapshot[]>([]);
@@ -80,7 +89,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
   const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
   const deliveryManifest = deliveryJob ? artifacts.find(a => deliveryJob.artifact_ids.includes(a.artifact_id) && a.kind === "document" && a.purpose === "metadata" && a.state === "ready") : undefined;
-  const readyToCapture = mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady;
+  const readyToCapture = visible && (mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady);
   const imageFailure = useCallback((message: string) => setError(message), []);
 
   useEffect(() => {
@@ -149,6 +158,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     async function read() {
       const receipts: FrameReceipt[] = []; const clips: PreviewSegment[] = [];
       const media: Artifact[] = [];
+      let storyboardPanels: StoryboardPanel[] = [];
       let pinned = version!;
       try {
         const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version!.item_id}, query: {cursor, limit: 100}}));
@@ -166,7 +176,14 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
           api.call("getFrameAvailability", {path: {project_id: projectId, job_id: job.job_id}}).then(value => {if (active) setAvailabilityByJob(previous=>({...previous,[job.job_id]:value}));}).catch(captureError),
         ]);
       }));
-      const artifactIds = [...new Set([...pinned.artifact_ids, ...versionJobs.flatMap(job => job.artifact_ids)])];
+      if (pinned.kind === "storyboard") {
+        try {
+          const plan = await api.call("getVersionShotPlan", {path: {project_id: projectId, version_id: pinned.version_id}});
+          if (plan.project_id !== projectId) throw new Error("Shot plan does not match active project");
+          storyboardPanels = plan.shots.flatMap(shot => shot.frames.flatMap(frame => frame.artifact_id ? [{shot_id: shot.shot_id, frame_id: frame.frame_id, role: frame.role, composition: frame.composition, artifact_id: frame.artifact_id}] : []));
+        } catch (e) {captureError(e);}
+      }
+      const artifactIds = [...new Set([...pinned.artifact_ids, ...storyboardPanels.map(panel => panel.artifact_id), ...versionJobs.flatMap(job => job.artifact_ids)])];
       await Promise.all(artifactIds.map(async artifact_id => {
         try { media.push(await api.call("getArtifact", {path: {project_id: projectId, artifact_id}})); } catch (e) {captureError(e);}
       }));
@@ -186,11 +203,18 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
         receipts.sort((a,b) => a.source_frame - b.source_frame);
         // Keep admission order, not asynchronous HTTP completion order, for initial display.
         const orderedMedia = artifactIds.flatMap(id => media.filter(a => a.artifact_id === id));
+        const panels: StoryboardTarget[] = storyboardPanels.flatMap(panel => {
+          const artifact = orderedMedia.find(a => a.artifact_id === panel.artifact_id && a.project_id === projectId && a.state === "ready" && a.kind === "image" && a.dimensions && ["image/png", "image/jpeg", "image/webp"].includes(a.media_type));
+          if (!artifact?.dimensions) return [];
+          return [{...panel, target: {origin: artifact.purpose === "reference" ? "reference" as const : "concept" as const, artifact_id: artifact.artifact_id, displayed_sha256: artifact.sha256, dimensions: artifact.dimensions, item_id: pinned.item_id, version_id: pinned.version_id, shot_id: panel.shot_id, render_job_id: null, source_frame: null, media_artifact_id: null}}];
+        });
+        setStoryboardTargets(panels);
         receipts.sort((a,b) => versionJobs.findIndex(j => j.job_id === a.job_id) - versionJobs.findIndex(j => j.job_id === b.job_id) || a.source_frame - b.source_frame);
         setFrames(receipts); setSegments(clips); setArtifacts(orderedMedia);
         if (!initialised.current && (receipts.length || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
           initialised.current = true;
           if (receipts[0]) {const first=frameTarget(receipts[0],version!);setTarget(first);setTargetCamera(frameCamera(first,jobs));setRequestedFrame(receipts[0].source_frame);}
+          else if (panels[0]) {setTarget(panels[0].target);setStoryboardPanelIndex(0);setTargetCamera(null);setMode("keyframes");}
           else {
             const image = orderedMedia.find(a => pinned.artifact_ids.includes(a.artifact_id) && a.kind === "image" && a.state === "ready" && a.dimensions)
               ?? versionJobs.flatMap(job => generationOutputs(job, orderedMedia))[0];
@@ -229,7 +253,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     setCaptureReady(true);
   }, [draftId, frameMap, version?.kind,jobs]);
 
-  const context: TurnSelection = draft ? {...annotationContext(draft.annotation), annotations: draft.state === "saved" ? [draft.annotation] : [],
+  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft ? {...annotationContext(draft.annotation), annotations: draft.state === "saved" ? [draft.annotation] : [],
     attachments: draft.state === "saved" ? annotationContext(draft.annotation).attachments : [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}]} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
     view_mode: mode, target: mode === "3d_inspection" || !readyToCapture ? null : target,
     camera: mode === "3d_inspection" ? camera : targetCamera, selected_objects: selected,
@@ -237,7 +261,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     attachments: mode !== "3d_inspection" && target ? [{artifact_id: target.artifact_id, role: cleanTargetRole(target)}] : []};
   const contextKey = JSON.stringify(context);
   const prepareState = useRef({context, draftKey: draft?.key});
-  prepareState.current = {context, draftKey: draft?.key};
+  prepareState.current = {context, draftKey: inspectedArtifact ? undefined : draft?.key};
   // Workspace alone owns the shell registration. The editor delegates internally,
   // so its cleanup can never clear a newer workspace's shell handler.
   useLayoutEffect(() => {
@@ -260,6 +284,14 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       const candidates=delta>0?versionJobs.slice(currentIndex+1):versionJobs.slice(0,currentIndex).reverse();
       const next=candidates.find(j=>j.target.shot_id!==activeJob?.target.shot_id);
       if(next) chooseJob(next.job_id);
+      return;
+    }
+    if (!currentFrames.length && storyboardTargets.length) {
+      if (draftId) return;
+      const activePanel = storyboardTargets[storyboardPanelIndex];
+      const index = activePanel && target && activePanel.target.artifact_id === target.artifact_id && activePanel.shot_id === target.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
+      const next = index >= 0 ? storyboardTargets[index + delta] : undefined;
+      if (next) {setTarget(next.target);setStoryboardPanelIndex(index + delta);setRequestedFrame(index + delta + 1);setTargetCamera(null);setCaptureReady(false);setMode("keyframes");}
       return;
     }
     if (!currentFrames.length) return;
@@ -288,6 +320,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
 
   useEffect(() => {
     function key(event: KeyboardEvent) {
+      if (!visible) return;
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
       const modes: Record<string, Mode> = {"1": "3d_inspection", "2": "keyframes", "3": "animation"};
       if (modes[event.key]) {event.preventDefault(); changeMode(modes[event.key]);}
@@ -300,7 +333,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   function changeDraft(next: Draft) { setDrafts(previous => [...previous.filter(d => d.key !== next.key), next]); }
 
   async function renderThisView() {
-    if (captureLatch.current || !version || !mapping || !captureStoreReady) return;
+    if (!visible || captureLatch.current || !version || !mapping || !captureStoreReady) return;
     captureLatch.current = true; setQueueingView(true); setError("");
     try {
       let pending = pendingCaptureRef.current;
@@ -312,7 +345,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
         // before any await. The upload is not a request to render/generate.
         const frozen = capture();
         const uploadId = crypto.randomUUID();
-        const selection = structuredClone({...context, target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
+        const selection = structuredClone({...context, request_target: {kind: "item" as const, version: {item_id: version.item_id, version_id: version.version_id}}, target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
         const sampleFrame = mapping.sample_frame;
         const shotId = versionJobs.find(job => job.artifact_ids.includes(mapping.proxy_artifact_id))?.target.shot_id ?? null;
         const png = await frozen.png;
@@ -323,7 +356,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       await writeProxyCapture(pending.key, pending, pending.uploadId);
       const artifact = await api.call("uploadImage", {path: {project_id: projectId, upload_id: pending.uploadId}, body: pending.png, idempotencyKey: pending.uploadId});
       if (artifact.project_id !== projectId || artifact.state !== "ready" || artifact.kind !== "image" || artifact.media_type !== "image/png" || artifact.sha256 !== pending.sha256 || artifact.bytes !== pending.png.size || artifact.dimensions?.width !== pending.dimensions.width || artifact.dimensions.height !== pending.dimensions.height) throw new Error("Capture upload acknowledgement does not match the frozen PNG hash/dimensions");
-      const selection: TurnSelection = {...pending.selection, target: {origin: "proxy_capture", artifact_id: artifact.artifact_id, displayed_sha256: pending.sha256, dimensions: pending.dimensions, item_id: pending.selection.item_id, version_id: pending.selection.version_id, source_frame: pending.sampleFrame, shot_id: pending.shotId, render_job_id: null, media_artifact_id: null}, attachments: [{artifact_id: artifact.artifact_id, role: "reference"}]};
+      const selection: TurnSelection = {...pending.selection, request_target: {kind: "item", version: {item_id: pending.selection.item_id!, version_id: pending.selection.version_id!}}, target: {origin: "proxy_capture", artifact_id: artifact.artifact_id, displayed_sha256: pending.sha256, dimensions: pending.dimensions, item_id: pending.selection.item_id, version_id: pending.selection.version_id, source_frame: pending.sampleFrame, shot_id: pending.shotId, render_job_id: null, media_artifact_id: null}, attachments: [{artifact_id: artifact.artifact_id, role: "reference"}]};
       pending = {...pending, selection, phase: "handoff"};
       await writeProxyCapture(pending.key, pending, pending.uploadId);
       pendingCaptureRef.current = pending; setPendingCapture(pending);
@@ -341,7 +374,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
 
   async function annotate() {
     setPlaying(false);
-    if (!target || !readyToCapture || mode === "3d_inspection") return;
+    if (!visible || !target || !readyToCapture || mode === "3d_inspection") return;
     // The target comes from a decoded image or rVFC-confirmed animation presentation.
     await startDraft(target);
   }
@@ -372,38 +405,60 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
     }
   }
 
-  if (!version) return <section className="review-workspace"><p>Select a published version to review.</p></section>;
+  if (inspectedArtifact) return <RetainedReview {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  if (!version) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
+  const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
+  const storyboardIndex = activeStoryboardPanel && target && activeStoryboardPanel.target.artifact_id === target.artifact_id && activeStoryboardPanel.shot_id === target.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
+  const storyboardPanel = storyboardIndex >= 0 ? storyboardTargets[storyboardIndex] : undefined;
+  const mappedSequence = mode === "animation" && !!assembly && !!frameMap;
+  const unsavedCount = saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).length;
   return <section className="review-workspace" aria-label="Review workspace">
-    <nav className="review-toolbar" aria-label="Review mode">{([['3d_inspection','3D Inspection'],['keyframes','Keyframes'],['animation','Animation']] as const).map(([id,label], index) => <button key={id} disabled={!!draft} aria-pressed={mode === id} onClick={() => changeMode(id)}>{index+1} {label}</button>)}
-      <button disabled={!target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
-      {mode === "3d_inspection" && <button disabled={!proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>}
-    </nav>
-    {assembly?.purpose === "final" && deliveryJob && deliveryManifest && <nav className="review-toolbar" aria-label="Sequence delivery">
-      <span>Final encode · technical completion is not owner selection</span>
-      <a href={mediaUrl(projectId,assembly.artifact_id)} download={`${version.version_id}.mp4`}>Download final video</a>
-      <a href={mediaUrl(projectId,deliveryManifest.artifact_id)} download={`${version.version_id}-manifest.json`}>Download delivery manifest</a>
-    </nav>}
+    {!draft && <>
+      <nav className="review-bar" aria-label="Review mode"><ReviewModeSwitcher mode={mode} onChange={changeMode}/>
+        <div className="toolbar-spacer"/><div className="toolbar-group review-command-actions">
+          {assembly?.purpose === "final" && deliveryJob && deliveryManifest && <>
+            <a className="toolbar-btn" title="Final encode · technical completion is not owner selection" href={mediaUrl(projectId,assembly.artifact_id)} download={`${version.version_id}.mp4`}><Download size={13}/>Download final video</a>
+            <a className="toolbar-btn" title="Final encode · technical completion is not owner selection" href={mediaUrl(projectId,deliveryManifest.artifact_id)} download={`${version.version_id}-manifest.json`}><Download size={13}/>Download delivery manifest</a>
+          </>}
+          <button className="toolbar-btn" aria-pressed={drawer === "annotations"} onClick={() => setDrawer(drawer === "annotations" ? null : "annotations")}><Bookmark size={13}/>Annotations{drafts.length + unsavedCount > 0 && <span className="toolbar-count">{drafts.length + unsavedCount}</span>}</button>
+          <button className="toolbar-btn" aria-pressed={drawer === "details"} onClick={() => setDrawer(drawer === "details" ? null : "details")}><Info size={13}/>Details</button>
+          {mode === "3d_inspection" ? <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || !proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>
+            : !mappedSequence && <button className="toolbar-btn toolbar-btn-accent" aria-label="Annotate presented frame" disabled={!visible || !target || !readyToCapture} onClick={() => void annotate()}><PenLine size={14}/>Annotate</button>}
+        </div>
+      </nav>
+      {drawer && <section className="review-drawer" aria-label={drawer === "annotations" ? "Saved annotations and local drafts" : "Pinned version details"}>
+        <button className="toolbar-btn toolbar-icon-btn drawer-close" aria-label="Close review drawer" onClick={() => setDrawer(null)}><X size={14}/></button>
+        {drawer === "annotations" ? <div className="review-drawer-items">
+          {!drafts.length && !saved.length && <span className="toolbar-meta">No saved annotations or local drafts</span>}
+          {drafts.map(d => <button className="toolbar-btn" key={d.key} onClick={() => void restore(d.annotation)}>{d.annotation.text || d.annotation.annotation_id} · {d.state} · {d.annotation.target.version_id}</button>)}
+          {saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).map(a => <button className="toolbar-btn" key={a.annotation_id} onClick={() => void restore(a)}>{a.text || a.annotation_id} · revision {a.saved_revision}</button>)}
+        </div> : <><p>Pinned version: {version.name} · {version.version_id} · {version.artifact_ids.length} version artefacts</p><div className="review-drawer-items"><strong>Published image artefacts</strong>{artifacts.filter(a => a.kind === "image").map(a => <span className="toolbar-chip" key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose}</span>)}</div></>}
+      </section>}
+    </>}
     {draft ? <AnnotationEditor key={draft.key} api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onContextPreparer={registerEditorPreparer} onClose={() => setDraftId(null)}/>
-      : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
-        : mode === "animation" ? assembly && frameMap ? <SequencePlayer key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={frameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
+       : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView visible={visible} url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <div className="viewer-empty">Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</div>
+         : mode === "animation" ? assembly && frameMap ? <SequencePlayer visible={visible} key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={frameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
-        }}/> : <ProgressivePlayer key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
-          : target ? <div className="review-image"><DecodedReviewImage projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
-    <div className="review-toolbar"><button onClick={() => step(-1)}>Previous frame</button><button onClick={() => step(1)}>Next frame</button>
-      <label>Shot / render job<select aria-label="Shot / render job" disabled={!!draft} value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>
-      <label>Frame<input type="number" min="1" value={requestedFrame} disabled={!!draft} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
-      <span>{target ? `${target.dimensions.width} × ${target.dimensions.height} · ${target.origin} · frame ${target.sequence_frame ?? target.source_frame ?? "image"}` : "No presented target"}</span>
-      <span>{activeJob?.render_spec ? `${activeJob.render_spec.engine} · ${activeJob.render_spec.purpose} · ${activeJob.render_spec.samples} samples` : "No render profile reported"}</span>
-    </div>
-    <details><summary>Saved annotations and local drafts</summary>
-      {drafts.map(d => <button key={d.key} onClick={() => restore(d.annotation)}>{d.annotation.text || d.annotation.annotation_id} · {d.state} · {d.annotation.target.version_id}</button>)}
-      {saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).map(a => <button key={a.annotation_id} onClick={() => restore(a)}>{a.text || a.annotation_id} · revision {a.saved_revision}</button>)}
-    </details>
-    <p>Pinned version: {version.name} · {version.version_id} · {version.artifact_ids.length} version artefacts</p>
-    <details><summary>Published image artefacts</summary>{artifacts.filter(a => a.kind === "image").map(a => <span key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose} </span>)}</details>
-    {pendingCapture && <section aria-label="Retained inspection capture"><p>Capture {pendingCapture.uploadId} · {pendingCapture.dimensions.width} × {pendingCapture.dimensions.height} · {pendingCapture.phase}</p>{pendingCapture.phase !== "upload" && <><p>Inspect and resolve the retained request in Copilot. This capture is not automatically queued again.</p><button disabled={queueingView} onClick={async () => {try {await writeProxyCapture(pendingCapture.key, null, pendingCapture.uploadId); pendingCaptureRef.current = null; setPendingCapture(null);} catch (e) {setError(String(e));}}}>Dismiss capture after resolving Copilot request</button></>}</section>}
-    {error && <p role="status">{error}</p>}
+         }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
+           : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">No ready review image. Rendering is an explicit Queue request.</div>}
+    {!draft && <div className="review-bar review-transport-bar" aria-label="Review transport">
+      {mode === "3d_inspection" ? <><span className="toolbar-chip">Sample frame {mapping?.sample_frame ?? 1}</span>{selected.length > 0 && <span className="toolbar-chip">{selected.length} object(s) selected</span>}<div className="toolbar-spacer"/><span className="toolbar-meta">Static inspection proxy · orbit / click to select</span></> : <>
+        <div className="toolbar-group">
+          {mode === "animation" && !mappedSequence && <button className="toolbar-btn toolbar-icon-btn" aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"} disabled={!visible} onClick={() => setPlaying(!playing)}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button>}
+          <button className="toolbar-btn toolbar-icon-btn" aria-label="Previous frame" title="Previous frame (←)" onClick={() => step(-1)}><ChevronLeft size={15}/></button>
+          <label className="toolbar-field"><span>Frame</span><input aria-label="Frame" type="number" min="1" value={requestedFrame} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
+          <button className="toolbar-btn toolbar-icon-btn" aria-label="Next frame" title="Next frame (→)" onClick={() => step(1)}><ChevronRight size={15}/></button>
+        </div>
+        {!currentFrames.length && storyboardPanel && <span className="toolbar-chip" title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
+        {versionJobs.length > 0 && <label className="toolbar-field"><span>Pass</span><select aria-label="Shot / render job" value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>}
+        <div className="toolbar-spacer"/>
+        {target && <span className="toolbar-chip">{target.dimensions.width} × {target.dimensions.height} · {target.origin} · {target.sequence_frame ?? target.source_frame ? `f${target.sequence_frame ?? target.source_frame}` : "still"}</span>}
+        {activeJob?.render_spec && <span className="toolbar-meta">{activeJob.render_spec.engine} · {activeJob.render_spec.purpose} · {activeJob.render_spec.samples} spp</span>}
+      </>}
+    </div>}
+    {pendingCapture && <section className="review-status-banner" aria-label="Retained inspection capture"><span>Capture {pendingCapture.uploadId} · {pendingCapture.dimensions.width} × {pendingCapture.dimensions.height} · {pendingCapture.phase}</span>{pendingCapture.phase !== "upload" && <><span>Inspect and resolve the retained request in Copilot. This capture is not automatically queued again.</span><button className="toolbar-btn" disabled={queueingView} onClick={async () => {try {await writeProxyCapture(pendingCapture.key, null, pendingCapture.uploadId); pendingCaptureRef.current = null; setPendingCapture(null);} catch (e) {setError(String(e));}}}>Dismiss capture after resolving Copilot request</button></>}</section>}
+    {error && <div className="review-status-banner" role="status">{error}</div>}
   </section>;
 }

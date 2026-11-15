@@ -1,7 +1,26 @@
 /** Integration-owned component seams. All business records come from generated contracts. */
 import type { ComponentType } from "react";
 import type { ApiClient } from "./client";
-import type { ContextSnapshot, ItemRecord, JobRecord, VersionRecord } from "./generated/contracts";
+import type { Artifact, ContextSnapshot, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RequestTarget, RetainedArtifactSummary, VersionRecord } from "./generated/contracts";
+
+export interface ComposerSeedIntent {
+  nonce: string;
+  target: RequestTarget;
+  templateText?: string;
+  focusChat?: boolean;
+}
+
+export interface AssistantStatusProps {
+  jobs?: JobRecord[];
+  snapshot: ProjectSnapshot | null;
+  requests: RequestRecord[];
+  events: Event[];
+  connection: string;
+  hydrated?: boolean;
+  submitting?: boolean;
+  stopping?: boolean;
+  compact?: boolean;
+}
 
 export type TurnSelection = Omit<ContextSnapshot, "schema_version" | "context_id" | "project_id" | "captured_at">;
 export type ContextPreparer = () => Promise<TurnSelection>;
@@ -20,6 +39,10 @@ export const emptySelection = (): TurnSelection => ({
 });
 
 export interface ReviewSurfaceProps {
+  inspectedArtifact?: Artifact | null;
+  inspectedArtifactSummary?: RetainedArtifactSummary | null;
+  onClearArtifact?: () => void;
+  visible?: boolean;
   api: ApiClient;
   projectId: string;
   version: VersionRecord | null;
@@ -33,6 +56,9 @@ export interface ReviewSurfaceProps {
 }
 
 export interface CatalogueSurfaceProps {
+  retainedArtifacts?: RetainedArtifactSummary[];
+  onCreateAsset?: () => void;
+  onInspectArtifact?: (artifact: Artifact) => void;
   api: ApiClient;
   projectId: string;
   items: ItemRecord[];
@@ -51,6 +77,7 @@ export interface CriticSurfaceProps {
 }
 
 export interface StudioComponents {
+  assistantStatus?: ComponentType<AssistantStatusProps>;
   review?: ComponentType<ReviewSurfaceProps>;
   outliner?: ComponentType<ReviewSurfaceProps>;
   catalogue?: ComponentType<CatalogueSurfaceProps>;

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
 import re
 import time
 from collections.abc import Callable
@@ -33,6 +34,8 @@ from .tools import DISCOVERY_READS, READ_TOOLS, TOOLS, Tools, read_arguments
 from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 
+CHARGEABLE_MCP_TOOLS = frozenset({"create_generation", "generate_3d", "generate_gaussian_world"})
+
 CONTINUATION_TEXT = "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
 
 
@@ -50,6 +53,7 @@ class CallbackOwner:
     progress_at: float = 0
     progress_sequence: int = 0
     activity_sequence: int = 0
+    models: tuple[str, str, str] | None = None
 
 
 def retired_housekeeping(event: dict[str, Any]) -> bool:
@@ -382,9 +386,74 @@ class Copilot:
             await self.native.health()
 
     async def session(self, project_id: str, *, allow_create: bool = False) -> Any:
+        target_models = None
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            live_invocations = any(i["state"] not in TERMINAL for i in tx.all("invocations"))
+            active_work = [w for w in tx.all("work") if w["state"] not in TERMINAL | {"pending"}]
+            request_ids = [w["originating_request_id"] for w in active_work]
+            candidates = [
+                r
+                for r in tx.all("requests")
+                if r["submission"]["type"] == "queue"
+                and r["receipt"]["state"] in {"dispatching", "running", "acknowledged", "held"}
+                and r["request_id"] not in request_ids
+            ]
+            # Dispatch uses admission FIFO, not random request-ID ordering. Active
+            # work above always wins over a later held request or edited profile.
+            candidates.sort(
+                key=lambda r: (
+                    r["receipt"]["state"] == "held",
+                    (tx.get("copilot.effective", r["request_id"], required=False) or {}).get(
+                        "fifo", 0
+                    ),
+                )
+            )
+            request_ids += [r["request_id"] for r in candidates]
+            for request_id in request_ids:
+                eff = tx.get("copilot.effective", request_id, required=False) or {}
+                if eff.get("lead_model") and eff.get("worker_model"):
+                    target_models = (
+                        eff["lead_model"],
+                        eff["worker_model"],
+                        eff.get("unity_worker_model") or eff["worker_model"],
+                    )
+                    break
+        if target_models is None:
+            with self.services.registry.store.transaction(write=False) as tx:
+                policy = tx.get("private", "settings:" + project_id, required=False) or {}
+            profiles = getattr(
+                self.services, "effective_profiles", lambda: list(self.services.settings.profiles)
+            )()
+            selected = next(
+                (p for p in profiles if p["profile_id"] == policy.get("default_profile_id")), None
+            )
+            if selected and selected.get("lead_model_id") and selected.get("worker_model_ids"):
+                target_models = (
+                    selected["lead_model_id"],
+                    selected["worker_model_ids"][0],
+                    selected["worker_model_ids"][-1],
+                )
         if project_id in self.sessions:
             cached = self.sessions[project_id]
             previous = self.session_callback_owners.get(id(cached))
+            sending = any(
+                not task.done()
+                # send() resolves its session before recording native send intent.
+                # Its own preparation is not an in-flight native send.
+                and task is not asyncio.current_task()
+                and self.send_projects.get(identity) == project_id
+                for identity, task in self.sends.items()
+            )
+            if (
+                previous is not None
+                and not previous.retired
+                and target_models is not None
+                and previous.models is not None
+                and previous.models != target_models
+                and not sending
+                and not live_invocations
+            ):
+                self.retire_callback(project_id, cached, settled=True)
             if previous is None or not previous.retired:
                 return cached
             del self.sessions[project_id]
@@ -400,7 +469,7 @@ class Copilot:
         if self.native is None:
             self.native = Native(self.services)
         session_id = association["session_id"] if association else None
-        owner = CallbackOwner(project_id, session_id)
+        owner = CallbackOwner(project_id, session_id, models=target_models)
         self.callback_owners[project_id] = owner
         tools = Tools(self.services, self.state, project_id)
         # Native session events can precede create/resume ACK. Session ID is bound by the SDK
@@ -500,7 +569,9 @@ class Copilot:
                 binding = self.state.binding(tx, str(sid), "agent", agent)
                 if binding is None:
                     raise DomainError("attribution_unavailable", 409)
-                record = tx.require("requests", binding["request_id"])
+                record = tx.require(
+                    "requests", binding.get("context_request_id") or binding["request_id"]
+                )
                 payload = tx.require("copilot.payloads", record["request_id"])
                 save(
                     tx,
@@ -532,6 +603,11 @@ class Copilot:
                 on_user_input_request=user_input,
                 hooks={"on_user_prompt_submitted": prompt_hook},
                 tools=native_tools,
+            ),
+            **(
+                {"models": target_models}
+                if "models" in inspect.signature(self.native.open).parameters
+                else {}
             ),
         )
         holder["session_id"] = session.session_id
@@ -805,7 +881,23 @@ class Copilot:
             ]
             if work["state"] not in {"running", "awaiting_user"}:
                 return
-            if any(
+            continuation = (
+                tx.get("copilot.continuations", last_delivery["delivery_id"], required=False)
+                if last_delivery
+                else None
+            )
+            continued = bool(
+                continuation
+                and continuation.get("work_id") == work["work_id"]
+                and (
+                    completion := tx.get(
+                        "copilot.completion", continuation["request_id"], required=False
+                    )
+                )
+                and completion.get("candidate")
+                and completion.get("delivery_id") == continuation["delivery_id"]
+            )
+            if not continued and any(
                 r["receipt"]["state"] not in TERMINAL
                 and not (tx.get("copilot.completion", r["request_id"], required=False) or {}).get(
                     "candidate"
@@ -968,14 +1060,20 @@ class Copilot:
                 phase = tx.require("copilot.stops", operation_id)
                 phase["phase"] = "outcome_uncertain"
                 save(tx, "copilot.stops", operation_id, phase)
+                detail_code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
                 self.state.request_state(
                     tx,
                     operation_id,
                     "outcome_uncertain",
-                    detail_code=exc.code
-                    if isinstance(exc, DomainError)
-                    else "provider_unavailable",
+                    detail_code=detail_code,
                 )
+                if tx.connection.execute(
+                    "SELECT 1 FROM outbox WHERE id=? AND state IN ('dispatching','outcome_uncertain')",
+                    (operation_id,),
+                ).fetchone():
+                    tx.settle_intent(
+                        operation_id, "outcome_uncertain", {"detail_code": detail_code}
+                    )
                 self.state.fence(tx, "outcome_uncertain")
             # Terminating the owned runtime is an execution fence, not invented cancellation evidence.
             if self.native:
@@ -1177,6 +1275,7 @@ class Copilot:
                 if owner and not owner.retired:
                     self.read_wait_recovery[project_id] = {
                         "session_id": session.session_id,
+                        "departed_process": departed,
                         "callback_generation": owner.generation,
                         "activity_sequence": owner.activity_sequence,
                         "proofs": probe_read_wait(
@@ -1251,7 +1350,7 @@ class Copilot:
                     {**departed, "invocation_ids": prior_invocations},
                 )
             if uncertain_stop_id:
-                await self.reconcile_cold_read_stop(project_id, session, uncertain_stop_id)
+                await self.reconcile_cold_stop(project_id, session, uncertain_stop_id)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             uncertain = [
                 r["request_id"]
@@ -1274,15 +1373,16 @@ class Copilot:
             "duplicate_correlations": len(duplicates),
         }
 
-    async def reconcile_cold_read_stop(self, project_id: str, session: Any, stop_id: str) -> None:
+    async def reconcile_cold_stop(self, project_id: str, session: Any, stop_id: str) -> None:
         sid = session.session_id
         recovery = self.read_wait_recovery.get(project_id)
         owner = self.callback_owners.get(project_id)
         if (
             not recovery
             or not owner
-            or len(recovery["proofs"]) != 1
-            or recovery["proofs"][0].get("existing_stop_request_id") != stop_id
+            or recovery["session_id"] != sid
+            or len(recovery["proofs"]) > 1
+            or any(p.get("existing_stop_request_id") != stop_id for p in recovery["proofs"])
             or not hasattr(self.native, "cold_stop_snapshot")
             or getattr(self.native, "non_continuing_session_id", None) != session.session_id
         ):
@@ -1303,6 +1403,7 @@ class Copilot:
                 "id": observation_id,
                 "epoch": epoch,
                 "session_id": session.session_id,
+                "departed_process": recovery["departed_process"],
                 "callback_generation": owner.generation,
                 "activity_sequence": recovery["activity_sequence"],
                 "status": "collecting",
@@ -1384,6 +1485,7 @@ class Copilot:
                         r["submission"]["type"] == "steer" and r["receipt"]["state"] not in TERMINAL
                         for r in tx.all("requests")
                     )
+                    and not any(d["state"] == "pending" for d in tx.all("decisions"))
                 )
 
         try:
@@ -1492,6 +1594,24 @@ class Copilot:
                     )
                     if body["mode"] == "continue_work":
                         work = tx.require("work", body["work_id"])
+                        request_ids = [
+                            work["originating_request_id"],
+                            *work["directive_request_ids"],
+                        ]
+                        active_payload = next(
+                            (
+                                (req_id, saved)
+                                for req_id in reversed(request_ids)
+                                if tx.require("requests", req_id)["receipt"]["state"]
+                                not in {"cancelled", "failed"}
+                                and (saved := tx.get("copilot.payloads", req_id, required=False))
+                                is not None
+                            ),
+                            None,
+                        )
+                        if active_payload is None:
+                            raise DomainError("attribution_unavailable", 409)
+                        context_request_id, _ = active_payload
                         self.state.work_state(
                             tx,
                             work["work_id"],
@@ -1510,6 +1630,7 @@ class Copilot:
                         )
                         binding = {
                             "request_id": work["originating_request_id"],
+                            "context_request_id": context_request_id,
                             "work_id": work["work_id"],
                             "delivery_id": operation_id,
                         }
@@ -1529,7 +1650,7 @@ class Copilot:
                     # This is an explicit continuation, never the original request body or a new task.
                     with store.transaction() as tx:
                         work = tx.require("work", body["work_id"])
-                        payload = tx.require("copilot.payloads", work["originating_request_id"])
+                        payload = tx.require("copilot.payloads", binding["context_request_id"])
                         snapshot = tx.require("contexts", payload["context_id"])
                         self.contexts.validate_references(tx, snapshot)
                         tx.put(
@@ -1711,7 +1832,7 @@ class Copilot:
             raise DomainError("invalid_request")
         if name in TOOLS:
             validate(TOOLS[name][2], arguments)
-            if arguments.get("project_id") != project_id:
+            if arguments.get("project_id", project_id) != project_id:
                 raise DomainError("scope_denied", 403)
         elif name in READ_TOOLS or name in DISCOVERY_READS:
             read_arguments(name, arguments)
@@ -1783,7 +1904,7 @@ class Copilot:
                 },
             )
 
-        def reply(approve: bool, authority: str) -> Any:
+        def reply(approve: bool, authority: str, denial_reason: str | None = None) -> Any:
             # Commit the exact claim/result before handing control back to the SDK.
             # Completion, not callback return, acknowledges native delivery.
             with self.services.registry.project_store(project_id).transaction() as tx:
@@ -1794,6 +1915,9 @@ class Copilot:
                     or self.state.control(tx)["fenced"]
                 ):
                     approve, authority = False, "host"
+                    denial_reason = (
+                        "Execution is paused or the original invocation is no longer current."
+                    )
                 prepared = {
                     **current,
                     "phase": "reply_prepared",
@@ -1801,6 +1925,7 @@ class Copilot:
                     "reply": "approve" if approve else "reject",
                     "reply_prepared_at": now(),
                     "delivery_state": "outcome_uncertain",
+                    "denial_reason": denial_reason if not approve else None,
                 }
                 save(tx, "copilot.permissions", stage_id, prepared)
                 save(
@@ -1867,8 +1992,13 @@ class Copilot:
                         )
                     ):
                         raise DomainError("attribution_unavailable", 409)
-            except DomainError:
-                return reply(False, "automatic_policy")
+            except DomainError as error:
+                reason = (
+                    "The requested path is outside the allowed project files or inside protected runtime storage."
+                    if error.code == "scope_denied"
+                    else "The file permission request could not be validated against the current work."
+                )
+                return reply(False, "automatic_policy", reason)
             if not special_approval:
                 return reply(True, "automatic_policy")
 
@@ -1891,13 +2021,18 @@ class Copilot:
         consequential = (
             True
             if is_io
+            or (request.get("kind") == "mcp" and request.get("toolName") in CHARGEABLE_MCP_TOOLS)
             else re.search(
                 r"(?i)(\b(push|purchase|install|upgrade|sudo|scp)\b|reset\s+--hard|rm\s+-[rf]|curl\s+.*(?:--upload-file|--data|-[dT]|-X\s*(?:POST|PUT|DELETE)))",
                 request.get("fullCommandText", "") if request.get("kind") == "shell" else text,
             )
         )
         if denied:
-            return reply(False, "automatic_policy")
+            return reply(
+                False,
+                "automatic_policy",
+                "The request matched a protected credential or environment-file rule. Review its paths and filters before continuing.",
+            )
         if not consequential and request.get("kind") in {
             "shell",
             "mcp",

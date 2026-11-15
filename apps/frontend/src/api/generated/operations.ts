@@ -3,6 +3,9 @@ import type * as C from "./contracts";
 export interface Operations {
   pairOwnerSession: { body: C.OwnerBootstrap; response: C.OwnerSession; path: Record<string, never>; query: Record<string, never> };
   getConfigurationView: { body: never; response: C.ConfigurationView; path: Record<string, never>; query: Record<string, never> };
+  getConfigurationStatus: { body: never; response: C.ConfigurationStatus; path: Record<string, never>; query: Record<string, never> };
+  upsertAuthoringProfile: { body: C.AuthoringProfileUpsert; response: C.ConfigurationView; path: { profile_id: string }; query: Record<string, never> };
+  deleteAuthoringProfile: { body: C.AuthoringProfileDelete; response: C.ConfigurationView; path: { profile_id: string }; query: Record<string, never> };
   listProjects: { body: never; response: C.ProjectPage; path: Record<string, never>; query: { cursor?: string; limit?: number } };
   openProject: { body: C.ProjectOpen; response: C.ProjectRecord; path: Record<string, never>; query: Record<string, never> };
   activateProject: { body: C.RevisionCommand; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
@@ -15,8 +18,9 @@ export interface Operations {
   getRequest: { body: never; response: C.RequestRecord; path: { project_id: string; request_id: string }; query: Record<string, never> };
   cancelHeldRequest: { body: C.RevisionCommand; response: C.CommandReceipt; path: { project_id: string; request_id: string }; query: Record<string, never> };
   resumeProjectWork: { body: C.ResumeCommand; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
+  getResumeOperation: { body: never; response: C.ResumeOperationStatus; path: { project_id: string; operation_id: string }; query: Record<string, never> };
   updateProjectSettings: { body: C.ProjectSettings; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
-  listItems: { body: never; response: C.ItemPage; path: { project_id: string }; query: { cursor?: string; limit?: number; kind?: string } };
+  listItems: { body: never; response: C.ItemPage; path: { project_id: string }; query: { cursor?: string; limit?: number; kind?: "asset" | "scene" | "storyboard" | "sequence" | "unity_result" } };
   listItemVersions: { body: never; response: C.VersionPage; path: { project_id: string; item_id: string }; query: { cursor?: string; limit?: number } };
   getVersionShotPlan: { body: never; response: C.ShotPlan; path: { project_id: string; version_id: string }; query: Record<string, never> };
   getVersionSequenceMap: { body: never; response: C.SequenceMap; path: { project_id: string; version_id: string }; query: Record<string, never> };
@@ -29,6 +33,7 @@ export interface Operations {
   listPreviewSegments: { body: never; response: C.SegmentPage; path: { project_id: string; job_id: string }; query: { cursor?: string; limit?: number } };
   requestJobCancellation: { body: C.RevisionCommand; response: C.CommandReceipt; path: { project_id: string; job_id: string }; query: Record<string, never> };
   uploadImage: { body: Blob; response: C.Artifact; path: { project_id: string; upload_id: string }; query: Record<string, never> };
+  listRetainedArtifacts: { body: never; response: C.RetainedArtifactPage; path: { project_id: string }; query: { cursor?: string; limit?: number; kind?: "image" | "mask" | "proxy" | "proxy_map" | "video" | "frame_map" | "document" | "source_blob" | "log"; purpose?: "reference" | "concept" | "keyframe" | "draft_motion" | "final" | "inspection" | "metadata" | "mask" | "log" } };
   getArtifact: { body: never; response: C.Artifact; path: { project_id: string; artifact_id: string }; query: Record<string, never> };
   getArtifactContent: { body: never; response: ArrayBuffer; path: { project_id: string; artifact_id: string }; query: Record<string, never> };
   headArtifactContent: { body: never; response: ArrayBuffer; path: { project_id: string; artifact_id: string }; query: Record<string, never> };
@@ -58,6 +63,9 @@ export interface Operations {
 export const routes = {
   pairOwnerSession: { method: "POST", path: "/api/v1/owner/session", binary: false },
   getConfigurationView: { method: "GET", path: "/api/v1/configuration", binary: false },
+  getConfigurationStatus: { method: "GET", path: "/api/v1/configuration/status", binary: false },
+  upsertAuthoringProfile: { method: "PUT", path: "/api/v1/configuration/profiles/{profile_id}", binary: false },
+  deleteAuthoringProfile: { method: "POST", path: "/api/v1/configuration/profiles/{profile_id}/delete", binary: false },
   listProjects: { method: "GET", path: "/api/v1/projects", binary: false },
   openProject: { method: "POST", path: "/api/v1/projects", binary: false },
   activateProject: { method: "POST", path: "/api/v1/projects/{project_id}/activate", binary: false },
@@ -70,6 +78,7 @@ export const routes = {
   getRequest: { method: "GET", path: "/api/v1/projects/{project_id}/requests/{request_id}", binary: false },
   cancelHeldRequest: { method: "POST", path: "/api/v1/projects/{project_id}/requests/{request_id}/cancel", binary: false },
   resumeProjectWork: { method: "POST", path: "/api/v1/projects/{project_id}/resume", binary: false },
+  getResumeOperation: { method: "GET", path: "/api/v1/projects/{project_id}/resumes/{operation_id}", binary: false },
   updateProjectSettings: { method: "PUT", path: "/api/v1/projects/{project_id}/settings", binary: false },
   listItems: { method: "GET", path: "/api/v1/projects/{project_id}/items", binary: false },
   listItemVersions: { method: "GET", path: "/api/v1/projects/{project_id}/items/{item_id}/versions", binary: false },
@@ -84,6 +93,7 @@ export const routes = {
   listPreviewSegments: { method: "GET", path: "/api/v1/projects/{project_id}/jobs/{job_id}/segments", binary: false },
   requestJobCancellation: { method: "POST", path: "/api/v1/projects/{project_id}/jobs/{job_id}/cancel", binary: false },
   uploadImage: { method: "PUT", path: "/api/v1/projects/{project_id}/uploads/{upload_id}", binary: false },
+  listRetainedArtifacts: { method: "GET", path: "/api/v1/projects/{project_id}/artifacts", binary: false },
   getArtifact: { method: "GET", path: "/api/v1/projects/{project_id}/artifacts/{artifact_id}", binary: false },
   getArtifactContent: { method: "GET", path: "/api/v1/projects/{project_id}/artifacts/{artifact_id}/content", binary: true },
   headArtifactContent: { method: "HEAD", path: "/api/v1/projects/{project_id}/artifacts/{artifact_id}/content", binary: true },

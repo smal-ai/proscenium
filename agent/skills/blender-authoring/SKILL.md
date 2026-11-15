@@ -8,12 +8,12 @@ description: Author and inspect Blender content inside the active Proscenium pro
 1. Read the host's structured context, project brief and current plan. Child
    additionalContext is host JSON rendered in the native `<system_reminder>`.
    Preserve every annotation's own frame target, camera, range and object instance.
-2. Use the explicitly configured `mcp-for-blender==2.0.0` server connected to its
-   external live add-on. Do not install or replace the add-on. Tool discovery is
-   authoritative. If the socket bridge is absent, use the accepted launcher from
-   the installed Proscenium repository: `python3 -m tools.blender doctor --project
-   <actual-active-project>` then `python3 -m tools.blender start --project
-   <actual-active-project>` (add `--virtual-display` only when needed). Do not invent
+2. Use the explicitly configured `mcp-for-blender==2.3.0` server connected to its
+   installed external live add-on (2.0, protocol 16). Never reinstall or overwrite
+   the add-on. Tool discovery is
+   authoritative. Call `get_project_capabilities` to check the configured bridge.
+   If absent, report the capability blocker rather than invoking checkout-only helpers.
+   Do not invent
    a home-directory project/default. An occupied, dirty, outside-project or uncertain
    instance is preserved, never force-closed or replaced. A readiness timeout needs
    inspection of the original launch receipt before any retry. A missing configured
@@ -29,7 +29,12 @@ description: Author and inspect Blender content inside the active Proscenium pro
    the active project. Do not inspect credentials, environment files, siblings or
    historical tasks from a reference project. Do not inherit a particular scene,
    character, storyboard, export target or creative task from these instructions.
-6. Call `checkpoint_sources` with the explicitly owned file set before
+6. Call `checkpoint_sources(entry_path=...)` with the explicitly owned file set,
+   dependencies and `required_runtime` when needed. For `.blend` source checkpoints,
+   supply `required_runtime` with `"application": "blender"` and the exact
+   `bpy.app.version_string` as `version` (for example `"4.5.16 LTS"`). Pass the receipt's
+   `source_closure` directly into `publish_outputs`, never script closure sorting
+   or SHA-256 digests. Checkpoint before
    `publish_outputs`. Preserve unrelated changes and staging. Never `git add .`.
    Missing accepted services are a limitation, not permission to invent a receipt.
    Keep the active `project_id` and host work/invocation authority. Assign stable
@@ -48,10 +53,11 @@ description: Author and inspect Blender content inside the active Proscenium pro
    Use `get_version(version_id)` for the pinned publication/source record and
    `list_job_frames(job_id, cursor?, limit?)` for ready frame receipts, following
    `next_cursor` until null. Call `get_artifact(artifact_id)` for each desired
-   output's metadata. For `state: ready`, the canonical project-relative byte path
-   is `.proscenium/artefacts/sha256/<Artifact.sha256>/content`. The full hash and
-   `bytes` identify the expected content, not the artefact ID or latest filename.
-   Verify that identity before native image/file inspection. Missing/changed bytes
+   output's metadata. Inspect registered images with
+   `get_artifact(artifact_id=..., include_image=true)`. Never copy managed
+   `.proscenium/artefacts/.../content` just to call `view`. Wait with
+   `get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid polling.
+   The host verifies ready bytes/hash inline. Missing/changed bytes
    are a known failure, not permission to guess another file. These reads neither
    launch a job nor change its state. Never inspect private SQLite/runtime stores.
    The accepted preview recipe is `renderer_revision: proscenium-blender-1`,
@@ -66,7 +72,20 @@ description: Author and inspect Blender content inside the active Proscenium pro
    actionable tool errors and the original receipt instead of looping on failure.
 8. Use the budgeted generation adapter for inference. Do not install/start/stop
    ComfyUI, LM Studio, Unity or other independent services as a workaround.
-9. A VLM review ticket is not a critique. Do not retrieve unapproved findings into
+9. Request `request_vlm_review` for produced renders/keyframes when capabilities
+   report a `configured` or `ready` VLM provider. A ticket is not a critique.
+   Do not retrieve unapproved findings into
    model context. Only owner-selected findings in host context authorise repairs.
 10. After compaction re-read the brief and current plan. Stop is not rollback.
     Late publication/job results belong to their original source, work and attempt.
+
+Honour host `request_target`, `reference_versions` and `execution_scope`.
+`planning_only` forbids scene execution, preview renders and generation. Validate
+storyboards/sequences/publications with `validate_authored_document` before checkpoint
+and publication. Plan comparison uses `compare_to_path` and `changed_ids`.
+Requested image inference uses `prepare_image_generation` then `submit_generation`.
+Omit preparation `project_id`/`generation_task_id` because the host binds them.
+Use capability recipe defaults by omitting width/height/steps unless the user
+requested valid multiple-of-16 dimensions within `max_pixels`.
+Create/publish standalone `asset` source without a storyboard. Existing dependent
+scenes/storyboards keep their version pins until the owner requests explicit adoption.

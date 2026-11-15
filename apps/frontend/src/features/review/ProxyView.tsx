@@ -1,5 +1,5 @@
-import { Suspense, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
-import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
+import { Canvas, useFrame, useThree, type RootState, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Matrix4, OrthographicCamera, PerspectiveCamera, Vector3, type Object3D } from "three";
 import type { Camera, ObjectSelection, ProxyMapping } from "../../api/generated/contracts";
@@ -93,10 +93,12 @@ function RestoreCamera({record, controls}: {record: Camera | null; controls: Ref
 }
 
 function CaptureBinding({ready, bind}: {ready: boolean; bind: (capture: ProxyCapture | null) => void}) {
-  const {gl, scene, camera} = useThree();
+  const {gl, scene, camera, size} = useThree();
+  const available = useRef(ready); available.current = ready;
   useLayoutEffect(() => {
-    if (!ready) return;
+    if (!ready || !size.width || !size.height || !gl.domElement.width || !gl.domElement.height) { bind(null); return; }
     bind(() => {
+      if (!available.current) throw new Error("Inspection capture requires a visible, ready viewport");
       if (!(camera instanceof PerspectiveCamera || camera instanceof OrthographicCamera)) throw new Error("Unsupported inspection camera");
       const {width, height} = gl.domElement;
       if (!width || !height || gl.getContext().isContextLost()) throw new Error("Inspection framebuffer is unavailable");
@@ -124,29 +126,52 @@ function CaptureBinding({ready, bind}: {ready: boolean; bind: (capture: ProxyCap
       })};
     });
     return () => bind(null);
-  }, [ready, bind, camera, gl, scene]);
+  }, [ready, bind, camera, gl, scene, size.width, size.height]);
   return null;
 }
 
-export function ProxyView({url, mapping, onSelect, onCamera, onCaptureReady, restoreCamera = null}: {url: string; mapping: ProxyMapping; onSelect: (selection: ObjectSelection[]) => void; onCamera: (camera: Camera) => void; onCaptureReady: (capture: ProxyCapture | null) => void; restoreCamera?: Camera | null}) {
+export function ProxyView({visible = true, url, mapping, onSelect, onCamera, onCaptureReady, restoreCamera = null}: {visible?: boolean; url: string; mapping: ProxyMapping; onSelect: (selection: ObjectSelection[]) => void; onCamera: (camera: Camera) => void; onCaptureReady: (capture: ProxyCapture | null) => void; restoreCamera?: Camera | null}) {
   const [ready, setReady] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const [size, setSize] = useState({width:0,height:0});
+  const renderer = useRef<RootState | null>(null);
+  const visibleRef = useRef(visible); visibleRef.current = visible;
+  const capture = useRef<ProxyCapture | null>(null);
+  const captureVisible = useCallback(() => {
+    if (!visibleRef.current || !capture.current) throw new Error("Inspection capture requires a visible, ready viewport");
+    return capture.current();
+  }, []);
+  const bindCapture = useCallback((next: ProxyCapture | null) => {
+    capture.current = next;
+    onCaptureReady(visibleRef.current && next ? captureVisible : null);
+  }, [onCaptureReady, captureVisible]);
   useLayoutEffect(() => {
     const element = host.current; if (!element) return;
-    const observer = new ResizeObserver(() => {const bounds=element.getBoundingClientRect();setSize({width:bounds.width,height:bounds.height});});
+    const measure = () => {
+      const bounds = element.getBoundingClientRect();
+      if (!visible || bounds.width <= 0 || bounds.height <= 0) return;
+      setSize(previous => previous.width === bounds.width && previous.height === bounds.height ? previous : {width:bounds.width,height:bounds.height});
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
     observer.observe(element); return () => observer.disconnect();
-  }, []);
+  }, [visible]);
+  useLayoutEffect(() => {
+    // Canvas skips configure/render when its own measured rectangle is zero.
+    // Drive the existing root too, otherwise a hidden Canvas can retain its old loop.
+    renderer.current?.setFrameloop(visible ? "always" : "never");
+    onCaptureReady(visible && size.width > 0 && size.height > 0 && capture.current ? captureVisible : null);
+  }, [visible, size.width, size.height, onCaptureReady, captureVisible]);
   const width = restoreCamera && size.width ? Math.min(size.width,size.height*restoreCamera.aspect) : size.width;
   const height = restoreCamera && width ? width/restoreCamera.aspect : size.height;
   return <div ref={host} className="review-proxy" aria-label={`Static proxy, source frame ${mapping.sample_frame}`}>
-    <Canvas style={restoreCamera && size.width ? {position:"absolute",left:(size.width-width)/2,top:(size.height-height)/2,width,height} : undefined} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: 50}}>
+    <Canvas frameloop={visible ? "always" : "never"} onCreated={state => { renderer.current = state; state.setFrameloop(visibleRef.current ? "always" : "never"); }} style={restoreCamera && size.width ? {position:"absolute",left:(size.width-width)/2,top:(size.height-height)/2,width,height} : undefined} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: 50}}>
       <ambientLight intensity={0.8}/><directionalLight position={[4,8,4]} intensity={1.5}/>
       <Suspense fallback={null}><Model url={url} mapping={mapping} onSelect={onSelect} onReady={setReady}/></Suspense>
       <OrbitControls ref={controls} makeDefault enableDamping={false}/>
       <RestoreCamera record={restoreCamera} controls={controls}/><CameraObserver onCamera={onCamera}/>
-      <CaptureBinding ready={ready} bind={onCaptureReady}/>
+      <CaptureBinding ready={visible && ready && size.width > 0 && size.height > 0} bind={bindCapture}/>
     </Canvas>
     <span className="review-proxy-label">Static inspection proxy · sample frame {mapping.sample_frame} · not material evidence</span>
   </div>;

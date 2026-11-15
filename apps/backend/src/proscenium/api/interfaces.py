@@ -8,6 +8,20 @@ from proscenium.db import Transaction
 
 
 class ArtifactService(Protocol):
+    def promote(
+        self,
+        project_id: str,
+        artifact_id: str,
+        data: bytes,
+        *,
+        kind: str,
+        purpose: str,
+        media_type: str,
+        derived_from: list[dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]: ...
+    @staticmethod
+    def put(tx: Transaction, artifact: dict[str, Any]) -> None: ...
     def get(self, project_id: str, artifact_id: str) -> dict[str, Any]: ...
     def ready_path(self, project_id: str, artifact_id: str) -> Path: ...
     def validate_mask(

@@ -16,7 +16,16 @@ from proscenium.db.store import now
 from proscenium.jobs import transition
 from proscenium.services import Services
 
+from .activity import (
+    error_fields,
+    failure_summary,
+    log_activity_problem,
+    safe_text,
+    shell_exit_code,
+)
 from .context import Contexts
+from .eligibility import control_status, execution_status
+from .outcomes import get_tool_outcome
 
 TERMINAL = {"completed", "failed", "stopped", "cancelled"}
 SYSTEM = {"kind": "system", "id": "copilot-host"}
@@ -58,30 +67,8 @@ class State:
         self.policy_resolver = policy_resolver
 
     def control(self, tx: Transaction) -> dict[str, Any]:
-        control = tx.get("copilot.control", "gate", required=False) or {
-            "fenced": False,
-            "epoch": self.services.ownership.epoch,
-            "revision": 0,
-        }
-        session = tx.get("copilot.session", "native", required=False)
-        previous_epoch = control["epoch"] != self.services.ownership.epoch or (
-            session is not None and session["owner_epoch"] != self.services.ownership.epoch
-        )
-        if not session and control.get("reconciled_epoch") != self.services.ownership.epoch:
-            previous_epoch = previous_epoch or any(
-                e["owner_epoch"] != self.services.ownership.epoch
-                for e in tx.all("copilot.effective")
-            )
-        project = self.services.registry.get(str(tx.project_id))
-        activation_changed = (
-            project["state"] == "awaiting_resume"
-            and project["state_revision"] != control.get("activation_revision")
-            and bool(tx.all("requests"))
-        )
-        return (
-            {**control, "fenced": True, "reason": "awaiting_resume"}
-            if previous_epoch or activation_changed
-            else control
+        return control_status(
+            tx, self.services.ownership.epoch, self.services.registry.get(str(tx.project_id))
         )
 
     def fence(self, tx: Transaction, reason: str) -> None:
@@ -179,11 +166,34 @@ class State:
                         if project_policy and project_policy["default_profile_id"] is not None
                         else self.services.settings.runtime.get("profile_id", "authoring"),
                     )
-                    configured = {p["profile_id"] for p in self.services.settings.profiles}
-                    active_profile = self.services.settings.runtime.get("profile_id", "authoring")
-                    if profile != active_profile or (
-                        body.get("profile_id") and profile not in configured
+                    profiles_list = getattr(
+                        self.services,
+                        "effective_profiles",
+                        lambda: list(self.services.settings.profiles),
+                    )()
+                    by_id = {p["profile_id"]: p for p in profiles_list}
+                    if profile in by_id:
+                        selected = by_id[profile]
+                        if (
+                            selected.get("scope_status") != "project_scoped"
+                            or not selected.get("lead_model_id")
+                            or not selected.get("worker_model_ids")
+                        ):
+                            raise DomainError("capability_unavailable", 501)
+                        lead_model = selected["lead_model_id"]
+                        worker_model = selected["worker_model_ids"][0]
+                        unity_worker_model = selected["worker_model_ids"][-1]
+                    elif (
+                        not body.get("profile_id")
+                        and not (project_policy and project_policy.get("default_profile_id"))
+                        and profile == self.services.settings.runtime.get("profile_id", "authoring")
                     ):
+                        lead_model = self.services.settings.runtime.get("lead_model", "gpt-6.1-sol")
+                        worker_model = self.services.settings.runtime.get("worker_model")
+                        unity_worker_model = self.services.settings.runtime.get(
+                            "unity_worker_model", worker_model
+                        )
+                    else:
                         raise DomainError("capability_unavailable", 501)
                     state = "held"
                     if not tx.all("requests") and not control["fenced"]:
@@ -205,8 +215,14 @@ class State:
                         for w in tx.all("work")
                     ):
                         raise DomainError("no_active_work", 409)
-                    if kind == "steer" and (
-                        work["state"] not in {"running", "awaiting_user"} or control["fenced"]
+                    if (
+                        kind == "steer"
+                        and execution_status(
+                            tx,
+                            self.services.ownership.epoch,
+                            self.services.registry.get(project_id),
+                        )["can_steer_work_id"]
+                        != work_id
                     ):
                         raise DomainError("no_active_work", 409)
                     task_id = work["generation_task_id"]
@@ -270,6 +286,9 @@ class State:
                                 else project_policy["generation_attempt_limit"],
                             ),
                             "profile_id": profile,
+                            "lead_model": lead_model,
+                            "worker_model": worker_model,
+                            "unity_worker_model": unity_worker_model,
                             "owner_epoch": self.services.ownership.epoch,
                             "fifo": tx.watermark() + 1,
                         },
@@ -684,6 +703,17 @@ class State:
                     k: v for k, v in event.items() if k in {"id", "type", "parentId", "agentId"}
                 }
                 staged["data"] = {k: v for k, v in data.items() if k in allowed}
+                if kind == "assistant.message" and "toolRequests" in data:
+                    # Retain only the turn classification, never tool arguments/prompts.
+                    staged["data"]["toolRequests"] = bool(data["toolRequests"])
+                if type(data.get("cancelled")) is bool:
+                    staged["data"]["cancelled"] = data["cancelled"]
+                if pending_display_name := safe_text(data.get("agentDisplayName"))[:200]:
+                    staged["data"]["agentDisplayName"] = pending_display_name
+                if (exit_code := shell_exit_code(data)) is not None:
+                    staged["data"]["shellExecution"] = {"exitCode": exit_code}
+                if kind in {"tool.execution_complete", "subagent.failed"}:
+                    staged["data"]["error"] = error_fields(data)
                 old_pending = tx.get("copilot.pending_events", event_key, required=False)
                 if old_pending and old_pending["fingerprint"] != fingerprint:
                     raise DomainError("idempotency_conflict", 409)
@@ -824,7 +854,16 @@ class State:
                 text = (
                     data.get("content") if kind == "assistant.message" else data.get("deltaContent")
                 )
-                if text is not None and data.get("messageId"):
+                if (
+                    isinstance(text, str)
+                    and text != ""
+                    and data.get("messageId")
+                    and not (
+                        kind == "assistant.message"
+                        and data.get("toolRequests")
+                        and not text.strip()
+                    )
+                ):
                     tx.emit(
                         "assistant.completed" if kind == "assistant.message" else "assistant.delta",
                         {"message_id": data["messageId"], "text": text, "native_agent_id": agent},
@@ -866,6 +905,23 @@ class State:
                     if kind.endswith("failed") or data.get("success") is False
                     else "completed"
                 )
+                exit_code = shell_exit_code(data)
+                if (
+                    kind == "tool.execution_complete"
+                    and exit_code is not None
+                    and exit_code != 0
+                    and state == "completed"
+                ):
+                    state = "failed"
+                display_name = (
+                    (
+                        safe_text(data.get("agentDisplayName"))[:200]
+                        or (old_invocation or {}).get("display_name")
+                        or None
+                    )
+                    if child
+                    else None
+                )
                 if not starting and old_invocation is None:
                     self.fence(tx, "attribution_unavailable")
                     return
@@ -883,25 +939,78 @@ class State:
                         data.get("toolName", (old_invocation or {}).get("name", "tool")),
                     ),
                     "model_id": data.get("model", (old_invocation or {}).get("model_id")),
+                    "updated_at": now(),
+                    "display_name": display_name,
                     "arguments_sha256": hashlib.sha256(canonical(data["arguments"])).hexdigest()
                     if starting and isinstance(data.get("arguments"), dict)
                     else (old_invocation or {}).get("arguments_sha256"),
                 }
                 if old_invocation and old_invocation["state"] in TERMINAL and starting:
                     return
+                summary = failure_summary(tx, invocation, data) if state == "failed" else ""
+                if summary:
+                    invocation["failure_summary"] = summary
                 save(tx, "invocations", invocation_id, invocation)
+                outcome = get_tool_outcome(tx, invocation_id)
+                output_status = (
+                    "published"
+                    if outcome
+                    and outcome["status"] == "succeeded"
+                    and outcome["published_versions"]
+                    else "publication_blocked"
+                    if invocation["name"] == "publish_outputs" and state == "failed"
+                    else "retained_unpublished"
+                    if outcome and outcome["artifact_ids"] and not outcome["published_versions"]
+                    else None
+                )
+                if (
+                    state in {"failed", "outcome_uncertain"}
+                    and (old_invocation or {}).get("state") != state
+                ):
+                    log_activity_problem(tx, invocation, data, summary)
                 tx.emit(
                     ("subagent." if child else "tool.") + ("started" if starting else "completed"),
                     {
                         "invocation_id": invocation_id,
                         "name": invocation["name"],
                         "state": state,
-                        "summary": "",
-                        "artifact_ids": [],
+                        "summary": summary,
+                        "artifact_ids": outcome["artifact_ids"] if outcome else [],
                         "model_id": invocation["model_id"],
+                        "published_versions": outcome["published_versions"] if outcome else [],
+                        "output_status": output_status,
+                        **({"exit_code": exit_code} if exit_code is not None else {}),
+                        **({"display_name": display_name} if display_name else {}),
                     },
                     **emit,
                 )
+            if kind == "abort" and not agent:
+                work = tx.require("work", work_id)
+                last_delivery = tx.get("copilot.last_delivery", work_id, required=False)
+                if (
+                    work["native_session_id"] == session_id
+                    and work["state"] in {"running", "awaiting_user"}
+                    and last_delivery
+                    and last_delivery.get("delivery_id") == binding.get("delivery_id")
+                    and not self.control(tx)["fenced"]
+                ):
+                    # An unsolicited native abort interrupts work, but is not a confirmed Stop
+                    # barrier or proof that external jobs/children have finished.
+                    save(
+                        tx,
+                        "copilot.interruptions",
+                        event_key,
+                        {**binding, "native_event_id": identity, "reason": "native_turn_aborted"},
+                    )
+                    self.fence(tx, "native_turn_aborted")
+                    self.work_state(tx, work_id, "awaiting_resume")
+                    original = tx.require("requests", request_id)
+                    self.request_state(
+                        tx,
+                        request_id,
+                        original["receipt"]["state"],
+                        detail_code="native_turn_aborted",
+                    )
             if not agent and kind == "assistant.turn_start":
                 save(
                     tx,
@@ -1597,11 +1706,19 @@ class State:
                 "at": now(),
             }
             tx.put("copilot.permission_outcomes", key(session_id, native_id), observation)
+            recovered_invocation = {**invocation, "state": "failed", "recovery": observation}
+            summary = "Native commands authorisation denied before execution; callback delivery and decision authority remain unproven."
             save(
                 tx,
                 "invocations",
                 invocation["invocation_id"],
-                {**invocation, "state": "failed", "recovery": observation},
+                recovered_invocation,
+            )
+            log_activity_problem(
+                tx,
+                recovered_invocation,
+                {"error": {"code": "native_authorization_denied"}},
+                summary,
             )
             tx.emit(
                 "tool.completed",
@@ -1609,7 +1726,7 @@ class State:
                     "invocation_id": invocation["invocation_id"],
                     "name": invocation["name"],
                     "state": "failed",
-                    "summary": "Native commands authorisation denied before execution; callback delivery and decision authority remain unproven.",
+                    "summary": summary,
                     "artifact_ids": [],
                     "model_id": invocation.get("model_id"),
                 },

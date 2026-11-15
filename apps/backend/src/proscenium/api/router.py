@@ -35,7 +35,28 @@ async def pair_owner_session(request: Request) -> JSONResponse:
 
 @router.get("/api/v1/configuration", operation_id="getConfigurationView")
 def get_configuration(request: Request, caller: Owner) -> dict:
-    return get_services(request).settings.view()
+    return get_services(request).configuration_view()
+
+
+@router.get("/api/v1/configuration/status", operation_id="getConfigurationStatus")
+def configuration_status(request: Request, caller: Owner) -> dict:
+    from proscenium.copilot.capabilities import get_configuration_status
+
+    return get_configuration_status(get_services(request))
+
+
+@router.put("/api/v1/configuration/profiles/{profile_id}", operation_id="upsertAuthoringProfile")
+async def upsert_profile(request: Request, profile_id: str, caller: Owner) -> dict:
+    body = await command(request, "AuthoringProfileUpsert")
+    return get_services(request).upsert_profile(caller, profile_id, body)
+
+
+@router.post(
+    "/api/v1/configuration/profiles/{profile_id}/delete", operation_id="deleteAuthoringProfile"
+)
+async def delete_profile(request: Request, profile_id: str, caller: Owner) -> dict:
+    body = await command(request, "AuthoringProfileDelete")
+    return get_services(request).delete_profile(caller, profile_id, body)
 
 
 @router.get("/api/v1/projects/{project_id}/jobs", operation_id="listJobs")

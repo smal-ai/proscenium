@@ -30,7 +30,8 @@ export function selectionCommand(projectId: string, version: VersionRecord, shot
 /** Never infer render provenance/source frames from a filename or storyboard index. */
 export function frameContext(version: VersionRecord, shot: PlanShot, frame: PlanFrame, artifact?: Artifact,
   render?: { job: JobRecord; receipt: FrameReceipt }): TurnSelection {
-  const selection = { ...emptySelection(), item_id: version.item_id, version_id: version.version_id };
+  const selection: TurnSelection = { ...emptySelection(), item_id: version.item_id, version_id: version.version_id,
+    request_target: { kind: "shot", storyboard_version: { item_id: version.item_id, version_id: version.version_id }, shot_id: shot.shot_id }, execution_scope: "default" };
   if (!artifact || artifact.project_id !== version.project_id || artifact.state !== "ready" || artifact.kind !== "image" || !artifact.dimensions) return selection;
   if (artifact.purpose !== "reference" && artifact.purpose !== "concept") {
     if (!render) return selection;
