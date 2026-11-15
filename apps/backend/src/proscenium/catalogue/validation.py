@@ -3,9 +3,52 @@
 from fractions import Fraction
 from typing import Any
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 from proscenium.api.errors import DomainError
-from proscenium.contracts import validate
+from proscenium.contracts import SCHEMA, validate
 from proscenium.db import Transaction
+
+
+def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
+    """Bounded host-authored diagnostics. Never interpolate rejected values or keys."""
+    known = {
+        key for definition in SCHEMA["$defs"].values() for key in definition.get("properties", {})
+    }
+    validator = Draft202012Validator(
+        {"$ref": f"#/$defs/{name}", "$defs": SCHEMA["$defs"]}, format_checker=FormatChecker()
+    )
+    issues = []
+    seen: set[tuple[str, str]] = set()
+    for error in validator.iter_errors(document):
+        parts = list(error.absolute_path)
+        if error.validator == "required" and isinstance(error.instance, dict):
+            missing = [key for key in error.validator_value if key not in error.instance]
+            paths = [parts + [key] for key in missing]
+        else:
+            paths = [parts]
+        for parts in paths:
+            path = ""
+            for part in parts:
+                if isinstance(part, int):
+                    path += f"[{part}]"
+                else:
+                    path += ("." if path else "") + (part if part in known else "field")
+            pair = (path or "$", str(error.validator))
+            if pair in seen:
+                continue
+            seen.add(pair)
+            issues.append(
+                dict(
+                    phase="schema",
+                    code=pair[1],
+                    path=pair[0],
+                    message=f"Field failed {error.validator} validation",
+                )
+            )
+            if len(issues) == 25:
+                return issues
+    return issues
 
 
 def rational(value: dict[str, int]) -> Fraction:
@@ -39,10 +82,12 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
     if document["project_id"] != tx.project_id:
         raise DomainError("scope_denied", 403)
     for identity in document["brief_artifact_ids"]:
-        tx.require("artifacts", identity)
+        if tx.require("artifacts", identity)["state"] != "ready":
+            raise DomainError("media_unavailable", 422)
     for reference in document["asset_dependencies"]:
         version_reference(tx, reference, batch)
     shots = set()
+    frames = set()
     for shot in document["shots"]:
         if shot["shot_id"] in shots:
             raise DomainError("source_conflict", 409, "Duplicate shot identity")
@@ -54,14 +99,21 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
             interval(shot["source_range"])
         if shot["fps"] is not None:
             rational(shot["fps"])
-        frames = set()
+        roles = [{"start": 0, "intermediate": 1, "end": 2}[f["role"]] for f in shot["frames"]]
+        if roles != sorted(roles):
+            raise DomainError(
+                "source_conflict", 409, "Frame roles must be ordered start, intermediate, end"
+            )
         for frame in shot["frames"]:
             if frame["frame_id"] in frames:
                 raise DomainError("source_conflict", 409, "Duplicate shot-frame identity")
             frames.add(frame["frame_id"])
             if frame["artifact_id"] is not None:
-                if tx.require("artifacts", frame["artifact_id"])["kind"] != "image":
+                artifact = tx.require("artifacts", frame["artifact_id"])
+                if artifact["kind"] != "image":
                     raise DomainError("source_conflict", 409)
+                if artifact["state"] != "ready":
+                    raise DomainError("media_unavailable", 422)
             elif frame["state"] in {"available", "selected"}:
                 raise DomainError("media_unavailable", 422)
 

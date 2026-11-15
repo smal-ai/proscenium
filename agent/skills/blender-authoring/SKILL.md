@@ -10,10 +10,9 @@ description: Author and inspect Blender content inside the active Proscenium pro
    Preserve every annotation's own frame target, camera, range and object instance.
 2. Use the explicitly configured `mcp-for-blender==2.0.0` server connected to its
    external live add-on. Do not install or replace the add-on. Tool discovery is
-   authoritative. If the socket bridge is absent, use the accepted launcher from
-   the installed Proscenium repository: `python3 -m tools.blender doctor --project
-   <actual-active-project>` then `python3 -m tools.blender start --project
-   <actual-active-project>` (add `--virtual-display` only when needed). Do not invent
+   authoritative. Call `get_project_capabilities` to check the configured bridge.
+   If absent, report the capability blocker rather than invoking checkout-only helpers.
+   Do not invent
    a home-directory project/default. An occupied, dirty, outside-project or uncertain
    instance is preserved, never force-closed or replaced. A readiness timeout needs
    inspection of the original launch receipt before any retry. A missing configured
@@ -70,3 +69,11 @@ description: Author and inspect Blender content inside the active Proscenium pro
    model context. Only owner-selected findings in host context authorise repairs.
 10. After compaction re-read the brief and current plan. Stop is not rollback.
     Late publication/job results belong to their original source, work and attempt.
+
+Honour host `request_target`, `reference_versions` and `execution_scope`.
+`planning_only` forbids scene execution, preview renders and generation. Validate
+storyboards/sequences/publications with `validate_authored_document` before checkpoint
+and publication. Plan comparison uses `compare_to_path` and `changed_ids`.
+Requested image inference uses `prepare_image_generation` then `submit_generation`.
+Create/publish standalone `asset` source without a storyboard. Existing dependent
+scenes/storyboards keep their version pins until the owner requests explicit adoption.

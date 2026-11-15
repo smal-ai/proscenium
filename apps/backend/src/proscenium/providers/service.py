@@ -119,6 +119,7 @@ class ProviderService:
             "minimum_free_vram_bytes",
             "vlm_max_tokens",
             "image_profiles",
+            "image_recipes",
         }
         if set(self.options) - allowed:
             raise ValueError(
@@ -140,6 +141,9 @@ class ProviderService:
             if not isinstance(revision, str):
                 raise ValueError("image profile revision must be a string")
             plugin("image", revision)
+        from .preparation import validate_recipes
+
+        validate_recipes(self.options)
 
     @property
     def artifacts(self) -> ArtifactService:
@@ -210,11 +214,16 @@ class ProviderService:
                 if existing != {"request": request, "work_id": caller.work_id}:
                     raise DomainError("idempotency_conflict", 409)
                 return tx.require("jobs", request["job_id"]), True
+            prepared = tx.get("providers.prepared", request["workflow_artifact_id"], required=False)
         revision = (
             self.options.get("image_profiles", {}).get(request["provider_id"])
             if request["capability"] == "image"
             else None
         )
+        if prepared:
+            if request != prepared["submit_request"]:
+                raise DomainError("idempotency_conflict", 409)
+            revision = prepared["profile_revision"]
         capability = plugin(request["capability"], revision)
         resolved = resolve_target(self.services, caller, request)
         provider = self.provider(request["provider_id"], capability.capability)

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import copy
 import inspect
+import json
+import re
 from typing import Any
 
 from copilot.tools import Tool, ToolInvocation, ToolResult
@@ -13,6 +15,7 @@ from proscenium.auth import Caller
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.services import Services
 
+from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
 from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
@@ -20,6 +23,20 @@ from .workflows import parameters as workflow_parameters
 
 # Extension, method, normative input, normative result, capability operation.
 TOOLS = {
+    "validate_authored_document": (
+        "authoring_validation",
+        "validate",
+        "AuthoredDocumentValidationRequest",
+        "AuthoredDocumentValidationResult",
+        "validateAuthoredDocument",
+    ),
+    "prepare_image_generation": (
+        "image_preparation",
+        "prepare",
+        "ImageGenerationPrepare",
+        "ImageGenerationPrepared",
+        "prepareImageGeneration",
+    ),
     "checkpoint_sources": (
         "sources",
         "checkpoint",
@@ -75,6 +92,11 @@ READ_TOOLS = {
     ),
 }
 DISCOVERY_READS = {
+    "get_project_capabilities": (
+        "",
+        "ProjectCapabilities",
+        "Read exposed tools, installed skills and observed provider recipes. No inference or service lifecycle actions.",
+    ),
     "list_items": (
         "",
         "ItemPage",
@@ -84,6 +106,12 @@ DISCOVERY_READS = {
 
 
 def read_parameters(name: str) -> dict[str, Any]:
+    if name == "get_project_capabilities":
+        return dict(
+            type="object",
+            properties={"project_id": copy.deepcopy(SCHEMA["$defs"]["Id"])},
+            additionalProperties=False,
+        )
     if name == "list_items":
         return dict(
             type="object",
@@ -111,6 +139,12 @@ def read_parameters(name: str) -> dict[str, Any]:
 
 
 def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
+    if name == "get_project_capabilities":
+        if not isinstance(arguments, dict) or set(arguments) - {"project_id"}:
+            raise DomainError("invalid_request")
+        if "project_id" in arguments:
+            validate("Id", arguments["project_id"])
+        return arguments
     if name == "list_items":
         if not isinstance(arguments, dict) or set(arguments) - {"query", "cursor", "limit"}:
             raise DomainError("invalid_request")
@@ -160,9 +194,24 @@ SAFE_REASONS = frozenset(
         "Displayed image identity mismatch",
         "No exact frame receipt",
         "Spatial mapping mismatch",
+        "Storyboard source must be AuthoredShotPlan JSON",
+        "Authored catalogue source is not JSON",
+        "Storyboard source failed AuthoredShotPlan validation",
+        "Sequence source failed SequenceMap validation",
+        "Multiple compatible image model tuples exist; configure provider_options.image_recipes",
+        "Configure one explicit provider",
+        "Image recipe nodes or models are unavailable",
+        "Provider catalogue could not be read",
+        "Selected image profile requires one exact 512x512 reference",
+        "SD-Turbo image recipes require 512x512 and four steps",
+        "Image preparation accepts at most one reference",
+        "Graph node is not installed",
+        "Model/choice is unavailable",
+        "An exact JSON-safe decimal seed is required",
     }
 )
 ERROR_GUIDANCE = {
+    "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
     "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
     "hash_mismatch": "Registered bytes or the source digest do not match. Reconcile the original source/artefact identity; do not reuse this operation ID with changed input.",
@@ -188,6 +237,46 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
         )
     )
     details: dict[str, Any] = {}
+    issues = error.details.get("issues", [])
+    if isinstance(issues, list) and issues:
+        # Accept only canonical host-validator diagnostics, never upstream strings.
+        safe = []
+        for issue in issues[:25]:
+            try:
+                validate("ValidationIssue", issue)
+            except DomainError:
+                continue
+            if (
+                issue["code"]
+                in {
+                    "required",
+                    "type",
+                    "enum",
+                    "const",
+                    "additionalProperties",
+                    "oneOf",
+                    "anyOf",
+                    "not",
+                    "minItems",
+                    "maxItems",
+                    "minLength",
+                    "maxLength",
+                    "minimum",
+                    "maximum",
+                    "pattern",
+                    "uniqueItems",
+                    "format",
+                }
+                and issue["message"] == f"Field failed {issue['code']} validation"
+                and len(issue["path"]) <= 512
+                and re.fullmatch(
+                    r"\$|[A-Za-z_][A-Za-z_0-9]*(?:\[[0-9]+\]|\.[A-Za-z_][A-Za-z_0-9]*)*",
+                    issue["path"],
+                )
+            ):
+                safe.append(issue)
+        if safe:
+            details["issues"] = safe
     if name == "get_unity_result" and error.code == "project_busy":
         message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
     revision = error.details.get("current_revision")
@@ -278,6 +367,12 @@ class Tools:
 
     def _read(self, name: str, invocation: ToolInvocation) -> tuple[dict[str, Any], str]:
         args = read_arguments(name, invocation.arguments)
+        if name == "get_project_capabilities":
+            from .capabilities import get_project_capabilities
+
+            if args.get("project_id", self.project_id) != self.project_id:
+                raise DomainError("scope_denied", 403)
+            return get_project_capabilities(self.services, self.project_id), "ProjectCapabilities"
         if name == "list_items":
             from proscenium.sources.common import fingerprint
 
@@ -363,6 +458,8 @@ class Tools:
                     "checkpoint_sources",
                     "publish_outputs",
                     "register_artifact",
+                    "prepare_image_generation",
+                    "validate_authored_document",
                     *READ_TOOLS,
                     *DISCOVERY_READS,
                     *WORKFLOW_TOOLS,
@@ -370,6 +467,13 @@ class Tools:
             )
             if name in READ_TOOLS or name in DISCOVERY_READS:
                 result, result_schema = self._read(name, invocation)
+            elif name == "validate_authored_document":
+                from .capabilities import validate_authored_document
+
+                result = validate_authored_document(
+                    self.services, self.project_id, invocation.arguments
+                )
+                result_schema = "AuthoredDocumentValidationResult"
             elif name in WORKFLOW_TOOLS:
                 method, result_schema, _ = WORKFLOW_TOOLS[name]
                 body = workflow_arguments(name, invocation.arguments)
@@ -394,6 +498,10 @@ class Tools:
                 function = getattr(service, method, None)
                 if function is None:
                     raise DomainError("capability_unavailable", 501)
+                if name == "prepare_image_generation" and not self.services.extension(
+                    "image_preparation"
+                ).replayable(caller, body):
+                    self.caller(invocation, admit=True)
                 result = function(caller, body)
                 if inspect.isawaitable(result):
                     result = await result
@@ -401,13 +509,91 @@ class Tools:
                     result = result[0]
             # ReviewTicket validation forbids findings in the model response.
             validate(result_schema, result)
+            outcome: dict[str, Any] = {}
+            if name == "register_artifact":
+                outcome["artifact_ids"] = [result["artifact_id"]]
+            elif name == "prepare_image_generation":
+                outcome["artifact_ids"] = [
+                    result["workflow_artifact_id"],
+                    result["prompt_artifact_id"],
+                ]
+            elif name == "publish_outputs":
+                outcome.update(
+                    publication_id=result["publication_id"],
+                    published_versions=result["versions"],
+                    job_ids=result["job_ids"],
+                    artifact_ids=[
+                        aid for item in body["items"] for aid in item.get("artifact_ids", [])
+                    ],
+                )
+            elif name in {
+                "submit_generation",
+                "request_preview",
+                "assemble_sequence",
+                "run_unity_workflow",
+            }:
+                outcome.update(
+                    job_ids=[result["job_id"]], artifact_ids=result.get("artifact_ids", [])
+                )
+            if outcome:
+                self._outcome(invocation, name, status="succeeded", **outcome)
             return ToolResult(text_result_for_llm=canonical(result).decode())
         except DomainError as exc:
-            return tool_failure(exc, name)
+            failure = tool_failure(exc, name)
+            diagnostic = json.loads(failure.text_result_for_llm)
+            issues = diagnostic["details"].get("issues", [])
+            self._outcome(
+                invocation,
+                name,
+                status="failed",
+                error_code=exc.code,
+                phase=issues[0]["phase"]
+                if issues
+                else "json"
+                if exc.message
+                in {
+                    "Storyboard source must be AuthoredShotPlan JSON",
+                    "Authored catalogue source is not JSON",
+                }
+                else "preflight",
+                safe_summary=diagnostic["message"],
+                issues=issues,
+            )
+            return failure
         except Exception:
             # Never give SDK callers an upstream exception repr, headers or credentials.
             # Cancellation still propagates, and existing durable effects are not retried.
             return tool_failure(DomainError("internal_error", 500), name)
+
+    def _outcome(self, invocation: ToolInvocation, name: str, **values: Any) -> None:
+        store = self.services.registry.project_store(self.project_id)
+        with store.transaction() as tx:
+            record = tx.get(
+                "invocations",
+                key(invocation.session_id, "tool", invocation.tool_call_id),
+                required=False,
+            )
+            if (
+                record is None
+                or record["session_id"] != invocation.session_id
+                or record["agent_id"] != invocation.agent_id
+            ):
+                return
+            previous = get_tool_outcome(tx, record["invocation_id"])
+            if previous and values.get("status") == "failed":
+                # A rejected retry cannot erase artefacts already proven by this invocation.
+                for field in ("artifact_ids", "job_ids", "publication_id", "published_versions"):
+                    values[field] = previous[field]
+            record_tool_outcome(
+                tx,
+                invocation_id=record["invocation_id"],
+                session_id=record["session_id"],
+                project_id=self.project_id,
+                work_id=record["work_id"],
+                request_id=record["request_id"],
+                tool_name=name,
+                **values,
+            )
 
     def definitions(self) -> list[Tool]:
         tools = []

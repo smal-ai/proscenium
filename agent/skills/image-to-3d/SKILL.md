@@ -5,6 +5,15 @@ description: Prepare an image-conditioned mesh workflow and use the accepted bud
 
 # Image to 3D
 
+- Call `get_project_capabilities` first. Honour host `request_target`, pinned
+  `reference_versions` and `execution_scope`. Planning-only work performs no
+  generation, preview rendering or scene execution. `prepare_image_generation`
+  prepares image concepts only, never an invented Hunyuan mesh workflow.
+- Validate authored plans, sequences and publications with `validate_authored_document`
+  before checkpoint/publication. `compare_to_path` and `changed_ids` report plan impact.
+  Publish a standalone generated/imported `asset` without a storyboard. Existing
+  dependent scenes/storyboards keep version pins until explicit adoption.
+
 - Work only in the active project and the current human generation task.
 - Check the configured provider capability. The host-owned Hunyuan plugin supports
   `image_to_3d` only with its exact trusted graph and model. If unavailable, report the exact

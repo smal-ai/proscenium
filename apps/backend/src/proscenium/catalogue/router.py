@@ -17,6 +17,22 @@ Tool = Annotated[Caller, Depends(tool)]
 BASE = "/api/v1/projects/{project_id}"
 
 
+@router.get(BASE + "/artifacts", operation_id="listRetainedArtifacts")
+def retained_artifacts(
+    request: Request,
+    project_id: str,
+    caller: Owner,
+    cursor: str | None = None,
+    limit: int = 50,
+    kind: str | None = None,
+    purpose: str | None = None,
+) -> dict:
+    artifacts: Artifacts = get_services(request).extension("artifacts")
+    return artifacts.list_retained(
+        project_id, cursor=cursor, limit=limit, kind=kind, purpose=purpose
+    )
+
+
 @router.get(BASE + "/items", operation_id="listItems")
 def items(
     request: Request,
