@@ -58,8 +58,21 @@ class ContractModel(RootModel[Any]):
 
     def wire(value: dict, fallback: str) -> str:
         content = resolve(value).get("content", {})
-        schema = content.get("application/json", {}).get("schema", {})
+        schema = resolve(content.get("application/json", {}).get("schema", {}))
+        if "application/json" in content and not schema.get("$ref", "").startswith(
+            "./schema.json#/$defs/"
+        ):
+            raise ValueError("JSON envelopes must reference a normative definition")
         return "C." + schema["$ref"].split("/")[-1] if "$ref" in schema else fallback
+
+    def query_wire(schema: dict) -> str:
+        if schema.get("type") == "integer":
+            return "number"
+        if schema.get("type") != "string":
+            raise ValueError("Query parameters require integer or string schemas")
+        if "enum" in schema:
+            return " | ".join(json.dumps(value) for value in schema["enum"])
+        return "string"
 
     for path, methods in api["paths"].items():
         for method, operation in methods.items():
@@ -78,12 +91,7 @@ class ContractModel(RootModel[Any]):
             )
             query_type = (
                 "{ "
-                + "; ".join(
-                    p["name"]
-                    + "?: "
-                    + ("number" if p["schema"].get("type") == "integer" else "string")
-                    for p in queries
-                )
+                + "; ".join(p["name"] + "?: " + query_wire(p["schema"]) for p in queries)
                 + " }"
                 if queries
                 else "Record<string, never>"
@@ -91,14 +99,12 @@ class ContractModel(RootModel[Any]):
             body = wire(
                 operation.get("requestBody", {}), "Blob" if "requestBody" in operation else "never"
             )
-            response = next(
-                (
-                    wire(v, "ArrayBuffer")
-                    for k, v in operation["responses"].items()
-                    if str(k).startswith("2")
-                ),
-                "never",
-            )
+            responses = [
+                wire(v, "ArrayBuffer")
+                for k, v in operation["responses"].items()
+                if str(k).startswith("2")
+            ]
+            response = responses[0] if responses else "never"
             operations.append(
                 f"  {name}: {{ body: {body}; response: {response}; path: {path_type}; query: {query_type} }};"
             )

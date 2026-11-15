@@ -48,11 +48,20 @@ class ArtifactRegister(ContractModel):
 class Attachment(ContractModel):
     definition = "Attachment"
 
+class AuthoredDocumentValidationRequest(ContractModel):
+    definition = "AuthoredDocumentValidationRequest"
+
+class AuthoredDocumentValidationResult(ContractModel):
+    definition = "AuthoredDocumentValidationResult"
+
 class AuthoredShotPlan(ContractModel):
     definition = "AuthoredShotPlan"
 
 class Camera(ContractModel):
     definition = "Camera"
+
+class CapabilityStatus(ContractModel):
+    definition = "CapabilityStatus"
 
 class CheckpointReceipt(ContractModel):
     definition = "CheckpointReceipt"
@@ -96,6 +105,12 @@ class Event(ContractModel):
 class EventPage(ContractModel):
     definition = "EventPage"
 
+class ExecutionScope(ContractModel):
+    definition = "ExecutionScope"
+
+class ExecutionStatus(ContractModel):
+    definition = "ExecutionStatus"
+
 class FindingPage(ContractModel):
     definition = "FindingPage"
 
@@ -131,6 +146,12 @@ class GitFile(ContractModel):
 
 class Id(ContractModel):
     definition = "Id"
+
+class ImageGenerationPrepare(ContractModel):
+    definition = "ImageGenerationPrepare"
+
+class ImageGenerationPrepared(ContractModel):
+    definition = "ImageGenerationPrepared"
 
 class ItemPage(ContractModel):
     definition = "ItemPage"
@@ -174,6 +195,9 @@ class Matrix4(ContractModel):
 class MessageSubmit(ContractModel):
     definition = "MessageSubmit"
 
+class NativeAgentActivity(ContractModel):
+    definition = "NativeAgentActivity"
+
 class NullableId(ContractModel):
     definition = "NullableId"
 
@@ -194,6 +218,9 @@ class PreviewRequest(ContractModel):
 
 class PreviewSegment(ContractModel):
     definition = "PreviewSegment"
+
+class ProjectCapabilities(ContractModel):
+    definition = "ProjectCapabilities"
 
 class ProjectConfig(ContractModel):
     definition = "ProjectConfig"
@@ -224,6 +251,9 @@ class ProjectSnapshot(ContractModel):
 
 class Provenance(ContractModel):
     definition = "Provenance"
+
+class ProviderCapabilitySummary(ContractModel):
+    definition = "ProviderCapabilitySummary"
 
 class ProxyMapping(ContractModel):
     definition = "ProxyMapping"
@@ -261,8 +291,20 @@ class RequestRecord(ContractModel):
 class RequestState(ContractModel):
     definition = "RequestState"
 
+class RequestTarget(ContractModel):
+    definition = "RequestTarget"
+
 class ResumeCommand(ContractModel):
     definition = "ResumeCommand"
+
+class ResumeOperationStatus(ContractModel):
+    definition = "ResumeOperationStatus"
+
+class RetainedArtifactPage(ContractModel):
+    definition = "RetainedArtifactPage"
+
+class RetainedArtifactSummary(ContractModel):
+    definition = "RetainedArtifactSummary"
 
 class RetainedFile(ContractModel):
     definition = "RetainedFile"
@@ -330,6 +372,9 @@ class ShotFrame(ContractModel):
 class ShotPlan(ContractModel):
     definition = "ShotPlan"
 
+class ShotPlanImpact(ContractModel):
+    definition = "ShotPlanImpact"
+
 class SocketControl(ContractModel):
     definition = "SocketControl"
 
@@ -360,6 +405,9 @@ class UnityResult(ContractModel):
 class UsageEventData(ContractModel):
     definition = "UsageEventData"
 
+class ValidationIssue(ContractModel):
+    definition = "ValidationIssue"
+
 class Vector3(ContractModel):
     definition = "Vector3"
 
@@ -374,6 +422,9 @@ class VersionRef(ContractModel):
 
 class Weight(ContractModel):
     definition = "Weight"
+
+class WorkOutputSummary(ContractModel):
+    definition = "WorkOutputSummary"
 
 class WorkRecord(ContractModel):
     definition = "WorkRecord"

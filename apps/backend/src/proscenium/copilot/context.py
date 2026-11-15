@@ -16,6 +16,7 @@ from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.db.paths import project_path
 from proscenium.services import Services
+from proscenium.sources.read_only import read_authored_json
 
 
 class Contexts:
@@ -84,6 +85,7 @@ class Contexts:
         validate("ContextSnapshot", context)
         if context["project_id"] != tx.project_id:
             raise DomainError("scope_denied", 403)
+        self.request_references(tx, context)
         if context["range"] and context["range"]["end"] < context["range"]["start"]:
             raise DomainError("invalid_frame_mapping", 422)
         if context["version_id"]:
@@ -164,6 +166,48 @@ class Contexts:
             for markup in annotation["markups"]:
                 self.validate_markup(tx, markup, target)
         self.files(tx, context)
+
+    def request_references(self, tx: Transaction, context: dict[str, Any]) -> None:
+        def pinned(ref: dict[str, Any]) -> dict[str, Any]:
+            item = tx.require("items", ref["item_id"])
+            version = tx.require("versions", ref["version_id"])
+            if item["project_id"] != tx.project_id or version["project_id"] != tx.project_id:
+                raise DomainError("scope_denied", 403)
+            if version["item_id"] != ref["item_id"]:
+                raise DomainError("source_conflict", 409)
+            return version
+
+        for ref in context.get("reference_versions", []):
+            pinned(ref)
+        target = context.get("request_target")
+        if not target:
+            return
+        if target["kind"] in {"project", "new_item"}:
+            if context["item_id"] is not None or context["version_id"] is not None:
+                raise DomainError("source_conflict", 409)
+            return
+        ref = target["version"] if target["kind"] == "item" else target["storyboard_version"]
+        version = pinned(ref)
+        if version["kind"] not in {"asset", "scene", "storyboard"} or (
+            target["kind"] == "shot" and version["kind"] != "storyboard"
+        ):
+            raise DomainError("source_conflict", 409)
+        if context["version_id"] is not None and (
+            context["item_id"] != ref["item_id"] or context["version_id"] != ref["version_id"]
+        ):
+            raise DomainError("source_conflict", 409)
+        if target["kind"] == "shot":
+            # Read immutable objects only. The exact version and dependencies come from
+            # this transaction, including records not yet visible to another reader.
+            batch = {v["version_id"]: v for v in tx.all("versions")}
+            plan = read_authored_json(self.services, str(tx.project_id), version, batch=batch)
+            validate("AuthoredShotPlan", plan)
+            if plan["project_id"] != tx.project_id:
+                raise DomainError("scope_denied", 403)
+            if not any(shot["shot_id"] == target["shot_id"] for shot in plan["shots"]):
+                raise DomainError("not_found", 404)
+            if tx.require("versions", ref["version_id"]) != version:
+                raise DomainError("source_conflict", 409)
 
     @staticmethod
     def camera(camera: dict[str, Any] | None) -> None:
@@ -306,5 +350,8 @@ class Contexts:
             },
             annotations=context["annotations"],
             approved_findings=context["approved_findings"],
+            request_target=context.get("request_target"),
+            reference_versions=context.get("reference_versions", []),
+            execution_scope=context.get("execution_scope", "default"),
             attached_files=self.files(tx, context),
         )

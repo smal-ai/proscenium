@@ -8,12 +8,51 @@ from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.services import Services
+from proscenium.sources.read_only import read_authored_json
 
 JSON = dict[str, Any]
 
 
 def _identity(prefix: str, parts: list[str]) -> str:
     return prefix + hashlib.sha256(canonical(parts)).hexdigest()
+
+
+def _request_context(tx: Transaction, caller: Caller, work: JSON) -> JSON | None:
+    record: JSON | None
+    invocation = (
+        tx.get("invocations", str(caller.invocation_id), required=False)
+        if caller.invocation_id is not None
+        else None
+    )
+    if invocation is not None:
+        if invocation.get("work_id") != work["work_id"]:
+            raise DomainError("scope_denied", 403)
+        record = tx.require("requests", invocation["request_id"])
+    else:
+        record = tx.get("requests", work["originating_request_id"], required=False)
+    if record and record["project_id"] != tx.project_id:
+        raise DomainError("scope_denied", 403)
+    context_id = record["submission"].get("context_id") if record else None
+    context = tx.require("contexts", context_id) if context_id else None
+    if context and context["project_id"] != tx.project_id:
+        raise DomainError("scope_denied", 403)
+    return context
+
+
+def _pinned_version(context: JSON | None, item_id: str) -> JSON | None:
+    if not context:
+        return None
+    references = [ref for ref in context.get("reference_versions", []) if ref["item_id"] == item_id]
+    if len({ref["version_id"] for ref in references}) > 1:
+        raise DomainError("source_conflict", 409)
+    target = context.get("request_target")
+    if target and target["kind"] in {"item", "shot"}:
+        ref = target["version"] if target["kind"] == "item" else target["storyboard_version"]
+        if ref["item_id"] == item_id:
+            return ref
+    if context["item_id"] == item_id and context["version_id"]:
+        return {"item_id": item_id, "version_id": context["version_id"]}
+    return references[0] if references else None
 
 
 def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
@@ -31,6 +70,7 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
         work = tx.require("work", str(caller.work_id))
         if work["generation_task_id"] != request["generation_task_id"]:
             raise DomainError("scope_denied", 403)
+        context = _request_context(tx, caller, work)
         policy = tx.get("providers.tasks", work["generation_task_id"], required=False)
         item_id = (
             slot["item_id"]
@@ -43,22 +83,10 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
             item = tx.get("items", item_id, required=False)
             if slot is not None and item is None:
                 raise DomainError("not_found", 404)
-            context = None
             version_ref = None
             if item:
-                original = tx.get("requests", work["originating_request_id"], required=False)
-                context_id = original["submission"].get("context_id") if original else None
-                context = tx.require("contexts", context_id) if context_id else None
-                if context and context["project_id"] != request["project_id"]:
-                    raise DomainError("scope_denied", 403)
-                captured = (
-                    {"item_id": context["item_id"], "version_id": context["version_id"]}
-                    if context and context["item_id"] and context["version_id"]
-                    else None
-                )
-                if captured and captured["item_id"] == item_id:
-                    version_ref = captured
-                elif item["current_version_id"]:
+                version_ref = _pinned_version(context, item_id)
+                if version_ref is None and item["current_version_id"]:
                     version_ref = {"item_id": item_id, "version_id": item["current_version_id"]}
                 if version_ref:
                     version = tx.require("versions", version_ref["version_id"])
@@ -71,9 +99,11 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
                     version = None
             else:
                 version = None
+                target = context.get("request_target") if context else None
                 if not (
                     (policy and item_id in policy["targets"])
                     or item_id == work["generation_task_id"]
+                    or (target and target["kind"] == "new_item" and item_id == target["intent_id"])
                 ):
                     raise DomainError("scope_denied", 403, "Unstructured target must name its task")
             if item and item["project_id"] != request["project_id"]:
@@ -92,6 +122,9 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
             if slot["kind"] == "storyboard_frame"
             else slot["sequence_version"]
         )
+        pinned = _pinned_version(context, reference["item_id"])
+        if pinned is not None and pinned != reference:
+            raise DomainError("source_conflict", 409)
         item = tx.require("items", reference["item_id"])
         version = tx.require("versions", reference["version_id"])
         if (
@@ -100,10 +133,10 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
             or version["item_id"] != item["item_id"]
         ):
             raise DomainError("scope_denied", 403)
-    document = services.extension("sources").authored(request["project_id"], version)
     expected_kind = "storyboard" if slot["kind"] == "storyboard_frame" else "sequence"
     if version["kind"] != expected_kind:
         raise DomainError("scope_denied", 403)
+    document = read_authored_json(services, request["project_id"], version)
     validate("AuthoredShotPlan" if expected_kind == "storyboard" else "SequenceMap", document)
     if document["project_id"] != request["project_id"]:
         raise DomainError("scope_denied", 403)
@@ -137,7 +170,7 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
         "slot": slot,
         "item": item,
         "version_record": version,
-        "context": None,
+        "context": context,
         "document_sha256": hashlib.sha256(canonical(document)).hexdigest(),
         "work_id": work["work_id"],
     }
