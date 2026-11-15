@@ -544,3 +544,62 @@ def test_pump_waiting_resource_does_not_duplicate_events(runtime, hold):
         )
     assert runtime.provider.pump(PROJECT, job["job_id"])[0]["state"] == "succeeded"
     assert len([r for r in calls if r.url.path == "/prompt"]) == 1
+
+
+def test_prepare_canonicalises_unpublished_target_alias_onto_active_intent(runtime):
+    with runtime.store.transaction() as tx:
+        tx.put(
+            "contexts",
+            "ctx-new",
+            dict(
+                schema_version="1.0",
+                context_id="ctx-new",
+                project_id=PROJECT,
+                captured_at="2026-11-15T10:00:00Z",
+                item_id=None,
+                version_id=None,
+                view_mode="none",
+                target=None,
+                camera=None,
+                range=None,
+                selected_objects=[],
+                attachments=[],
+                annotations=[],
+                approved_findings=[],
+                request_target=dict(
+                    kind="new_item", item_kind="storyboard", intent_id="intent-board"
+                ),
+                reference_versions=[],
+                execution_scope="default",
+            ),
+            schema="ContextSnapshot",
+        )
+        tx.put(
+            "requests",
+            "request-one",
+            dict(project_id=PROJECT, submission={"context_id": "ctx-new"}),
+            expected_revision=tx.revision("requests", "request-one"),
+        )
+    first, kind1 = prepare(
+        runtime,
+        dict(
+            schema_version="1.0",
+            operation_id="prep-alias-1",
+            prompt="Opening shot",
+            seed="11",
+            target_id="unpublished-panel-alias-1",
+        ),
+    )
+    second, kind2 = prepare(
+        runtime,
+        dict(
+            schema_version="1.0",
+            operation_id="prep-alias-2",
+            prompt="Opening shot v2",
+            seed="12",
+            target_id="unpublished-panel-alias-2",
+        ),
+    )
+    assert kind1 != "failure" and kind2 != "failure"
+    assert first["submit_request"]["target_id"] == "intent-board"
+    assert second["submit_request"]["target_id"] == "intent-board"

@@ -239,10 +239,12 @@ SAFE_REASONS = frozenset(
         "Image artefact is not ready for inline inspection",
         "Inline image inspection supports ready PNG, JPEG or WebP artefacts only",
         "Image artefact exceeds inline inspection bounds",
+        "Unstructured target must name its task",
     }
 )
 ERROR_GUIDANCE = {
     "corrupt_provider_output": "The provider returned a corrupted raster image. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
+    "scope_denied": "The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on prepare_image_generation, or use an existing published item/slot.",
     "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
     "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
@@ -558,7 +560,7 @@ class Tools:
                 result = await getattr(service, method)(caller, body)
             else:
                 extension, method, schema, result_schema, _ = TOOLS[name]
-                body = validate(schema, invocation.arguments)
+                body = copy.deepcopy(validate(schema, invocation.arguments))
                 if body.get("project_id", self.project_id) != self.project_id:
                     raise DomainError("scope_denied", 403)
                 body.setdefault("project_id", self.project_id)

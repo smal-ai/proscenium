@@ -223,6 +223,21 @@ class Preparation:
                 "generation_task_id": body.get("generation_task_id") or work["generation_task_id"],
             }
             context = _request_context(tx, caller, work) or {}
+            explicit_target = body.get("target_id")
+            policy = tx.get("providers.tasks", work["generation_task_id"], required=False)
+            bound_explicit_target = bool(
+                explicit_target
+                and (
+                    tx.get("items", explicit_target, required=False) is not None
+                    or (policy and explicit_target in policy["targets"])
+                    or explicit_target == work["generation_task_id"]
+                    or (
+                        (context.get("request_target") or {}).get("kind") == "new_item"
+                        and explicit_target
+                        == (context.get("request_target") or {}).get("intent_id")
+                    )
+                )
+            )
         provider = self.provider.provider(body.get("provider_id"), "image")
         try:
             catalog = bounded_get(self.provider, provider, "/object_info")
@@ -286,12 +301,18 @@ class Preparation:
         capability.preflight(bound, catalog, model_ids)
         digest = sha(body["operation_id"].encode())[:24]
         target = context.get("request_target") or {}
-        target_id = body.get("target_id") or (
+        default_target = (
             target["intent_id"]
             if target.get("kind") == "new_item"
             else target["version"]["item_id"]
             if target.get("kind") == "item"
             else body["generation_task_id"]
+        )
+        target_id = (
+            body["target_id"]
+            if (body.get("target_slot") is not None or bound_explicit_target)
+            and body.get("target_id")
+            else default_target
         )
         request = dict(
             schema_version="1.0",
