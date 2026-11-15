@@ -1,27 +1,43 @@
-import { useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Paperclip, Square, X, MessageSquare } from "lucide-react";
-import type { ApiClient, Artifact, Attachment, Event, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand } from "../../api";
-import type { ContextPreparer, TurnSelection } from "../../api/studio";
+import { useEffect, useRef, useState } from "react";
+import { ArrowDown, Paperclip, Square, X, MessageSquare } from "lucide-react";
+import type { ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, VersionRef } from "../../api";
+import type { ComposerSeedIntent, ContextPreparer, TurnSelection } from "../../api/studio";
 import { describeError, durableCommand, id, readPrivate, writePrivate } from "../../app/storage";
 import { DecisionCard } from "./DecisionCard";
 import { ContextPreview } from "./ContextPreview";
 import { Conversation } from "./Conversation";
 import type { useRequestComposer } from "./useRequestComposer";
-import { resumableWork, resumeCommand } from "./resume";
+import { awaitResume, resumableWork, resumeCommand } from "./resume";
 import { useChatScroll } from "./useChatScroll";
 import { ComposerPanel, JobList } from "./ComposerPanel";
+import { AssistantStatus } from "./AssistantStatus";
+import { TargetPicker } from "./TargetPicker";
+import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, uniqueVersions, type DraftTarget } from "./target";
+import { canNavigateHistory, promptHistory, stepHistory, type HistoryCursor } from "./promptHistory";
+import { busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
+import { SendControl } from "./SendControl";
+import { OutputCards } from "./OutputCards";
+import { steerWorkId, stopWorkId } from "./controls";
 import "./chat.css";
 
+export { AssistantStatus } from "./AssistantStatus";
+
 interface Upload { uploadId: string; name: string; file: File; artifact: Artifact | null; busy: boolean; error: string }
-export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, onRefresh }: {
+export interface ChatPanelProps {
   api: ApiClient; projectId: string; snapshot: ProjectSnapshot | null; requests: RequestRecord[]; events: Event[]; jobs: JobRecord[]; selection: TurnSelection;
   composer: ReturnType<typeof useRequestComposer>; onRefresh: () => Promise<void>;
   prepareContext?: ContextPreparer;
-}) {
+  items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; seedIntent?: ComposerSeedIntent | null;
+  hydrated?: boolean; connection?: string; onInspectArtifact?: (artifact: Artifact) => void;
+}
+export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, onRefresh, items, retainedArtifacts = [], seedIntent, hydrated = true, connection = "Connected", onInspectArtifact }: ChatPanelProps) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [mode, setMode] = useState<"queue" | "steer">("queue");
+  const [draftTarget, setDraftTarget] = useState<DraftTarget>(() => readPrivate<DraftTarget>(`target.${projectId}`) ?? "current_view");
+  const [references, setReferences] = useState<VersionRef[]>(() => readPrivate<VersionRef[]>(`ref_versions.${projectId}`) ?? []);
+  const [includeCurrentViewAsReference, setIncludeCurrentViewAsReference] = useState(() => readPrivate<boolean>(`include_current_view_ref.${projectId}`) ?? false);
   const [targetWork, setTargetWork] = useState("");
   const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>("reconcile_only");
   const [resumeWorkId, setResumeWorkId] = useState("");
@@ -31,22 +47,62 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [preparing, setPreparing] = useState(false);
   const preparingLatch = useRef(false);
   const messageRef = useRef<HTMLTextAreaElement>(null);
-  const [composerPanel, setComposerPanel] = useState<"message" | "jobs" | "context">("message");
+  const [composerPanel, setComposerPanel] = useState<"message" | "jobs" | "context" | "agents">("message");
+  const caret = useRef({ start: 0, end: 0 });
+  const historyCursor = useRef<HistoryCursor | null>(null);
+  const seenSeeds = useRef(new Set<string>());
+  const snapshotRef = useRef(snapshot); snapshotRef.current = snapshot;
+  const agentsRef = useRef<NativeSpecialist[]>([]);
   const { scrollRef, contentRef, isFollowing, onScroll, jumpToLatest } = useChatScroll(projectId, requests, events);
   const work = snapshot?.active_work;
-  const active = work && !["completed", "failed", "stopped"].includes(work.state);
+  const canSteerWorkId = steerWorkId(snapshot);
+  const canStopWorkId = stopWorkId(snapshot);
+  const uncertainStop = requests.some(record => record.submission.type === "stop" && record.receipt.state === "outcome_uncertain") || snapshot?.execution?.hold_reason_code === "uncertain_stop";
+  const stale = connection !== "Connected" || !hydrated;
+  const agents = nativeAgents(snapshot, events, agentsRef.current);
+  agentsRef.current = agents;
+  const history = promptHistory(projectId, requests);
+  const catalogue = items ?? snapshot?.items ?? [];
+  const renderedOutputIds = new Set(events.filter(event => event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")).flatMap(event => (event.payload as unknown as { artifact_ids: string[] }).artifact_ids ?? []));
+  for (const summary of retainedArtifacts) {
+    if (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id)))) renderedOutputIds.add(summary.artifact.artifact_id);
+  }
   const resumable = resumableWork(snapshot, events);
   const chosenResumeWork = resumeWorkId
     ? resumable.find(record => record.work_id === resumeWorkId)
     : resumable.find(record => record.work_id === work?.work_id) ?? (resumable.length === 1 ? resumable[0] : undefined);
-  const currentSelection = { ...selection, attachments: [...selection.attachments, ...attachments] };
+  const resolvedTarget = resolveTarget(draftTarget, selection);
+  const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
+  const currentSelection: TurnSelection = draftTarget === "current_view" && (selection.version_id || selection.annotations.length) ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] } : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
   function changeDraft(value: string) { setDraft(value); writePrivate(`draft.${projectId}`, value); }
+  function changeTarget(target: DraftTarget) { setDraftTarget(target); writePrivate(`target.${projectId}`, target); }
+  function changeReferences(versions: VersionRef[]) { setReferences(versions); writePrivate(`ref_versions.${projectId}`, versions); }
+  function changeIncludeView(include: boolean) { setIncludeCurrentViewAsReference(include); writePrivate(`include_current_view_ref.${projectId}`, include); }
+  function focusMessage() {
+    requestAnimationFrame(() => { const input = messageRef.current; if (input) { input.focus(); input.setSelectionRange(caret.current.start, caret.current.end); } });
+  }
+  function starter(kind: "asset" | "scene" | "storyboard") {
+    changeTarget({ kind: "new_item", item_kind: kind, intent_id: id() });
+    if (!draft.trim()) {
+      const text = kind === "storyboard" ? "Plan a storyboard for " : kind === "asset" ? "Create an asset: " : "Build a scene: ";
+      changeDraft(text); caret.current = { start: text.length, end: text.length };
+    }
+    setComposerPanel("message"); focusMessage();
+  }
+  useEffect(() => {
+    if (!seedIntent || seenSeeds.current.has(seedIntent.nonce)) return;
+    seenSeeds.current.add(seedIntent.nonce);
+    changeTarget(structuredClone(seedIntent.target));
+    if (!draft.trim() && seedIntent.templateText) { changeDraft(seedIntent.templateText); caret.current = { start: seedIntent.templateText.length, end: seedIntent.templateText.length }; }
+    setComposerPanel("message"); focusMessage();
+  }, [seedIntent, projectId]);
   function changeAttachments(value: Attachment[]) { setAttachments(value); writePrivate(`attachments.${projectId}`, value); }
   function closePanel() {
     setComposerPanel("message");
-    requestAnimationFrame(() => messageRef.current?.focus());
+    focusMessage();
   }
-  function togglePanel(panel: "jobs" | "context") {
+  function togglePanel(panel: "jobs" | "context" | "agents") {
+    if (messageRef.current) caret.current = { start: messageRef.current.selectionStart, end: messageRef.current.selectionEnd };
     if (composerPanel === panel) closePanel();
     else setComposerPanel(panel);
   }
@@ -60,15 +116,22 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     } catch (e) { setUploads(old => old.map(u => u.uploadId === value.uploadId ? { ...u, busy: false, error: describeError(e) } : u)); }
   }
   async function send() {
-    if (preparingLatch.current || composer.busy || composer.pending || uploads.length) return;
+    if (preparingLatch.current || composer.busy || composer.pending || uploads.length || !draft.trim()) return;
+    if (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId)) { setError("Steer is unavailable for this work. Switch to Queue deliberately to send a new request."); return; }
     preparingLatch.current = true; setPreparing(true); setError("");
     const text = draft;
+    const submittedMode = mode;
+    const submittedWorkId = targetWork;
+    const submittedTargetMode = draftTarget;
+    const capturedSelection = structuredClone(selection);
+    const capturedReferences = structuredClone(effectiveReferences);
+    const profileId = snapshot?.settings.default_profile_id ?? null;
     const capturedAttachments = structuredClone(attachments);
     const submittedIds = new Set(capturedAttachments.map(a => a.artifact_id));
     try {
-      const captured = prepareContext ? await prepareContext() : structuredClone(selection);
-      const context = { ...captured, attachments: [...captured.attachments, ...capturedAttachments] };
-      const ok = await composer.submit(text, context, mode, mode === "steer" ? targetWork : null, snapshot?.settings.default_profile_id ?? null);
+      const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments }, prepareContext);
+      if (submittedMode === "steer" && steerWorkId(snapshotRef.current) !== submittedWorkId) throw new Error("Work is no longer steerable. Your Steer mode and draft are retained. Switch to Queue deliberately.");
+      const ok = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId);
       if (ok) {
         if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
         setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
@@ -81,38 +144,58 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     setResuming(true); setError("");
     try {
       const body = original ?? resumeCommand(snapshot, events, resumeMode, chosenResumeWork?.work_id ?? "", id());
-      await durableCommand<ResumeCommand, unknown>(`resume.${projectId}`, () => body, command => api.call("resumeProjectWork", { path: { project_id: projectId }, body: command, idempotencyKey: command.operation_id }));
+      setPendingResume(body);
+      await durableCommand<ResumeCommand, unknown>(`resume.${projectId}`, () => body, async command => {
+        await api.call("resumeProjectWork", { path: { project_id: projectId }, body: command, idempotencyKey: command.operation_id });
+        const result = await awaitResume(api, projectId, command.operation_id);
+        if (result?.state === "outcome_uncertain") setError(`Resume needs recovery${result.detail_code ? ` · ${result.detail_code}` : ""}. Use Reconcile only before continuing original work.`);
+        return result;
+      });
       setPendingResume(null);
       await onRefresh();
-    } catch (e) { setError(describeError(e)); }
+    } catch (e) { setError(describeError(e)); await onRefresh(); }
     finally { setPendingResume(readPrivate(`command.resume.${projectId}`)); setResuming(false); }
   }
   return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
-    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div></div>
+    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div><AssistantStatus snapshot={snapshot} requests={requests} events={events} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} /></div>
+    {snapshot?.execution?.work_outputs.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => <section className="publication-status" key={output.work_id} role="status"><strong>{output.status === "publication_blocked" ? "Finished · publication blocked" : "Outputs retained · not published"}</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p><OutputCards api={api} projectId={projectId} artifactIds={output.artifact_ids.filter(id => !renderedOutputIds.has(id))} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></section>)}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
     {snapshot?.pending_decisions.map(decision => <DecisionCard key={`${decision.decision_id}.${decision.state_revision}`} api={api} decision={decision} onRefresh={onRefresh} />)}
-    {(snapshot?.project.state === "awaiting_resume" || requests.some(r => r.receipt.state === "held") || (work && ["stopped", "awaiting_resume", "outcome_uncertain"].includes(work.state))) && <section className="resume-card"><h3>Continue deliberately</h3><p>Held requests stay held until explicitly released. Reconcile inspects known outcomes without sending a new prompt.</p><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work">Continue original work</option><option value="release_held_queue">Release held queue</option></select>{resumeMode === "continue_work" && <label>Original work<select aria-label="Original work to continue" value={chosenResumeWork?.work_id ?? ""} disabled={resuming || !!pendingResume} onChange={event => setResumeWorkId(event.target.value)}><option value="">Select original work</option>{resumable.map(record => <option key={record.work_id} value={record.work_id}>{record.work_id} · {record.state}</option>)}</select></label>}<button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork)} onClick={() => void resume()}>Resume</button></section>}
+    {(uncertainStop || snapshot?.execution?.fenced || snapshot?.project.state === "awaiting_resume" || requests.some(r => r.receipt.state === "held") || (work && ["stopped", "awaiting_resume", "outcome_uncertain"].includes(work.state))) && <section className="resume-card"><h3>Continue deliberately</h3><p>Held requests stay held until explicitly released. Reconcile inspects known outcomes without sending a new prompt.</p><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work">Continue original work</option><option value="release_held_queue">Release held queue</option></select>{resumeMode === "continue_work" && <label>Original work<select aria-label="Original work to continue" value={chosenResumeWork?.work_id ?? ""} disabled={resuming || !!pendingResume} onChange={event => setResumeWorkId(event.target.value)}><option value="">Select original work</option>{resumable.map(record => <option key={record.work_id} value={record.work_id}>{record.work_id} · {record.state}</option>)}</select></label>}<button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork)} onClick={() => void resume()}>Resume</button></section>}
     {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}
-    <Conversation api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} />
+    <Conversation api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
   </div></div>
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="composer">
       {(composer.error || error) && <p role="alert">{composer.error || error}</p>}
       {composer.pending && <div className="retry-card"><strong>Request awaiting confirmation</strong><code>{composer.pending.submission.request_id}</code><p>Its original text and context are frozen. Your draft is retained.</p><button disabled={composer.busy} onClick={() => void composer.retry(false)}>Reconcile original request / retry same ID</button></div>}
-      {composer.pendingStop && <div className="retry-card"><strong>Stop awaiting confirmation</strong><button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop</button></div>}
+      {composer.pendingStop && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
+      {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
+      {mode === "queue" && (snapshot?.execution?.hold_reason || snapshot?.execution?.fenced || snapshot?.project.state === "awaiting_resume") && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
+      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} />
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
-      {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => changeDraft(e.target.value)} placeholder="Describe the next iteration…" onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); if (!uploads.length && !composer.pending) void send(); } }} /></>}
+      {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
+        if (e.nativeEvent.isComposing) return;
+        if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || ((e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) && ["ArrowUp", "ArrowDown"].includes(e.key))) historyCursor.current = null;
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); void send(); return; }
+        if (canNavigateHistory({ key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, shiftKey: e.shiftKey, isComposing: e.nativeEvent.isComposing }, draft, e.currentTarget.selectionStart, e.currentTarget.selectionEnd, historyCursor.current)) {
+          const next = stepHistory(history, historyCursor.current, draft, e.key === "ArrowUp" ? "older" : "newer");
+          if (next.text !== draft || next.cursor) { e.preventDefault(); historyCursor.current = next.cursor; changeDraft(next.text); caret.current = { start: next.text.length, end: next.text.length }; focusMessage(); }
+        }
+      }} /></>}
       {composerPanel === "jobs" && <ComposerPanel panelId="composer-jobs" title="Independent jobs" onClose={closePanel}><JobList api={api} projectId={projectId} jobs={jobs} onRefresh={onRefresh} onError={e => setError(describeError(e))} /></ComposerPanel>}
       {composerPanel === "context" && <ComposerPanel panelId="composer-context" title="Next request context" onClose={closePanel}>
         <ContextPreview projectId={projectId} selection={currentSelection} />
+        {references.map(ref => <div className="reference-version" key={`${ref.item_id}:${ref.version_id}`}><code>{ref.item_id} · {ref.version_id}</code><button aria-label={`Remove reference version ${ref.version_id}`} onClick={() => changeReferences(references.filter(value => value.item_id !== ref.item_id || value.version_id !== ref.version_id))}>Remove reference</button></div>)}
         {attachments.map((a, i) => <div className="attachment-controls" key={`${a.artifact_id}.${i}`}><select aria-label={`Image ${i + 1} role`} value={a.role} onChange={e => changeAttachments(attachments.map((x, j) => i === j ? { ...x, role: e.target.value as Attachment["role"] } : x))}>{["reference", "concept", "render", "markup", "mask"].map(role => <option key={role}>{role}</option>)}</select><button aria-label={`Remove image ${i + 1}`} onClick={() => changeAttachments(attachments.filter((_, j) => i !== j))}><X size={13} /></button></div>)}
       </ComposerPanel>}
-      <nav className="composer-links" aria-label="Composer panels"><button aria-controls="composer-jobs" aria-expanded={composerPanel === "jobs"} onClick={() => togglePanel("jobs")}>Jobs{jobs.length > 0 && <span>{jobs.length}</span>}</button><button aria-controls="composer-context" aria-expanded={composerPanel === "context"} onClick={() => togglePanel("context")}>Context{currentSelection.attachments.length > 0 && <span>{currentSelection.attachments.length}</span>}</button></nav>
-      {mode === "steer" && <label className="steer-target">Active work target<select aria-label="Steer active work target" value={targetWork} onChange={e => setTargetWork(e.target.value)}><option value="">Select active work explicitly</option>{active && <option value={work.work_id}>{work.work_id} · {work.state}</option>}</select><small>Steer corrects active work. It does not undo completed actions.</small></label>}
+      {composerPanel === "agents" && <ComposerPanel panelId="composer-agents" title="Native specialists" onClose={closePanel}>{agents.map(agent => <div className="native-agent-row" key={agent.activity_key}><strong>{agent.display_name || agent.name}</strong><small>{agent.state.replaceAll("_", " ")} · {agent.state === "outcome_uncertain" ? "uncertain" : stale ? "last known" : agent.freshness.replaceAll("_", " ")}</small><small>Model: {agent.model_id ?? "not reported"}</small></div>)}{!agents.length && <small>{stale ? "Native specialist activity is not confirmed while reconnecting." : "No native specialists reported."}</small>}</ComposerPanel>}
+      <nav className="composer-links" aria-label="Composer panels">{([{ panel: "jobs", label: "Jobs", count: jobs.filter(job => !["succeeded", "failed", "cancelled"].includes(job.state)).length, uncertain: jobs.some(job => job.state === "outcome_uncertain") }, { panel: "context", label: "Context", count: contextCount(currentSelection), uncertain: preparing }, { panel: "agents", label: "Agents", count: agents.filter(busyAgent).length, uncertain: agents.some(agent => busyAgent(agent) && agent.freshness !== "live") }] as const).map(link => <button key={link.panel} aria-controls={`composer-${link.panel}`} aria-expanded={composerPanel === link.panel} onClick={() => togglePanel(link.panel)}>{link.label}<span className={`composer-count${link.count === 0 ? " empty" : ""}`} aria-label={`${link.count}${stale || link.uncertain ? " last known or uncertain" : ""}`}>{link.count}{stale || link.uncertain ? "?" : ""}</span>{link.panel === "context" && uploads.some(upload => upload.busy) && <small>+{uploads.filter(upload => upload.busy).length} uploading</small>}</button>)}</nav>
+      {mode === "steer" && <label className="steer-target">Active work target<select aria-label="Steer active work target" value={targetWork} onChange={e => setTargetWork(e.target.value)}><option value="">Select active work explicitly</option>{canSteerWorkId && <option value={canSteerWorkId}>{canSteerWorkId} · {work?.state}</option>}{targetWork && targetWork !== canSteerWorkId && <option value={targetWork}>{targetWork} · unavailable</option>}</select><small>Steer corrects active work. It does not undo completed actions.</small></label>}
+      {mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId) && <div className="steer-unavailable" role="status"><p>{!canSteerWorkId ? `Steer is unavailable because work is ${work?.state.replaceAll("_", " ") ?? "not active"}${snapshot?.execution?.fenced ? " or execution is paused" : ""}. Your draft and mode are retained.` : "Select the eligible work explicitly before sending Steer."}</p><button onClick={() => setMode("queue")}>Switch to Queue</button></div>}
       <div className="composer-actions"><label className="attach-button" title="Attach PNG, JPEG or WebP"><Paperclip size={15} /><span className="sr-only">Attach images</span><input aria-label="Attach images" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e => { const next = [...(e.target.files ?? [])].map(file => ({ uploadId: id(), name: file.name, file, artifact: null, busy: true, error: "" })); setUploads(old => [...old, ...next]); next.forEach(u => void upload(u)); e.target.value = ""; }} /></label>
-        <select aria-label="Request mode" value={mode} onChange={e => { setMode(e.target.value as "queue" | "steer"); setTargetWork(""); }}><option value="queue">Queue</option><option value="steer">Steer</option></select>
-        <button className="stop" disabled={!active || composer.stopping || !!composer.pendingStop || work?.state === "stop_requested"} onClick={() => work && void composer.stop(work.work_id)}><Square size={11} fill="currentColor" />{composer.stopping || work?.state === "stop_requested" ? "Stop requested" : "Stop"}</button>
-        <button className="primary send" aria-label={mode === "queue" ? "Queue message" : "Steer active work"} disabled={!draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || (mode === "steer" && (!active || targetWork !== work.work_id))} onClick={() => void send()}><ArrowUp size={16} /></button>
+        <button className="stop" disabled={!canStopWorkId || uncertainStop || composer.stopping || !!composer.pendingStop || work?.state === "stop_requested"} onClick={() => { if (canStopWorkId && stopWorkId(snapshotRef.current) === canStopWorkId) void composer.stop(canStopWorkId); }}><Square size={11} fill="currentColor" />{composer.stopping || work?.state === "stop_requested" ? "Stop requested" : "Stop"}</button>
+        <SendControl mode={mode} onMode={setMode} disabled={composerPanel !== "message" || !draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId))} onSend={() => void send()} />
       </div><small className="composer-hint">Ctrl+Enter to {mode} · Context is captured on submit</small>
     </div>
   </div>;

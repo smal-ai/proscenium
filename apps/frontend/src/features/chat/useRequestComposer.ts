@@ -34,7 +34,10 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
           if (!(e instanceof ApiError) || e.status !== 404 || command.acknowledged) throw e;
         }
       }
-      if (command.context) await api.call("captureContext", { path: { project_id: projectId }, body: command.context, idempotencyKey: command.context.context_id });
+      if (command.context) {
+        await api.call("captureContext", { path: { project_id: projectId }, body: command.context, idempotencyKey: command.context.context_id });
+        writePrivate(`context.${projectId}.${command.context.context_id}`, command.context);
+      }
       await api.call("submitRequest", { path: { project_id: projectId }, body: command.submission, idempotencyKey: command.submission.request_id });
       command = { ...command, acknowledged: true }; persist(command, stop);
       const record = await api.call("getRequest", { path });
