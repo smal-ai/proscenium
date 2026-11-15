@@ -1,0 +1,20 @@
+# TEMPLATE ONLY. Replace @CHECKOUT@ and @CONFIG_FILE@ with reviewed absolute paths.
+# No automatic pairing output, execution Resume, model-service or editor lifecycle.
+[Unit]
+Description=Proscenium private host-native studio
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=@CHECKOUT@
+Environment=PYTHONUNBUFFERED=1
+UMask=0077
+ExecStart=@CHECKOUT@/.venv/bin/python -m proscenium --config @CONFIG_FILE@ --frontend-dir @CHECKOUT@/apps/frontend/dist
+Restart=no
+KillMode=process
+TimeoutStopSec=30
+# Child/native ownership is managed by the composed adapter, not group-wide killing.
+# No unmeasured MemoryMax is imposed. No privileges/sandbox that break native tools.
+
+[Install]
+WantedBy=default.target

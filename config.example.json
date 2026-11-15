@@ -1,0 +1,37 @@
+{
+  "data_directory": "${HOME}/.local/share/proscenium",
+  "origin": "http://127.0.0.1:8765",
+  "frontend_directory": "${APP_ROOT}/apps/frontend/dist",
+  "generation_attempt_limit": 3,
+  "free_space_reserve_bytes": 5368709120,
+  "execution_profiles": ["blender-cpu", "unity-local"],
+  "profiles": [{"profile_id": "authoring", "name": "Project authoring", "lead_model_id": "gpt-6.1-sol", "worker_model_ids": ["gpt-6.1-sol"], "scope_status": "project_scoped"}],
+  "runtime": {
+    "cli_path": "${APP_ROOT}/node_modules/@github/copilot-linux-x64/copilot",
+    "lead_model": "gpt-6.1-sol",
+    "worker_model": "gpt-6.1-sol",
+    "unity_worker_model": "gpt-6.1-sol",
+    "unity_editor": "/absolute/path/to/Unity",
+    "worker_tools": ["view", "bash", "checkpoint_sources", "publish_outputs", "request_preview", "register_artifact", "submit_generation", "request_vlm_review", "admit_job", "retry_job", "update_job_state", "get_job", "get_artifact", "get_version", "list_job_frames", "list_items", "assemble_sequence", "run_unity_workflow", "get_unity_result"],
+    "profile_id": "authoring",
+    "skill_directories": ["${APP_ROOT}/agent/skills"],
+    "max_continues": 5,
+    "mcp_servers": {}
+  },
+  "rendering": {
+    "blender": "blender",
+    "ffmpeg": "ffmpeg",
+    "ffprobe": "ffprobe",
+    "build_hash": "62c1db4208e8",
+    "profile_id": "blender-cpu",
+    "threads": 4,
+    "timeout": 300,
+    "encode_timeout": 60,
+    "claim_path": "${HOME}/.cache/proscenium/native-claims/blender-render.lock"
+  },
+  "services": [
+    {"provider_id": "local-comfy", "endpoint": "http://127.0.0.1:8188", "capabilities": ["image"], "model_id": null, "available": null},
+    {"provider_id": "local-vlm", "endpoint": "http://127.0.0.1:1234", "capabilities": ["vlm"], "model_id": null, "available": null}
+  ],
+  "provider_options": {"review_provider_id": "local-vlm", "minimum_free_vram_bytes": 268435456, "vlm_max_tokens": 512}
+}

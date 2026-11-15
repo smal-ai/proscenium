@@ -1,0 +1,30 @@
+.sb-browser { box-sizing: border-box; display: flex; flex-direction: column; width: 100%; min-width: 0; height: 100%; min-height: 0; overflow: hidden; background: #17191d; color: #e4e6eb; font: 13px/1.5 Inter, system-ui, sans-serif; }
+.sb-browser * { box-sizing: border-box; }
+.sb-browser p { margin: 6px 0; overflow-wrap: anywhere; }
+.sb-browser h2 { font-size: 15px; margin: 0; }
+.sb-browser h3 { font-size: 13px; margin: 8px 0; }
+.sb-browser button, .sb-browser input, .sb-browser select, .sb-browser textarea { font: inherit; color: inherit; border: 1px solid #444951; border-radius: 4px; background: #23262c; padding: 5px 7px; min-width: 0; }
+.sb-browser button { cursor: pointer; }
+.sb-browser button:disabled { cursor: default; opacity: .5; }
+.sb-browser :focus-visible { outline: 2px solid #aebeff; outline-offset: 2px; }
+.sb-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #363a42; }
+.sb-label { display: flex; flex-direction: column; gap: 4px; margin: 8px 12px; }
+.sb-label select, .sb-label input, .sb-label textarea { width: 100%; }
+.sb-label textarea { min-height: 64px; resize: vertical; }
+.sb-browser > .sb-meta, .sb-browser > p, .sb-browser > .sb-error, .sb-browser > .sb-notice { margin: 6px 12px; }
+.sb-meta { font-size: 12px; color: #bac0cc; overflow-wrap: anywhere; }
+.sb-scroll { overflow: auto; overscroll-behaviour: contain; flex: 1; min-height: 90px; padding: 0 12px 12px; scrollbar-gutter: stable; }
+.sb-browser summary { cursor: pointer; color: #cbd4ea; }
+.sb-browser ul { padding-left: 18px; }
+.sb-shots, .sb-frames { padding: 0; margin: 0; list-style: none; }
+.sb-shot { border-top: 1px solid #363a42; padding: 8px 0; }
+.sb-frames { display: grid; gap: 10px; }
+.sb-frame { display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left; }
+.sb-frame[aria-pressed="true"] { border-color: #b7c8ff; background: #2a3244; }
+.sb-frame img { display: block; width: 100%; max-height: 140px; object-fit: contain; background: #111317; }
+.sb-placeholder { display: grid; place-items: center; min-height: 70px; color: #c0c5d0; background: #111317; border: 1px dashed #626976; }
+.sb-actions { max-height: 43%; overflow: auto; flex-shrink: 0; border-top: 1px solid #444951; padding: 10px 12px; background: #1d2026; }
+.sb-actions .sb-label { margin: 8px 0; }
+.sb-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sb-error { color: #ffc0ba; overflow-wrap: anywhere; }
+.sb-notice { color: #ead9a2; overflow-wrap: anywhere; }

@@ -1,58 +1,46 @@
 # Proscenium
 
-A personal, desktop-browser studio for directing AI-authored Blender assets, scenes, storyboards and silent cinematics, with playable Unity scenes as a downstream output.
+An AI-powered desktop studio for creating 3D assets, storyboards, silent cinematics and playable Unity scenes through conversation and visual feedback.
 
-**Status: planning baseline.** The V1 requirements, architecture and 14 journey-led milestones are documented. Application implementation has not started, and there is no runnable studio or installation procedure yet.
+## Run locally
 
-## Start here
+Use Linux x86-64, Python 3.12, [uv](https://docs.astral.sh/uv/), Node.js 22.12 or newer, npm, Make, Git and Git LFS.
 
-| Document | Purpose |
-| --- | --- |
-| [Requirements](docs/requirements.md) | Agreed V1 scope, ownership boundaries, functional requirements and exclusions. |
-| [Architecture](docs/architecture.md) | Components, integration contracts, source versions, progressive review, persistence and reusable tooling. |
-| [User journeys and milestones](docs/user-journeys.md) | Complete implementation plan, dependencies, acceptance criteria and failure/recovery checks. |
+```bash
+git clone --single-branch --branch main https://github.com/smal-ai/proscenium.git
+cd proscenium
+make bootstrap
+install -d -m 700 "$HOME/.config/proscenium"
+cp -n config.example.json "$HOME/.config/proscenium/config.json"
+chmod 600 "$HOME/.config/proscenium/config.json"
+```
 
-## Planned V1 experience
+Configure the installed native tools, Copilot models and independent services in that private JSON file, then start:
 
-- One user, multiple saved projects and one active project at a time.
-- A persistent project-wide Copilot discussion, with selected items, versions, images and annotations captured for each message. Send queues work, while Steer corrects the current turn.
-- A single central viewer toggled between **3D Inspection**, rendered **Keyframes** and rendered **Animation**. Completed frames and playable ranges become reviewable before an animation finishes rendering.
-- Story planning, reference research, local/online asset discovery and ComfyUI-generated concept images.
-- Requested local VLM critique, with user-approved findings and relevant images returned to Copilot.
-- Silent cinematic assembly and a native Unity specialist producing playable scenes with basic movement, camera control and collision. Playtesting stays in Unity.
-- Canonical source filenames with Git/Git LFS history and pinned asset dependencies.
-- Browser disconnections leave work running. Backend/workstation restarts require explicit Resume.
+```bash
+make run CONFIG="$HOME/.config/proscenium/config.json" ARGS=--pair
+```
 
-Image-to-3D is planned but **not yet proven** on the target workstation. It has an early feasibility proof and a dedicated implementation milestone.
+Open the private pairing URL printed in the terminal. The studio serves its UI, API, WebSocket and media at **http://127.0.0.1:8765**. Use one backend process and a desktop Chromium, Brave or Edge browser.
 
-## Architecture boundary
+[Operator guide](docs/operator.md) · [Runtime specification](docs/specification.md) · [Owner policy](docs/owner-policy.md)
 
-**Copilot and its tools own Blender/Unity authoring. Proscenium owns the interaction, published-output catalogue and review presentation.**
+## Included capabilities
 
-The planned application uses:
+- Persistent project discussion with immutable message context, Queue, Steer, Stop and explicit Resume.
+- Blender authoring, static 3D inspection, rendered keyframes and progressive animation review.
+- Reference research, storyboards, ComfyUI image generation and actual image-to-3D mesh generation.
+- Requested VLM critique with owner-approved feedback, silent cinematic assembly and playable Unity scenes.
+- Git/Git LFS source versions, pinned dependencies, local backup/restore and SSH access.
 
-| Component | Role |
-| --- | --- |
-| React, TypeScript and Vite | Desktop workspace using the mockup's Linear Minimal styling. |
-| Three.js / React Three Fiber | Static 3D proxy inspection and object selection. |
-| FastAPI and SQLite | Project/session association, UI context, public events, publications, preview jobs and saved feedback. |
-| GitHub Copilot Python SDK | Cloud frontier lead, native subagents and configured CLI/MCP tools. |
-| Blender MCP and CLI tools | Scene authoring, export and isolated rendering of completed, version-pinned sources. |
-| Independent LM Studio / ComfyUI services | Configurable local VLM inference and generation workflows. |
-| Unity CLI and Editor APIs | Import, scene setup, player controls and validation through a Copilot specialist. |
+Copilot access and the native/model tools are workstation prerequisites. ComfyUI and LM Studio run independently. Saved outputs remain reviewable when those services are unavailable.
 
-V1 runs **host-native on one workstation**, with remote browser access through SSH. The UI targets a **1920 × 1080 desktop viewport**. Mobile layouts, multi-user collaboration, public hosting and distributed execution are outside V1.
+## Development
 
-The project consolidates lessons from `smal-ai-blender`, `smal-ai-game` and `smal`. Their reusable components and required adaptations are recorded in the [reference implementation inventory](docs/architecture.md#15-reference-implementation-inventory). They are research sources, not intended runtime dependencies.
+```bash
+make check
+```
 
-## First implementation milestone
+This checks formatting, lint, types, generated contracts, the frontend build and isolated local-runtime smoke tests. It makes no model requests or native authoring runs. Use a topic branch and a pull request for changes to protected `main`.
 
-[M01: First Blender authoring loop](docs/user-journeys.md#m01-first-blender-authoring-loop) delivers:
-
-**Prompt → Copilot/Blender → Git checkpoint → published render → annotation → follow-up.**
-
-Start by proving Copilot SDK compatibility and the minimal source/publication/context contracts, then demonstrate that loop with the existing Blender tooling. The remaining milestones build out the full V1 experience.
-
-## Local configuration
-
-`.env`, `.envrc` and `.direnv/` remain local and ignored by Git. Do not commit credentials or copy secret configuration from the reference projects. Installation and run commands will be documented when the first working application is available.
+`main` is a selective runtime import of [`6b714c0`](https://github.com/smal-ai/proscenium/commit/6b714c0dd574abe3995cf7020b988190336cefdf). The original [milestone history and release evidence](https://github.com/smal-ai/proscenium/tree/impl/studio/docs/evidence/release) remain on `impl/studio`. The application source, packaged schemas and native tools retain that implementation's bytes.

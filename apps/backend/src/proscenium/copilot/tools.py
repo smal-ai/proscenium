@@ -1,0 +1,463 @@
+"""Model tools call accepted host services with persisted native invocation authority."""
+
+from __future__ import annotations
+
+import copy
+import inspect
+from typing import Any
+
+from copilot.tools import Tool, ToolInvocation, ToolResult
+
+from proscenium.api.errors import DomainError
+from proscenium.auth import Caller
+from proscenium.contracts import SCHEMA, canonical, validate
+from proscenium.services import Services
+
+from .state import State, key
+from .workflows import WORKFLOW_TOOLS
+from .workflows import arguments as workflow_arguments
+from .workflows import parameters as workflow_parameters
+
+# Extension, method, normative input, normative result, capability operation.
+TOOLS = {
+    "checkpoint_sources": (
+        "sources",
+        "checkpoint",
+        "CheckpointRequest",
+        "CheckpointReceipt",
+        "checkpoint_sources",
+    ),
+    "publish_outputs": (
+        "catalogue",
+        "publish",
+        "PublicationSubmit",
+        "PublicationReceipt",
+        "publishOutputs",
+    ),
+    "request_preview": ("previews", "request", "PreviewRequest", "JobRecord", "requestPreview"),
+    "register_artifact": (
+        "artifacts",
+        "register",
+        "ArtifactRegister",
+        "Artifact",
+        "registerToolArtifact",
+    ),
+    "submit_generation": (
+        "generation",
+        "submit",
+        "GenerationSubmit",
+        "JobRecord",
+        "submitGenerationJob",
+    ),
+    "request_vlm_review": ("vlm", "request", "ReviewRequest", "ReviewTicket", "requestToolReview"),
+    "admit_job": ("jobs", "admit", "JobAdmission", "JobRecord", "admitToolJob"),
+    "retry_job": ("jobs", "retry", "JobRetry", "JobRecord", "retryToolJob"),
+    "update_job_state": ("jobs", "update", "JobStateUpdate", "JobRecord", "updateJobState"),
+}
+
+# Native argument wrappers around existing reads, not additional public wire DTOs.
+READ_TOOLS = {
+    "get_job": ("job_id", "JobRecord", "Read an existing job without starting or retrying it."),
+    "get_artifact": (
+        "artifact_id",
+        "Artifact",
+        "Read registered artefact metadata by ID. Inspect only ready bytes at the documented SHA-256 managed path.",
+    ),
+    "get_version": (
+        "version_id",
+        "VersionRecord",
+        "Read an exact published version, pinned source closure and registered output associations. Never infer the latest working source.",
+    ),
+    "list_job_frames": (
+        "job_id",
+        "FramePage",
+        "Page verified frame receipts for the exact job/input identity in numeric source-frame order. Does not launch rendering.",
+    ),
+}
+DISCOVERY_READS = {
+    "list_items": (
+        "",
+        "ItemPage",
+        "Discover published catalogue items by name, description, tags or recorded provenance. Optional text query, scoped cursor and limit. Read-only; no vector search or source changes.",
+    ),
+}
+
+
+def read_parameters(name: str) -> dict[str, Any]:
+    if name == "list_items":
+        return dict(
+            type="object",
+            properties=dict(
+                query={"type": "string", "maxLength": 512},
+                cursor={"type": ["string", "null"]},
+                limit={"type": "integer", "minimum": 1, "maximum": 100, "default": 50},
+            ),
+            additionalProperties=False,
+        )
+    identity, _, _ = READ_TOOLS[name]
+    assert identity is not None
+    properties = {identity: copy.deepcopy(SCHEMA["$defs"]["Id"])}
+    if name == "list_job_frames":
+        properties.update(
+            cursor={"type": ["string", "null"]},
+            limit={"type": "integer", "minimum": 1, "maximum": 100, "default": 50},
+        )
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": [identity],
+        "additionalProperties": False,
+    }
+
+
+def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
+    if name == "list_items":
+        if not isinstance(arguments, dict) or set(arguments) - {"query", "cursor", "limit"}:
+            raise DomainError("invalid_request")
+        if not isinstance(arguments.get("query", ""), str) or len(arguments.get("query", "")) > 512:
+            raise DomainError("invalid_request")
+        if (
+            type(arguments.get("limit", 50)) is not int
+            or not 1 <= arguments.get("limit", 50) <= 100
+        ):
+            raise DomainError("invalid_request")
+        if arguments.get("cursor") is not None and not isinstance(arguments["cursor"], str):
+            raise DomainError("invalid_cursor")
+        return arguments
+    identity, _, _ = READ_TOOLS[name]
+    assert identity is not None
+    allowed = {identity, "cursor", "limit"} if name == "list_job_frames" else {identity}
+    if not isinstance(arguments, dict) or identity not in arguments or set(arguments) - allowed:
+        raise DomainError("invalid_request")
+    validate("Id", arguments[identity])
+    if name == "list_job_frames":
+        limit = arguments.get("limit", 50)
+        cursor = arguments.get("cursor")
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise DomainError("invalid_request")
+        if cursor is not None and not isinstance(cursor, str):
+            raise DomainError("invalid_cursor")
+    return arguments
+
+
+# Only fixed application-authored reasons cross this boundary. DomainError messages
+# can otherwise contain paths, provider bodies or an upstream exception repr.
+SAFE_REASONS = frozenset(
+    {
+        "This installed profile is Cycles CPU. No GPU fallback is permitted",
+        "Render exceeds configured profile bounds",
+        "Rendering profile is not enabled",
+        "Execution profile is not configured",
+        "A proxy is a single static sample",
+        "Extra outputs are not configured",
+        "Original rendering configuration is unavailable",
+        "Original launch must be reconciled",
+        "Binary authoring files require Git LFS tracking",
+        "Invalid Git LFS pointer",
+        "Local Git LFS object missing",
+        "Authored version references must be pinned in the source closure",
+        "Dependency cycle",
+        "Displayed image identity mismatch",
+        "No exact frame receipt",
+        "Spatial mapping mismatch",
+    }
+)
+ERROR_GUIDANCE = {
+    "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
+    "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
+    "hash_mismatch": "Registered bytes or the source digest do not match. Reconcile the original source/artefact identity; do not reuse this operation ID with changed input.",
+    "dependency_missing": "A pinned source dependency is missing. Check the published source closure and dependency versions.",
+    "idempotency_conflict": "This operation ID already binds different input or invocation authority. Inspect its original receipt; do not blindly repeat the effect.",
+    "revision_conflict": "The record revision changed. Read the current record before submitting a corrected command.",
+    "project_busy": "Execution is held or the project is unsettled. Reconcile the existing work and wait for explicit owner Resume.",
+    "attribution_unavailable": "The native invocation cannot be joined safely. Retain the original work and reconcile; do not invent caller IDs.",
+    "permission_denied": "This invocation is not authorised for a new effect. Respect the owner decision and active-project scope.",
+    "invalid_request": "The request does not match the operation's contract or supported input. Correct the existing input rather than blindly retrying.",
+    "not_found": "No record exists under that ID in the active project. Check the immutable selection and original receipt.",
+    "invalid_cursor": "This cursor is invalid for the selected project/job or was altered. Restart the read without a cursor.",
+}
+
+
+def tool_failure(error: DomainError, name: str) -> ToolResult:
+    message = (
+        error.message
+        if error.message in SAFE_REASONS
+        else ERROR_GUIDANCE.get(
+            error.code,
+            "The operation could not complete. Inspect its original durable receipt before retrying; the external outcome may be uncertain.",
+        )
+    )
+    details: dict[str, Any] = {}
+    if name == "get_unity_result" and error.code == "project_busy":
+        message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
+    revision = error.details.get("current_revision")
+    if type(revision) is int and revision >= 0:
+        details["current_revision"] = revision
+    if name == "request_preview" and error.code in {"capability_unavailable", "invalid_request"}:
+        # Public supported recipe, not private executable paths/configuration/MCP data.
+        details.update(
+            renderer_revision="proscenium-blender-1",
+            engine="CYCLES",
+            device="CPU",
+            dimensions="positive exact PNG dimensions for keyframes; even width and height for H.264 motion",
+            samples="explicit positive sample count",
+        )
+    return ToolResult(
+        text_result_for_llm=canonical(
+            {
+                "error": error.code,
+                "message": message,
+                "details": details,
+            }
+        ).decode(),
+        result_type="failure",
+    )
+
+
+def tool_schema(name: str) -> dict[str, Any]:
+    """The normative definition and its transitive local refs, not 119 defs per tool."""
+    definitions: dict[str, Any] = {}
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            reference = value.get("$ref")
+            if reference:
+                prefix = "#/$defs/"
+                if not reference.startswith(prefix):
+                    raise ValueError("Unsupported non-local normative tool reference")
+                dependency = reference[len(prefix) :]
+                if dependency not in definitions:
+                    definitions[dependency] = copy.deepcopy(SCHEMA["$defs"][dependency])
+                    visit(definitions[dependency])
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    root = copy.deepcopy(SCHEMA["$defs"][name])
+    visit(root)
+    if definitions:
+        root["$defs"] = definitions
+    return root
+
+
+class Tools:
+    def __init__(self, services: Services, state: State, project_id: str):
+        self.services, self.state, self.project_id = services, state, project_id
+
+    def caller(self, invocation: ToolInvocation, *, admit: bool = True) -> Caller:
+        with self.services.registry.project_store(self.project_id).transaction(write=False) as tx:
+            record = tx.require(
+                "invocations", key(invocation.session_id, "tool", invocation.tool_call_id)
+            )
+            if (
+                record["agent_id"] != invocation.agent_id
+                or record["session_id"] != invocation.session_id
+            ):
+                raise DomainError("attribution_unavailable", 409)
+            work = tx.require("work", record["work_id"])
+            if admit and (
+                record["owner_epoch"] != self.services.ownership.epoch
+                or record["state"] not in {"admitted", "running"}
+                or work["state"] not in {"running", "awaiting_user"}
+                or self.state.control(tx)["fenced"]
+            ):
+                raise DomainError("permission_denied", 403)
+        if admit:
+            self.services.gate.require(self.project_id)
+        return Caller(
+            "tool",
+            invocation.tool_call_id,
+            self.project_id,
+            record["work_id"],
+            record["owner_epoch"],
+            invocation_id=record["invocation_id"],
+            operations=tuple(item[4] for item in TOOLS.values()),
+        )
+
+    def _read(self, name: str, invocation: ToolInvocation) -> tuple[dict[str, Any], str]:
+        args = read_arguments(name, invocation.arguments)
+        if name == "list_items":
+            from proscenium.sources.common import fingerprint
+
+            query = args.get("query", "").casefold().strip()
+            catalogue = self.services.extension("catalogue")
+            with self.services.registry.project_store(self.project_id).transaction(
+                write=False
+            ) as tx:
+                rows = [catalogue.item_view(tx, item) for item in tx.all("items")]
+
+            def searchable(item):
+                provenance = item.get("provenance") or {}
+                return " ".join(
+                    str(value)
+                    for value in (
+                        item.get("name", ""),
+                        item.get("description", ""),
+                        *item.get("tags", []),
+                        *(
+                            provenance.get(field) or ""
+                            for field in ("source_url", "creator", "licence", "note")
+                        ),
+                    )
+                ).casefold()
+
+            for item in rows:
+                validate("ItemRecord", item)
+                if item["project_id"] != self.project_id:
+                    raise DomainError("scope_denied", 403)
+            result = self.services.cursors.page(
+                f"{self.project_id}:native-items:{fingerprint(query)}",
+                [item for item in rows if query in searchable(item)],
+                "item_id",
+                cursor=args.get("cursor"),
+                limit=args.get("limit", 50),
+            )
+            return result, "ItemPage"
+        identity, result_schema, _ = READ_TOOLS[name]
+        assert identity is not None
+        if name == "get_job":
+            result = self.services.jobs.get(self.project_id, args[identity])
+        elif name == "get_artifact":
+            result = self.services.extension("artifacts").get(self.project_id, args[identity])
+        elif name == "get_version":
+            result = self.services.extension("catalogue").version(self.project_id, args[identity])
+        else:
+            previews = self.services.extension("previews")
+            with self.services.registry.project_store(self.project_id).transaction(
+                write=False
+            ) as tx:
+                job = tx.require("jobs", args[identity])
+                rows = previews.records(tx, job, "frames")
+            # Same numeric ordering and signed project/job/filter scope as the HTTP read.
+            keyed = [{"order": f"{row['source_frame']:012d}", "record": row} for row in rows]
+            result = self.services.cursors.page(
+                f"{self.project_id}:{args[identity]}:frames:None:None",
+                keyed,
+                "order",
+                cursor=args.get("cursor"),
+                limit=args.get("limit", 50),
+            )
+            result["items"] = [row["record"] for row in result["items"]]
+            if any(
+                row["project_id"] != self.project_id or row["job_id"] != args[identity]
+                for row in result["items"]
+            ):
+                raise DomainError("scope_denied", 403)
+        if name != "list_job_frames":
+            if result.get("project_id") != self.project_id:
+                raise DomainError("scope_denied", 403)
+            if result.get(identity) != args[identity]:
+                raise DomainError("source_conflict", 409)
+        return result, result_schema
+
+    async def invoke(self, name: str, invocation: ToolInvocation) -> ToolResult:
+        try:
+            # Accepted W02 services check completed-operation identity before admitting
+            # a new effect. Preserve the ORIGINAL invocation/work/epoch for that replay.
+            caller = self.caller(
+                invocation,
+                admit=name
+                not in {
+                    "checkpoint_sources",
+                    "publish_outputs",
+                    "register_artifact",
+                    *READ_TOOLS,
+                    *DISCOVERY_READS,
+                    *WORKFLOW_TOOLS,
+                },
+            )
+            if name in READ_TOOLS or name in DISCOVERY_READS:
+                result, result_schema = self._read(name, invocation)
+            elif name in WORKFLOW_TOOLS:
+                method, result_schema, _ = WORKFLOW_TOOLS[name]
+                body = workflow_arguments(name, invocation.arguments)
+                service = self.services.extension("workflows")
+                if name != "get_unity_result" and not await service.replayable(
+                    caller, body, method
+                ):
+                    # Preserve W01's native fence as well as F00's gate. Only a proved
+                    # existing effect can be read/reconciled after a callback is held.
+                    self.caller(invocation, admit=True)
+                result = await getattr(service, method)(caller, body)
+            else:
+                extension, method, schema, result_schema, _ = TOOLS[name]
+                body = validate(schema, invocation.arguments)
+                if body.get("project_id") != self.project_id:
+                    raise DomainError("scope_denied", 403)
+                service = (
+                    self.services.jobs
+                    if extension == "jobs"
+                    else self.services.extension(extension)
+                )
+                function = getattr(service, method, None)
+                if function is None:
+                    raise DomainError("capability_unavailable", 501)
+                result = function(caller, body)
+                if inspect.isawaitable(result):
+                    result = await result
+                if isinstance(result, tuple):
+                    result = result[0]
+            # ReviewTicket validation forbids findings in the model response.
+            validate(result_schema, result)
+            return ToolResult(text_result_for_llm=canonical(result).decode())
+        except DomainError as exc:
+            return tool_failure(exc, name)
+        except Exception:
+            # Never give SDK callers an upstream exception repr, headers or credentials.
+            # Cancellation still propagates, and existing durable effects are not retried.
+            return tool_failure(DomainError("internal_error", 500), name)
+
+    def definitions(self) -> list[Tool]:
+        tools = []
+        for name, (_, _, schema, _, _) in TOOLS.items():
+
+            async def handler(invocation: ToolInvocation, name: str = name) -> ToolResult:
+                return await self.invoke(name, invocation)
+
+            parameters = tool_schema(schema)
+            tools.append(
+                Tool(
+                    name=name,
+                    description=f"Proscenium {name}. Active project only. Returns a durable receipt, not fabricated completion.",
+                    parameters=parameters,
+                    handler=handler,
+                )
+            )
+
+        for name, (_, _, description) in {**READ_TOOLS, **DISCOVERY_READS}.items():
+
+            async def read_handler(invocation: ToolInvocation, name: str = name) -> ToolResult:
+                return await self.invoke(name, invocation)
+
+            tools.append(
+                Tool(
+                    name=name,
+                    description=description,
+                    parameters=read_parameters(name),
+                    handler=read_handler,
+                )
+            )
+        for name, (_, _, description) in WORKFLOW_TOOLS.items():
+
+            async def workflow_handler(invocation: ToolInvocation, name: str = name) -> ToolResult:
+                return await self.invoke(name, invocation)
+
+            parameters = workflow_parameters(name)
+            if "execution_profile_id" in parameters["properties"]:
+                profiles = sorted(self.services.settings.execution_profiles)
+                previews = self.services.extensions.get("previews")
+                if name == "assemble_sequence" and previews is not None:
+                    profiles = [value for value in profiles if value == previews.config.profile_id]
+                if profiles:
+                    parameters["properties"]["execution_profile_id"]["enum"] = profiles
+            tools.append(
+                Tool(
+                    name=name,
+                    description=description,
+                    parameters=parameters,
+                    handler=workflow_handler,
+                )
+            )
+        return tools

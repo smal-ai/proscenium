@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Normative edges. Companion execution guards still apply; this is not a runtime implementation.",
+  "job_attempt": {
+    "planned": ["waiting_resource", "starting", "cancel_requested", "failed", "outcome_uncertain"],
+    "waiting_resource": ["starting", "cancel_requested", "failed", "outcome_uncertain"],
+    "starting": ["running", "succeeded", "failed", "cancel_requested", "outcome_uncertain"],
+    "running": ["succeeded", "failed", "cancel_requested", "outcome_uncertain"],
+    "cancel_requested": ["cancelled", "succeeded", "failed", "running", "starting", "waiting_resource", "outcome_uncertain"],
+    "outcome_uncertain": ["planned", "waiting_resource", "starting", "running", "cancel_requested", "succeeded", "failed", "cancelled"],
+    "succeeded": [], "failed": [], "cancelled": []
+  },
+  "work": {
+    "pending": ["running", "stop_requested", "failed", "awaiting_resume"],
+    "running": ["awaiting_user", "completed", "failed", "stop_requested", "outcome_uncertain", "awaiting_resume"],
+    "awaiting_user": ["running", "failed", "stop_requested", "outcome_uncertain", "awaiting_resume"],
+    "stop_requested": ["stopped", "completed", "failed", "outcome_uncertain", "awaiting_resume"],
+    "outcome_uncertain": ["pending", "running", "awaiting_user", "completed", "failed", "stopped", "awaiting_resume"],
+    "awaiting_resume": ["running", "completed", "failed", "stopped", "outcome_uncertain"],
+    "stopped": ["running"], "failed": ["running"], "completed": []
+  },
+  "resume_only_work_edges": [["stopped", "running"], ["failed", "running"], ["awaiting_resume", "running"]],
+  "guards": {
+    "uncertainty": "Every outgoing uncertainty edge requires recorded native/provider/worker evidence.",
+    "cancellation": "Cancellation failure does not fail a still-running job. Completion winning the race remains success.",
+    "retry": "A failed/cancelled job projection may become planned only by allocating a new immutable attempt under an admitted retry operation.",
+    "stop": "Confirmed Stop requires quiescence and settlement of accepted native deferred steering, while application Queue remains held."
+  }
+}

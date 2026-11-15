@@ -1,0 +1,475 @@
+"""Preview admission and verified, incremental immutable media publication."""
+
+import io
+import threading
+from pathlib import Path
+from typing import Any
+
+from PIL import Image
+
+from proscenium.api.errors import DomainError
+from proscenium.auth import Caller
+from proscenium.contracts import validate
+from proscenium.db import Transaction
+from proscenium.jobs import TERMINAL
+from proscenium.jobs.resources import check_storage
+from proscenium.services import Services
+from proscenium.sources.common import active, admitted, binding, fingerprint, managed, replay
+
+from .config import Rendering
+from .journal import output, read, sha
+from .media import verify_video
+
+
+def ranges(frames: set[int]) -> list[dict[str, int]]:
+    result: list[dict[str, int]] = []
+    for frame in sorted(frames):
+        if result and result[-1]["end"] + 1 == frame:
+            result[-1]["end"] = frame
+        else:
+            result.append({"start": frame, "end": frame})
+    return result
+
+
+def worker_caller(job: dict) -> Caller:
+    return Caller(
+        "worker",
+        job["attempt_id"],
+        job["project_id"],
+        job["work_id"],
+        job["owner_epoch"],
+        job["job_id"],
+        job["attempt_id"],
+        job["input_digest"],
+        ("registerFrameReceipt", "registerPreviewSegment", "updateJobState"),
+    )
+
+
+class PreviewService:
+    def __init__(self, services: Services):
+        self.services = services
+        self.config = Rendering(**services.settings.rendering)
+        self.lock = threading.RLock()
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    @property
+    def artifacts(self) -> Any:
+        return self.services.extension("artifacts")
+
+    def request(self, caller: Caller, request: Any) -> tuple[dict, bool]:
+        body = request.model_dump(mode="json") if hasattr(request, "model_dump") else request
+        validate("PreviewRequest", body)
+        project_id = body["project_id"]
+        active(self.services, caller, "requestPreview", project_id)
+        store = self.services.registry.project_store(project_id)
+        immutable = binding(caller, body)
+        with self.services.activation_lock, store.transaction() as tx:
+            previous = replay(tx, "previews.request", body["operation_id"], immutable)
+            if previous:
+                return previous, True
+            admitted(self.services, tx, caller)
+            version = tx.require("versions", body["version"]["version_id"])
+            if version["item_id"] != body["version"]["item_id"]:
+                raise DomainError("scope_denied", 403)
+            self.config.validate(body["spec"])
+            if body["spec"]["source_closure_digest"] != version["source"]["digest"]:
+                raise DomainError("hash_mismatch", 422)
+            if self.config.profile_id not in self.services.settings.execution_profiles:
+                raise DomainError("capability_unavailable", 501, "Rendering profile is not enabled")
+            check_storage(store.path.parent, self.services.settings.free_space_reserve_bytes)
+
+            reused_intent = False
+
+            def effect() -> dict:
+                nonlocal reused_intent
+                intent = tx.get("preview_intents", body["spec"]["intent_id"], required=False)
+                if intent:
+                    if (
+                        intent["version"] != body["version"]
+                        or intent["render_spec"] != body["spec"]
+                    ):
+                        raise DomainError("idempotency_conflict", 409)
+                    reused_intent = True
+                    return tx.require("jobs", intent["job_id"])
+                job_id = "preview-" + fingerprint(
+                    {"project_id": project_id, "intent_id": body["spec"]["intent_id"]}
+                )
+                spec = body["spec"]
+                job = self.services.jobs.create(
+                    tx,
+                    job_id=job_id,
+                    kind="render",
+                    target={
+                        "target_id": version["item_id"],
+                        "version": body["version"],
+                        "shot_id": spec["shot_id"],
+                    },
+                    input_digest=fingerprint({"version": body["version"], "render_spec": spec}),
+                    operation_id=body["operation_id"],
+                    work_id=caller.work_id,
+                    render_spec=spec,
+                    expected_frames=spec["frames"]["end"] - spec["frames"]["start"] + 1,
+                    enqueue_kind="preview.render",
+                )
+                tx.put(
+                    "preview_intents",
+                    spec["intent_id"],
+                    {"version": body["version"], "render_spec": spec, "job_id": job_id},
+                )
+                self.services.jobs.freeze_inputs(
+                    tx,
+                    job_id,
+                    {
+                        "source": version["source"],
+                        "configuration": self.services.settings.view(),
+                        "work_id": caller.work_id,
+                        "invocation_id": caller.invocation_id,
+                        "owner_epoch": caller.owner_epoch,
+                    },
+                )
+                self.services.jobs.emit(tx, job, caller)
+                return job
+
+            result, replayed = tx.operation(
+                "previews.request", body["operation_id"], immutable, effect
+            )
+            return result, replayed or reused_intent
+
+    def root(self, job: dict) -> Path:
+        project = Path(self.services.registry.get(job["project_id"])["path"])
+        name = f".proscenium/jobs/previews/{job['job_id']}/{job['attempt_id']}"
+        # IDs are path components as well as schema identities. Never permit slash/traversal IDs.
+        if any("/" in job[key] or job[key] in {".", ".."} for key in ("job_id", "attempt_id")):
+            raise DomainError("scope_denied", 403)
+        return managed(project, name + "/task.json").parent
+
+    def runtime(self, project_id: str, job: dict) -> dict:
+        inputs = self.services.jobs.inputs(project_id, job["job_id"])
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            existing = tx.get("preview_runtime", job["job_id"], required=False)
+        if existing:
+            return existing
+        # Initial W02 snapshots contain ConfigurationView, not the private rendering object.
+        # Never silently bind a changed revision to an older publication intent.
+        if inputs["configuration"] != self.services.settings.view():
+            raise DomainError(
+                "source_conflict", 409, "Original rendering configuration is unavailable"
+            )
+        config = self.config.snapshot()
+        with self.services.registry.project_store(project_id).transaction() as tx:
+            previous = tx.get("preview_runtime", job["job_id"], required=False)
+            if previous:
+                return previous
+            tx.put("preview_runtime", job["job_id"], config)
+        return config
+
+    def records(self, tx: Transaction, job: dict, family: str) -> list[dict]:
+        # Old verified frames remain reusable across same-input attempts. Segments carry their
+        # own commissioning attempt and are not rewritten to pretend they belong to the retry.
+        rows = [
+            r
+            for r in tx.all(family)
+            if r["job_id"] == job["job_id"] and r["input_digest"] == job["input_digest"]
+        ]
+        if family == "frames":
+            unique: dict[int, dict] = {}
+            for row in rows:
+                old = unique.get(row["source_frame"])
+                if old and old["sha256"] != row["sha256"]:
+                    raise DomainError("frame_conflict", 409)
+                unique[row["source_frame"]] = row
+            return sorted(unique.values(), key=lambda row: row["source_frame"])
+        intervals: dict[tuple[int, int], dict] = {}
+        for row in rows:
+            key = (row["source_frames"]["start"], row["source_frames"]["end"])
+            old = intervals.get(key)
+            if old and old["sha256"] != row["sha256"]:
+                raise DomainError("frame_conflict", 409)
+            intervals[key] = row
+        return sorted(intervals.values(), key=lambda row: row["source_frames"]["start"])
+
+    def availability(self, project_id: str, job_id: str) -> dict:
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            job = tx.require("jobs", job_id)
+            spec = job["render_spec"]
+            if spec is None:
+                raise DomainError("invalid_request")
+            ready = {row["source_frame"] for row in self.records(tx, job, "frames")}
+            playable = set()
+            for row in self.records(tx, job, "segments"):
+                interval = set(
+                    range(row["source_frames"]["start"], row["source_frames"]["end"] + 1)
+                )
+                if interval <= ready:
+                    playable |= interval
+            missing = set(range(spec["frames"]["start"], spec["frames"]["end"] + 1)) - ready
+            failed = missing if job["state"] in {"failed", "cancelled"} else set()
+            progress = tx.get("preview_progress", job_id, required=False) or {"revision": 0}
+            result = dict(
+                schema_version="1.0",
+                project_id=project_id,
+                job_id=job_id,
+                version_id=job["target"]["version"]["version_id"],
+                source_range=spec["frames"],
+                fps=spec["fps"],
+                available_ranges=ranges(ready),
+                playable_ranges=ranges(playable),
+                pending_ranges=ranges(missing - failed),
+                failed_ranges=ranges(failed),
+                state_revision=job["state_revision"] + progress["revision"],
+            )
+            validate("FrameAvailability", result)
+            return result
+
+    def bound(self, caller: Caller, body: dict, operation: str, tx: Transaction) -> dict:
+        caller.permits(operation, body["project_id"])
+        job = tx.require("jobs", body["job_id"])
+        if (
+            caller.channel != "worker"
+            or caller.job_id != job["job_id"]
+            or caller.attempt_id != body["attempt_id"]
+            or caller.input_digest != body["input_digest"]
+            or job["attempt_id"] != body["attempt_id"]
+            or job["input_digest"] != body["input_digest"]
+            or job["target"]["version"]["version_id"] != body["version_id"]
+            or job["target"]["shot_id"] != body["shot_id"]
+        ):
+            raise DomainError("scope_denied", 403)
+        return job
+
+    def register(self, caller: Caller, body: dict, *, segment: bool = False) -> tuple[dict, bool]:
+        schema, family, identity, operation = (
+            ("PreviewSegment", "segments", "segment_id", "registerPreviewSegment")
+            if segment
+            else ("FrameReceipt", "frames", "receipt_id", "registerFrameReceipt")
+        )
+        validate(schema, body)
+        store = self.services.registry.project_store(body["project_id"])
+        with store.transaction(write=False) as tx:
+            # An old identical receipt can be acknowledged, but never mutate a new attempt.
+            caller.permits(operation, body["project_id"])
+            existing = tx.get(family, body[identity], required=False)
+            if (
+                caller.channel != "worker"
+                or caller.job_id != body["job_id"]
+                or caller.attempt_id != body["attempt_id"]
+                or caller.input_digest != body["input_digest"]
+            ):
+                raise DomainError("scope_denied", 403)
+            if existing:
+                if existing != body:
+                    raise DomainError("frame_conflict", 409)
+                return self.receipt(body[identity], True), True
+            job = self.bound(caller, body, operation, tx)
+        if job["state"] in TERMINAL:
+            raise DomainError("invalid_state_transition")
+        root = self.root(job)
+        task = read(root / "task.json")
+        if any(task[key] != job[key] for key in ("job_id", "attempt_id", "input_digest")):
+            raise DomainError("scope_denied", 403)
+        path = output(root, body["output_path"])
+        data = path.read_bytes()
+        if sha(data) != body["sha256"]:
+            raise DomainError("hash_mismatch", 422)
+        spec = job["render_spec"]
+        first = body["source_frames"]["start"] if segment else body["source_frame"]
+        last = body["source_frames"]["end"] if segment else first
+        if first < spec["frames"]["start"] or last > spec["frames"]["end"] or first > last:
+            raise DomainError("invalid_frame_mapping", 422)
+        if segment:
+            if body["fps"] != spec["fps"] or body["frame_count"] != last - first + 1:
+                raise DomainError("invalid_frame_mapping", 422)
+            with store.transaction(write=False) as tx:
+                ready = {r["source_frame"] for r in self.records(tx, job, "frames")}
+            if not set(range(first, last + 1)) <= ready:
+                raise DomainError("dependency_missing", 422)
+            verify_video(path, body["fps"], body["frame_count"], spec["dimensions"], task["config"])
+        else:
+            if body["dimensions"] != spec["dimensions"]:
+                raise DomainError("invalid_frame_mapping", 422)
+            with Image.open(io.BytesIO(data)) as image:
+                image.load()
+                if (
+                    image.format != "PNG"
+                    or image.mode != "RGB"
+                    or image.size != (body["dimensions"]["width"], body["dimensions"]["height"])
+                ):
+                    raise DomainError("media_unavailable", 422)
+        metadata = {"dimensions": spec["dimensions"], "source_version_id": body["version_id"]}
+        if segment:
+            metadata.update(fps=body["fps"], frame_count=body["frame_count"])
+        artifact = self.artifacts.promote(
+            body["project_id"],
+            body["artifact_id"],
+            data,
+            kind="video" if segment else "image",
+            purpose=spec["purpose"],
+            media_type="video/mp4" if segment else "image/png",
+            metadata=metadata,
+        )
+        with self.lock, store.transaction() as tx:
+            self.bound(caller, body, operation, tx)
+
+            def effect() -> dict:
+                current = tx.require("jobs", job["job_id"])
+                if current["state"] in TERMINAL:
+                    raise DomainError("invalid_state_transition")
+                for row in self.records(tx, current, family):
+                    a, b = (
+                        (row["source_frames"]["start"], row["source_frames"]["end"])
+                        if segment
+                        else (row["source_frame"], row["source_frame"])
+                    )
+                    if not (last < a or first > b):
+                        if a == first and b == last and row["sha256"] == body["sha256"]:
+                            break
+                        raise DomainError("frame_conflict", 409)
+                self.artifacts.put(tx, artifact)
+                tx.put(family, body[identity], body, schema=schema)
+                progress = tx.get("preview_progress", job["job_id"], required=False)
+                tx.put(
+                    "preview_progress",
+                    job["job_id"],
+                    {"revision": progress["revision"] + 1 if progress else 1},
+                    expected_revision=tx.revision("preview_progress", job["job_id"])
+                    if progress
+                    else None,
+                )
+                tx.emit(
+                    "segment.available" if segment else "frame.available",
+                    body,
+                    actor={"kind": "worker", "id": caller.subject_id},
+                    work_id=job["work_id"],
+                )
+                # F00 owns job records. A parent-supplied transaction-taking primitive
+                # makes the job projection part of this exact commit without opening a
+                # nested SQLite writer or implementing another job state machine here.
+                update_tx = getattr(self.services.jobs, "update_in_transaction", None)
+                if update_tx is not None:
+                    ready_frames = self.records(tx, current, "frames")
+                    ready_segments = self.records(tx, current, "segments")
+                    count = len(ready_frames)
+                    complete = count == current["expected_frames"] and count > 0
+                    update = dict(
+                        schema_version="1.0",
+                        operation_id=body[identity] + "-job",
+                        project_id=body["project_id"],
+                        job_id=current["job_id"],
+                        attempt_id=current["attempt_id"],
+                        expected_revision=current["state_revision"],
+                        state="starting" if current["state"] == "planned" else current["state"],
+                        availability="complete" if complete else "partial",
+                        completed_frames=count,
+                        artifact_ids=list(
+                            dict.fromkeys(
+                                current["artifact_ids"]
+                                + [r["artifact_id"] for r in ready_frames + ready_segments]
+                            )
+                        ),
+                    )
+                    update_tx(tx, caller, update, evidence="Verified immutable worker receipt")
+                return self.receipt(body[identity], False)
+
+            return tx.operation(f"previews.{family}", body[identity], body, effect)
+
+    @staticmethod
+    def receipt(identity: str, replayed: bool) -> dict:
+        return dict(
+            schema_version="1.0",
+            operation_id=identity,
+            resource_id=identity,
+            state="ready",
+            state_revision=0,
+            replayed=replayed,
+        )
+
+    def state(
+        self,
+        job: dict,
+        state: str,
+        *,
+        exit_code: int | None = None,
+        evidence: str | None = None,
+        extra_artifacts: list[str] | None = None,
+        error_code: str | None = None,
+    ) -> dict:
+        with self.services.registry.project_store(job["project_id"]).transaction(write=False) as tx:
+            current = tx.require("jobs", job["job_id"])
+            if current["attempt_id"] != job["attempt_id"]:
+                raise DomainError("scope_denied", 403)
+            if current["state"] in TERMINAL:
+                return current
+            frames = self.records(tx, current, "frames")
+            segments = self.records(tx, current, "segments")
+        artifact_ids = list(
+            dict.fromkeys(
+                current["artifact_ids"]
+                + [r["artifact_id"] for r in frames + segments]
+                + (extra_artifacts or [])
+            )
+        )
+        complete = len(frames) == current["expected_frames"] and bool(frames)
+        if current["render_spec"] and current["render_spec"]["purpose"] == "proxy":
+            complete = bool(extra_artifacts)
+        if current["kind"] == "encode":
+            complete = bool(extra_artifacts)
+        body = dict(
+            schema_version="1.0",
+            operation_id=f"{job['attempt_id']}-state-{current['state_revision']}",
+            project_id=job["project_id"],
+            job_id=job["job_id"],
+            attempt_id=job["attempt_id"],
+            expected_revision=current["state_revision"],
+            state=state,
+            availability="complete" if complete else "partial" if frames else "pending",
+            completed_frames=len(frames),
+            artifact_ids=artifact_ids,
+        )
+        if exit_code is not None:
+            body["native_exit_code"] = exit_code
+        if error_code is not None:
+            body["error_code"] = error_code
+        return self.services.jobs.update(worker_caller(job), body, evidence=evidence)[0]
+
+    def pump(self, project_id: str) -> list[dict]:
+        from .runner import pump
+
+        with self.lock:
+            return pump(self, project_id)
+
+    def assembly(
+        self, caller: Caller, admission: dict, sequence: dict, frame_map: dict | None = None
+    ) -> tuple[dict, bool]:
+        from .assembly import admit_assembly
+
+        return admit_assembly(self, caller, admission, sequence, frame_map)
+
+    def reconcile(self, project_id: str) -> list[dict]:
+        from .runner import reconcile
+
+        with self.lock:
+            return reconcile(self, project_id)
+
+    def start(self, project_id: str, *, interval: float = 0.05) -> None:
+        if self._thread and self._thread.is_alive():
+            return
+        self._stop.clear()
+
+        def watch() -> None:
+            while not self._stop.wait(interval):
+                try:
+                    self.reconcile(project_id)
+                    # Admission gate is checked by pump. Closed boot means reconciliation only.
+                    self.pump(project_id)
+                except DomainError:
+                    continue
+
+        self._thread = threading.Thread(target=watch, name="proscenium-previews", daemon=True)
+        self._thread.start()
+
+    def close(self) -> None:
+        self._stop.set()
+        if self._thread:
+            self._thread.join(timeout=5)
+        # Detached workers intentionally survive owner/browser shutdown.
