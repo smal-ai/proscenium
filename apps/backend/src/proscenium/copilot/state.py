@@ -16,6 +16,7 @@ from proscenium.db.store import now
 from proscenium.jobs import transition
 from proscenium.services import Services
 
+from .activity import error_fields, failure_summary
 from .context import Contexts
 
 TERMINAL = {"completed", "failed", "stopped", "cancelled"}
@@ -684,6 +685,8 @@ class State:
                     k: v for k, v in event.items() if k in {"id", "type", "parentId", "agentId"}
                 }
                 staged["data"] = {k: v for k, v in data.items() if k in allowed}
+                if kind in {"tool.execution_complete", "subagent.failed"}:
+                    staged["data"]["error"] = error_fields(data)
                 old_pending = tx.get("copilot.pending_events", event_key, required=False)
                 if old_pending and old_pending["fingerprint"] != fingerprint:
                     raise DomainError("idempotency_conflict", 409)
@@ -889,6 +892,9 @@ class State:
                 }
                 if old_invocation and old_invocation["state"] in TERMINAL and starting:
                     return
+                summary = failure_summary(tx, invocation, data) if state == "failed" else ""
+                if summary:
+                    invocation["failure_summary"] = summary
                 save(tx, "invocations", invocation_id, invocation)
                 tx.emit(
                     ("subagent." if child else "tool.") + ("started" if starting else "completed"),
@@ -896,12 +902,39 @@ class State:
                         "invocation_id": invocation_id,
                         "name": invocation["name"],
                         "state": state,
-                        "summary": "",
+                        "summary": summary,
                         "artifact_ids": [],
                         "model_id": invocation["model_id"],
                     },
                     **emit,
                 )
+            if kind == "abort" and not agent:
+                work = tx.require("work", work_id)
+                last_delivery = tx.get("copilot.last_delivery", work_id, required=False)
+                if (
+                    work["native_session_id"] == session_id
+                    and work["state"] in {"running", "awaiting_user"}
+                    and last_delivery
+                    and last_delivery.get("delivery_id") == binding.get("delivery_id")
+                    and not self.control(tx)["fenced"]
+                ):
+                    # An unsolicited native abort interrupts work, but is not a confirmed Stop
+                    # barrier or proof that external jobs/children have finished.
+                    save(
+                        tx,
+                        "copilot.interruptions",
+                        event_key,
+                        {**binding, "native_event_id": identity, "reason": "native_turn_aborted"},
+                    )
+                    self.fence(tx, "native_turn_aborted")
+                    self.work_state(tx, work_id, "awaiting_resume")
+                    original = tx.require("requests", request_id)
+                    self.request_state(
+                        tx,
+                        request_id,
+                        original["receipt"]["state"],
+                        detail_code="native_turn_aborted",
+                    )
             if not agent and kind == "assistant.turn_start":
                 save(
                     tx,

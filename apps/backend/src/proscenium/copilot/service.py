@@ -1783,7 +1783,7 @@ class Copilot:
                 },
             )
 
-        def reply(approve: bool, authority: str) -> Any:
+        def reply(approve: bool, authority: str, denial_reason: str | None = None) -> Any:
             # Commit the exact claim/result before handing control back to the SDK.
             # Completion, not callback return, acknowledges native delivery.
             with self.services.registry.project_store(project_id).transaction() as tx:
@@ -1794,6 +1794,9 @@ class Copilot:
                     or self.state.control(tx)["fenced"]
                 ):
                     approve, authority = False, "host"
+                    denial_reason = (
+                        "Execution is paused or the original invocation is no longer current."
+                    )
                 prepared = {
                     **current,
                     "phase": "reply_prepared",
@@ -1801,6 +1804,7 @@ class Copilot:
                     "reply": "approve" if approve else "reject",
                     "reply_prepared_at": now(),
                     "delivery_state": "outcome_uncertain",
+                    "denial_reason": denial_reason if not approve else None,
                 }
                 save(tx, "copilot.permissions", stage_id, prepared)
                 save(
@@ -1867,8 +1871,13 @@ class Copilot:
                         )
                     ):
                         raise DomainError("attribution_unavailable", 409)
-            except DomainError:
-                return reply(False, "automatic_policy")
+            except DomainError as error:
+                reason = (
+                    "The requested path is outside the allowed project files or inside protected runtime storage."
+                    if error.code == "scope_denied"
+                    else "The file permission request could not be validated against the current work."
+                )
+                return reply(False, "automatic_policy", reason)
             if not special_approval:
                 return reply(True, "automatic_policy")
 
@@ -1897,7 +1906,11 @@ class Copilot:
             )
         )
         if denied:
-            return reply(False, "automatic_policy")
+            return reply(
+                False,
+                "automatic_policy",
+                "The request matched a protected credential or environment-file rule. Review its paths and filters before continuing.",
+            )
         if not consequential and request.get("kind") in {
             "shell",
             "mcp",
