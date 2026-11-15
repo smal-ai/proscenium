@@ -12,6 +12,7 @@ from copilot.tools import Tool, ToolInvocation, ToolResult
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
+from proscenium.catalogue.validation import safe_schema_guidance
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.services import Services
 
@@ -267,7 +268,7 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
                     "uniqueItems",
                     "format",
                 }
-                and issue["message"] == f"Field failed {issue['code']} validation"
+                and safe_schema_guidance(issue["code"], issue["message"])
                 and len(issue["path"]) <= 512
                 and re.fullmatch(
                     r"\$|[A-Za-z_][A-Za-z_0-9]*(?:\[[0-9]+\]|\.[A-Za-z_][A-Za-z_0-9]*)*",

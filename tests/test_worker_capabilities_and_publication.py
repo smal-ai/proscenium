@@ -612,7 +612,42 @@ def test_publication_failure_trusted_outcomes(runtime, data, message):
         assert outcome["status"] == "failed" and outcome["safe_summary"] == message
         if "failed" in message:
             assert outcome["issues"] and outcome["issues"][0]["path"] != "$"
+            assert any(
+                issue["message"] == "Missing required field plan_id" for issue in outcome["issues"]
+            )
         assert not tx.all("versions") and not tx.all("jobs")
+
+
+def test_publication_guidance_keeps_schema_keys_without_echoing_private_input(runtime):
+    from proscenium.copilot.tools import tool_failure
+
+    document = plan()
+    document["password-private-field"] = "never-echo-this-value"
+    body = publication(runtime, canonical(document))
+    result, kind = invoke(runtime, "publish_outputs", body)
+    assert kind == "failure"
+    issues = result["details"]["issues"]
+    assert any(
+        issue["code"] == "additionalProperties"
+        and issue["message"].startswith("Unexpected property. Allowed keys: ")
+        and "plan_id" in issue["message"]
+        for issue in issues
+    )
+    assert "password-private-field" not in json.dumps(result)
+    assert "never-echo-this-value" not in json.dumps(result)
+    forged = DomainError(
+        "invalid_request",
+        issues=[
+            {
+                "phase": "schema",
+                "path": "$",
+                "code": "additionalProperties",
+                "message": "Unexpected property. Allowed keys: password-private-field",
+            }
+        ],
+    )
+    refused = tool_failure(forged, "publish_outputs")
+    assert "password-private-field" not in refused.text_result_for_llm
 
 
 def test_publication_preflight_reads_git_without_snapshots(runtime):

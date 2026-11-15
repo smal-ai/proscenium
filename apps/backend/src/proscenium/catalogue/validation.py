@@ -1,6 +1,7 @@
 """Relationship checks for authored catalogue documents, using the existing wire schema."""
 
 from fractions import Fraction
+from functools import cache
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -8,6 +9,37 @@ from jsonschema import Draft202012Validator, FormatChecker
 from proscenium.api.errors import DomainError
 from proscenium.contracts import SCHEMA, validate
 from proscenium.db import Transaction
+
+
+@cache
+def schema_guidance_messages() -> dict[str, frozenset[str]]:
+    """Allow only messages derived from installed schema keys, never submitted fields."""
+    messages: dict[str, set[str]] = {"required": set(), "additionalProperties": set()}
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            for name in value.get("required", []):
+                messages["required"].add(f"Missing required field {name}")
+            properties = value.get("properties", {})
+            if properties:
+                messages["additionalProperties"].add(
+                    "Unexpected property. Allowed keys: " + ", ".join(sorted(properties))
+                )
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(SCHEMA)
+    return {code: frozenset(values) for code, values in messages.items()}
+
+
+def safe_schema_guidance(code: str, message: str) -> bool:
+    return (
+        message == f"Field failed {code} validation"
+        or message in schema_guidance_messages().get(code, frozenset())
+    )
 
 
 def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
@@ -38,12 +70,24 @@ def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
             if pair in seen:
                 continue
             seen.add(pair)
+            allowed_keys = (
+                sorted(error.schema.get("properties", {}))
+                if error.validator == "additionalProperties" and isinstance(error.schema, dict)
+                else []
+            )
+            message = (
+                f"Unexpected property. Allowed keys: {', '.join(allowed_keys)}"
+                if allowed_keys
+                else f"Missing required field {parts[-1]}"
+                if error.validator == "required" and parts and isinstance(parts[-1], str)
+                else f"Field failed {error.validator} validation"
+            )
             issues.append(
                 dict(
                     phase="schema",
                     code=pair[1],
                     path=pair[0],
-                    message=f"Field failed {error.validator} validation",
+                    message=message,
                 )
             )
             if len(issues) == 25:

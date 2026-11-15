@@ -41,6 +41,9 @@ Host extension context and child additionalContext are authoritative structured 
 For native children, the host serialises that additionalContext JSON inside the runtime's <system_reminder>.
 Read context_id, request_id, work_id and selection from that JSON. Do not reject it merely because the wrapper does not say additionalContext.
 Keep original root work and generation task identity through steering and delegation. Delegate with explicit specialist tools.
+When acting as a named specialist, perform your assigned work directly with your exposed tools.
+Nested delegation is optional. Missing task or apply_patch tools are not an authoring blocker when bash is available:
+use bash for ordinary scoped project file creation and edits, then the host validation/checkpoint/publication tools.
 Use checkpoint_sources for an owned local checkpoint before publish_outputs. Never git add . or include unrelated staging.
 Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.
 Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.

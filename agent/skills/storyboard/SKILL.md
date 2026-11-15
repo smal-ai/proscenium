@@ -46,6 +46,30 @@ description: Author or revise a stable-ID shot plan and review existing storyboa
    separate. A selected concept is not a render or geometry.
 
 ```json
+{
+  "schema_version": "1.0",
+  "plan_id": "plan-id",
+  "project_id": "project-id",
+  "treatment": "Brief visual direction",
+  "brief_artifact_ids": [],
+  "asset_dependencies": [{"item_id": "asset-id", "version_id": "asset-v1"}],
+  "shots": [{
+    "shot_id": "shot-01",
+    "intent": "Narrative beat",
+    "camera_intent": "Camera framing",
+    "motion_beats": ["Subtle motion beat"],
+    "scene_version": null,
+    "source_range": null,
+    "fps": null,
+    "frames": [
+      {"frame_id": "shot-01-start", "role": "start", "composition": "Opening composition", "artifact_id": null, "state": "missing"}
+    ]
+  }],
+  "unresolved": []
+}
+```
+
+```json
 {"schema_version":"1.0","project_id":"project-id","document_kind":"authored_shot_plan","path":"storyboards/plan-id/plan.json","compare_to_path":"storyboards/plan-id/before.json","changed_ids":["asset-version-id"]}
 ```
 
