@@ -45,6 +45,52 @@ paths:
             application/json:
               schema: {$ref: './schema.json#/$defs/ConfigurationView'}
         default: {$ref: '#/components/responses/Error'}
+  /api/v1/configuration/status:
+    get:
+      operationId: getConfigurationStatus
+      responses:
+        '200':
+          description: Bounded read-only provider and workstation bridge status. Does not start services or reserve budgets.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ConfigurationStatus'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/configuration/profiles/{profile_id}:
+    parameters:
+      - {name: profile_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    put:
+      operationId: upsertAuthoringProfile
+      parameters: *ownerWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/AuthoringProfileUpsert'}
+      responses:
+        '200':
+          description: Updated owner authoring profiles.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ConfigurationView'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/configuration/profiles/{profile_id}/delete:
+    parameters:
+      - {name: profile_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    post:
+      operationId: deleteAuthoringProfile
+      parameters: *ownerWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/AuthoringProfileDelete'}
+      responses:
+        '200':
+          description: Updated owner authoring profiles.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ConfigurationView'}
+        default: {$ref: '#/components/responses/Error'}
   /api/v1/projects:
     get:
       operationId: listProjects

@@ -32,6 +32,7 @@ from proscenium.configuration import Settings
 from proscenium.contracts import canonical
 from proscenium.copilot.capabilities import (
     compare,
+    get_configuration_status,
     get_project_capabilities,
     validate_authored_document,
 )
@@ -286,6 +287,55 @@ def validate_plan(runtime, **changes):
             **changes,
         },
     )
+
+
+def test_owner_status_shares_bounded_live_provider_probes(runtime, tmp_path):
+    services = runtime.services
+    editor = tmp_path / "Unity"
+    editor.touch()
+    services.settings = replace(
+        services.settings,
+        execution_profiles=frozenset({"blender-cpu", "unity-local"}),
+        runtime={
+            "worker_model": "fixture",
+            "unity_editor": str(editor),
+            "mcp_servers": {
+                "blender": {},
+                "assets": {"type": "http", "url": "https://blendswap.com/api/mcp"},
+            },
+        },
+        services=(
+            services.settings.services[0],
+            {**services.settings.services[1], "available": True, "model_id": "qwen/qwen3.8-27b"},
+        ),
+        provider_options={"image_recipes": {"comfy": RECIPE}},
+    )
+    runtime.provider.options = services.settings.provider_options
+    calls = []
+
+    def transport(request):
+        calls.append(request)
+        assert request.method == "GET"
+        assert request.extensions["timeout"]["read"] == 3
+        return httpx.Response(
+            200,
+            json=runtime.catalog
+            if request.url.path == "/object_info"
+            else {"data": [{"id": "qwen/qwen3.8-27b"}]},
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(transport)) as client:
+        runtime.provider.client = client
+        status = get_configuration_status(services)
+        assert status["rendering_ready"] and status["blender_mcp_configured"]
+        assert status["blendswap_mcp_configured"] and status["unity_configured"]
+        assert status["providers"][0]["status"] == "ready"
+        assert RECIPE["unet"] in status["providers"][0]["selected_models"]
+        assert status["providers"][1]["status"] == "configured"
+        assert get_project_capabilities(services, PROJECT)["providers"] == status["providers"]
+        assert len(calls) == 4
+        services.settings = replace(services.settings, runtime={})
+        assert get_configuration_status(services)["blender_mcp_configured"] is False
 
 
 def test_configuration_and_recipe_validation(tmp_path):

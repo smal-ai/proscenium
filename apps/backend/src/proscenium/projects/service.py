@@ -256,7 +256,11 @@ class Projects:
             def effect() -> dict[str, Any]:
                 if body["default_profile_id"] not in {
                     profile["profile_id"]
-                    for profile in self.services.settings.profiles
+                    for profile in getattr(
+                        self.services,
+                        "effective_profiles",
+                        lambda: list(self.services.settings.profiles),
+                    )()
                     if profile["scope_status"] == "project_scoped"
                 }:
                     raise DomainError("capability_unavailable", 501)

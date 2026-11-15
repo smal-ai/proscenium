@@ -16,7 +16,12 @@ from proscenium.providers.preparation import AMBIGUOUS, bounded_get, compatible_
 from proscenium.sources.common import git, relative
 from proscenium.sources.read_only import read_authored_json, read_closure_files
 
-from .native import Configuration, is_blender_mcp_configured, resolve_mcp_servers
+from .native import (
+    Configuration,
+    is_blender_mcp_configured,
+    is_blendswap_mcp_configured,
+    resolve_mcp_servers,
+)
 
 RECOMMENDED_TOOLS = frozenset(
     {
@@ -49,18 +54,8 @@ KINDS = {
 }
 
 
-def get_project_capabilities(services: Any, project_id: str) -> dict[str, Any]:
-    config = Configuration.load(services.settings.runtime)
+def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
     provider = services.extension("providers")
-    skills: set[str] = set()
-    for directory in config.skill_directories:
-        root = Path(directory)
-        if root.is_dir():
-            skills.update(
-                child.name
-                for child in root.iterdir()
-                if child.is_dir() and (child / "SKILL.md").is_file()
-            )
     rows = []
     for service in services.settings.services:
         for capability in service["capabilities"]:
@@ -200,6 +195,43 @@ def get_project_capabilities(services: Any, project_id: str) -> dict[str, Any]:
                     else "nodes_or_models_missing",
                     summary=AMBIGUOUS if ambiguous else "Required nodes or models are unavailable",
                 )
+    return rows
+
+
+def get_configuration_status(services: Any) -> dict[str, Any]:
+    runtime = services.settings.runtime
+    raw_servers = runtime.get("mcp_servers", {})
+    servers = resolve_mcp_servers(
+        raw_servers if isinstance(raw_servers, dict) else {}, services.settings.secret_env
+    )
+    editor = runtime.get("unity_editor")
+    return validate(
+        "ConfigurationStatus",
+        dict(
+            schema_version="1.0",
+            observed_at=now(),
+            providers=probe_provider_capabilities(services),
+            rendering_ready=services.settings.rendering.get("profile_id", "blender-cpu")
+            in services.settings.execution_profiles,
+            blender_mcp_configured=is_blender_mcp_configured(servers),
+            blendswap_mcp_configured=is_blendswap_mcp_configured(servers),
+            unity_configured="unity-local" in services.settings.execution_profiles
+            and bool(editor and Path(editor).is_file()),
+        ),
+    )
+
+
+def get_project_capabilities(services: Any, project_id: str) -> dict[str, Any]:
+    config = Configuration.load(services.settings.runtime)
+    skills: set[str] = set()
+    for directory in config.skill_directories:
+        root = Path(directory)
+        if root.is_dir():
+            skills.update(
+                child.name
+                for child in root.iterdir()
+                if child.is_dir() and (child / "SKILL.md").is_file()
+            )
     result = dict(
         schema_version="1.0",
         project_id=project_id,
@@ -208,7 +240,7 @@ def get_project_capabilities(services: Any, project_id: str) -> dict[str, Any]:
         missing_worker_tools=sorted(RECOMMENDED_TOOLS - set(config.worker_tools)),
         available_skills=sorted(skills),
         skill_loader_exposed="skill" in config.worker_tools,
-        providers=rows,
+        providers=probe_provider_capabilities(services),
         rendering_ready=services.settings.rendering.get("profile_id", "blender-cpu")
         in services.settings.execution_profiles,
         blender_mcp_configured=is_blender_mcp_configured(

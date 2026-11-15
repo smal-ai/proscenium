@@ -9,6 +9,14 @@ the backend/frontend bindings. Wire `schema_version` remains `1.0`.
 
 ## Compatible UAT extensions
 
+- Owner `GET /api/v1/configuration/status` returns bounded read-only provider and
+  workstation bridge observations (`ConfigurationStatus`), without starting services
+  or reserving generation budgets. Configuration remains independently readable.
+- Owner `PUT /api/v1/configuration/profiles/{profile_id}` and
+  `POST /api/v1/configuration/profiles/{profile_id}/delete` accept revision-checked,
+  idempotent `AuthoringProfileUpsert` / `AuthoringProfileDelete` commands and return
+  `ConfigurationView`. New requests freeze the selected profile's model identities.
+
 Contract `1.0.0` retains all existing required stored-record fields and lifecycle
 edges. Omitted extensions do not alter historical bytes, context fingerprints or
 same-ID capture receipts. Consumers must accept historical records without them.

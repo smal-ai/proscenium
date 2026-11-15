@@ -1,6 +1,7 @@
 import { expect, type Page, type WebSocketRoute } from "@playwright/test";
 import type { ContextSnapshot, Event, ItemRecord, JobRecord, MessageSubmit, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, ShotPlan, VersionRecord, WorkRecord } from "../../apps/frontend/src/api";
 import { installFakeStudioApi, type MockRoute } from "./fixtures";
+import type { ConfigurationStatus, ConfigurationView } from "../../apps/frontend/src/api";
 
 export const projectId = "isolated-uat";
 export const base = `/api/v1/projects/${projectId}`;
@@ -32,6 +33,21 @@ export function retained(id: string, attribution_status: "verified" | "unrecorde
   return { schema_version: "1.0", artifact: { schema_version: "1.0", project_id: projectId, artifact_id: id, kind: media_type === "text/html" ? "document" : "image", purpose: "concept", sha256: "a".repeat(64), bytes: png.length, media_type, state: "ready", dimensions: { width: 1, height: 1 }, derived_from: [] }, attribution_status, request_id: null, work_id: null, invocation_id: null, job_id: null, published_versions: [] };
 }
 export class StudioFixture {
+  configuration: ConfigurationView = {
+    schema_version: "1.0", revision: 0, generation_attempt_limit: 3,
+    profiles: [{ profile_id: "authoring", name: "Project authoring", lead_model_id: "gpt-6.1-sol", worker_model_ids: ["gpt-6.1-sol"], scope_status: "project_scoped" }],
+    services: [
+      { provider_id: "local-comfy", endpoint: "http://127.0.0.1:8188", capabilities: ["image"], model_id: "flux-2-klein-4b.safetensors", available: null },
+      { provider_id: "local-vlm", endpoint: "http://127.0.0.1:1234", capabilities: ["vlm"], model_id: "qwen/qwen3.8-27b", available: true },
+    ],
+  };
+  configurationStatus: ConfigurationStatus = {
+    schema_version: "1.0", observed_at: stamp, rendering_ready: true, blender_mcp_configured: true, blendswap_mcp_configured: true, unity_configured: false,
+    providers: [
+      { provider_id: "local-comfy", capability: "image", status: "ready", profile_revision: "comfy-image-1", selected_models: ["flux-2-klein-4b.safetensors"], compatible_models: [], reference_dimensions: null, reason_code: null, summary: "Observed recipe preflight passed", default_dimensions: { width: 512, height: 512 }, default_steps: 4, max_pixels: 1048576 },
+      { provider_id: "local-vlm", capability: "vlm", status: "configured", profile_revision: null, selected_models: ["qwen/qwen3.8-27b"], compatible_models: [], reference_dimensions: null, reason_code: null, summary: "Model listing does not prove vision inference" },
+    ],
+  };
   snapshot = snapshot();
   requests: RequestRecord[] = [];
   retained = [retained("verified", "verified"), retained("legacy", "unrecorded")];
@@ -57,7 +73,11 @@ export class StudioFixture {
     }, { id: projectId, saved: options.savedLayout ?? false, created: options.created ?? false });
     const routes: MockRoute[] = [
       { path: "/api/v1/projects", body: pageOf([project]) },
-      { path: "/api/v1/configuration", body: { schema_version: "1.0", origin: this.origin, services: [], profiles: [], runtime: {} } },
+      { path: "/api/v1/configuration", handler: route => route.fulfill({ json: this.configuration }) },
+      { path: "/api/v1/configuration/status", handler: route => route.fulfill({ json: this.configurationStatus }) },
+      { method: "PUT", path: /\/api\/v1\/configuration\/profiles\/[^/]+$/, handler: route => { const body = route.request().postDataJSON(); const profile = { profile_id: body.profile_id, name: body.name, lead_model_id: body.lead_model_id, worker_model_ids: body.worker_model_ids, scope_status: "project_scoped" as const }; const index = this.configuration.profiles.findIndex(p => p.profile_id === profile.profile_id); if (index < 0) this.configuration.profiles.push(profile); else this.configuration.profiles[index] = profile; this.configuration.revision++; return route.fulfill({ json: this.configuration }); } },
+      { method: "POST", path: /\/api\/v1\/configuration\/profiles\/[^/]+\/delete$/, handler: route => { const body = route.request().postDataJSON(); this.configuration.profiles = this.configuration.profiles.filter(p => p.profile_id !== body.profile_id); this.configuration.revision++; return route.fulfill({ json: this.configuration }); } },
+      { method: "PUT", path: `${base}/settings`, handler: route => { const body = route.request().postDataJSON(); Object.assign(this.snapshot.settings, { default_profile_id: body.default_profile_id, generation_attempt_limit: body.generation_attempt_limit, state_revision: this.snapshot.settings.state_revision + 1 }); return route.fulfill({ json: { schema_version: "1.0", operation_id: body.operation_id, resource_id: projectId, state: "updated", state_revision: this.snapshot.settings.state_revision, replayed: false } }); } },
       { path: `${base}/snapshot`, handler: async route => { const body = structuredClone(this.snapshot); if (this.snapshotGate) await this.snapshotGate; await route.fulfill({ json: body }); } },
       { method: "GET", path: `${base}/requests`, handler: async route => { const body = pageOf(structuredClone(this.requests)); if (this.requestsGate) await this.requestsGate; await route.fulfill({ json: body }); } },
       { path: `${base}/items`, handler: route => route.fulfill({ json: pageOf(this.snapshot.items) }) },

@@ -19,6 +19,14 @@
 
 ## Layouts and navigation
 
+Open **Services & models** (labelled with the active authoring profile in the header)
+to inspect bounded live provider status and workstation bridge configuration. Use
+**New profile** or **Edit** to set Copilot lead and worker models, then select the
+profile for this project. **Use for this project** selects a newly saved profile.
+The generation-attempt limit is editable even before an explicit profile selection.
+Changes affect future requests, not settings frozen into existing work. Refreshing
+status does not start services or consume generation attempts.
+
 - **Split view:** Navigator, Review workspace and Assistant panel shown side by side.
 - **Chat focus:** Assistant expands across the Review workspace's area while hiding Review. Navigator remains independently collapsible and resizable. Selecting any catalogue item, version, storyboard shot or retained output automatically restores **Split view** so the chosen media opens immediately in the Review workspace.
 - **Collapse and resize:** Both Navigator and Assistant collapse into narrow icon rails and remember their Split-view widths per project. Drag a **Splitter** or focus it and use `ArrowLeft` / `ArrowRight` (`Shift` for larger steps).

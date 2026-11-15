@@ -441,6 +441,8 @@ export interface ContractDefinitions {
   AuthoredDocumentValidationRequest: AuthoredDocumentValidationRequest;
   AuthoredDocumentValidationResult: AuthoredDocumentValidationResult;
   AuthoredShotPlan: AuthoredShotPlan;
+  AuthoringProfileDelete: AuthoringProfileDelete;
+  AuthoringProfileUpsert: AuthoringProfileUpsert;
   Camera: Camera;
   CapabilityStatus: CapabilityStatus;
   CheckpointReceipt: CheckpointReceipt;
@@ -448,6 +450,7 @@ export interface ContractDefinitions {
   ClosureFile: ClosureFile;
   CommandReceipt: CommandReceipt;
   Commit: Commit;
+  ConfigurationStatus: ConfigurationStatus;
   ConfigurationView: ConfigurationView;
   ContextSnapshot: ContextSnapshot;
   ConversationEventData: ConversationEventData;
@@ -748,6 +751,25 @@ export interface ShotFrame {
   artifact_id: NullableId;
   state: "missing" | "proposed" | "available" | "selected";
 }
+export interface AuthoringProfileDelete {
+  schema_version: "1.0";
+  operation_id: Id;
+  expected_revision: Revision;
+  profile_id: Id;
+}
+export interface AuthoringProfileUpsert {
+  schema_version: "1.0";
+  operation_id: Id;
+  expected_revision: Revision;
+  profile_id: Id;
+  name: string;
+  lead_model_id: string;
+  /**
+   * @minItems 1
+   * @maxItems 2
+   */
+  worker_model_ids: [string] | [string, string];
+}
 export interface SourceClosure {
   entry_path: RelativePath;
   /**
@@ -805,6 +827,29 @@ export interface CommandReceipt {
   state: string;
   state_revision: Revision;
   replayed: boolean;
+}
+export interface ConfigurationStatus {
+  schema_version: "1.0";
+  observed_at: Timestamp;
+  rendering_ready: boolean;
+  blender_mcp_configured: boolean;
+  blendswap_mcp_configured: boolean;
+  unity_configured: boolean;
+  providers: ProviderCapabilitySummary[];
+}
+export interface ProviderCapabilitySummary {
+  provider_id: Id;
+  capability: "image" | "image_to_3d" | "vlm";
+  status: CapabilityStatus;
+  profile_revision: string | null;
+  selected_models: string[];
+  compatible_models: string[];
+  reference_dimensions: Dimensions | null;
+  reason_code: string | null;
+  summary: string;
+  default_dimensions?: Dimensions | null;
+  default_steps?: number | null;
+  max_pixels?: number | null;
 }
 export interface ConfigurationView {
   schema_version: "1.0";
@@ -1216,20 +1261,6 @@ export interface ProjectCapabilities {
   rendering_ready: boolean;
   blender_mcp_configured: boolean;
   unity_configured: boolean;
-}
-export interface ProviderCapabilitySummary {
-  provider_id: Id;
-  capability: "image" | "image_to_3d" | "vlm";
-  status: CapabilityStatus;
-  profile_revision: string | null;
-  selected_models: string[];
-  compatible_models: string[];
-  reference_dimensions: Dimensions | null;
-  reason_code: string | null;
-  summary: string;
-  default_dimensions?: Dimensions | null;
-  default_steps?: number | null;
-  max_pixels?: number | null;
 }
 export interface ProjectConfig {
   schema_version: "1.0";

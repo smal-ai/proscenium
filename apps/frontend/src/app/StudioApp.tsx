@@ -40,11 +40,11 @@ export function StudioApp({ components = {} }: { components?: StudioComponents }
   }, [api, paired, refreshProjects, unauthorised]);
   const active = projects.find(p => p.state === "active" || p.state === "awaiting_resume");
   if (!paired) return <Pairing api={api} onPaired={() => setPaired(true)} />;
-  return <ProjectStudio key={active?.project_id ?? "none"} api={api} projectId={active?.project_id ?? null} projects={projects} configuration={configuration} components={components} onRefreshProjects={refreshProjects} onUnauthorised={unauthorised} rootError={error} />;
+  return <ProjectStudio key={active?.project_id ?? "none"} api={api} projectId={active?.project_id ?? null} projects={projects} configuration={configuration} onConfigurationChange={setConfiguration} components={components} onRefreshProjects={refreshProjects} onUnauthorised={unauthorised} rootError={error} />;
 }
 
-function ProjectStudio({ api, projectId, projects, configuration, components, onRefreshProjects, onUnauthorised, rootError }: {
-  api: ApiClient; projectId: string | null; projects: ProjectRecord[]; configuration: ConfigurationView | null; components: StudioComponents; onRefreshProjects: () => Promise<void>; onUnauthorised: () => void; rootError: string;
+function ProjectStudio({ api, projectId, projects, configuration, onConfigurationChange, components, onRefreshProjects, onUnauthorised, rootError }: {
+  api: ApiClient; projectId: string | null; projects: ProjectRecord[]; configuration: ConfigurationView | null; onConfigurationChange: (view: ConfigurationView) => void; components: StudioComponents; onRefreshProjects: () => Promise<void>; onUnauthorised: () => void; rootError: string;
 }) {
   const data = useProjectData(api, projectId, onUnauthorised);
   const { layout, setLayout } = useStudioLayout(projectId, data.snapshot, data.requests.length, data.items.length, data.jobs.length, data.hydrated);
@@ -138,7 +138,7 @@ function ProjectStudio({ api, projectId, projects, configuration, components, on
   return <div className="studio-shell">
     <header className="studio-header"><div className="brand"><span className="brand-mark">P</span><strong>PROSCENIUM</strong></div><div className="header-divider" /><ProjectMenu api={api} projects={projects} activeId={projectId} onRefresh={onRefreshProjects} />
       <code className="workspace-path" title={data.snapshot?.project.path}>{data.snapshot?.project.path ?? "No active workstation folder"}</code>
-      <div className="header-spacer" /><span className={data.connection === "Connected" ? "connection connected" : "connection"}><span />{data.connection}</span><button aria-label="Refresh project metadata" title="Refresh metadata without sending a prompt" onClick={() => { void onRefreshProjects(); void data.refresh(); }}><RefreshCw size={14} /></button><ConfigurationMenu api={api} configuration={configuration} snapshot={data.snapshot} onRefresh={data.refresh} />
+      <div className="header-spacer" /><span className={data.connection === "Connected" ? "connection connected" : "connection"}><span />{data.connection}</span><button aria-label="Refresh project metadata" title="Refresh metadata without sending a prompt" onClick={() => { void onRefreshProjects(); void data.refresh(); }}><RefreshCw size={14} /></button><ConfigurationMenu api={api} configuration={configuration} snapshot={data.snapshot} onRefresh={data.refresh} onConfigurationChange={onConfigurationChange} />
     </header>
     <div ref={body} className={`studio-body${chatFocus ? " chat-focus" : ""}`} style={{ gridTemplateColumns: chatFocus ? `${navigatorWidth}px ${layout.navigatorCollapsed ? 0 : 6}px minmax(0,1fr)${layout.assistantCollapsed ? " 52px" : ""}` : `${navigatorWidth}px ${layout.navigatorCollapsed ? 0 : 6}px minmax(320px,1fr) ${layout.assistantCollapsed ? 0 : 6}px ${assistantWidth}px` }}>
       <aside className={`left-panel${layout.navigatorCollapsed ? " collapsed" : ""}`} aria-label="Navigator">

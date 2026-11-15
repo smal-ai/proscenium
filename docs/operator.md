@@ -100,8 +100,17 @@ requests freeze the profile, endpoint, graph and input hashes. Configuration cha
 not reinterpret admitted jobs. The default attempt budget is three per human task and
 target.
 
-`services[].available` and `profiles[].scope_status` are configured metadata.
-Unknown availability is shown explicitly. The 256 MiB free-VRAM check is a
+**Services & models** shows bounded live provider catalogue/recipe observations,
+configured workstation bridges and a manual **Refresh status** control. These reads
+do not start services, perform inference or reserve generation budgets. A listed
+VLM model is not proof of vision inference. Failed probes leave profile editing available.
+Create, edit and select owner-controlled Copilot lead/worker profiles in the same
+menu. Profiles persist privately in `registry.sqlite3`, independently of source
+configuration. New Queue requests freeze their selected model identities. A profile
+selected by any registered project cannot be deleted, and one authoring profile must remain.
+
+`services[].available` and `profiles[].scope_status` remain configured metadata.
+The 256 MiB free-VRAM check is a
 capability preflight, not a guarantee that a model fits in memory.
 
 The accepted SD-Turbo correction workflow did not achieve its requested blue
@@ -148,6 +157,9 @@ identity. Backup preserves the original source files and copies associated
 Git/LFS, SQLite, media and native history through validated read-only paths.
 Incomplete/corrupt or busy stores are reported explicitly. Backups are private
 material and are not automatically encrypted or uploaded.
+Owner-created profile definitions are retained in the backed-up machine registry
+alongside the selected project's profile preference. Authentication and unrelated
+project records remain excluded.
 
 The runtime identity manifest at `docs/implementation/runtime-lock.json` is retained
 because the backup tool reads it. The verified native relocation used the same

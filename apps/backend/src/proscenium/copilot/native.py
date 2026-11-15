@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from copilot import CopilotClient, RuntimeConnection
@@ -271,6 +272,18 @@ def is_blender_mcp_configured(mcp_servers: dict[str, Any]) -> bool:
     return False
 
 
+def is_blendswap_mcp_configured(mcp_servers: dict[str, Any]) -> bool:
+    for name, server in mcp_servers.items():
+        if name.lower() == "blendswap":
+            return True
+        if server.get("type") not in {"http", "sse"}:
+            continue
+        host = urlsplit(server.get("url", "")).hostname or ""
+        if host == "blendswap.com" or host.endswith(".blendswap.com"):
+            return True
+    return False
+
+
 UNITY_TOOLS = [
     "get_project_capabilities",
     "validate_authored_document",
@@ -289,12 +302,12 @@ UNITY_TOOLS = [
 ]
 
 
-def unity_agent(config: Configuration) -> dict[str, Any]:
+def unity_agent(config: Configuration, *, model: str | None = None) -> dict[str, Any]:
     skill = Path(__file__).resolve().parents[5] / "agent/skills/unity/SKILL.md"
     return dict(
         name="unity-specialist",
         description="Scoped pinned-source Unity scene import, controls and validation",
-        model=config.unity_worker_model or config.worker_model,
+        model=model or config.unity_worker_model or config.worker_model,
         model_policy="required",
         tools=list(UNITY_TOOLS),
         prompt=UNITY_INSTRUCTIONS + "\n" + skill.read_text(),
@@ -340,8 +353,20 @@ class Native:
         if identity(pid) is not None:
             raise DomainError("owner_conflict", 409, "Original runtime exit not yet observed")
 
-    async def open(self, project_id: str, session_id: str | None, callbacks: dict[str, Any]) -> Any:
+    async def open(
+        self,
+        project_id: str,
+        session_id: str | None,
+        callbacks: dict[str, Any],
+        *,
+        models: tuple[str, str, str] | None = None,
+    ) -> Any:
         config = self.config
+        lead_model, worker_model, unity_worker_model = models or (
+            config.lead_model,
+            config.worker_model,
+            config.unity_worker_model or config.worker_model,
+        )
         if version("github-copilot-sdk") != "1.0.34":
             raise DomainError("capability_unavailable", 501)
         with config.cli_path.open("rb") as binary:
@@ -408,7 +433,7 @@ class Native:
         output = project / ".proscenium/tool-output"
         output.mkdir(mode=0o700, parents=True, exist_ok=True)
         settings = dict(
-            model=config.lead_model,
+            model=lead_model,
             working_directory=str(project),
             memory={"enabled": False},
             enable_session_store=False,
@@ -428,12 +453,12 @@ class Native:
                 dict(
                     name="authoring-specialist",
                     description="Scoped Proscenium authoring specialist",
-                    model=config.worker_model,
+                    model=worker_model,
                     model_policy="required",
                     tools=config.worker_tools,
                     prompt=SPECIALIST_INSTRUCTIONS,
                 ),
-                unity_agent(config),
+                unity_agent(config, model=unity_worker_model),
             ],
             **callbacks,
         )

@@ -2,6 +2,78 @@ import { expect, test } from "@playwright/test";
 import { base, job, projectId, StudioFixture, work } from "./studio-fixture";
 import type { ShotPlan } from "../../apps/frontend/src/api";
 
+test("profile editing and deletion remain available when live status is offline", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ savedLayout: true });
+  await page.route("**/api/v1/configuration/status", route => route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "provider_unavailable", message: "Offline fixture", details: {} } } }));
+  await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: "Project authoring", exact: true }).click();
+  const menu = page.getByRole("region", { name: "Services and models", exact: true });
+  await expect(menu.getByText("Live status unavailable. Profile editing remains available.")).toBeVisible();
+  await expect(menu.getByRole("button", { name: "Delete profile Project authoring", exact: true })).toBeDisabled();
+  await menu.getByRole("button", { name: "New profile" }).click();
+  await menu.getByLabel("Profile name", { exact: true }).fill("Secondary");
+  await menu.getByRole("checkbox", { name: "Use for this project" }).uncheck();
+  await menu.getByRole("button", { name: "Save profile" }).click();
+  await menu.getByRole("button", { name: "Edit profile Secondary", exact: true }).click();
+  await expect(menu.getByLabel("Profile ID", { exact: true })).toHaveAttribute("readonly", "");
+  await menu.getByLabel("Profile name", { exact: true }).fill("Secondary edited");
+  await menu.getByLabel("Lead model", { exact: true }).fill("claude-opus-5.5");
+  await menu.getByRole("button", { name: "Save profile" }).click();
+  await expect(menu.getByRole("button", { name: "Edit profile Secondary edited", exact: true })).toBeVisible();
+  expect(studio.configuration.profiles.at(-1)?.lead_model_id).toBe("claude-opus-5.5");
+  await menu.getByRole("button", { name: "Delete profile Secondary edited", exact: true }).click();
+  await expect(menu.getByRole("button", { name: "Edit profile Secondary edited", exact: true })).toHaveCount(0);
+  expect(studio.configuration.profiles).toHaveLength(1);
+  await menu.getByRole("button", { name: "Close services and models" }).click();
+  await expect(menu).toHaveCount(0);
+  studio.assertHermetic();
+});
+
+test("service refresh reads configuration and distinguishes unreachable and ambiguous recipes", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.configurationStatus.providers[0] = { ...studio.configurationStatus.providers[0], status: "unavailable", reason_code: "provider_unreachable", selected_models: [] };
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: "Project authoring", exact: true }).click();
+  const menu = page.getByRole("region", { name: "Services and models", exact: true });
+  const comfy = menu.locator(".service-row").filter({ hasText: "local-comfy" });
+  await expect(comfy).toContainText("Unreachable");
+  studio.configurationStatus.providers[0] = { ...studio.configurationStatus.providers[0], status: "ambiguous", reason_code: "recipe_selection_required" };
+  const before = studio.guard!.calls.filter(call => call.url.endsWith("/configuration")).length;
+  await menu.getByRole("button", { name: "Refresh service status" }).click();
+  await expect(comfy).toContainText("Recipe needed");
+  expect(studio.guard!.calls.filter(call => call.url.endsWith("/configuration"))).toHaveLength(before + 1);
+  studio.assertHermetic();
+});
+
+test("Services & models probes live status and creates a project authoring profile", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: "Project authoring", exact: true }).click();
+  const menu = page.getByRole("region", { name: "Services and models", exact: true });
+  const comfy = menu.locator(".service-row").filter({ hasText: "local-comfy" });
+  await expect(comfy).toContainText("Connected");
+  await expect(comfy).toContainText("flux-2-klein-4b.safetensors");
+  await expect(comfy).not.toContainText(/Unknown|Model unavailable/);
+  await expect(menu.getByText("Workstation bridges", { exact: true })).toBeVisible();
+  await expect(menu.locator(".bridge-grid")).toContainText("Blender CPUReady");
+  await expect(menu.locator(".bridge-grid")).toContainText("BlendSwap MCPConfigured");
+  await expect(menu.getByRole("spinbutton", { name: "Generation attempt limit" })).toBeEnabled();
+  expect(studio.guard!.calls.some(call => call.url.endsWith("/configuration/status"))).toBe(true);
+  await menu.getByRole("button", { name: "New profile" }).click();
+  await menu.getByRole("textbox", { name: "Profile name", exact: true }).fill("Claude Sonnet Authoring");
+  await expect(menu.getByRole("textbox", { name: "Profile ID", exact: true })).toHaveValue("claude-sonnet-authoring");
+  await menu.getByLabel("Lead model", { exact: true }).fill("claude-sonnet-5.5");
+  await menu.getByLabel("Worker model", { exact: true }).fill("gpt-5.3-codex");
+  await menu.getByRole("button", { name: "Save profile" }).click();
+  await expect(page.getByRole("button", { name: "Claude Sonnet Authoring", exact: true })).toBeVisible();
+  await expect(menu.getByRole("combobox", { name: "Copilot profile" })).toHaveValue("claude-sonnet-authoring");
+  await expect(menu.getByRole("spinbutton", { name: "Generation attempt limit" })).toBeEnabled();
+  expect(studio.snapshot.settings.default_profile_id).toBe("claude-sonnet-authoring");
+  expect(studio.configuration.profiles.at(-1)).toMatchObject({ lead_model_id: "claude-sonnet-5.5", worker_model_ids: ["gpt-5.3-codex"] });
+  studio.assertHermetic();
+});
+
 for (const [state, code, reason, fenced, shown] of [
   ["running", "active_work_running", "Queued requests wait until the current work finishes.", false, false],
   ["awaiting_user", "awaiting_user", "Waiting for your answer.", false, false],

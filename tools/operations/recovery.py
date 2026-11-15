@@ -354,11 +354,11 @@ def backup(settings: Settings, project_id: str, target: Path, *, allow_incomplet
             registry_store.backup(target / "machine/registry.sqlite3")
             # Never include pairing codes/cookies/tool capabilities, cursor keys or
             # other projects in a recoverable registry. Keep only the selected binding
-            # and its authoritative non-secret preferences.
+            # and its authoritative non-secret preferences/profile definitions.
             with closing(sqlite3.connect(target / "machine/registry.sqlite3")) as db:
                 db.execute(
                     "DELETE FROM records WHERE NOT ((namespace='projects' AND id=?) OR "
-                    "(namespace='private' AND id=?))",
+                    "(namespace='private' AND id IN (?, 'configuration.profiles')))",
                     (project_id, f"settings:{project_id}"),
                 )
                 for table in (

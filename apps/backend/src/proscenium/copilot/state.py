@@ -166,11 +166,34 @@ class State:
                         if project_policy and project_policy["default_profile_id"] is not None
                         else self.services.settings.runtime.get("profile_id", "authoring"),
                     )
-                    configured = {p["profile_id"] for p in self.services.settings.profiles}
-                    active_profile = self.services.settings.runtime.get("profile_id", "authoring")
-                    if profile != active_profile or (
-                        body.get("profile_id") and profile not in configured
+                    profiles_list = getattr(
+                        self.services,
+                        "effective_profiles",
+                        lambda: list(self.services.settings.profiles),
+                    )()
+                    by_id = {p["profile_id"]: p for p in profiles_list}
+                    if profile in by_id:
+                        selected = by_id[profile]
+                        if (
+                            selected.get("scope_status") != "project_scoped"
+                            or not selected.get("lead_model_id")
+                            or not selected.get("worker_model_ids")
+                        ):
+                            raise DomainError("capability_unavailable", 501)
+                        lead_model = selected["lead_model_id"]
+                        worker_model = selected["worker_model_ids"][0]
+                        unity_worker_model = selected["worker_model_ids"][-1]
+                    elif (
+                        not body.get("profile_id")
+                        and not (project_policy and project_policy.get("default_profile_id"))
+                        and profile == self.services.settings.runtime.get("profile_id", "authoring")
                     ):
+                        lead_model = self.services.settings.runtime.get("lead_model", "gpt-6.1-sol")
+                        worker_model = self.services.settings.runtime.get("worker_model")
+                        unity_worker_model = self.services.settings.runtime.get(
+                            "unity_worker_model", worker_model
+                        )
+                    else:
                         raise DomainError("capability_unavailable", 501)
                     state = "held"
                     if not tx.all("requests") and not control["fenced"]:
@@ -263,6 +286,9 @@ class State:
                                 else project_policy["generation_attempt_limit"],
                             ),
                             "profile_id": profile,
+                            "lead_model": lead_model,
+                            "worker_model": worker_model,
+                            "unity_worker_model": unity_worker_model,
                             "owner_epoch": self.services.ownership.epoch,
                             "fifo": tx.watermark() + 1,
                         },

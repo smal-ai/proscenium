@@ -57,6 +57,12 @@ class AuthoredDocumentValidationResult(ContractModel):
 class AuthoredShotPlan(ContractModel):
     definition = "AuthoredShotPlan"
 
+class AuthoringProfileDelete(ContractModel):
+    definition = "AuthoringProfileDelete"
+
+class AuthoringProfileUpsert(ContractModel):
+    definition = "AuthoringProfileUpsert"
+
 class Camera(ContractModel):
     definition = "Camera"
 
@@ -77,6 +83,9 @@ class CommandReceipt(ContractModel):
 
 class Commit(ContractModel):
     definition = "Commit"
+
+class ConfigurationStatus(ContractModel):
+    definition = "ConfigurationStatus"
 
 class ConfigurationView(ContractModel):
     definition = "ConfigurationView"

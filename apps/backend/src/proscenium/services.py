@@ -1,6 +1,7 @@
 """Dependency container. Feature routers consume this single accepted shared API."""
 
 import secrets
+from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
 from typing import Any, Protocol
@@ -8,8 +9,9 @@ from typing import Any, Protocol
 from fastapi import Request
 
 from proscenium.api.errors import DomainError
-from proscenium.auth import Auth
+from proscenium.auth import Auth, Caller
 from proscenium.configuration import Settings
+from proscenium.contracts import validate
 from proscenium.db import Store
 from proscenium.db.ownership import Ownership
 from proscenium.db.pagination import Cursors
@@ -99,6 +101,123 @@ class Services:
             self.project_ownership[project_id] = Ownership(store.path.parent / "owner.lock")
         # Activation never opens execution. W01 resumes after reconciliation explicitly.
         self.gate.close(project_id)
+
+    def _profile_state(self, tx: Any) -> dict[str, Any]:
+        return tx.get("private", "configuration.profiles", required=False) or dict(
+            revision=0, overrides={}, deleted=[], order=[]
+        )
+
+    def _effective_profiles(self, stored: dict[str, Any]) -> list[dict[str, Any]]:
+        base_ids = {p["profile_id"] for p in self.settings.profiles}
+        identities = [p["profile_id"] for p in self.settings.profiles] + [
+            identity for identity in stored["order"] if identity not in base_ids
+        ]
+        profiles = {p["profile_id"]: p for p in self.settings.profiles} | stored["overrides"]
+        return deepcopy([profiles[i] for i in identities if i not in stored["deleted"]])
+
+    def effective_profiles(self) -> list[dict[str, Any]]:
+        with self.registry.store.transaction(write=False) as tx:
+            return self._effective_profiles(self._profile_state(tx))
+
+    def configuration_view(self) -> dict[str, Any]:
+        with self.registry.store.transaction(write=False) as tx:
+            stored = self._profile_state(tx)
+        view = deepcopy(self.settings.view())
+        view.update(
+            revision=self.settings.revision + stored["revision"],
+            profiles=self._effective_profiles(stored),
+        )
+        for service in view["services"]:
+            recipe = self.settings.provider_options.get("image_recipes", {}).get(
+                service["provider_id"]
+            )
+            if service["model_id"] is None and isinstance(recipe, dict):
+                service["model_id"] = recipe.get("unet") or recipe.get("checkpoint")
+        return validate("ConfigurationView", view)
+
+    def upsert_profile(
+        self, caller: Caller, profile_id: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        return self._mutate_profile(caller, profile_id, body, delete=False)
+
+    def delete_profile(
+        self, caller: Caller, profile_id: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        return self._mutate_profile(caller, profile_id, body, delete=True)
+
+    def _mutate_profile(
+        self, caller: Caller, profile_id: str, body: dict[str, Any], *, delete: bool
+    ) -> dict[str, Any]:
+        if caller.channel != "owner":
+            raise DomainError("scope_denied", 403)
+        validate("AuthoringProfileDelete" if delete else "AuthoringProfileUpsert", body)
+        if body["profile_id"] != profile_id:
+            raise DomainError("invalid_request", 422)
+        selected = None
+        if not delete:
+            selected = dict(
+                profile_id=profile_id,
+                name=body["name"].strip(),
+                lead_model_id=body["lead_model_id"].strip(),
+                worker_model_ids=[m.strip() for m in body["worker_model_ids"]],
+                scope_status="project_scoped",
+            )
+            if not all(
+                [selected["name"], selected["lead_model_id"], *selected["worker_model_ids"]]
+            ):
+                raise DomainError("invalid_request", 422)
+        with self.registry.store.transaction() as tx:
+
+            def effect() -> dict[str, Any]:
+                stored = self._profile_state(tx)
+                current = self.settings.revision + stored["revision"]
+                if body["expected_revision"] != current:
+                    raise DomainError("revision_conflict", 409, current_revision=current)
+                profiles = self._effective_profiles(stored)
+                if delete:
+                    if not any(p["profile_id"] == profile_id for p in profiles):
+                        raise DomainError("not_found", 404)
+                    if not any(
+                        p["profile_id"] != profile_id and p["scope_status"] == "project_scoped"
+                        for p in profiles
+                    ):
+                        raise DomainError(
+                            "invalid_request",
+                            422,
+                            "At least one authoring profile must remain configured",
+                        )
+                    if any(
+                        (
+                            tx.get("private", "settings:" + p["project_id"], required=False) or {}
+                        ).get("default_profile_id")
+                        == profile_id
+                        for p in tx.all("projects")
+                    ):
+                        raise DomainError(
+                            "project_busy",
+                            409,
+                            "Switch the project to another profile before deleting this profile",
+                        )
+                    stored["deleted"].append(profile_id)
+                else:
+                    stored["overrides"][profile_id] = selected
+                    if profile_id not in stored["order"]:
+                        stored["order"].append(profile_id)
+                    stored["deleted"] = [i for i in stored["deleted"] if i != profile_id]
+                stored["revision"] += 1
+                existing = tx.get("private", "configuration.profiles", required=False)
+                tx.put(
+                    "private",
+                    "configuration.profiles",
+                    stored,
+                    expected_revision=tx.revision("private", "configuration.profiles")
+                    if existing
+                    else None,
+                )
+                return {"revision": self.settings.revision + stored["revision"]}
+
+            tx.operation("configuration.profiles", body["operation_id"], body, effect)
+        return self.configuration_view()
 
     def activate_project(self, project_id: str) -> None:
         """W02 calls after validating owner command/project identity, before emitting its receipt."""

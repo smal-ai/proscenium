@@ -4,6 +4,45 @@
   "title": "Proscenium contract definitions 1.0.0",
   "$comment": "Reference a named $defs entry. Cross-record and execution invariants are normative in the companion documents.",
   "$defs": {
+    "ConfigurationStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "observed_at", "rendering_ready", "blender_mcp_configured", "blendswap_mcp_configured", "unity_configured", "providers"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "observed_at": {"$ref": "#/$defs/Timestamp"},
+        "rendering_ready": {"type": "boolean"},
+        "blender_mcp_configured": {"type": "boolean"},
+        "blendswap_mcp_configured": {"type": "boolean"},
+        "unity_configured": {"type": "boolean"},
+        "providers": {"type": "array", "items": {"$ref": "#/$defs/ProviderCapabilitySummary"}}
+      }
+    },
+    "AuthoringProfileUpsert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "operation_id", "expected_revision", "profile_id", "name", "lead_model_id", "worker_model_ids"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "operation_id": {"$ref": "#/$defs/Id"},
+        "expected_revision": {"$ref": "#/$defs/Revision"},
+        "profile_id": {"$ref": "#/$defs/Id"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 120},
+        "lead_model_id": {"type": "string", "minLength": 1, "maxLength": 120},
+        "worker_model_ids": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"type": "string", "minLength": 1, "maxLength": 120}}
+      }
+    },
+    "AuthoringProfileDelete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "operation_id", "expected_revision", "profile_id"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "operation_id": {"$ref": "#/$defs/Id"},
+        "expected_revision": {"$ref": "#/$defs/Revision"},
+        "profile_id": {"$ref": "#/$defs/Id"}
+      }
+    },
     "Id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
     "NullableId": {"anyOf": [{"$ref": "#/$defs/Id"}, {"type": "null"}]},
     "Sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},

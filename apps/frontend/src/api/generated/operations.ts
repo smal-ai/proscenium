@@ -3,6 +3,9 @@ import type * as C from "./contracts";
 export interface Operations {
   pairOwnerSession: { body: C.OwnerBootstrap; response: C.OwnerSession; path: Record<string, never>; query: Record<string, never> };
   getConfigurationView: { body: never; response: C.ConfigurationView; path: Record<string, never>; query: Record<string, never> };
+  getConfigurationStatus: { body: never; response: C.ConfigurationStatus; path: Record<string, never>; query: Record<string, never> };
+  upsertAuthoringProfile: { body: C.AuthoringProfileUpsert; response: C.ConfigurationView; path: { profile_id: string }; query: Record<string, never> };
+  deleteAuthoringProfile: { body: C.AuthoringProfileDelete; response: C.ConfigurationView; path: { profile_id: string }; query: Record<string, never> };
   listProjects: { body: never; response: C.ProjectPage; path: Record<string, never>; query: { cursor?: string; limit?: number } };
   openProject: { body: C.ProjectOpen; response: C.ProjectRecord; path: Record<string, never>; query: Record<string, never> };
   activateProject: { body: C.RevisionCommand; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
@@ -60,6 +63,9 @@ export interface Operations {
 export const routes = {
   pairOwnerSession: { method: "POST", path: "/api/v1/owner/session", binary: false },
   getConfigurationView: { method: "GET", path: "/api/v1/configuration", binary: false },
+  getConfigurationStatus: { method: "GET", path: "/api/v1/configuration/status", binary: false },
+  upsertAuthoringProfile: { method: "PUT", path: "/api/v1/configuration/profiles/{profile_id}", binary: false },
+  deleteAuthoringProfile: { method: "POST", path: "/api/v1/configuration/profiles/{profile_id}/delete", binary: false },
   listProjects: { method: "GET", path: "/api/v1/projects", binary: false },
   openProject: { method: "POST", path: "/api/v1/projects", binary: false },
   activateProject: { method: "POST", path: "/api/v1/projects/{project_id}/activate", binary: false },

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
 import re
 import time
 from collections.abc import Callable
@@ -52,6 +53,7 @@ class CallbackOwner:
     progress_at: float = 0
     progress_sequence: int = 0
     activity_sequence: int = 0
+    models: tuple[str, str, str] | None = None
 
 
 def retired_housekeeping(event: dict[str, Any]) -> bool:
@@ -384,9 +386,74 @@ class Copilot:
             await self.native.health()
 
     async def session(self, project_id: str, *, allow_create: bool = False) -> Any:
+        target_models = None
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            live_invocations = any(i["state"] not in TERMINAL for i in tx.all("invocations"))
+            active_work = [w for w in tx.all("work") if w["state"] not in TERMINAL | {"pending"}]
+            request_ids = [w["originating_request_id"] for w in active_work]
+            candidates = [
+                r
+                for r in tx.all("requests")
+                if r["submission"]["type"] == "queue"
+                and r["receipt"]["state"] in {"dispatching", "running", "acknowledged", "held"}
+                and r["request_id"] not in request_ids
+            ]
+            # Dispatch uses admission FIFO, not random request-ID ordering. Active
+            # work above always wins over a later held request or edited profile.
+            candidates.sort(
+                key=lambda r: (
+                    r["receipt"]["state"] == "held",
+                    (tx.get("copilot.effective", r["request_id"], required=False) or {}).get(
+                        "fifo", 0
+                    ),
+                )
+            )
+            request_ids += [r["request_id"] for r in candidates]
+            for request_id in request_ids:
+                eff = tx.get("copilot.effective", request_id, required=False) or {}
+                if eff.get("lead_model") and eff.get("worker_model"):
+                    target_models = (
+                        eff["lead_model"],
+                        eff["worker_model"],
+                        eff.get("unity_worker_model") or eff["worker_model"],
+                    )
+                    break
+        if target_models is None:
+            with self.services.registry.store.transaction(write=False) as tx:
+                policy = tx.get("private", "settings:" + project_id, required=False) or {}
+            profiles = getattr(
+                self.services, "effective_profiles", lambda: list(self.services.settings.profiles)
+            )()
+            selected = next(
+                (p for p in profiles if p["profile_id"] == policy.get("default_profile_id")), None
+            )
+            if selected and selected.get("lead_model_id") and selected.get("worker_model_ids"):
+                target_models = (
+                    selected["lead_model_id"],
+                    selected["worker_model_ids"][0],
+                    selected["worker_model_ids"][-1],
+                )
         if project_id in self.sessions:
             cached = self.sessions[project_id]
             previous = self.session_callback_owners.get(id(cached))
+            sending = any(
+                not task.done()
+                # send() resolves its session before recording native send intent.
+                # Its own preparation is not an in-flight native send.
+                and task is not asyncio.current_task()
+                and self.send_projects.get(identity) == project_id
+                for identity, task in self.sends.items()
+            )
+            if (
+                previous is not None
+                and not previous.retired
+                and target_models is not None
+                and previous.models is not None
+                and previous.models != target_models
+                and not sending
+                and not live_invocations
+            ):
+                self.retire_callback(project_id, cached, settled=True)
             if previous is None or not previous.retired:
                 return cached
             del self.sessions[project_id]
@@ -402,7 +469,7 @@ class Copilot:
         if self.native is None:
             self.native = Native(self.services)
         session_id = association["session_id"] if association else None
-        owner = CallbackOwner(project_id, session_id)
+        owner = CallbackOwner(project_id, session_id, models=target_models)
         self.callback_owners[project_id] = owner
         tools = Tools(self.services, self.state, project_id)
         # Native session events can precede create/resume ACK. Session ID is bound by the SDK
@@ -536,6 +603,11 @@ class Copilot:
                 on_user_input_request=user_input,
                 hooks={"on_user_prompt_submitted": prompt_hook},
                 tools=native_tools,
+            ),
+            **(
+                {"models": target_models}
+                if "models" in inspect.signature(self.native.open).parameters
+                else {}
             ),
         )
         holder["session_id"] = session.session_id
