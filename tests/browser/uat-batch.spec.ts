@@ -1,0 +1,234 @@
+import { expect, test } from "@playwright/test";
+import { verifyLayout } from "./layout-journey";
+import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
+
+test("hydration gates onboarding and starter intents never send or overwrite drafts", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const delayed = deferred(); studio.snapshotGate = delayed.promise; studio.requestsGate = delayed.promise;
+  await studio.install({ created: true }); await studio.open();
+  await expect(page.getByRole("button", { name: "Collapse Navigator" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chat focus", exact: true })).toBeVisible();
+  expect(await page.evaluate(id => localStorage.getItem(`proscenium.owner.layout.v1.${id}`), projectId)).toBeNull();
+  delayed.release(); studio.snapshotGate = null; studio.requestsGate = null;
+  await studio.ready();
+  await expect(page.locator("main.review-panel")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Expand Navigator" })).toBeVisible();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  for (const [label, kind] of [["Plan a storyboard", "storyboard"], ["Create an asset", "asset"], ["Build a scene", "scene"]]) {
+    await input.fill(""); await page.getByRole("button", { name: label, exact: true }).click();
+    await expect(input).not.toHaveValue(""); await expect(input).toBeFocused();
+    const target = await page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.target.${id}`)!), projectId);
+    expect(target).toMatchObject({ kind: "new_item", item_kind: kind });
+    await input.fill("Keep my own wording"); await page.getByRole("button", { name: label, exact: true }).click();
+    await expect(input).toHaveValue("Keep my own wording");
+  }
+  expect(studio.submissions).toEqual([]); studio.assertHermetic();
+});
+
+test("DPR 1 splitters, remembered tabs, layout and conversation following", async ({ page, baseURL }) => {
+  await verifyLayout(page, baseURL!, 1);
+});
+
+test("hidden decoded Review preserves mode, frame and local annotation draft", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
+  const review = page.locator("main.review-panel");
+  await expect(review.locator("img")).toBeVisible();
+  const before = await review.innerText();
+  await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+  await page.locator(".brand").click();
+  for (const key of ["1", "2", "3", "Space", "ArrowLeft", "ArrowRight"]) await page.keyboard.press(key);
+  await page.getByRole("button", { name: "Restore split view" }).click();
+  expect(await review.innerText()).toBe(before);
+  await expect(page.getByRole("button", { name: "2 Keyframes" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Annotate presented frame" }).click();
+  const annotation = page.getByRole("textbox", { name: "Feedback" });
+  // The real editor's labelled input is inspected, rather than injecting app state.
+  await annotation.fill("Keep this local annotation");
+  await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+  await page.locator(".brand").click(); await page.keyboard.press("3");
+  await page.getByRole("button", { name: "Restore split view" }).click();
+  await expect(annotation).toHaveValue("Keep this local annotation");
+  expect(studio.guard?.calls.filter(c => c.method === "POST")).toEqual([]); studio.assertHermetic();
+});
+
+test("explicit target and historical references stay isolated during async submit", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
+  await page.getByRole("button", { name: "Annotate presented frame" }).click();
+  await page.getByRole("textbox", { name: "Feedback" }).fill("Unrelated hidden annotation must never flush");
+  await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+  await page.getByRole("button", { name: "Choose request target and references" }).click();
+  await page.getByLabel("Published item", { exact: true }).selectOption("asset-a");
+  await expect(page.getByLabel("Published version", { exact: true })).toBeEnabled();
+  await page.getByLabel("Published version", { exact: true }).selectOption("a-v1");
+  await page.getByRole("button", { name: "Add reference version" }).click();
+  await page.getByLabel("Published item", { exact: true }).selectOption("board-b");
+  await page.getByLabel("Target storyboard shot").selectOption("shot-1");
+  await page.getByRole("textbox", { name: "Message Copilot" }).fill("Use B shot one with A v1");
+  const delayed = deferred(); studio.contextGate = delayed.promise;
+  await page.getByRole("button", { name: "Queue message", exact: true }).click();
+  await expect.poll(() => studio.contexts.length).toBe(1);
+  await page.getByRole("button", { name: "Asset A v1 a-v1" }).click();
+  delayed.release();
+  await expect.poll(() => studio.submissions.length).toBe(1);
+  expect(studio.contexts[0]).toMatchObject({ request_target: { kind: "shot", storyboard_version: { item_id: "board-b", version_id: "b-v1" }, shot_id: "shot-1" }, reference_versions: [{ item_id: "asset-a", version_id: "a-v1" }], view_mode: "none", selected_objects: [], target: null, camera: null, range: null, attachments: [], annotations: [] });
+  expect(studio.guard?.calls.filter(c => c.method === "POST").map(c => c.url)).toEqual([`${base}/contexts`, `${base}/requests`]);
+  studio.assertHermetic();
+});
+
+test("Navigator asset-first creation and retained verified versus legacy PNGs", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const outputs = page.getByRole("region", { name: "Retained outputs" });
+  await expect(outputs.getByText(/Attribution unrecorded/)).toBeVisible();
+  await expect(outputs.getByText(/Verified/)).toBeVisible();
+  await expect(outputs.getByText(/Concept images are not 3D meshes/)).toBeVisible();
+  for (const image of await outputs.locator("img").all()) expect(await image.getAttribute("src")).toMatch(new RegExp(`${base}/artifacts/(verified|legacy)/content`));
+  await page.getByRole("button", { name: "New asset", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Message Copilot" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Choose request target and references" })).toContainText("New asset");
+  expect(studio.submissions).toEqual([]); studio.assertHermetic();
+});
+
+test("send mode is deliberate, stale Steer stays guarded, held cancellation and Resume polling", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!); studio.snapshot.active_work = work(); studio.snapshot.execution!.can_steer_work_id = "work";
+  studio.requests = [request("held", "Held request", "held")];
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" }); await input.fill("Retain this steer draft");
+  await page.getByRole("button", { name: "Select send mode" }).click();
+  await page.getByRole("menuitemradio", { name: /Steer/ }).click();
+  expect(studio.submissions).toEqual([]);
+  await page.getByLabel("Steer active work target").selectOption("work");
+  await expect(page.getByRole("button", { name: "Steer active work", exact: true })).toBeEnabled();
+  await studio.setWork("awaiting_resume", true);
+  await expect(page.getByRole("button", { name: "Steer active work", exact: true })).toBeDisabled();
+  await expect(input).toHaveValue("Retain this steer draft");
+  await page.getByRole("button", { name: "Switch to Queue" }).click();
+  await expect(page.locator(".queue-hold")).toContainText("Execution awaits explicit Resume");
+  await page.getByRole("button", { name: "Cancel held request" }).click();
+  await expect.poll(() => studio.requests[0].receipt.state).toBe("cancelled");
+  expect(studio.submissions).toEqual([]);
+  await page.getByLabel("Resume mode").selectOption("continue_work");
+  await page.getByRole("button", { name: "Resume", exact: true }).click();
+  await expect.poll(() => studio.resumePolls).toBeGreaterThan(0);
+  await expect(page.getByRole("region", { name: "Resume awaiting confirmation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Resume", exact: true })).toBeDisabled();
+  studio.resumeComplete = true;
+  await expect(page.getByRole("region", { name: "Resume awaiting confirmation" })).toHaveCount(0);
+  expect(studio.resumePolls).toBeGreaterThan(1);
+  studio.assertHermetic();
+});
+
+test("fixed status header and collapsed rail retain work on disconnect", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const status = page.locator(".assistant-heading .assistant-status");
+  await expect(status).toHaveAttribute("aria-label", "Ready");
+  for (const [state, label, fenced] of [["running", "Working…", false], ["awaiting_resume", "Paused", true], ["stop_requested", "Stopping…", true], ["outcome_uncertain", "Needs recovery", true]] as const) {
+    await studio.setWork(state, fenced); await expect(status).toHaveAttribute("aria-label", label);
+    await page.getByRole("button", { name: "Collapse Assistant" }).click();
+    await expect(page.locator(".right-panel .panel-rail .assistant-status")).toHaveAttribute("aria-label", label);
+    await page.getByRole("button", { name: "Expand Assistant" }).click();
+  }
+  studio.snapshot.pending_decisions = [{ decision_id: "decision", state: "pending", state_revision: 1, kind: "user_input", prompt: "Synthetic question", options: [], fingerprint: "synthetic" } as unknown as NonNullable<typeof studio.snapshot>["pending_decisions"][number]];
+  await studio.setWork("awaiting_user"); await expect(status).toHaveAttribute("aria-label", "Needs your input");
+  studio.snapshot.pending_decisions = [];
+  await studio.setWork("running"); await expect(status).toHaveAttribute("aria-label", "Working…");
+  studio.emit("subagent.started", { invocation_id: "child", name: "authoring-specialist", display_name: "Retained child", state: "running", summary: "", artifact_ids: [], model_id: "synthetic" });
+  studio.sockets.at(-1)!.close({ code: 1000, reason: "Synthetic disconnect" });
+  await expect(status).toHaveAttribute("aria-label", "Working… · reconnecting");
+  await expect(page.getByRole("button", { name: /^Agents/ })).toHaveText("Agents1?");
+  studio.assertHermetic();
+});
+
+test("awaiting-user status is not falsely reported as Ready without a decision projection", async ({ page, baseURL }) => {
+  test.fixme(true, "Owner fix required: AssistantStatus.tsx:11–16 omits awaiting_user without pending decisions. Reproduced independently.");
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work("awaiting_user");
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  await expect(page.locator(".assistant-heading .assistant-status")).toHaveAttribute("aria-label", "Needs your input");
+});
+
+test("a fresh native child event has a known live Agents count", async ({ page, baseURL }) => {
+  test.fixme(true, "Owner fix required: agents.ts:19 marks fresh connected child events last_known; useProjectData does not refresh starts. Reproduced independently.");
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work();
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  studio.emit("subagent.started", { invocation_id: "child", name: "authoring-specialist", display_name: "Layout shot one", state: "running", summary: "", artifact_ids: [], model_id: "synthetic" });
+  await expect(page.getByRole("button", { name: /^Agents/ })).toHaveText("Agents1");
+});
+
+test("Jobs Context Agents replace textarea and restore draft caret plus accepted history", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.jobs = [job("waiting", "waiting_resource"), job("cancelling", "cancel_requested"), job("uncertain", "outcome_uncertain"), job("finished", "succeeded")];
+  const steer = request("steer", "Accepted Steer");
+  steer.submission = { schema_version: "1.0", project_id: projectId, request_id: "steer", type: "steer", target_work_id: "work", text: "Accepted Steer", context_id: "context" };
+  studio.requests = [request("old", "Accepted Queue", "completed", "2026-11-15T07:59:59Z"), steer, request("cancelled", "Accepted then cancelled", "cancelled")];
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  studio.emit("tool.started", { invocation_id: "wrapper", name: "task", state: "running", summary: "", artifact_ids: [], model_id: null });
+  studio.emit("subagent.started", { invocation_id: "child", name: "authoring-specialist", display_name: "Layout shot one", state: "running", summary: "", artifact_ids: [], model_id: "synthetic" });
+  const input = page.getByRole("textbox", { name: "Message Copilot" }); await input.fill("Unsent draft\nSecond line");
+  await input.evaluate(e => (e as HTMLTextAreaElement).setSelectionRange(3, 3));
+  for (const panel of ["Jobs", "Context", "Agents"]) {
+    await page.getByRole("button", { name: new RegExp(`^${panel}`) }).click();
+    await expect(input).toHaveCount(0);
+    if (panel === "Agents") { await expect(page.getByText("Layout shot one", { exact: true }).last()).toBeVisible(); await expect(page.getByRole("button", { name: /^Agents/ })).toContainText("1"); }
+    if (panel === "Jobs") { await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs3?"); await expect(page.getByText("Finished job history")).toBeVisible(); }
+    await page.getByRole("button", { name: "Back to message" }).click();
+    await expect(input).toHaveValue("Unsent draft\nSecond line"); await expect(input).toBeFocused();
+    expect(await input.evaluate(e => (e as HTMLTextAreaElement).selectionStart)).toBe(3);
+  }
+  await input.evaluate(e => { const input = e as HTMLTextAreaElement; input.setSelectionRange(input.value.length, input.value.length); }); await input.press("ArrowUp");
+  await expect(input).toHaveValue("Unsent draft\nSecond line");
+  await input.evaluate(e => (e as HTMLTextAreaElement).setSelectionRange(0, 0)); await input.press("ArrowUp");
+  await expect(input).toHaveValue("Accepted Steer"); await input.press("ArrowUp");
+  await expect(input).toHaveValue("Accepted then cancelled"); await input.press("ArrowUp");
+  await expect(input).toHaveValue("Accepted Queue"); await input.press("ArrowDown"); await input.press("ArrowDown");
+  await input.press("ArrowDown");
+  await expect(input).toHaveValue("Unsent draft\nSecond line");
+  await input.evaluate(e => { (e as HTMLTextAreaElement).setSelectionRange(0, 0); e.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", isComposing: true, bubbles: true })); });
+  await expect(input).toHaveValue("Unsent draft\nSecond line");
+  studio.emit("subagent.completed", { invocation_id: "child", name: "authoring-specialist", display_name: "Layout shot one", state: "completed", summary: "", artifact_ids: [], model_id: "synthetic" });
+  await expect(page.getByRole("button", { name: /^Agents/ })).toHaveText("Agents0");
+  studio.assertHermetic();
+});
+
+test("conversation UTC ordering, blank suppression and safe publication-blocked output cards", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.retained.push(retained("html", "verified", "text/html"), retained("svg", "verified", "image/svg+xml"));
+  studio.snapshot.execution!.work_outputs = [{ work_id: "work", request_id: "initial", status: "publication_blocked", summary: "Storyboard source must be AuthoredShotPlan JSON", reason_code: "schema_invalid", artifact_ids: ["verified", "html", "svg"], published_versions: [] }];
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  studio.emit("assistant.completed", { message_id: "blank", text: "", native_agent_id: null });
+  studio.emit("assistant.completed", { message_id: "later", text: "Later UTC", native_agent_id: null }, "2026-11-15T08:00:01+00:00");
+  studio.emit("assistant.completed", { message_id: "earlier", text: "Earlier UTC", native_agent_id: null }, "2026-11-15T08:00:00Z");
+  await expect(page.locator(".assistant-message")).toHaveCount(2);
+  expect(await page.locator(".assistant-message p").allTextContents()).toEqual(["Earlier UTC", "Later UTC"]);
+  await expect(page.getByText("Finished · publication blocked", { exact: true })).toBeVisible();
+  const cards = page.locator(".publication-status .retained-output-card");
+  await expect(cards).toHaveCount(3); await expect(cards.locator("img")).toHaveCount(1);
+  await expect(cards.locator("iframe,svg")).toHaveCount(0); await expect(cards.getByRole("link", { name: "Download output" })).toHaveCount(3);
+  studio.assertHermetic();
+});
+
+test("delayed older snapshot cannot resurrect a completed work event", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!); studio.snapshot.active_work = work();
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const delayed = deferred(); studio.snapshotGate = delayed.promise;
+  const staleResponse = page.waitForResponse(async response => response.url().endsWith(`${base}/snapshot`) && (await response.json()).active_work?.state === "running");
+  await page.getByRole("button", { name: "Refresh project metadata" }).click();
+  // The request handler freezes running state before the newer event is delivered.
+  await expect.poll(() => studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length).toBeGreaterThan(2);
+  await studio.setWork(null);
+  await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+  delayed.release(); studio.snapshotGate = null;
+  await (await staleResponse).finished();
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(page.locator(".assistant-heading .assistant-status")).toHaveAttribute("aria-label", "Ready");
+  await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+  studio.assertHermetic();
+});

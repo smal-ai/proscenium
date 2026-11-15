@@ -13,8 +13,9 @@ export interface MockRoute {
  * Hermetic browser fixture guard: every unconfigured external or API request fails
  * loudly so isolated UI tests never contact live models, providers or services.
  */
-export async function installFakeStudioApi(page: Page, routes: MockRoute[], origin = "http://127.0.0.1:4179"): Promise<{ calls: Array<{ method: string; url: string }> }> {
+export async function installFakeStudioApi(page: Page, routes: MockRoute[], origin = "http://127.0.0.1:4179"): Promise<{ calls: Array<{ method: string; url: string }>; unconfigured: string[] }> {
   const calls: Array<{ method: string; url: string }> = [];
+  const unconfigured: string[] = [];
   await page.route("**/*", async route => {
     const request = route.request();
     const url = new URL(request.url());
@@ -32,6 +33,7 @@ export async function installFakeStudioApi(page: Page, routes: MockRoute[], orig
       && (typeof entry.path === "string" ? entry.path === url.pathname : entry.path.test(url.pathname)),
     );
     if (!matched) {
+      unconfigured.push(`${request.method()} ${url.pathname}`);
       await route.fulfill({
         status: 500,
         contentType: "application/json",
@@ -59,5 +61,5 @@ export async function installFakeStudioApi(page: Page, routes: MockRoute[], orig
       body: raw ? Buffer.from(matched.body as Uint8Array) : JSON.stringify(matched.body ?? {}),
     });
   });
-  return { calls };
+  return { calls, unconfigured };
 }
