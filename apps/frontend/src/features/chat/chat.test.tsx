@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ActivityEventData, ApiClient, Artifact, Event, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary } from "../../api";
+import type { ActivityEventData, ApiClient, Artifact, Event, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary } from "../../api";
 import { emptySelection } from "../../api/studio";
 import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
@@ -12,6 +12,8 @@ import { OutputCards } from "./OutputCards";
 import { awaitResume } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
+import { ChatPanel, shouldShowQueueHold, type ChatPanelProps } from "./ChatPanel";
+import { JobList, jobsBadgeState } from "./ComposerPanel";
 
 const api = { call: () => { throw new Error("Unconfigured API operation in offline test"); } } as unknown as ApiClient;
 const ref = { item_id: "asset-a", version_id: "version-old" };
@@ -20,6 +22,142 @@ const request = (request_id: string, accepted_at: string, text: string, type = "
 const snapshot = (state = "running", fenced = false) => ({ project: { project_id: "project", state: "active" }, active_work: { work_id: "work", state, native_session_id: "session" }, pending_decisions: [], execution: { fenced, hold_reason: fenced ? "Owner stopped work" : null, active_agents: [], work_outputs: [] }, items: [] }) as unknown as ProjectSnapshot;
 const event = (sequence: number, event_type: Event["event_type"], payload: object, occurred_at = "2026-11-15T10:00:00Z") => ({ sequence, event_type, payload, occurred_at, project_id: "project", actor: { kind: "lead", id: "lead" }, native_session_id: "session", request_id: "request", work_id: "work" }) as Event;
 const activity: ActivityEventData = { invocation_id: "invocation", name: "image specialist", state: "running", summary: "", artifact_ids: [], model_id: "reported-model", display_name: "Prepare concept" };
+const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({ job_id, state, kind: "image_generation", provider_id: "local-comfy" }) as JobRecord;
+const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => false, stop: async () => {}, retry: async () => false };
+const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
+
+test("queue hold excludes ordinary running and awaiting-user eligibility reasons", () => {
+  assert.equal(shouldShowQueueHold(null, "queue"), false);
+  for (const state of ["running", "awaiting_user", "completed"]) {
+    for (const code of ["active_work_running", "awaiting_user"]) {
+      const current = snapshot(state);
+      current.execution!.hold_reason_code = code;
+      current.execution!.hold_reason = "Queued requests wait until the current work finishes.";
+      assert.equal(shouldShowQueueHold(current, "queue"), false);
+      assert.doesNotMatch(chatMarkup([], { snapshot: current }), /class="queue-hold"/);
+    }
+  }
+});
+
+test("queue hold recognises explicit fences, pause codes and legacy idle holds only in Queue mode", () => {
+  const pausedProject = snapshot(); pausedProject.project.state = "awaiting_resume";
+  const held = [snapshot("running", true), pausedProject];
+  for (const code of ["fenced", "awaiting_resume", "queue_paused", "uncertain_stop", "stop_requested"]) {
+    const current = snapshot(); current.execution!.hold_reason_code = code; held.push(current);
+  }
+  const legacy = snapshot("completed"); legacy.execution!.hold_reason = "Legacy queue hold"; held.push(legacy);
+  for (const current of held) {
+    assert.equal(shouldShowQueueHold(current, "queue"), true);
+    assert.equal(shouldShowQueueHold(current, "steer"), false);
+    assert.match(chatMarkup([], { snapshot: current }), /class="queue-hold"/);
+  }
+  for (const state of ["running", "awaiting_user"]) {
+    const current = snapshot(state); current.execution!.hold_reason = "Queued requests wait until the current work finishes.";
+    assert.equal(shouldShowQueueHold(current, "queue"), false);
+  }
+  const fenced = snapshot("running", true); fenced.execution!.hold_reason_code = "active_work_running";
+  assert.equal(shouldShowQueueHold(fenced, "queue"), true);
+  pausedProject.execution!.hold_reason_code = "awaiting_user";
+  assert.equal(shouldShowQueueHold(pausedProject, "queue"), true);
+  assert.equal(shouldShowQueueHold(snapshot("completed"), "queue"), false);
+});
+
+test("live tool calls provide readable working steps and reconnecting status", () => {
+  const labels = {
+    prepare_image_generation: "Preparing image", submit_generation: "Submitting image", get_job: "Waiting on job",
+    get_artifact: "Inspecting output", validate_authored_document: "Validating plan", checkpoint_sources: "Checkpointing sources",
+    publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", request_preview: "Requesting preview",
+    assemble_sequence: "Assembling sequence", run_unity_workflow: "Running Unity workflow", bash: "Running command",
+    skill: "Loading skill", view: "Reading project file", get_project_capabilities: "Checking capabilities", custom_tool: "custom tool",
+  };
+  for (const [name, detail] of Object.entries(labels)) {
+    const props = { snapshot: snapshot(), requests: [], events: [event(1, "tool.started", { ...activity, name })], jobs: [], connection: "Connected" };
+    assert.deepEqual(assistantState(props), { state: "working", label: `Working · ${detail}…`, detail });
+    assert.ok(renderToStaticMarkup(<AssistantStatus {...props} connection="Reconnecting" />).includes(`Working · ${detail}… · reconnecting`));
+  }
+});
+
+test("live tool status excludes completed, wrapper and unrelated activity and selects the latest active call", () => {
+  const start = event(1, "tool.started", { ...activity, name: "prepare_image_generation" });
+  const props = { snapshot: snapshot(), requests: [], events: [], jobs: [], connection: "Connected" };
+  for (const events of [
+    [start, event(2, "tool.completed", { ...activity, state: "completed" }), start],
+    [event(1, "tool.started", { ...activity, name: "task" })],
+    [{ ...start, work_id: "other", native_session_id: "other" }],
+    [{ ...start, project_id: "other" }],
+  ]) assert.equal(assistantState({ ...props, events }).label, "Working…");
+  const latest = event(2, "tool.started", { ...activity, invocation_id: "latest", name: "checkpoint_sources" });
+  assert.equal(assistantState({ ...props, events: [latest, start] }).label, "Working · Checkpointing sources…");
+  assert.equal(assistantState({ ...props, events: [{ ...start, work_id: null }] }).label, "Working · Preparing image…");
+  assert.equal(assistantState({ ...props, events: [{ ...start, native_session_id: null }] }).label, "Working · Preparing image…");
+  assert.equal(assistantState({ ...props, events: [start, { ...event(2, "tool.completed", activity), native_session_id: "other" }] }).label, "Working · Preparing image…");
+});
+
+test("native specialists precede independent jobs and live tools precede specialists", () => {
+  const props = { snapshot: snapshot(), requests: [], events: [event(1, "subagent.started", activity)], jobs: [job("running")], connection: "Connected" };
+  assert.equal(assistantState(props).label, "Working · Prepare concept…");
+  assert.match(renderToStaticMarkup(<AssistantStatus {...props} />), /Working · Prepare concept…/);
+  const current = snapshot(); current.execution!.active_agents = [{ ...activity, state: "running", display_name: "Prepare concept", model_id: "reported-model", native_agent_id: "specialist", work_id: "work", request_id: "request", freshness: "live", updated_at: "2026-11-15T10:00:00Z" }];
+  assert.equal(assistantState({ ...props, snapshot: current, events: [] }).label, "Working · Prepare concept…");
+  assert.equal(assistantState({ ...props, events: [event(1, "subagent.started", { ...activity, display_name: null })] }).label, "Working · image specialist…");
+  assert.equal(assistantState({ ...props, events: [...props.events, event(2, "tool.started", { ...activity, name: "prepare_image_generation" })] }).label, "Working · Preparing image…");
+});
+
+test("unfinished jobs provide live status with snapshot fallback and settled jobs leave the default label intact", () => {
+  const props = { snapshot: snapshot(), requests: [], events: [], jobs: [], connection: "Connected" };
+  assert.equal(assistantState(props).label, "Working…");
+  assert.equal(assistantState({ ...props, jobs: [job("running")] }).label, "Working · 1 job running…");
+  const jobs = [job("running"), job("outcome_uncertain"), job("failed"), job("succeeded"), job("cancelled")];
+  assert.equal(assistantState({ ...props, jobs }).label, "Working · 2 jobs running…");
+  assert.match(renderToStaticMarkup(<AssistantStatus {...props} jobs={jobs} connection="Reconnecting" />), /Working · 2 jobs running… · reconnecting/);
+  assert.equal(assistantState({ ...props, jobs: jobs.slice(2) }).label, "Working…");
+  const current = snapshot(); current.jobs = jobs;
+  assert.equal(assistantState({ ...props, snapshot: current, jobs: undefined }).label, "Working · 2 jobs running…");
+  assert.equal(assistantState({ ...props, snapshot: current }).label, "Working…");
+});
+
+test("Jobs badge distinguishes empty, active, uncertain, settled and failed history", () => {
+  assert.deepEqual(jobsBadgeState([], false), { text: "0", ariaLabel: "Jobs: 0", tone: "empty" });
+  assert.equal(jobsBadgeState([], true).text, "0?");
+  const active = [job("running"), job("planned")];
+  assert.deepEqual(jobsBadgeState(active, false), { text: "2 active", ariaLabel: "Jobs: 2 active", tone: "active" });
+  assert.equal(jobsBadgeState(active, true).text, "2 active?");
+  const uncertain = jobsBadgeState([...active, job("outcome_uncertain")], false);
+  assert.equal(uncertain.text, "3 active?"); assert.equal(uncertain.tone, "attention"); assert.match(uncertain.ariaLabel, /uncertain/);
+  const settled = [job("succeeded", "a"), job("succeeded", "b"), job("cancelled", "c"), job("succeeded", "d")];
+  assert.equal(jobsBadgeState(settled, false).text, "4 done"); assert.equal(jobsBadgeState(settled, false).tone, "done");
+  assert.equal(jobsBadgeState(settled, true).text, "4 done?");
+  const failed = jobsBadgeState([{ ...job("failed"), error_code: "corrupt_provider_output" }], false);
+  assert.equal(failed.tone, "attention"); assert.match(failed.ariaLabel, /failed job/);
+});
+
+test("Composer renders accented Jobs counts and its status as the final bottom-right footer row", () => {
+  for (const [jobs, text, tone] of [
+    [[], "0", "empty"],
+    [[job("running"), job("planned")], "2 active", "active"],
+    [[job("running"), job("planned"), job("outcome_uncertain")], "3 active?", "attention"],
+    [[job("succeeded", "a"), job("cancelled", "b"), job("succeeded", "c"), job("succeeded", "d")], "4 done", "done"],
+    [[{ ...job("failed"), error_code: "corrupt_provider_output" }], "1 done", "attention"],
+  ] as [JobRecord[], string, string][]) {
+    const markup = chatMarkup(jobs);
+    assert.ok(markup.includes(`class="${tone}-jobs"`));
+    assert.ok(markup.includes(`>${text}</span>`));
+    assert.equal((markup.match(/class="assistant-status /g) ?? []).length, 1);
+    assert.match(markup, /<div class="composer-footer"><small class="composer-hint">Ctrl\+Enter to queue · Context is captured on submit<\/small><span class="assistant-status [\s\S]*<\/span><\/div><\/div><\/div>$/);
+    assert.ok(markup.indexOf('class="composer-footer"') > markup.indexOf('class="composer-actions"'));
+    if (["active", "attention"].includes(tone)) assert.match(markup, /class="jobs-indicator" aria-hidden="true"/);
+  }
+  assert.match(chatMarkup([job("running")], { connection: "Reconnecting" }), /1 active\?/);
+  assert.equal((chatMarkup([], { showHeaderStatus: true }).match(/class="assistant-status /g) ?? []).length, 2);
+});
+
+test("Jobs panel reports failed provider output diagnostics and retains unfinished uncertain jobs", () => {
+  const markup = renderToStaticMarkup(<JobList api={api} projectId="project" jobs={[{ ...job("failed"), error_code: "corrupt_provider_output" }, job("outcome_uncertain")]} onRefresh={async () => {}} onError={() => {}} />);
+  assert.match(markup, /Failure: corrupt_provider_output/); assert.match(markup, /Provider: local-comfy/);
+  assert.match(markup, /Finished job history/); assert.match(markup, /Unfinished jobs/);
+  assert.equal((markup.match(/Request job cancellation/g) ?? []).length, 1);
+  assert.equal((markup.match(/needs-attention/g) ?? []).length, 2);
+});
 
 test("explicit target context strips Review media and retains the older version pin", async () => {
   const selection = { ...emptySelection(), ...ref, attachments: [{ artifact_id: "viewport", role: "render" as const }], selected_objects: [{ object_id: "object", instance_id: "instance" }] };

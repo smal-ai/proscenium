@@ -29,6 +29,12 @@
 .composer-links button:focus-visible,.target-picker button:focus-visible,.split-send button:focus-visible{outline:2px solid #a3a3e8;outline-offset:2px}
 .composer-count{display:inline-block;min-width:16px;padding:0 3px;border-radius:3px;background:#131318;text-align:center;font-variant-numeric:tabular-nums}
 .composer-count.empty{opacity:.55}
+.composer-links button.active-jobs{border-color:#5c719e;background:#202d46;color:#d1e1ff}
+.composer-links button.attention-jobs{border-color:#997632;background:#352b19;color:#ffe0a0}
+.composer-links button.done-jobs{border-color:#365a4e;color:#b4d9c9}
+.composer-links .jobs-indicator{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.active-jobs .jobs-indicator{animation:jobs-pulse 1.4s ease-in-out infinite}
+.job-row small{overflow-wrap:anywhere}
 .composer-links small{font-size:9px;color:#c5bc93}
 .target-picker{position:relative;margin:0 0 7px;font-size:11px}
 .target-bar{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;text-align:left;border:1px solid #3b3b48;background:#202027;border-radius:5px;padding:6px 8px;cursor:pointer}
@@ -51,14 +57,21 @@
 .steer-unavailable p{margin:0 0 6px}
 .native-agent-row{display:flex;flex-direction:column;gap:4px;padding:7px 0;border-bottom:1px solid #33333d;font-size:11px}
 .needs-attention{border-left:2px solid #d3b477;padding-left:7px}
-.assistant-status{display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:10px;color:#9fafa6;white-space:nowrap}
+.composer-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 10px;margin-top:7px}
+.composer-footer .composer-hint{margin:0;font-size:10px;color:#a1aab9}
+.assistant-status{display:inline-flex;align-items:center;gap:5px;margin-left:auto;padding:3px 9px;border:1px solid #414958;border-radius:999px;background:#232934;font-size:11px;color:#c1cbd9;white-space:nowrap}
+.composer-footer .assistant-status{max-width:none;font-size:11px}
 .assistant-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
-.status-working .assistant-status-dot,.status-sending .assistant-status-dot,.status-stopping .assistant-status-dot{width:10px;height:10px;border:1.5px solid #8e8eaa;border-right-color:transparent;background:none;animation:assistant-rotate 1.2s linear infinite}
-.status-recovery,.status-attention,.status-stopping{color:#dfbe83}
-.status-paused,.assistant-status.stale{color:#aaa7bc}
-.assistant-status.compact{margin:0}
+.status-working .assistant-status-dot,.status-sending .assistant-status-dot,.status-stopping .assistant-status-dot{width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;background:none;animation:assistant-rotate 1s linear infinite}
+.assistant-status.status-working{color:#a7efd0;border-color:#38755e;background:#19392d}
+.assistant-status.status-sending{color:#d1d3ff;border-color:#686cab;background:#303250}
+.assistant-status.status-recovery,.assistant-status.status-attention,.assistant-status.status-stopping{color:#ffe0a0;border-color:#997632;background:#352b19}
+.assistant-status.status-paused,.assistant-status.status-ready{color:#c1cbd9;border-color:#414958;background:#232934}
+.assistant-status.stale{border-style:dashed}
+.assistant-status.compact{margin:0;padding:4px;min-width:20px;min-height:20px;justify-content:center}
 @keyframes assistant-rotate{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.assistant-status-dot{animation:none!important}}
+@keyframes jobs-pulse{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.assistant-status-dot,.jobs-indicator{animation:none!important}}
 .publication-status{padding:8px;margin:8px 0;border:1px solid #685732;border-radius:5px;background:#252116;color:#e0c68d;font-size:11px;overflow-wrap:anywhere}
 .publication-status p{margin:5px 0}
 .retained-output-cards{display:flex;flex-wrap:wrap;gap:7px;margin:5px 0}
