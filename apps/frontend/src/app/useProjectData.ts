@@ -133,6 +133,13 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     const seenNative = new Set<string>();
     const journal = new Map<number, Event>();
     const knownWork = new Map<string, WorkRecord>();
+    const knownJobs = new Map<string, JobRecord>();
+    const recordJobs = (records: JobRecord[]) => {
+      for (const record of records) {
+        const prev = knownJobs.get(record.job_id);
+        if (!prev || record.state_revision >= prev.state_revision) knownJobs.set(record.job_id, record);
+      }
+    };
     const report = (e: unknown) => {
       if (disposed) return;
       setError(describeError(e));
@@ -163,13 +170,17 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
           const prev = knownWork.get(s.value.active_work.work_id);
           if (!prev || s.value.active_work.state_revision >= prev.state_revision) knownWork.set(s.value.active_work.work_id, s.value.active_work);
         }
+        recordJobs(s.value.jobs);
         setSnapshot(prev => mergeSnapshot(prev, s.value, cursor, knownWork));
         setItems(prev => mergeItems(prev, s.value.items));
         setJobs(prev => mergeJobs(prev, s.value.jobs));
       }
       if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
       if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
-      if (j.status === "fulfilled") setJobs(prev => mergeJobs(prev, j.value));
+      if (j.status === "fulfilled") {
+        recordJobs(j.value);
+        setJobs(prev => mergeJobs(prev, j.value));
+      }
       if (s.status === "fulfilled" && r.status === "fulfilled" && i.status === "fulfilled" && j.status === "fulfilled") {
         setHydrated(true);
       }
@@ -224,10 +235,21 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
           };
         });
       }
+      let jobMaterialChange = false;
       if (event.event_type === "job.state_changed") {
         const job = event.payload as unknown as JobRecord;
+        const prevJob = knownJobs.get(job.job_id);
+        const prevArtifacts = prevJob ? prevJob.artifact_ids.join("\0") : "";
+        const nextArtifacts = job.artifact_ids.join("\0");
+        jobMaterialChange = !prevJob
+          || job.state !== prevJob.state
+          || job.availability !== prevJob.availability
+          || nextArtifacts !== prevArtifacts
+          || job.completed_frames !== prevJob.completed_frames
+          || job.error_code !== prevJob.error_code;
+        recordJobs([job]);
         setJobs(old => mergeJobs(old, [job]));
-        if (job.artifact_ids.length > 0) void loadRetainedArtifacts();
+        if (job.artifact_ids.length > 0 && nextArtifacts !== prevArtifacts) void loadRetainedArtifacts();
       }
       if (event.event_type === "subagent.started" || event.event_type === "tool.completed" || event.event_type === "subagent.completed") {
         const activity = event.payload as unknown as ActivityEventData;
@@ -242,7 +264,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (!disposed) setItems(prev => mergeItems(prev, value)); }).catch(report);
         void loadRetainedArtifacts();
       }
-      if (["publication.created", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "job.state_changed"].includes(event.event_type)) setRevision(n => n + 1);
+      if (["publication.created", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready"].includes(event.event_type) || (event.event_type === "job.state_changed" && jobMaterialChange)) setRevision(n => n + 1);
     }
     async function replay() {
       if (replaying) return replaying;
@@ -261,7 +283,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       return replaying;
     }
     async function resync() {
-      cursor = 0; journal.clear(); seenNative.clear(); knownWork.clear(); setEvents([]);
+      cursor = 0; journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); setEvents([]);
       await hydrate(); await replay();
     }
     function connect() {

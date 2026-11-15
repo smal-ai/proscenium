@@ -20,7 +20,7 @@
 ## Layouts and navigation
 
 - **Split view:** Navigator, Review workspace and Assistant panel shown side by side.
-- **Chat focus:** Assistant expands across the Review workspace's area while hiding Review. Navigator remains independently collapsible and resizable.
+- **Chat focus:** Assistant expands across the Review workspace's area while hiding Review. Navigator remains independently collapsible and resizable. Selecting any catalogue item, version, storyboard shot or retained output automatically restores **Split view** so the chosen media opens immediately in the Review workspace.
 - **Collapse and resize:** Both Navigator and Assistant collapse into narrow icon rails and remember their Split-view widths per project. Drag a **Splitter** or focus it and use `ArrowLeft` / `ArrowRight` (`Shift` for larger steps).
 - **Hidden Review safety:** Entering Chat focus preserves the selected version, camera, frame and unsaved annotation drafts while pausing playback, disabling hidden Review shortcuts and suspending 3D render loops until restored.
 - **New projects:** Once project hydration completes, a newly created or empty project opens in **Chat focus** with Navigator collapsed so the Composer has room. Existing projects restore their saved layout or Split view.
@@ -49,21 +49,21 @@ The **Target** picker above the Composer separates what you are viewing from wha
 - **Guarded Steer:** Steer is enabled only when eligible work is actively running or awaiting input with execution unfenced. If work finishes or pauses, your Steer selection and draft are preserved with an explicit **Switch to Queue** action.
 - **Prompt history:** Press `ArrowUp` in an empty Composer (or with the caret at index `0`) to recall earlier project prompts, and `ArrowDown` to move forward back to your unsent draft. Recalling history restores text only, keeping your current target, mode and attachments intact.
 - **Panel links:** **Jobs**, **Context** and **Agents** sit beneath the input as interactive pill links that temporarily replace the text box and restore your draft, caret and focus on close:
-  - **Jobs:** Counts unfinished independent render, encode, generation, VLM and Unity jobs.
+  - **Jobs:** Highlights unfinished independent render, encode, generation, VLM and Unity jobs (`N active` with an active indicator), retains settled history (`N done` or attention state on failure/uncertainty) and shows `0` when no jobs exist.
   - **Context:** Counts logical items in the next request (explicit target, reference versions, deduplicated images, object selections, annotations and approved findings), showing active uploads separately until ready.
   - **Agents:** Counts busy or uncertain product-native specialists (`subagent.*`), showing each specialist's task label, state, freshness and model without counting wrapper `task` calls.
 
 ## Live output, usage, failures and retained media
 
 - **Live following:** Conversation follows new requests, streamed replies and tool updates automatically, pauses when you scroll up and offers **Jump to latest**. Empty tool-only assistant turns do not create blank message bubbles.
-- **Copilot status:** The fixed Assistant header (and collapsed rail) displays **Sending…**, **Working…**, **Needs your input**, **Paused**, **Stopping…**, **Needs recovery** or **Ready**, marking disconnected states as reconnecting rather than assuming idle.
+- **Copilot status:** Anchored at the bottom right of the Assistant panel (Composer footer, Critic footer and bottom of the collapsed right rail), displaying **Sending…**, **Working…** (with live active tool, specialist or running-job step detail), **Needs your input**, **Paused**, **Stopping…**, **Needs recovery** or **Ready**, and marking disconnected states as reconnecting rather than assuming idle.
 - **Usage readout:** Reported usage renders as a dim, right-aligned monospace line. Legacy `assistant.usage.cost` from the pinned SDK represents premium-request usage and is labelled **premium credits** without currency or AI-credit conversion ([Copilot SDK 1.0.34 usage reference](https://github.com/github/copilot-sdk/blob/v1.0.34/docs/features/usage-and-billing.md#per-call-token-counts)).
 - **Actionable diagnostics:** Failed and uncertain tool calls expand their sanitised reason immediately while keeping technical IDs collapsed. Automatic policy rejections, owner declines, host holds, non-zero shell exit codes and structured schema/publication errors are distinguished explicitly.
-- **Retained outputs vs publication:** Registered images remain viewable and downloadable through authenticated artefact cards in Conversation and **Navigator → Assets → Retained outputs** even when catalogue publication fails (**Finished · publication blocked**). Standalone concept images are never labelled as 3D meshes.
+- **Retained outputs vs publication:** Registered images remain viewable and downloadable through authenticated artefact cards in Conversation and **Navigator → Assets → Retained outputs** even when catalogue publication fails (**Finished · publication blocked**). Clicking a retained image opens it directly in the Review workspace without fabricating a catalogue version, and selecting a published storyboard displays its ready `ShotPlan` panels in **Keyframes** mode. Standalone concept images are never labelled as 3D meshes.
 
 ## Stopping, holding and explicit Resume
 
-- **Queue holds:** When execution is paused or awaiting reconciliation, the Composer shows the hold reason before submission. Held Queue requests can be cancelled individually with **Cancel held request**.
+- **Queue holds:** When execution is genuinely fenced, paused or awaiting reconciliation (never during ordinary active execution), the Composer shows the hold reason before submission. Held Queue requests can be cancelled individually with **Cancel held request**.
 - **Stop vs Resume:** **Stop** cancels Copilot work through verified native barriers without stopping independent external jobs. After a restart, native abort or uncertain Stop, the **Resume Copilot** controls stay visible directly above the Composer, outside the scrollable Conversation. Choose a mode, then click **Resume**:
   - **Reconcile only:** Inspects native state and settles proven barriers without sending a prompt.
   - **Continue original work:** Resumes the selected work with its latest acknowledged request context and original generation budget.
