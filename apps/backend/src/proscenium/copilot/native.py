@@ -55,6 +55,13 @@ Routine in-scope creative stages progress automatically. Request exact owner per
 new charges, remote push/sharing or destructive retained-source operations. Do not treat tool permissions as creative selection.
 Do not install, start or stop independent model services. Preserve unsaved Blender/Unity work. One live scene writer and Git index owner.
 After compaction re-read the project brief and current plan. Report unavailable capabilities rather than inventing outputs.
+Honour request_target, reference_versions and execution_scope in extension_context and child additionalContext.
+planning_only forbids image generation, preview rendering and scene execution. Use empty publication preview_requests.
+Call get_project_capabilities first for tool, skill and provider discovery. Never probe python/proscenium imports or private runtime files.
+Use validate_authored_document for storyboards, sequences and publications before checkpoint_sources and publish_outputs.
+Storyboard source.entry_path MUST be canonical AuthoredShotPlan JSON at storyboards/<plan_id>/plan.json, never HTML, SVG or Markdown.
+Use prepare_image_generation then submit_generation with the returned exact submit_request. Never silently substitute vector/SVG drawings for inference.
+Relative workspace links such as storyboards/.../index.html are not browser URLs. Report retained artefact identities instead.
 """
 
 
@@ -113,6 +120,10 @@ class Configuration:
             [
                 "view",
                 "bash",
+                "skill",
+                "get_project_capabilities",
+                "validate_authored_document",
+                "prepare_image_generation",
                 "checkpoint_sources",
                 "publish_outputs",
                 "request_preview",
@@ -158,6 +169,8 @@ class Configuration:
 
 
 UNITY_TOOLS = [
+    "get_project_capabilities",
+    "validate_authored_document",
     "view",
     "bash",
     "run_unity_workflow",

@@ -5,6 +5,14 @@ description: Research an active-project creative brief, find reusable local or c
 
 # Research for the active brief
 
+Call `get_project_capabilities` first. Honour host `request_target`, `reference_versions`
+and `execution_scope`. Planning-only work performs no inference, previews or scene
+execution. Use `validate_authored_document` for plans, sequences and publications
+before checkpoint/publication. Plan impact uses `compare_to_path` and `changed_ids`.
+Requested image inference uses `prepare_image_generation` then `submit_generation`.
+Acquire/import and publish a standalone `asset` without requiring a storyboard.
+Dependent scenes/storyboards remain pinned until an explicit adoption edit.
+
 1. Read the active project's instructions, canonical brief and selected treatment,
    current request, pinned catalogue versions and owner selections. Check Git status
    before edits. Do not inherit unfinished creative work from a reference project.

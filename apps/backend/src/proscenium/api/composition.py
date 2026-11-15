@@ -13,6 +13,7 @@ from proscenium.previews import router as previews_router
 from proscenium.providers import install as install_providers
 from proscenium.providers import register_provider_artifact
 from proscenium.providers import router as providers_router
+from proscenium.providers.preparation import Preparation
 from proscenium.reviews import install as install_reviews
 from proscenium.reviews import router as reviews_router
 from proscenium.services import Services
@@ -79,3 +80,4 @@ def configure_services(services: Services) -> None:
         install_copilot(services)
     services.extensions.setdefault("generation", GenerationAlias(providers))
     services.extensions.setdefault("vlm", ReviewAlias(providers))
+    services.extensions.setdefault("image_preparation", Preparation(services, providers))

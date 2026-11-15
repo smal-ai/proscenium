@@ -33,6 +33,7 @@ class Settings:
 
     @classmethod
     def load(cls, path: Path | None = None) -> "Settings":
+        path = Path(path) if path is not None else None
         path = (
             path
             or Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config")))
@@ -107,6 +108,9 @@ class Settings:
             if endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
                 raise ValueError("Service views must not contain credentials or query tokens")
         validate("ConfigurationView", self.view())
+        from proscenium.providers.preparation import validate_recipes
+
+        validate_recipes(self.provider_options)
 
     @property
     def host(self) -> str:

@@ -34,6 +34,50 @@ class ImageLimits:
 
 
 class Artifacts:
+    def list_retained(
+        self,
+        project_id: str,
+        *,
+        cursor: str | None = None,
+        limit: int = 50,
+        kind: str | None = None,
+        purpose: str | None = None,
+    ) -> dict[str, Any]:
+        from proscenium.contracts import SCHEMA
+        from proscenium.copilot.outcomes import artifact_attributions
+
+        for field, value in (("kind", kind), ("purpose", purpose)):
+            if (
+                value is not None
+                and value not in SCHEMA["$defs"]["Artifact"]["properties"][field]["enum"]
+            ):
+                raise DomainError("invalid_request")
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            attributions = artifact_attributions(tx)
+            records = []
+            for artifact in tx.all("artifacts"):
+                if artifact["project_id"] != project_id:
+                    raise DomainError("scope_denied", 403)
+                if (kind is None or artifact["kind"] == kind) and (
+                    purpose is None or artifact["purpose"] == purpose
+                ):
+                    summary = dict(
+                        schema_version="1.0",
+                        artifact=artifact,
+                        **attributions[artifact["artifact_id"]],
+                    )
+                    validate("RetainedArtifactSummary", summary)
+                    records.append({"artifact_id": artifact["artifact_id"], "summary": summary})
+        result = self.services.cursors.page(
+            f"{project_id}:retained-artifacts:{kind}:{purpose}",
+            records,
+            "artifact_id",
+            cursor=cursor,
+            limit=limit,
+        )
+        result["items"] = [row["summary"] for row in result["items"]]
+        return validate("RetainedArtifactPage", result)
+
     def __init__(self, services: Services, limits: ImageLimits | None = None):
         self.services = services
         self.limits = limits or ImageLimits(
