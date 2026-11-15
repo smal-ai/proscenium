@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 from proscenium.api.errors import DomainError
 from proscenium.copilot.activity import MAX_MESSAGE, failure_summary, safe_text
+from proscenium.copilot.outcomes import record_tool_outcome
 from proscenium.copilot.state import State, key, save
 from proscenium.db import Store
 from proscenium.jobs.gate import ExecutionGate
@@ -222,6 +223,33 @@ def test_error_text_is_bounded_and_common_credentials_are_redacted():
     assert token not in text and "fixture-only-value" not in text and "name:password" not in text
     assert safe_text("a" * (MAX_MESSAGE + 10)) == "a" * MAX_MESSAGE + "…"
     assert safe_text({"message": "not a string"}) == ""
+
+
+def test_permission_authority_precedes_trusted_outcome_and_issues_are_bounded(runtime):
+    state, store, _ = runtime
+    start(state)
+    rejection_stage(store, "owner")
+    with store.transaction() as tx:
+        record_tool_outcome(
+            tx,
+            invocation_id=key(SESSION, "tool", TOOL),
+            session_id=SESSION,
+            project_id=PROJECT,
+            work_id=WORK,
+            request_id=REQUEST,
+            tool_name="bash",
+            status="failed",
+            safe_summary="Host validation failed. Bearer fixture-secret",
+            issues=[
+                dict(path=f"field[{n}]", phase="schema", message="Invalid shape.") for n in range(8)
+            ],
+        )
+        invocation = tx.require("invocations", key(SESSION, "tool", TOOL))
+        confirmed = failure_summary(tx, invocation, dict(error=dict(code="rejected")))
+        assert "declined by the owner" in confirmed and "Host validation" not in confirmed
+        summary = failure_summary(tx, invocation, {})
+        assert "Host validation failed." in summary and "fixture-secret" not in summary
+        assert "field[4]" in summary and "field[5]" not in summary
 
 
 def test_unsolicited_abort_holds_original_work_without_claiming_stop_or_completion(runtime):

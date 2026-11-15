@@ -275,7 +275,7 @@ def test_settled_stop_reconciles_original_identity_then_releases_empty_queue(run
                 == "cold_settled_stop_confirmed"
             )
             assert observation["previous_stop_receipt"]["state"] == "outcome_uncertain"
-            assert observation["previous_outbox"]["state"] == "dispatching"
+            assert observation["previous_outbox"]["state"] in {"dispatching", "outcome_uncertain"}
             assert (
                 tx.connection.execute("SELECT state FROM outbox WHERE id=?", (STOP,)).fetchone()[0]
                 == "acknowledged"

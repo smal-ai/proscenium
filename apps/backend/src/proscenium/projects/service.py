@@ -9,6 +9,7 @@ from uuid import uuid4
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
+from proscenium.copilot.eligibility import execution_status
 from proscenium.db import Store
 from proscenium.db.ownership import Ownership
 from proscenium.db.paths import DENIED_PARTS, project_path
@@ -414,6 +415,7 @@ class Projects:
                     project=record,
                     settings=settings,
                     event_sequence=tx.watermark(),
+                    execution=execution_status(tx, self.services.ownership.epoch, record),
                     active_work=active[0] if active else None,
                     held_requests=[
                         r for r in tx.all("requests") if r["receipt"]["state"] == "held"

@@ -968,14 +968,20 @@ class Copilot:
                 phase = tx.require("copilot.stops", operation_id)
                 phase["phase"] = "outcome_uncertain"
                 save(tx, "copilot.stops", operation_id, phase)
+                detail_code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
                 self.state.request_state(
                     tx,
                     operation_id,
                     "outcome_uncertain",
-                    detail_code=exc.code
-                    if isinstance(exc, DomainError)
-                    else "provider_unavailable",
+                    detail_code=detail_code,
                 )
+                if tx.connection.execute(
+                    "SELECT 1 FROM outbox WHERE id=? AND state IN ('dispatching','outcome_uncertain')",
+                    (operation_id,),
+                ).fetchone():
+                    tx.settle_intent(
+                        operation_id, "outcome_uncertain", {"detail_code": detail_code}
+                    )
                 self.state.fence(tx, "outcome_uncertain")
             # Terminating the owned runtime is an execution fence, not invented cancellation evidence.
             if self.native:
@@ -1533,7 +1539,25 @@ class Copilot:
                     # This is an explicit continuation, never the original request body or a new task.
                     with store.transaction() as tx:
                         work = tx.require("work", body["work_id"])
-                        payload = tx.require("copilot.payloads", work["originating_request_id"])
+                        request_ids = [
+                            work["originating_request_id"],
+                            *work["directive_request_ids"],
+                        ]
+                        payload = next(
+                            (
+                                saved
+                                for request_id in reversed(request_ids)
+                                if tx.require("requests", request_id)["receipt"]["state"]
+                                not in {"cancelled", "failed"}
+                                and (
+                                    saved := tx.get("copilot.payloads", request_id, required=False)
+                                )
+                                is not None
+                            ),
+                            None,
+                        )
+                        if payload is None:
+                            raise DomainError("attribution_unavailable", 409)
                         snapshot = tx.require("contexts", payload["context_id"])
                         self.contexts.validate_references(tx, snapshot)
                         tx.put(

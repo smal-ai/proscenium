@@ -1,9 +1,14 @@
 """Bounded owner-visible failure diagnostics, never raw tool output or reasoning."""
 
+import json
+import logging
 import re
 from typing import Any
 
 from proscenium.db import Transaction
+from proscenium.db.store import now
+
+from .outcomes import get_tool_outcome
 
 MAX_MESSAGE = 2048
 REJECTIONS = {"rejected", "reject", "permission_denied", "denied-interactively-by-user"}
@@ -35,6 +40,48 @@ def error_fields(data: dict[str, Any]) -> dict[str, str]:
             name: value for name in ("message", "code") if (value := safe_text(error.get(name)))
         }
     return {}
+
+
+def shell_exit_code(data: dict[str, Any]) -> int | None:
+    shell = data.get("shellExecution")
+    value = shell.get("exitCode") if isinstance(shell, dict) else None
+    return value if type(value) is int else None
+
+
+def diagnostic_summary(message: Any, issues: Any) -> str:
+    parts = [safe_text(message)]
+    if isinstance(issues, list):
+        for issue in issues[:5]:
+            if isinstance(issue, dict):
+                location = safe_text(issue.get("path")) or safe_text(issue.get("phase"))
+                detail = safe_text(issue.get("message"))[:300]
+                if detail:
+                    parts.append(f"{location}: {detail}" if location else detail)
+    return safe_text(" ".join(parts))
+
+
+def log_activity_problem(
+    tx: Transaction, invocation: dict[str, Any], data: dict[str, Any], summary: str
+) -> None:
+    outcome = get_tool_outcome(tx, invocation["invocation_id"]) or {}
+    record = dict(
+        event="native_activity_problem",
+        occurred_at=now(),
+        project_id=tx.project_id,
+        **{
+            name: invocation.get(name)
+            for name in ("work_id", "request_id", "invocation_id", "kind", "name", "state")
+        },
+        phase=outcome.get("phase") or "native_execution",
+        error_code=outcome.get("error_code") or error_fields(data).get("code"),
+        exit_code=shell_exit_code(data),
+        summary=summary,
+    )
+    record = {
+        name: safe_text(value) if isinstance(value, str) else value
+        for name, value in record.items()
+    }
+    logging.getLogger("proscenium.copilot").warning("%s", json.dumps(record, sort_keys=True))
 
 
 def failure_summary(tx: Transaction, invocation: dict[str, Any], data: dict[str, Any]) -> str:
@@ -70,6 +117,30 @@ def failure_summary(tx: Transaction, invocation: dict[str, Any], data: dict[str,
                 )
         # The SDK calls automatic/host refusals 'user rejected' too. Do not invent an owner decision.
         return "Permission was rejected, but the rejecting authority was not confirmed. Reconcile the original work before continuing."
+    outcome = get_tool_outcome(tx, invocation["invocation_id"])
+    if outcome and outcome.get("safe_summary"):
+        return diagnostic_summary(outcome["safe_summary"], outcome.get("issues"))
+    # Legacy ToolResult failures may lack a trusted receipt. Decode only the known
+    # failure envelope, never arbitrary result/stdout content or model-written IDs.
+    raw_error = data.get("error")
+    raw_message = raw_error.get("message") if isinstance(raw_error, dict) else raw_error
+    if isinstance(raw_message, str):
+        try:
+            envelope = json.loads(raw_message)
+        except (ValueError, TypeError):
+            envelope = None
+        if (
+            isinstance(envelope, dict)
+            and isinstance(envelope.get("error"), str)
+            and isinstance(envelope.get("message"), str)
+        ):
+            details = envelope.get("details")
+            return diagnostic_summary(
+                envelope["message"], details.get("issues") if isinstance(details, dict) else None
+            )
+    exit_code = shell_exit_code(data)
+    if exit_code is not None and exit_code != 0 and not error.get("message"):
+        return f"Command exited with status {exit_code}. Inspect the command arguments and tool availability before retrying."
     message = error.get("message")
     if message:
         return f"{message} ({error['code']})" if error.get("code") else message
