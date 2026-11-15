@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { Provenance, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
+import type { Provenance, RetainedArtifactSummary, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
 import { ApiError } from "../../api/client";
 import type { CatalogueSurfaceProps } from "../../api/studio";
 import { allPages } from "../review/records";
 import { readPendingSelection, writePendingSelection, type PendingSelection } from "./pendingSelection";
+import { mediaUrl } from "../review/media";
 
 function ProvenanceDetails({provenance}: {provenance: Provenance | undefined}) {
   const source = provenance?.source_url?.trim();
@@ -21,7 +22,9 @@ export function CatalogueBrowser(props: CatalogueSurfaceProps) {
   return <Catalogue key={props.projectId} {...props}/>;
 }
 
-function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, onSelect}: CatalogueSurfaceProps) {
+function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, onSelect, retainedArtifacts, onCreateAsset, onInspectArtifact}: CatalogueSurfaceProps) {
+  const [retained, setRetained] = useState<RetainedArtifactSummary[]>([]);
+  const [retainedError, setRetainedError] = useState("");
   const [versions, setVersions] = useState<VersionRecord[]>([]);
   const [selections, setSelections] = useState<SelectionRecord[]>([]);
   const [error, setError] = useState("");
@@ -30,6 +33,19 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
   const [pending, setPending] = useState<PendingSelection | null>(null);
   const [query, setQuery] = useState("");
   const locked = useRef(false);
+
+  useEffect(() => {
+    if (retainedArtifacts !== undefined) return;
+    const controller = new AbortController();
+    setRetainedError("");
+    void allPages(cursor => api.call("listRetainedArtifacts", { path: { project_id: projectId }, query: { cursor, limit: 100, kind: "image" }, signal: controller.signal }))
+      .then(records => { if (!controller.signal.aborted) setRetained(records); })
+      .catch(cause => {
+        if (controller.signal.aborted || (cause instanceof ApiError && [404, 501].includes(cause.status))) return;
+        setRetainedError(cause instanceof Error ? cause.message : "Retained outputs unavailable.");
+      });
+    return () => controller.abort();
+  }, [api, projectId, refreshRevision, retainedArtifacts]);
 
   async function authoritativeChoices() {
     const choices = await allPages(cursor => api.call("listSelections", {path: {project_id: projectId}, query: {cursor, limit: 100}}));
@@ -120,6 +136,7 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
   }
 
   return <section className="review-catalogue" aria-label="Version catalogue">
+    {onCreateAsset && <button className="primary new-asset" onClick={onCreateAsset}>New asset</button>}
     <label>Search assets<input aria-label="Search assets" type="search" value={query} onChange={event => setQuery(event.target.value)}/></label>
     {pending && <div role="status">Selection {pending.state}. Original operation {pending.command.operation_id}, selection {pending.command.selection_id}, expected revision {pending.command.expected_revision}.
       <button disabled={busy} onClick={() => void retry()}>{pending.state === "acknowledged" ? "Reload acknowledged selection" : "Retry original selection"}</button>
@@ -143,5 +160,16 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
         {ownerVersion === version.version_id && <button disabled={busy || !ready || !!pending} onClick={() => void select(version, true)}>Withdraw selection</button>}
       </article>)}
     </details>;
-  })}{error && <p role="alert">{error}</p>}</section>;
+  })}
+    <section className="retained-outputs" aria-label="Retained outputs"><h3>Retained outputs</h3><p>Ready images, separate from published catalogue items. Concept images are not 3D meshes.</p>
+      {(retainedArtifacts ?? retained).filter(record => record.artifact.project_id === projectId && record.artifact.kind === "image" && record.artifact.state === "ready" && ["image/png", "image/jpeg", "image/webp"].includes(record.artifact.media_type)).map(record => {
+        const artifact = record.artifact;
+        return <article key={artifact.artifact_id} className="retained-output"><strong>{artifact.purpose} image</strong><small>{record.published_versions.length ? `Also published · ${record.published_versions.length} version(s)` : "Unpublished retained media"} · {record.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</small>
+          <img src={mediaUrl(projectId, artifact.artifact_id)} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }} />
+          <small>{artifact.dimensions ? `${artifact.dimensions.width} × ${artifact.dimensions.height}` : "Dimensions unrecorded"}</small><code>{artifact.artifact_id}</code>
+          <div className="button-row"><a href={mediaUrl(projectId, artifact.artifact_id)} download={artifact.artifact_id}>Download image</a>{onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect image</button>}</div>
+        </article>;
+      })}
+      {retainedError && <p role="alert">{retainedError}</p>}
+    </section>{error && <p role="alert">{error}</p>}</section>;
 }

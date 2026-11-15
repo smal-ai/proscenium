@@ -208,7 +208,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
       scene: `Author the scene and actual camera/timeline bindings for storyboard ${plan?.plan_id}, shot ${shot.shot_id}, preserving pinned dependencies and unrelated work.`,
     }[stage];
     setBusy(true);
-    try { await onQueue(text, context(shot, frame)); }
+    try { await onQueue(text, { ...context(shot, frame), execution_scope: stage === "planning" ? "planning_only" : "default" }); }
     catch (cause) { setError(message(cause)); }
     finally { setBusy(false); }
   }

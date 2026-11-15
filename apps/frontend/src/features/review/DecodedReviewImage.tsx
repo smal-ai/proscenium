@@ -7,13 +7,15 @@ export const decodedImageIdentity = (projectId: string, target: FrameTarget | nu
   ? JSON.stringify([mediaUrl(projectId, target.artifact_id), target.displayed_sha256, target.dimensions.width, target.dimensions.height])
   : null;
 
-export function DecodedReviewImage({projectId, target, onReadiness, onFailure}: {
+export function DecodedReviewImage({visible = true, projectId, target, onReadiness, onFailure}: {
+  visible?: boolean;
   projectId: string; target: FrameTarget; onReadiness: (identity: string | null) => void; onFailure: (message: string) => void;
 }) {
   const image = useRef<HTMLImageElement>(null);
   const source = mediaUrl(projectId, target.artifact_id);
   const identity = decodedImageIdentity(projectId, target)!;
   function verify() {
+    if (!visible) { onReadiness(null); return false; }
     const element = image.current;
     // currentSrc can still name the previous URL during a pending src change.
     // Revalidate the live DOM for every event, never trust an old event's target.
@@ -31,7 +33,7 @@ export function DecodedReviewImage({projectId, target, onReadiness, onFailure}: 
   useLayoutEffect(() => {
     verify();
     return () => onReadiness(null);
-  }, [identity, onReadiness]);
+  }, [identity, onReadiness, visible]);
 
   return <img ref={image} src={source} alt={`${target.origin}, frame ${target.sequence_frame ?? target.source_frame ?? "image"}`}
     onLoad={verify} onError={() => {
