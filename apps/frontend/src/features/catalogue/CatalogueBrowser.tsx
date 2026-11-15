@@ -145,27 +145,34 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
     {items.filter(item => [item.name, item.description, ...(item.tags ?? []), item.provenance?.source_url, item.provenance?.creator, item.provenance?.licence, item.provenance?.note].filter(Boolean).join(" ").toLowerCase().includes(query.trim().toLowerCase())).map(item => {
     const selected = selections.find(s => s.slot.kind === "item" && s.slot.item_id === item.item_id && s.state === "selected");
     const ownerVersion = selected?.choice?.kind === "version" ? selected.choice.version.version_id : null;
-    return <details key={item.item_id} open><summary>{item.name}</summary>
+    const itemVersions = versions.filter(v => v.item_id === item.item_id).sort((a,b) => b.created_at.localeCompare(a.created_at));
+    const activeItemVersion = itemVersions.find(v => v.version_id === (ownerVersion ?? item.current_version_id)) ?? itemVersions[0];
+    return <section key={item.item_id} className="catalogue-item-group">
+      <button className="catalogue-item-header" aria-pressed={!!activeItemVersion && activeItemVersion.version_id === selectedVersionId} onClick={() => { if (activeItemVersion) onSelect(activeItemVersion); }}><strong>{item.name}</strong><span className="catalogue-kind">{item.kind}</span><small>{itemVersions.length} version(s)</small></button>
+      <details className="catalogue-item-meta"><summary>Provenance &amp; selection</summary>
       {item.description && <p>{item.description}</p>}
       {!!item.tags?.length && <p>Tags: {item.tags.join(", ")}</p>}
       <ProvenanceDetails provenance={item.provenance}/>
-      {versions.filter(v => v.item_id === item.item_id).sort((a,b) => b.created_at.localeCompare(a.created_at)).map(version => <article key={version.version_id}>
+      </details>
+      {itemVersions.map(version => <article key={version.version_id}>
         <button aria-pressed={version.version_id === selectedVersionId} onClick={() => onSelect(version)}>{version.name} <small>{version.version_id}</small></button>
         <p>{item.current_version_id === version.version_id ? "Current published" : "Historical"}{ownerVersion === version.version_id ? " · Owner selected" : ""}{selectedVersionId === version.version_id ? " · Viewing (pinned)" : ""}</p>
         {selectedVersionId === version.version_id && item.current_version_id !== version.version_id && <p>Newer published version available. Your view has not moved.</p>}
+        <details className="catalogue-item-meta"><summary>Provenance &amp; selection</summary>
         <p>Technical assessment: not recorded. Source published · {version.artifact_ids.length} registered artefacts</p>
         {version.description && <p>{version.description}</p>}
         <ProvenanceDetails provenance={version.provenance}/>
         <button disabled={busy || !ready || !!pending || ownerVersion === version.version_id} onClick={() => void select(version)}>Select for item</button>
         {ownerVersion === version.version_id && <button disabled={busy || !ready || !!pending} onClick={() => void select(version, true)}>Withdraw selection</button>}
+        </details>
       </article>)}
-    </details>;
+    </section>;
   })}
     <section className="retained-outputs" aria-label="Retained outputs"><h3>Retained outputs</h3><p>Ready images, separate from published catalogue items. Concept images are not 3D meshes.</p>
       {(retainedArtifacts ?? retained).filter(record => record.artifact.project_id === projectId && record.artifact.kind === "image" && record.artifact.state === "ready" && ["image/png", "image/jpeg", "image/webp"].includes(record.artifact.media_type)).map(record => {
         const artifact = record.artifact;
         return <article key={artifact.artifact_id} className="retained-output"><strong>{artifact.purpose} image</strong><small>{record.published_versions.length ? `Also published · ${record.published_versions.length} version(s)` : "Unpublished retained media"} · {record.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</small>
-          <img src={mediaUrl(projectId, artifact.artifact_id)} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }} />
+          {onInspectArtifact ? <button className="retained-preview" aria-label={`Inspect retained ${artifact.purpose} image ${artifact.artifact_id}`} onClick={() => onInspectArtifact(artifact)}><img src={mediaUrl(projectId, artifact.artifact_id)} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }} /></button> : <img src={mediaUrl(projectId, artifact.artifact_id)} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }} />}
           <small>{artifact.dimensions ? `${artifact.dimensions.width} × ${artifact.dimensions.height}` : "Dimensions unrecorded"}</small><code>{artifact.artifact_id}</code>
           <div className="button-row"><a href={mediaUrl(projectId, artifact.artifact_id)} download={artifact.artifact_id}>Download image</a>{onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect image</button>}</div>
         </article>;

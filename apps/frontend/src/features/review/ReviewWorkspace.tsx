@@ -17,6 +17,8 @@ import { useReviewSelection } from "./state";
 import "./review.css";
 
 type Mode = "3d_inspection" | "keyframes" | "animation";
+type StoryboardPanel = { shot_id: string; frame_id: string; role: string; composition: string; artifact_id: string };
+type StoryboardTarget = StoryboardPanel & { target: FrameTarget };
 
 class MediaBoundary extends Component<{children: ReactNode}, {error: string}> {
   state = {error: ""};
@@ -29,13 +31,16 @@ export function ReviewWorkspace(props: ReviewSurfaceProps) {
   return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props}/>;
 }
 
-function Workspace({visible = true, api, projectId, version: suppliedVersion, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+function Workspace({visible: surfaceVisible = true, api, projectId, version: suppliedVersion, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+  const visible = surfaceVisible && !inspectedArtifact;
   const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
   const version = refreshedVersion ?? suppliedVersion;
   const [mode, setMode] = useState<Mode>("keyframes");
   const [frames, setFrames] = useState<FrameReceipt[]>([]);
   const [segments, setSegments] = useState<PreviewSegment[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [storyboardTargets, setStoryboardTargets] = useState<StoryboardTarget[]>([]);
+  const [storyboardPanelIndex, setStoryboardPanelIndex] = useState(0);
   const [mapping, setMapping] = useState<ProxyMapping | null>(null);
   const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap} | null>(null);
   const [availabilityByJob, setAvailabilityByJob] = useState<Record<string,FrameAvailability>>({});
@@ -150,6 +155,7 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
     async function read() {
       const receipts: FrameReceipt[] = []; const clips: PreviewSegment[] = [];
       const media: Artifact[] = [];
+      let storyboardPanels: StoryboardPanel[] = [];
       let pinned = version!;
       try {
         const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version!.item_id}, query: {cursor, limit: 100}}));
@@ -167,7 +173,14 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
           api.call("getFrameAvailability", {path: {project_id: projectId, job_id: job.job_id}}).then(value => {if (active) setAvailabilityByJob(previous=>({...previous,[job.job_id]:value}));}).catch(captureError),
         ]);
       }));
-      const artifactIds = [...new Set([...pinned.artifact_ids, ...versionJobs.flatMap(job => job.artifact_ids)])];
+      if (pinned.kind === "storyboard") {
+        try {
+          const plan = await api.call("getVersionShotPlan", {path: {project_id: projectId, version_id: pinned.version_id}});
+          if (plan.project_id !== projectId) throw new Error("Shot plan does not match active project");
+          storyboardPanels = plan.shots.flatMap(shot => shot.frames.flatMap(frame => frame.artifact_id ? [{shot_id: shot.shot_id, frame_id: frame.frame_id, role: frame.role, composition: frame.composition, artifact_id: frame.artifact_id}] : []));
+        } catch (e) {captureError(e);}
+      }
+      const artifactIds = [...new Set([...pinned.artifact_ids, ...storyboardPanels.map(panel => panel.artifact_id), ...versionJobs.flatMap(job => job.artifact_ids)])];
       await Promise.all(artifactIds.map(async artifact_id => {
         try { media.push(await api.call("getArtifact", {path: {project_id: projectId, artifact_id}})); } catch (e) {captureError(e);}
       }));
@@ -187,11 +200,18 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
         receipts.sort((a,b) => a.source_frame - b.source_frame);
         // Keep admission order, not asynchronous HTTP completion order, for initial display.
         const orderedMedia = artifactIds.flatMap(id => media.filter(a => a.artifact_id === id));
+        const panels: StoryboardTarget[] = storyboardPanels.flatMap(panel => {
+          const artifact = orderedMedia.find(a => a.artifact_id === panel.artifact_id && a.project_id === projectId && a.state === "ready" && a.kind === "image" && a.dimensions && ["image/png", "image/jpeg", "image/webp"].includes(a.media_type));
+          if (!artifact?.dimensions) return [];
+          return [{...panel, target: {origin: artifact.purpose === "reference" ? "reference" as const : "concept" as const, artifact_id: artifact.artifact_id, displayed_sha256: artifact.sha256, dimensions: artifact.dimensions, item_id: pinned.item_id, version_id: pinned.version_id, shot_id: panel.shot_id, render_job_id: null, source_frame: null, media_artifact_id: null}}];
+        });
+        setStoryboardTargets(panels);
         receipts.sort((a,b) => versionJobs.findIndex(j => j.job_id === a.job_id) - versionJobs.findIndex(j => j.job_id === b.job_id) || a.source_frame - b.source_frame);
         setFrames(receipts); setSegments(clips); setArtifacts(orderedMedia);
         if (!initialised.current && (receipts.length || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
           initialised.current = true;
           if (receipts[0]) {const first=frameTarget(receipts[0],version!);setTarget(first);setTargetCamera(frameCamera(first,jobs));setRequestedFrame(receipts[0].source_frame);}
+          else if (panels[0]) {setTarget(panels[0].target);setStoryboardPanelIndex(0);setTargetCamera(null);setMode("keyframes");}
           else {
             const image = orderedMedia.find(a => pinned.artifact_ids.includes(a.artifact_id) && a.kind === "image" && a.state === "ready" && a.dimensions)
               ?? versionJobs.flatMap(job => generationOutputs(job, orderedMedia))[0];
@@ -230,7 +250,7 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
     setCaptureReady(true);
   }, [draftId, frameMap, version?.kind,jobs]);
 
-  const context: TurnSelection = draft ? {...annotationContext(draft.annotation), annotations: draft.state === "saved" ? [draft.annotation] : [],
+  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft ? {...annotationContext(draft.annotation), annotations: draft.state === "saved" ? [draft.annotation] : [],
     attachments: draft.state === "saved" ? annotationContext(draft.annotation).attachments : [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}]} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
     view_mode: mode, target: mode === "3d_inspection" || !readyToCapture ? null : target,
     camera: mode === "3d_inspection" ? camera : targetCamera, selected_objects: selected,
@@ -238,7 +258,7 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
     attachments: mode !== "3d_inspection" && target ? [{artifact_id: target.artifact_id, role: cleanTargetRole(target)}] : []};
   const contextKey = JSON.stringify(context);
   const prepareState = useRef({context, draftKey: draft?.key});
-  prepareState.current = {context, draftKey: draft?.key};
+  prepareState.current = {context, draftKey: inspectedArtifact ? undefined : draft?.key};
   // Workspace alone owns the shell registration. The editor delegates internally,
   // so its cleanup can never clear a newer workspace's shell handler.
   useLayoutEffect(() => {
@@ -261,6 +281,14 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
       const candidates=delta>0?versionJobs.slice(currentIndex+1):versionJobs.slice(0,currentIndex).reverse();
       const next=candidates.find(j=>j.target.shot_id!==activeJob?.target.shot_id);
       if(next) chooseJob(next.job_id);
+      return;
+    }
+    if (!currentFrames.length && storyboardTargets.length) {
+      if (draftId) return;
+      const activePanel = storyboardTargets[storyboardPanelIndex];
+      const index = activePanel?.target.artifact_id === target?.artifact_id && activePanel.shot_id === target?.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
+      const next = storyboardTargets[index + delta];
+      if (next) {setTarget(next.target);setStoryboardPanelIndex(index + delta);setRequestedFrame(index + delta + 1);setTargetCamera(null);setCaptureReady(false);setMode("keyframes");}
       return;
     }
     if (!currentFrames.length) return;
@@ -374,7 +402,19 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
     }
   }
 
+  if (inspectedArtifact) return <section className="review-workspace retained-review" aria-label="Review workspace">
+    <div className="review-toolbar retained-review-toolbar"><strong>Retained output preview</strong><span>Unpublished retained output · Concept images are not 3D meshes</span>
+      {inspectedArtifactSummary && <span className="attribution-badge">{inspectedArtifactSummary.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</span>}
+      <a href={mediaUrl(projectId, inspectedArtifact.artifact_id)} download={inspectedArtifact.artifact_id}>Download image</a>
+      {onClearArtifact && <button onClick={onClearArtifact}>{version ? "Back to pinned version" : "Clear preview"}</button>}
+    </div>
+    {inspectedArtifact.state === "ready" && inspectedArtifact.kind === "image" && ["image/png", "image/jpeg", "image/webp"].includes(inspectedArtifact.media_type) ? <div className="review-image"><img src={mediaUrl(projectId, inspectedArtifact.artifact_id)} alt={`Retained ${inspectedArtifact.purpose} image ${inspectedArtifact.artifact_id}`} /></div> : <p>No safe ready image preview available.</p>}
+    <footer className="review-toolbar retained-review-metadata">{inspectedArtifact.dimensions && <span>{inspectedArtifact.dimensions.width} × {inspectedArtifact.dimensions.height}</span>}<span>{inspectedArtifact.purpose}</span><code>SHA-256 {inspectedArtifact.sha256.slice(0, 12)}</code><span>{inspectedArtifactSummary?.published_versions.length ? `Published to ${inspectedArtifactSummary.published_versions.length} catalogue version(s)` : "Not published to catalogue"}</span></footer>
+  </section>;
   if (!version) return <section className="review-workspace"><p>Select a published version to review.</p></section>;
+  const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
+  const storyboardIndex = activeStoryboardPanel?.target.artifact_id === target?.artifact_id && activeStoryboardPanel.shot_id === target?.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
+  const storyboardPanel = storyboardTargets[storyboardIndex];
   return <section className="review-workspace" aria-label="Review workspace">
     <nav className="review-toolbar" aria-label="Review mode">{([['3d_inspection','3D Inspection'],['keyframes','Keyframes'],['animation','Animation']] as const).map(([id,label], index) => <button key={id} disabled={!!draft} aria-pressed={mode === id} onClick={() => changeMode(id)}>{index+1} {label}</button>)}
       <button disabled={!visible || !target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
@@ -394,6 +434,7 @@ function Workspace({visible = true, api, projectId, version: suppliedVersion, jo
          }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
            : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
     <div className="review-toolbar"><button onClick={() => step(-1)}>Previous frame</button><button onClick={() => step(1)}>Next frame</button>
+      {!currentFrames.length && storyboardPanel && <span title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
       <label>Shot / render job<select aria-label="Shot / render job" disabled={!!draft} value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>
       <label>Frame<input type="number" min="1" value={requestedFrame} disabled={!!draft} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
       <span>{target ? `${target.dimensions.width} × ${target.dimensions.height} · ${target.origin} · frame ${target.sequence_frame ?? target.source_frame ?? "image"}` : "No presented target"}</span>
