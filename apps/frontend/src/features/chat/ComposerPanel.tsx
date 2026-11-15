@@ -24,9 +24,11 @@ export function JobList({ api, projectId, jobs, onRefresh, onError }: {
       await onRefresh();
     } catch (error) { onError(error); }
   }
-  return <>{jobs.map(job => <div className="job-row" key={job.job_id}>
+  const finished = (job: JobRecord) => ["succeeded", "failed", "cancelled"].includes(job.state);
+  return <>{[false, true].map(terminal => <section key={String(terminal)}>{jobs.some(job => finished(job) === terminal) && <h4>{terminal ? "Finished job history" : "Unfinished jobs"}</h4>}{jobs.filter(job => finished(job) === terminal).map(job => <div className={`job-row${job.state === "outcome_uncertain" ? " needs-attention" : ""}`} key={job.job_id}>
     <strong>{job.kind.replaceAll("_", " ")}</strong><small>{job.state.replaceAll("_", " ")}</small>
     <small>{job.job_id}</small>
+    {job.state === "outcome_uncertain" && <small role="status">Needs attention · reconcile the original job outcome before retrying.</small>}
     {!["succeeded", "failed", "cancelled"].includes(job.state) && <button onClick={() => void cancel(job)}>Request job cancellation</button>}
-  </div>)}{!jobs.length && <small>No jobs recorded.</small>}</>;
+  </div>)}</section>)}{!jobs.length && <small>No jobs recorded.</small>}</>;
 }

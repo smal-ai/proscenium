@@ -1,4 +1,25 @@
-import type { Event, ProjectSnapshot, ResumeCommand, WorkRecord } from "../../api";
+import { ApiError, type ApiClient, type Event, type ProjectSnapshot, type ResumeCommand, type ResumeOperationStatus, type WorkRecord } from "../../api";
+
+/** Admission is not completion. Keep the original operation until it settles. */
+export async function awaitResume(api: ApiClient, projectId: string, operationId: string, budgetMs = 15000): Promise<ResumeOperationStatus | null> {
+  const deadline = Date.now() + budgetMs;
+  let delay = 200;
+  while (Date.now() < deadline) {
+    let status: ResumeOperationStatus;
+    try {
+      status = await api.call("getResumeOperation", { path: { project_id: projectId, operation_id: operationId }, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) });
+    } catch (error) {
+      // Older synthetic clients may not expose the additive read operation.
+      if (!(error instanceof ApiError) && error instanceof Error && /(?:not implemented|unsupported|unexpected|unhandled|unknown).*(?:getResumeOperation)|getResumeOperation.*(?:not implemented|unsupported|unexpected|unhandled|unknown)/i.test(error.message)) return null;
+      throw error;
+    }
+    if (!status || !status.state) return null;
+    if (["completed", "outcome_uncertain"].includes(status.state)) return status;
+    await new Promise(resolve => setTimeout(resolve, Math.min(delay, Math.max(0, deadline - Date.now()))));
+    delay = Math.min(delay * 1.6, 2000);
+  }
+  throw new Error("Resume is still awaiting confirmation. Reconcile the original Resume, not a new operation.");
+}
 
 /** Stopped work is intentionally absent from active_work, but remains in durable events. */
 export function knownWork(snapshot: ProjectSnapshot | null, events: Event[]): WorkRecord[] {
