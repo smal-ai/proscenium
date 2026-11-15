@@ -75,6 +75,33 @@ class ImagePlugin:
             if image.format != "PNG" or image.width * image.height > maximum_pixels:
                 raise DomainError("unsupported_media_type", 415)
             image.verify()
+        with Image.open(io.BytesIO(data)) as image:
+            rgb = image.convert("RGB")
+            width, height = rgb.size
+            if width >= 64 and height >= 64:
+                px = rgb.tobytes()
+                stride = width * 3
+                step_y = max(1, height // 128)
+                step_x = max(1, width // 128)
+                h_diff = v_diff = count = 0
+                for y in range(0, height - 1, step_y):
+                    row = y * stride
+                    next_row = (y + 1) * stride
+                    for x in range(0, width - 1, step_x):
+                        i = row + x * 3
+                        j = i + 3
+                        k = next_row + x * 3
+                        h_diff += sum(abs(px[i + c] - px[j + c]) for c in range(3))
+                        v_diff += sum(abs(px[i + c] - px[k + c]) for c in range(3))
+                        count += 3
+                if count:
+                    mean_h, mean_v = h_diff / count, v_diff / count
+                    if mean_v >= 20.0 or (mean_v >= 10.0 and mean_v / max(mean_h, 0.01) >= 3.0):
+                        raise DomainError(
+                            "corrupt_provider_output",
+                            422,
+                            "Provider returned a corrupted scanline or noise image",
+                        )
         return {"sha256_verified_during_registration": True}
 
 

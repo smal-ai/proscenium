@@ -640,7 +640,16 @@ class ProviderService:
         inspections = []
         for item in capability.output_descriptors(history):
             data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
-            inspection = capability.inspect_output(data, self.services.settings.upload_max_pixels)
+            try:
+                inspection = capability.inspect_output(
+                    data, self.services.settings.upload_max_pixels
+                )
+            except DomainError as exc:
+                if exc.code != "corrupt_provider_output":
+                    raise
+                execution["phase"] = "failed"
+                self.execution(job["project_id"], job["job_id"], execution)
+                return self.update(job, "failed", error_code="corrupt_provider_output")
             artifacts.append(
                 self._register(
                     job,
@@ -700,6 +709,8 @@ class ProviderService:
             "heavy-gpu", job["project_id"], job["job_id"], job["attempt_id"]
         ):
             self.execution(job["project_id"], job["job_id"], {"phase": "waiting"})
+            if job["state"] == "waiting_resource":
+                return job
             return self.update(job, "waiting_resource")
         self.execution(job["project_id"], job["job_id"], {"phase": "preparing"})
         references = {}

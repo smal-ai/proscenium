@@ -38,10 +38,16 @@ def validate_recipes(options: dict[str, Any]) -> None:
             raise ValueError("Image recipe profile_revision must agree with image_profiles")
         plugin("image", revision)
         keys = {"unet", "clip", "vae"} if revision == "comfy-image-1" else {"checkpoint"}
-        if set(recipe) - (keys | {"profile_revision", "width", "height", "steps"}) or any(
-            not isinstance(recipe.get(key), str) or not recipe[key].strip() for key in keys
-        ):
+        if set(recipe) - (
+            keys | {"profile_revision", "width", "height", "steps", "max_pixels"}
+        ) or any(not isinstance(recipe.get(key), str) or not recipe[key].strip() for key in keys):
             raise ValueError("Image recipe requires exact model roles")
+        if "max_pixels" in recipe:
+            maximum = recipe["max_pixels"]
+            if type(maximum) is not int or not 4096 <= maximum <= 16_777_216:
+                raise ValueError("Image recipe max_pixels is outside supported bounds")
+            if revision != "comfy-image-1" and maximum != 512 * 512:
+                raise ValueError("SD-Turbo image recipes require a 512x512 pixel limit")
         for key in ("width", "height", "steps"):
             value = recipe.get(key, 4 if key == "steps" else 512)
             if type(value) is not int or not (
@@ -76,7 +82,9 @@ def bounded_get(provider: Any, service: dict[str, Any], path: str) -> dict[str, 
     return body
 
 
-def workflow(recipe: dict[str, Any], reference: str | None = None) -> dict[str, Any]:
+def workflow(
+    recipe: dict[str, Any], reference: str | None = None, *, catalog: dict[str, Any] | None = None
+) -> dict[str, Any]:
     revision = recipe["profile_revision"]
     if revision != "comfy-image-1":
         if reference is None:
@@ -94,6 +102,10 @@ def workflow(recipe: dict[str, Any], reference: str | None = None) -> dict[str, 
         height=recipe.get("height", 512),
         steps=recipe.get("steps", 4),
         reference_artifact_id=reference,
+        tiled_vae=bool(catalog and "VAEDecodeTiled" in catalog and "VAEEncodeTiled" in catalog),
+        reference_megapixels=min(
+            1.0, max(0.01, round(recipe.get("max_pixels", 1_048_576) / 1_000_000, 4))
+        ),
     )
 
 
@@ -146,7 +158,9 @@ def compatible_recipes(
     for recipe in candidates:
         try:
             capability = plugin("image", revision)
-            graph = workflow(recipe, "reference" if revision != "comfy-image-1" else None)
+            graph = workflow(
+                recipe, "reference" if revision != "comfy-image-1" else None, catalog=catalog
+            )
             bound = capability.bind_graph(
                 graph,
                 "Preflight",
@@ -166,16 +180,25 @@ class Preparation:
         self.services, self.provider = services, provider
 
     def replayable(self, caller: Caller, body: dict[str, Any]) -> dict[str, Any] | None:
-        with self.services.registry.project_store(body["project_id"]).transaction(
-            write=False
-        ) as tx:
+        project_id = body.get("project_id") or caller.project_id
+        if project_id is None:
+            raise DomainError("invalid_request")
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             return replay(
-                tx, "providers.prepare_image", body["operation_id"], binding(caller, body)
+                tx,
+                "providers.prepare_image",
+                body["operation_id"],
+                binding(caller, {**body, "project_id": project_id}),
             )
 
     def prepare(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         validate("ImageGenerationPrepare", body)
-        active(self.services, caller, "prepareImageGeneration", body["project_id"])
+        project_id = body.get("project_id") or caller.project_id
+        if project_id is None:
+            raise DomainError("invalid_request")
+        body = {**body, "project_id": project_id}
+        immutable = binding(caller, body)
+        active(self.services, caller, "prepareImageGeneration", project_id)
         previous = self.replayable(caller, body)
         if previous:
             return {**previous, "replayed": True}, True
@@ -186,8 +209,19 @@ class Preparation:
             )
         with store.transaction(write=False) as tx:
             work = admitted(self.services, tx, caller)
-            if work["generation_task_id"] != body["generation_task_id"]:
-                raise DomainError("scope_denied", 403)
+            if (
+                "generation_task_id" in body
+                and body["generation_task_id"] != work["generation_task_id"]
+            ):
+                raise DomainError(
+                    "scope_denied",
+                    403,
+                    "generation_task_id does not match the active work; omit generation_task_id to use the active task",
+                )
+            body = {
+                **body,
+                "generation_task_id": body.get("generation_task_id") or work["generation_task_id"],
+            }
             context = _request_context(tx, caller, work) or {}
         provider = self.provider.provider(body.get("provider_id"), "image")
         try:
@@ -204,6 +238,24 @@ class Preparation:
             raise DomainError("capability_unavailable", 501, AMBIGUOUS if recipes else UNAVAILABLE)
         recipe = {**recipes[0], **{k: body[k] for k in ("width", "height", "steps") if k in body}}
         revision = recipe["profile_revision"]
+        width, height = recipe.get("width", 512), recipe.get("height", 512)
+        if revision == "comfy-image-1" and (
+            width % 16 != 0
+            or height % 16 != 0
+            or not (64 <= width <= 4096 and 64 <= height <= 4096)
+        ):
+            raise DomainError(
+                "invalid_request",
+                message="Image width and height must be multiples of 16 between 64 and 4096",
+            )
+        max_pixels = recipe.get(
+            "max_pixels", 1_048_576 if revision == "comfy-image-1" else 512 * 512
+        )
+        if width * height > max_pixels:
+            raise DomainError(
+                "invalid_request",
+                message="Requested image dimensions exceed the configured provider pixel limit",
+            )
         if revision != "comfy-image-1" and any(
             recipe.get(k, v) != v for k, v in (("width", 512), ("height", 512), ("steps", 4))
         ):
@@ -226,7 +278,7 @@ class Preparation:
                     "invalid_request",
                     message="Selected image profile requires one exact 512x512 reference",
                 )
-        graph = workflow(recipe, references[0] if references else None)
+        graph = workflow(recipe, references[0] if references else None, catalog=catalog)
         model_ids = models(recipe)
         bound = capability.bind_graph(
             graph, body["prompt"], body["seed"], {k: "artifact:" + k for k in references}, model_ids
@@ -298,6 +350,6 @@ class Preparation:
                 return result
 
             receipt, repeated = tx.operation(
-                "providers.prepare_image", body["operation_id"], binding(caller, body), effect
+                "providers.prepare_image", body["operation_id"], immutable, effect
             )
             return {**receipt, "replayed": repeated}, repeated
