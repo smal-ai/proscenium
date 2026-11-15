@@ -16,7 +16,7 @@ from proscenium.providers.preparation import AMBIGUOUS, bounded_get, compatible_
 from proscenium.sources.common import git, relative
 from proscenium.sources.read_only import read_authored_json, read_closure_files
 
-from .native import Configuration
+from .native import Configuration, is_blender_mcp_configured, resolve_mcp_servers
 
 RECOMMENDED_TOOLS = frozenset(
     {
@@ -211,7 +211,9 @@ def get_project_capabilities(services: Any, project_id: str) -> dict[str, Any]:
         providers=rows,
         rendering_ready=services.settings.rendering.get("profile_id", "blender-cpu")
         in services.settings.execution_profiles,
-        blender_mcp_configured=bool(config.mcp_servers),
+        blender_mcp_configured=is_blender_mcp_configured(
+            resolve_mcp_servers(config.mcp_servers, services.settings.secret_env)
+        ),
         unity_configured="unity-local" in services.settings.execution_profiles
         and config.unity_editor is not None
         and config.unity_editor.is_file(),

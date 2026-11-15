@@ -8,8 +8,9 @@ description: Author and inspect Blender content inside the active Proscenium pro
 1. Read the host's structured context, project brief and current plan. Child
    additionalContext is host JSON rendered in the native `<system_reminder>`.
    Preserve every annotation's own frame target, camera, range and object instance.
-2. Use the explicitly configured `mcp-for-blender==2.0.0` server connected to its
-   external live add-on. Do not install or replace the add-on. Tool discovery is
+2. Use the explicitly configured `mcp-for-blender==2.3.0` server connected to its
+   installed external live add-on (2.0, protocol 16). Never reinstall or overwrite
+   the add-on. Tool discovery is
    authoritative. Call `get_project_capabilities` to check the configured bridge.
    If absent, report the capability blocker rather than invoking checkout-only helpers.
    Do not invent
@@ -29,7 +30,9 @@ description: Author and inspect Blender content inside the active Proscenium pro
    historical tasks from a reference project. Do not inherit a particular scene,
    character, storyboard, export target or creative task from these instructions.
 6. Call `checkpoint_sources(entry_path=...)` with the explicitly owned file set,
-   dependencies and `required_runtime` when needed. Pass the receipt's
+   dependencies and `required_runtime` when needed. For `.blend` source checkpoints,
+   supply `required_runtime` with `"application": "blender"` and the exact
+   `bpy.app.version_string` as `version` (for example `"4.5.16 LTS"`). Pass the receipt's
    `source_closure` directly into `publish_outputs`, never script closure sorting
    or SHA-256 digests. Checkpoint before
    `publish_outputs`. Preserve unrelated changes and staging. Never `git add .`.

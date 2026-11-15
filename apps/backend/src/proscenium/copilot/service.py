@@ -33,6 +33,8 @@ from .tools import DISCOVERY_READS, READ_TOOLS, TOOLS, Tools, read_arguments
 from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 
+CHARGEABLE_MCP_TOOLS = frozenset({"create_generation", "generate_3d", "generate_gaussian_world"})
+
 CONTINUATION_TEXT = "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
 
 
@@ -1947,6 +1949,7 @@ class Copilot:
         consequential = (
             True
             if is_io
+            or (request.get("kind") == "mcp" and request.get("toolName") in CHARGEABLE_MCP_TOOLS)
             else re.search(
                 r"(?i)(\b(push|purchase|install|upgrade|sudo|scp)\b|reset\s+--hard|rm\s+-[rf]|curl\s+.*(?:--upload-file|--data|-[dT]|-X\s*(?:POST|PUT|DELETE)))",
                 request.get("fullCommandText", "") if request.get("kind") == "shell" else text,

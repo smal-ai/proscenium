@@ -16,7 +16,7 @@ class Rendering:
     blender: str = "blender"
     ffmpeg: str = "ffmpeg"
     ffprobe: str = "ffprobe"
-    build_hash: str = "62c1db4208e8"
+    build_hash: str = "3f6797307da5"
     profile_id: str = "blender-cpu"
     threads: int = 4
     timeout: int = 300

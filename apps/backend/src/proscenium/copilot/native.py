@@ -6,10 +6,12 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import signal
 import sys
 import time
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
@@ -189,6 +191,28 @@ class Configuration:
         mcps = settings.get("mcp_servers", {})
         if not isinstance(mcps, dict):
             raise ValueError("mcp_servers must be an SDK MCP configuration object")
+        for name, server in mcps.items():
+            if not isinstance(name, str) or not name.strip() or not isinstance(server, dict):
+                raise ValueError("MCP server names and configuration objects are required")
+            if "headers" in server and (
+                not isinstance(server["headers"], dict)
+                or not all(
+                    isinstance(k, str) and isinstance(v, str) for k, v in server["headers"].items()
+                )
+            ):
+                raise ValueError("MCP headers must contain string names and values")
+            if any(k.lower() == "authorization" for k in server.get("headers", {})):
+                raise ValueError("Inline Authorization headers are forbidden; use bearer_token_env")
+            if "bearer_token_env" in server:
+                env_name = server["bearer_token_env"]
+                if (
+                    server.get("type") not in {"http", "sse"}
+                    or not isinstance(env_name, str)
+                    or not re.fullmatch(r"[A-Z_][A-Z0-9_]*", env_name)
+                ):
+                    raise ValueError(
+                        "bearer_token_env requires HTTP/SSE and a valid environment name"
+                    )
         unity_worker = settings.get("unity_worker_model", worker)
         if not isinstance(unity_worker, str) or not unity_worker.strip():
             raise ValueError(
@@ -210,6 +234,41 @@ class Configuration:
             unity_worker,
             Path(editor) if editor is not None else None,
         )
+
+
+def resolve_mcp_servers(
+    mcp_servers: dict[str, Any], lookup: Callable[[str], str | None]
+) -> dict[str, Any]:
+    """Resolve optional authentication only on the private wire copy."""
+    resolved = deepcopy(mcp_servers)
+    for name, server in list(resolved.items()):
+        if "bearer_token_env" in server:
+            token = lookup(server.pop("bearer_token_env"))
+            if not token:
+                del resolved[name]
+                continue
+            server["headers"] = {
+                **(server.get("headers") or {}),
+                "Authorization": f"Bearer {token}",
+            }
+    return resolved
+
+
+def is_blender_mcp_configured(mcp_servers: dict[str, Any]) -> bool:
+    markers = ("mcp-for-blender", "blender_mcp", "blender-mcp")
+    for name, server in mcp_servers.items():
+        if name.lower() in {"blender", "blender-mcp", "mcp-for-blender"}:
+            return True
+        if server.get("type", "stdio") not in {"stdio", "local"}:
+            continue
+        args = server.get("args", [])
+        strings = [server.get("command", ""), *([args] if isinstance(args, str) else args)]
+        if any(
+            isinstance(value, str) and any(marker in value.lower() for marker in markers)
+            for value in strings
+        ):
+            return True
+    return False
 
 
 UNITY_TOOLS = [
@@ -359,7 +418,7 @@ class Native:
             large_output={"enabled": True, "output_directory": str(output)},
             skill_directories=config.skill_directories,
             enable_skills=True,
-            mcp_servers=config.mcp_servers,
+            mcp_servers=resolve_mcp_servers(config.mcp_servers, self.services.settings.secret_env),
             enable_config_discovery=False,
             skip_custom_instructions=True,
             streaming=True,

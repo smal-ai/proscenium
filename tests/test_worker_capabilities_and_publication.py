@@ -317,6 +317,34 @@ def test_configuration_and_recipe_validation(tmp_path):
         )
 
 
+@pytest.mark.parametrize("blender", [False, True])
+@pytest.mark.parametrize("token", [None, "synthetic-token"])
+def test_capabilities_distinguish_blender_from_optional_blendswap(
+    runtime, monkeypatch, blender, token
+):
+    monkeypatch.delenv("BLENDSWAP_KEY", raising=False)
+    if token:
+        monkeypatch.setenv("BLENDSWAP_KEY", token)
+    servers = {
+        "blendswap": {
+            "type": "http",
+            "url": "https://blendswap.com/api/mcp",
+            "bearer_token_env": "BLENDSWAP_KEY",
+        }
+    }
+    if blender:
+        servers["blender"] = {"type": "stdio", "command": "uvx", "args": ["mcp-for-blender==2.3.0"]}
+    runtime.services.settings = replace(
+        runtime.services.settings,
+        services=(),
+        runtime={"worker_model": "fixture", "mcp_servers": servers},
+    )
+    capabilities = get_project_capabilities(runtime.services, PROJECT)
+    assert capabilities["blender_mcp_configured"] is blender
+    assert "synthetic-token" not in json.dumps(capabilities)
+    assert runtime.calls == []
+
+
 def test_capabilities_skills_override_ready_ambiguous_unavailable(runtime):
     runtime.services.settings.runtime["worker_tools"] = ["view"]
     result, _ = invoke(runtime, "get_project_capabilities", {})

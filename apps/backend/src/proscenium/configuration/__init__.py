@@ -1,11 +1,38 @@
 import json
 import os
+import re
 from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
 from proscenium.contracts import validate
+
+APP_ROOT = Path(__file__).resolve().parents[5]
+
+
+def _read_dotenv(path: Path) -> dict[str, str]:
+    """Read bounded private values without exporting or logging them."""
+    try:
+        if os.path.islink(path) or not path.is_file() or path.stat().st_size > 65536:
+            return {}
+        values = {}
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:].strip()
+            key, separator, value = line.partition("=")
+            key, value = key.strip(), value.strip()
+            if not separator or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+                continue
+            if len(value) >= 2 and value[0] in {"'", '"'} and value[-1] == value[0]:
+                value = value[1:-1]
+            values[key] = value
+        return values
+    except (OSError, UnicodeError):
+        return {}
 
 
 @dataclass(frozen=True)
@@ -30,6 +57,7 @@ class Settings:
     upload_max_pixels: int = 40_000_000
     attachment_max_count: int = 8
     attachment_max_bytes: int = 100 * 1024**2
+    _config_dir: Path | None = field(default=None, repr=False, compare=False)
 
     @classmethod
     def load(cls, path: Path | None = None) -> "Settings":
@@ -42,12 +70,13 @@ class Settings:
         if not path.exists():
             return cls()
         body = json.loads(path.read_text())
-        if not isinstance(body, dict) or set(body) - {f.name for f in fields(cls)}:
+        allowed_fields = {f.name for f in fields(cls) if not f.name.startswith("_")}
+        if not isinstance(body, dict) or set(body) - allowed_fields:
             raise ValueError("Unknown configuration fields")
         substitutions = {
             "HOME": str(Path.home()),
             "CONFIG_DIR": str(path.resolve().parent),
-            "APP_ROOT": str(Path(__file__).resolve().parents[5]),
+            "APP_ROOT": str(APP_ROOT),
         }
 
         def expand(value: Any) -> Any:
@@ -72,7 +101,20 @@ class Settings:
         for key in ("profiles", "services"):
             if key in body:
                 body[key] = tuple(body[key])
-        return cls(**body)
+        return cls(**body, _config_dir=path.resolve().parent)
+
+    def secret_env(self, name: str) -> str | None:
+        if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", name):
+            raise ValueError("Invalid environment variable name")
+        value = os.environ.get(name)
+        if value:
+            return value
+        if self._config_dir is not None:
+            for path in (self._config_dir / ".env", APP_ROOT / ".env"):
+                value = _read_dotenv(path).get(name)
+                if value:
+                    return value
+        return None
 
     def __post_init__(self) -> None:
         url = urlsplit(self.origin)

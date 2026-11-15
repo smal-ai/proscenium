@@ -33,6 +33,13 @@ Dependent scenes/storyboards remain pinned until an explicit adoption edit.
    available. Missing credentials, endpoint or tool means optional capability
    unavailable, not failed local research. Do not install services or seek credentials.
    Prefer original publishers, useful views, scale anchors and construction evidence.
+   When exposed, use `blendswap-search_assets`, `blendswap-get_asset`,
+   `blendswap-download_asset` and `blendswap-get_balance`. Inspect
+   `blendswap-get_balance` before downloading. Free daily-allowance downloads proceed
+   automatically into the active project. Credit-consuming downloads when
+   `free_downloads_remaining == 0` and paid Studio generations through
+   `blendswap-create_generation` require explicit owner confirmation under owner policy
+   (Section 2).
 4. Distinguish **discovered** (a lead), **acquired** (actual verified local bytes),
    **imported** (observed application import) and **validated** (named checks with
    evidence). A thumbnail is not an acquired model. Import success is not visual,

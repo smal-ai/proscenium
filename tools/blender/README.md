@@ -27,10 +27,15 @@ The host MCP configuration uses the existing installed integration:
 ```json
 {
   "command": "uvx",
-  "args": ["--python", "3.11", "mcp-for-blender==2.0.0"],
+  "args": ["--python", "3.11", "mcp-for-blender==2.3.0", "--host", "127.0.0.1", "--port", "9876"],
   "env": {"DISABLE_TELEMETRY": "1"}
 }
 ```
+
+The workstation uses Blender 4.5.16 LTS, build `3f6797307da5`, with the installed
+add-on 2.0, protocol 16. Never reinstall or overwrite the add-on. Include the
+model-facing `blender-*` tool names in `runtime.worker_tools` for delegated
+`authoring-specialist` builds.
 
 The MCP client must separately confirm `get_addon_status`, `get_scene_info` and
 the active file/dirty state before editing. A healthy stdio server alone is not
@@ -65,7 +70,7 @@ the already installed `blender_mcp` add-on in memory, sets the scene's bridge po
 and starts that instance's server. It does not install an add-on, change installed
 files or save preferences. The default non-isolated endpoint remains port 9876.
 Custom endpoints require isolation and a numeric loopback address. Configure the
-official `mcp-for-blender==2.0.0` client with matching `--host` and `--port` flags.
+official `mcp-for-blender==2.3.0` client with matching `--host` and `--port` flags.
 
 The private launch receipt records PID, process start ticks, boot ID and argv.
 An existing receipt with no ready socket remains `outcome_uncertain`, even if the

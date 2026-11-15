@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import hashlib
 import json
 from threading import RLock
 from types import SimpleNamespace
@@ -14,7 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.contracts import validate
+from proscenium.contracts import canonical, validate
 from proscenium.copilot.eligibility import execution_status
 from proscenium.copilot.outcomes import record_tool_outcome
 from proscenium.copilot.router import router
@@ -22,7 +23,7 @@ from proscenium.copilot.service import Copilot
 from proscenium.copilot.state import key, save
 from proscenium.db.pagination import Cursors
 from proscenium.projects.service import Projects
-from test_activity_feedback import PROJECT, REQUEST, SESSION, TOOL, WORK, event, start
+from test_activity_feedback import BINDING, PROJECT, REQUEST, SESSION, TOOL, WORK, event, start
 from test_activity_feedback import runtime as activity_runtime
 from test_request_targeting import context, request_record
 
@@ -78,6 +79,88 @@ def set_work(store, status):
         work = tx.require("work", WORK)
         work.update(state=status, state_revision=tx.revision("work", WORK) + 1)
         save(tx, "work", WORK, work)
+
+
+@pytest.mark.parametrize(
+    "tool,chargeable",
+    [
+        ("create_generation", True),
+        ("generate_3d", True),
+        ("generate_gaussian_world", True),
+        ("get_addon_status", False),
+        ("search_assets", False),
+        ("execute_blender_code", False),
+    ],
+)
+@pytest.mark.parametrize("action", ["approve_once", "decline"])
+def test_mcp_chargeable_tools_wait_for_exact_owner_decision(runtime, tool, chargeable, action):
+    state, store, _, _ = runtime
+    start(state)
+    request = {"kind": "mcp", "toolCallId": TOOL, "toolName": tool, "args": {}}
+    native_id = "native-permission-one"
+    with store.transaction() as tx:
+        tx.put(
+            "copilot.permissions",
+            key(SESSION, native_id),
+            {
+                **BINDING,
+                "session_id": SESSION,
+                "tool_call_id": TOOL,
+                "native_id": native_id,
+                "phase": "pending",
+                "fingerprint": hashlib.sha256(canonical(request)).hexdigest(),
+            },
+        )
+    copilot = Copilot.__new__(Copilot)
+    copilot.services = state.services
+    copilot.state = state
+    copilot.closing = False
+
+    async def run():
+        task = asyncio.create_task(copilot.permission(PROJECT, request, {"session_id": SESSION}))
+        try:
+            # Let the callback reach its persisted decision wait without external execution.
+            await asyncio.sleep(0)
+            with store.transaction(write=False) as tx:
+                decisions = tx.all("decisions")
+                if not chargeable:
+                    assert decisions == []
+                else:
+                    assert len(decisions) == 1
+                    decision = decisions[0]
+                    validate("Decision", decision)
+                    assert decision["state"] == "pending" and decision["resolved_by"] is None
+                    assert decision["options"] == ["approve_once", "decline"]
+                    assert tx.require("work", WORK)["state"] == "awaiting_user"
+                    revision = tx.revision("decisions", decision["decision_id"])
+            if chargeable:
+                assert not task.done()
+                body = dict(
+                    schema_version="1.0",
+                    operation_id="answer-one",
+                    project_id=PROJECT,
+                    expected_revision=revision,
+                    fingerprint=decision["fingerprint"],
+                    action=action,
+                )
+                with pytest.raises(DomainError, match="owner session required"):
+                    state.answer(Caller("tool", "model"), decision["decision_id"], body)
+                state.answer(OWNER, decision["decision_id"], body)
+            return await asyncio.wait_for(task, 1)
+        finally:
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+
+    result = asyncio.run(run())
+    with store.transaction(write=False) as tx:
+        stage = tx.require("copilot.permissions", key(SESSION, native_id))
+        assert stage["reply"] == ("reject" if chargeable and action == "decline" else "approve")
+        assert stage["authority"] == ("owner" if chargeable else "automatic_policy")
+        if chargeable:
+            decision = tx.all("decisions")[0]
+            assert decision["resolved_by"] == {"kind": "user", "id": OWNER.subject_id}
+    assert result.kind == ("reject" if chargeable and action == "decline" else "approve-once")
 
 
 @pytest.mark.parametrize(
