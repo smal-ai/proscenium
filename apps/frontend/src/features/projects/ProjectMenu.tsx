@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, FolderOpen, Plus, ArrowRight, MapPin, X } from "lucide-react";
 import type { ApiClient, ProjectOpen, ProjectRebind, ProjectRecord, RevisionCommand } from "../../api";
-import { describeError, durableCommand, id } from "../../app/storage";
+import { describeError, durableCommand, id, writePrivate } from "../../app/storage";
 
 export function ProjectMenu({ api, projects, activeId, onRefresh }: {
   api: ApiClient; projects: ProjectRecord[]; activeId: string | null; onRefresh: () => Promise<void>;
@@ -25,6 +25,7 @@ export function ProjectMenu({ api, projects, activeId, onRefresh }: {
       const result = await durableCommand<ProjectOpen, ProjectRecord>(`project.${create ? "create" : "open"}`, () => ({
         schema_version: "1.0", operation_id: id(), path, create, ...(create && name ? { name } : {}),
       }), body => api.call("openProject", { body, idempotencyKey: body.operation_id }));
+      if (create) writePrivate(`created.${result.project_id}`, true);
       setChosen(result.project_id);
     });
   }

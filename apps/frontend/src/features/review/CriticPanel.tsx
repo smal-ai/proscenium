@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Attachment, ReviewFinding, ReviewRequest, ReviewTicket } from "../../api/generated/contracts";
 import { cleanTargetRole } from "./context";
-import type { CriticSurfaceProps } from "../../api/studio";
+import { emptySelection, type CriticSurfaceProps } from "../../api/studio";
 import { mediaUrl } from "./media";
 import { allPages } from "./records";
 
@@ -66,15 +66,18 @@ export function CriticPanel({api, projectId, selection, refreshRevision, onQueue
       const explicit = selection.attachments.find(a => a.artifact_id === target.artifact_id && ["render","reference","concept"].includes(a.role));
       clean.set(target.artifact_id, {...explicit, artifact_id: target.artifact_id, role: cleanTargetRole(target)});
     }
-    const attachments = [...clean.values(), ...selection.attachments.filter(a => !clean.has(a.artifact_id) || a.role === "markup" || a.role === "mask")];
+    const attachments = [...clean.values()];
     for (const finding of selected) for (const evidence of finding.evidence) {
       if (evidence.kind === "visual" && !attachments.some(a => a.artifact_id === evidence.artifact_id)) attachments.push({artifact_id: evidence.artifact_id, role: "reference"});
     }
     queueLatch.current = true; setBusy(true); setError("");
     const target = selected[0].target;
-    try {await (steer && onSteer ? onSteer : onQueue)(selected.map(f => approved[f.finding_id]).join("\n\n"), {...selection,
-      item_id: target.item_id, version_id: target.version_id, target: structuredClone(target), camera: null,
-      view_mode: target.media_artifact_id ? "animation" : "keyframes", range: null, selected_objects: [], annotations: [],
+    const singleVersion = !!target.item_id && !!target.version_id && selected.every(f => f.target.item_id === target.item_id && f.target.version_id === target.version_id);
+    if (steer && !onSteer) {queueLatch.current = false; setBusy(false); setError("Steer is no longer available. Choose Queue explicitly."); return;}
+    try {await (steer ? onSteer! : onQueue)(selected.map(f => approved[f.finding_id]).join("\n\n"), {...emptySelection(),
+      request_target: singleVersion ? {kind: "item", version: {item_id: target.item_id!, version_id: target.version_id!}} : {kind: "project"},
+      item_id: singleVersion ? target.item_id : null, version_id: singleVersion ? target.version_id : null, target: singleVersion ? structuredClone(target) : null, camera: null,
+      view_mode: singleVersion ? target.media_artifact_id ? "animation" : "keyframes" : "none", range: null, selected_objects: [], annotations: [],
       attachments,
       approved_findings: selected.map(f => ({finding_id: f.finding_id, finding_revision: f.revision, approved_text: approved[f.finding_id], target: structuredClone(f.target)})),
     });

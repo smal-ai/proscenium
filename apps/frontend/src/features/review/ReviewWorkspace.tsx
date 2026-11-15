@@ -29,7 +29,7 @@ export function ReviewWorkspace(props: ReviewSurfaceProps) {
   return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props}/>;
 }
 
-function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+function Workspace({visible = true, api, projectId, version: suppliedVersion, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
   const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
   const version = refreshedVersion ?? suppliedVersion;
   const [mode, setMode] = useState<Mode>("keyframes");
@@ -48,6 +48,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const [range, setRange] = useState<FrameRange | null>(null);
   const [requestedFrame, setRequestedFrame] = useState(1);
   const [playing, setPlaying] = useState(false);
+  useEffect(() => { if (!visible) { setPlaying(false); setCaptureReady(false); } }, [visible]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [saved, setSaved] = useState<AnnotationSnapshot[]>([]);
@@ -80,7 +81,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
   const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
   const deliveryManifest = deliveryJob ? artifacts.find(a => deliveryJob.artifact_ids.includes(a.artifact_id) && a.kind === "document" && a.purpose === "metadata" && a.state === "ready") : undefined;
-  const readyToCapture = mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady;
+  const readyToCapture = visible && (mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady);
   const imageFailure = useCallback((message: string) => setError(message), []);
 
   useEffect(() => {
@@ -288,6 +289,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
 
   useEffect(() => {
     function key(event: KeyboardEvent) {
+      if (!visible) return;
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
       const modes: Record<string, Mode> = {"1": "3d_inspection", "2": "keyframes", "3": "animation"};
       if (modes[event.key]) {event.preventDefault(); changeMode(modes[event.key]);}
@@ -300,7 +302,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   function changeDraft(next: Draft) { setDrafts(previous => [...previous.filter(d => d.key !== next.key), next]); }
 
   async function renderThisView() {
-    if (captureLatch.current || !version || !mapping || !captureStoreReady) return;
+    if (!visible || captureLatch.current || !version || !mapping || !captureStoreReady) return;
     captureLatch.current = true; setQueueingView(true); setError("");
     try {
       let pending = pendingCaptureRef.current;
@@ -312,7 +314,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
         // before any await. The upload is not a request to render/generate.
         const frozen = capture();
         const uploadId = crypto.randomUUID();
-        const selection = structuredClone({...context, target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
+        const selection = structuredClone({...context, request_target: {kind: "item" as const, version: {item_id: version.item_id, version_id: version.version_id}}, target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
         const sampleFrame = mapping.sample_frame;
         const shotId = versionJobs.find(job => job.artifact_ids.includes(mapping.proxy_artifact_id))?.target.shot_id ?? null;
         const png = await frozen.png;
@@ -323,7 +325,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       await writeProxyCapture(pending.key, pending, pending.uploadId);
       const artifact = await api.call("uploadImage", {path: {project_id: projectId, upload_id: pending.uploadId}, body: pending.png, idempotencyKey: pending.uploadId});
       if (artifact.project_id !== projectId || artifact.state !== "ready" || artifact.kind !== "image" || artifact.media_type !== "image/png" || artifact.sha256 !== pending.sha256 || artifact.bytes !== pending.png.size || artifact.dimensions?.width !== pending.dimensions.width || artifact.dimensions.height !== pending.dimensions.height) throw new Error("Capture upload acknowledgement does not match the frozen PNG hash/dimensions");
-      const selection: TurnSelection = {...pending.selection, target: {origin: "proxy_capture", artifact_id: artifact.artifact_id, displayed_sha256: pending.sha256, dimensions: pending.dimensions, item_id: pending.selection.item_id, version_id: pending.selection.version_id, source_frame: pending.sampleFrame, shot_id: pending.shotId, render_job_id: null, media_artifact_id: null}, attachments: [{artifact_id: artifact.artifact_id, role: "reference"}]};
+      const selection: TurnSelection = {...pending.selection, request_target: {kind: "item", version: {item_id: pending.selection.item_id!, version_id: pending.selection.version_id!}}, target: {origin: "proxy_capture", artifact_id: artifact.artifact_id, displayed_sha256: pending.sha256, dimensions: pending.dimensions, item_id: pending.selection.item_id, version_id: pending.selection.version_id, source_frame: pending.sampleFrame, shot_id: pending.shotId, render_job_id: null, media_artifact_id: null}, attachments: [{artifact_id: artifact.artifact_id, role: "reference"}]};
       pending = {...pending, selection, phase: "handoff"};
       await writeProxyCapture(pending.key, pending, pending.uploadId);
       pendingCaptureRef.current = pending; setPendingCapture(pending);
@@ -341,7 +343,7 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
 
   async function annotate() {
     setPlaying(false);
-    if (!target || !readyToCapture || mode === "3d_inspection") return;
+    if (!visible || !target || !readyToCapture || mode === "3d_inspection") return;
     // The target comes from a decoded image or rVFC-confirmed animation presentation.
     await startDraft(target);
   }
@@ -375,8 +377,8 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
   if (!version) return <section className="review-workspace"><p>Select a published version to review.</p></section>;
   return <section className="review-workspace" aria-label="Review workspace">
     <nav className="review-toolbar" aria-label="Review mode">{([['3d_inspection','3D Inspection'],['keyframes','Keyframes'],['animation','Animation']] as const).map(([id,label], index) => <button key={id} disabled={!!draft} aria-pressed={mode === id} onClick={() => changeMode(id)}>{index+1} {label}</button>)}
-      <button disabled={!target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
-      {mode === "3d_inspection" && <button disabled={!proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>}
+      <button disabled={!visible || !target || !readyToCapture || !!draft || mode === "3d_inspection"} onClick={() => void annotate()}>Annotate presented frame</button>
+      {mode === "3d_inspection" && <button disabled={!visible || !proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>}
     </nav>
     {assembly?.purpose === "final" && deliveryJob && deliveryManifest && <nav className="review-toolbar" aria-label="Sequence delivery">
       <span>Final encode · technical completion is not owner selection</span>
@@ -384,13 +386,13 @@ function Workspace({api, projectId, version: suppliedVersion, jobs, refreshRevis
       <a href={mediaUrl(projectId,deliveryManifest.artifact_id)} download={`${version.version_id}-manifest.json`}>Download delivery manifest</a>
     </nav>}
     {draft ? <AnnotationEditor key={draft.key} api={api} draft={draft} onChange={changeDraft} onQueue={onQueue} onContextPreparer={registerEditorPreparer} onClose={() => setDraftId(null)}/>
-      : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
-        : mode === "animation" ? assembly && frameMap ? <SequencePlayer key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={frameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
+       : mode === "3d_inspection" ? mapping ? <MediaBoundary key={mapping.proxy_artifact_id}><ProxyView visible={visible} url={mediaUrl(projectId, mapping.proxy_artifact_id)} mapping={mapping} onSelect={pairs => choice.select(scope, pairs)} onCamera={setCamera} onCaptureReady={bindCapture} restoreCamera={target?.version_id === mapping.version_id && target?.source_frame === mapping.sample_frame ? targetCamera : null}/></MediaBoundary> : <p>Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</p>
+         : mode === "animation" ? assembly && frameMap ? <SequencePlayer visible={visible} key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={frameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
-        }}/> : <ProgressivePlayer key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
-          : target ? <div className="review-image"><DecodedReviewImage projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
+         }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
+           : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <p>No ready review image. Rendering is an explicit Queue request.</p>}
     <div className="review-toolbar"><button onClick={() => step(-1)}>Previous frame</button><button onClick={() => step(1)}>Next frame</button>
       <label>Shot / render job<select aria-label="Shot / render job" disabled={!!draft} value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>
       <label>Frame<input type="number" min="1" value={requestedFrame} disabled={!!draft} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>

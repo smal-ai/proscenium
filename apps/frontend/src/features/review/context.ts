@@ -11,6 +11,7 @@ export function annotationContext(annotation: AnnotationSnapshot): TurnSelection
   const target = annotation.target;
   const masks = [...new Set(annotation.markups.filter(m => m.kind === "mask").map(m => m.mask_artifact_id!))];
   return {...emptySelection(), item_id: target.item_id, version_id: target.version_id,
+    ...(target.item_id && target.version_id ? {request_target: {kind: "item" as const, version: {item_id: target.item_id, version_id: target.version_id}}} : {}),
     view_mode: target.media_artifact_id ? "animation" : "keyframes", target: structuredClone(target),
     camera: annotation.camera, range: annotation.range, annotations: [structuredClone(annotation)],
     attachments: [{artifact_id: target.artifact_id, role: cleanTargetRole(target)},
