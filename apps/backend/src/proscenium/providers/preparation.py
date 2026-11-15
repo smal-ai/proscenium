@@ -233,7 +233,7 @@ class Preparation:
         )
         capability.preflight(bound, catalog, model_ids)
         digest = sha(body["operation_id"].encode())[:24]
-        target = context.get("request_target", {})
+        target = context.get("request_target") or {}
         target_id = body.get("target_id") or (
             target["intent_id"]
             if target.get("kind") == "new_item"

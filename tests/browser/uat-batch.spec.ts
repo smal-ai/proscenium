@@ -147,7 +147,6 @@ test("fixed status header and collapsed rail retain work on disconnect", async (
 });
 
 test("awaiting-user status is not falsely reported as Ready without a decision projection", async ({ page, baseURL }) => {
-  test.fixme(true, "Owner fix required: AssistantStatus.tsx:11–16 omits awaiting_user without pending decisions. Reproduced independently.");
   const studio = new StudioFixture(page, baseURL!);
   studio.snapshot.active_work = work("awaiting_user");
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
@@ -155,7 +154,6 @@ test("awaiting-user status is not falsely reported as Ready without a decision p
 });
 
 test("a fresh native child event has a known live Agents count", async ({ page, baseURL }) => {
-  test.fixme(true, "Owner fix required: agents.ts:19 marks fresh connected child events last_known; useProjectData does not refresh starts. Reproduced independently.");
   const studio = new StudioFixture(page, baseURL!);
   studio.snapshot.active_work = work();
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();

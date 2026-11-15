@@ -12,6 +12,7 @@ export function assistantState({ snapshot, requests, submitting, stopping }: Ass
   if (stopping || work?.state === "stop_requested" || requests.some(r => r.submission.type === "stop" && r.receipt.state === "stop_requested")) return { state: "stopping", label: "Stopping…" };
   if (work?.state === "outcome_uncertain" || requests.some(r => r.submission.type === "stop" && r.receipt.state === "outcome_uncertain") || execution?.hold_reason_code === "uncertain_stop") return { state: "recovery", label: "Needs recovery" };
   if (execution?.fenced || snapshot?.project.state === "awaiting_resume" || work?.state === "awaiting_resume") return { state: "paused", label: "Paused", reason: execution?.hold_reason ?? execution?.fence_reason ?? "Execution awaits explicit Resume" };
+  if (work?.state === "awaiting_user") return { state: "attention", label: "Needs your input" };
   if (work?.state === "running" && !execution?.fenced) return { state: "working", label: "Working…" };
   return { state: "ready", label: "Ready" };
 }

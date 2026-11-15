@@ -12,7 +12,7 @@
     "generate": "node scripts/generate-types.mjs",
     "build": "npm run build --workspace apps/frontend",
     "typecheck": "npm run typecheck --workspace apps/frontend && tsc --noEmit -p tsconfig.browser.json",
-    "test:unit": "node --test apps/frontend/src/features/review/surfaceTargets.test.mjs && node --loader ./apps/frontend/src/features/chat/testLoader.mjs --test ./apps/frontend/src/features/chat/chat.test.tsx",
+    "test:unit": "node --test apps/frontend/src/features/review/surfaceTargets.test.mjs && node --import ./scripts/register-tsx.mjs --test ./apps/frontend/src/features/chat/chat.test.tsx",
     "test:browser": "playwright test --config playwright.config.ts --project=chromium-*",
     "lint": "eslint apps/frontend/src scripts/*.mjs playwright.config.ts tests/browser"
   },

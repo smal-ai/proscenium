@@ -25,6 +25,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-dpr1",
+      testIgnore: "*dpr2*.spec.ts",
       use: { browserName: "chromium", deviceScaleFactor: 1, launchOptions: { args: softwareWebGL } },
     },
     {

@@ -498,10 +498,6 @@ def test_http_journal_publication_failure_retained_pngs_and_corrective_publicati
     assert rt.client.get(path, params=dict(kind="document")).json()["items"] == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Owner fix required: preparation.py:236–241 dereferences a contract-valid null request_target",
-)
 def test_preparation_accepts_legacy_explicit_null_request_target(journey):
     rt = journey
     queue(rt, context(request_target=None))

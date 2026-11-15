@@ -229,10 +229,10 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         setJobs(old => mergeJobs(old, [job]));
         if (job.artifact_ids.length > 0) void loadRetainedArtifacts();
       }
-      if (event.event_type === "tool.completed" || event.event_type === "subagent.completed") {
+      if (event.event_type === "subagent.started" || event.event_type === "tool.completed" || event.event_type === "subagent.completed") {
         const activity = event.payload as unknown as ActivityEventData;
-        if (activity.artifact_ids?.length || activity.output_status) {
-          void loadRetainedArtifacts();
+        if (activity.artifact_ids?.length) void loadRetainedArtifacts();
+        if (event.event_type.startsWith("subagent.") || activity.artifact_ids?.length || activity.output_status) {
           void api.call("getProjectSnapshot", { path }).then(fresh => {
             if (!disposed) setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
           }).catch(() => {});
