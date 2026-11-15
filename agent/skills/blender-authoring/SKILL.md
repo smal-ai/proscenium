@@ -28,7 +28,10 @@ description: Author and inspect Blender content inside the active Proscenium pro
    the active project. Do not inspect credentials, environment files, siblings or
    historical tasks from a reference project. Do not inherit a particular scene,
    character, storyboard, export target or creative task from these instructions.
-6. Call `checkpoint_sources` with the explicitly owned file set before
+6. Call `checkpoint_sources(entry_path=...)` with the explicitly owned file set,
+   dependencies and `required_runtime` when needed. Pass the receipt's
+   `source_closure` directly into `publish_outputs`, never script closure sorting
+   or SHA-256 digests. Checkpoint before
    `publish_outputs`. Preserve unrelated changes and staging. Never `git add .`.
    Missing accepted services are a limitation, not permission to invent a receipt.
    Keep the active `project_id` and host work/invocation authority. Assign stable
@@ -47,10 +50,11 @@ description: Author and inspect Blender content inside the active Proscenium pro
    Use `get_version(version_id)` for the pinned publication/source record and
    `list_job_frames(job_id, cursor?, limit?)` for ready frame receipts, following
    `next_cursor` until null. Call `get_artifact(artifact_id)` for each desired
-   output's metadata. For `state: ready`, the canonical project-relative byte path
-   is `.proscenium/artefacts/sha256/<Artifact.sha256>/content`. The full hash and
-   `bytes` identify the expected content, not the artefact ID or latest filename.
-   Verify that identity before native image/file inspection. Missing/changed bytes
+   output's metadata. Inspect registered images with
+   `get_artifact(artifact_id=..., include_image=true)`. Never copy managed
+   `.proscenium/artefacts/.../content` just to call `view`. Wait with
+   `get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid polling.
+   The host verifies ready bytes/hash inline. Missing/changed bytes
    are a known failure, not permission to guess another file. These reads neither
    launch a job nor change its state. Never inspect private SQLite/runtime stores.
    The accepted preview recipe is `renderer_revision: proscenium-blender-1`,
@@ -65,7 +69,9 @@ description: Author and inspect Blender content inside the active Proscenium pro
    actionable tool errors and the original receipt instead of looping on failure.
 8. Use the budgeted generation adapter for inference. Do not install/start/stop
    ComfyUI, LM Studio, Unity or other independent services as a workaround.
-9. A VLM review ticket is not a critique. Do not retrieve unapproved findings into
+9. Request `request_vlm_review` for produced renders/keyframes when capabilities
+   report a `configured` or `ready` VLM provider. A ticket is not a critique.
+   Do not retrieve unapproved findings into
    model context. Only owner-selected findings in host context authorise repairs.
 10. After compaction re-read the brief and current plan. Stop is not rollback.
     Late publication/job results belong to their original source, work and attempt.
@@ -75,5 +81,8 @@ Honour host `request_target`, `reference_versions` and `execution_scope`.
 storyboards/sequences/publications with `validate_authored_document` before checkpoint
 and publication. Plan comparison uses `compare_to_path` and `changed_ids`.
 Requested image inference uses `prepare_image_generation` then `submit_generation`.
+Omit preparation `project_id`/`generation_task_id` because the host binds them.
+Use capability recipe defaults by omitting width/height/steps unless the user
+requested valid multiple-of-16 dimensions within `max_pixels`.
 Create/publish standalone `asset` source without a storyboard. Existing dependent
 scenes/storyboards keep their version pins until the owner requests explicit adoption.

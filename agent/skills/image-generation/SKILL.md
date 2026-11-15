@@ -23,8 +23,11 @@ description: Generate or correct project concept images with the configured, bud
 - Discover relevant project references and identify composition, style and identity roles.
   Inspect the actual bytes. Do not copy a previous project's treatment or ask for approval
   of routine creative progression. Missing essential input is reported explicitly.
-- Call `prepare_image_generation` with a stable `operation_id`, host `project_id`,
-  `generation_task_id`, prompt, decimal seed and optional reference artefact IDs/target slot.
+- Call `prepare_image_generation` with a stable `operation_id`, prompt, decimal
+  seed and optional reference artefact IDs/target slot. Omit `project_id` and
+  `generation_task_id`: the host binds them automatically. Omit width, height and
+  steps to use capability `default_dimensions`/`default_steps`, unless the user
+  requested valid multiple-of-16 dimensions within `max_pixels`.
   It registers exact prompt/workflow artefacts locally without consuming an attempt.
   Replay the same input/ID after acknowledgement loss. It returns the exact `submit_request`.
 - Use the **host-selected, frozen image family**. The default `comfy-image-1` remains the
@@ -47,16 +50,23 @@ description: Generate or correct project concept images with the configured, bud
   its shared GPU claim. Busy/unavailable means waiting or an actionable failure. Never
   start/stop services, unload models, clear a global queue or substitute another endpoint.
 - Retain the admitted job identity. A timeout does not authorise another inference.
-  Poll/reconcile the existing prompt and download verified immutable outputs. A genuinely
+  Wait with `get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid
+  polling. Reconcile the existing prompt and verified immutable outputs. A genuinely
   new correction is a new GenerationSubmit under the same canonical task/target allowance.
-- Inspect the generated image. Distinguish technical execution, agent assessment and
+- Inspect with `get_artifact(artifact_id=..., include_image=true)`. Never copy
+  `.proscenium/artefacts/.../content` just to call `view`.
+  Distinguish technical execution, agent assessment and
   owner selection. Do not replace source authoring or owner selection automatically.
 - A VLM review is a separate explicit `request_vlm_review` call. Supply only clean target
-  images, criteria and explicitly selected telemetry. Its native result is ONLY a review
+  images when a `configured` or `ready` VLM provider is reported by capabilities.
+  Supply criteria and explicitly selected telemetry. Its native result is ONLY a review
   ticket/status. Findings remain in the owner readstore until the owner submits them.
 - Report exact job/output identities and limitations. Missing telemetry is unknown, not zero.
 - Publish a standalone `asset` without requiring a storyboard. Validate publications
   with `validate_authored_document` before `checkpoint_sources`/`publish_outputs`.
+  Use `checkpoint_sources(entry_path=...)` with dependencies/`required_runtime`
+  when needed, then pass its receipt's `source_closure` directly to `publish_outputs`.
+  Never script source-closure sorting or SHA-256 digests.
   Dependent scenes/storyboards retain exact version pins until explicit adoption.
   Never silently replace requested inference with SVG/vector drawings or use relative
   workspace viewer links as browser URLs. Report retained artefact identities.

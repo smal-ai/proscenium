@@ -10,6 +10,14 @@ and `execution_scope`. Planning-only work performs no inference, previews or sce
 execution. Use `validate_authored_document` for plans, sequences and publications
 before checkpoint/publication. Plan impact uses `compare_to_path` and `changed_ids`.
 Requested image inference uses `prepare_image_generation` then `submit_generation`.
+Omit preparation `project_id`/`generation_task_id`, which the host binds. Omit
+width/height/steps for capability recipe defaults unless the user requested valid
+multiple-of-16 dimensions within `max_pixels`. Wait with
+`get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid polling.
+Inspect images using `get_artifact(artifact_id=..., include_image=true)`, never
+copy managed artefact content just to call `view`. Request `request_vlm_review`
+for produced visual outputs when a `configured` or `ready` VLM provider is reported.
+Only owner-approved findings become revision instructions.
 Acquire/import and publish a standalone `asset` without requiring a storyboard.
 Dependent scenes/storyboards remain pinned until an explicit adoption edit.
 
@@ -37,8 +45,10 @@ Dependent scenes/storyboards remain pinned until an explicit adoption edit.
    unsaved work and inspect actual units/materials/dependencies. Use configured
    native tools only when authorised and available. Never call an unrun import
    validated. Keep exact failures and a viable authoring fallback visible.
-7. Checkpoint only owned sources through the accepted `checkpoint_sources` tool,
-   then hand its receipt and exact source/version dependencies to the configured
+7. Checkpoint only owned sources through `checkpoint_sources(entry_path=...)`,
+   with dependencies/`required_runtime` when needed. Pass the receipt's
+   `source_closure` directly to `publish_outputs`, never script closure sorting
+   or SHA-256 digests. Retain exact source/version dependencies in the configured
    publication tool. Use its generated command contract and original operation ID
    on acknowledgement loss. Do not write a database, make a parallel catalogue,
    resolve by mtime, or claim publication without its receipt. Empty preview requests
