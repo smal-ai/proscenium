@@ -27,7 +27,8 @@ def _request_context(tx: Transaction, caller: Caller, work: JSON) -> JSON | None
     if invocation is not None:
         if invocation.get("work_id") != work["work_id"]:
             raise DomainError("scope_denied", 403)
-        record = tx.require("requests", invocation["request_id"])
+        request_id = invocation.get("context_request_id") or invocation["request_id"]
+        record = tx.require("requests", request_id)
     else:
         record = tx.get("requests", work["originating_request_id"], required=False)
     if record and record["project_id"] != tx.project_id:

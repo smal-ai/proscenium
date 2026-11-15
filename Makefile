@@ -1,4 +1,4 @@
-.PHONY: bootstrap run build generate check-generated lint typecheck test check
+.PHONY: bootstrap run build generate check-generated lint typecheck test test-browser check
 
 CONFIG ?= config.example.json
 PYTHON_CHECK_PATHS = apps/backend/src scripts tests tools agent/skills
@@ -31,6 +31,10 @@ typecheck:
 	npm run typecheck
 
 test: build
+	npm run test:unit
 	uv run pytest -q tests
+
+test-browser:
+	npx playwright test --config playwright.config.ts --project=chromium-*
 
 check: lint typecheck check-generated test

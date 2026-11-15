@@ -500,7 +500,9 @@ class Copilot:
                 binding = self.state.binding(tx, str(sid), "agent", agent)
                 if binding is None:
                     raise DomainError("attribution_unavailable", 409)
-                record = tx.require("requests", binding["request_id"])
+                record = tx.require(
+                    "requests", binding.get("context_request_id") or binding["request_id"]
+                )
                 payload = tx.require("copilot.payloads", record["request_id"])
                 save(
                     tx,
@@ -805,7 +807,23 @@ class Copilot:
             ]
             if work["state"] not in {"running", "awaiting_user"}:
                 return
-            if any(
+            continuation = (
+                tx.get("copilot.continuations", last_delivery["delivery_id"], required=False)
+                if last_delivery
+                else None
+            )
+            continued = bool(
+                continuation
+                and continuation.get("work_id") == work["work_id"]
+                and (
+                    completion := tx.get(
+                        "copilot.completion", continuation["request_id"], required=False
+                    )
+                )
+                and completion.get("candidate")
+                and completion.get("delivery_id") == continuation["delivery_id"]
+            )
+            if not continued and any(
                 r["receipt"]["state"] not in TERMINAL
                 and not (tx.get("copilot.completion", r["request_id"], required=False) or {}).get(
                     "candidate"
@@ -1502,6 +1520,24 @@ class Copilot:
                     )
                     if body["mode"] == "continue_work":
                         work = tx.require("work", body["work_id"])
+                        request_ids = [
+                            work["originating_request_id"],
+                            *work["directive_request_ids"],
+                        ]
+                        active_payload = next(
+                            (
+                                (req_id, saved)
+                                for req_id in reversed(request_ids)
+                                if tx.require("requests", req_id)["receipt"]["state"]
+                                not in {"cancelled", "failed"}
+                                and (saved := tx.get("copilot.payloads", req_id, required=False))
+                                is not None
+                            ),
+                            None,
+                        )
+                        if active_payload is None:
+                            raise DomainError("attribution_unavailable", 409)
+                        context_request_id, _ = active_payload
                         self.state.work_state(
                             tx,
                             work["work_id"],
@@ -1520,6 +1556,7 @@ class Copilot:
                         )
                         binding = {
                             "request_id": work["originating_request_id"],
+                            "context_request_id": context_request_id,
                             "work_id": work["work_id"],
                             "delivery_id": operation_id,
                         }
@@ -1539,25 +1576,7 @@ class Copilot:
                     # This is an explicit continuation, never the original request body or a new task.
                     with store.transaction() as tx:
                         work = tx.require("work", body["work_id"])
-                        request_ids = [
-                            work["originating_request_id"],
-                            *work["directive_request_ids"],
-                        ]
-                        payload = next(
-                            (
-                                saved
-                                for request_id in reversed(request_ids)
-                                if tx.require("requests", request_id)["receipt"]["state"]
-                                not in {"cancelled", "failed"}
-                                and (
-                                    saved := tx.get("copilot.payloads", request_id, required=False)
-                                )
-                                is not None
-                            ),
-                            None,
-                        )
-                        if payload is None:
-                            raise DomainError("attribution_unavailable", 409)
+                        payload = tx.require("copilot.payloads", binding["context_request_id"])
                         snapshot = tx.require("contexts", payload["context_id"])
                         self.contexts.validate_references(tx, snapshot)
                         tx.put(

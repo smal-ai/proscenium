@@ -77,7 +77,7 @@ Configured generation submission goes through the budgeted adapter. General shel
 
 ## 5. Queue, Steer and Stop
 
-Queue and Steer carry text and captured UI context. Stop carries the intended active work ID and optional reason. All three are visible, durable request types. Stop uses native cancellation control and is never sent as natural-language text behind the current work.
+Queue and Steer carry text and immutable captured context, including optional structured `request_target` (`project`, pinned `item`, storyboard `shot` or `new_item`), `reference_versions` and `execution_scope`. Targeting directs creative work inside the active project without widening filesystem scope or resetting the originating Queue's generation budget. Steer requires an actively running or awaiting-user work item with unfenced execution; invocations under a Steer or subsequent `continue_work` Resume resolve the latest acknowledged request context while retaining the originating `generation_task_id`. Stop carries the intended active work ID and optional reason. All three are visible, durable request types. Stop uses native cancellation control and is never sent as natural-language text behind the current work.
 
 Stop holds queued messages until explicit Resume. Independently running render/generation/Unity jobs remain visible and have separate cancellation requests where supported. Native cancellation must be acknowledged before the UI calls the agent stopped. See the [accepted execution and recovery protocol](https://github.com/smal-ai/proscenium/blob/6b714c0dd574abe3995cf7020b988190336cefdf/docs/execution.md).
 

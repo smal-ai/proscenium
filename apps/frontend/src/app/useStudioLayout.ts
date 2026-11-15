@@ -18,17 +18,17 @@ function savedLayout(projectId: string | null): StudioLayout | null {
 }
 
 /** Split widths are preferences, not transient available-space measurements. */
-export function useStudioLayout(projectId: string | null, snapshot: ProjectSnapshot | null, requestCount: number, itemCount: number, jobCount: number) {
+export function useStudioLayout(projectId: string | null, snapshot: ProjectSnapshot | null, requestCount: number, itemCount: number, jobCount: number, hydrated = snapshot !== null) {
   const [initial] = useState(() => savedLayout(projectId));
   const [layout, setLayout] = useState<StudioLayout>(initial ?? defaults);
   const [settled, setSettled] = useState(!!initial);
   useEffect(() => {
-    if (!projectId || !snapshot || settled) return;
+    if (!projectId || !snapshot || !hydrated || settled) return;
     const created = readPrivate(`created.${projectId}`) === true;
     const empty = !snapshot.project.native_session_id && requestCount === 0 && itemCount === 0 && jobCount === 0;
     setLayout(created || empty ? { ...defaults, mode: "chat_focus", navigatorCollapsed: true } : defaults);
     setSettled(true);
-  }, [projectId, snapshot, requestCount, itemCount, jobCount, settled]);
+  }, [projectId, snapshot, hydrated, requestCount, itemCount, jobCount, settled]);
   useEffect(() => {
     if (!projectId || !settled) return;
     writePrivate(`layout.v1.${projectId}`, layout);

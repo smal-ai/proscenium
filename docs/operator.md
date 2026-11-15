@@ -29,11 +29,12 @@ chmod 600 "$HOME/.config/proscenium/config.json"
 Edit the private configuration to match this workstation:
 
 - `runtime.lead_model`, `worker_model` and `unity_worker_model` select available Copilot models.
+- `runtime.worker_tools` lists the native and host tools exposed to `authoring-specialist`. Include `skill`, `get_project_capabilities`, `validate_authored_document` and `prepare_image_generation` when overriding the default list; `get_project_capabilities` reports any omitted recommended names under `missing_worker_tools` without silently widening your override.
 - `runtime.unity_editor` must be the installed Editor executable's absolute path when using Unity.
 - `runtime.mcp_servers` configures the existing MCP integrations. The [Blender bridge guide](../tools/blender/README.md) shows the pinned client and socket setup.
 - `rendering.blender`, `ffmpeg` and `ffprobe` select installed executables. The default preview profile is four-thread Cycles CPU with a 300-second worker limit.
 - `services` selects provider IDs, endpoints, capabilities and loaded model IDs.
-- `provider_options.image_profiles` selects a versioned image profile for each Comfy provider.
+- `provider_options.image_profiles` selects a versioned image profile for each Comfy provider, and optional `provider_options.image_recipes` pins exact model filenames when multiple compatible checkpoints exist on the ComfyUI server.
 
 JSON path strings expand `${HOME}`, `${CONFIG_DIR}` and `${APP_ROOT}`. Credentials
 stay in the existing supported authentication stores. Do not paste tokens into
@@ -64,7 +65,23 @@ feedback remain accessible when a configured service is unavailable.
 | `comfy-sd-turbo-img2img-1` | Pinned SD-Turbo F32 checkpoint and one exact 512×512 reference. |
 | `comfy-sd-turbo-img2img-fp16-1` | Pinned separately prepared FP16 derivative and one exact 512×512 reference. |
 
-For example, add this key to `provider_options` for an already prepared FP16 service:
+For example, select an explicit FLUX.2 Klein 4B recipe when a ComfyUI server hosts multiple checkpoints, or select an already prepared SD-Turbo FP16 profile:
+
+```json
+{
+  "image_recipes": {
+    "local-comfy": {
+      "profile_revision": "comfy-image-1",
+      "unet": "flux-2-klein-4b.safetensors",
+      "clip": "qwen_3_4b.safetensors",
+      "vae": "flux2-vae.safetensors",
+      "width": 512,
+      "height": 512,
+      "steps": 4
+    }
+  }
+}
+```
 
 ```json
 {"image_profiles": {"local-comfy": "comfy-sd-turbo-img2img-fp16-1"}}
@@ -100,8 +117,8 @@ Browser/tunnel disconnection leaves admitted work running.
 - The machine registry defaults to `${XDG_DATA_HOME:-$HOME/.local/share}/proscenium`.
 - Each project keeps its application records and retained media under `.proscenium/`.
 - Git/Git LFS retain authored source and pinned dependencies. They do not replace backups of annotations, published media or native conversation history.
-- Restart restores read models with execution held. Use **Resume** deliberately to reconcile original work or release held Queue requests.
-- **Stop** controls Copilot. External jobs have separate cancellation support. A missing native result stays unknown.
+- Restart and unsolicited native aborts restore read models with execution held. Use **Resume** deliberately (`Reconcile only`, `Continue original work` or `Release held queue`) and await `getResumeOperation` completion.
+- **Stop** controls Copilot, including post-restart cold RPC inactivity reconciliation when prior tool invocations have settled. External jobs have separate cancellation support. A missing native result stays unknown.
 
 ## Backup and restore
 

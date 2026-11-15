@@ -28,9 +28,9 @@ export interface ChatPanelProps {
   composer: ReturnType<typeof useRequestComposer>; onRefresh: () => Promise<void>;
   prepareContext?: ContextPreparer;
   items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; seedIntent?: ComposerSeedIntent | null;
-  hydrated?: boolean; connection?: string; onInspectArtifact?: (artifact: Artifact) => void;
+  hydrated?: boolean; connection?: string; showHeaderStatus?: boolean; onInspectArtifact?: (artifact: Artifact) => void;
 }
-export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, onRefresh, items, retainedArtifacts = [], seedIntent, hydrated = true, connection = "Connected", onInspectArtifact }: ChatPanelProps) {
+export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, onRefresh, items, retainedArtifacts = [], seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact }: ChatPanelProps) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
   const [uploads, setUploads] = useState<Upload[]>([]);
@@ -157,7 +157,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     finally { setPendingResume(readPrivate(`command.resume.${projectId}`)); setResuming(false); }
   }
   return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
-    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div><AssistantStatus snapshot={snapshot} requests={requests} events={events} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} /></div>
+    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus snapshot={snapshot} requests={requests} events={events} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} />}</div>
     {snapshot?.execution?.work_outputs.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => <section className="publication-status" key={output.work_id} role="status"><strong>{output.status === "publication_blocked" ? "Finished · publication blocked" : "Outputs retained · not published"}</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p><OutputCards api={api} projectId={projectId} artifactIds={output.artifact_ids.filter(id => !renderedOutputIds.has(id))} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></section>)}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
     {snapshot?.pending_decisions.map(decision => <DecisionCard key={`${decision.decision_id}.${decision.state_revision}`} api={api} decision={decision} onRefresh={onRefresh} />)}
