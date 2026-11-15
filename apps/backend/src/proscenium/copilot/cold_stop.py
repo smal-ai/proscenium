@@ -1,4 +1,4 @@
-"""Positive RPC inactivity proof for one existing uncertain departed read-only Stop."""
+"""Positive RPC inactivity proof for an existing uncertain Stop after native departure."""
 
 import hashlib
 import time
@@ -147,6 +147,8 @@ def apply(
     work = tx.require("work", work_id)
     require(
         work == observation["previous_work"]
+        and work["native_session_id"] == observation["session_id"]
+        and stop["submission"]["target_work_id"] == work_id
         and work["state"] in {"stop_requested", "awaiting_resume", "outcome_uncertain"},
         "changed_original_work",
     )
@@ -158,12 +160,26 @@ def apply(
         ),
         "changed_read_binding",
     )
-    require(
-        len(proofs) == 1
-        and proofs[0]["existing_stop_request_id"] == stop_id
-        and proofs[0]["work_id"] == work_id,
-        "not_exact_read_candidate",
-    )
+    if proofs:
+        require(
+            len(proofs) == 1
+            and proofs[0]["existing_stop_request_id"] == stop_id
+            and proofs[0]["work_id"] == work_id,
+            "not_exact_read_candidate",
+        )
+    else:
+        # All invocations are already terminal. No historical tool result is
+        # inferred or rewritten; the fresh RPC barrier proves current inactivity.
+        departed = observation.get("departed_process", {})
+        require(
+            departed.get("session_id") == observation["session_id"]
+            and isinstance(departed.get("pid"), int)
+            and bool(departed.get("start"))
+            and "observed_identity" in departed
+            and departed.get("observed_identity") != departed["start"]
+            and observation["candidate_records"] == [],
+            "missing_departed_session_proof",
+        )
     allowed = {p["invocation_id"] for p in proofs}
     require(
         {i.get("invocation_id") for i in tx.all("invocations") if i["state"] not in TERMINAL}
@@ -197,6 +213,10 @@ def apply(
         "unknown_attribution",
     )
     require(
+        not any(d["state"] == "pending" for d in tx.all("decisions")),
+        "unsettled_decision",
+    )
+    require(
         interrupt_cold(
             tx, observation["session_id"], stop_id, proofs, observation["epoch"], observation["id"]
         )
@@ -214,9 +234,21 @@ def apply(
         tx,
         work_id,
         "stopped",
-        evidence="Verified cold Stop RPC barrier: inactive main loop, paused empty queue, no active background tasks/external calls; departed read wait interrupted, result unknown",
+        evidence=(
+            "Verified cold Stop RPC barrier: inactive main loop, paused empty queue, no active background tasks/external calls; "
+            + (
+                "departed read wait interrupted, result unknown"
+                if proofs
+                else "all recorded invocations already terminal"
+            )
+        ),
     )
-    state.request_state(tx, stop_id, "completed", detail_code="cold_read_stop_confirmed")
+    state.request_state(
+        tx,
+        stop_id,
+        "completed",
+        detail_code="cold_read_stop_confirmed" if proofs else "cold_settled_stop_confirmed",
+    )
     save(
         tx,
         "copilot.stops",

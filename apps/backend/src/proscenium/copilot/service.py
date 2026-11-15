@@ -1177,6 +1177,7 @@ class Copilot:
                 if owner and not owner.retired:
                     self.read_wait_recovery[project_id] = {
                         "session_id": session.session_id,
+                        "departed_process": departed,
                         "callback_generation": owner.generation,
                         "activity_sequence": owner.activity_sequence,
                         "proofs": probe_read_wait(
@@ -1251,7 +1252,7 @@ class Copilot:
                     {**departed, "invocation_ids": prior_invocations},
                 )
             if uncertain_stop_id:
-                await self.reconcile_cold_read_stop(project_id, session, uncertain_stop_id)
+                await self.reconcile_cold_stop(project_id, session, uncertain_stop_id)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             uncertain = [
                 r["request_id"]
@@ -1274,15 +1275,16 @@ class Copilot:
             "duplicate_correlations": len(duplicates),
         }
 
-    async def reconcile_cold_read_stop(self, project_id: str, session: Any, stop_id: str) -> None:
+    async def reconcile_cold_stop(self, project_id: str, session: Any, stop_id: str) -> None:
         sid = session.session_id
         recovery = self.read_wait_recovery.get(project_id)
         owner = self.callback_owners.get(project_id)
         if (
             not recovery
             or not owner
-            or len(recovery["proofs"]) != 1
-            or recovery["proofs"][0].get("existing_stop_request_id") != stop_id
+            or recovery["session_id"] != sid
+            or len(recovery["proofs"]) > 1
+            or any(p.get("existing_stop_request_id") != stop_id for p in recovery["proofs"])
             or not hasattr(self.native, "cold_stop_snapshot")
             or getattr(self.native, "non_continuing_session_id", None) != session.session_id
         ):
@@ -1303,6 +1305,7 @@ class Copilot:
                 "id": observation_id,
                 "epoch": epoch,
                 "session_id": session.session_id,
+                "departed_process": recovery["departed_process"],
                 "callback_generation": owner.generation,
                 "activity_sequence": recovery["activity_sequence"],
                 "status": "collecting",
@@ -1384,6 +1387,7 @@ class Copilot:
                         r["submission"]["type"] == "steer" and r["receipt"]["state"] not in TERMINAL
                         for r in tx.all("requests")
                     )
+                    and not any(d["state"] == "pending" for d in tx.all("decisions"))
                 )
 
         try:
