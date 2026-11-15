@@ -1,5 +1,5 @@
 import { expect, type Page, type WebSocketRoute } from "@playwright/test";
-import type { ContextSnapshot, Event, ItemRecord, JobRecord, MessageSubmit, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, VersionRecord, WorkRecord } from "../../apps/frontend/src/api";
+import type { ContextSnapshot, Event, ItemRecord, JobRecord, MessageSubmit, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, ShotPlan, VersionRecord, WorkRecord } from "../../apps/frontend/src/api";
 import { installFakeStudioApi, type MockRoute } from "./fixtures";
 
 export const projectId = "isolated-uat";
@@ -38,6 +38,7 @@ export class StudioFixture {
   events: Event[] = [];
   contexts: ContextSnapshot[] = [];
   submissions: MessageSubmit[] = [];
+  pageErrors: string[] = [];
   sockets: WebSocketRoute[] = [];
   resumePolls = 0;
   resumeComplete = false;
@@ -46,7 +47,8 @@ export class StudioFixture {
   requestsGate: Promise<void> | null = null;
   guard: Awaited<ReturnType<typeof installFakeStudioApi>> | null = null;
   constructor(readonly page: Page, readonly origin: string) {}
-  async install(options: { catalogue?: boolean; savedLayout?: boolean; created?: boolean } = {}) {
+  async install(options: { catalogue?: boolean; savedLayout?: boolean; created?: boolean; shotPlan?: ShotPlan } = {}) {
+    this.page.on("pageerror", error => this.pageErrors.push(error.message));
     if (options.catalogue) this.snapshot.items = items;
     await this.page.addInitScript(({ id, saved, created }) => {
       localStorage.setItem("proscenium.owner.session", JSON.stringify({ csrf_token: "synthetic-only" }));
@@ -66,7 +68,7 @@ export class StudioFixture {
       { path: `${base}/selections`, body: pageOf([]) },
       { path: `${base}/annotations`, body: pageOf([]) },
       { path: new RegExp(`${base}/versions/[^/]+/proxy-mapping$`), status: 404, body: { schema_version: "1.0", error: { code: "not_found", message: "Synthetic fixture has no proxy", details: {} } } },
-      { path: `${base}/versions/b-v1/shot-plan`, body: { schema_version: "1.0", project_id: projectId, plan_id: "plan", storyboard_version: { item_id: "board-b", version_id: "b-v1" }, asset_dependencies: [], unresolved: [], shots: [{ shot_id: "shot-1", intent: "Shot one", camera_intent: "Static", motion_beats: [], scene_version: null, source_range: null, fps: null, frames: [] }] } },
+      { path: `${base}/versions/b-v1/shot-plan`, body: options.shotPlan ?? { schema_version: "1.0", project_id: projectId, plan_id: "plan", storyboard_version: { item_id: "board-b", version_id: "b-v1" }, asset_dependencies: [], unresolved: [], shots: [{ shot_id: "shot-1", intent: "Shot one", camera_intent: "Static", motion_beats: [], scene_version: null, source_range: null, fps: null, frames: [] }] } },
       // Changing picker item can briefly leave the previous version selected. The
       // backend rejects this optional read rather than fabricating an asset plan.
       { path: new RegExp(`${base}/versions/a-v[12]/shot-plan$`), status: 404, body: { schema_version: "1.0", error: { code: "not_found", message: "Not a storyboard", details: {} } } },
@@ -105,7 +107,7 @@ export class StudioFixture {
     this.snapshot.execution = { ...this.snapshot.execution!, fenced, can_steer_work_id: state === "running" && !fenced ? "work" : null, can_stop_work_id: state ? "work" : null, hold_reason: fenced ? "Execution awaits explicit Resume" : null, hold_reason_code: fenced ? "awaiting_resume" : null };
     this.emit("work.state_changed", next);
   }
-  assertHermetic() { expect(this.guard?.unconfigured).toEqual([]); }
+  assertHermetic() { expect(this.guard?.unconfigured).toEqual([]); expect(this.pageErrors).toEqual([]); }
 }
 
 export function deferred() {

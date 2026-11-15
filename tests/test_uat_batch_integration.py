@@ -1,6 +1,7 @@
 """Independent HTTP/native-adapter/storage journeys. No native or provider execution."""
 
 import asyncio
+import base64
 import copy
 import io
 import json
@@ -14,7 +15,7 @@ import httpx
 import pytest
 import test_worker_capabilities_and_publication as worker_fixtures
 from copilot import CopilotClient
-from copilot.tools import ToolInvocation
+from copilot.tools import ToolBinaryResult, ToolInvocation
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
@@ -30,9 +31,13 @@ from proscenium.copilot.service import Copilot
 from proscenium.copilot.state import key
 from proscenium.db import Store
 from proscenium.db.registry import Registry
+from proscenium.jobs.resources import Resources
 from proscenium.projects.service import Projects
+from proscenium.providers.bridge import register_provider_artifact
 from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.sources import Sources, closure_digest
+from proscenium.sources.common import git, sha
+from test_provider_klein_and_pump import add_tiled_nodes, raster
 from test_request_targeting import add_version, context, plan
 from test_worker_capabilities_and_publication import PROJECT, SESSION
 from test_worker_capabilities_and_publication import publication as source_publication
@@ -640,3 +645,287 @@ def test_backup_verify_restore_preserves_new_context_outcomes_preparation_and_cu
             "artifacts",
         ):
             assert source.all(namespace) and source.all(namespace) == target.all(namespace)
+
+
+def test_batch_two_klein_tool_loop_checkpoint_publication_and_private_recovery(
+    tool_runtime, tmp_path, monkeypatch
+):
+    """Drive real tool authority, provider pump, closure and recovery with mock HTTP only."""
+    worker_fixtures.offline.__wrapped__(monkeypatch)
+    rt = tool_runtime
+    artifacts = rt.services.extension("artifacts")
+    rt.services.resources = Resources(rt.store)
+    rt.provider.options["image_recipes"] = {
+        "comfy": {
+            **worker_fixtures.RECIPE,
+            "width": 512,
+            "height": 512,
+            "steps": 4,
+            "max_pixels": 1_048_576,
+        }
+    }
+    add_tiled_nodes(rt.catalog)
+    reference = artifacts.promote(
+        PROJECT,
+        "wide-reference",
+        raster("solid", (1600, 900)),
+        kind="image",
+        purpose="reference",
+        media_type="image/png",
+    )
+    with rt.store.transaction() as tx:
+        artifacts.put(tx, reference)
+    assert reference["dimensions"] == {"width": 1600, "height": 900}
+    provider_calls = []
+    attempts = []
+
+    def transport(request):
+        provider_calls.append((request.method, request.url.path))
+        path = request.url.path
+        if path == "/object_info":
+            return httpx.Response(200, json=rt.catalog)
+        if path == "/queue":
+            return httpx.Response(200, json={"queue_running": [], "queue_pending": []})
+        if path == "/system_stats":
+            return httpx.Response(200, json={"devices": [{"vram_free": 2**30}]})
+        if path == "/upload/image":
+            assert request.method == "POST"
+            return httpx.Response(200, json={"name": "reference.png", "subfolder": "uat"})
+        if path == "/prompt":
+            assert request.method == "POST"
+            graph = json.loads(request.content)["prompt"]
+            assert graph["reference_scale"]["inputs"]["resolution_steps"] == 16
+            assert graph["reference_scale"]["inputs"]["megapixels"] == 1.0
+            assert graph["reference_encode"]["class_type"] == "VAEEncodeTiled"
+            assert graph["decode"]["class_type"] == "VAEDecodeTiled"
+            attempts.append(f"prompt-{len(attempts) + 1}")
+            return httpx.Response(200, json={"prompt_id": attempts[-1]})
+        if path.startswith("/history/prompt-"):
+            return httpx.Response(
+                200,
+                json={
+                    path.rsplit("/", 1)[1]: {
+                        "status": {"completed": True, "status_str": "success"},
+                        "outputs": {"save": {"images": [{"filename": "generated.png"}]}},
+                    }
+                },
+            )
+        if path == "/view":
+            return httpx.Response(
+                200, content=raster("scanline" if len(attempts) == 1 else "gradient", (512, 512))
+            )
+        raise AssertionError(f"Unexpected provider request: {request.method} {path}")
+
+    rt.provider.client.close()
+    rt.provider.client = httpx.Client(transport=httpx.MockTransport(transport))
+    rt.provider.registrar = lambda caller, body: register_provider_artifact(
+        rt.services, caller, body
+    )
+
+    def call(name, body, identity):
+        result, kind = worker_fixtures.invoke(rt, name, body, identity)
+        assert kind == "success", result
+        return result
+
+    capabilities = call("get_project_capabilities", {}, "capabilities")
+    provider = next(row for row in capabilities["providers"] if row["provider_id"] == "comfy")
+    assert provider["default_dimensions"] == {"width": 512, "height": 512}
+    assert provider["default_steps"] == 4 and provider["max_pixels"] == 1_048_576
+    generated = []
+    for number in (1, 2):
+        prepared = call(
+            "prepare_image_generation",
+            dict(
+                schema_version="1.0",
+                operation_id=f"prepare-{number}",
+                prompt="Synthetic retained concept",
+                seed="42",
+                reference_artifact_ids=[reference["artifact_id"]],
+            ),
+            f"prepare-{number}",
+        )
+        assert prepared["project_id"] == PROJECT
+        assert prepared["dimensions"] == {"width": 512, "height": 512}
+        submission = prepared["submit_request"]
+        assert submission["project_id"] == PROJECT
+        assert submission["generation_task_id"] == worker_fixtures.TASK
+        graph = json.loads(
+            artifacts.ready_path(PROJECT, prepared["workflow_artifact_id"]).read_bytes()
+        )
+        assert graph["reference_scale"]["class_type"] == "ImageScaleToTotalPixels"
+        assert graph["reference_scale"]["inputs"]["resolution_steps"] == 16
+        assert graph["reference_scale"]["inputs"]["megapixels"] == 1.0
+        assert graph["sigmas"]["inputs"]["steps"] == 4
+        admitted = call("submit_generation", submission, f"submit-{number}")
+        assert admitted["attempt_number"] == 1  # New job, same shared task/target budget.
+        if number == 1:
+            settled = rt.provider.pump(PROJECT, admitted["job_id"])[0]
+            assert settled["state"] == "failed"
+            assert settled["error_code"] == "corrupt_provider_output"
+            assert settled["artifact_ids"] == []
+            with rt.store.transaction(write=False) as tx:
+                assert not [
+                    a
+                    for a in tx.all("artifacts")
+                    if a["sha256"] == sha(raster("scanline", (512, 512)))
+                ]
+        else:
+            invocation = worker_fixtures.invocation(
+                rt, "get_job", {"job_id": admitted["job_id"], "wait_seconds": 5}, "wait-clean"
+            )
+
+            async def wait_and_pump():
+                async def pump():
+                    await asyncio.sleep(0.01)
+                    return await asyncio.to_thread(rt.provider.pump, PROJECT, admitted["job_id"])
+
+                pending = asyncio.create_task(pump())
+                result = await rt.tools.invoke("get_job", invocation)
+                await pending
+                return result
+
+            result = asyncio.run(wait_and_pump())
+            assert result.result_type == "success"
+            settled = json.loads(result.text_result_for_llm)
+            assert settled["state"] == "succeeded" and settled["error_code"] is None
+            generated = [
+                identity
+                for identity in settled["artifact_ids"]
+                if artifacts.get(PROJECT, identity)["kind"] == "image"
+            ]
+    assert len(attempts) == 2 and len(generated) == 1
+    image_call = worker_fixtures.invocation(
+        rt, "get_artifact", {"artifact_id": generated[0], "include_image": True}, "inspect-clean"
+    )
+    private = rt.root / ".proscenium"
+    before = {str(path.relative_to(private)): path.is_symlink() for path in private.rglob("*")}
+    result = asyncio.run(rt.tools.invoke("get_artifact", image_call))
+    assert result.result_type == "success"
+    (binary,) = result.binary_results_for_llm
+    assert isinstance(binary, ToolBinaryResult)
+    assert binary.type == "image" and binary.mime_type == "image/png"
+    assert base64.b64decode(binary.data, validate=True) == raster("gradient", (512, 512))
+    assert {
+        str(path.relative_to(private)): path.is_symlink() for path in private.rglob("*")
+    } == before
+    assert not any(before.values())
+
+    git(rt.root, "init", "-b", "main")
+    git(rt.root, "config", "user.name", "Offline UAT fixture")
+    git(rt.root, "config", "user.email", "fixture@example.invalid")
+    (rt.root / ".git/info/exclude").write_text(".proscenium/\n")
+    (rt.root / "project.json").write_bytes(
+        canonical(
+            dict(
+                schema_version="1.0",
+                project_id=PROJECT,
+                repository_id="repository-one",
+                name="Batch 2 recovery fixture",
+                paths={
+                    name: name for name in ("brief", "assets", "scenes", "storyboards", "sequences")
+                },
+            )
+        )
+    )
+    git(rt.root, "add", "project.json")
+    git(rt.root, "-c", "core.hooksPath=/dev/null", "commit", "-m", "Initial isolated project")
+    entry = "storyboards/plan-one/plan.json"
+    path = rt.root / entry
+    path.parent.mkdir(parents=True)
+    document = worker_fixtures.plan()
+    document["shots"][0]["frames"][0].update(artifact_id=generated[0], state="available")
+    path.write_bytes(canonical(document))
+    sources = Sources(rt.services)
+    rt.services.extensions["sources"] = sources
+    rt.services.extension("catalogue").sources = sources
+    validation = call(
+        "validate_authored_document",
+        {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "document_kind": "authored_shot_plan",
+            "path": entry,
+        },
+        "validate-plan",
+    )
+    assert validation["valid"], validation
+    receipt = call(
+        "checkpoint_sources",
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            operation_id="checkpoint-plan",
+            expected_head=git(rt.root, "rev-parse", "HEAD").decode().strip(),
+            paths=[entry],
+            entry_path=entry,
+            message="Checkpoint Batch 2 storyboard",
+        ),
+        "checkpoint-plan",
+    )
+    closure = receipt["source_closure"]
+    validate("SourceClosure", closure)
+    assert closure["entry_path"] == entry and closure["digest"] == closure_digest(closure)
+    published = call(
+        "publish_outputs",
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            publication_id="batch-two-publication",
+            items=[
+                dict(
+                    item_id="storyboard",
+                    version_id="board-v1",
+                    kind="storyboard",
+                    name="Batch 2 storyboard",
+                    expected_current_version_id=None,
+                    source_commit=receipt["source_commit"],
+                    source=closure,
+                    artifact_ids=generated,
+                    preview_requests=[],
+                )
+            ],
+        ),
+        "publish-plan",
+    )
+    assert published["versions"] == [{"item_id": "storyboard", "version_id": "board-v1"}]
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("versions", "board-v1")["source"] == closure
+        reservations = tx.connection.execute("SELECT state FROM budget_reservations").fetchall()
+        assert [row[0] for row in reservations] == ["consumed", "consumed"]
+
+    # Settle only our synthetic work and invocations, never a native/model process.
+    with rt.store.transaction() as tx:
+        for namespace in ("work", "invocations"):
+            for record in tx.all(namespace):
+                identity = record["work_id"] if namespace == "work" else record["invocation_id"]
+                revision = tx.revision(namespace, identity)
+                tx.put(
+                    namespace,
+                    identity,
+                    {**record, "state": "completed", "state_revision": revision + 1},
+                    expected_revision=revision,
+                )
+    registry = Registry(Store(rt.services.settings.data_directory / "registry.sqlite3"))
+    registry.register(
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            repository_id="repository-one",
+            name="Batch 2 recovery fixture",
+            path=str(rt.root),
+            native_session_id=SESSION,
+            state="active",
+            state_revision=0,
+        )
+    )
+    registry.activate(PROJECT)
+    registry.assert_settled(PROJECT)
+    history = rt.services.settings.data_directory / "copilot-runtime/home/session-state" / SESSION
+    history.mkdir(parents=True)
+    (history / "events.jsonl").write_text("")
+    manifest = backup(rt.services.settings, PROJECT, tmp_path / "batch-two-backup")
+    assert not manifest["limits"]
+    assert verify(tmp_path / "batch-two-backup")["format"] == "proscenium-private-backup-1"
+    assert manifest["files"]
+    assert provider_calls.count(("POST", "/prompt")) == 2
+    rt.provider.client.close()

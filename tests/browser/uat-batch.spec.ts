@@ -158,10 +158,11 @@ test("Resume stays visible above the Composer while scrolling a long conversatio
   studio.assertHermetic();
 });
 
-test("fixed status header and collapsed rail retain work on disconnect", async ({ page, baseURL }) => {
+test("fixed Composer footer and collapsed rail retain work on disconnect", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
-  const status = page.locator(".assistant-heading .assistant-status");
+  await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
+  const status = page.locator(".composer-footer .assistant-status");
   await expect(status).toHaveAttribute("aria-label", "Ready");
   for (const [state, label, fenced] of [["running", "Working…", false], ["awaiting_resume", "Paused", true], ["stop_requested", "Stopping…", true], ["outcome_uncertain", "Needs recovery", true]] as const) {
     await studio.setWork(state, fenced); await expect(status).toHaveAttribute("aria-label", label);
@@ -175,7 +176,7 @@ test("fixed status header and collapsed rail retain work on disconnect", async (
   await studio.setWork("running"); await expect(status).toHaveAttribute("aria-label", "Working…");
   studio.emit("subagent.started", { invocation_id: "child", name: "authoring-specialist", display_name: "Retained child", state: "running", summary: "", artifact_ids: [], model_id: "synthetic" });
   studio.sockets.at(-1)!.close({ code: 1000, reason: "Synthetic disconnect" });
-  await expect(status).toHaveAttribute("aria-label", "Working… · reconnecting");
+  await expect(status).toHaveAttribute("aria-label", "Working · Retained child… · reconnecting");
   await expect(page.getByRole("button", { name: /^Agents/ })).toHaveText("Agents1?");
   studio.assertHermetic();
 });
@@ -184,7 +185,8 @@ test("awaiting-user status is not falsely reported as Ready without a decision p
   const studio = new StudioFixture(page, baseURL!);
   studio.snapshot.active_work = work("awaiting_user");
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
-  await expect(page.locator(".assistant-heading .assistant-status")).toHaveAttribute("aria-label", "Needs your input");
+  await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
+  await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", "Needs your input");
 });
 
 test("a fresh native child event has a known live Agents count", async ({ page, baseURL }) => {
@@ -210,7 +212,7 @@ test("Jobs Context Agents replace textarea and restore draft caret plus accepted
     await page.getByRole("button", { name: new RegExp(`^${panel}`) }).click();
     await expect(input).toHaveCount(0);
     if (panel === "Agents") { await expect(page.getByText("Layout shot one", { exact: true }).last()).toBeVisible(); await expect(page.getByRole("button", { name: /^Agents/ })).toContainText("1"); }
-    if (panel === "Jobs") { await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs3?"); await expect(page.getByText("Finished job history")).toBeVisible(); }
+    if (panel === "Jobs") { await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs3 active?"); await expect(page.getByText("Finished job history")).toBeVisible(); }
     await page.getByRole("button", { name: "Back to message" }).click();
     await expect(input).toHaveValue("Unsent draft\nSecond line"); await expect(input).toBeFocused();
     expect(await input.evaluate(e => (e as HTMLTextAreaElement).selectionStart)).toBe(3);
@@ -260,7 +262,8 @@ test("delayed older snapshot cannot resurrect a completed work event", async ({ 
   delayed.release(); studio.snapshotGate = null;
   await (await staleResponse).finished();
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-  await expect(page.locator(".assistant-heading .assistant-status")).toHaveAttribute("aria-label", "Ready");
+  await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
+  await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", "Ready");
   await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
   studio.assertHermetic();
 });
