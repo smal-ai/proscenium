@@ -1,18 +1,29 @@
 """Hermetic worker tools, immutable preparation and retained publication diagnostics."""
 
 import asyncio
+import base64
 import copy
 import importlib.util
 import io
 import json
 import subprocess
+import time
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
 import pytest
 from copilot import CopilotClient
-from copilot.tools import ToolInvocation
+from copilot.generated.rpc import (
+    ExternalToolTextResultForLlmBinaryResultsForLlm,
+    ExternalToolTextResultForLlmBinaryResultsForLlmType,
+)
+from copilot.tools import (
+    ToolBinaryResult,
+    ToolInvocation,
+    tool_result_to_external_tool_text_result_for_llm,
+)
 from PIL import Image
 from proscenium.api.errors import DomainError
 from proscenium.catalogue.artifacts import Artifacts
@@ -110,6 +121,7 @@ def catalog():
         "clip_name": [RECIPE["clip"]],
         "vae_name": [RECIPE["vae"]],
         "ckpt_name": [sd_turbo.FILENAME, sd_turbo_fp16.FILENAME],
+        "upscale_method": ["nearest-exact", "bilinear", "area", "bicubic", "lanczos"],
     }
     for graph in graphs:
         for node in graph.values():
@@ -233,7 +245,7 @@ def runtime(tmp_path):
     client.close()
 
 
-def invoke(runtime, name, body, identity="call-one"):
+def invocation(runtime, name, body, identity="call-one"):
     invocation_id = key(SESSION, "tool", identity)
     with runtime.store.transaction() as tx:
         if not tx.get("invocations", invocation_id, required=False):
@@ -250,10 +262,13 @@ def invoke(runtime, name, body, identity="call-one"):
                     state="running",
                 ),
             )
-    invocation = ToolInvocation(
+    return ToolInvocation(
         session_id=SESSION, tool_call_id=identity, tool_name=name, arguments=body, agent_id=None
     )
-    result = asyncio.run(runtime.tools.invoke(name, invocation))
+
+
+def invoke(runtime, name, body, identity="call-one"):
+    result = asyncio.run(runtime.tools.invoke(name, invocation(runtime, name, body, identity)))
     return json.loads(result.text_result_for_llm), result.result_type
 
 
@@ -978,3 +993,435 @@ def test_register_artifact_records_verified_output(runtime):
         ]
         == "verified"
     )
+
+
+def retained_image(runtime, format="PNG", media_type="image/png"):
+    image = io.BytesIO()
+    Image.new("RGB", (64, 64), "blue").save(image, format=format)
+    raw = image.getvalue()
+    artifacts = runtime.services.extension("artifacts")
+    artifact = artifacts.promote(
+        PROJECT, "inline-image", raw, kind="image", purpose="concept", media_type=media_type
+    )
+    with runtime.store.transaction() as tx:
+        artifacts.put(tx, artifact)
+    return artifact, raw
+
+
+@pytest.mark.parametrize(
+    "format,media_type", [("PNG", "image/png"), ("JPEG", "image/jpeg"), ("WEBP", "image/webp")]
+)
+def test_inline_image_sdk_binary_and_zero_files(runtime, format, media_type):
+    artifact, raw = retained_image(runtime, format, media_type)
+    call = invocation(
+        runtime, "get_artifact", {"artifact_id": artifact["artifact_id"], "include_image": True}
+    )
+    before = {str(p.relative_to(runtime.root)): p.is_symlink() for p in runtime.root.rglob("*")}
+    result = asyncio.run(runtime.tools.invoke("get_artifact", call))
+    assert result.result_type == "success" and json.loads(result.text_result_for_llm) == artifact
+    (binary,) = result.binary_results_for_llm
+    assert isinstance(binary, ToolBinaryResult)
+    assert binary.type == "image" and binary.mime_type == media_type
+    assert binary.description == artifact["artifact_id"]
+    assert base64.b64decode(binary.data, validate=True) == raw
+    wire = tool_result_to_external_tool_text_result_for_llm(result)
+    (rpc_image,) = wire.binary_results_for_llm
+    assert isinstance(rpc_image, ExternalToolTextResultForLlmBinaryResultsForLlm)
+    assert rpc_image.type is ExternalToolTextResultForLlmBinaryResultsForLlmType.IMAGE
+    encoded = wire.to_dict()["binaryResultsForLlm"][0]
+    assert encoded["type"] == "image" and encoded["mimeType"] == media_type
+    assert base64.b64decode(encoded["data"], validate=True) == raw
+    assert {
+        str(p.relative_to(runtime.root)): p.is_symlink() for p in runtime.root.rglob("*")
+    } == before
+    for body in (
+        {"artifact_id": artifact["artifact_id"]},
+        {"artifact_id": artifact["artifact_id"], "include_image": False},
+    ):
+        metadata = asyncio.run(
+            runtime.tools.invoke("get_artifact", invocation(runtime, "get_artifact", body))
+        )
+        assert metadata.binary_results_for_llm is None
+
+
+@pytest.mark.parametrize(
+    "case",
+    ["document", "media_type", "unavailable", "corrupt", "bytes", "pixels", "hash", "length"],
+)
+def test_inline_image_safe_rejections(runtime, monkeypatch, case):
+    artifact, raw = retained_image(runtime)
+    expected = "invalid_request"
+    if case == "document":
+        artifact.update(kind="document", media_type="text/plain")
+    elif case == "media_type":
+        artifact["media_type"] = "image/gif"
+    elif case in {"unavailable", "corrupt"}:
+        artifact["state"] = case
+        expected = "media_unavailable"
+    elif case == "bytes":
+        runtime.services.settings = replace(
+            runtime.services.settings, upload_max_bytes=len(raw) - 1
+        )
+    elif case == "pixels":
+        runtime.services.settings = replace(
+            runtime.services.settings, upload_max_pixels=64 * 64 - 1
+        )
+    else:
+        path = runtime.services.extension("artifacts").ready_path(PROJECT, artifact["artifact_id"])
+        # Exercise the tool's own second hash/length check even if bytes change
+        # after ready_path validation, without weakening the production resolver.
+        monkeypatch.setattr(
+            runtime.services.extension("artifacts"), "ready_path", lambda *args: path
+        )
+        path.chmod(0o600)
+        path.write_bytes(raw[:-1] if case == "length" else b"x" * len(raw))
+        expected = "hash_mismatch"
+    with runtime.store.transaction() as tx:
+        tx.put(
+            "artifacts",
+            artifact["artifact_id"],
+            artifact,
+            expected_revision=tx.revision("artifacts", artifact["artifact_id"]),
+        )
+    result, kind = invoke(
+        runtime, "get_artifact", {"artifact_id": artifact["artifact_id"], "include_image": True}
+    )
+    assert kind == "failure" and result["error"] == expected
+    if case in {"unavailable", "corrupt"}:
+        assert result["message"] == "Image artefact is not ready for inline inspection"
+    elif case in {"document", "media_type"}:
+        assert (
+            result["message"]
+            == "Inline image inspection supports ready PNG, JPEG or WebP artefacts only"
+        )
+    elif case in {"bytes", "pixels"}:
+        assert result["message"] == "Image artefact exceeds inline inspection bounds"
+
+
+@pytest.mark.parametrize(
+    "name,field,value",
+    [
+        ("get_artifact", "include_image", 1),
+        ("get_artifact", "include_image", "true"),
+        ("get_artifact", "include_image", None),
+        ("get_job", "wait_seconds", True),
+        ("get_job", "wait_seconds", -1),
+        ("get_job", "wait_seconds", 31),
+        ("get_job", "wait_seconds", 1.0),
+        ("get_job", "wait_seconds", "15"),
+        ("get_job", "wait_seconds", None),
+    ],
+)
+def test_read_arguments_reject_inexact_optional_types(name, field, value):
+    from proscenium.copilot.tools import read_arguments
+
+    identity = "artifact_id" if name == "get_artifact" else "job_id"
+    with pytest.raises(DomainError) as error:
+        read_arguments(name, {identity: "identity", field: value})
+    assert error.value.code == "invalid_request"
+
+
+def test_read_parameter_defaults_and_boundaries():
+    from proscenium.copilot.tools import read_arguments, read_parameters
+
+    assert read_parameters("get_artifact")["properties"]["include_image"] == {
+        "type": "boolean",
+        "default": False,
+    }
+    assert read_parameters("get_job")["properties"]["wait_seconds"] == {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 30,
+        "default": 0,
+    }
+    for seconds in (0, 30):
+        assert (
+            read_arguments("get_job", {"job_id": "job", "wait_seconds": seconds})["wait_seconds"]
+            == seconds
+        )
+
+
+def waiting_job(runtime, state="running"):
+    job = dict(
+        schema_version="1.0",
+        project_id=PROJECT,
+        job_id="wait-job",
+        work_id=WORK,
+        owner_operation_id=None,
+        target={"target_id": TASK, "version": None, "shot_id": None},
+        attempt_id="attempt-one",
+        attempt_number=1,
+        kind="image_generation",
+        state=state,
+        state_revision=0,
+        availability="pending",
+        input_digest="0" * 64,
+        external_job_id=None,
+        provider_id="comfy",
+        owner_epoch="epoch",
+        completed_frames=None,
+        expected_frames=None,
+        artifact_ids=[],
+        render_spec=None,
+    )
+    with runtime.store.transaction() as tx:
+        tx.put("jobs", job["job_id"], job, schema="JobRecord")
+    return job
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "succeeded",
+        "gate",
+        "stop_requested",
+        "stopped",
+        "awaiting_resume",
+        "outcome_uncertain",
+        "fenced",
+    ],
+)
+def test_job_wait_async_ticks_and_execution_holds(runtime, monkeypatch, change):
+    job = waiting_job(runtime)
+    call = invocation(runtime, "get_job", {"job_id": job["job_id"], "wait_seconds": 15})
+    reads = []
+    original_get = runtime.services.jobs.get
+
+    def observed_get(*args):
+        result = original_get(*args)
+        reads.append(result["state"])
+        return result
+
+    monkeypatch.setattr(runtime.services.jobs, "get", observed_get)
+
+    async def run():
+        async def transition():
+            await asyncio.sleep(0.01)
+            if change == "gate":
+                runtime.services.gate.close(PROJECT)
+            elif change == "fenced":
+                runtime.state.control = lambda tx: {"fenced": True}
+            else:
+                bucket, identity = (
+                    ("jobs", job["job_id"]) if change == "succeeded" else ("work", WORK)
+                )
+                with runtime.store.transaction() as tx:
+                    record = tx.require(bucket, identity)
+                    tx.put(
+                        bucket,
+                        identity,
+                        {
+                            **record,
+                            "state": change,
+                            "state_revision": tx.revision(bucket, identity) + 1,
+                        },
+                        expected_revision=tx.revision(bucket, identity),
+                    )
+
+        background = asyncio.create_task(transition())
+        result = await runtime.tools.invoke("get_job", call)
+        await background
+        return result
+
+    started = time.monotonic()
+    result = asyncio.run(run())
+    assert time.monotonic() - started < 3
+    assert result.result_type == "success"
+    assert json.loads(result.text_result_for_llm)["state"] == (
+        "succeeded" if change == "succeeded" else "running"
+    )
+    assert reads == ["running", "succeeded" if change == "succeeded" else "running"]
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.revision("jobs", job["job_id"]) == (1 if change == "succeeded" else 0)
+
+
+@pytest.mark.parametrize("state", ["succeeded", "failed", "cancelled", "outcome_uncertain"])
+def test_job_wait_terminal_states_return_without_sleep(runtime, monkeypatch, state):
+    job = waiting_job(runtime, state)
+
+    async def forbidden_sleep(*args):
+        raise AssertionError("Terminal reads must not wait")
+
+    monkeypatch.setattr(asyncio, "sleep", forbidden_sleep)
+    result, kind = invoke(runtime, "get_job", {"job_id": job["job_id"], "wait_seconds": 30})
+    assert kind == "success" and result["state"] == state
+
+
+def test_job_wait_deadline_and_default_read_only(runtime, monkeypatch):
+    job = waiting_job(runtime)
+    ticks = []
+    clock = [0.0]
+
+    async def tick(seconds):
+        ticks.append(seconds)
+        clock[0] += seconds
+
+    monkeypatch.setattr("proscenium.copilot.tools.time.monotonic", lambda: clock[0])
+    monkeypatch.setattr("proscenium.copilot.tools.asyncio.sleep", tick)
+    for body in ({"job_id": job["job_id"]}, {"job_id": job["job_id"], "wait_seconds": 0}):
+        result, kind = invoke(runtime, "get_job", body)
+        assert kind == "success" and result == job and not ticks
+    result, kind = invoke(runtime, "get_job", {"job_id": job["job_id"], "wait_seconds": 1})
+    assert kind == "success" and result == job and ticks == [0.5, 0.5]
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.revision("jobs", job["job_id"]) == 0
+
+
+@pytest.mark.parametrize("hold", ["gate", "fenced", "stop_requested", "awaiting_resume"])
+def test_job_wait_already_held_returns_without_sleep(runtime, monkeypatch, hold):
+    job = waiting_job(runtime)
+    if hold == "gate":
+        runtime.services.gate.close(PROJECT)
+    elif hold == "fenced":
+        runtime.state.control = lambda tx: {"fenced": True}
+    else:
+        with runtime.store.transaction() as tx:
+            work = tx.require("work", WORK)
+            tx.put(
+                "work",
+                WORK,
+                {**work, "state": hold, "state_revision": tx.revision("work", WORK) + 1},
+                expected_revision=tx.revision("work", WORK),
+            )
+
+    async def forbidden_sleep(*args):
+        raise AssertionError("Held reads must not wait")
+
+    monkeypatch.setattr(asyncio, "sleep", forbidden_sleep)
+    result, kind = invoke(runtime, "get_job", {"job_id": job["job_id"], "wait_seconds": 30})
+    assert kind == "success" and result == job
+
+
+@pytest.mark.parametrize("revision", ["comfy-image-1", sd_turbo.REVISION, sd_turbo_fp16.REVISION])
+def test_capability_recipe_defaults(runtime, revision):
+    runtime.provider.options["image_profiles"] = {"comfy": revision}
+    row = get_project_capabilities(runtime.services, PROJECT)["providers"][0]
+    assert row["status"] == "ready"
+    assert row["default_dimensions"] == {"width": 512, "height": 512}
+    assert row["default_steps"] == 4
+    assert row["max_pixels"] == (1_048_576 if revision == "comfy-image-1" else 512 * 512)
+    assert "512x512, 4 steps" in row["summary"]
+    assert "Observed recipe preflight passed" in row["summary"]
+    assert "Inference remains untested" in row["summary"]
+
+
+def test_explicit_recipe_defaults_retained_when_unavailable(runtime):
+    runtime.provider.options["image_recipes"] = {
+        "comfy": {**RECIPE, "width": 768, "height": 512, "steps": 8, "max_pixels": 786432}
+    }
+    row = get_project_capabilities(runtime.services, PROJECT)["providers"][0]
+    assert row["status"] == "ready"
+    assert row["default_dimensions"] == {"width": 768, "height": 512}
+    assert row["default_steps"] == 8 and row["max_pixels"] == 786432
+    runtime.services.settings.services[0]["available"] = False
+    rows = get_project_capabilities(runtime.services, PROJECT)["providers"]
+    assert rows[0]["default_dimensions"] == row["default_dimensions"]
+    assert rows[0]["default_steps"] == 8 and rows[0]["max_pixels"] == 786432
+    assert all(
+        rows[1][field] is None for field in ("default_dimensions", "default_steps", "max_pixels")
+    )
+
+
+def test_prepare_omitted_project_and_task_bound_by_host(runtime, monkeypatch):
+    from proscenium.copilot.service import Copilot
+
+    body = dict(schema_version="1.0", operation_id="prepare-omitted", prompt="Fixture", seed="42")
+    assert Copilot.custom_tool_arguments(
+        None, PROJECT, {"toolName": "prepare_image_generation", "args": body}
+    )
+    service = runtime.services.extension("image_preparation")
+    original_prepare, original_replayable = service.prepare, service.replayable
+    seen = []
+
+    def prepare(caller, request):
+        seen.append(request["project_id"])
+        return original_prepare(caller, request)
+
+    def replayable(caller, request):
+        seen.append(request["project_id"])
+        return original_replayable(caller, request)
+
+    monkeypatch.setattr(service, "prepare", prepare)
+    monkeypatch.setattr(service, "replayable", replayable)
+    result, kind = invoke(runtime, "prepare_image_generation", body)
+    assert kind == "success", result
+    assert seen == [PROJECT, PROJECT, PROJECT]
+    assert result["submit_request"]["project_id"] == PROJECT
+    assert result["submit_request"]["generation_task_id"] == TASK
+    mismatched = {**body, "project_id": "other-project"}
+    with pytest.raises(DomainError) as error:
+        Copilot.custom_tool_arguments(
+            None, PROJECT, {"toolName": "prepare_image_generation", "args": mismatched}
+        )
+    assert error.value.code == "scope_denied" and error.value.status == 403
+    result, kind = invoke(runtime, "prepare_image_generation", mismatched, "mismatch")
+    assert kind == "failure" and result["error"] == "scope_denied"
+    assert seen == [PROJECT, PROJECT, PROJECT]
+
+
+def test_preflight_diagnostics_never_echo_unknown_reasons():
+    from proscenium.copilot.tools import ERROR_GUIDANCE, tool_failure
+
+    for name in ("prepare_image_generation", "validate_authored_document"):
+        result = tool_failure(DomainError("invalid_request", message="private-provider-body"), name)
+        message = json.loads(result.text_result_for_llm)["message"]
+        assert "before any external job or inference was submitted" in message
+        assert "private-provider-body" not in message
+    assert "corrupted raster image" in ERROR_GUIDANCE["corrupt_provider_output"]
+
+
+def test_native_lead_specialist_prompt_wiring(runtime, monkeypatch):
+    from proscenium.copilot.native import (
+        INSTRUCTIONS,
+        LEAD_INSTRUCTIONS,
+        SHARED_INSTRUCTIONS,
+        SPECIALIST_INSTRUCTIONS,
+        UNITY_INSTRUCTIONS,
+        Native,
+    )
+
+    assert INSTRUCTIONS is LEAD_INSTRUCTIONS
+    assert LEAD_INSTRUCTIONS != SPECIALIST_INSTRUCTIONS
+    assert (
+        SHARED_INSTRUCTIONS in LEAD_INSTRUCTIONS and SHARED_INSTRUCTIONS in SPECIALIST_INSTRUCTIONS
+    )
+    assert "via the task tool" in LEAD_INSTRUCTIONS
+    assert "Do not run long authoring or generation loops inline" in LEAD_INSTRUCTIONS
+    assert "without unnecessary nested subagent delegation" in SPECIALIST_INSTRUCTIONS
+    assert "Nested delegation is optional" not in LEAD_INSTRUCTIONS + SPECIALIST_INSTRUCTIONS
+    for rule in (
+        "include_image=true",
+        "wait_seconds=15",
+        'receipt["source_closure"]',
+        "omit project_id and generation_task_id",
+        "request_vlm_review",
+        "owner-approved findings",
+    ):
+        assert rule in LEAD_INSTRUCTIONS and rule in SPECIALIST_INSTRUCTIONS
+
+    captured = []
+
+    class Client:
+        async def create_session(self, **settings):
+            captured.append(settings)
+            return "session"
+
+        async def resume_session(self, session_id, **settings):
+            captured.append(settings)
+            return session_id
+
+    native = Native(runtime.services)
+    native.client = Client()
+    monkeypatch.setattr(
+        "proscenium.copilot.native.hashlib.file_digest",
+        lambda *args: SimpleNamespace(
+            hexdigest=lambda: "463978cdea4ad6973b615f1ba07b7837634218632480ef06307ea844ee369a69"
+        ),
+    )
+    assert asyncio.run(native.open(PROJECT, None, {})) == "session"
+    assert asyncio.run(native.open(PROJECT, SESSION, {})) == SESSION
+    for settings in captured:
+        assert settings["system_message"]["content"] == LEAD_INSTRUCTIONS
+        authoring, unity = settings["custom_agents"]
+        assert authoring["prompt"] == SPECIALIST_INSTRUCTIONS
+        assert unity["prompt"].startswith(UNITY_INSTRUCTIONS)

@@ -87,7 +87,23 @@ def get_project_capabilities(services: Any, project_id: str) -> dict[str, Any]:
                 else None,
                 reason_code=None,
                 summary="",
+                default_dimensions=None,
+                default_steps=None,
+                max_pixels=None,
             )
+            if capability == "image":
+                explicit = provider.options.get("image_recipes", {}).get(service["provider_id"])
+                if isinstance(explicit, dict):
+                    row.update(
+                        default_dimensions={
+                            "width": explicit.get("width", 512),
+                            "height": explicit.get("height", 512),
+                        },
+                        default_steps=explicit.get("steps", 4),
+                        max_pixels=explicit.get(
+                            "max_pixels", 1_048_576 if revision == "comfy-image-1" else 512 * 512
+                        ),
+                    )
             rows.append(row)
             if service["available"] is False:
                 row.update(
@@ -128,10 +144,19 @@ def get_project_capabilities(services: Any, project_id: str) -> dict[str, Any]:
                     recipes = compatible_recipes(provider, service["provider_id"], catalog)
                     row["compatible_models"] = sorted({m for r in recipes for m in models(r)})[:64]
                     if len(recipes) == 1:
+                        recipe = recipes[0]
+                        width, height = recipe.get("width", 512), recipe.get("height", 512)
+                        steps = recipe.get("steps", 4)
                         row.update(
                             status="ready",
-                            selected_models=models(recipes[0]),
-                            summary="Observed recipe preflight passed. Inference remains untested",
+                            selected_models=models(recipe),
+                            default_dimensions={"width": width, "height": height},
+                            default_steps=steps,
+                            max_pixels=recipe.get(
+                                "max_pixels",
+                                1_048_576 if revision == "comfy-image-1" else 512 * 512,
+                            ),
+                            summary=f"Observed recipe preflight passed. Defaults: {width}x{height}, {steps} steps. Inference remains untested",
                         )
                     elif recipes:
                         row.update(

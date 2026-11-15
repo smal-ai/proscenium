@@ -1758,7 +1758,7 @@ class Copilot:
             raise DomainError("invalid_request")
         if name in TOOLS:
             validate(TOOLS[name][2], arguments)
-            if arguments.get("project_id") != project_id:
+            if arguments.get("project_id", project_id) != project_id:
                 raise DomainError("scope_denied", 403)
         elif name in READ_TOOLS or name in DISCOVERY_READS:
             read_arguments(name, arguments)

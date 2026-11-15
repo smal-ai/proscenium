@@ -35,12 +35,19 @@ description: Author or revise a stable-ID shot plan and review existing storyboa
    The host reports changed/removed IDs, affected
    downstream scene versions and dependent artefacts. It never rewrites sources,
    regenerates images or resolves dependencies by filesystem modification time.
-7. Checkpoint the exact owned brief/plan sources through `checkpoint_sources`.
+7. Checkpoint the exact owned brief/plan sources through
+   `checkpoint_sources(entry_path=...)`, with dependencies/`required_runtime` when
+   needed. Pass the receipt's `source_closure` directly to `publish_outputs`.
+   Never script closure sorting or SHA-256 digests.
    Publish through the configured accepted source/publication tool with exact
    dependency IDs, original idempotency key and empty preview requests for
    planning-only work. Read the receipt before claiming success. No direct DB
    writes or parallel catalogue. Reconcile uncertain acknowledgement before retry.
-8. Review existing images through the central reviewer with source-type labels.
+8. Inspect images with `get_artifact(artifact_id=..., include_image=true)`, never
+   copy managed artefact content just to call `view`. For produced storyboards and
+   keyframes, call `request_vlm_review` when capabilities report a `configured` or
+   `ready` VLM provider. Only owner-approved findings become revision instructions.
+   Use source-type labels.
    Missing frames stay missing. Keep authored availability/proposal, execution
    completion, agent assessment, exact owner selection and animation approval
    separate. A selected concept is not a render or geometry.
@@ -77,8 +84,12 @@ Validate the complete publication with `document_kind: publication_submit` befor
 `publish_outputs`. Its storyboard `source.entry_path` is the canonical plan JSON,
 never an HTML/SVG/Markdown viewer. Workspace file links are not browser URLs.
 Honour host `request_target`, `reference_versions` and `execution_scope`.
-For requested model inference use `prepare_image_generation` then `submit_generation`,
-never silent vector substitutes. A standalone asset needs no storyboard. Publish it
+For requested model inference use `prepare_image_generation` then `submit_generation`.
+Omit preparation `project_id`/`generation_task_id` because the host binds them.
+Omit width/height/steps to use capability recipe defaults unless the user requested
+valid multiple-of-16 dimensions within `max_pixels`. Wait for admitted jobs with
+`get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid polling.
+Never use silent vector substitutes. A standalone asset needs no storyboard. Publish it
 as `asset` and keep dependent scenes/storyboards pinned until explicit adoption.
 
 Planning, image generation, Blender authoring and assembly are separately invocable.
