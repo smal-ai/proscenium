@@ -8,6 +8,8 @@ from typing import Any
 
 from proscenium.api.errors import DomainError
 
+VALID_VAE_DTYPES = {"default", "fp32", "fp16", "bf16"}
+
 
 def graph(
     *,
@@ -19,6 +21,7 @@ def graph(
     reference_artifact_id: str | None = None,
     steps: int = 4,
     tiled_vae: bool = False,
+    vae_dtype: str | None = None,
     reference_megapixels: float = 1.0,
 ) -> dict[str, Any]:
     if not (64 <= width <= 4096 and 64 <= height <= 4096 and width % 16 == height % 16 == 0):
@@ -26,9 +29,14 @@ def graph(
             "invalid_request",
             message="Image width and height must be multiples of 16 between 64 and 4096",
         )
-    if not 1 <= steps <= 50 or not 0.01 <= reference_megapixels <= 4.0:
+    if (
+        not 1 <= steps <= 50
+        or not 0.01 <= reference_megapixels <= 4.0
+        or (vae_dtype is not None and vae_dtype not in VALID_VAE_DTYPES)
+    ):
         raise DomainError("invalid_request")
     tiles = {"tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
+    vae_source = ["vae_dtype", 0] if vae_dtype else ["vae", 0]
     result: dict[str, Any] = {
         "model": {
             "class_type": "UNETLoader",
@@ -75,13 +83,18 @@ def graph(
         },
         "decode": {
             "class_type": "VAEDecodeTiled" if tiled_vae else "VAEDecode",
-            "inputs": {"samples": ["sample", 0], "vae": ["vae", 0], **(tiles if tiled_vae else {})},
+            "inputs": {"samples": ["sample", 0], "vae": vae_source, **(tiles if tiled_vae else {})},
         },
         "save": {
             "class_type": "SaveImage",
             "inputs": {"images": ["decode", 0], "filename_prefix": "proscenium/generated"},
         },
     }
+    if vae_dtype:
+        result["vae_dtype"] = {
+            "class_type": "VAEComputeDtype",
+            "inputs": {"vae": ["vae", 0], "dtype": vae_dtype},
+        }
     if reference_artifact_id:
         result.update(
             {
@@ -102,7 +115,7 @@ def graph(
                     "class_type": "VAEEncodeTiled" if tiled_vae else "VAEEncode",
                     "inputs": {
                         "pixels": ["reference_scale", 0],
-                        "vae": ["vae", 0],
+                        "vae": vae_source,
                         **(tiles if tiled_vae else {}),
                     },
                 },

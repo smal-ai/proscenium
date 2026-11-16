@@ -19,6 +19,37 @@ from proscenium.sources.common import active, admitted, binding, replay, sha
 AMBIGUOUS = "Multiple compatible image model tuples exist; configure provider_options.image_recipes"
 UNAVAILABLE = "Image recipe nodes or models are unavailable"
 MAX_CATALOG_BYTES = 16 * 1024**2
+TILE_THRESHOLD_PIXELS = 1_048_576
+
+
+def supports_bf16_vae(catalog: dict[str, Any] | None) -> bool:
+    if not catalog or not isinstance(catalog.get("VAEComputeDtype"), dict):
+        return False
+    node = catalog["VAEComputeDtype"]
+    required = node.get("input", {}).get("required", {})
+    outputs = node.get("output", [])
+    if set(required) != {"vae", "dtype"} or not outputs or outputs[0] not in {"VAE", "*"}:
+        return False
+    vae_spec = required.get("vae")
+    if (
+        not isinstance(vae_spec, list)
+        or not vae_spec
+        or not isinstance(vae_spec[0], str)
+        or not (set(vae_spec[0].split(",")) & {"VAE", "*"})
+    ):
+        return False
+    dtype_spec = required.get("dtype")
+    if not isinstance(dtype_spec, list) or not dtype_spec:
+        return False
+    if isinstance(dtype_spec[0], list):
+        return "bf16" in dtype_spec[0]
+    if dtype_spec[0] == "COMBO":
+        return (
+            len(dtype_spec) > 1
+            and isinstance(dtype_spec[1], dict)
+            and "bf16" in dtype_spec[1].get("options", [])
+        )
+    return dtype_spec[0] in {"STRING", "*"}
 
 
 def validate_recipes(options: dict[str, Any]) -> None:
@@ -94,17 +125,26 @@ def workflow(
                 "Selected image profile requires one exact 512x512 reference",
             )
         return (sd_turbo if revision == sd_turbo.REVISION else sd_turbo_fp16).graph(reference)
+    width = recipe.get("width", 512)
+    height = recipe.get("height", 512)
     return klein.graph(
         unet=recipe["unet"],
         clip=recipe["clip"],
         vae=recipe["vae"],
-        width=recipe.get("width", 512),
-        height=recipe.get("height", 512),
+        width=width,
+        height=height,
         steps=recipe.get("steps", 4),
         reference_artifact_id=reference,
-        tiled_vae=bool(catalog and "VAEDecodeTiled" in catalog and "VAEEncodeTiled" in catalog),
+        tiled_vae=bool(
+            width * height > TILE_THRESHOLD_PIXELS
+            and catalog
+            and "VAEDecodeTiled" in catalog
+            and "VAEEncodeTiled" in catalog
+        ),
+        vae_dtype="bf16" if supports_bf16_vae(catalog) else None,
         reference_megapixels=min(
-            1.0, max(0.01, round(recipe.get("max_pixels", 1_048_576) / 1_000_000, 4))
+            1.0,
+            max(0.01, round(recipe.get("max_pixels", TILE_THRESHOLD_PIXELS) / 1_000_000, 4)),
         ),
     )
 

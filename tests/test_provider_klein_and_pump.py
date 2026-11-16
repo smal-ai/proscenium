@@ -66,9 +66,24 @@ def add_tiled_nodes(catalog):
         }
 
 
+def add_vae_dtype_node(catalog, *, legacy=False, options=("default", "fp32", "fp16", "bf16")):
+    catalog["VAEComputeDtype"] = {
+        "input": {
+            "required": {
+                "vae": ["VAE", {}],
+                "dtype": [list(options)]
+                if legacy
+                else ["COMBO", {"default": "default", "options": list(options)}],
+            }
+        },
+        "output": ["VAE"],
+    }
+
+
 @pytest.mark.parametrize("tiled", [False, True])
-def test_reference_scaling_tiling_and_admitted_replay(tiled):
-    original = graph(reference_artifact_id="reference", tiled_vae=tiled)
+@pytest.mark.parametrize("vae_dtype", [None, "bf16"])
+def test_reference_scaling_tiling_vae_dtype_and_admitted_replay(tiled, vae_dtype):
+    original = graph(reference_artifact_id="reference", tiled_vae=tiled, vae_dtype=vae_dtype)
     assert original["reference_scale"] == {
         "class_type": "ImageScaleToTotalPixels",
         "inputs": {
@@ -78,8 +93,16 @@ def test_reference_scaling_tiling_and_admitted_replay(tiled):
             "resolution_steps": 16,
         },
     }
+    expected_vae = ["vae_dtype", 0] if vae_dtype else ["vae", 0]
+    assert ("vae_dtype" in original) is bool(vae_dtype)
+    if vae_dtype:
+        assert original["vae_dtype"] == {
+            "class_type": "VAEComputeDtype",
+            "inputs": {"vae": ["vae", 0], "dtype": vae_dtype},
+        }
     for key, kind in (("decode", "VAEDecode"), ("reference_encode", "VAEEncode")):
         assert original[key]["class_type"] == kind + ("Tiled" if tiled else "")
+        assert original[key]["inputs"]["vae"] == expected_vae
         if tiled:
             assert {
                 k: original[key]["inputs"][k]
@@ -88,12 +111,14 @@ def test_reference_scaling_tiling_and_admitted_replay(tiled):
     admitted = bind_graph(original, "Concept", "42", {"reference": "artifact:reference"})
     replayed = bind_graph(admitted, "Concept", "42", {"reference": "uploaded/reference.png"})
     assert replayed["reference"]["inputs"]["image"] == "uploaded/reference.png"
+    assert replayed["decode"]["inputs"]["vae"] == expected_vae
+    assert replayed["reference_encode"]["inputs"]["vae"] == expected_vae
     assert original["noise"]["inputs"]["noise_seed"] == "$seed"
     for polarity in ("positive", "negative"):
         assert replayed["guider"]["inputs"][polarity] == ["reference_" + polarity, 0]
 
 
-def test_historical_unscaled_untiled_graph_binds_and_replays():
+def test_historical_unscaled_and_tiled_graphs_bind_and_replay():
     historical = graph(reference_artifact_id="reference")
     del historical["reference_scale"]
     historical["reference_encode"]["inputs"]["pixels"] = ["reference", 0]
@@ -101,6 +126,21 @@ def test_historical_unscaled_untiled_graph_binds_and_replays():
     replayed = bind_graph(admitted, "Concept", "42", {"reference": "uploaded.png"})
     assert replayed["reference_encode"]["inputs"]["pixels"] == ["reference", 0]
     assert replayed["decode"]["class_type"] == "VAEDecode"
+    assert replayed["decode"]["inputs"]["vae"] == ["vae", 0]
+
+    historical_tiled = graph(reference_artifact_id="reference", tiled_vae=True)
+    admitted_tiled = bind_graph(
+        historical_tiled, "Concept", "42", {"reference": "artifact:reference"}
+    )
+    replayed_tiled = bind_graph(admitted_tiled, "Concept", "42", {"reference": "uploaded.png"})
+    assert replayed_tiled["decode"]["class_type"] == "VAEDecodeTiled"
+    assert replayed_tiled["reference_encode"]["class_type"] == "VAEEncodeTiled"
+    assert replayed_tiled["decode"]["inputs"]["vae"] == ["vae", 0]
+
+
+def test_klein_vae_dtype_validation():
+    with pytest.raises(DomainError):
+        graph(vae_dtype="fp8")
 
 
 def test_unreachable_reference_conditioning_is_rejected():
@@ -227,15 +267,18 @@ def promote_reference(runtime):
 
 @pytest.mark.parametrize("explicit_project", [False, True])
 @pytest.mark.parametrize("explicit_task", [False, True])
-@pytest.mark.parametrize("tiled", [False, True])
+@pytest.mark.parametrize("tiled_catalog", [False, True])
+@pytest.mark.parametrize("bf16_catalog", [False, True])
 def test_preparation_authority_recipe_defaults_and_fenced_replay(
-    runtime, explicit_project, explicit_task, tiled
+    runtime, explicit_project, explicit_task, tiled_catalog, bf16_catalog
 ):
     runtime.provider.options["image_recipes"] = {
         "comfy": {**RECIPE, "width": 768, "height": 512, "steps": 7, "max_pixels": 524288}
     }
-    if tiled:
+    if tiled_catalog:
         add_tiled_nodes(runtime.catalog)
+    if bf16_catalog:
+        add_vae_dtype_node(runtime.catalog)
     promote_reference(runtime)
     body = prepare_body(reference_artifact_ids=["reference"])
     if explicit_project:
@@ -252,8 +295,12 @@ def test_preparation_authority_recipe_defaults_and_fenced_replay(
     saved = json.loads(artifacts.ready_path(PROJECT, prepared["workflow_artifact_id"]).read_bytes())
     assert saved["sigmas"]["inputs"]["steps"] == 7
     assert saved["reference_scale"]["inputs"]["megapixels"] == 0.5243
-    assert saved["reference_encode"]["class_type"] == ("VAEEncodeTiled" if tiled else "VAEEncode")
-    assert saved["decode"]["class_type"] == ("VAEDecodeTiled" if tiled else "VAEDecode")
+    assert saved["reference_encode"]["class_type"] == "VAEEncode"
+    assert saved["decode"]["class_type"] == "VAEDecode"
+    expected_vae = ["vae_dtype", 0] if bf16_catalog else ["vae", 0]
+    assert ("vae_dtype" in saved) is bf16_catalog
+    assert saved["reference_encode"]["inputs"]["vae"] == expected_vae
+    assert saved["decode"]["inputs"]["vae"] == expected_vae
     with runtime.store.transaction(write=False) as tx:
         assert not tx.all("jobs")
         assert tx.connection.execute("SELECT COUNT(*) FROM budget_reservations").fetchone()[0] == 0
@@ -277,9 +324,56 @@ def test_preparation_authority_recipe_defaults_and_fenced_replay(
         assert tx.connection.execute("SELECT COUNT(*) FROM budget_reservations").fetchone()[0] == 1
 
 
-@pytest.mark.parametrize("nodes", [{}, {"VAEDecodeTiled": {}}, {"VAEEncodeTiled": {}}])
-def test_partial_tiled_catalog_keeps_untiled_graph(nodes):
-    assert workflow(RECIPE, catalog=nodes)["decode"]["class_type"] == "VAEDecode"
+@pytest.mark.parametrize(
+    "width,height,expected_tiled",
+    [
+        (512, 512, False),
+        (1024, 576, False),
+        (1024, 1024, False),
+        (1024, 1040, True),
+        (1920, 1088, True),
+    ],
+)
+def test_tiling_activates_only_above_one_megapixel_when_advertised(width, height, expected_tiled):
+    cat = {}
+    add_tiled_nodes(cat)
+    add_vae_dtype_node(cat, legacy=True)
+    built = workflow(
+        {**RECIPE, "width": width, "height": height, "max_pixels": 2_088_960},
+        "reference",
+        catalog=cat,
+    )
+    assert built["decode"]["class_type"] == ("VAEDecodeTiled" if expected_tiled else "VAEDecode")
+    assert built["reference_encode"]["class_type"] == (
+        "VAEEncodeTiled" if expected_tiled else "VAEEncode"
+    )
+    assert built["vae_dtype"] == {
+        "class_type": "VAEComputeDtype",
+        "inputs": {"vae": ["vae", 0], "dtype": "bf16"},
+    }
+
+
+@pytest.mark.parametrize(
+    "nodes",
+    [
+        {},
+        {"VAEDecodeTiled": {}},
+        {"VAEEncodeTiled": {}},
+        {
+            "VAEComputeDtype": {
+                "input": {"required": {"vae": ["VAE"], "dtype": [["fp16"]]}},
+                "output": ["VAE"],
+            }
+        },
+    ],
+)
+def test_partial_or_unsupported_catalog_keeps_untiled_default_vae_graph(nodes):
+    built = workflow(
+        {**RECIPE, "width": 1920, "height": 1088, "max_pixels": 2_088_960}, catalog=nodes
+    )
+    assert built["decode"]["class_type"] == "VAEDecode"
+    assert "vae_dtype" not in built
+    assert built["decode"]["inputs"]["vae"] == ["vae", 0]
 
 
 @pytest.mark.parametrize(
@@ -363,6 +457,31 @@ def raster(kind, size=(128, 128)):
                 colour = (value, value, value)
             elif kind == "noise":
                 colour = tuple(rng.randrange(256) for _ in range(3))
+            elif kind == "black":
+                colour = (0, 0, 0)
+            elif kind == "quadrant_wipeout":
+                # Matches 3-quadrant NaN->0 wipeout from tiled VAE strip failure.
+                colour = (
+                    (0, 0, 0)
+                    if (y < height // 2 or x >= width // 2)
+                    else (40 + (x % 32), 70 + (y % 32), 110)
+                )
+            elif kind == "half_wipeout":
+                colour = (0, 0, 0) if y < height // 2 else (40 + (x % 32), 70 + (y % 32), 110)
+            elif kind == "single_quadrant_zero":
+                colour = (
+                    (0, 0, 0)
+                    if (x < width // 2 and y < height // 2)
+                    else (40 + (x % 32), 70 + (y % 32), 110)
+                )
+            elif kind == "starfield":
+                # Upper two-thirds dark starfield, lower third lit horizon silhouette.
+                if y >= (height * 2) // 3:
+                    colour = (25, 45, 75)
+                elif (x * 17 + y * 31) % 29 == 0:
+                    colour = (80, 95, 120)
+                else:
+                    colour = (0, 0, 0)
             elif kind == "gradient":
                 colour = (x * 255 // width, y * 255 // height, (x + y) * 127 // (width + height))
             elif kind == "landscape":
@@ -381,7 +500,9 @@ def raster(kind, size=(128, 128)):
     return data.getvalue()
 
 
-@pytest.mark.parametrize("kind", ["solid", "gradient", "landscape"])
+@pytest.mark.parametrize(
+    "kind", ["solid", "gradient", "landscape", "single_quadrant_zero", "starfield"]
+)
 def test_clean_rasters_pass_inspection(kind):
     assert ImagePlugin().inspect_output(raster(kind), 16384)["sha256_verified_during_registration"]
 
@@ -391,7 +512,7 @@ def test_small_rasters_skip_noise_guard(size):
     assert ImagePlugin().inspect_output(raster("noise", size), 16384)
 
 
-@pytest.mark.parametrize("kind", ["scanline", "noise"])
+@pytest.mark.parametrize("kind", ["scanline", "noise", "black", "quadrant_wipeout", "half_wipeout"])
 def test_corrupt_rasters_are_rejected(kind):
     with pytest.raises(DomainError, match=CORRUPT) as error:
         ImagePlugin().inspect_output(raster(kind), 16384)
@@ -472,11 +593,23 @@ def admitted_job(runtime, output_kind="solid"):
     return job, response, calls
 
 
-@pytest.mark.parametrize("kind", ["solid", "gradient", "landscape", "tiny", "scanline", "noise"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "solid",
+        "gradient",
+        "landscape",
+        "tiny",
+        "scanline",
+        "noise",
+        "black",
+        "quadrant_wipeout",
+    ],
+)
 def test_pump_completed_raster_is_terminal_and_consumes_attempt(runtime, kind):
     job, _, calls = admitted_job(runtime, kind)
     completed = runtime.provider.pump(PROJECT, job["job_id"])[0]
-    corrupt = kind in {"scanline", "noise"}
+    corrupt = kind in {"scanline", "noise", "black", "quadrant_wipeout"}
     assert completed["state"] == ("failed" if corrupt else "succeeded"), completed
     assert completed["error_code"] == ("corrupt_provider_output" if corrupt else None)
     assert bool(completed["artifact_ids"]) is not corrupt

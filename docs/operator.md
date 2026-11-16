@@ -77,10 +77,10 @@ For example, select an explicit FLUX.2 Klein 4B recipe when a ComfyUI server hos
       "unet": "flux-2-klein-4b.safetensors",
       "clip": "qwen_3_4b.safetensors",
       "vae": "flux2-vae.safetensors",
-      "width": 512,
-      "height": 512,
+      "width": 1920,
+      "height": 1088,
       "steps": 4,
-      "max_pixels": 1048576
+      "max_pixels": 2088960
     }
   }
 }
@@ -92,9 +92,10 @@ For example, select an explicit FLUX.2 Klein 4B recipe when a ComfyUI server hos
 
 The required checkpoint hashes and graphs are defined in
 `apps/backend/src/proscenium/providers/`. FLUX.2 Klein reference conditioning scales
-input images through `ImageScaleToTotalPixels` (`resolution_steps: 16`, capped at 1 MP)
-and uses tiled VAE encode/decode when available in ComfyUI `/object_info`; corrupted
-scanline or noise rasters are rejected as `corrupt_provider_output`. Add `image_to_3d`
+input images through `ImageScaleToTotalPixels` (`resolution_steps: 16`, capped at 1 MP),
+inserts `VAEComputeDtype` (`bf16`) when advertised in ComfyUI `/object_info`, and uses
+tiled VAE encode/decode only above 1 MP (`1,048,576` pixels); corrupted scanline, noise,
+all-zero or multi-quadrant zeroed rasters are rejected as `corrupt_provider_output`. Add `image_to_3d`
 to the Comfy provider's capabilities when the Hunyuan model/nodes are installed. New
 requests freeze the profile, endpoint, graph and input hashes. Configuration changes do
 not reinterpret admitted jobs. The default attempt budget is three per human task and

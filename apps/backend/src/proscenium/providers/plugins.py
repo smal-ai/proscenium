@@ -80,20 +80,44 @@ class ImagePlugin:
             width, height = rgb.size
             if width >= 64 and height >= 64:
                 px = rgb.tobytes()
+                if px.count(0) == len(px):
+                    raise DomainError(
+                        "corrupt_provider_output",
+                        422,
+                        "Provider returned a corrupted scanline or noise image",
+                    )
                 stride = width * 3
+                mid_x, mid_y = width // 2, height // 2
+                quad_total = [0, 0, 0, 0]
+                quad_zero = [0, 0, 0, 0]
                 step_y = max(1, height // 128)
                 step_x = max(1, width // 128)
                 h_diff = v_diff = count = 0
                 for y in range(0, height - 1, step_y):
                     row = y * stride
                     next_row = (y + 1) * stride
+                    qy = 0 if y < mid_y else 2
                     for x in range(0, width - 1, step_x):
                         i = row + x * 3
                         j = i + 3
                         k = next_row + x * 3
+                        q = qy + (0 if x < mid_x else 1)
+                        quad_total[q] += 1
+                        if px[i] == 0 and px[i + 1] == 0 and px[i + 2] == 0:
+                            quad_zero[q] += 1
                         h_diff += sum(abs(px[i + c] - px[j + c]) for c in range(3))
                         v_diff += sum(abs(px[i + c] - px[k + c]) for c in range(3))
                         count += 3
+                dead_quadrants = sum(
+                    total > 0 and zero / total >= 0.995
+                    for zero, total in zip(quad_zero, quad_total)
+                )
+                if dead_quadrants >= 2:
+                    raise DomainError(
+                        "corrupt_provider_output",
+                        422,
+                        "Provider returned a corrupted scanline or noise image",
+                    )
                 if count:
                     mean_h, mean_v = h_diff / count, v_diff / count
                     if mean_v >= 20.0 or (mean_v >= 10.0 and mean_v / max(mean_h, 0.01) >= 3.0):
