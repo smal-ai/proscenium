@@ -72,6 +72,7 @@ The **Target** picker above the Composer separates what you are viewing from wha
 
 ## Stopping, holding and explicit Resume
 
+- **Pending owner Decisions:** Decision cards stay anchored above the Composer alongside **Resume Copilot**, independently of Conversation scrolling. Commands are readable, with original payloads and fingerprints available under **Technical details & fingerprint**. The recovery area scrolls when needed to keep the Composer visible.
 - **Queue holds:** When execution is genuinely fenced, paused or awaiting reconciliation (never during ordinary active execution), the Composer shows the hold reason before submission. Held Queue requests can be cancelled individually with **Cancel held request**.
 - **Stop vs Resume:** **Stop** cancels Copilot work through verified native barriers without stopping independent external jobs. After a restart, native abort or uncertain Stop, the **Resume Copilot** controls stay visible directly above the Composer, outside the scrollable Conversation. Choose a mode, then click **Resume**:
   - **Reconcile only:** Inspects native state and settles proven barriers without sending a prompt.

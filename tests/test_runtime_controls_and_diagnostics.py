@@ -19,7 +19,7 @@ from proscenium.contracts import canonical, validate
 from proscenium.copilot.eligibility import execution_status
 from proscenium.copilot.outcomes import record_tool_outcome
 from proscenium.copilot.router import router
-from proscenium.copilot.service import Copilot
+from proscenium.copilot.service import Copilot, is_consequential_shell
 from proscenium.copilot.state import key, save
 from proscenium.db.pagination import Cursors
 from proscenium.projects.service import Projects
@@ -82,21 +82,81 @@ def set_work(store, status):
 
 
 @pytest.mark.parametrize(
-    "tool,chargeable",
+    "operation,chargeable",
     [
-        ("create_generation", True),
-        ("generate_3d", True),
-        ("generate_gaussian_world", True),
-        ("get_addon_status", False),
-        ("search_assets", False),
-        ("execute_blender_code", False),
+        ({"kind": "mcp", "toolName": tool, "args": {}}, chargeable)
+        for tool, chargeable in [
+            ("create_generation", True),
+            ("generate_3d", True),
+            ("generate_gaussian_world", True),
+            ("get_addon_status", False),
+            ("search_assets", False),
+            ("execute_blender_code", False),
+        ]
+    ]
+    + [
+        ({"kind": "shell", "fullCommandText": command}, consequential)
+        for command, consequential in [
+            *[
+                (
+                    "python -c 'import json,pathlib; "
+                    f'pathlib.Path("storyboards/plan.json").write_text(json.dumps({{"motion": "{prose}"}}))\'',
+                    False,
+                )
+                for prose in [
+                    "Very slow subtle axial push toward the dusty brushed-aluminium toggle",
+                    "Push in toward the relay installation",
+                    "install",
+                    "installation",
+                    "upgrade",
+                ]
+            ],
+            (
+                'node -e \'console.log(JSON.stringify({motion: "push in", action: "install upgrade"}))\'',
+                False,
+            ),
+            (
+                'cat <<\'EOF\' > storyboards/plan.json\n{"motion": "push in", "scene": "installation upgrade"}\nEOF',
+                False,
+            ),
+            ("git status", False),
+            ("git push origin main", True),
+            ("pip install foo", True),
+            ("uv pip install foo", True),
+            ("npm install foo", True),
+            ("sudo ls", True),
+            ("scp file host:", True),
+            ("git reset --hard", True),
+            ("rm -rf build", True),
+            ("curl -X POST https://example.com -d @file", True),
+            ("python -c 'import os; os.system(\"git push origin main\")'", True),
+            (
+                "python -c 'import subprocess; subprocess.run(\"pip install foo\", shell=True)'",
+                True,
+            ),
+            ("python -c 'import os; os.system(\"rm -rf build\")'", True),
+        ]
+    ]
+    + [
+        (
+            {
+                "kind": "shell",
+                "fullCommandText": "echo ready",
+                "commandSegments": [{"fullCommandText": "git push origin main"}],
+            },
+            True,
+        ),
+        ({"kind": "mcp", "toolName": "purchase", "args": {}}, True),
+        ({"kind": "url", "url": "https://example.com/purchase"}, True),
     ],
 )
 @pytest.mark.parametrize("action", ["approve_once", "decline"])
-def test_mcp_chargeable_tools_wait_for_exact_owner_decision(runtime, tool, chargeable, action):
+def test_consequential_operations_wait_for_exact_owner_decision(
+    runtime, operation, chargeable, action
+):
     state, store, _, _ = runtime
     start(state)
-    request = {"kind": "mcp", "toolCallId": TOOL, "toolName": tool, "args": {}}
+    request = {**operation, "toolCallId": TOOL}
     native_id = "native-permission-one"
     with store.transaction() as tx:
         tx.put(
@@ -161,6 +221,96 @@ def test_mcp_chargeable_tools_wait_for_exact_owner_decision(runtime, tool, charg
             decision = tx.all("decisions")[0]
             assert decision["resolved_by"] == {"kind": "user", "id": OWNER.subject_id}
     assert result.kind == ("reject" if chargeable and action == "decline" else "approve-once")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git -C workspace push origin main",
+        "git --no-pager push",
+        "gh pr create",
+        "gh release upload release output.zip",
+        "sftp host",
+        "rsync file host:",
+        "su root",
+        "pkexec ls",
+        "systemctl restart demo",
+        "service demo stop",
+        "pip3 uninstall foo",
+        "pipx install foo",
+        "uv tool install foo",
+        "uv add foo",
+        "uv self update",
+        "pnpm add foo",
+        "yarn upgrade foo",
+        "bun i foo",
+        "npm publish",
+        "apt install foo",
+        "apt-get dist-upgrade",
+        "dnf remove foo",
+        "yum install foo",
+        "apk install foo",
+        "zypper purge foo",
+        "pacman -S foo",
+        "pacman -U foo",
+        "cargo install foo",
+        "gem install foo",
+        "go install foo",
+        "brew reinstall foo",
+        "mcp-for-blender --host localhost install-addon",
+        "git clean -df",
+        "git checkout -- .",
+        "git restore --worktree .",
+        "rm -fr build",
+        "rm -r build",
+        "rm -f build",
+        "rm --recursive --force build",
+        "rm --force --recursive build",
+        "curl https://example.com --upload-file output",
+        "curl --data-binary @file https://example.com",
+        "curl -F file=@output https://example.com",
+        "curl -X PATCH https://example.com",
+        "wget --post-file=output https://example.com",
+    ],
+)
+def test_consequential_shell_operation_signatures(command):
+    assert is_consequential_shell(command)
+
+
+@pytest.mark.parametrize(
+    "protected", [".env", ".ssh/id_rsa", "credentials", "github_token", "/etc/shadow"]
+)
+def test_shell_payload_credential_denial_remains_automatic(runtime, protected):
+    state, store, _, _ = runtime
+    start(state)
+    request = {
+        "kind": "shell",
+        "toolCallId": TOOL,
+        "fullCommandText": f"python -c 'from pathlib import Path; print(Path(\"{protected}\").read_text())'",
+    }
+    native_id = "protected-permission"
+    with store.transaction() as tx:
+        tx.put(
+            "copilot.permissions",
+            key(SESSION, native_id),
+            {
+                **BINDING,
+                "session_id": SESSION,
+                "tool_call_id": TOOL,
+                "native_id": native_id,
+                "phase": "pending",
+                "fingerprint": hashlib.sha256(canonical(request)).hexdigest(),
+            },
+        )
+    copilot = Copilot.__new__(Copilot)
+    copilot.services, copilot.state, copilot.closing = state.services, state, False
+    result = asyncio.run(copilot.permission(PROJECT, request, {"session_id": SESSION}))
+    assert result.kind == "reject"
+    with store.transaction(write=False) as tx:
+        assert tx.all("decisions") == []
+        stage = tx.require("copilot.permissions", key(SESSION, native_id))
+        assert stage["authority"] == "automatic_policy"
+        assert "protected credential" in stage["denial_reason"]
 
 
 @pytest.mark.parametrize(
