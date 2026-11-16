@@ -271,10 +271,22 @@ def test_consequential_operations_wait_for_exact_owner_decision(
         "curl -F file=@output https://example.com",
         "curl -X PATCH https://example.com",
         "wget --post-file=output https://example.com",
+        "service --status-all",
     ],
 )
 def test_consequential_shell_operation_signatures(command):
     assert is_consequential_shell(command)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python3 -c 'print(\"No service changes or installations.\")'",
+        "echo 'provider service status ok'",
+    ],
+)
+def test_non_consequential_shell_prose_mentions_of_service_do_not_prompt(command):
+    assert not is_consequential_shell(command)
 
 
 @pytest.mark.parametrize(
@@ -1028,3 +1040,114 @@ def test_uncertain_stop_settles_outbox_to_same_unknown_outcome(runtime):
         ).fetchone()
         assert row[0] == "outcome_uncertain"
         assert json.loads(row[1])["detail_code"] == "provider_unavailable"
+
+
+@pytest.mark.parametrize("decision_state", ["pending", "cancelled"])
+def test_observe_native_denials_recovers_subagent_shell_rejected_on_graceful_shutdown(
+    runtime, decision_state
+):
+    state, store, _, _ = runtime
+    child = event(
+        "child-start", "subagent.started", agentName="authoring-specialist", toolCallId="task-1"
+    )
+    child["agentId"] = "subagent-1"
+    state.reduce(PROJECT, SESSION, child)
+    cmd = "python3 -c 'print(1)'"
+    start_ev = event(
+        "bash-start",
+        "tool.execution_start",
+        toolCallId=TOOL,
+        toolName="bash",
+        arguments={"command": cmd},
+        ownerNativeSessionId="subagent-session-1",
+    )
+    start_ev["agentId"] = "subagent-1"
+    state.reduce(PROJECT, SESSION, start_ev)
+    perm_payload = {
+        "kind": "shell",
+        "toolCallId": TOOL,
+        "shellType": "bash",
+        "hasParseErrors": False,
+        "fullCommandText": cmd,
+        "commandSegments": [{"fullCommandText": cmd, "identifier": "python3"}],
+    }
+    sdk_perm_payload = {
+        k: v for k, v in perm_payload.items() if k not in {"shellType", "hasParseErrors"}
+    }
+    fp = hashlib.sha256(canonical(sdk_perm_payload)).hexdigest()
+    req_ev = event(
+        "perm-req",
+        "permission.requested",
+        requestId="native-perm-1",
+        ownerSessionId="subagent-session-1",
+        permissionRequest=perm_payload,
+        promptRequest={"kind": "commands", "toolCallId": TOOL, "fullCommandText": cmd},
+    )
+    req_ev["agentId"] = "subagent-1"
+    comp_ev = event(
+        "perm-done",
+        "permission.completed",
+        requestId="native-perm-1",
+        toolCallId=TOOL,
+        result={"kind": "denied-interactively-by-user"},
+    )
+    comp_ev["agentId"] = "subagent-1"
+    inv_id = key(SESSION, "tool", TOOL)
+    dec_id = "decision-" + key(SESSION, "native-perm-1")
+    with store.transaction() as tx:
+        tx.put(
+            "copilot.permissions",
+            key(SESSION, "native-perm-1"),
+            {
+                **BINDING,
+                "invocation_id": inv_id,
+                "session_id": SESSION,
+                "tool_call_id": TOOL,
+                "native_id": "native-perm-1",
+                "phase": "outcome_uncertain",
+                "reply": "reject",
+                "authority": "host",
+                "delivery_state": "outcome_uncertain",
+                "fingerprint": fp,
+            },
+        )
+        tx.put(
+            "decisions",
+            dec_id,
+            {
+                "schema_version": "1.0",
+                "decision_id": dec_id,
+                "project_id": PROJECT,
+                "work_id": WORK,
+                "invocation_id": inv_id,
+                "native_decision_id": "native-perm-1",
+                "kind": "permission",
+                "state": decision_state,
+                "state_revision": 0,
+                "prompt": canonical(sdk_perm_payload).decode(),
+                "options": ["approve_once", "decline"],
+                "fingerprint": "f" * 64,
+                "response": None,
+                "resolved_by": None,
+                "delivery_state": "not_sent",
+            },
+            schema="Decision",
+        )
+        recovered = state.observe_native_denials(
+            tx,
+            SESSION,
+            [start_ev, req_ev, comp_ev],
+            {
+                "session_id": SESSION,
+                "pid": 99999,
+                "start": "100",
+                "observed_identity": None,
+                "invocation_ids": [inv_id],
+                "pending_empty": True,
+                "current_send": False,
+                "permission_fingerprints": {"perm-req": fp},
+            },
+        )
+        assert recovered == 1
+        assert tx.require("invocations", inv_id)["state"] == "failed"
+        assert tx.require("decisions", dec_id)["state"] == "cancelled"

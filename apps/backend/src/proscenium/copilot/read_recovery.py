@@ -91,9 +91,18 @@ def probe(
         data, args = event["data"], start["data"].get("arguments", {})
         permission = data["permissionRequest"]
         native_id = data["requestId"]
+        owner_sessions = {sid}
+        if (
+            inv.get("agent_id")
+            and start.get("agentId") == inv.get("agent_id")
+            and event.get("agentId") == inv.get("agent_id")
+        ):
+            child_sid = start["data"].get("ownerNativeSessionId")
+            if isinstance(child_sid, str) and child_sid:
+                owner_sessions.add(child_sid)
         if (
             permission.get("kind") != "read"
-            or data.get("ownerSessionId") != sid
+            or data.get("ownerSessionId") not in owner_sessions
             or start["data"].get("toolName") != "rg"
             or history.index(start) >= history.index(event)
             or set(args) - {"pattern", "paths", "output_mode", "head_limit"}

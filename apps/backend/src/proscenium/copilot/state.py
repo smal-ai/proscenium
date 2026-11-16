@@ -1398,10 +1398,19 @@ class State:
                 validate("CheckpointRequest", body)
             except DomainError:
                 continue
+            owner_sessions = {session_id}
+            if (
+                invocation.get("agent_id")
+                and starts[0].get("agentId") == invocation.get("agent_id")
+                and event.get("agentId") == invocation.get("agent_id")
+            ):
+                child_sid = starts[0]["data"].get("ownerNativeSessionId")
+                if isinstance(child_sid, str) and child_sid:
+                    owner_sessions.add(child_sid)
             if (
                 body["project_id"] != tx.project_id
                 or body["expected_head"] != departed["checkpoint_head"].get("head")
-                or event["data"].get("ownerSessionId") != session_id
+                or event["data"].get("ownerSessionId") not in owner_sessions
                 or starts[0]["data"].get("toolName") != "checkpoint_sources"
                 or canonical(starts[0]["data"].get("arguments")) != canonical(body)
             ):
@@ -1603,6 +1612,15 @@ class State:
             permission, prompt = data.get("permissionRequest", {}), data.get("promptRequest", {})
             command = permission.get("fullCommandText")
             segments = permission.get("commandSegments") or []
+            owner_sessions = {session_id}
+            if (
+                invocation.get("agent_id")
+                and starts[0][1].get("agentId") == invocation.get("agent_id")
+                and denied.get("agentId") == invocation.get("agent_id")
+            ):
+                child_sid = starts[0][1]["data"].get("ownerNativeSessionId")
+                if isinstance(child_sid, str) and child_sid:
+                    owner_sessions.add(child_sid)
             if (
                 permission.get("kind") != "shell"
                 or permission.get("shellType") != "bash"
@@ -1611,7 +1629,7 @@ class State:
                 or segments[0].get("fullCommandText") != command
                 or prompt.get("kind") != "commands"
                 or prompt.get("toolCallId") != tool
-                or data.get("ownerSessionId") != session_id
+                or data.get("ownerSessionId") not in owner_sessions
                 or not command
                 or prompt.get("fullCommandText") != command
                 or starts[0][1]["data"].get("toolName") != "bash"
@@ -1645,7 +1663,7 @@ class State:
                         prior.get("kind") != "path"
                         or prior.get("accessKind") != "shell"
                         or prior.get("toolCallId") != tool
-                        or requested["data"].get("ownerSessionId") != session_id
+                        or requested["data"].get("ownerSessionId") not in owner_sessions
                         or completed["data"].get("result", {}).get("kind") != "approved"
                     ):
                         valid = False
@@ -1671,14 +1689,18 @@ class State:
                 for s in tx.all("copilot.permissions")
                 if s.get("session_id") == session_id and s.get("tool_call_id") == tool
             ]
+            decisions = [
+                d for d in tx.all("decisions") if d["invocation_id"] == invocation["invocation_id"]
+            ]
             if (
                 not stage
+                or len(decisions) > 1
                 or stage.get("session_id") != session_id
                 or stage.get("tool_call_id") != tool
                 or stage.get("native_id") != native_id
                 or any(s["native_id"] not in ids for s in related)
-                or stage.get("reply") is not None
-                or stage.get("authority") is not None
+                or stage.get("reply") not in {None, "reject"}
+                or stage.get("authority") not in {None, "host"}
                 or stage.get("delivery_state") not in {"not_sent", "outcome_uncertain"}
                 or any(
                     stage.get(k) != invocation.get(k)
@@ -1688,6 +1710,35 @@ class State:
                 != departed.get("permission_fingerprints", {}).get(denied["id"])
             ):
                 continue
+            if decisions:
+                decision = decisions[0]
+                if (
+                    decision["native_decision_id"] != native_id
+                    or decision["kind"] != "permission"
+                    or decision["work_id"] != invocation["work_id"]
+                    or decision["state"] not in {"pending", "cancelled"}
+                    or decision["response"] is not None
+                    or decision["resolved_by"] is not None
+                    or decision["delivery_state"] != "not_sent"
+                ):
+                    continue
+                if decision["state"] == "pending":
+                    revision = tx.revision("decisions", decision["decision_id"])
+                    decision.update(state="cancelled", state_revision=revision + 1)
+                    tx.put(
+                        "decisions",
+                        decision["decision_id"],
+                        decision,
+                        expected_revision=revision,
+                        schema="Decision",
+                    )
+                    tx.emit(
+                        "decision.resolved",
+                        decision,
+                        actor=SYSTEM,
+                        work_id=invocation["work_id"],
+                        request_id=invocation["request_id"],
+                    )
             observation = {
                 **{
                     k: invocation[k]
