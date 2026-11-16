@@ -120,6 +120,8 @@ class ProviderService:
             "vlm_max_tokens",
             "image_profiles",
             "image_recipes",
+            "mesh_profiles",
+            "mesh_recipes",
         }
         if set(self.options) - allowed:
             raise ValueError(
@@ -141,6 +143,16 @@ class ProviderService:
             if not isinstance(revision, str):
                 raise ValueError("image profile revision must be a string")
             plugin("image", revision)
+        mesh_profiles = self.options.get("mesh_profiles", {})
+        if not isinstance(mesh_profiles, dict):
+            raise ValueError(
+                "mesh_profiles must map host provider IDs to installed versioned mesh profiles"
+            )
+        for provider_id, revision in mesh_profiles.items():
+            validate("Id", provider_id)
+            if not isinstance(revision, str):
+                raise ValueError("mesh profile revision must be a string")
+            plugin("image_to_3d", revision)
         from .preparation import validate_recipes
 
         validate_recipes(self.options)
@@ -218,6 +230,13 @@ class ProviderService:
         revision = (
             self.options.get("image_profiles", {}).get(request["provider_id"])
             if request["capability"] == "image"
+            else (
+                self.options.get("mesh_profiles", {}).get(request["provider_id"])
+                or (self.options.get("mesh_recipes", {}).get(request["provider_id"]) or {}).get(
+                    "profile_revision"
+                )
+            )
+            if request["capability"] == "image_to_3d"
             else None
         )
         if prepared:

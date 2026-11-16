@@ -70,12 +70,28 @@ def inspect_glb_bytes(data: bytes) -> dict:
         ]
 
     vertices = triangles = 0
+    has_vertex_colors = False
     minimum, maximum = [math.inf] * 3, [-math.inf] * 3
     for mesh in document.get("meshes", []):
         for primitive in mesh.get("primitives", []):
             if primitive.get("mode", 4) != 4 or "indices" not in primitive:
                 raise ValueError("expected indexed triangles")
             positions = values(primitive["attributes"]["POSITION"], "VEC3", {5126: ("<3f", 12)})
+            if "COLOR_0" in primitive["attributes"]:
+                color_idx = primitive["attributes"]["COLOR_0"]
+                color_shape = document["accessors"][color_idx].get("type")
+                if color_shape not in {"VEC3", "VEC4"}:
+                    raise ValueError("unsupported vertex color shape")
+                colors = values(
+                    color_idx,
+                    color_shape,
+                    {5126: ("<3f", 12) if color_shape == "VEC3" else ("<4f", 16)},
+                )
+                if len(colors) != len(positions) or any(
+                    not all(math.isfinite(c) for c in color) for color in colors
+                ):
+                    raise ValueError("invalid vertex colors")
+                has_vertex_colors = True
             indices = values(
                 primitive["indices"],
                 "SCALAR",
@@ -108,5 +124,6 @@ def inspect_glb_bytes(data: bytes) -> dict:
         "local_bounds": [minimum, maximum],
         "materials": len(document.get("materials", [])),
         "images": len(document.get("images", [])),
+        "vertex_colors": has_vertex_colors,
         "blender_import_proven": False,
     }

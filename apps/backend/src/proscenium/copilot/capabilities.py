@@ -10,7 +10,7 @@ from proscenium.api.errors import DomainError
 from proscenium.catalogue import validation
 from proscenium.contracts import canonical, validate
 from proscenium.db.store import now
-from proscenium.providers import hunyuan
+from proscenium.providers import budget3d, hunyuan
 from proscenium.providers.plugins import plugin
 from proscenium.providers.preparation import AMBIGUOUS, bounded_get, compatible_recipes, models
 from proscenium.sources.common import git, relative
@@ -59,12 +59,21 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
     rows = []
     for service in services.settings.services:
         for capability in service["capabilities"]:
+            mesh_recipe = provider.options.get("mesh_recipes", {}).get(service["provider_id"])
             revision = (
                 provider.options.get("image_profiles", {}).get(
                     service["provider_id"], "comfy-image-1"
                 )
                 if capability == "image"
-                else plugin("image_to_3d").revision
+                else (
+                    provider.options.get("mesh_profiles", {}).get(service["provider_id"])
+                    or (
+                        mesh_recipe.get("profile_revision")
+                        if isinstance(mesh_recipe, dict)
+                        else None
+                    )
+                    or plugin("image_to_3d").revision
+                )
                 if capability == "image_to_3d"
                 else None
             )
@@ -99,6 +108,16 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                             "max_pixels", 1_048_576 if revision == "comfy-image-1" else 512 * 512
                         ),
                     )
+            elif capability == "image_to_3d":
+                default_mesh_steps = (
+                    20
+                    if revision == "hunyuan3d-native-2.0-1"
+                    else 5
+                    if revision == budget3d.TURBO_REVISION
+                    else 50
+                )
+                if isinstance(mesh_recipe, dict):
+                    row["default_steps"] = mesh_recipe.get("steps", default_mesh_steps)
             rows.append(row)
             if service["available"] is False:
                 row.update(
@@ -165,19 +184,38 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                             summary="Image recipe nodes or models are unavailable",
                         )
                 else:
-                    graph = hunyuan.graph("reference")
-                    adapter = plugin("image_to_3d")
+                    assert revision is not None
+                    adapter = plugin("image_to_3d", revision)
+                    if revision == "hunyuan3d-native-2.0-1":
+                        graph = hunyuan.graph("reference")
+                        mesh_models = [hunyuan.FILENAME]
+                        steps = 20
+                        summary = "Observed Hunyuan preflight passed. Inference remains untested"
+                    else:
+                        cfg = mesh_recipe if isinstance(mesh_recipe, dict) else {}
+                        turbo = revision == budget3d.TURBO_REVISION
+                        graph = budget3d.recipe_graph("reference", revision, cfg)
+                        mesh_models = budget3d.models(turbo=turbo)
+                        steps = cfg.get("steps", 5 if turbo else 50)
+                        mode = cfg.get("mode", "synthetic")
+                        budget_val = cfg.get("budget", 1.0)
+                        summary = (
+                            f"Observed Budget3D preflight passed. Defaults: {mode}, "
+                            f"budget={budget_val}, {steps} steps. Inference remains untested"
+                        )
                     adapter.preflight(
                         adapter.bind_graph(
-                            graph, "", "0", {"reference": "artifact:reference"}, [hunyuan.FILENAME]
+                            graph, "", "0", {"reference": "artifact:reference"}, mesh_models
                         ),
                         catalog,
-                        [hunyuan.FILENAME],
+                        mesh_models,
                     )
                     row.update(
                         status="ready",
-                        selected_models=[hunyuan.FILENAME],
-                        summary="Observed Hunyuan preflight passed. Inference remains untested",
+                        selected_models=mesh_models,
+                        compatible_models=sorted(mesh_models),
+                        default_steps=steps,
+                        summary=summary,
                     )
             except (
                 DomainError,

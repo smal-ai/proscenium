@@ -10,7 +10,7 @@ import httpx
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
-from proscenium.providers import klein, sd_turbo, sd_turbo_fp16
+from proscenium.providers import budget3d, klein, sd_turbo, sd_turbo_fp16
 from proscenium.providers.comfy import endpoint
 from proscenium.providers.plugins import plugin
 from proscenium.providers.targets import _request_context, resolve_target
@@ -91,6 +91,41 @@ def validate_recipes(options: dict[str, Any]) -> None:
             sd_turbo.FILENAME if revision == sd_turbo.REVISION else sd_turbo_fp16.FILENAME
         ):
             raise ValueError("SD-Turbo image recipe must use the pinned checkpoint")
+
+    mesh_profiles = options.get("mesh_profiles", {})
+    if not isinstance(mesh_profiles, dict):
+        raise ValueError("mesh_profiles must map provider IDs to installed mesh profiles")
+    for identity, revision in mesh_profiles.items():
+        validate("Id", identity)
+        if not isinstance(revision, str):
+            raise ValueError("Mesh profile revision must be a string")
+        plugin("image_to_3d", revision)
+    mesh_recipes = options.get("mesh_recipes", {})
+    if not isinstance(mesh_recipes, dict):
+        raise ValueError("mesh_recipes must map provider IDs to mesh recipe objects")
+    for identity, recipe in mesh_recipes.items():
+        validate("Id", identity)
+        if not isinstance(recipe, dict):
+            raise ValueError("Mesh recipe must be an object")
+        revision = recipe.get("profile_revision")
+        if not isinstance(revision, str) or revision != mesh_profiles.get(identity, revision):
+            raise ValueError("Mesh recipe profile_revision must agree with mesh_profiles")
+        plugin("image_to_3d", revision)
+        if revision == "hunyuan3d-native-2.0-1":
+            if set(recipe) != {"profile_revision"}:
+                raise ValueError("Hunyuan mesh recipe accepts profile_revision only")
+            continue
+        allowed_mesh = {
+            "profile_revision",
+            "budget",
+            "mode",
+            "steps",
+            "num_gaussians",
+            "mesh_resolution",
+        }
+        if set(recipe) - allowed_mesh:
+            raise ValueError("Unknown mesh recipe fields")
+        budget3d.recipe_graph("reference", revision, recipe)
 
 
 def bounded_get(provider: Any, service: dict[str, Any], path: str) -> dict[str, Any]:

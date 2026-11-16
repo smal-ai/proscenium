@@ -87,7 +87,14 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
                     value < bounds.get("min", value) or value > bounds.get("max", value)
                 ):
                     raise DomainError("invalid_request", message="Graph input outside node bounds")
-            if name in {"unet_name", "ckpt_name", "clip_name", "vae_name", "lora_name"}:
+            if name in {
+                "unet_name",
+                "ckpt_name",
+                "clip_name",
+                "vae_name",
+                "lora_name",
+                "bg_removal_name",
+            }:
                 selected_models.add(value)
     if set(models) != selected_models or not any(s.get("output_node") for s in schemas.values()):
         raise DomainError("invalid_request", message="Model manifest/output graph mismatch")

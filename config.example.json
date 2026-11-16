@@ -46,8 +46,8 @@
     "claim_path": "${HOME}/.cache/proscenium/native-claims/blender-render.lock"
   },
   "services": [
-    {"provider_id": "local-comfy", "endpoint": "http://127.0.0.1:8188", "capabilities": ["image"], "model_id": null, "available": null},
+    {"provider_id": "local-comfy", "endpoint": "http://127.0.0.1:8188", "capabilities": ["image", "image_to_3d"], "model_id": null, "available": null},
     {"provider_id": "local-vlm", "endpoint": "http://127.0.0.1:1234", "capabilities": ["vlm"], "model_id": null, "available": null}
   ],
-  "provider_options": {"review_provider_id": "local-vlm", "minimum_free_vram_bytes": 268435456, "vlm_max_tokens": 512, "image_recipes": {"local-comfy": {"profile_revision": "comfy-image-1", "unet": "flux-2-klein-4b.safetensors", "clip": "qwen_3_4b.safetensors", "vae": "flux2-vae.safetensors", "width": 1920, "height": 1088, "steps": 4, "max_pixels": 2088960}}}
+  "provider_options": {"review_provider_id": "local-vlm", "minimum_free_vram_bytes": 268435456, "vlm_max_tokens": 512, "image_recipes": {"local-comfy": {"profile_revision": "comfy-image-1", "unet": "flux-2-klein-4b.safetensors", "clip": "qwen_3_4b.safetensors", "vae": "flux2-vae.safetensors", "width": 1920, "height": 1088, "steps": 4, "max_pixels": 2088960}}, "mesh_recipes": {"local-comfy": {"profile_revision": "budget3d-idol-turbo-1", "budget": 1.0, "mode": "synthetic", "steps": 5, "num_gaussians": 262144, "mesh_resolution": 384}}}
 }
