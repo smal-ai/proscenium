@@ -14,7 +14,6 @@
 .resume-controls{display:flex;align-items:center;gap:8px}
 .resume-controls select{min-width:0;flex:1;font-size:11px}
 .resume-controls button{flex-shrink:0}
-.usage-credit{margin:8px 0 12px;text-align:right;color:#85858f;font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px;line-height:1.6}
 .composer-links{display:flex;gap:12px;margin:0 0 8px}
 .composer-links button{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:3px 7px;border:1px solid #363640;border-radius:12px;background:#202027;font-size:11px;color:#aaaab6;cursor:pointer}
 .composer-links button:hover:not(:disabled),.composer-links button[aria-expanded=true]{background:#343444;color:#f4f4f5;border-color:#777790}

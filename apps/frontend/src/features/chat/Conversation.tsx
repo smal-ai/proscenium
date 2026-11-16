@@ -1,20 +1,11 @@
-import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Event, ItemRecord, RequestRecord, RetainedArtifactSummary, RevisionCommand, UsageEventData } from "../../api";
+import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Event, ItemRecord, RequestRecord, RetainedArtifactSummary, RevisionCommand } from "../../api";
 import { durableCommand, id } from "../../app/storage";
 import { StoredContext } from "./ContextPreview";
 import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
 
-const usageNumber = new Intl.NumberFormat("en-GB", { maximumSignificantDigits: 8 });
-
 export function compareConversationEntries(a: { time: string; sequence?: number; key: string }, b: { time: string; sequence?: number; key: string }): number {
   return Date.parse(a.time) - Date.parse(b.time) || (a.sequence ?? 0) - (b.sequence ?? 0) || a.key.localeCompare(b.key);
-}
-
-function credits(data: UsageEventData): string {
-  if (data.reported_cost === null) return "— credits";
-  // SDK 1.0.34's legacy cost field is premium-request usage, not token-priced AI credits.
-  const unit = data.cost_unit ?? (data.reported_cost === 1 ? "premium credit" : "premium credits");
-  return `${usageNumber.format(data.reported_cost)} ${unit}`;
 }
 
 export function Conversation({ api, projectId, requests, events, onRefresh, onError, onStarter, items = [], retainedArtifacts = [], onInspectArtifact }: {
@@ -23,7 +14,6 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
 }) {
   const messages = new Map<string, { event: Event; text: string }>();
   const activities = new Map<string, Event>();
-  const usage: Event[] = [];
   for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
     if (event.event_type.startsWith("assistant.")) {
       const payload = event.payload as unknown as ConversationEventData;
@@ -33,7 +23,7 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
     } else if (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) {
       const activity = event.payload as unknown as ActivityEventData;
       activities.set(`${event.native_session_id ?? "app"}:${activity.invocation_id}`, event);
-    } else if (event.event_type === "usage.recorded") usage.push(event);
+    }
   }
   const assigned = new Set<string>();
   const activityOutputs = new Map<string, string[]>();
@@ -56,7 +46,6 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
     </article> })),
     ...[...messages.entries()].filter(([, message]) => message.text.trim()).map(([key, { event, text }]) => ({ key, time: event.occurred_at, sequence: event.sequence, node: <article className="message assistant-message" key={key}><div className="message-heading"><strong>{event.actor.kind === "subagent" ? "Native specialist" : "Copilot"}</strong><span>{event.actor.id}</span></div><p>{text}</p></article> })),
     ...[...activities.entries()].map(([key, event]) => ({ key: `activity.${key}`, time: event.occurred_at, sequence: event.sequence, node: <ActivityEntry key={key} event={event} api={api} projectId={projectId} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} artifactIds={activityOutputs.get(key)} /> })),
-    ...usage.map(event => { const data = event.payload as unknown as UsageEventData; return { key: `usage.${event.sequence}`, time: event.occurred_at, sequence: event.sequence, node: <small className="usage-credit" key={event.sequence} title={data.cost_unit === null && data.reported_cost !== null ? "Copilot premium-request usage" : "Reported credit usage"}>{credits(data)}</small> }; }),
   ].sort(compareConversationEntries);
   return <div className="conversation" aria-label="Project conversation" aria-live="polite">{entries.map(entry => <div key={entry.key}>{entry.node}</div>)}{!requests.length && !entries.length && <div className="conversation-empty"><h3>What would you like to make?</h3><p>Choose a starting point, or type any idea directly.</p>{onStarter && <div className="starter-actions"><button onClick={() => onStarter("storyboard")}>Plan a storyboard</button><button onClick={() => onStarter("asset")}>Create an asset</button><button onClick={() => onStarter("scene")}>Build a scene</button></div>}<small>These options prepare a draft. Nothing is sent until you choose Queue or Steer.</small></div>}</div>;
 }
