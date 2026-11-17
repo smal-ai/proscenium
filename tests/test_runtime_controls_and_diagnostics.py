@@ -1151,3 +1151,131 @@ def test_observe_native_denials_recovers_subagent_shell_rejected_on_graceful_shu
         assert recovered == 1
         assert tx.require("invocations", inv_id)["state"] == "failed"
         assert tx.require("decisions", dec_id)["state"] == "cancelled"
+
+
+def test_check_health_tolerates_busy_rpc_when_transport_alive_and_fails_when_dead(runtime):
+    state, _, _, _ = runtime
+    pings = 0
+    alive = True
+
+    async def slow_ping():
+        nonlocal pings
+        pings += 1
+        raise TimeoutError
+
+    native = SimpleNamespace(
+        client=object(),
+        health=slow_ping,
+        transport_alive=lambda: alive,
+    )
+    copilot = Copilot(state.services, native=native)
+    from proscenium.copilot.service import CallbackOwner
+
+    copilot.callback_owners[PROJECT] = CallbackOwner(PROJECT, SESSION)
+    asyncio.run(copilot.check_health(PROJECT))
+    assert pings == 1
+    # Throttled inside the 15-second window while transport remains alive.
+    asyncio.run(copilot.check_health(PROJECT))
+    assert pings == 1
+
+    alive = False
+    with pytest.raises(ConnectionError):
+        asyncio.run(copilot.check_health(PROJECT))
+
+
+def test_admit_resume_rejects_busy_release_and_continue_work_releases_empty_queue(runtime):
+    state, store, _, project = runtime
+    set_work(store, "awaiting_resume")
+    with store.transaction() as tx:
+        state.fence(tx, "awaiting_resume")
+        work = tx.require("work", WORK)
+        tx.put(
+            "copilot.payloads",
+            REQUEST,
+            {"context_id": "ctx-1", "attached_files": [], "request_target": {"kind": "project"}},
+        )
+        tx.put(
+            "contexts",
+            "ctx-1",
+            {
+                "schema_version": "1.0",
+                "context_id": "ctx-1",
+                "project_id": PROJECT,
+                "captured_at": "2026-11-17T10:00:00Z",
+                "item_id": None,
+                "version_id": None,
+                "view_mode": "none",
+                "target": None,
+                "camera": None,
+                "range": None,
+                "selected_objects": [],
+                "attachments": [],
+                "annotations": [],
+                "approved_findings": [],
+                "request_target": {"kind": "project"},
+                "reference_versions": [],
+                "execution_scope": "default",
+            },
+        )
+        save(
+            tx,
+            "copilot.control",
+            "gate",
+            {
+                "fenced": True,
+                "epoch": "epoch",
+                "revision": 2,
+                "queue_released": False,
+                "reason": "awaiting_resume",
+            },
+        )
+    copilot = Copilot(state.services)
+    copilot.contexts.validate_references = lambda tx, snapshot: validate(
+        "ContextSnapshot", snapshot
+    )
+    with pytest.raises(DomainError) as busy:
+        copilot.admit_resume(
+            OWNER,
+            {
+                "schema_version": "1.0",
+                "project_id": PROJECT,
+                "operation_id": "bad-release",
+                "mode": "release_held_queue",
+                "work_id": None,
+                "expected_revision": state.services.registry.get(PROJECT)["state_revision"],
+            },
+        )
+    assert busy.value.code == "project_busy"
+    with store.transaction(write=False) as tx:
+        assert tx.get("copilot.resumes", "bad-release", required=False) is None
+
+    async def send(*args, **kwargs):
+        return "continued-msg"
+
+    session = SimpleNamespace(session_id=SESSION, send=send)
+
+    async def open_session(pid, **kwargs):
+        copilot.sessions[pid] = session
+        return session
+
+    copilot.session = open_session
+    copilot.native = SimpleNamespace(
+        pending=lambda s: asyncio.sleep(
+            0, result={"items": [], "steeringMessages": [], "inFlightSteeringCount": 0}
+        )
+    )
+    copilot.admit_resume(
+        OWNER,
+        {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "operation_id": "continue-ok",
+            "mode": "continue_work",
+            "work_id": WORK,
+            "expected_revision": work["state_revision"],
+        },
+    )
+    asyncio.run(copilot.resume(PROJECT, "continue-ok"))
+    with store.transaction(write=False) as tx:
+        gate = copilot.state.control(tx)
+        assert not gate["fenced"] and gate["queue_released"] is True

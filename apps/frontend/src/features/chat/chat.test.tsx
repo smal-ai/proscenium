@@ -314,3 +314,17 @@ test("Resume waits for real completion, preserves uncertainty and bounds polling
   const legacyApi = { call: async () => { throw new Error("getResumeOperation not implemented"); } } as unknown as ApiClient;
   assert.equal(await awaitResume(legacyApi, "project", "original-operation"), null);
 });
+
+test("Conversation collapses consecutive routine completed tools and names specialists cleanly", () => {
+  const events = [
+    { ...event(1, "subagent.started", { ...activity, invocation_id: "child-inv", name: "authoring-specialist", display_name: "shot-retry" }), actor: { kind: "subagent" as const, id: "uuid-9488c0fc" } },
+    event(2, "tool.completed", { ...activity, invocation_id: "task-wrap", name: "task", state: "completed" }, "2026-11-15T10:00:01Z"),
+    event(3, "tool.completed", { ...activity, invocation_id: "t1", name: "view", state: "completed" }, "2026-11-15T10:00:02Z"),
+    event(4, "tool.completed", { ...activity, invocation_id: "t2", name: "bash", state: "completed" }, "2026-11-15T10:00:03Z"),
+    { ...event(5, "assistant.completed", { message_id: "sub-msg", text: "Checked hull connection", native_agent_id: "uuid-9488c0fc" }, "2026-11-15T10:00:04Z"), actor: { kind: "subagent" as const, id: "uuid-9488c0fc" } },
+  ];
+  const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={events} onRefresh={async () => {}} onError={() => {}} />);
+  assert.match(markup, /2 tool steps completed/);
+  assert.match(markup, /<strong>Specialist<\/strong><span>shot-retry<\/span>/);
+  assert.doesNotMatch(markup, /Tool: task/);
+});

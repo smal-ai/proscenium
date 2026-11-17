@@ -80,6 +80,13 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const chosenResumeWork = resumeWorkId
     ? resumable.find(record => record.work_id === resumeWorkId)
     : resumable.find(record => record.work_id === work?.work_id) ?? (resumable.length === 1 ? resumable[0] : undefined);
+  const canReleaseQueue = !work || ["completed", "failed", "stopped"].includes(work.state) || uncertainStop;
+  const recoveryStateKey = `${projectId}:${uncertainStop}:${work?.work_id ?? ""}:${work?.state ?? ""}:${Boolean(snapshot?.execution?.fenced)}:${snapshot?.execution?.hold_reason_code ?? ""}`;
+  useEffect(() => {
+    if (uncertainStop) setResumeMode("reconcile_only");
+    else if (work?.state === "awaiting_resume" && chosenResumeWork) setResumeMode("continue_work");
+    else if (canReleaseQueue) setResumeMode("release_held_queue");
+  }, [recoveryStateKey, Boolean(chosenResumeWork)]);
   const resolvedTarget = resolveTarget(draftTarget, selection);
   const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
   const currentSelection: TurnSelection = draftTarget === "current_view" && (selection.version_id || selection.annotations.length || selection.attachments.length) ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] } : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
@@ -174,10 +181,10 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="chat-recovery">
       {snapshot?.pending_decisions.map(decision => <DecisionCard key={`${decision.decision_id}.${decision.state_revision}`} api={api} decision={decision} onRefresh={onRefresh} />)}
-      {(uncertainStop || snapshot?.execution?.fenced || snapshot?.project.state === "awaiting_resume" || requests.some(r => r.receipt.state === "held") || (work && ["stopped", "awaiting_resume", "outcome_uncertain"].includes(work.state))) && <section className="resume-card" aria-label="Resume Copilot">
+      {(uncertainStop || snapshot?.execution?.fenced || snapshot?.execution?.hold_reason_code === "queue_paused" || snapshot?.project.state === "awaiting_resume" || requests.some(r => r.receipt.state === "held") || (work && ["stopped", "awaiting_resume", "outcome_uncertain"].includes(work.state))) && <section className="resume-card" aria-label="Resume Copilot">
         <h3>Resume Copilot</h3>
         <p>Choose how to continue. Reconcile only checks known outcomes without sending a prompt.</p>
-        <div className="resume-controls"><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work">Continue original work</option><option value="release_held_queue">Release held queue</option></select><button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork)} onClick={() => void resume()}>Resume</button></div>
+        <div className="resume-controls"><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work" disabled={!resumable.length || uncertainStop}>Continue original work</option><option value="release_held_queue" disabled={!canReleaseQueue}>Release held queue</option></select><button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork) || (resumeMode === "release_held_queue" && !canReleaseQueue)} onClick={() => void resume()}>Resume</button></div>
         {resumeMode === "continue_work" && <label>Original work<select aria-label="Original work to continue" value={chosenResumeWork?.work_id ?? ""} disabled={resuming || !!pendingResume} onChange={event => setResumeWorkId(event.target.value)}><option value="">Select original work</option>{resumable.map(record => <option key={record.work_id} value={record.work_id}>{record.work_id} · {record.state}</option>)}</select></label>}
       </section>}
       {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}

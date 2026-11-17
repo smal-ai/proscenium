@@ -147,7 +147,7 @@ def admitted(services: Services, tx: Transaction, caller: Caller) -> dict[str, A
 
 
 def binding(caller: Caller, body: dict[str, Any]) -> dict[str, Any]:
-    return {"body": body, "work_id": caller.work_id, "invocation_id": caller.invocation_id}
+    return {"body": body, "work_id": caller.work_id}
 
 
 def replay(tx: Transaction, scope: str, identity: str, body: Any) -> dict[str, Any] | None:

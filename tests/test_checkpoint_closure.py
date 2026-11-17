@@ -1,6 +1,7 @@
 """Offline checkpoint closures, publication interoperability and compatible wire records."""
 
 import copy
+import dataclasses
 import json
 from types import SimpleNamespace
 
@@ -482,3 +483,25 @@ def test_compatible_provider_and_preparation_contracts():
         invalid[key] = None
         with pytest.raises(DomainError):
             validate("ImageGenerationPrepare", invalid)
+
+
+def test_checkpoint_replays_across_resumed_invocation_and_reordered_paths(runtime):
+    write_plan(runtime)
+    (runtime.root / "notes.md").write_text("Brief notes")
+    body = request(runtime, entry_path="plan.json")
+    body["paths"] = ["notes.md", "plan.json"]
+    receipt = runtime.sources.checkpoint(runtime.caller, body)
+    resumed_caller = dataclasses.replace(runtime.caller, invocation_id="resumed-tool-call")
+    reordered = {**body, "paths": ["plan.json", "notes.md"]}
+    assert runtime.sources.checkpoint(resumed_caller, reordered) == {**receipt, "replayed": True}
+
+    # Also verify legacy pre-fix invocation-bound operations rows replay when intent matches.
+    with runtime.store.transaction() as tx:
+        tx.connection.execute(
+            "UPDATE operations SET fingerprint='legacy' WHERE scope='sources.checkpoint' AND id=?",
+            (body["operation_id"],),
+        )
+    assert runtime.sources.checkpoint(resumed_caller, reordered) == {**receipt, "replayed": True}
+    with pytest.raises(DomainError) as conflict:
+        runtime.sources.checkpoint(resumed_caller, {**reordered, "message": "Different message"})
+    assert conflict.value.code == "idempotency_conflict"

@@ -681,7 +681,7 @@ class Native:
 
     async def health(self) -> None:
         if self.client:
-            await asyncio.wait_for(self.client.ping(), 5)
+            await asyncio.wait_for(self.client.ping(), 15)
 
     def transport_alive(self) -> bool:
         """Positive exact-process/connected-transport evidence, not absence of an error."""

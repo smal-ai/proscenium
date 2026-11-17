@@ -141,6 +141,7 @@ class Copilot:
         self.pause_owner: dict[str, str] = {}
         self.checked_projects: set[str] = set()
         self.read_wait_recovery: dict[str, dict[str, Any]] = {}
+        self.last_health_at: float = 0.0
 
     def restore(self, project_id: str) -> None:
         if project_id:
@@ -395,26 +396,34 @@ class Copilot:
             )
 
     async def check_health(self, project_id: str) -> None:
+        if (
+            hasattr(self.native, "transport_alive")
+            and getattr(self.native, "client", None) is not None
+            and not self.native.transport_alive()
+        ):
+            raise ConnectionError("Copilot runtime transport is not alive")
+        now_mono = time.monotonic()
+        if now_mono - self.last_health_at < 15.0:
+            return
+        self.last_health_at = now_mono
         owner = self.callback_owners.get(project_id)
-        before = owner.progress_sequence if owner else 0
-        started = time.monotonic()
+        started = now_mono
         try:
             await self.native.health()
         except TimeoutError as exc:
             self.runtime_error(project_id, "health_timeout", exc, started)
             if (
-                owner is None
-                or owner.retired
-                or owner.failure
-                or owner is not self.callback_owners.get(project_id)
-                or owner.progress_sequence <= before
-                or time.monotonic() - owner.progress_at > 5
-                or not hasattr(self.native, "transport_alive")
-                or not self.native.transport_alive()
+                owner is not None
+                and not owner.retired
+                and not owner.failure
+                and owner is self.callback_owners.get(project_id)
+                and hasattr(self.native, "transport_alive")
+                and self.native.transport_alive()
             ):
-                raise
-            # One additional five-second probe, never indefinite timeout forgiveness.
-            await self.native.health()
+                # Single-threaded CLI stdio can block RPC pings during large turns/assets while the
+                # pinned OS process and pipe remain healthy; never kill live work on a busy pipe.
+                return
+            raise
 
     async def session(self, project_id: str, *, allow_create: bool = False) -> Any:
         target_models = None
@@ -1168,6 +1177,27 @@ class Copilot:
                     or resource["state"] not in {"stopped", "failed", "awaiting_resume"}
                 ):
                     raise DomainError("invalid_state_transition", 409)
+                if body["mode"] == "release_held_queue":
+                    unresolved_stop_work_ids = {
+                        r["receipt"]["work_id"]
+                        for r in tx.all("requests")
+                        if r["submission"]["type"] == "stop"
+                        and r["receipt"]["state"] not in {"completed", "failed", "cancelled"}
+                    } | {
+                        s["work_id"]
+                        for s in tx.all("copilot.stops")
+                        if s.get("phase") != "confirmed"
+                    }
+                    if any(
+                        w["state"] not in TERMINAL | {"pending"}
+                        and w["work_id"] not in unresolved_stop_work_ids
+                        for w in tx.all("work")
+                    ):
+                        raise DomainError(
+                            "project_busy",
+                            409,
+                            "Continue or stop the awaiting work before releasing the queue.",
+                        )
                 tx.put("copilot.resumes", body["operation_id"], {"body": body, "state": "pending"})
                 tx.enqueue(body["operation_id"], "copilot.resume", body)
                 return receipt(
@@ -1651,6 +1681,7 @@ class Copilot:
                         w["state"] not in TERMINAL | {"pending"} for w in tx.all("work")
                     ):
                         raise DomainError("project_busy", 409)
+                    has_held = any(r["receipt"]["state"] == "held" for r in tx.all("requests"))
                     control = self.state.control(tx)
                     save(
                         tx,
@@ -1665,7 +1696,8 @@ class Copilot:
                                 "state_revision"
                             ],
                             "revision": control["revision"] + 1,
-                            "queue_released": body["mode"] == "release_held_queue",
+                            "queue_released": body["mode"] == "release_held_queue"
+                            or (body["mode"] == "continue_work" and not has_held),
                         },
                     )
                     if body["mode"] == "continue_work":
