@@ -80,7 +80,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const chosenResumeWork = resumeWorkId
     ? resumable.find(record => record.work_id === resumeWorkId)
     : resumable.find(record => record.work_id === work?.work_id) ?? (resumable.length === 1 ? resumable[0] : undefined);
-  const canReleaseQueue = !work || ["completed", "failed", "stopped"].includes(work.state) || uncertainStop;
+  const canReleaseQueue = !uncertainStop && (!work || ["completed", "failed", "stopped"].includes(work.state));
   const recoveryStateKey = `${projectId}:${uncertainStop}:${work?.work_id ?? ""}:${work?.state ?? ""}:${Boolean(snapshot?.execution?.fenced)}:${snapshot?.execution?.hold_reason_code ?? ""}`;
   useEffect(() => {
     if (uncertainStop) setResumeMode("reconcile_only");

@@ -995,8 +995,14 @@ class Copilot:
 
     async def stop(self, project_id: str, work_id: str, operation_id: str) -> None:
         store = self.services.registry.project_store(project_id)
+        cold_session = project_id not in self.sessions
         try:
             with store.transaction() as tx:
+                prior_invocations = [
+                    i["invocation_id"]
+                    for i in tx.all("invocations")
+                    if i["state"] not in TERMINAL and i.get("invocation_id")
+                ]
                 phase = tx.require("copilot.stops", operation_id)
                 was_terminal = tx.require("work", work_id)["state"] in TERMINAL
                 if phase["phase"] in {"confirmed", "outcome_uncertain"}:
@@ -1028,6 +1034,12 @@ class Copilot:
                 phase = tx.require("copilot.stops", operation_id)
                 phase.update(phase="reconciling", abort="acknowledged")
                 save(tx, "copilot.stops", operation_id, phase)
+            history: list[dict[str, Any]] = []
+            if cold_session and hasattr(session, "get_events"):
+                history = [wire(event) for event in await session.get_events()]
+                for event in history:
+                    self.state.replay_event(project_id, session.session_id, event)
+                self.state.drain_pending(project_id, session.session_id)
             pending = await self.native.pending(session)
             with store.transaction(write=False) as tx:
                 records = [
@@ -1064,8 +1076,15 @@ class Copilot:
                 with store.transaction() as tx:
                     save(tx, "copilot.withdrawals", key(operation_id, native_id), result)
                 # removed=False is NOT a successful withdrawal. Re-observe the actual queue.
+            departed_recovered = False
             for _ in range(50):
                 pending = await self.native.pending(session)
+                departed = getattr(self.native, "departed_process", None)
+                if cold_session and not departed_recovered and departed and empty(pending):
+                    departed_recovered = True
+                    await self._recover_departed_session(
+                        project_id, session, history, prior_invocations, pending, departed
+                    )
                 recovery = self.read_wait_recovery.get(project_id)
                 owner = self.callback_owners.get(project_id)
                 if (
@@ -1172,32 +1191,50 @@ class Copilot:
                     raise DomainError(
                         "revision_conflict", 409, current_revision=resource["state_revision"]
                     )
-                if body["mode"] == "continue_work" and (
-                    not body["work_id"]
-                    or resource["state"] not in {"stopped", "failed", "awaiting_resume"}
+                unresolved_stop_work_ids = {
+                    r["receipt"]["work_id"]
+                    for r in tx.all("requests")
+                    if r["submission"]["type"] == "stop"
+                    and r["receipt"]["state"] not in {"completed", "failed", "cancelled"}
+                } | {s["work_id"] for s in tx.all("copilot.stops") if s.get("phase") != "confirmed"}
+                if (
+                    not self.state.control(tx)["fenced"]
+                    and not unresolved_stop_work_ids
+                    and any(
+                        w["state"] in {"running", "awaiting_user", "stop_requested"}
+                        for w in tx.all("work")
+                    )
                 ):
-                    raise DomainError("invalid_state_transition", 409)
-                if body["mode"] == "release_held_queue":
-                    unresolved_stop_work_ids = {
-                        r["receipt"]["work_id"]
-                        for r in tx.all("requests")
-                        if r["submission"]["type"] == "stop"
-                        and r["receipt"]["state"] not in {"completed", "failed", "cancelled"}
-                    } | {
-                        s["work_id"]
-                        for s in tx.all("copilot.stops")
-                        if s.get("phase") != "confirmed"
-                    }
-                    if any(
-                        w["state"] not in TERMINAL | {"pending"}
-                        and w["work_id"] not in unresolved_stop_work_ids
+                    raise DomainError(
+                        "project_busy",
+                        409,
+                        "Work is actively running; Stop or wait before resuming.",
+                    )
+                if body["mode"] == "continue_work":
+                    if not body["work_id"] or resource["state"] not in {
+                        "stopped",
+                        "failed",
+                        "awaiting_resume",
+                    }:
+                        raise DomainError("invalid_state_transition", 409)
+                    if unresolved_stop_work_ids or any(
+                        w["work_id"] != body["work_id"] and w["state"] not in TERMINAL | {"pending"}
                         for w in tx.all("work")
                     ):
                         raise DomainError(
                             "project_busy",
                             409,
-                            "Continue or stop the awaiting work before releasing the queue.",
+                            "Reconcile or finish the active work before continuing.",
                         )
+                if body["mode"] == "release_held_queue" and (
+                    unresolved_stop_work_ids
+                    or any(w["state"] not in TERMINAL | {"pending"} for w in tx.all("work"))
+                ):
+                    raise DomainError(
+                        "project_busy",
+                        409,
+                        "Reconcile, continue or stop the unsettled work before releasing the queue.",
+                    )
                 tx.put("copilot.resumes", body["operation_id"], {"body": body, "state": "pending"})
                 tx.enqueue(body["operation_id"], "copilot.resume", body)
                 return receipt(
@@ -1292,159 +1329,9 @@ class Copilot:
         pending = await self.native.pending(session)
         departed = getattr(self.native, "departed_process", None)
         if cold_resume and departed and empty(pending):
-            raw_history = (
-                [wire(e) for e in await session.get_raw_events()]
-                if hasattr(session, "get_raw_events")
-                else []
+            uncertain_stop_id = await self._recover_departed_session(
+                project_id, session, history, prior_invocations, pending, departed
             )
-            validated_targets: dict[str, str] = {}
-            root = Path(self.services.registry.get(project_id)["path"])
-            for event in raw_history:
-                permission = event.get("data", {}).get("permissionRequest", {})
-                if event["type"] != "permission.requested" or permission.get("kind") != "read":
-                    continue
-                starts = [
-                    e
-                    for e in raw_history
-                    if e["type"] == "tool.execution_start"
-                    and e.get("data", {}).get("toolCallId") == permission.get("toolCallId")
-                ]
-                if len(starts) != 1 or starts[0]["data"].get("toolName") != "rg":
-                    continue
-                try:
-                    targets, special = file_io(root, permission)
-                    args = starts[0]["data"].get("arguments", {})
-                    declared = {**permission, "path": args.get("paths")}
-                    declared.pop("resolvedPath", None)
-                    argument_targets, _ = file_io(root, declared)
-                    if (
-                        not special
-                        and targets == argument_targets
-                        and len(targets) == 1
-                        and not targets[0].is_dir()
-                    ):
-                        validated_targets[event["id"]] = str(targets[0])
-                except DomainError:
-                    pass
-            checkpoint_head: dict[str, Any] = {"verified": False}
-            for event in raw_history:
-                request = event.get("data", {}).get("permissionRequest", {})
-                if (
-                    event["type"] == "permission.requested"
-                    and request.get("kind") == "custom-tool"
-                    and request.get("toolName") == "checkpoint_sources"
-                ):
-                    try:
-                        self.custom_tool_arguments(project_id, request)
-                        from proscenium.sources.common import git
-
-                        head = (
-                            git(
-                                Path(self.services.registry.get(project_id)["path"]),
-                                "rev-parse",
-                                "--verify",
-                                "HEAD",
-                                required=False,
-                            )
-                            .decode()
-                            .strip()
-                            or None
-                        )
-                        checkpoint_head = {"verified": True, "head": head}
-                    except DomainError:
-                        pass
-                    break
-            with self.services.registry.project_store(project_id).transaction() as tx:
-                current_send = any(not task.done() for task in self.sends.values()) or any(
-                    s.get("state") in {"dispatching", "outcome_uncertain"}
-                    for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
-                )
-                uncertain_stop_ids = [
-                    r["request_id"]
-                    for r in tx.all("requests")
-                    if r["submission"]["type"] == "stop"
-                    and r["receipt"]["state"] == "outcome_uncertain"
-                    and tx.require("copilot.stops", r["request_id"])["phase"] == "outcome_uncertain"
-                ]
-                uncertain_stop_id = uncertain_stop_ids[0] if len(uncertain_stop_ids) == 1 else None
-                owner = self.callback_owners.get(project_id)
-                if owner and not owner.retired:
-                    self.read_wait_recovery[project_id] = {
-                        "session_id": session.session_id,
-                        "departed_process": departed,
-                        "callback_generation": owner.generation,
-                        "activity_sequence": owner.activity_sequence,
-                        "proofs": probe_read_wait(
-                            self.state,
-                            tx,
-                            session.session_id,
-                            raw_history,
-                            {
-                                "departed": departed,
-                                "prior_invocations": prior_invocations,
-                                "current_send": current_send,
-                                "uncertain_stop_id": uncertain_stop_id,
-                                "validated_targets": validated_targets,
-                                "pending_empty": {
-                                    "items",
-                                    "steeringMessages",
-                                    "inFlightSteeringCount",
-                                }
-                                <= pending.keys()
-                                and empty(pending),
-                                "permission_fingerprints": {
-                                    e["id"]: hashlib.sha256(
-                                        canonical(e["data"]["permissionRequest"])
-                                    ).hexdigest()
-                                    for e in history
-                                    if e["type"] == "permission.requested"
-                                },
-                            },
-                        ),
-                    }
-                self.state.observe_native_denials(
-                    tx,
-                    session.session_id,
-                    raw_history,
-                    {
-                        **departed,
-                        "invocation_ids": prior_invocations,
-                        "pending_empty": True,
-                        "current_send": current_send,
-                        "permission_fingerprints": {
-                            e["id"]: hashlib.sha256(
-                                canonical(e["data"]["permissionRequest"])
-                            ).hexdigest()
-                            for e in history
-                            if e["type"] == "permission.requested"
-                        },
-                    },
-                )
-                self.state.interrupt_uninvoked_checkpoint(
-                    tx,
-                    session.session_id,
-                    raw_history,
-                    {
-                        **departed,
-                        "invocation_ids": prior_invocations,
-                        "pending_empty": True,
-                        "current_send": current_send,
-                        "checkpoint_head": checkpoint_head,
-                        "permission_fingerprints": {
-                            e["id"]: hashlib.sha256(
-                                canonical(e["data"]["permissionRequest"])
-                            ).hexdigest()
-                            for e in history
-                            if e["type"] == "permission.requested"
-                        },
-                    },
-                )
-                self.state.interrupt_coordinators(
-                    tx,
-                    session.session_id,
-                    history,
-                    {**departed, "invocation_ids": prior_invocations},
-                )
             if uncertain_stop_id:
                 await self.reconcile_cold_stop(project_id, session, uncertain_stop_id)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
@@ -1469,6 +1356,149 @@ class Copilot:
             "duplicate_correlations": len(duplicates),
         }
 
+    async def _recover_departed_session(
+        self,
+        project_id: str,
+        session: Any,
+        history: list[dict[str, Any]],
+        prior_invocations: list[str],
+        pending: dict[str, Any],
+        departed: dict[str, Any],
+    ) -> str | None:
+        raw_history = (
+            [wire(e) for e in await session.get_raw_events()]
+            if hasattr(session, "get_raw_events")
+            else []
+        )
+        validated_targets: dict[str, str] = {}
+        root = Path(self.services.registry.get(project_id)["path"])
+        for event in raw_history:
+            permission = event.get("data", {}).get("permissionRequest", {})
+            if event["type"] != "permission.requested" or permission.get("kind") != "read":
+                continue
+            starts = [
+                e
+                for e in raw_history
+                if e["type"] == "tool.execution_start"
+                and e.get("data", {}).get("toolCallId") == permission.get("toolCallId")
+            ]
+            if len(starts) != 1 or starts[0]["data"].get("toolName") != "rg":
+                continue
+            try:
+                targets, special = file_io(root, permission)
+                args = starts[0]["data"].get("arguments", {})
+                declared = {**permission, "path": args.get("paths")}
+                declared.pop("resolvedPath", None)
+                argument_targets, _ = file_io(root, declared)
+                if (
+                    not special
+                    and targets == argument_targets
+                    and len(targets) == 1
+                    and not targets[0].is_dir()
+                ):
+                    validated_targets[event["id"]] = str(targets[0])
+            except DomainError:
+                pass
+        checkpoint_head: dict[str, Any] = {"verified": False}
+        for event in raw_history:
+            request = event.get("data", {}).get("permissionRequest", {})
+            if (
+                event["type"] == "permission.requested"
+                and request.get("kind") == "custom-tool"
+                and request.get("toolName") == "checkpoint_sources"
+            ):
+                try:
+                    self.custom_tool_arguments(project_id, request)
+                    from proscenium.sources.common import git
+
+                    head = (
+                        git(
+                            Path(self.services.registry.get(project_id)["path"]),
+                            "rev-parse",
+                            "--verify",
+                            "HEAD",
+                            required=False,
+                        )
+                        .decode()
+                        .strip()
+                        or None
+                    )
+                    checkpoint_head = {"verified": True, "head": head}
+                except DomainError:
+                    pass
+                break
+        permission_fingerprints = {
+            e["id"]: hashlib.sha256(canonical(e["data"]["permissionRequest"])).hexdigest()
+            for e in history
+            if e["type"] == "permission.requested"
+        }
+        with self.services.registry.project_store(project_id).transaction() as tx:
+            current_send = any(not task.done() for task in self.sends.values()) or any(
+                s.get("state") in {"dispatching", "outcome_uncertain"}
+                for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
+            )
+            uncertain_stop_ids = [
+                r["request_id"]
+                for r in tx.all("requests")
+                if r["submission"]["type"] == "stop"
+                and r["receipt"]["state"] == "outcome_uncertain"
+                and tx.require("copilot.stops", r["request_id"])["phase"] == "outcome_uncertain"
+            ]
+            uncertain_stop_id = uncertain_stop_ids[0] if len(uncertain_stop_ids) == 1 else None
+            owner = self.callback_owners.get(project_id)
+            if owner and not owner.retired:
+                self.read_wait_recovery[project_id] = {
+                    "session_id": session.session_id,
+                    "departed_process": departed,
+                    "callback_generation": owner.generation,
+                    "activity_sequence": owner.activity_sequence,
+                    "proofs": probe_read_wait(
+                        self.state,
+                        tx,
+                        session.session_id,
+                        raw_history,
+                        {
+                            "departed": departed,
+                            "prior_invocations": prior_invocations,
+                            "current_send": current_send,
+                            "uncertain_stop_id": uncertain_stop_id,
+                            "validated_targets": validated_targets,
+                            "pending_empty": {
+                                "items",
+                                "steeringMessages",
+                                "inFlightSteeringCount",
+                            }
+                            <= pending.keys()
+                            and empty(pending),
+                            "permission_fingerprints": permission_fingerprints,
+                        },
+                    ),
+                }
+            departed_context = {
+                **departed,
+                "invocation_ids": prior_invocations,
+                "pending_empty": True,
+                "current_send": current_send,
+                "permission_fingerprints": permission_fingerprints,
+            }
+            self.state.observe_native_denials(tx, session.session_id, raw_history, departed_context)
+            self.state.interrupt_uninvoked_checkpoint(
+                tx,
+                session.session_id,
+                raw_history,
+                {**departed_context, "checkpoint_head": checkpoint_head},
+            )
+            self.state.interrupt_departed_custom_tools(
+                tx, session.session_id, raw_history, departed_context
+            )
+            self.state.interrupt_coordinators(
+                tx,
+                session.session_id,
+                history,
+                {**departed, "invocation_ids": prior_invocations},
+            )
+        return uncertain_stop_id
+
     async def reconcile_cold_stop(self, project_id: str, session: Any, stop_id: str) -> None:
         sid = session.session_id
         recovery = self.read_wait_recovery.get(project_id)
@@ -1487,7 +1517,11 @@ class Copilot:
         observation_id = key(epoch, stop_id)
         store = self.services.registry.project_store(project_id)
         with store.transaction() as tx:
-            if tx.get("copilot.cold_stop_observations", observation_id, required=False):
+            existing = tx.get("copilot.cold_stop_observations", observation_id, required=False)
+            if existing and (
+                existing.get("status") == "applied"
+                or bool((existing.get("snapshot") or {}).get("rpc"))
+            ):
                 return  # Non-idempotent pause is never retried in this owner epoch.
             phase = tx.require("copilot.stops", stop_id)
             stop = tx.require("requests", stop_id)
@@ -1525,7 +1559,7 @@ class Copilot:
                     ("copilot.permissions", key(session.session_id, proof["native_id"])),
                 )
             ]
-            tx.put("copilot.cold_stop_observations", observation_id, observation)
+            save(tx, "copilot.cold_stop_observations", observation_id, observation)
 
         def owned() -> bool:
             if (

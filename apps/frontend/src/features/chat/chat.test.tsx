@@ -9,7 +9,7 @@ import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation } from "./Conversation";
 import { OutputCards } from "./OutputCards";
-import { awaitResume } from "./resume";
+import { awaitResume, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowQueueHold, type ChatPanelProps } from "./ChatPanel";
@@ -327,4 +327,17 @@ test("Conversation collapses consecutive routine completed tools and names speci
   assert.match(markup, /2 tool steps completed/);
   assert.match(markup, /<strong>Specialist<\/strong><span>shot-retry<\/span>/);
   assert.doesNotMatch(markup, /Tool: task/);
+});
+
+test("resumableWork offers stopped work only until newer work runs and ChatPanel guards uncertain Stop", () => {
+  const idle = { ...snapshot(), active_work: null };
+  const oldStopped = event(10, "work.state_changed", { work_id: "work-old", project_id: "project", state: "stopped", state_revision: 4 });
+  assert.deepEqual(resumableWork(idle, [oldStopped]).map(w => w.work_id), ["work-old"]);
+  const newerCompleted = event(20, "work.state_changed", { work_id: "work-new", project_id: "project", state: "completed", state_revision: 2 });
+  assert.deepEqual(resumableWork(idle, [oldStopped, newerCompleted]), []);
+
+  const uncertainReq = { ...request("stop-1", "2026-11-17T10:00:00Z", "", "stop"), receipt: { state: "outcome_uncertain", state_revision: 1 } } as RequestRecord;
+  const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true), requests: [uncertainReq] });
+  assert.match(markup, /<option value="continue_work" disabled="">Continue original work<\/option>/);
+  assert.match(markup, /<option value="release_held_queue" disabled="">Release held queue<\/option>/);
 });
