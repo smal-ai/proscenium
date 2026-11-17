@@ -56,8 +56,10 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
                 outputs = schemas.get(source, {}).get("output", [])
                 if type(slot) is not int or not 0 <= slot < len(outputs):
                     raise DomainError("invalid_request", message="Invalid graph link")
-                if isinstance(spec[0], str) and not (
-                    set(spec[0].split(",")) & {outputs[slot], "*"}
+                if (
+                    isinstance(spec[0], str)
+                    and outputs[slot] != "*"
+                    and not (set(spec[0].split(",")) & {outputs[slot], "*"})
                 ):
                     raise DomainError("invalid_request", message="Graph link type mismatch")
             elif isinstance(spec[0], list) and value not in spec[0]:
@@ -71,7 +73,12 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
                     or (kind == "FLOAT" and type(value) in {int, float} and math.isfinite(value))
                     or (kind == "BOOLEAN" and type(value) is bool)
                     or (kind == "STRING" and isinstance(value, str))
-                    or (kind == "COMBO" and len(spec) > 1 and value in spec[1].get("options", []))
+                    or (
+                        kind == "COMBO"
+                        and len(spec) > 1
+                        and isinstance(spec[1], dict)
+                        and value in spec[1].get("options", [])
+                    )
                 )
                 if not valid:
                     raise DomainError("invalid_request", message="Invalid graph input type")
@@ -80,7 +87,14 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
                     value < bounds.get("min", value) or value > bounds.get("max", value)
                 ):
                     raise DomainError("invalid_request", message="Graph input outside node bounds")
-            if name in {"unet_name", "ckpt_name", "clip_name", "vae_name", "lora_name"}:
+            if name in {
+                "unet_name",
+                "ckpt_name",
+                "clip_name",
+                "vae_name",
+                "lora_name",
+                "bg_removal_name",
+            }:
                 selected_models.add(value)
     if set(models) != selected_models or not any(s.get("output_node") for s in schemas.values()):
         raise DomainError("invalid_request", message="Model manifest/output graph mismatch")

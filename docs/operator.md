@@ -61,13 +61,16 @@ ComfyUI and LM Studio remain independently installed and operated. Proscenium
 does not start, stop, upgrade, unload or clear their queues. Existing media and
 feedback remain accessible when a configured service is unavailable.
 
-| Image profile | Inputs |
-| --- | --- |
-| `comfy-image-1` | FLUX.2 Klein graph and configured UNet/encoder/VAE. |
-| `comfy-sd-turbo-img2img-1` | Pinned SD-Turbo F32 checkpoint and one exact 512×512 reference. |
-| `comfy-sd-turbo-img2img-fp16-1` | Pinned separately prepared FP16 derivative and one exact 512×512 reference. |
+| Profile | Capability | Inputs |
+| --- | --- | --- |
+| `comfy-image-1` | `image` | FLUX.2 Klein graph and configured UNet/encoder/VAE. |
+| `comfy-sd-turbo-img2img-1` | `image` | Pinned SD-Turbo F32 checkpoint and one exact 512×512 reference. |
+| `comfy-sd-turbo-img2img-fp16-1` | `image` | Pinned separately prepared FP16 derivative and one exact 512×512 reference. |
+| `budget3d-idol-turbo-1` | `image_to_3d` | Default 5-step Budget3D-Idol-Turbo graph (`budget3d_idol_turbo.safetensors`, `dino_v3_vit_h.safetensors`, `flux2-vae.safetensors`, `idol_vae_decoder_fp32.safetensors`, `birefnet.safetensors`) with `SplatToMesh` → `SaveGLB`. |
+| `budget3d-idol-1` | `image_to_3d` | 50-step guided Budget3D-Idol graph (`budget3d_idol.safetensors` + shared encoders/decoders) with `SplatToMesh` → `SaveGLB`. |
+| `hunyuan3d-native-2.0-1` | `image_to_3d` | Legacy pinned Hunyuan3D 2.0 FP16 checkpoint and untextured `VoxelToMesh` → `SaveGLB`. |
 
-For example, select an explicit FLUX.2 Klein 4B recipe when a ComfyUI server hosts multiple checkpoints, or select an already prepared SD-Turbo FP16 profile:
+For example, select explicit FLUX.2 Klein 4B and Budget3D-Idol-Turbo recipes on `local-comfy`, or select an already prepared SD-Turbo FP16 profile:
 
 ```json
 {
@@ -77,10 +80,20 @@ For example, select an explicit FLUX.2 Klein 4B recipe when a ComfyUI server hos
       "unet": "flux-2-klein-4b.safetensors",
       "clip": "qwen_3_4b.safetensors",
       "vae": "flux2-vae.safetensors",
-      "width": 512,
-      "height": 512,
+      "width": 1920,
+      "height": 1088,
       "steps": 4,
-      "max_pixels": 1048576
+      "max_pixels": 2088960
+    }
+  },
+  "mesh_recipes": {
+    "local-comfy": {
+      "profile_revision": "budget3d-idol-turbo-1",
+      "budget": 1.0,
+      "mode": "synthetic",
+      "steps": 5,
+      "num_gaussians": 262144,
+      "mesh_resolution": 384
     }
   }
 }
@@ -92,10 +105,13 @@ For example, select an explicit FLUX.2 Klein 4B recipe when a ComfyUI server hos
 
 The required checkpoint hashes and graphs are defined in
 `apps/backend/src/proscenium/providers/`. FLUX.2 Klein reference conditioning scales
-input images through `ImageScaleToTotalPixels` (`resolution_steps: 16`, capped at 1 MP)
-and uses tiled VAE encode/decode when available in ComfyUI `/object_info`; corrupted
-scanline or noise rasters are rejected as `corrupt_provider_output`. Add `image_to_3d`
-to the Comfy provider's capabilities when the Hunyuan model/nodes are installed. New
+input images through `ImageScaleToTotalPixels` (`resolution_steps: 16`, capped at 1 MP),
+inserts `VAEComputeDtype` (`bf16`) when advertised in ComfyUI `/object_info`, and uses
+tiled VAE encode/decode only above 1 MP (`1,048,576` pixels); corrupted scanline, noise,
+all-zero or multi-quadrant zeroed rasters are rejected as `corrupt_provider_output`. Add `image_to_3d`
+to the Comfy provider's capabilities when the `ComfyUI-Budget3D` nodes and Budget3D/Idol
+weights (or legacy Hunyuan weights under `mesh_profiles`) are installed; `SplatToMesh`
+extracts vertex-coloured `.glb` geometry from the decoded 3D Gaussian splat. New
 requests freeze the profile, endpoint, graph and input hashes. Configuration changes do
 not reinterpret admitted jobs. The default attempt budget is three per human task and
 target.

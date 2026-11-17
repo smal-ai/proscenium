@@ -39,6 +39,37 @@ CHARGEABLE_MCP_TOOLS = frozenset({"create_generation", "generate_3d", "generate_
 CONTINUATION_TEXT = "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
 
 
+def is_consequential_shell(command_text: str) -> bool:
+    """Recognise explicit operations, not authoring prose such as camera push-ins.
+
+    This is the pragmatic owner policy, not a shell/interpreter sandbox. Keep
+    command signatures visible inside subprocess/os.system payloads as well.
+    """
+    return bool(
+        re.search(
+            r"\bgit\b(?:\s+-\S+(?:\s+\S+)?)*\s+push\b"
+            r"|\bgh\s+(?:pr|release|repo|gist)\s+(?:create|edit|merge|upload|delete)\b"
+            r"|\b(?:scp|sftp|rsync)\b"
+            r"|\b(?:sudo|su|pkexec|systemctl)\b"
+            r"|\bservice\s+(?:--status-all|\S+\s+(?:start|stop|restart|reload|force-reload|try-restart|condrestart|status))\b"
+            r"|\b(?:pip3?|pipx)\s+(?:install|uninstall)\b"
+            r"|\buv\s+(?:pip\s+install|tool\s+install|add|self\s+update)\b"
+            r"|\b(?:npm|pnpm|yarn|bun)\s+(?:i|install|add|update|upgrade|publish)\b"
+            r"|\b(?:apt|apt-get|dnf|yum|apk|zypper)\s+(?:install|upgrade|dist-upgrade|remove|purge)\b"
+            r"|\bpacman\s+-[SU]"
+            r"|\b(?:cargo|gem|go)\s+install\b"
+            r"|\bbrew\s+(?:install|upgrade|reinstall)\b"
+            r"|\bmcp-for-blender\b[^\n;|&]*\b(?:install-addon|setup|update)\b"
+            r"|\bgit\b(?:\s+-\S+(?:\s+\S+)?)*\s+(?:reset\s+--hard|clean\s+-[a-zA-Z]*[fd]"
+            r"|checkout\s+--\s+\.|restore\s+--worktree)"
+            r"|\brm\s+(?:-[a-zA-Z]*[rf]|--recursive\b.*--force\b|--force\b.*--recursive\b)"
+            r"|\bcurl\b[^\n;|&]*(?:--upload-file|--data\S*|-[dTF]\b|-X\s*(?:POST|PUT|DELETE|PATCH))"
+            r"|\bwget\b[^\n;|&]*--post-(?:data|file)",
+            command_text,
+        )
+    )
+
+
 @dataclass
 class CallbackOwner:
     """One exact SDK callback registration, including cold resumes of the same ID."""
@@ -2008,6 +2039,17 @@ class Copilot:
         ):
             return reply(False, "host")
 
+        shell_commands = []
+        if request.get("kind") == "shell":
+            shell_commands.append(request["fullCommandText"])
+            segments = request.get("commandSegments")
+            if isinstance(segments, list):
+                shell_commands.extend(
+                    segment["fullCommandText"]
+                    for segment in segments
+                    if isinstance(segment, dict) and isinstance(segment.get("fullCommandText"), str)
+                )
+
         text = canonical(request).decode()
         # This is the owner's pragmatic tool policy, not an OS/network sandbox. Shell remains enabled.
         denied = (
@@ -2019,13 +2061,10 @@ class Copilot:
             )
         )
         consequential = (
-            True
-            if is_io
+            is_io
             or (request.get("kind") == "mcp" and request.get("toolName") in CHARGEABLE_MCP_TOOLS)
-            else re.search(
-                r"(?i)(\b(push|purchase|install|upgrade|sudo|scp)\b|reset\s+--hard|rm\s+-[rf]|curl\s+.*(?:--upload-file|--data|-[dT]|-X\s*(?:POST|PUT|DELETE)))",
-                request.get("fullCommandText", "") if request.get("kind") == "shell" else text,
-            )
+            or any(is_consequential_shell(command) for command in shell_commands)
+            or (request.get("kind") in {"url", "mcp"} and re.search(r"(?i)\bpurchase\b", text))
         )
         if denied:
             return reply(

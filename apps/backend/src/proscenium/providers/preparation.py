@@ -10,7 +10,7 @@ import httpx
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
-from proscenium.providers import klein, sd_turbo, sd_turbo_fp16
+from proscenium.providers import budget3d, klein, sd_turbo, sd_turbo_fp16
 from proscenium.providers.comfy import endpoint
 from proscenium.providers.plugins import plugin
 from proscenium.providers.targets import _request_context, resolve_target
@@ -19,6 +19,37 @@ from proscenium.sources.common import active, admitted, binding, replay, sha
 AMBIGUOUS = "Multiple compatible image model tuples exist; configure provider_options.image_recipes"
 UNAVAILABLE = "Image recipe nodes or models are unavailable"
 MAX_CATALOG_BYTES = 16 * 1024**2
+TILE_THRESHOLD_PIXELS = 1_048_576
+
+
+def supports_bf16_vae(catalog: dict[str, Any] | None) -> bool:
+    if not catalog or not isinstance(catalog.get("VAEComputeDtype"), dict):
+        return False
+    node = catalog["VAEComputeDtype"]
+    required = node.get("input", {}).get("required", {})
+    outputs = node.get("output", [])
+    if set(required) != {"vae", "dtype"} or not outputs or outputs[0] not in {"VAE", "*"}:
+        return False
+    vae_spec = required.get("vae")
+    if (
+        not isinstance(vae_spec, list)
+        or not vae_spec
+        or not isinstance(vae_spec[0], str)
+        or not (set(vae_spec[0].split(",")) & {"VAE", "*"})
+    ):
+        return False
+    dtype_spec = required.get("dtype")
+    if not isinstance(dtype_spec, list) or not dtype_spec:
+        return False
+    if isinstance(dtype_spec[0], list):
+        return "bf16" in dtype_spec[0]
+    if dtype_spec[0] == "COMBO":
+        return (
+            len(dtype_spec) > 1
+            and isinstance(dtype_spec[1], dict)
+            and "bf16" in dtype_spec[1].get("options", [])
+        )
+    return dtype_spec[0] in {"STRING", "*"}
 
 
 def validate_recipes(options: dict[str, Any]) -> None:
@@ -61,6 +92,41 @@ def validate_recipes(options: dict[str, Any]) -> None:
         ):
             raise ValueError("SD-Turbo image recipe must use the pinned checkpoint")
 
+    mesh_profiles = options.get("mesh_profiles", {})
+    if not isinstance(mesh_profiles, dict):
+        raise ValueError("mesh_profiles must map provider IDs to installed mesh profiles")
+    for identity, revision in mesh_profiles.items():
+        validate("Id", identity)
+        if not isinstance(revision, str):
+            raise ValueError("Mesh profile revision must be a string")
+        plugin("image_to_3d", revision)
+    mesh_recipes = options.get("mesh_recipes", {})
+    if not isinstance(mesh_recipes, dict):
+        raise ValueError("mesh_recipes must map provider IDs to mesh recipe objects")
+    for identity, recipe in mesh_recipes.items():
+        validate("Id", identity)
+        if not isinstance(recipe, dict):
+            raise ValueError("Mesh recipe must be an object")
+        revision = recipe.get("profile_revision")
+        if not isinstance(revision, str) or revision != mesh_profiles.get(identity, revision):
+            raise ValueError("Mesh recipe profile_revision must agree with mesh_profiles")
+        plugin("image_to_3d", revision)
+        if revision == "hunyuan3d-native-2.0-1":
+            if set(recipe) != {"profile_revision"}:
+                raise ValueError("Hunyuan mesh recipe accepts profile_revision only")
+            continue
+        allowed_mesh = {
+            "profile_revision",
+            "budget",
+            "mode",
+            "steps",
+            "num_gaussians",
+            "mesh_resolution",
+        }
+        if set(recipe) - allowed_mesh:
+            raise ValueError("Unknown mesh recipe fields")
+        budget3d.recipe_graph("reference", revision, recipe)
+
 
 def bounded_get(provider: Any, service: dict[str, Any], path: str) -> dict[str, Any]:
     # Stream to bound both transfer and JSON allocation. Never follow a redirect.
@@ -94,17 +160,26 @@ def workflow(
                 "Selected image profile requires one exact 512x512 reference",
             )
         return (sd_turbo if revision == sd_turbo.REVISION else sd_turbo_fp16).graph(reference)
+    width = recipe.get("width", 512)
+    height = recipe.get("height", 512)
     return klein.graph(
         unet=recipe["unet"],
         clip=recipe["clip"],
         vae=recipe["vae"],
-        width=recipe.get("width", 512),
-        height=recipe.get("height", 512),
+        width=width,
+        height=height,
         steps=recipe.get("steps", 4),
         reference_artifact_id=reference,
-        tiled_vae=bool(catalog and "VAEDecodeTiled" in catalog and "VAEEncodeTiled" in catalog),
+        tiled_vae=bool(
+            width * height > TILE_THRESHOLD_PIXELS
+            and catalog
+            and "VAEDecodeTiled" in catalog
+            and "VAEEncodeTiled" in catalog
+        ),
+        vae_dtype="bf16" if supports_bf16_vae(catalog) else None,
         reference_megapixels=min(
-            1.0, max(0.01, round(recipe.get("max_pixels", 1_048_576) / 1_000_000, 4))
+            1.0,
+            max(0.01, round(recipe.get("max_pixels", TILE_THRESHOLD_PIXELS) / 1_000_000, 4)),
         ),
     )
 

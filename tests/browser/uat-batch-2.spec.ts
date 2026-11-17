@@ -1,6 +1,92 @@
 import { expect, test } from "@playwright/test";
-import { base, job, projectId, StudioFixture, work } from "./studio-fixture";
-import type { ShotPlan } from "../../apps/frontend/src/api";
+import { base, job, projectId, request, StudioFixture, work } from "./studio-fixture";
+import type { Decision, DecisionAnswer, ShotPlan } from "../../apps/frontend/src/api";
+
+test("pending shell Decision stays above Composer with a long bottom-scrolled Conversation", async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work("awaiting_user");
+  studio.requests = Array.from({ length: 40 }, (_, index) => request(`long-${index}`, `Shot ${index}: ${"Describe the relay installation and its camera movement. ".repeat(30)}`));
+  const command = "git push origin main";
+  const prompt = JSON.stringify({ canOfferSessionApproval: true, commandSegments: [{ fullCommandText: command }], fullCommandText: command, kind: "shell" });
+  const decision: Decision = { schema_version: "1.0", project_id: projectId, decision_id: "permission", work_id: "work", kind: "permission", state: "pending", state_revision: 3, fingerprint: "b".repeat(64), prompt, options: ["approve_once", "decline"] };
+  studio.snapshot.pending_decisions = [decision];
+  await studio.install({ savedLayout: true });
+  let answer: DecisionAnswer | null = null;
+  await page.route(`**${base}/decisions/permission/answer`, async route => {
+    answer = route.request().postDataJSON() as DecisionAnswer;
+    studio.snapshot.pending_decisions = [];
+    await route.fulfill({ json: { schema_version: "1.0", operation_id: answer.operation_id, resource_id: decision.decision_id, state: "updated", state_revision: 4, replayed: false } });
+  });
+  await studio.open(); await studio.ready();
+  const scroll = page.locator(".chat-scroll");
+  await expect(page.locator(".conversation .user-message")).toHaveCount(40);
+  await scroll.evaluate(element => { element.scrollTop = element.scrollHeight; element.dispatchEvent(new Event("scroll")); });
+  await expect.poll(() => scroll.evaluate(element => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(3);
+  const recovery = page.locator(".chat-recovery");
+  const card = recovery.locator(".decision-card");
+  await expect(card).toBeInViewport({ ratio: 1 });
+  await expect(card.getByRole("heading", { name: "Approve shell command?" })).toBeVisible();
+  await expect(card.locator(":scope > .decision-code")).toHaveText(command);
+  await expect(card.getByText(prompt, { exact: true })).toBeHidden();
+  const details = card.locator(".decision-details");
+  await expect(details).not.toHaveAttribute("open", "");
+  await details.locator("summary").click();
+  await expect(details).toContainText(prompt);
+  await expect(details).toContainText("Exact revision 3 · Work work");
+  await expect(details.locator(".fingerprint")).toHaveText(decision.fingerprint);
+  await details.locator("summary").click();
+  expect(await recovery.evaluate(element => element.nextElementSibling?.classList.contains("composer"))).toBe(true);
+  const composer = page.locator(".composer");
+  await expect(composer).toBeInViewport({ ratio: 1 });
+  const cardBox = (await card.boundingBox())!, composerBox = (await composer.boundingBox())!;
+  expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(composerBox.y);
+  expect(composerBox.y + composerBox.height).toBeLessThanOrEqual(1080);
+  expect(await recovery.evaluate(element => parseFloat(getComputedStyle(element).maxHeight))).toBeCloseTo(453.6, 1);
+  await card.getByRole("button", { name: "Approve once", exact: true }).click();
+  await expect(card).toHaveCount(0);
+  expect(answer).toMatchObject({ action: "approve_once", expected_revision: 3, fingerprint: decision.fingerprint });
+  studio.assertHermetic();
+});
+
+test("multiple large Decisions share bounded recovery space without hiding Composer", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.pending_decisions = Array.from({ length: 5 }, (_, index) => ({ schema_version: "1.0", project_id: projectId, decision_id: `permission-${index}`, work_id: "work", kind: "permission", state: "pending", state_revision: 1, fingerprint: "a".repeat(64), prompt: JSON.stringify({ kind: "shell", fullCommandText: `git push origin branch-${index}\n${"# Exact scope and destination\n".repeat(100)}` }), options: ["approve_once", "decline"] }));
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const recovery = page.locator(".chat-recovery");
+  await expect(recovery.locator(".decision-card")).toHaveCount(5);
+  const geometry = await recovery.evaluate(element => ({ height: element.getBoundingClientRect().height, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight, overflow: getComputedStyle(element).overflowY }));
+  expect(geometry.height).toBeLessThanOrEqual(1080 * 0.42);
+  expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight);
+  expect(geometry.overflow).toBe("auto");
+  for (const code of await recovery.locator(":scope > .decision-card > .decision-code").all()) expect((await code.boundingBox())!.height).toBeLessThanOrEqual(120);
+  await expect(page.locator(".composer")).toBeInViewport({ ratio: 1 });
+  await recovery.evaluate(element => { element.scrollTop = element.scrollHeight; });
+  await expect(recovery.locator(".decision-card").last().getByRole("button", { name: "Approve once" })).toBeInViewport({ ratio: 1 });
+  studio.assertHermetic();
+});
+
+for (const [kind, prompt, heading, detail] of [
+  ["permission", JSON.stringify({ kind: "mcp", serverName: "blender", toolName: "create_generation", toolTitle: "Create generation" }), "Approve MCP tool call?", "blender · create_generation · Create generation"],
+  ["permission", JSON.stringify({ kind: "read", path: "storyboards/plan.json" }), "Approve file access?", "storyboards/plan.json"],
+  ["permission", JSON.stringify({ kind: "write", fileName: "storyboards/plan.json" }), "Approve file access?", "storyboards/plan.json"],
+  ["permission", "Confirm this exact operation", "", "Confirm this exact operation"],
+  ["permission", "null", "", "null"],
+  ["permission", "{invalid JSON", "", "{invalid JSON"],
+  ["user_input", "Which camera angle?", "", "Which camera angle?"],
+  ["generation_budget", "Extend this task?", "", "Extend this task?"],
+] as const) {
+  test(`Decision formats ${kind} ${prompt} without exposing metadata by default`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.pending_decisions = [{ schema_version: "1.0", project_id: projectId, decision_id: "decision", work_id: "work", kind, state: "pending", state_revision: 1, fingerprint: "a".repeat(64), prompt, options: [] }];
+    await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+    const card = page.locator(".chat-recovery .decision-card");
+    if (heading) await expect(card.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(card.getByText(detail, { exact: true })).toBeVisible();
+    await expect(card.locator(".fingerprint")).toBeHidden();
+    studio.assertHermetic();
+  });
+}
 
 test("profile editing and deletion remain available when live status is offline", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);

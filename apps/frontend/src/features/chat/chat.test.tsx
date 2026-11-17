@@ -264,10 +264,16 @@ test("native children survive disconnect and parent pause until terminal evidenc
   assert.equal(nativeAgents(null, [started, secondSession]).length, 2);
 });
 
-test("Conversation suppresses tool-only bubbles, sorts UTC and offers neutral starters", () => {
-  const events = [event(2, "assistant.completed", { message_id: "late", text: "later reply" }, "2026-11-15T10:00:01+00:00"), event(1, "assistant.completed", { message_id: "early", text: "earlier reply" }, "2026-11-15T10:00:00Z"), event(3, "assistant.completed", { message_id: "blank", text: "  \n" })];
+test("Conversation suppresses tool-only bubbles, usage lines, sorts UTC and offers neutral starters", () => {
+  const events = [
+    event(2, "assistant.completed", { message_id: "late", text: "later reply" }, "2026-11-15T10:00:01+00:00"),
+    event(1, "assistant.completed", { message_id: "early", text: "earlier reply" }, "2026-11-15T10:00:00Z"),
+    event(3, "assistant.completed", { message_id: "blank", text: "  \n" }),
+    event(4, "usage.recorded", { model_id: "gpt-5.4", input_tokens: 100, output_tokens: 50, reported_cost: 1, cost_unit: null }),
+  ];
   const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={events} onRefresh={async () => {}} onError={() => {}} />);
   assert.equal((markup.match(/class="message assistant-message"/g) ?? []).length, 2);
+  assert.doesNotMatch(markup, /premium credit|usage-credit/);
   assert.ok(markup.indexOf("earlier reply") < markup.indexOf("later reply"));
   const empty = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={[]} onRefresh={async () => {}} onError={() => {}} onStarter={() => {}} />);
   assert.match(empty, /Plan a storyboard/); assert.match(empty, /Create an asset/); assert.match(empty, /Build a scene/);

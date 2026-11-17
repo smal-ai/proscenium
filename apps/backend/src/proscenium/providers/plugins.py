@@ -8,7 +8,7 @@ from typing import Any, Protocol
 from PIL import Image
 
 from proscenium.api.errors import DomainError
-from proscenium.providers import hunyuan, sd_turbo, sd_turbo_fp16
+from proscenium.providers import budget3d, hunyuan, sd_turbo, sd_turbo_fp16
 from proscenium.providers.comfy import bind_graph, preflight
 from proscenium.providers.mesh import inspect_glb_bytes
 
@@ -80,20 +80,44 @@ class ImagePlugin:
             width, height = rgb.size
             if width >= 64 and height >= 64:
                 px = rgb.tobytes()
+                if px.count(0) == len(px):
+                    raise DomainError(
+                        "corrupt_provider_output",
+                        422,
+                        "Provider returned a corrupted scanline or noise image",
+                    )
                 stride = width * 3
+                mid_x, mid_y = width // 2, height // 2
+                quad_total = [0, 0, 0, 0]
+                quad_zero = [0, 0, 0, 0]
                 step_y = max(1, height // 128)
                 step_x = max(1, width // 128)
                 h_diff = v_diff = count = 0
                 for y in range(0, height - 1, step_y):
                     row = y * stride
                     next_row = (y + 1) * stride
+                    qy = 0 if y < mid_y else 2
                     for x in range(0, width - 1, step_x):
                         i = row + x * 3
                         j = i + 3
                         k = next_row + x * 3
+                        q = qy + (0 if x < mid_x else 1)
+                        quad_total[q] += 1
+                        if px[i] == 0 and px[i + 1] == 0 and px[i + 2] == 0:
+                            quad_zero[q] += 1
                         h_diff += sum(abs(px[i + c] - px[j + c]) for c in range(3))
                         v_diff += sum(abs(px[i + c] - px[k + c]) for c in range(3))
                         count += 3
+                dead_quadrants = sum(
+                    total > 0 and zero / total >= 0.995
+                    for zero, total in zip(quad_zero, quad_total)
+                )
+                if dead_quadrants >= 2:
+                    raise DomainError(
+                        "corrupt_provider_output",
+                        422,
+                        "Provider returned a corrupted scanline or noise image",
+                    )
                 if count:
                     mean_h, mean_v = h_diff / count, v_diff / count
                     if mean_v >= 20.0 or (mean_v >= 10.0 and mean_v / max(mean_h, 0.01) >= 3.0):
@@ -103,6 +127,50 @@ class ImagePlugin:
                             "Provider returned a corrupted scanline or noise image",
                         )
         return {"sha256_verified_during_registration": True}
+
+
+class Budget3DPlugin:
+    capability = "image_to_3d"
+    revision = budget3d.TURBO_REVISION
+    job_kind = "mesh_generation"
+    output_format = GLB
+    maximum_output_bytes = 256 * 1024**2
+    turbo = True
+    expected_model_hashes = budget3d.TURBO_HASHES
+
+    def bind_graph(self, workflow, prompt, seed, references, models):
+        expected = budget3d.models(turbo=self.turbo)
+        if (
+            len(references) != 1
+            or len(models) != len(expected)
+            or set(models) != set(expected)
+            or seed is None
+        ):
+            raise DomainError(
+                "invalid_request",
+                message="One conditioning image and exact Budget3D models required",
+            )
+        identity = next(iter(references))
+        # Prompt text is provenance; Budget3D conditions on the segmented object image.
+        try:
+            return budget3d.bind(workflow, identity, references[identity], seed, turbo=self.turbo)
+        except ValueError as exc:
+            raise DomainError("invalid_request", message=str(exc)) from exc
+
+    def preflight(self, graph, catalog, models):
+        preflight(graph, catalog, models)
+
+    def output_descriptors(self, history):
+        return budget3d.output_files(history)
+
+    def inspect_output(self, data, maximum_pixels):
+        return inspect_glb_bytes(data)
+
+
+class Budget3DIdolPlugin(Budget3DPlugin):
+    revision = budget3d.IDOL_REVISION
+    turbo = False
+    expected_model_hashes = budget3d.IDOL_HASHES
 
 
 class HunyuanPlugin:
@@ -176,7 +244,7 @@ class SDTurboFP16Img2ImgPlugin(SDTurboImg2ImgPlugin):
 # No model/request/graph field can register a plugin, nominate Python or choose a revision.
 PLUGINS: dict[str, GenerationCapabilityPlugin] = {
     "image": ImagePlugin(),
-    "image_to_3d": HunyuanPlugin(),
+    "image_to_3d": Budget3DPlugin(),
 }
 REGISTRY = MappingProxyType(PLUGINS)
 IMAGE_REVISIONS = MappingProxyType(
@@ -186,12 +254,21 @@ IMAGE_REVISIONS = MappingProxyType(
         sd_turbo_fp16.REVISION: SDTurboFP16Img2ImgPlugin(),
     }
 )
+MESH_REVISIONS = MappingProxyType(
+    {
+        budget3d.TURBO_REVISION: PLUGINS["image_to_3d"],
+        budget3d.IDOL_REVISION: Budget3DIdolPlugin(),
+        "hunyuan3d-native-2.0-1": HunyuanPlugin(),
+    }
+)
 
 
 def plugin(capability: str, revision: str | None = None) -> GenerationCapabilityPlugin:
     result = (
         IMAGE_REVISIONS.get(revision)
         if capability == "image" and revision is not None
+        else MESH_REVISIONS.get(revision)
+        if capability == "image_to_3d" and revision is not None
         else REGISTRY.get(capability)
     )
     if result is None or (revision is not None and revision != result.revision):

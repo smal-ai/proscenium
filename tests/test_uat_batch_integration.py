@@ -37,7 +37,7 @@ from proscenium.providers.bridge import register_provider_artifact
 from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.sources import Sources, closure_digest
 from proscenium.sources.common import git, sha
-from test_provider_klein_and_pump import add_tiled_nodes, raster
+from test_provider_klein_and_pump import add_tiled_nodes, add_vae_dtype_node, raster
 from test_request_targeting import add_version, context, plan
 from test_worker_capabilities_and_publication import PROJECT, SESSION
 from test_worker_capabilities_and_publication import publication as source_publication
@@ -665,6 +665,7 @@ def test_batch_two_klein_tool_loop_checkpoint_publication_and_private_recovery(
         }
     }
     add_tiled_nodes(rt.catalog)
+    add_vae_dtype_node(rt.catalog)
     reference = artifacts.promote(
         PROJECT,
         "wide-reference",
@@ -696,8 +697,14 @@ def test_batch_two_klein_tool_loop_checkpoint_publication_and_private_recovery(
             graph = json.loads(request.content)["prompt"]
             assert graph["reference_scale"]["inputs"]["resolution_steps"] == 16
             assert graph["reference_scale"]["inputs"]["megapixels"] == 1.0
-            assert graph["reference_encode"]["class_type"] == "VAEEncodeTiled"
-            assert graph["decode"]["class_type"] == "VAEDecodeTiled"
+            assert graph["vae_dtype"] == {
+                "class_type": "VAEComputeDtype",
+                "inputs": {"vae": ["vae", 0], "dtype": "bf16"},
+            }
+            assert graph["reference_encode"]["class_type"] == "VAEEncode"
+            assert graph["decode"]["class_type"] == "VAEDecode"
+            assert graph["reference_encode"]["inputs"]["vae"] == ["vae_dtype", 0]
+            assert graph["decode"]["inputs"]["vae"] == ["vae_dtype", 0]
             attempts.append(f"prompt-{len(attempts) + 1}")
             return httpx.Response(200, json={"prompt_id": attempts[-1]})
         if path.startswith("/history/prompt-"):

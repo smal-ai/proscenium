@@ -62,16 +62,16 @@ The **Target** picker above the Composer separates what you are viewing from wha
   - **Context:** Counts logical items in the next request (explicit target, reference versions, deduplicated images, object selections, annotations and approved findings), showing active uploads separately until ready.
   - **Agents:** Counts busy or uncertain product-native specialists (`subagent.*`), showing each specialist's task label, state, freshness and model without counting wrapper `task` calls.
 
-## Live output, usage, failures and retained media
+## Live output, failures and retained media
 
-- **Live following:** Conversation follows new requests, streamed replies and tool updates automatically, pauses when you scroll up and offers **Jump to latest**. Empty tool-only assistant turns do not create blank message bubbles.
+- **Live following:** Conversation follows new requests, streamed replies and tool updates automatically, pauses when you scroll up and offers **Jump to latest**. Empty tool-only assistant turns and `usage.recorded` telemetry events do not render inline rows in Conversation.
 - **Copilot status:** Anchored at the bottom right of the Assistant panel (Composer footer, Critic footer and bottom of the collapsed right rail), displaying **Sending…**, **Working…** (with live active tool, specialist or running-job step detail), **Needs your input**, **Paused**, **Stopping…**, **Needs recovery** or **Ready**, and marking disconnected states as reconnecting rather than assuming idle.
-- **Usage readout:** Reported usage renders as a dim, right-aligned monospace line. Legacy `assistant.usage.cost` from the pinned SDK represents premium-request usage and is labelled **premium credits** without currency or AI-credit conversion ([Copilot SDK 1.0.34 usage reference](https://github.com/github/copilot-sdk/blob/v1.0.34/docs/features/usage-and-billing.md#per-call-token-counts)).
 - **Actionable diagnostics:** Failed and uncertain tool calls expand their sanitised reason immediately while keeping technical IDs collapsed. Automatic policy rejections, owner declines, host holds, non-zero shell exit codes and structured schema/publication errors are distinguished explicitly.
 - **Retained outputs vs publication:** Registered images remain viewable and downloadable through authenticated artefact cards in Conversation and **Navigator → Assets → Retained outputs** even when catalogue publication fails (**Finished · publication blocked**). Clicking a retained image opens it directly in the Review workspace without fabricating a catalogue version, and selecting a published storyboard displays its ready `ShotPlan` panels in **Keyframes** mode. Standalone concept images are never labelled as 3D meshes.
 
 ## Stopping, holding and explicit Resume
 
+- **Pending owner Decisions:** Decision cards stay anchored above the Composer alongside **Resume Copilot**, independently of Conversation scrolling. Commands are readable, with original payloads and fingerprints available under **Technical details & fingerprint**. The recovery area scrolls when needed to keep the Composer visible.
 - **Queue holds:** When execution is genuinely fenced, paused or awaiting reconciliation (never during ordinary active execution), the Composer shows the hold reason before submission. Held Queue requests can be cancelled individually with **Cancel held request**.
 - **Stop vs Resume:** **Stop** cancels Copilot work through verified native barriers without stopping independent external jobs. After a restart, native abort or uncertain Stop, the **Resume Copilot** controls stay visible directly above the Composer, outside the scrollable Conversation. Choose a mode, then click **Resume**:
   - **Reconcile only:** Inspects native state and settles proven barriers without sending a prompt.

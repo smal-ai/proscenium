@@ -1,14 +1,19 @@
 .chat-scroll-content{display:flow-root}
 .chat-jump{align-self:center;flex-shrink:0;margin:0 0 8px;font-size:11px;color:#a1a1aa}
-.chat-recovery{flex-shrink:0;padding:0 13px 8px}
+.chat-recovery{flex-shrink:0;max-height:42vh;overflow:auto;padding:0 13px 8px}
 .chat-recovery:empty{display:none}
+.chat-recovery .decision-card{margin:0 0 6px;min-width:0;overflow-wrap:anywhere}
+.decision-code{max-height:120px;overflow:auto;padding:8px;margin:6px 0;border:1px solid var(--border);border-radius:5px;background:#141418;white-space:pre-wrap;overflow-wrap:anywhere}
+.decision-code code{font-size:10px}
+.decision-details{border-top:1px solid var(--border);margin:6px 0}
+.decision-details>summary{font-size:10px;padding:5px 0}
+.decision-details ul{margin:5px 0;padding-left:18px;font-size:10px}
 .chat-recovery .resume-card,.chat-recovery .retry-card{margin:0;padding:9px;gap:6px}
 .chat-recovery .retry-card{margin-top:6px}
 .chat-recovery h3,.chat-recovery p{font-size:11px}
 .resume-controls{display:flex;align-items:center;gap:8px}
 .resume-controls select{min-width:0;flex:1;font-size:11px}
 .resume-controls button{flex-shrink:0}
-.usage-credit{margin:8px 0 12px;text-align:right;color:#85858f;font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px;line-height:1.6}
 .composer-links{display:flex;gap:12px;margin:0 0 8px}
 .composer-links button{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:3px 7px;border:1px solid #363640;border-radius:12px;background:#202027;font-size:11px;color:#aaaab6;cursor:pointer}
 .composer-links button:hover:not(:disabled),.composer-links button[aria-expanded=true]{background:#343444;color:#f4f4f5;border-color:#777790}
