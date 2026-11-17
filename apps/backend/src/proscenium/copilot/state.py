@@ -294,6 +294,9 @@ class State:
                         },
                     )
                 elif kind == "steer":
+                    self.invalidate_work_completions(tx, work)
+                    if work.get("native_session_id"):
+                        save(tx, "copilot.idle", work["native_session_id"], {"idle": False})
                     self.work_state(
                         tx,
                         work_id,
@@ -377,6 +380,17 @@ class State:
             return tx.operation(
                 "request.cancel", body["operation_id"], {**body, "request_id": request_id}, effect
             )
+
+    def invalidate_work_completions(self, tx: Transaction, work: dict[str, Any]) -> None:
+        for req_id in [work["originating_request_id"], *work["directive_request_ids"]]:
+            existing = tx.get("copilot.completion", req_id, required=False)
+            if existing and (existing.get("candidate") or existing.get("public_terminal_message")):
+                save(
+                    tx,
+                    "copilot.completion",
+                    req_id,
+                    {**existing, "candidate": False, "public_terminal_message": False},
+                )
 
     def cancel_decisions(self, tx: Transaction, work_id: str) -> None:
         for stage in tx.all("copilot.permissions"):
@@ -570,6 +584,20 @@ class State:
                         request["receipt"]["state"],
                         native_message_id=data["messageId"],
                     )
+                    save(
+                        tx,
+                        "copilot.admitted_messages",
+                        request["request_id"],
+                        {
+                            "message_id": data["messageId"],
+                            "work_id": request["receipt"]["work_id"],
+                            "native_event_id": identity,
+                        },
+                    )
+                    if request["submission"]["type"] == "steer":
+                        self.invalidate_work_completions(
+                            tx, tx.require("work", request["receipt"]["work_id"])
+                        )
             binding = (
                 binding
                 or self.binding(tx, session_id, "message", data.get("originatingMessageId"))
@@ -987,11 +1015,27 @@ class State:
             if kind == "abort" and not agent:
                 work = tx.require("work", work_id)
                 last_delivery = tx.get("copilot.last_delivery", work_id, required=False)
+                work_requests = {work["originating_request_id"], *work["directive_request_ids"]}
+                current_delivery = bool(
+                    last_delivery
+                    and (
+                        last_delivery.get("delivery_id") == binding.get("delivery_id")
+                        or (
+                            last_delivery.get("delivery_id") in work["directive_request_ids"]
+                            and tx.get(
+                                "copilot.admitted_messages",
+                                last_delivery["delivery_id"],
+                                required=False,
+                            )
+                            is not None
+                            and binding.get("delivery_id") in work_requests
+                        )
+                    )
+                )
                 if (
                     work["native_session_id"] == session_id
                     and work["state"] in {"running", "awaiting_user"}
-                    and last_delivery
-                    and last_delivery.get("delivery_id") == binding.get("delivery_id")
+                    and current_delivery
                     and not self.control(tx)["fenced"]
                 ):
                     # An unsolicited native abort interrupts work, but is not a confirmed Stop

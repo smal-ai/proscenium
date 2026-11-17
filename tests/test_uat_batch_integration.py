@@ -936,3 +936,132 @@ def test_batch_two_klein_tool_loop_checkpoint_publication_and_private_recovery(
     assert manifest["files"]
     assert provider_calls.count(("POST", "/prompt")) == 2
     rt.provider.client.close()
+
+
+@pytest.mark.parametrize("second_steer", [False, True])
+def test_settle_completes_steered_work_across_mid_turn_and_new_turn_steers(journey, second_steer):
+    rt = journey
+    queue(rt)
+    rt.native.emit("r1-turn-start", "assistant.turn_start", "root")
+    rt.native.emit(
+        "r1-tool-msg",
+        "assistant.message",
+        "r1-turn-start",
+        messageId="msg-r1-tool",
+        originatingMessageId="message-1",
+        turnId="0",
+        content="",
+        toolRequests=[{"toolCallId": "tool-1"}],
+    )
+    ctx_s1 = context("context-s1", request_target={"kind": "project"}, execution_scope="default")
+    post(rt, "contexts", ctx_s1, 201)
+    post(
+        rt,
+        "requests",
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            request_id="S1",
+            type="steer",
+            text="Keep trusses dark",
+            context_id="context-s1",
+            target_work_id=rt.work_id,
+        ),
+        202,
+    )
+    # Admitted-but-unsent steer blocks premature completion.
+    asyncio.run(rt.copilot.settle(PROJECT, rt.native.session))
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("work", rt.work_id)["state"] == "running"
+
+    asyncio.run(rt.copilot.send(PROJECT, "S1"))
+    # Even if a pre-steer turn ends before S1's user.message is observed, settle() waits.
+    rt.native.emit(
+        "r1-pre-steer-reply",
+        "assistant.message",
+        "r1-turn-start",
+        messageId="msg-r1-pre",
+        originatingMessageId="message-1",
+        turnId="1",
+        content="Pre-steer reply",
+    )
+    rt.native.emit("r1-pre-steer-end", "assistant.turn_end", "r1-pre-steer-reply")
+    rt.native.emit("r1-pre-steer-idle", "session.idle", "r1-pre-steer-end")
+    asyncio.run(rt.copilot.settle(PROJECT, rt.native.session))
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("work", rt.work_id)["state"] == "running"
+
+    # S1 user.message arrives mid-interaction; CLI continues under R1's originatingMessageId.
+    rt.native.emit(
+        "s1-user",
+        "user.message",
+        "r1-turn-start",
+        clientTurnId="S1",
+        messageId="message-2",
+        content="Keep trusses dark",
+    )
+    rt.native.emit(
+        "r1-post-s1-reply",
+        "assistant.message",
+        "r1-turn-start",
+        messageId="msg-r1-post-s1",
+        originatingMessageId="message-1",
+        turnId="2",
+        content="Applied dark trusses",
+    )
+    rt.native.emit("r1-post-s1-end", "assistant.turn_end", "r1-post-s1-reply")
+    rt.native.emit("r1-post-s1-idle", "session.idle", "r1-post-s1-end")
+
+    if second_steer:
+        ctx_s2 = context(
+            "context-s2", request_target={"kind": "project"}, execution_scope="default"
+        )
+        post(rt, "contexts", ctx_s2, 201)
+        post(
+            rt,
+            "requests",
+            dict(
+                schema_version="1.0",
+                project_id=PROJECT,
+                request_id="S2",
+                type="steer",
+                text="Verify prompt wording",
+                context_id="context-s2",
+                target_work_id=rt.work_id,
+            ),
+            202,
+        )
+        # Second steer admission immediately invalidates the prior candidate and idle state.
+        asyncio.run(rt.copilot.settle(PROJECT, rt.native.session))
+        with rt.store.transaction(write=False) as tx:
+            assert tx.require("work", rt.work_id)["state"] == "running"
+
+        asyncio.run(rt.copilot.send(PROJECT, "S2"))
+        rt.native.emit(
+            "s2-user",
+            "user.message",
+            None,
+            clientTurnId="S2",
+            messageId="message-3",
+            content="Verify prompt wording",
+        )
+        rt.native.emit("s2-turn-start", "assistant.turn_start", "s2-user")
+        rt.native.emit(
+            "s2-reply",
+            "assistant.message",
+            "s2-turn-start",
+            messageId="msg-s2-final",
+            originatingMessageId="message-3",
+            turnId="0",
+            content="Prompt wording verified.",
+        )
+        rt.native.emit("s2-turn-end", "assistant.turn_end", "s2-reply")
+        rt.native.emit("s2-idle", "session.idle", "s2-turn-end")
+
+    asyncio.run(rt.copilot.settle(PROJECT, rt.native.session))
+    expected_ids = ("R1", "S1", "S2") if second_steer else ("R1", "S1")
+    with rt.store.transaction(write=False) as tx:
+        assert [tx.require("requests", rid)["receipt"]["state"] for rid in expected_ids] == [
+            "completed"
+        ] * len(expected_ids)
+        assert tx.require("work", rt.work_id)["state"] == "completed"

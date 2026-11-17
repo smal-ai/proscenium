@@ -640,6 +640,30 @@ class Native:
         validate(self.latest_cold_stop_snapshot, session.session_id)
         return self.latest_cold_stop_snapshot
 
+    async def inactive(self, session: Any) -> bool:
+        """Positive RPC proof that a paused, aborted session has no active turn, task or tool wait."""
+        if not hasattr(session, "rpc"):
+            return False
+        raw_tasks = await session.rpc.tasks.list(timeout=5)
+        tasks = raw_tasks.to_dict() if hasattr(raw_tasks, "to_dict") else raw_tasks
+        if not tasks_inactive(tasks):
+            return False
+        raw_external = await session.rpc.tools.list_pending_requests(timeout=5)
+        external = raw_external.to_dict() if hasattr(raw_external, "to_dict") else raw_external
+        if not external_empty(external):
+            return False
+        raw_interrupted = await session.rpc.interrupt_main_turn(
+            InterruptMainTurnRequest(flush_queued=False), timeout=5
+        )
+        interrupted = (
+            raw_interrupted.to_dict() if hasattr(raw_interrupted, "to_dict") else raw_interrupted
+        )
+        if not (isinstance(interrupted, dict) and interrupted.get("interrupted") is False):
+            return False
+        raw_after = await session.rpc.queue.pending_items(timeout=5)
+        after = raw_after.to_dict() if hasattr(raw_after, "to_dict") else raw_after
+        return queue_empty(after)
+
     async def pause(self, session: Any, paused: bool) -> None:
         await session.rpc.queue.set_drain_paused(
             QueueSetDrainPausedRequest(paused=paused), timeout=10

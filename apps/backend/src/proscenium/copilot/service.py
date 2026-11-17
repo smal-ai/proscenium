@@ -794,6 +794,8 @@ class Copilot:
                     self.state.work_state(
                         tx, work["work_id"], "running", native_session_id=session.session_id
                     )
+                elif record["submission"]["type"] == "steer":
+                    self.state.invalidate_work_completions(tx, work)
                 save(
                     tx,
                     "copilot.sends",
@@ -904,8 +906,6 @@ class Copilot:
                 return
             work = tx.require("work", idle["work_id"])
             last_delivery = tx.get("copilot.last_delivery", work["work_id"], required=False)
-            if last_delivery and idle.get("delivery_id") != last_delivery["delivery_id"]:
-                return
             requests = [
                 tx.require("requests", r)
                 for r in [work["originating_request_id"], *work["directive_request_ids"]]
@@ -917,25 +917,50 @@ class Copilot:
                 if last_delivery
                 else None
             )
-            continued = bool(
-                continuation
-                and continuation.get("work_id") == work["work_id"]
-                and (
-                    completion := tx.get(
-                        "copilot.completion", continuation["request_id"], required=False
+            if continuation is not None:
+                if (
+                    continuation.get("work_id") != work["work_id"]
+                    or idle.get("delivery_id") != continuation["delivery_id"]
+                    or not (
+                        completion := tx.get(
+                            "copilot.completion", continuation["request_id"], required=False
+                        )
                     )
-                )
-                and completion.get("candidate")
-                and completion.get("delivery_id") == continuation["delivery_id"]
-            )
-            if not continued and any(
-                r["receipt"]["state"] not in TERMINAL
-                and not (tx.get("copilot.completion", r["request_id"], required=False) or {}).get(
-                    "candidate"
-                )
-                for r in requests
-            ):
-                return
+                    or not completion.get("candidate")
+                    or completion.get("delivery_id") != continuation["delivery_id"]
+                ):
+                    return
+            else:
+                non_terminal = [r for r in requests if r["receipt"]["state"] not in TERMINAL]
+                non_terminal_ids = {r["request_id"] for r in non_terminal}
+                if (
+                    not non_terminal_ids
+                    or idle.get("delivery_id") not in non_terminal_ids
+                    or (last_delivery and last_delivery.get("delivery_id") not in non_terminal_ids)
+                    or any(
+                        r["receipt"]["state"] != "acknowledged"
+                        or (tx.get("copilot.sends", r["request_id"], required=False) or {}).get(
+                            "state"
+                        )
+                        != "acknowledged"
+                        for r in non_terminal
+                    )
+                    or any(
+                        r["submission"]["type"] == "steer"
+                        and tx.get("copilot.admitted_messages", r["request_id"], required=False)
+                        is None
+                        for r in non_terminal
+                    )
+                ):
+                    return
+                idle_delivery = str(idle["delivery_id"])
+                completion = tx.get("copilot.completion", idle_delivery, required=False)
+                if (
+                    not completion
+                    or not completion.get("candidate")
+                    or completion.get("delivery_id") != idle_delivery
+                ):
+                    return
             if any(
                 i["work_id"] == work["work_id"] and i["state"] not in TERMINAL
                 for i in tx.all("invocations")
@@ -1058,7 +1083,17 @@ class Copilot:
                         if i["work_id"] == work_id and i["state"] not in TERMINAL
                     ]
                     idle = tx.get("copilot.idle", session.session_id, required=False) or {}
-                if empty(pending) and not live and (was_terminal or idle.get("idle")):
+                if (
+                    empty(pending)
+                    and not live
+                    and (
+                        was_terminal
+                        or idle.get("idle")
+                        or (
+                            hasattr(self.native, "inactive") and await self.native.inactive(session)
+                        )
+                    )
+                ):
                     break
                 await asyncio.sleep(0.1)
             else:
@@ -1513,7 +1548,17 @@ class Copilot:
                         for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
                     )
                     and not any(
-                        r["submission"]["type"] == "steer" and r["receipt"]["state"] not in TERMINAL
+                        r["submission"]["type"] == "steer"
+                        and r["receipt"]["state"] not in TERMINAL
+                        and not (
+                            r["receipt"]["work_id"] == work["work_id"]
+                            and r["request_id"] in work["directive_request_ids"]
+                            and r["receipt"]["state"] == "acknowledged"
+                            and (
+                                tx.get("copilot.sends", r["request_id"], required=False) or {}
+                            ).get("state")
+                            == "acknowledged"
+                        )
                         for r in tx.all("requests")
                     )
                     and not any(d["state"] == "pending" for d in tx.all("decisions"))
