@@ -1,0 +1,26 @@
+.proxy-frame-gate {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(9, 9, 11, 0.56);
+  border: 1px solid rgba(165, 166, 255, 0.55);
+  border-radius: 2px;
+  z-index: 2;
+}
+
+.proxy-frame-gate-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #101014cc;
+  color: #c7c7ff;
+  font: 10px/1.4 "JetBrains Mono", monospace;
+  white-space: nowrap;
+}
+
+.proxy-pin-layer,
+.review-proxy-label {
+  z-index: 3;
+}
