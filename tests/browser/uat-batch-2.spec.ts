@@ -351,7 +351,7 @@ test("Jobs badge updates empty, active, failed attention and all-succeeded histo
 test("Review uses compact mode and transport bars with a single annotation editor", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   const review = page.locator("main.review-panel");
   const modes = review.getByRole("navigation", { name: "Review mode", exact: true });
   await expect(modes).toBeVisible();
@@ -390,7 +390,8 @@ test("Review uses compact mode and transport bars with a single annotation edito
   await expect(modes).toHaveCount(0); await expect(transport).toHaveCount(0);
   const editor = review.getByRole("region", { name: "Pinned annotation", exact: true });
   await expect(editor.locator(":scope > .review-bar")).toHaveCount(1);
-  for (const name of ["Stroke", "Arrow", "Region", "Pin", "Eraser", "Mask", "Close draft"]) await expect(editor.getByRole("button", { name, exact: true })).toBeVisible();
+  for (const name of ["Stroke", "Arrow", "Region", "Pin", "Eraser", "Mask"]) await expect(editor.getByRole("button", { name, exact: true })).toBeVisible();
+  await expect(editor.locator(":scope > .review-bar").getByRole("button", { name: "Close draft", exact: true })).toHaveCount(0);
   const width = editor.getByRole("spinbutton", { name: "Width (image px)", exact: true });
   await expect(width).toBeVisible();
   expect(await width.locator("..").evaluate(label => getComputedStyle(label).flexDirection)).toBe("row");
@@ -399,7 +400,7 @@ test("Review uses compact mode and transport bars with a single annotation edito
   await editor.getByRole("textbox", { name: "Feedback", exact: true }).fill("Do not switch modes while typing");
   await page.keyboard.press("1");
   await expect(editor).toBeVisible();
-  await editor.getByRole("button", { name: "Close draft", exact: true }).click();
+  await editor.getByRole("button", { name: "Keep draft & close", exact: true }).click();
   await expect(modes.getByRole("button", { name: "Keyframes", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(editor).toHaveCount(0); await aligned();
   const surface = review.locator(".review-surface");
@@ -413,7 +414,7 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
   const waiting = job("waiting", "waiting_resource");
   studio.snapshot.jobs = [waiting];
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await expect(page.getByRole("button", { name: "Asset A v2 a-v2" })).toBeVisible();
+  await expect(page.locator(".catalogue-item-header").filter({ hasText: "Asset A" })).toBeVisible();
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   const reads = () => studio.guard!.calls.filter(call => call.method === "GET" && (new URL(call.url, baseURL).pathname === `${base}/artifacts` || /\/items\/[^/]+\/versions$/.test(new URL(call.url, baseURL).pathname)));
   const before = reads().length;
@@ -809,12 +810,16 @@ test("3D spatial pin resolves multi-primitive & scaled child instances, survives
 
   // Publish Asset A v3, switch to v3, reopen the v2 spatial annotation, and confirm Queue targets v2!
   studio.addAssetVersion("a-v3", "Asset A v3");
-  await review.getByRole("button", { name: "Close draft", exact: true }).click();
+  await expect(review.locator('[aria-label="Spatial pin tools"]').getByRole("button", { name: "Close draft", exact: true })).toHaveCount(0);
+  await review.locator(".annotation-dock").getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "Refresh project metadata" }).click();
   await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   await expect(review.locator("h1")).toHaveText("Asset A v3");
 
   await review.getByRole("button", { name: /Annotations/ }).click();
+  await expect(review.getByRole("button", { name: "This version · v3" })).toHaveAttribute("aria-pressed", "true");
+  await expect(review.getByText("No annotations on v3.")).toBeVisible();
+  await review.getByRole("button", { name: /All versions of this item/ }).click();
   await review.locator(".review-drawer-items button").filter({ hasText: "Chamfer the collar lip by 2 mm" }).click();
   await expect(review.locator("h1")).toHaveText("Asset A v2");
   expect(studio.guard!.calls.some(c => c.url.includes("/versions/a-v2/proxy-mapping?mapping_artifact_id=map-a-v2"))).toBe(true);

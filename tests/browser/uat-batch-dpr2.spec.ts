@@ -36,7 +36,8 @@ test("DPR 2 bottom-right live status and Chat-focus click-to-review geometry", a
   await expect(review.locator('[aria-label="Review transport"]')).toHaveCount(0);
   await expect(review.getByRole("button", { name: "Stroke", exact: true })).toBeVisible();
   expect((await review.locator(".annotation-dock").boundingBox())!.height).toBeLessThanOrEqual(120);
-  await review.getByRole("button", { name: "Close draft", exact: true }).click();
+  await expect(review.locator('.review-bar:not(.review-transport-bar)').getByRole("button", { name: "Close draft", exact: true })).toHaveCount(0);
+  await review.getByRole("button", { name: "Keep draft & close", exact: true }).click();
   const surface = review.locator(".review-surface");
   expect(await surface.evaluate(element => element.scrollHeight <= element.clientHeight)).toBe(true);
   await page.getByRole("button", { name: "Critic", exact: true }).click();

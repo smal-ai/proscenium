@@ -5,12 +5,13 @@ import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type Tur
 import { AnnotationEditor } from "./AnnotationEditor";
 import { AnnotationsDrawer, mergeItemAnnotations } from "./AnnotationsDrawer";
 import { frameTarget, mediaUrl, sequenceTarget, typingTarget } from "./media";
-import { flushDraft, readDrafts, saveDraft, type Draft } from "./outbox";
+import { flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
 import { SequencePlayer } from "./SequencePlayer";
 import { ProxyView, type FrozenProxyCapture, type ProxyCapture, type ProxyPinPlacement, type SpatialPinMarker } from "./ProxyView";
 import { readProxyCapture, writeProxyCapture, type PendingProxyCapture } from "./proxyCaptureStore";
 import { allPages } from "./records";
+import { formatRenderPresetOption, RENDER_PRESETS, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
 import { annotationContext, cleanTargetRole } from "./context";
 import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
@@ -84,6 +85,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const pendingCaptureRef = useRef<PendingProxyCapture | null>(null);
   const captureHandler = useRef<ProxyCapture | null>(null);
   const [proxyReady, setProxyReady] = useState(false);
+  const [renderPreset, setRenderPreset] = useState<RenderPresetId>("16:9");
+  const [viewportPixels, setViewportPixels] = useState<{width: number; height: number} | null>(null);
   const [captureStoreReady, setCaptureStoreReady] = useState(false);
   const captureLatch = useRef(false);
   const bindCapture = useCallback((capture: ProxyCapture | null) => {captureHandler.current = capture; setProxyReady(!!capture);}, []);
@@ -609,7 +612,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         targetBlob: png,
         targetUploaded: false,
       };
-      await saveDraft(next);
+      await saveDraftEdit(next);
       changeDraft(next);
       setDraftId(next.key);
       setEditing2D(false);
@@ -676,7 +679,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         targetBlob: png,
         targetUploaded: false,
       };
-      await saveDraft(next);
+      await saveDraftEdit(next);
       changeDraft(next);
       setDraftId(next.key);
       setEditing2D(true);
@@ -696,7 +699,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         if (!capture) throw new Error("The published inspection proxy is not ready to capture");
         // All source identities, camera, selected pairs and actual pixels freeze
         // before any await. The upload is not a request to render/generate.
-        const frozen = capture();
+        const frozen = capture({targetDimensions: resolveRenderTargetDimensions(renderPreset)});
         const uploadId = crypto.randomUUID();
         const selection = structuredClone({...context, request_target: {kind: "item" as const, version: {item_id: version.item_id, version_id: version.version_id}}, target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
         const sampleFrame = mapping.sample_frame;
@@ -799,7 +802,6 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if (draftId === draftKey) closeDraft();
     }
   }
-  void discardActiveDraft; // Lane B5 connects the two dock callbacks.
 
   const merged = useMemo(() => version ? mergeItemAnnotations({itemId: version.item_id, currentVersionId: version.version_id, drafts, saved, itemVersions}) : null,
     [version, drafts, saved, itemVersions]);
@@ -835,7 +837,6 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           }
         }}
         onEdit2D={() => { setPinMode(false); setEditing2D(true); }}
-        onClose={closeDraft}
       />
     ) : (
       <nav className="review-bar" aria-label="Review mode"><ReviewModeSwitcher mode={mode} onChange={changeMode}/>
@@ -855,6 +856,19 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
             >
               <MapPin size={14}/>Pin note
             </button>
+            <label className="toolbar-field">
+              <span className="sr-only">Render output format</span>
+              <select
+                aria-label="Render output format"
+                disabled={!visible || !proxyReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")}
+                value={renderPreset}
+                onChange={e => setRenderPreset(e.target.value as RenderPresetId)}
+              >
+                {RENDER_PRESETS.map(preset => (
+                  <option key={preset.id} value={preset.id}>{formatRenderPresetOption(preset.id, viewportPixels)}</option>
+                ))}
+              </select>
+            </label>
             <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || !proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>
           </> : !mappedSequence && <button className="toolbar-btn toolbar-btn-accent" aria-label="Annotate presented frame" disabled={!visible || !target || !readyToCapture} onClick={() => void annotate()}><PenLine size={14}/>Annotate</button>}
         </div>
@@ -878,6 +892,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         onContextPreparer={registerEditorPreparer}
         onReturnTo3D={isSpatialDraft && !proxyUnavailableReason ? () => setEditing2D(false) : undefined}
         onClose={closeDraft}
+        onDiscard={discardActiveDraft}
       />
     ) : draft && isSpatialDraft && proxyUnavailableReason ? (
       <SpatialPinFallbackView draft={draft} reason={proxyUnavailableReason} controller={spatialController}/>
@@ -893,6 +908,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
             onSelect={pairs => choice.select(scope, pairs)}
             onCamera={setCamera}
             onCaptureReady={bindCapture}
+            renderPreset={draft && isSpatialDraft ? "viewport" : renderPreset}
+            onViewportPixels={setViewportPixels}
             onPlacePin={placement => void handlePlacePin(placement)}
             onPinMiss={handlePinMiss}
             restoreCamera={effectiveRestoreCamera}
@@ -911,7 +928,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
          }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
            : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">No ready review image. Rendering is an explicit Queue request.</div>}
     {show2DEditor ? null : draft && isSpatialDraft ? (
-      <SpatialPinDock draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController}/>
+      <SpatialPinDock draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft}/>
     ) : (
       <div className={`review-bar review-transport-bar${mode === "3d_inspection" ? "" : " review-playback-transport"}`} aria-label="Review transport">
         {mode === "3d_inspection" ? <>

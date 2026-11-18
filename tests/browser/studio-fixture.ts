@@ -210,7 +210,7 @@ export class StudioFixture {
     return next;
   }
 
-  async install(options: { catalogue?: boolean; savedLayout?: boolean; created?: boolean; shotPlan?: ShotPlan } = {}) {
+  async install(options: { catalogue?: boolean; savedLayout?: boolean; created?: boolean; shotPlan?: ShotPlan; routes?: MockRoute[] } = {}) {
     this.page.on("pageerror", error => this.pageErrors.push(error.message));
     if (options.catalogue) this.snapshot.items = structuredClone(items);
     await this.page.addInitScript(({ id, saved, created }) => {
@@ -219,6 +219,7 @@ export class StudioFixture {
       if (created) localStorage.setItem(`proscenium.owner.created.${id}`, "true");
     }, { id: projectId, saved: options.savedLayout ?? false, created: options.created ?? false });
     const routes: MockRoute[] = [
+      ...(options.routes ?? []),
       { path: "/api/v1/projects", body: pageOf([project]) },
       { path: "/api/v1/configuration", handler: route => route.fulfill({ json: this.configuration }) },
       { path: "/api/v1/configuration/status", handler: route => route.fulfill({ json: this.configurationStatus }) },

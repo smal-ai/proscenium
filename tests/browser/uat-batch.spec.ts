@@ -32,7 +32,7 @@ test("DPR 1 splitters, remembered tabs, layout and conversation following", asyn
 test("hidden decoded Review preserves mode, frame and local annotation draft", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
   const review = page.locator("main.review-panel");
   await expect(review.locator("img")).toBeVisible();
@@ -57,7 +57,7 @@ test("hidden decoded Review preserves mode, frame and local annotation draft", a
 test("explicit target and historical references stay isolated during async submit", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
   await page.getByRole("button", { name: "Annotate presented frame" }).click();
   await page.getByRole("textbox", { name: "Feedback" }).fill("Unrelated hidden annotation must never flush");
@@ -73,7 +73,8 @@ test("explicit target and historical references stay isolated during async submi
   const delayed = deferred(); studio.contextGate = delayed.promise;
   await page.getByRole("button", { name: "Queue message", exact: true }).click();
   await expect.poll(() => studio.contexts.length).toBe(1);
-  await page.getByRole("button", { name: "Asset A v1 a-v1" }).click();
+  await page.getByRole("button", { name: "Version history for Asset A" }).click();
+  await page.locator(".catalogue-version-row").getByText("v1", { exact: true }).click();
   delayed.release();
   await expect.poll(() => studio.submissions.length).toBe(1);
   expect(studio.contexts[0]).toMatchObject({ request_target: { kind: "shot", storyboard_version: { item_id: "board-b", version_id: "b-v1" }, shot_id: "shot-1" }, reference_versions: [{ item_id: "asset-a", version_id: "a-v1" }], view_mode: "none", selected_objects: [], target: null, camera: null, range: null, attachments: [], annotations: [] });

@@ -40,7 +40,16 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
 
 - **Optional starter actions:** Empty projects offer **Plan a storyboard**, **Create an asset** and **Build a scene**, or you can type any prompt directly. Starter buttons prepare a target and draft without sending a request or overwriting existing draft text.
 - **Asset-first workflow:** Use **New asset** at the top of **Navigator → Assets** (or target a new asset in the Composer) to author, import or generate standalone assets without creating a storyboard first.
+- **Version history:** Assets starts with version histories collapsed. Expand an item to inspect a compact version row without changing the owner selection. Use the `⋯` menus for item details and version selection actions. **Check selection status** appears only when a selection change needs reconciliation.
 - **Pinned reuse:** Publishing a new asset version never silently updates existing scenes or storyboards. Dependent items adopt newer versions only through an explicit revision.
+
+## Reviewing published versions
+
+- **Version status:** The Review header shows the version you are viewing. When a newer version is published, use **View vN** to open it. Unfinished drafts stay on the original version.
+- **3D Inspection:** **Render output format** offers **16:9 · 1920 × 1080**, **16:10 · 1920 × 1200** and **Match viewport**. The fixed formats dim the area outside the safe frame. **Render this view** captures the framed composition with the matching camera aspect. **Match viewport** uses the full viewport at its native pixel size.
+- **Keyframes:** Arrows step between rendered frames in the selected pass, including over gaps. A pass with one rendered frame disables both arrows. If you enter an unavailable frame, the transport explains why and keeps the frame number in sync with the image shown.
+- **Annotations:** The drawer starts on **This version**. Switch to **All versions of this item** to see historical notes. Opening a historical note takes you to its original version.
+- **Annotation actions:** The 2D editor and 3D pin dock put **Keep draft & close**, **Discard draft** or **Discard edits**, **Save annotation** and **Queue feedback** at the bottom. Discard removes an untouched 2D draft immediately and asks for confirmation before removing notes, marks or pins. Discarding unsaved edits restores the saved note.
 
 ## Request targeting and references
 
