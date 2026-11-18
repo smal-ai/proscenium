@@ -72,6 +72,13 @@ TOOLS = {
         "submitGenerationJob",
     ),
     "request_vlm_review": ("vlm", "request", "ReviewRequest", "ReviewTicket", "requestToolReview"),
+    "escalate_vlm_review": (
+        "vlm",
+        "escalate",
+        "ReviewEscalate",
+        "ReviewTicket",
+        "escalateToolReview",
+    ),
     "admit_job": ("jobs", "admit", "JobAdmission", "JobRecord", "admitToolJob"),
     "retry_job": ("jobs", "retry", "JobRetry", "JobRecord", "retryToolJob"),
     "update_job_state": ("jobs", "update", "JobStateUpdate", "JobRecord", "updateJobState"),
@@ -83,6 +90,11 @@ READ_TOOLS = {
         "job_id",
         "JobRecord",
         "Read an admitted job without starting or retrying it. Use wait_seconds (0..30) for bounded waiting instead of busy-polling.",
+    ),
+    "get_vlm_review": (
+        "review_id",
+        "ReviewDetail",
+        "Read a VLM critique requested by the current work, including validated findings and diagnostics. Use wait_seconds (0..30) for bounded waiting instead of busy-polling.",
     ),
     "get_artifact": (
         "artifact_id",
@@ -136,7 +148,7 @@ def read_parameters(name: str) -> dict[str, Any]:
     properties = {identity: copy.deepcopy(SCHEMA["$defs"]["Id"])}
     if name == "get_artifact":
         properties["include_image"] = {"type": "boolean", "default": False}
-    elif name == "get_job":
+    elif name in {"get_job", "get_vlm_review"}:
         properties["wait_seconds"] = {"type": "integer", "minimum": 0, "maximum": 30, "default": 0}
     if name == "list_job_frames":
         properties.update(
@@ -176,14 +188,14 @@ def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
     allowed = {identity, "cursor", "limit"} if name == "list_job_frames" else {identity}
     if name == "get_artifact":
         allowed.add("include_image")
-    elif name == "get_job":
+    elif name in {"get_job", "get_vlm_review"}:
         allowed.add("wait_seconds")
     if not isinstance(arguments, dict) or identity not in arguments or set(arguments) - allowed:
         raise DomainError("invalid_request")
     validate("Id", arguments[identity])
     if name == "get_artifact" and type(arguments.get("include_image", False)) is not bool:
         raise DomainError("invalid_request")
-    if name == "get_job":
+    if name in {"get_job", "get_vlm_review"}:
         wait_seconds = arguments.get("wait_seconds", 0)
         if type(wait_seconds) is not int or not 0 <= wait_seconds <= 30:
             raise DomainError("invalid_request")
@@ -409,7 +421,9 @@ class Tools:
             operations=tuple(item[4] for item in TOOLS.values()),
         )
 
-    def _read(self, name: str, invocation: ToolInvocation) -> tuple[dict[str, Any], str]:
+    def _read(
+        self, name: str, invocation: ToolInvocation, caller: Caller | None = None
+    ) -> tuple[dict[str, Any], str]:
         args = read_arguments(name, invocation.arguments)
         if name == "get_project_capabilities":
             from .capabilities import get_project_capabilities
@@ -458,6 +472,22 @@ class Tools:
         assert identity is not None
         if name == "get_job":
             result = self.services.jobs.get(self.project_id, args[identity])
+        elif name == "get_vlm_review":
+            if caller is None or not caller.work_id:
+                raise DomainError("scope_denied", 403)
+            reviews = self.services.extension("reviews")
+            with self.services.registry.project_store(self.project_id).transaction(
+                write=False
+            ) as tx:
+                result = reviews.detail(tx, args[identity])
+                job = tx.require("jobs", result["ticket"]["job_id"])
+                if job.get("work_id") != caller.work_id:
+                    raise DomainError("scope_denied", 403)
+            if result.get("project_id") != self.project_id:
+                raise DomainError("scope_denied", 403)
+            if result["ticket"].get("review_id") != args[identity]:
+                raise DomainError("source_conflict", 409)
+            return result, result_schema
         elif name == "get_artifact":
             result = self.services.extension("artifacts").get(self.project_id, args[identity])
         elif name == "get_version":
@@ -510,16 +540,28 @@ class Tools:
                 },
             )
             if name in READ_TOOLS or name in DISCOVERY_READS:
-                result, result_schema = self._read(name, invocation)
-                if name == "get_job" and invocation.arguments.get("wait_seconds", 0) > 0:
+                result, result_schema = self._read(name, invocation, caller)
+                if (
+                    name in {"get_job", "get_vlm_review"}
+                    and invocation.arguments.get("wait_seconds", 0) > 0
+                ):
                     assert caller.work_id is not None
                     deadline = time.monotonic() + invocation.arguments["wait_seconds"]
-                    while result["state"] not in {
-                        "succeeded",
-                        "failed",
-                        "cancelled",
-                        "outcome_uncertain",
-                    }:
+
+                    def settled(payload: dict[str, Any]) -> bool:
+                        if name == "get_job":
+                            return payload["state"] in {
+                                "succeeded",
+                                "failed",
+                                "cancelled",
+                                "outcome_uncertain",
+                            }
+                        ticket = payload["ticket"]
+                        return ticket["status"] in {"ready", "failed"} or (
+                            ticket.get("error_code") == "outcome_uncertain"
+                        )
+
+                    while not settled(result):
                         remaining = deadline - time.monotonic()
                         if remaining <= 0:
                             break
@@ -540,7 +582,7 @@ class Tools:
                         if held:
                             break
                         await asyncio.sleep(min(0.5, remaining))
-                        result, result_schema = self._read(name, invocation)
+                        result, result_schema = self._read(name, invocation, caller)
             elif name == "validate_authored_document":
                 from .capabilities import validate_authored_document
 

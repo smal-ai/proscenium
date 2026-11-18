@@ -424,3 +424,246 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
   await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1 active");
   studio.assertHermetic();
 });
+
+test("Navigator and Assistant panels open at maximum width by default on an existing project", async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ catalogue: true, savedLayout: false });
+  await studio.open(); await studio.ready();
+  const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
+  const assistant = page.getByRole("complementary", { name: "Assistant panel" });
+  await expect.poll(async () => (await navigator.boundingBox())!.width).toBe(520);
+  await expect.poll(async () => (await assistant.boundingBox())!.width).toBe(760);
+  studio.assertHermetic();
+});
+
+test("Critic realtime badge, Pending/All SAST cards, persisted drafts and human resolution workflow", async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const studio = new StudioFixture(page, baseURL!);
+  const target = {
+    origin: "concept" as const,
+    item_id: "asset-a",
+    version_id: "a-v2",
+    shot_id: null,
+    render_job_id: null,
+    sequence_frame: null,
+    source_frame: null,
+    artifact_id: "verified",
+    media_artifact_id: null,
+    displayed_sha256: "a".repeat(64),
+    dimensions: { width: 1, height: 1 },
+  };
+  // Routine agent self-check starts in All only (0 pending).
+  studio.reviews.push({
+    schema_version: "1.0",
+    project_id: projectId,
+    ticket: {
+      schema_version: "1.0",
+      review_id: "rev-self",
+      job_id: "job-self",
+      status: "ready",
+      title: "Agent internal check",
+      created_at: "2026-11-18T12:00:00Z",
+      revision: 2,
+      human_review_state: "not_requested",
+      awaiting_human: false,
+      question: null,
+      finding_count: 1,
+      unreviewed_count: 1,
+      error_code: null,
+    },
+    criteria: "Routine check.",
+    targets: [target],
+    telemetry_artifact_ids: [],
+    findings: [
+      {
+        schema_version: "1.0",
+        finding_id: "rev-self-f0",
+        review_id: "rev-self",
+        project_id: projectId,
+        revision: 1,
+        target,
+        observation: "Slight rim highlight.",
+        recommendation: "Dim rim light by 10%.",
+        evidence: [{ kind: "visual", artifact_id: "verified", description: "Upper-left edge." }],
+        state: "unreviewed",
+      },
+    ],
+    diagnostics: null,
+  });
+
+  await studio.install({ catalogue: true, savedLayout: true });
+  await studio.open(); await studio.ready();
+
+  const criticTab = page.getByRole("button", { name: "Critic", exact: true });
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "0");
+  await expect(criticTab.locator(".tab-count")).toHaveCount(0);
+
+  // Live escalated review with 2 findings arrives while user is on Copilot -> badge shows 1 (per review, not per finding).
+  const escalatedDetail = {
+    schema_version: "1.0" as const,
+    project_id: projectId,
+    ticket: {
+      schema_version: "1.0" as const,
+      review_id: "rev-escalated",
+      job_id: "job-escalated",
+      status: "ready" as const,
+      title: "Orbital dish collar & rim light",
+      created_at: "2026-11-18T14:05:00Z",
+      revision: 3,
+      human_review_state: "pending" as const,
+      awaiting_human: true,
+      question: "Should the dish silhouette stay centered or offset camera-left?",
+      finding_count: 2,
+      unreviewed_count: 2,
+      error_code: null,
+    },
+    criteria: "Verify dish collar seats flush on dorsal spine and rim light preserves silhouette.",
+    targets: [target],
+    telemetry_artifact_ids: [],
+    findings: [
+      {
+        schema_version: "1.0" as const,
+        finding_id: "rev-esc-f0",
+        review_id: "rev-escalated",
+        project_id: projectId,
+        revision: 1,
+        target,
+        observation: "Dish collar floats above dorsal spine.",
+        recommendation: "Seat dish collar flush against the dorsal spine.",
+        evidence: [{ kind: "visual" as const, artifact_id: "verified", description: "Gap at spine mount." }],
+        state: "unreviewed" as const,
+      },
+      {
+        schema_version: "1.0" as const,
+        finding_id: "rev-esc-f1",
+        review_id: "rev-escalated",
+        project_id: projectId,
+        revision: 1,
+        target,
+        observation: "Rim highlight clips specular detail on dish edge.",
+        recommendation: "Lower rim key exposure by 0.7 stops.",
+        evidence: [{ kind: "visual" as const, artifact_id: "verified", description: "Clipped upper rim." }],
+        state: "unreviewed" as const,
+      },
+    ],
+    diagnostics: {
+      finish_reason: "stop",
+      prompt_tokens: 1800,
+      completion_tokens: 420,
+      reasoning_tokens: 300,
+      reasoning_effort: "medium",
+      rubric_revision: "proscenium-vlm-2",
+      error_code: null,
+    },
+  };
+  studio.reviews.unshift(escalatedDetail);
+  studio.emit("review.changed", escalatedDetail.ticket);
+
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "1");
+  await expect(criticTab.locator(".tab-count")).toHaveText("1");
+
+  await criticTab.click();
+  const critic = page.getByRole("region", { name: "Critic", exact: true });
+  await expect(critic.getByRole("button", { name: "Load existing reviews" })).toHaveCount(0);
+  await expect(critic.locator("select")).toHaveCount(0);
+
+  // Default Pending filter shows 1 card with ONLY review name + 24h SAST date/time.
+  const cards = critic.locator(".critic-review-card");
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first().locator(".critic-card-title")).toHaveText("Orbital dish collar & rim light");
+  await expect(cards.first().locator(".critic-card-time")).toHaveText("2026-11-18 16:05 SAST");
+  expect((await cards.first().innerText()).trim().split(/\n+/)).toEqual([
+    "Orbital dish collar & rim light",
+    "2026-11-18 16:05 SAST",
+  ]);
+
+  // All filter reveals the routine self-check alongside the pending review.
+  await critic.getByRole("button", { name: "All", exact: true }).click();
+  await expect(cards).toHaveCount(2);
+  await critic.getByRole("button", { name: "Pending (1)", exact: true }).click();
+  await expect(cards).toHaveCount(1);
+
+  // Open the pending review thread, stage an edit, and verify persistence across tab switch + reload.
+  await cards.first().click();
+  await expect(critic.locator(".critic-question")).toContainText(
+    "Should the dish silhouette stay centered or offset camera-left?",
+  );
+  await expect(critic.locator(".critic-finding")).toHaveCount(2);
+
+  const secondFinding = critic.locator(".critic-finding").nth(1);
+  await secondFinding.getByRole("checkbox", { name: "Include finding" }).check();
+  const instructionBox = secondFinding.getByRole("textbox", { name: "Approved instruction rev-esc-f1" });
+  await instructionBox.fill("Lower rim key exposure by 0.7 stops and offset dish camera-left.");
+
+  await page.getByRole("button", { name: "Copilot", exact: true }).click();
+  await criticTab.click();
+  await expect(instructionBox).toHaveValue("Lower rim key exposure by 0.7 stops and offset dish camera-left.");
+
+  await page.reload();
+  await studio.ready();
+  await criticTab.click();
+  await expect(critic.getByRole("textbox", { name: "Approved instruction rev-esc-f1" })).toHaveValue(
+    "Lower rim key exposure by 0.7 stops and offset dish camera-left.",
+  );
+
+  // Rejecting finding 0 while finding 1 remains unreviewed keeps badge at 1.
+  await critic.locator(".critic-finding").first().getByRole("button", { name: "Reject finding" }).click();
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "1");
+
+  // Submitting the remaining finding sends approved_findings pinned to asset-a / a-v2 and clears badge to 0!
+  await critic.getByRole("button", { name: "Queue selected findings once" }).click();
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "0");
+  await expect(criticTab.locator(".tab-count")).toHaveCount(0);
+  expect(studio.submissions).toHaveLength(1);
+  expect(studio.contexts.at(-1)?.request_target).toEqual({
+    kind: "item",
+    version: { item_id: "asset-a", version_id: "a-v2" },
+  });
+  expect(studio.contexts.at(-1)?.approved_findings).toEqual([
+    {
+      finding_id: "rev-esc-f1",
+      finding_revision: 1,
+      approved_text: "Lower rim key exposure by 0.7 stops and offset dish camera-left.",
+      target,
+    },
+  ]);
+
+  // Zero-defect escalated question review shows "No defects reported." and clears via "Done without changes".
+  const questionOnly = {
+    schema_version: "1.0" as const,
+    project_id: projectId,
+    ticket: {
+      schema_version: "1.0" as const,
+      review_id: "rev-q-only",
+      job_id: "job-q-only",
+      status: "ready" as const,
+      title: "Zero-defect framing check",
+      created_at: "2026-11-18T15:30:00Z",
+      revision: 2,
+      human_review_state: "pending" as const,
+      awaiting_human: true,
+      question: "Confirm this wide establishing angle before scene assembly?",
+      finding_count: 0,
+      unreviewed_count: 0,
+      error_code: null,
+    },
+    criteria: "Check wide establishing framing.",
+    targets: [target],
+    telemetry_artifact_ids: [],
+    findings: [],
+    diagnostics: null,
+  };
+  studio.reviews.unshift(questionOnly);
+  studio.emit("review.changed", questionOnly.ticket);
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "1");
+  await criticTab.click();
+  await critic.getByRole("button", { name: "Back to reviews" }).click();
+  await critic.locator(".critic-review-card").first().click();
+  await expect(critic).toContainText("No defects reported.");
+  await critic.getByRole("button", { name: "Done without changes" }).click();
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "0");
+  await expect(critic.getByRole("heading", { name: "No pending reviews" })).toBeVisible();
+
+  studio.assertHermetic();
+});

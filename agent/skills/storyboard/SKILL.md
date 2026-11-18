@@ -47,8 +47,11 @@ description: Author or revise a stable-ID shot plan and review existing storyboa
    writes or parallel catalogue. Reconcile uncertain acknowledgement before retry.
 8. Inspect images with `get_artifact(artifact_id=..., include_image=true)`, never
    copy managed artefact content just to call `view`. For produced storyboards and
-   keyframes, call `request_vlm_review` when capabilities report a `configured` or
-   `ready` VLM provider. Only owner-approved findings become revision instructions.
+   keyframes, call `request_vlm_review` (with a short `title` and concise visual
+   `criteria`) when capabilities report a `configured` or `ready` VLM provider, read
+   `get_vlm_review(review_id=..., wait_seconds=15)` for bounded self-correction, and
+   use `escalate_vlm_review` with an explicit question when human review is needed.
+   Only owner-approved findings carry owner instruction authority.
    Use source-type labels.
    Missing frames stay missing. Keep authored availability/proposal, execution
    completion, agent assessment, exact owner selection and animation approval

@@ -58,8 +58,10 @@ class ReviewAlias:
         self.providers = providers
 
     def request(self, caller: Any, body: dict) -> Any:
-        # Native Tools validates ReviewTicket as well. Never fetch owner findings.
         return self.providers.request_review(caller, body)
+
+    def escalate(self, caller: Any, body: dict) -> Any:
+        return self.providers.reviews.escalate(caller, body)
 
 
 def configure_services(services: Services) -> None:

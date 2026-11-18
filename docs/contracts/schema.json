@@ -370,11 +370,23 @@
     },
     "ReviewRequest": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "review_id", "project_id", "targets", "criteria", "telemetry_artifact_ids"],
-      "properties": {"schema_version": {"const": "1.0"}, "review_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "targets": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/FrameTarget"}}, "criteria": {"type": "string", "minLength": 1}, "telemetry_artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}}
+      "properties": {"schema_version": {"const": "1.0"}, "review_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "targets": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/FrameTarget"}}, "criteria": {"type": "string", "minLength": 1}, "telemetry_artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "title": {"type": "string", "minLength": 1, "maxLength": 160}, "human_review": {"type": "boolean"}, "question": {"type": "string", "minLength": 1, "maxLength": 2000}}
     },
     "ReviewTicket": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "review_id", "job_id", "status"],
-      "properties": {"schema_version": {"const": "1.0"}, "review_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "status": {"enum": ["pending", "running", "ready", "failed"]}}
+      "properties": {"schema_version": {"const": "1.0"}, "review_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "status": {"enum": ["pending", "running", "ready", "failed"]}, "title": {"type": ["string", "null"], "maxLength": 160}, "created_at": {"anyOf": [{"$ref": "#/$defs/Timestamp"}, {"type": "null"}]}, "revision": {"$ref": "#/$defs/Revision"}, "human_review_state": {"enum": ["not_requested", "pending", "resolved"]}, "awaiting_human": {"type": "boolean"}, "question": {"type": ["string", "null"], "maxLength": 2000}, "finding_count": {"type": "integer", "minimum": 0}, "unreviewed_count": {"type": "integer", "minimum": 0}, "error_code": {"type": ["string", "null"]}}
+    },
+    "ReviewDiagnostics": {
+      "type": "object", "additionalProperties": false,
+      "properties": {"finish_reason": {"type": ["string", "null"]}, "prompt_tokens": {"type": ["integer", "null"], "minimum": 0}, "completion_tokens": {"type": ["integer", "null"], "minimum": 0}, "reasoning_tokens": {"type": ["integer", "null"], "minimum": 0}, "reasoning_effort": {"type": ["string", "null"]}, "rubric_revision": {"type": ["string", "null"]}, "error_code": {"type": ["string", "null"]}}
+    },
+    "ReviewDetail": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "ticket", "criteria", "targets", "telemetry_artifact_ids", "findings"],
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "ticket": {"$ref": "#/$defs/ReviewTicket"}, "criteria": {"type": "string"}, "targets": {"type": "array", "items": {"$ref": "#/$defs/FrameTarget"}}, "telemetry_artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "findings": {"type": "array", "items": {"$ref": "#/$defs/ReviewFinding"}}, "diagnostics": {"anyOf": [{"$ref": "#/$defs/ReviewDiagnostics"}, {"type": "null"}]}}
+    },
+    "ReviewEscalate": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "review_id", "question"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "review_id": {"$ref": "#/$defs/Id"}, "question": {"type": "string", "minLength": 1, "maxLength": 2000}, "title": {"type": "string", "minLength": 1, "maxLength": 160}}
     },
     "ReviewFinding": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "finding_id", "review_id", "project_id", "revision", "target", "observation", "recommendation", "evidence", "state"],
@@ -535,7 +547,7 @@
     },
     "Event": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "sequence", "occurred_at", "event_type", "request_id", "work_id", "actor", "native_session_id", "native_event_id", "payload"],
-      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "sequence": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}, "occurred_at": {"$ref": "#/$defs/Timestamp"}, "event_type": {"enum": ["project.state_changed", "work.state_changed", "request.accepted", "request.state_changed", "assistant.delta", "assistant.completed", "tool.started", "tool.completed", "subagent.started", "subagent.completed", "publication.created", "job.state_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "decision.requested", "decision.resolved", "review.ready", "usage.recorded"]}, "request_id": {"$ref": "#/$defs/NullableId"}, "work_id": {"$ref": "#/$defs/NullableId"}, "actor": {"$ref": "#/$defs/Actor"}, "native_session_id": {"type": ["string", "null"]}, "native_event_id": {"type": ["string", "null"]}, "payload": {"type": "object"}},
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "sequence": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}, "occurred_at": {"$ref": "#/$defs/Timestamp"}, "event_type": {"enum": ["project.state_changed", "work.state_changed", "request.accepted", "request.state_changed", "assistant.delta", "assistant.completed", "tool.started", "tool.completed", "subagent.started", "subagent.completed", "publication.created", "job.state_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "decision.requested", "decision.resolved", "review.ready", "review.changed", "usage.recorded"]}, "request_id": {"$ref": "#/$defs/NullableId"}, "work_id": {"$ref": "#/$defs/NullableId"}, "actor": {"$ref": "#/$defs/Actor"}, "native_session_id": {"type": ["string", "null"]}, "native_event_id": {"type": ["string", "null"]}, "payload": {"type": "object"}},
       "allOf": [
         {"if": {"properties": {"event_type": {"const": "project.state_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ProjectRecord"}}}},
         {"if": {"properties": {"event_type": {"const": "work.state_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/WorkRecord"}}}},
@@ -548,7 +560,7 @@
         {"if": {"properties": {"event_type": {"const": "segment.available"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/PreviewSegment"}}}},
         {"if": {"properties": {"event_type": {"enum": ["annotation.saved", "selection.changed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/CommandReceipt"}}}},
         {"if": {"properties": {"event_type": {"enum": ["decision.requested", "decision.resolved"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/Decision"}}}},
-        {"if": {"properties": {"event_type": {"const": "review.ready"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ReviewTicket"}}}},
+        {"if": {"properties": {"event_type": {"enum": ["review.ready", "review.changed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ReviewTicket"}}}},
         {"if": {"properties": {"event_type": {"const": "usage.recorded"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/UsageEventData"}}}}
       ]
     },

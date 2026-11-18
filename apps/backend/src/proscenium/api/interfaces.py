@@ -35,8 +35,27 @@ class SourceService(Protocol):
 
 
 class ReviewStore(Protocol):
-    def create(self, tx: Transaction, request: dict[str, Any], job_id: str) -> dict[str, Any]: ...
-    def complete(self, caller: Caller, request: dict[str, Any]) -> dict[str, Any]: ...
+    def create(
+        self,
+        tx: Transaction,
+        request: dict[str, Any],
+        job_id: str,
+        *,
+        caller: Caller | None = None,
+    ) -> dict[str, Any]: ...
+    def complete(
+        self,
+        caller: Caller,
+        request: dict[str, Any],
+        *,
+        diagnostics: dict[str, Any] | None = None,
+    ) -> dict[str, Any]: ...
+    def escalate(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]: ...
+    def ticket_view(self, tx: Transaction, ticket: dict[str, Any]) -> dict[str, Any]: ...
+    def detail(self, tx: Transaction, review_id: str) -> dict[str, Any]: ...
+    def record_diagnostics(
+        self, project_id: str, review_id: str, diagnostics: dict[str, Any]
+    ) -> None: ...
 
 
 class ContextService(Protocol):

@@ -57,10 +57,14 @@ description: Generate or correct project concept images with the configured, bud
   `.proscenium/artefacts/.../content` just to call `view`.
   Distinguish technical execution, agent assessment and
   owner selection. Do not replace source authoring or owner selection automatically.
-- A VLM review is a separate explicit `request_vlm_review` call. Supply only clean target
-  images when a `configured` or `ready` VLM provider is reported by capabilities.
-  Supply criteria and explicitly selected telemetry. Its native result is ONLY a review
-  ticket/status. Findings remain in the owner readstore until the owner submits them.
+- A VLM review is a separate explicit `request_vlm_review` call (include a short `title`,
+  concise visual `criteria` without policy boilerplate, and pass any registered `reference`
+  or `start` comparison frame alongside the candidate in `targets`) when a `configured` or
+  `ready` VLM provider is reported by capabilities. Call `get_vlm_review(review_id=..., wait_seconds=15)`
+  to inspect your current work's validated findings for bounded self-correction within the
+  remaining task budget, or call `escalate_vlm_review` with a clear question when you need
+  owner judgement in **Critic**. Only owner-approved findings in host context carry owner
+  instruction or selection authority.
 - Report exact job/output identities and limitations. Missing telemetry is unknown, not zero.
 - Publish a standalone `asset` without requiring a storyboard. Validate publications
   with `validate_authored_document` before `checkpoint_sources`/`publish_outputs`.

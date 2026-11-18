@@ -16,8 +16,10 @@ multiple-of-16 dimensions within `max_pixels`. Wait with
 `get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid polling.
 Inspect images using `get_artifact(artifact_id=..., include_image=true)`, never
 copy managed artefact content just to call `view`. Request `request_vlm_review`
-for produced visual outputs when a `configured` or `ready` VLM provider is reported.
-Only owner-approved findings become revision instructions.
+for produced visual outputs when a `configured` or `ready` VLM provider is reported,
+read `get_vlm_review(review_id=..., wait_seconds=15)` for active-work self-checks,
+and use `escalate_vlm_review` when human judgement is needed. Only owner-approved
+findings carry owner instruction authority.
 Acquire/import and publish a standalone `asset` without requiring a storyboard.
 Dependent scenes/storyboards remain pinned until an explicit adoption edit.
 

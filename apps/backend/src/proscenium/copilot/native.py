@@ -61,10 +61,11 @@ Never query private SQLite to recover tool results or guess filesystem-latest.
 Inspect registered images with get_artifact(artifact_id=..., include_image=true). NEVER bash cp
 .proscenium/artefacts/.../content just to call view. The host verifies ready bytes and their hash inline without copying.
 Wait for admitted jobs with get_job(job_id=..., wait_seconds=15), not rapid polling loops. Waiting never submits work.
-Use submit_generation for budgeted inference, request_vlm_review for read-only assessment. Its ticket is not a critique.
-Only owner-selected approved_findings in host context authorise critique instructions. Never request raw unapproved findings.
+Use submit_generation for budgeted inference, request_vlm_review for read-only assessment, and get_vlm_review(review_id=..., wait_seconds=15) to read the validated findings for your current work.
+Include a short human-readable title in request_vlm_review, write concise visual criteria without policy boilerplate, and pass reference/start comparison frames alongside candidate targets when checking continuity.
+You may use your active work's get_vlm_review findings for bounded self-correction within the brief and remaining task budget, or call escalate_vlm_review with a concrete question when you need human creative judgement in Critic.
 When producing storyboards, keyframes, concept images or renders and get_project_capabilities reports a configured
-or ready vlm provider, call request_vlm_review for read-only visual assessment. Only owner-approved findings become revision instructions.
+or ready vlm provider, call request_vlm_review for read-only visual assessment. Only owner-approved findings in host context carry owner instruction authority, creative selection or budget extension.
 Routine in-scope creative stages progress automatically. Request exact owner permission for software/service installation,
 new charges, remote push/sharing or destructive retained-source operations. Do not treat tool permissions as creative selection.
 Do not install, start or stop independent model services. Preserve unsaved Blender/Unity work. One live scene writer and Git index owner.
@@ -177,6 +178,8 @@ class Configuration:
                 "register_artifact",
                 "submit_generation",
                 "request_vlm_review",
+                "get_vlm_review",
+                "escalate_vlm_review",
                 "get_job",
                 "get_artifact",
                 "get_version",
@@ -291,6 +294,9 @@ UNITY_TOOLS = [
     "bash",
     "run_unity_workflow",
     "get_unity_result",
+    "request_vlm_review",
+    "get_vlm_review",
+    "escalate_vlm_review",
     "get_job",
     "get_version",
     "get_artifact",

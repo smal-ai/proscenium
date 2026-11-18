@@ -324,6 +324,15 @@ class RetainedFile(ContractModel):
 class ReviewComplete(ContractModel):
     definition = "ReviewComplete"
 
+class ReviewDetail(ContractModel):
+    definition = "ReviewDetail"
+
+class ReviewDiagnostics(ContractModel):
+    definition = "ReviewDiagnostics"
+
+class ReviewEscalate(ContractModel):
+    definition = "ReviewEscalate"
+
 class ReviewFinding(ContractModel):
     definition = "ReviewFinding"
 

@@ -54,3 +54,15 @@ async def complete_review(
     if body["review_id"] != review_id:
         raise DomainError("scope_denied", 403)
     return service(request).complete_review(caller, body)[0]
+
+
+@router.post("/internal/v1/reviews/{review_id}/escalate", operation_id="escalateToolReview")
+async def escalate_review(
+    review_id: str, request: Request, caller: Annotated[Caller, Depends(tool)]
+) -> dict[str, Any]:
+    from proscenium.api.errors import DomainError
+
+    body = await command(request, "ReviewEscalate")
+    if body["review_id"] != review_id:
+        raise DomainError("scope_denied", 403)
+    return get_services(request).extension("reviews").escalate(caller, body)[0]

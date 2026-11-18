@@ -72,10 +72,12 @@ description: Author and inspect Blender content inside the active Proscenium pro
    actionable tool errors and the original receipt instead of looping on failure.
 8. Use the budgeted generation adapter for inference. Do not install/start/stop
    ComfyUI, LM Studio, Unity or other independent services as a workaround.
-9. Request `request_vlm_review` for produced renders/keyframes when capabilities
-   report a `configured` or `ready` VLM provider. A ticket is not a critique.
-   Do not retrieve unapproved findings into
-   model context. Only owner-selected findings in host context authorise repairs.
+9. Request `request_vlm_review` (with a short `title`, concise visual `criteria`, and any
+   comparison `reference` / `start` frame in `targets`) for produced renders/keyframes when
+   capabilities report a `configured` or `ready` VLM provider. Read your current work's
+   critique with `get_vlm_review(review_id=..., wait_seconds=15)` for bounded self-correction,
+   or call `escalate_vlm_review` with an explicit question when human judgement is needed.
+   Only owner-selected findings in host context carry owner instruction or selection authority.
 10. After compaction re-read the brief and current plan. Stop is not rollback.
     Late publication/job results belong to their original source, work and attempt.
 

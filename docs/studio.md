@@ -77,3 +77,9 @@ The **Target** picker above the Composer separates what you are viewing from wha
   - **Reconcile only:** Inspects native state and settles proven barriers without sending a prompt.
   - **Continue original work:** Resumes the selected work with its latest acknowledged request context and original generation budget.
   - **Release held queue:** Unfences an idle project so held Queue requests can dispatch.
+
+## Visual Critic inbox and chat-aligned review
+
+- **Realtime Critic badge:** The **Critic** tab header counts reviews currently awaiting human attention (once per review, regardless of finding count). Routine agent self-checks stay out of **Pending** unless escalated with an explicit question; owner-requested critiques count while processing and while unreviewed findings remain, clearing automatically on zero-defect completion or when you click **Done without changes**.
+- **Pending / All inbox:** Defaults to **Pending**, listing compact review cards newest-first with only the **review name** and **24-hour SAST date/time** (`Date unavailable` when unrecorded).
+- **Critique conversation & anchored actions:** Selecting a card displays the original criteria, any lead escalation question, and atomic **Critic** finding entries with clickable target images and expandable evidence, above an anchored Composer that submits selected revisions against the reviewed target/version via **Queue** or **Steer**.

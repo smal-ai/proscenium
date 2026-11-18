@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ActivityEventData, ApiClient, Artifact, Event, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary } from "../../api";
+import type { ActivityEventData, ApiClient, Artifact, Event, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
+import { mergeReviews } from "../../app/useProjectData";
+import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
+import { CriticPanel, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
 import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
@@ -66,7 +69,8 @@ test("live tool calls provide readable working steps and reconnecting status", (
   const labels = {
     prepare_image_generation: "Preparing image", submit_generation: "Submitting image", get_job: "Waiting on job",
     get_artifact: "Inspecting output", validate_authored_document: "Validating plan", checkpoint_sources: "Checkpointing sources",
-    publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", request_preview: "Requesting preview",
+    publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", get_vlm_review: "Waiting on VLM critique",
+    escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",
     assemble_sequence: "Assembling sequence", run_unity_workflow: "Running Unity workflow", bash: "Running command",
     skill: "Loading skill", view: "Reading project file", get_project_capabilities: "Checking capabilities", custom_tool: "custom tool",
   };
@@ -340,4 +344,80 @@ test("resumableWork offers stopped work only until newer work runs and ChatPanel
   const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true), requests: [uncertainReq] });
   assert.match(markup, /<option value="continue_work" disabled="">Continue original work<\/option>/);
   assert.match(markup, /<option value="release_held_queue" disabled="">Release held queue<\/option>/);
+});
+
+test("default Studio split layout starts Navigator and Assistant at maximum width", () => {
+  assert.equal(NAVIGATOR_MAX_WIDTH, 520);
+  assert.equal(ASSISTANT_MAX_WIDTH, 760);
+  assert.deepEqual(defaultStudioLayout, {
+    mode: "split",
+    navigatorCollapsed: false,
+    assistantCollapsed: false,
+    navigatorWidth: 520,
+    assistantWidth: 760,
+  });
+});
+
+test("Critic SAST timestamps, revision-monotonic review merges and compact card markup", () => {
+  assert.equal(formatReviewTimeSast("2026-11-18T14:05:00Z"), "2026-11-18 16:05 SAST");
+  assert.equal(formatReviewTimeSast("2026-11-18T22:00:00Z"), "2026-11-19 00:00 SAST");
+  assert.equal(formatReviewTimeSast(null), "Date unavailable");
+
+  const olderPending: ReviewTicket = {
+    schema_version: "1.0",
+    review_id: "rev-1",
+    job_id: "job-1",
+    status: "ready",
+    title: "Shot 4 hull containment",
+    created_at: "2026-11-18T14:05:00Z",
+    revision: 2,
+    human_review_state: "pending",
+    awaiting_human: true,
+    finding_count: 2,
+    unreviewed_count: 2,
+  };
+  const resolvedNewer: ReviewTicket = {
+    ...olderPending,
+    revision: 3,
+    human_review_state: "resolved",
+    awaiting_human: false,
+    unreviewed_count: 0,
+  };
+  const selfCheck: ReviewTicket = {
+    schema_version: "1.0",
+    review_id: "rev-self",
+    job_id: "job-2",
+    status: "ready",
+    title: "Routine self check",
+    created_at: "2026-11-18T15:00:00Z",
+    revision: 2,
+    human_review_state: "not_requested",
+    awaiting_human: false,
+    finding_count: 1,
+    unreviewed_count: 1,
+  };
+
+  // Stale lower-revision snapshot cannot resurrect a resolved review's awaiting_human state.
+  const merged = mergeReviews([resolvedNewer], [olderPending, selfCheck]);
+  assert.equal(merged.find(r => r.review_id === "rev-1")?.awaiting_human, false);
+  assert.equal(isPendingReview(olderPending), true);
+  assert.equal(isPendingReview(selfCheck), false);
+  assert.equal(reviewDisplayName({ ...olderPending, title: "  " }), "rev-1");
+
+  const markup = renderToStaticMarkup(
+    <CriticPanel
+      api={api}
+      projectId="project"
+      selection={emptySelection()}
+      refreshRevision={0}
+      reviews={[olderPending, selfCheck]}
+      onQueue={async () => {}}
+    />,
+  );
+  assert.match(markup, /Pending \(1\)/);
+  assert.match(markup, /Shot 4 hull containment/);
+  assert.match(markup, /2026-11-18 16:05 SAST/);
+  assert.doesNotMatch(markup, /Routine self check/);
+  assert.doesNotMatch(markup, /Load existing reviews/);
+  assert.doesNotMatch(markup, /<select/);
 });

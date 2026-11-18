@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiClient, ApiError } from "../api";
-import type { ActivityEventData, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, SocketControl, WorkRecord } from "../api";
+import type { ActivityEventData, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, ReviewTicket, SocketControl, WorkRecord } from "../api";
 import { routes } from "../api/generated/operations";
 import { describeError, writePrivate } from "./storage";
 
@@ -54,6 +54,31 @@ export function mergeJobs(current: JobRecord[], incoming: JobRecord[]): JobRecor
   return [...byId.values()];
 }
 
+export function mergeReviews(current: ReviewTicket[], incoming: ReviewTicket[]): ReviewTicket[] {
+  const order: string[] = [];
+  const seen = new Set<string>();
+  for (const ticket of [...incoming, ...current]) {
+    if (!seen.has(ticket.review_id)) {
+      seen.add(ticket.review_id);
+      order.push(ticket.review_id);
+    }
+  }
+  const byId = new Map<string, ReviewTicket>();
+  for (const ticket of current) byId.set(ticket.review_id, ticket);
+  for (const ticket of incoming) {
+    const prev = byId.get(ticket.review_id);
+    const prevRev = prev?.revision ?? 0;
+    const nextRev = ticket.revision ?? 0;
+    if (!prev || nextRev >= prevRev) byId.set(ticket.review_id, ticket);
+  }
+  return order.map(id => byId.get(id)!).sort((a, b) => {
+    const ta = a.created_at ? Date.parse(a.created_at) : NaN;
+    const tb = b.created_at ? Date.parse(b.created_at) : NaN;
+    if (!Number.isNaN(ta) && !Number.isNaN(tb) && tb !== ta) return tb - ta;
+    return order.indexOf(a.review_id) - order.indexOf(b.review_id);
+  });
+}
+
 export function mergeSnapshot(
   current: ProjectSnapshot | null,
   incoming: ProjectSnapshot,
@@ -100,6 +125,7 @@ export function mergeSnapshot(
     active_work,
     items: mergeItems(current.items, incoming.items),
     jobs: mergeJobs(current.jobs, incoming.jobs),
+    reviews: incoming.reviews || current.reviews ? mergeReviews(current.reviews ?? [], incoming.reviews ?? []) : undefined,
     held_requests: mergeRequests(current.held_requests, incoming.held_requests).filter(r => r.receipt.state === "held"),
     pending_decisions: [...decisionMap.values()].filter(d => d.state === "pending"),
     execution: current.execution && incoming.event_sequence < current.event_sequence ? current.execution : incoming.execution,
@@ -111,6 +137,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const [requests, setRequests] = useState<RequestRecord[]>([]);
   const [items, setItems] = useState<ItemRecord[]>([]);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
+  const [reviews, setReviews] = useState<ReviewTicket[]>([]);
   const [retainedArtifacts, setRetainedArtifacts] = useState<RetainedArtifactSummary[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -120,7 +147,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const refreshRef = useRef<() => Promise<void>>(async () => {});
   const refresh = useCallback(() => refreshRef.current(), []);
   useEffect(() => {
-    setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setRetainedArtifacts([]); setEvents([]); setHydrated(false); setError("");
+    setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]); setEvents([]); setHydrated(false); setError("");
     if (!projectId) { setConnection("No active project"); return; }
     let disposed = false;
     let socket: WebSocket | undefined;
@@ -174,6 +201,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         setSnapshot(prev => mergeSnapshot(prev, s.value, cursor, knownWork));
         setItems(prev => mergeItems(prev, s.value.items));
         setJobs(prev => mergeJobs(prev, s.value.jobs));
+        if (s.value.reviews) setReviews(prev => mergeReviews(prev, s.value.reviews!));
       }
       if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
       if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
@@ -264,7 +292,11 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (!disposed) setItems(prev => mergeItems(prev, value)); }).catch(report);
         void loadRetainedArtifacts();
       }
-      if (["publication.created", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready"].includes(event.event_type) || (event.event_type === "job.state_changed" && jobMaterialChange)) setRevision(n => n + 1);
+      if (event.event_type === "review.ready" || event.event_type === "review.changed") {
+        const ticket = event.payload as unknown as ReviewTicket;
+        setReviews(prev => mergeReviews(prev, [ticket]));
+      }
+      if (["publication.created", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"].includes(event.event_type) || (event.event_type === "job.state_changed" && jobMaterialChange)) setRevision(n => n + 1);
     }
     async function replay() {
       if (replaying) return replaying;
@@ -324,5 +356,5 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     }).finally(connect);
     return () => { disposed = true; clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
   }, [api, projectId, onUnauthorised]);
-  return { snapshot, requests, items, jobs, retainedArtifacts, events, hydrated, connection, error, revision, refresh };
+  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error, revision, refresh };
 }

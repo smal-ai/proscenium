@@ -2,12 +2,14 @@
 
 import hashlib
 import json
+import re
 from typing import Any
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
+from proscenium.db.store import now
 from proscenium.reviews.references import References
 from proscenium.services import Services
 
@@ -26,6 +28,32 @@ def receipt(body: dict[str, Any], identity: str, state: str, revision: int) -> d
 def cas(expected: int, actual: int) -> None:
     if expected != actual:
         raise DomainError("revision_conflict", 409, current_revision=actual)
+
+
+def default_review_title(request: dict[str, Any]) -> str:
+    explicit = request.get("title")
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()[:160]
+    targets = request.get("targets") or []
+    subject = next((t for t in targets if t.get("origin") != "reference"), None) or (
+        targets[0] if targets else {}
+    )
+    prefix = subject.get("shot_id") or subject.get("version_id") or subject.get("item_id") or ""
+    raw_criteria = str(request.get("criteria") or "").strip()
+    cleaned = re.sub(
+        r"^(?:read-only\s+assessment\s+of\s+|assess\s+|evaluate\s+)",
+        "",
+        raw_criteria,
+        flags=re.IGNORECASE,
+    ).strip()
+    clause = re.split(r"[.;\n]", cleaned, maxsplit=1)[0].strip()
+    if len(clause) > 84:
+        clause = clause[:81].rstrip() + "…"
+    if prefix and clause:
+        title = f"{prefix} · {clause}"
+    else:
+        title = clause or prefix or str(request.get("review_id", "Visual review"))
+    return title[:160]
 
 
 class ReviewStore:
@@ -68,6 +96,185 @@ class ReviewStore:
     def owner(self, caller: Caller, project_id: str) -> None:
         if caller.channel != "owner" or project_id != self.services.registry.active_id():
             raise DomainError("scope_denied", 403)
+
+    @staticmethod
+    def _legacy_created_at(tx: Transaction, review_id: str, job_id: str) -> str | None:
+        row = tx.connection.execute(
+            "SELECT json_extract(body, '$.occurred_at') FROM events "
+            "WHERE (json_extract(body, '$.event_type')='job.state_changed' "
+            "AND json_extract(body, '$.payload.job_id')=?) "
+            "OR (json_extract(body, '$.event_type') IN ('review.ready', 'review.changed') "
+            "AND json_extract(body, '$.payload.review_id')=?) "
+            "ORDER BY sequence ASC LIMIT 1",
+            (job_id, review_id),
+        ).fetchone()
+        return row[0] if row and isinstance(row[0], str) else None
+
+    def _ensure_meta(self, tx: Transaction, review_id: str) -> dict[str, Any]:
+        existing = tx.get("review.meta", review_id, required=False)
+        if existing is not None:
+            return dict(existing)
+        ticket = tx.require("reviews", review_id)
+        request = tx.get("review.requests", review_id, required=False)
+        job = tx.get("jobs", ticket["job_id"], required=False) or {}
+        unreviewed_count = sum(
+            1
+            for f in tx.all("findings")
+            if f["review_id"] == review_id and f["state"] == "unreviewed"
+        )
+        is_owner = bool(job.get("owner_operation_id"))
+        human_requested = is_owner or unreviewed_count > 0
+        return dict(
+            channel="owner" if is_owner else "tool",
+            work_id=job.get("work_id"),
+            title=default_review_title(request) if request else review_id[:160],
+            created_at=self._legacy_created_at(tx, review_id, ticket["job_id"]),
+            human_requested=human_requested,
+            question=None,
+            resolved=not human_requested or (ticket["status"] == "ready" and unreviewed_count == 0),
+            revision=max(1, tx.revision("reviews", review_id) + 1),
+        )
+
+    @staticmethod
+    def _save_meta(tx: Transaction, review_id: str, meta: dict[str, Any]) -> None:
+        old = tx.get("review.meta", review_id, required=False)
+        tx.put(
+            "review.meta",
+            review_id,
+            meta,
+            expected_revision=tx.revision("review.meta", review_id) if old is not None else None,
+        )
+
+    def record_diagnostics(
+        self, project_id: str, review_id: str, diagnostics: dict[str, Any]
+    ) -> None:
+        clean = validate("ReviewDiagnostics", diagnostics)
+        store = self.services.registry.project_store(project_id)
+        with store.transaction() as tx:
+            old = tx.get("review.diagnostics", review_id, required=False)
+            tx.put(
+                "review.diagnostics",
+                review_id,
+                clean,
+                expected_revision=tx.revision("review.diagnostics", review_id)
+                if old is not None
+                else None,
+                schema="ReviewDiagnostics",
+            )
+
+    def ticket_view(
+        self,
+        tx: Transaction,
+        ticket: dict[str, Any],
+        *,
+        override_error_code: str | None = None,
+    ) -> dict[str, Any]:
+        review_id = ticket["review_id"]
+        meta = tx.get("review.meta", review_id, required=False)
+        request = tx.get("review.requests", review_id, required=False)
+        job = tx.get("jobs", ticket["job_id"], required=False)
+        diag = tx.get("review.diagnostics", review_id, required=False)
+        review_findings = [f for f in tx.all("findings") if f["review_id"] == review_id]
+        finding_count = len(review_findings)
+        unreviewed_count = sum(1 for f in review_findings if f["state"] == "unreviewed")
+
+        status = ticket["status"]
+        error_code = override_error_code or (diag or {}).get("error_code")
+        job_failed_or_uncertain = status == "failed"
+        if job is not None:
+            if job["state"] in {"failed", "cancelled"}:
+                status = "failed"
+                error_code = (
+                    error_code
+                    or job.get("error_code")
+                    or ("cancelled" if job["state"] == "cancelled" else "failed")
+                )
+                job_failed_or_uncertain = True
+            elif job["state"] == "outcome_uncertain":
+                error_code = error_code or job.get("error_code") or "outcome_uncertain"
+                job_failed_or_uncertain = True
+            elif job["state"] in {"starting", "running"} and status == "pending":
+                status = "running"
+        if status == "failed" and not error_code:
+            error_code = "failed"
+
+        if meta is not None:
+            title = meta.get("title") or (
+                default_review_title(request) if request else review_id[:160]
+            )
+            created_at = meta.get("created_at")
+            question = meta.get("question")
+            human_requested = bool(meta.get("human_requested"))
+            resolved = bool(meta.get("resolved"))
+            revision = int(meta.get("revision", 1))
+        else:
+            title = default_review_title(request) if request else review_id[:160]
+            created_at = self._legacy_created_at(tx, review_id, ticket["job_id"])
+            question = None
+            is_owner = bool((job or {}).get("owner_operation_id"))
+            human_requested = is_owner or unreviewed_count > 0
+            resolved = not human_requested or (status == "ready" and unreviewed_count == 0)
+            revision = max(
+                1,
+                tx.revision("reviews", review_id)
+                + 1
+                + sum(max(0, f["revision"] - 1) for f in review_findings),
+            )
+
+        if not human_requested or resolved:
+            awaiting_human = False
+        elif job_failed_or_uncertain:
+            awaiting_human = bool(question)
+        elif status in {"pending", "running"}:
+            awaiting_human = True
+        elif status == "ready":
+            awaiting_human = unreviewed_count > 0 or bool(question)
+        else:
+            awaiting_human = False
+
+        human_review_state = (
+            "pending" if awaiting_human else ("resolved" if human_requested else "not_requested")
+        )
+        return validate(
+            "ReviewTicket",
+            dict(
+                schema_version="1.0",
+                review_id=review_id,
+                job_id=ticket["job_id"],
+                status=status,
+                title=title,
+                created_at=created_at,
+                revision=revision,
+                human_review_state=human_review_state,
+                awaiting_human=awaiting_human,
+                question=question,
+                finding_count=finding_count,
+                unreviewed_count=unreviewed_count,
+                error_code=error_code,
+            ),
+        )
+
+    def detail(self, tx: Transaction, review_id: str) -> dict[str, Any]:
+        ticket = self.ticket_view(tx, tx.require("reviews", review_id))
+        request = tx.require("review.requests", review_id)
+        review_findings = sorted(
+            (f for f in tx.all("findings") if f["review_id"] == review_id),
+            key=lambda f: f["finding_id"],
+        )
+        diagnostics = tx.get("review.diagnostics", review_id, required=False)
+        return validate(
+            "ReviewDetail",
+            dict(
+                schema_version="1.0",
+                project_id=str(tx.project_id),
+                ticket=ticket,
+                criteria=request["criteria"],
+                targets=request["targets"],
+                telemetry_artifact_ids=request["telemetry_artifact_ids"],
+                findings=review_findings,
+                diagnostics=diagnostics,
+            ),
+        )
 
     def save_annotation(self, caller: Caller, body: dict[str, Any]) -> dict[str, Any]:
         validate("AnnotationSave", body)
@@ -195,7 +402,14 @@ class ReviewStore:
             result, replayed = tx.operation("reviews.selection", body["operation_id"], body, effect)
             return {**result, "replayed": replayed}
 
-    def create(self, tx: Transaction, request: dict[str, Any], job_id: str) -> dict[str, Any]:
+    def create(
+        self,
+        tx: Transaction,
+        request: dict[str, Any],
+        job_id: str,
+        *,
+        caller: Caller | None = None,
+    ) -> dict[str, Any]:
         """Trusted W07 primitive inside its authorised, idempotent job transaction.
 
         This method does not admit a job or infer owner authority. W07 must authenticate
@@ -213,6 +427,22 @@ class ReviewStore:
             job = tx.require("jobs", job_id)
             if job["kind"] != "vlm_review" or job["target"]["target_id"] != request["review_id"]:
                 raise DomainError("scope_denied", 403)
+            is_owner = (
+                caller.channel == "owner"
+                if caller is not None
+                else bool(job.get("owner_operation_id"))
+            )
+            raw_question = request.get("question")
+            question = (
+                raw_question.strip()
+                if isinstance(raw_question, str) and raw_question.strip()
+                else None
+            )
+            human_requested = (
+                bool(request["human_review"])
+                if "human_review" in request
+                else (is_owner or bool(question))
+            )
             ticket = dict(
                 schema_version="1.0",
                 review_id=request["review_id"],
@@ -221,14 +451,44 @@ class ReviewStore:
             )
             tx.put("reviews", request["review_id"], ticket, schema="ReviewTicket")
             tx.put("review.requests", request["review_id"], request, schema="ReviewRequest")
-            return ticket
+            self._save_meta(
+                tx,
+                request["review_id"],
+                dict(
+                    channel="owner" if is_owner else "tool",
+                    work_id=job["work_id"],
+                    title=default_review_title(request),
+                    created_at=now(),
+                    human_requested=human_requested,
+                    question=question,
+                    resolved=False,
+                    revision=1,
+                ),
+            )
+            projected = self.ticket_view(tx, ticket)
+            if human_requested:
+                actor_kind = "user" if is_owner else (caller.channel if caller else "tool")
+                actor_id = caller.subject_id if caller else (job.get("work_id") or "review-host")
+                tx.emit(
+                    "review.changed",
+                    projected,
+                    actor={"kind": actor_kind, "id": actor_id},
+                    work_id=job["work_id"],
+                )
+            return projected
 
         result, _ = tx.operation(
             "reviews.create", request["review_id"], {"request": request, "job_id": job_id}, effect
         )
         return result
 
-    def complete(self, caller: Caller, request: dict[str, Any]) -> dict[str, Any]:
+    def complete(
+        self,
+        caller: Caller,
+        request: dict[str, Any],
+        *,
+        diagnostics: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         validate("ReviewComplete", request)
         self.services.jobs.check_caller(caller, "completeToolReview", request["project_id"])
         with self.services.registry.project_store(request["project_id"]).transaction() as tx:
@@ -250,6 +510,8 @@ class ReviewStore:
                     raise DomainError("invalid_state_transition", 409)
                 original = tx.require("review.requests", request["review_id"])
                 targets = {canonical(t) for t in original["targets"]}
+                has_non_ref_candidate = any(t["origin"] != "reference" for t in original["targets"])
+                permitted_visual = {t["artifact_id"] for t in original["targets"]}
                 if request["status"] == "failed" and request["findings"]:
                     raise DomainError("invalid_request")
                 for finding in request["findings"]:
@@ -257,16 +519,17 @@ class ReviewStore:
                         finding["project_id"] != tx.project_id
                         or finding["review_id"] != request["review_id"]
                         or canonical(finding["target"]) not in targets
+                        or (has_non_ref_candidate and finding["target"]["origin"] == "reference")
                         or finding["revision"] != 1
                         or finding["state"] != "unreviewed"
                     ):
                         raise DomainError("source_conflict", 409)
                     for evidence in finding["evidence"]:
                         self.refs.artifact(tx, evidence["artifact_id"])
-                        if (
-                            evidence["kind"] == "measured"
-                            and evidence["artifact_id"] not in original["telemetry_artifact_ids"]
-                        ):
+                        if evidence["kind"] == "visual":
+                            if evidence["artifact_id"] not in permitted_visual:
+                                raise DomainError("scope_denied", 403)
+                        elif evidence["artifact_id"] not in original["telemetry_artifact_ids"]:
                             raise DomainError(
                                 "source_conflict",
                                 409,
@@ -279,6 +542,32 @@ class ReviewStore:
                         finding,
                         schema="ReviewFinding",
                     )
+                if diagnostics is not None or request.get("error_code"):
+                    existing_diag = (
+                        tx.get("review.diagnostics", request["review_id"], required=False) or {}
+                    )
+                    merged_diag = validate(
+                        "ReviewDiagnostics",
+                        {
+                            **existing_diag,
+                            **(diagnostics or {}),
+                            **(
+                                {"error_code": request["error_code"]}
+                                if request.get("error_code")
+                                else {}
+                            ),
+                        },
+                    )
+                    tx.put(
+                        "review.diagnostics",
+                        request["review_id"],
+                        merged_diag,
+                        expected_revision=tx.revision("review.diagnostics", request["review_id"])
+                        if tx.get("review.diagnostics", request["review_id"], required=False)
+                        is not None
+                        else None,
+                        schema="ReviewDiagnostics",
+                    )
                 updated = {**ticket, "status": request["status"]}
                 tx.put(
                     "reviews",
@@ -287,17 +576,136 @@ class ReviewStore:
                     expected_revision=tx.revision("reviews", ticket["review_id"]),
                     schema="ReviewTicket",
                 )
+                meta = self._ensure_meta(tx, request["review_id"])
+                meta["revision"] = int(meta.get("revision", 1)) + 1
+                if (
+                    request["status"] == "ready"
+                    and not request["findings"]
+                    and not meta.get("question")
+                ):
+                    meta["resolved"] = True
+                self._save_meta(tx, request["review_id"], meta)
+                projected = self.ticket_view(
+                    tx, updated, override_error_code=request.get("error_code")
+                )
                 if request["status"] == "ready":
                     tx.emit(
                         "review.ready",
-                        updated,
+                        projected,
                         actor={"kind": caller.channel, "id": caller.subject_id},
                         work_id=job["work_id"],
                     )
-                return updated
+                elif meta.get("human_requested"):
+                    tx.emit(
+                        "review.changed",
+                        projected,
+                        actor={"kind": caller.channel, "id": caller.subject_id},
+                        work_id=job["work_id"],
+                    )
+                return projected
 
             result, _ = tx.operation("reviews.complete", request["operation_id"], request, effect)
             return result
+
+    def escalate(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+        validate("ReviewEscalate", body)
+        project_id = body["project_id"]
+        self.services.jobs.check_caller(caller, "escalateToolReview", project_id, admission=True)
+        if caller.channel != "tool" or not caller.work_id:
+            raise DomainError("scope_denied", 403)
+        question = body["question"].strip()
+        if not question:
+            raise DomainError("invalid_request")
+        new_title = (
+            body["title"].strip()[:160]
+            if isinstance(body.get("title"), str) and body["title"].strip()
+            else None
+        )
+        store = self.services.registry.project_store(project_id)
+        immutable = {"body": body, "work_id": caller.work_id}
+        with store.transaction() as tx:
+
+            def effect() -> dict[str, Any]:
+                work = tx.require("work", str(caller.work_id))
+                if work["state"] not in {"running", "awaiting_user"}:
+                    raise DomainError("no_active_work", 409)
+                review_id = body["review_id"]
+                ticket = tx.require("reviews", review_id)
+                job = tx.require("jobs", ticket["job_id"])
+                if job["work_id"] != caller.work_id:
+                    raise DomainError("scope_denied", 403)
+                meta = self._ensure_meta(tx, review_id)
+                if (
+                    meta.get("human_requested")
+                    and not meta.get("resolved")
+                    and meta.get("question") is not None
+                ):
+                    if meta["question"] == question and (
+                        new_title is None or meta.get("title") == new_title
+                    ):
+                        return self.ticket_view(tx, ticket)
+                    raise DomainError("idempotency_conflict", 409)
+                meta["human_requested"] = True
+                meta["resolved"] = False
+                meta["question"] = question
+                if new_title is not None:
+                    meta["title"] = new_title
+                meta["revision"] = int(meta.get("revision", 1)) + 1
+                self._save_meta(tx, review_id, meta)
+                projected = self.ticket_view(tx, ticket)
+                if tx.get("providers.tickets", review_id, required=False) is not None:
+                    tx.put(
+                        "providers.tickets",
+                        review_id,
+                        projected,
+                        expected_revision=tx.revision("providers.tickets", review_id),
+                    )
+                tx.emit(
+                    "review.changed",
+                    projected,
+                    actor={"kind": "tool", "id": caller.subject_id},
+                    work_id=job["work_id"],
+                )
+                return projected
+
+            return tx.operation("reviews.escalate", body["operation_id"], immutable, effect)
+
+    def resolve(self, caller: Caller, review_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        validate("RevisionCommand", body)
+        self.owner(caller, body["project_id"])
+        with self.services.registry.project_store(body["project_id"]).transaction() as tx:
+
+            def effect() -> dict[str, Any]:
+                ticket = tx.require("reviews", review_id)
+                current = self.ticket_view(tx, ticket)
+                cas(body["expected_revision"], current["revision"])
+                meta = self._ensure_meta(tx, review_id)
+                meta["human_requested"] = True
+                meta["resolved"] = True
+                meta["revision"] = current["revision"] + 1
+                self._save_meta(tx, review_id, meta)
+                projected = self.ticket_view(tx, ticket)
+                if tx.get("providers.tickets", review_id, required=False) is not None:
+                    tx.put(
+                        "providers.tickets",
+                        review_id,
+                        projected,
+                        expected_revision=tx.revision("providers.tickets", review_id),
+                    )
+                tx.emit(
+                    "review.changed",
+                    projected,
+                    actor={"kind": "user", "id": caller.subject_id},
+                )
+                return receipt(body, review_id, "resolved", projected["revision"])
+
+            result, replayed = tx.operation(
+                "reviews.resolve",
+                body["operation_id"],
+                {**body, "review_id": review_id},
+                effect,
+            )
+            return {**result, "replayed": replayed}
 
     def reject(
         self, caller: Caller, review_id: str, finding_id: str, body: dict[str, Any]
@@ -315,6 +723,30 @@ class ReviewStore:
                     raise DomainError("invalid_state_transition", 409)
                 updated = {**finding, "state": "rejected", "revision": finding["revision"] + 1}
                 self._finding(tx, updated)
+                ticket = tx.require("reviews", review_id)
+                meta = self._ensure_meta(tx, review_id)
+                remaining_unreviewed = sum(
+                    1
+                    for f in tx.all("findings")
+                    if f["review_id"] == review_id and f["state"] == "unreviewed"
+                )
+                if remaining_unreviewed == 0 and not meta.get("question"):
+                    meta["resolved"] = True
+                meta["revision"] = int(meta.get("revision", 1)) + 1
+                self._save_meta(tx, review_id, meta)
+                projected = self.ticket_view(tx, ticket)
+                if tx.get("providers.tickets", review_id, required=False) is not None:
+                    tx.put(
+                        "providers.tickets",
+                        review_id,
+                        projected,
+                        expected_revision=tx.revision("providers.tickets", review_id),
+                    )
+                tx.emit(
+                    "review.changed",
+                    projected,
+                    actor={"kind": "user", "id": caller.subject_id},
+                )
                 return receipt(body, finding_id, "rejected", updated["revision"])
 
             result, replayed = tx.operation(
@@ -354,6 +786,7 @@ class ReviewStore:
 
         def effect() -> dict[str, Any]:
             seen = set()
+            touched_reviews: list[str] = []
             for approved in approved_findings:
                 validate("ApprovedFinding", approved)
                 identity = approved["finding_id"]
@@ -378,6 +811,34 @@ class ReviewStore:
                 tx.put(
                     "review.submissions", identity, {"request_id": request_id, "approved": approved}
                 )
+                if finding["review_id"] not in touched_reviews:
+                    touched_reviews.append(finding["review_id"])
+            for review_id in touched_reviews:
+                ticket = tx.require("reviews", review_id)
+                meta = self._ensure_meta(tx, review_id)
+                remaining_unreviewed = sum(
+                    1
+                    for f in tx.all("findings")
+                    if f["review_id"] == review_id and f["state"] == "unreviewed"
+                )
+                if remaining_unreviewed == 0:
+                    meta["resolved"] = True
+                meta["revision"] = int(meta.get("revision", 1)) + 1
+                self._save_meta(tx, review_id, meta)
+                projected = self.ticket_view(tx, ticket)
+                if tx.get("providers.tickets", review_id, required=False) is not None:
+                    tx.put(
+                        "providers.tickets",
+                        review_id,
+                        projected,
+                        expected_revision=tx.revision("providers.tickets", review_id),
+                    )
+                tx.emit(
+                    "review.changed",
+                    projected,
+                    actor={"kind": "system", "id": "review-host"},
+                    request_id=request_id,
+                )
             return {"request_id": request_id}
 
         tx.operation("reviews.submit", request_id, approved_findings, effect)
@@ -387,7 +848,7 @@ def install(services: Services) -> ReviewStore:
     existing = services.extensions.get("reviews")
     if existing is not None:
         if not isinstance(existing, ReviewStore):
-            raise ValueError("A different review store is already installed")
+            raise RuntimeError("Incompatible reviews extension installed")
         return existing
     store = ReviewStore(services)
     services.extensions["reviews"] = store

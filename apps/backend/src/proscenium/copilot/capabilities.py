@@ -37,6 +37,8 @@ RECOMMENDED_TOOLS = frozenset(
         "register_artifact",
         "submit_generation",
         "request_vlm_review",
+        "get_vlm_review",
+        "escalate_vlm_review",
         "get_job",
         "get_artifact",
         "get_version",
