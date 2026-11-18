@@ -123,7 +123,7 @@ class ReviewStore:
             if f["review_id"] == review_id and f["state"] == "unreviewed"
         )
         is_owner = bool(job.get("owner_operation_id"))
-        human_requested = is_owner or unreviewed_count > 0
+        human_requested = is_owner
         return dict(
             channel="owner" if is_owner else "tool",
             work_id=job.get("work_id"),
@@ -212,7 +212,7 @@ class ReviewStore:
             created_at = self._legacy_created_at(tx, review_id, ticket["job_id"])
             question = None
             is_owner = bool((job or {}).get("owner_operation_id"))
-            human_requested = is_owner or unreviewed_count > 0
+            human_requested = is_owner
             resolved = not human_requested or (status == "ready" and unreviewed_count == 0)
             revision = max(
                 1,

@@ -650,10 +650,21 @@ class State:
                         },
                     )
                 if kind == "permission.requested":
-                    permission = data["permissionRequest"]
-                    tool_call = permission.get("toolCallId")
+                    permission = data.get("permissionRequest")
+                    tool_call = (
+                        permission.get("toolCallId") if isinstance(permission, dict) else None
+                    )
+                    if not isinstance(tool_call, str) or not tool_call:
+                        self.fence(tx, "attribution_unavailable")
+                        return
                     permission_binding = self.binding(tx, session_id, "tool", tool_call)
-                    if not permission_binding or not tool_call:
+                    if permission_binding is None:
+                        self.bind(tx, session_id, "tool", tool_call, binding)
+                        permission_binding = binding
+                    elif any(
+                        permission_binding.get(k) != binding.get(k)
+                        for k in ("work_id", "request_id", "delivery_id")
+                    ):
                         self.fence(tx, "attribution_unavailable")
                         return
                     stage_id = key(session_id, data["requestId"])

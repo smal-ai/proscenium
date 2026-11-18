@@ -934,3 +934,82 @@ def test_blender_worker_ignores_local_asset_shelf_weak_refs_and_allows_curve_fon
     )
     assert _is_tessellated_primitive_instance(curve_inst) is True
     assert _is_tessellated_primitive_instance(collection_inst) is False
+
+
+def test_subagent_permission_requested_and_rpc_before_tool_execution_start_never_false_fences(
+    tmp_path, monkeypatch
+):
+    import asyncio
+    import hashlib
+
+    import test_runtime_controls_and_diagnostics as rcd
+    from proscenium.copilot.service import Copilot
+
+    state, store, _, _ = rcd.runtime.__wrapped__(tmp_path, monkeypatch)
+    rcd.start(state)
+
+    sub_agent = "subagent-race-1"
+    sub_start = rcd.event("ev-sub-start", "subagent.started", agentName="authoring-specialist")
+    sub_start["agentId"] = sub_agent
+    state.reduce(rcd.PROJECT, rcd.SESSION, sub_start)
+
+    tool_call_id = "call_Ep8TOn3RqkObbMPtujJOk0hL"
+    perm_req = {
+        "kind": "custom-tool",
+        "toolCallId": tool_call_id,
+        "toolName": "get_job",
+        "args": {"job_id": "job-race-1", "wait_seconds": 15},
+    }
+    # 1. permission.requested arrives BEFORE tool.execution_start!
+    perm_ev = rcd.event(
+        "ev-perm-req",
+        "permission.requested",
+        requestId="perm-race-1",
+        permissionRequest=perm_req,
+    )
+    perm_ev["agentId"] = sub_agent
+    state.reduce(rcd.PROJECT, rcd.SESSION, perm_ev)
+
+    with store.transaction(write=False) as tx:
+        assert state.control(tx)["fenced"] is False
+
+    copilot = Copilot.__new__(Copilot)
+    copilot.services = state.services
+    copilot.state = state
+    copilot.closing = False
+
+    async def run_race():
+        # 2. RPC permission callback starts BEFORE tool.execution_start lands!
+        perm_task = asyncio.create_task(
+            copilot.permission(rcd.PROJECT, perm_req, {"session_id": rcd.SESSION})
+        )
+        await asyncio.sleep(0.06)
+        start_ev = rcd.event(
+            "ev-tool-start",
+            "tool.execution_start",
+            toolCallId=tool_call_id,
+            toolName="get_job",
+            arguments={"job_id": "job-race-1", "wait_seconds": 15},
+        )
+        start_ev["agentId"] = sub_agent
+        state.reduce(rcd.PROJECT, rcd.SESSION, start_ev)
+        decision = await asyncio.wait_for(perm_task, 2.0)
+        done_ev = rcd.event(
+            "ev-perm-done",
+            "permission.completed",
+            requestId="perm-race-1",
+            toolCallId=tool_call_id,
+            result={"kind": "approved"},
+        )
+        done_ev["agentId"] = sub_agent
+        state.reduce(rcd.PROJECT, rcd.SESSION, done_ev)
+        return decision
+
+    decision = asyncio.run(run_race())
+    assert decision.kind == "approve-once"
+    with store.transaction(write=False) as tx:
+        assert state.control(tx)["fenced"] is False
+        stage = tx.require("copilot.permissions", rcd.key(rcd.SESSION, "perm-race-1"))
+        assert stage["phase"] == "completed"
+        assert stage["authority"] == "automatic_policy"
+        assert hashlib.sha256(canonical(perm_req)).hexdigest() == stage["fingerprint"]

@@ -1993,58 +1993,105 @@ class Copilot:
         tool_id = request.get("toolCallId")
         fingerprint = hashlib.sha256(canonical(request)).hexdigest()
         claim_id = uuid4().hex
-        with self.services.registry.project_store(project_id).transaction() as tx:
-            binding = self.state.binding(tx, str(sid), "tool", tool_id)
-            matches = [
-                s
-                for s in tx.all("copilot.permissions")
-                if s.get("session_id") == sid
-                and s.get("tool_call_id") == tool_id
-                and s.get("fingerprint") == fingerprint
-                and s.get("phase") != "completed"
-                and not self.state.native_denied_stage(tx, s)
-                and not self.state.interrupted_custom_stage(tx, s)
-                and not retired_read_stage(tx, s)
-            ]
-            save(
-                tx,
-                "copilot.permission_callbacks",
-                claim_id,
-                {
-                    "session_id": sid,
-                    "tool_call_id": tool_id,
-                    "fingerprint": fingerprint,
-                    "state": "rejected_correlation",
-                    "authority": "host",
-                },
-            )
-            if (
-                not binding
-                or self.state.control(tx)["fenced"]
-                or len(matches) != 1
-                or matches[0].get("phase") != "pending"
-                or any(matches[0].get(k) != v for k, v in binding.items())
-                or tx.require("work", binding["work_id"])["state"]
-                not in {"running", "awaiting_user"}
-            ):
-                self.state.fence(tx, "attribution_unavailable")
-                return PermissionDecisionReject()
-            binding = {**binding, "invocation_id": key(str(sid), "tool", str(tool_id))}
-            stage = matches[0]
-            native_id = stage["native_id"]
-            stage_id = key(str(sid), native_id)
-            stage = {**stage, "phase": "claimed", "claim_id": claim_id, "claimed_at": now()}
-            save(tx, "copilot.permissions", stage_id, stage)
-            save(
-                tx,
-                "copilot.permission_callbacks",
-                claim_id,
-                {
-                    **stage,
-                    "state": "claimed",
-                    "authority": None,
-                },
-            )
+        needs_invocation = request.get("kind") in {"custom-tool", "read", "write"}
+        claimed = False
+        stage_id = ""
+        binding: dict[str, Any] | None = None
+        for attempt in range(41):
+            if attempt > 0:
+                if self.closing:
+                    return PermissionDecisionReject()
+                try:
+                    self.services.gate.require(project_id)
+                except DomainError:
+                    return PermissionDecisionReject()
+                await asyncio.sleep(0.05)
+            with self.services.registry.project_store(project_id).transaction() as tx:
+                fenced = self.state.control(tx)["fenced"]
+                binding = self.state.binding(tx, str(sid), "tool", tool_id)
+                matches = [
+                    s
+                    for s in tx.all("copilot.permissions")
+                    if s.get("session_id") == sid
+                    and s.get("tool_call_id") == tool_id
+                    and s.get("fingerprint") == fingerprint
+                    and s.get("phase") != "completed"
+                    and not self.state.native_denied_stage(tx, s)
+                    and not self.state.interrupted_custom_stage(tx, s)
+                    and not retired_read_stage(tx, s)
+                ]
+                work_ok = bool(
+                    binding
+                    and tx.require("work", binding["work_id"])["state"]
+                    in {"running", "awaiting_user"}
+                )
+                inv_id = key(str(sid), "tool", str(tool_id))
+                inv_ready = not needs_invocation or (
+                    tx.get("invocations", inv_id, required=False) is not None
+                )
+                ready = bool(
+                    not fenced
+                    and binding
+                    and work_ok
+                    and len(matches) == 1
+                    and matches[0].get("phase") == "pending"
+                    and all(matches[0].get(k) == v for k, v in binding.items())
+                    and inv_ready
+                )
+                if ready:
+                    assert binding is not None
+                    binding = {**binding, "invocation_id": inv_id}
+                    stage = matches[0]
+                    native_id = stage["native_id"]
+                    stage_id = key(str(sid), native_id)
+                    stage = {**stage, "phase": "claimed", "claim_id": claim_id, "claimed_at": now()}
+                    save(tx, "copilot.permissions", stage_id, stage)
+                    save(
+                        tx,
+                        "copilot.permission_callbacks",
+                        claim_id,
+                        {
+                            **stage,
+                            "state": "claimed",
+                            "authority": None,
+                        },
+                    )
+                    claimed = True
+                    break
+                definite_conflict = (
+                    fenced
+                    or not sid
+                    or not tool_id
+                    or (binding is not None and not work_ok)
+                    or len(matches) > 1
+                    or (
+                        len(matches) == 1
+                        and (
+                            matches[0].get("phase") != "pending"
+                            or (
+                                binding is not None
+                                and any(matches[0].get(k) != v for k, v in binding.items())
+                            )
+                        )
+                    )
+                )
+                if definite_conflict or attempt == 40:
+                    save(
+                        tx,
+                        "copilot.permission_callbacks",
+                        claim_id,
+                        {
+                            "session_id": sid,
+                            "tool_call_id": tool_id,
+                            "fingerprint": fingerprint,
+                            "state": "rejected_correlation",
+                            "authority": "host",
+                        },
+                    )
+                    self.state.fence(tx, "attribution_unavailable")
+                    return PermissionDecisionReject()
+        if not claimed or binding is None:
+            return PermissionDecisionReject()
 
         def reply(approve: bool, authority: str, denial_reason: str | None = None) -> Any:
             # Commit the exact claim/result before handing control back to the SDK.
@@ -2204,10 +2251,21 @@ class Copilot:
 
     async def user_input(self, project_id: str, request: dict[str, Any], invocation: Any) -> Any:
         sid, native_id = invocation.get("session_id"), request.get("requestId")
-        with self.services.registry.project_store(project_id).transaction() as tx:
-            binding = self.state.binding(tx, str(sid), "decision", native_id)
-            if not binding or not binding.get("invocation_id"):
-                self.state.fence(tx, "attribution_unavailable")
+        binding: dict[str, Any] | None = None
+        for attempt in range(41):
+            if attempt > 0:
+                if self.closing:
+                    raise DomainError("stale_decision", 409)
+                await asyncio.sleep(0.05)
+            with self.services.registry.project_store(project_id).transaction() as tx:
+                if self.state.control(tx)["fenced"]:
+                    break
+                binding = self.state.binding(tx, str(sid), "decision", native_id)
+                if binding and binding.get("invocation_id"):
+                    break
+                if not sid or not native_id or attempt == 40:
+                    self.state.fence(tx, "attribution_unavailable")
+                    break
         if not binding or not binding.get("invocation_id"):
             self.notify()
             raise DomainError("attribution_unavailable", 409)
