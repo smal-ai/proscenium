@@ -15,6 +15,7 @@ from proscenium.previews import runner
 from proscenium.previews import service as preview_service
 from proscenium.previews.journal import atomic, read, sha
 from proscenium.previews.service import PreviewService, worker_caller
+from proscenium.reviews.references import References
 from test_vlm_critic_workflow import vlm_runtime as vlm_runtime
 from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK, invoke
 from test_worker_capabilities_and_publication import offline as offline
@@ -380,7 +381,7 @@ def review_request(targets):
     }
 
 
-@pytest.mark.parametrize("origin", ["concept", "reference", "blender_render"])
+@pytest.mark.parametrize("origin", ["concept", "reference", "blender_render", "sequence_render"])
 def test_vlm_draft_motion_stills_require_exact_receipt_before_job_admission(
     studio, monkeypatch, origin
 ):
@@ -422,6 +423,7 @@ def test_vlm_draft_motion_stills_require_exact_receipt_before_job_admission(
     message = (
         "Draft motion visual review targets must reference receipt-backed render or sequence frames"
     )
+    expected_frames = []
     if origin == "blender_render":
         job = plan_render(studio)
         with studio.store.transaction() as tx:
@@ -429,6 +431,57 @@ def test_vlm_draft_motion_stills_require_exact_receipt_before_job_admission(
         target.update(**VERSION, render_job_id=job["job_id"], shot_id="shot-one", source_frame=1)
         code = "source_conflict"
         message = "No exact frame receipt"
+    elif origin == "sequence_render":
+        job, root = attempt(studio, end=1)
+        contributor = frame_receipt(job, root, 1)
+        studio.previews.register(worker_caller(job), contributor)
+        expected_frames = [contributor]
+        sequence = {"item_id": "sequence-one", "version_id": "sequence-version-one"}
+        mapping = {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "sequence_version_id": sequence["version_id"],
+            "fps": FPS,
+            "frame_count": 1,
+            "blend_space": "linear_rgb",
+            "frames": [
+                {
+                    "sequence_frame": 1,
+                    "contributors": [
+                        {
+                            **{
+                                key: contributor[key]
+                                for key in ("job_id", "version_id", "shot_id", "source_frame")
+                            },
+                            "weight": {"numerator": 1, "denominator": 1},
+                        }
+                    ],
+                }
+            ],
+        }
+        artefacts = studio.previews.artifacts
+        frame_map = artefacts.promote(
+            PROJECT,
+            "sequence-frame-map",
+            json.dumps(mapping).encode(),
+            kind="frame_map",
+            purpose="metadata",
+            media_type="application/json",
+        )
+        with studio.store.transaction() as tx:
+            tx.put("versions", sequence["version_id"], {**sequence, "project_id": PROJECT})
+            artefacts.put(tx, frame_map)
+        target.update(
+            **sequence,
+            sequence_version_id=sequence["version_id"],
+            sequence_frame=1,
+            frame_map_artifact_id=frame_map["artifact_id"],
+        )
+        assert target["displayed_sha256"] == contributor["sha256"]
+        assert target["artifact_id"] != contributor["artifact_id"]
+        # A valid map and a byte-identical contributor cannot prove receipt of this artefact.
+        with studio.store.transaction(write=False) as tx:
+            References(studio.services).target(tx, target)
 
     def forbid_job_creation(*args, **kwargs):
         pytest.fail("Target preflight must reject before attempting review job allocation")
@@ -439,7 +492,7 @@ def test_vlm_draft_motion_stills_require_exact_receipt_before_job_admission(
         studio, "request_vlm_review", review_request([target]), identity="call-reject"
     )
     assert (status, error["error"], error["message"]) == ("failure", code, message)
-    assert records(studio, "frames") == []
+    assert records(studio, "frames") == expected_frames
     assert records(studio, "reviews") == []
     assert records(studio, "providers.tickets") == []
     assert records(studio, "jobs") == prior_jobs

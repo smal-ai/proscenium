@@ -61,8 +61,8 @@ function useShotPlan({ api, projectId }: Lookups, versionId?: string) {
 }
 
 function ItemSelect({ label, items, itemId, onChange }: { label: string; items: ItemRecord[]; itemId: string; onChange: (id: string) => void }) {
-  return <label>{label}<select aria-label={label} value={itemId} onChange={event => onChange(event.target.value)}>
-    <option value="" disabled>Choose published item</option>
+  return <label>{label}<select aria-label={label} value={itemId} disabled={!items.length} onChange={event => onChange(event.target.value)}>
+    <option value="" disabled>{items.length ? "Choose published item" : "No published items yet"}</option>
     {items.map(item => <option key={item.item_id} value={item.item_id}>{item.kind} · {item.name}</option>)}
   </select></label>;
 }
@@ -83,6 +83,7 @@ function ExistingTarget({ api, projectId, items, target, onTarget, plan, pending
   const itemId = pinned?.item_id ?? "";
   const versionId = pinned?.version_id ?? "";
   const current = items.find(item => item.item_id === itemId)?.current_version_id;
+  const eligibleItems = items.filter(item => canTarget(item) && (item.current_version_id || item.item_id === itemId));
   const currentShotId = target !== "current_view" && target.kind === "shot" && versionId ? target.shot_id : "";
   const result = useVersions({ api, projectId }, itemId, current);
   const error = result?.error ?? (versionId ? plan?.error : undefined);
@@ -91,7 +92,7 @@ function ExistingTarget({ api, projectId, items, target, onTarget, plan, pending
     if (version_id) onTarget({ kind: "item", version: { item_id: next, version_id } });
   }
   return <div className="target-existing-fields">
-    <ItemSelect label="Published item" items={items.filter(item => canTarget(item) && (item.current_version_id || item.item_id === itemId))} itemId={itemId} onChange={chooseItem} />
+    <ItemSelect label="Published item" items={eligibleItems} itemId={itemId} onChange={chooseItem} />
     {itemId && <VersionSelect label="Published version" result={result} versionId={versionId} current={current}
       onChange={version_id => onTarget({ kind: "item", version: { item_id: itemId, version_id } })} />}
     {plan?.plan && pinned && versionId && <label>Specific shot (optional)<select aria-label="Target storyboard shot" value={currentShotId} onChange={event => {
@@ -101,7 +102,7 @@ function ExistingTarget({ api, projectId, items, target, onTarget, plan, pending
       <option value="">Entire storyboard version</option>
       {plan.plan.shots.map(shot => <option key={shot.shot_id} value={shot.shot_id}>{shot.intent || shot.shot_id}</option>)}
     </select></label>}
-    {pending && <small className="target-pending-hint">Select a published item to enable sending, or choose another target mode.</small>}
+    {pending && <small className="target-pending-hint">{eligibleItems.length ? "Select a published item to enable sending, or choose another target mode." : "No published items exist yet. Choose another target mode to enable sending."}</small>}
     {error && <small role="alert">{error}</small>}
   </div>;
 }

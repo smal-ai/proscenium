@@ -40,6 +40,9 @@ Registrar = Callable[[Caller, JSON], JSON]
 REVIEWABLE_IMAGE_PURPOSES = frozenset(
     {"concept", "reference", "keyframe", "draft_motion", "inspection", "final"}
 )
+DRAFT_MOTION_RECEIPT_REQUIRED = (
+    "Draft motion visual review targets must reference receipt-backed render or sequence frames"
+)
 
 
 def sha(data: bytes) -> str:
@@ -441,15 +444,24 @@ class ProviderService:
                 raise DomainError(
                     "invalid_request",
                     422,
-                    "Draft motion visual review targets must reference receipt-backed render or sequence frames",
+                    DRAFT_MOTION_RECEIPT_REQUIRED,
                 )
             hashes[target["artifact_id"]] = artifact["sha256"]
             image_hashes[target["artifact_id"]] = sha(clean)
             target_purposes[target["artifact_id"]] = artifact["purpose"]
         refs = References(self.services)
         with store.transaction(write=False) as tx:
+            frames = tx.all("frames") if "draft_motion" in target_purposes.values() else []
             for target in request["targets"]:
                 refs.target(tx, target)
+                # Sequence maps prove contributor receipts, not the displayed PNG itself.
+                if target_purposes[target["artifact_id"]] == "draft_motion" and not any(
+                    frame["artifact_id"] == target["artifact_id"]
+                    and frame["sha256"] == target["displayed_sha256"]
+                    and frame["dimensions"] == target["dimensions"]
+                    for frame in frames
+                ):
+                    raise DomainError("invalid_request", 422, DRAFT_MOTION_RECEIPT_REQUIRED)
         for identity in request["telemetry_artifact_ids"]:
             artifact, data = self.artifact_bytes(project_id, identity)
             if artifact["media_type"] != "application/json" or len(data) > 1024 * 1024:

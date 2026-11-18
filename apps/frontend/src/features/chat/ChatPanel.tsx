@@ -102,7 +102,11 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   }, [recoveryStateKey, Boolean(chosenResumeWork)]);
   const resolvedTarget = resolveTarget(draftTarget, selection);
   const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
-  const currentSelection: TurnSelection = draftTarget === "current_view" && (selection.version_id || selection.annotations.length || selection.attachments.length) ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] } : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
+  const currentSelection: TurnSelection = pendingExisting
+    ? { ...cleanTargetContext({ kind: "project" }, effectiveReferences, attachments), request_target: undefined }
+    : draftTarget === "current_view" && (selection.version_id || selection.annotations.length || selection.attachments.length)
+      ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] }
+      : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
   function changeDraft(value: string) { setDraft(value); writePrivate(`draft.${projectId}`, value); }
   function changeTarget(target: DraftTarget) {
     setPendingExisting(false);

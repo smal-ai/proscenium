@@ -192,7 +192,7 @@ test("Independent jobs shows real frame progress, attention first and only settl
 });
 
 test("Target picker exposes four distinct modes and references do not require an existing primary target", () => {
-  const markupFor = (target: DraftTarget, references = [ref], open = true, pendingExisting?: boolean) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={[asset]} target={target} selection={emptySelection()} references={references} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={pendingExisting} {...(open ? { open } : {})} />);
+  const markupFor = (target: DraftTarget, references = [ref], open = true, pendingExisting?: boolean, items = [asset]) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={items} target={target} selection={emptySelection()} references={references} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={pendingExisting} {...(open ? { open } : {})} />);
   const current = markupFor("current_view", []);
   assert.match(current, /Target mode.*aria-pressed="true">Current view.*aria-pressed="false">Project.*aria-pressed="false">Existing….*aria-pressed="false">New…/);
   assert.match(current, /Nothing open in Review · resolves to Project on submit/);
@@ -201,6 +201,9 @@ test("Target picker exposes four distinct modes and references do not require an
   const pending = markupFor("current_view", [], true, true);
   assert.match(pending, /aria-invalid="true".*Target:<\/span> Choose published item….*aria-pressed="true">Existing…/);
   assert.match(pending, /class="target-pending-hint">Select a published item to enable sending, or choose another target mode\./);
+  const unpublished = markupFor("current_view", [], true, true, [{ ...asset, current_version_id: null }]);
+  assert.match(unpublished, /<select aria-label="Published item" disabled=""><option[^>]*>No published items yet<\/option><\/select>/);
+  assert.match(unpublished, /No published items exist yet\. Choose another target mode to enable sending\./);
   assert.match(markupFor("current_view", [], false, true), /aria-expanded="false".*Target:<\/span> Choose published item…/);
   assert.match(markupFor({ kind: "project" }), /aria-pressed="true">Project.*Project-wide planning/);
   const existing = markupFor({ kind: "item", version: ref });
