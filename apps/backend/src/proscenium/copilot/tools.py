@@ -251,6 +251,11 @@ SAFE_REASONS = frozenset(
         "Image artefact is not ready for inline inspection",
         "Inline image inspection supports ready PNG, JPEG or WebP artefacts only",
         "Image artefact exceeds inline inspection bounds",
+        "Visual review targets must be ready PNG, JPEG or WebP still images",
+        "Stored artefact bytes do not match their recorded SHA-256 digest",
+        "Target displayed_sha256 does not match the registered image artefact",
+        "Target dimensions do not match the registered image artefact",
+        "Artefact purpose is not eligible for visual review; supply concept, reference, keyframe, draft_motion, inspection or final still images",
         "Unstructured target must name its task",
     }
 )
@@ -262,6 +267,8 @@ ERROR_GUIDANCE = {
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
     "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
     "hash_mismatch": "Registered bytes or the source digest do not match. Reconcile the original source/artefact identity; do not reuse this operation ID with changed input.",
+    "frame_conflict": "The frame or its dimensions do not match the registered artefact. Check the original frame receipt before retrying.",
+    "unsupported_media_type": "This operation does not support the supplied media type. Check the supported formats before retrying.",
     "dependency_missing": "A pinned source dependency is missing. Check the published source closure and dependency versions.",
     "idempotency_conflict": "This operation ID already binds different input or invocation authority. Inspect its original receipt; do not blindly repeat the effect.",
     "revision_conflict": "The record revision changed. Read the current record before submitting a corrected command.",

@@ -36,6 +36,9 @@ from proscenium.services import Services
 
 JSON = dict[str, Any]
 Registrar = Callable[[Caller, JSON], JSON]
+REVIEWABLE_IMAGE_PURPOSES = frozenset(
+    {"concept", "reference", "keyframe", "draft_motion", "inspection", "final"}
+)
 
 
 def sha(data: bytes) -> str:
@@ -215,10 +218,17 @@ class ProviderService:
         artifact = self.artifacts.get(project_id, artifact_id)
         if artifact["project_id"] != project_id or artifact["state"] != "ready":
             raise DomainError("media_unavailable", 422)
-        data = self.artifacts.ready_path(project_id, artifact_id).read_bytes()
-        if sha(data) != artifact["sha256"] or len(data) != artifact["bytes"]:
-            raise DomainError("hash_mismatch", 422)
-        return artifact, data
+        try:
+            data = self.artifacts.ready_path(project_id, artifact_id).read_bytes()
+        except DomainError as exc:
+            if exc.code != "hash_mismatch":
+                raise
+        else:
+            if sha(data) == artifact["sha256"] and len(data) == artifact["bytes"]:
+                return artifact, data
+        raise DomainError(
+            "hash_mismatch", 422, "Stored artefact bytes do not match their recorded SHA-256 digest"
+        )
 
     def image_bytes(self, project_id: str, artifact_id: str) -> tuple[JSON, bytes]:
         artifact, data = self.artifact_bytes(project_id, artifact_id)
@@ -227,7 +237,11 @@ class ProviderService:
             "image/jpeg",
             "image/webp",
         }:
-            raise DomainError("unsupported_media_type", 415)
+            raise DomainError(
+                "unsupported_media_type",
+                415,
+                "Visual review targets must be ready PNG, JPEG or WebP still images",
+            )
         with Image.open(io.BytesIO(data)) as image:
             if image.width * image.height > self.services.settings.upload_max_pixels:
                 raise DomainError("image_dimensions_exceeded", 413)
@@ -401,13 +415,24 @@ class ProviderService:
         target_purposes = {}
         for target in request["targets"]:
             artifact, clean = self.image_bytes(project_id, target["artifact_id"])
-            if (
-                artifact["sha256"] != target["displayed_sha256"]
-                or artifact.get("dimensions") != target["dimensions"]
-                or artifact["purpose"]
-                not in {"concept", "reference", "keyframe", "inspection", "final"}
-            ):
-                raise DomainError("hash_mismatch", 422)
+            if artifact["sha256"] != target["displayed_sha256"]:
+                raise DomainError(
+                    "hash_mismatch",
+                    422,
+                    "Target displayed_sha256 does not match the registered image artefact",
+                )
+            if artifact.get("dimensions") != target["dimensions"]:
+                raise DomainError(
+                    "frame_conflict",
+                    422,
+                    "Target dimensions do not match the registered image artefact",
+                )
+            if artifact["purpose"] not in REVIEWABLE_IMAGE_PURPOSES:
+                raise DomainError(
+                    "invalid_request",
+                    422,
+                    "Artefact purpose is not eligible for visual review; supply concept, reference, keyframe, draft_motion, inspection or final still images",
+                )
             hashes[target["artifact_id"]] = artifact["sha256"]
             image_hashes[target["artifact_id"]] = sha(clean)
             target_purposes[target["artifact_id"]] = artifact["purpose"]

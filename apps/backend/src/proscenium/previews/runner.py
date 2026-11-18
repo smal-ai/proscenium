@@ -16,6 +16,16 @@ from .journal import alive, atomic, read, renderer_hashes, sha
 from .service import worker_caller
 
 RESOURCE = "blender-render-writer"
+MEDIA_VALIDATION_FAILED = "media_validation_failed"
+INVALID_RECEIPT_CODES = frozenset(
+    {
+        "media_unavailable",
+        "hash_mismatch",
+        "invalid_frame_mapping",
+        "frame_conflict",
+        "invalid_request",
+    }
+)
 
 
 def resource_for(job: dict) -> str:
@@ -177,7 +187,8 @@ def cancel(service, project_id: str, body: dict) -> dict:
     if job["state"] in TERMINAL:
         return {"terminal": job["state"]}
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    atomic(root / "cancel.json", {"attempt_id": job["attempt_id"]})
+    if cancellation_marker(root, job).get("reason") != MEDIA_VALIDATION_FAILED:
+        atomic(root / "cancel.json", {"attempt_id": job["attempt_id"]})
     if not (root / "launch.claim").exists():
         service.state(job, "cancelled", evidence="Verified cancellation before any owned launch")
         return {"terminal": "cancelled", "launched": False}
@@ -416,6 +427,30 @@ def publish_assembly(service, job: dict, root: Path) -> list[str]:
     return [a["artifact_id"] for a in artifacts]
 
 
+def cancellation_marker(root: Path, job: dict) -> dict:
+    try:
+        marker = read(root / "cancel.json")
+    except (FileNotFoundError, TypeError, ValueError):
+        return {}
+    return marker if marker.get("attempt_id") == job["attempt_id"] else {}
+
+
+def verified_terminal(root: Path, task_sha256: str) -> dict | None:
+    try:
+        terminal = read(root / "terminal.json")
+    except FileNotFoundError:
+        return None
+    if terminal["task_sha256"] != task_sha256:
+        raise DomainError("hash_mismatch", 422)
+    return terminal
+
+
+def register_frames(service, caller, root: Path) -> None:
+    for path in sorted(root.glob("frame-*.json")):
+        if path.stem.removeprefix("frame-").isdigit():
+            service.register(caller, read(path))
+
+
 def reconcile(service, project_id: str) -> list[dict]:
     services = service.services
     store = services.registry.project_store(project_id)
@@ -433,10 +468,12 @@ def reconcile(service, project_id: str) -> list[dict]:
         task = read(root / "task.json")
         if any(task[key] != job[key] for key in ("job_id", "attempt_id", "input_digest")):
             raise DomainError("scope_denied", 403)
+        task_sha256 = sha((root / "task.json").read_bytes())
+        # A terminal journal seals the receipt set. If it arrives during this scan,
+        # settle on the next tick, after scanning the full sealed set.
+        terminal = verified_terminal(root, task_sha256)
         if job["state"] in TERMINAL:
-            if (root / "terminal.json").exists() and read(root / "terminal.json")[
-                "task_sha256"
-            ] == sha((root / "task.json").read_bytes()):
+            if terminal is not None:
                 release_owned(
                     services,
                     project_id,
@@ -447,7 +484,7 @@ def reconcile(service, project_id: str) -> list[dict]:
         process_path = root / "process.json"
         if process_path.exists():
             process = read(process_path)
-            if process["task_sha256"] != sha((root / "task.json").read_bytes()):
+            if process["task_sha256"] != task_sha256:
                 raise DomainError("hash_mismatch", 422)
             if alive(process) and job["state"] in {"starting", "outcome_uncertain"}:
                 job = service.state(
@@ -474,21 +511,41 @@ def reconcile(service, project_id: str) -> list[dict]:
         # Frames first, then segments, irrespective of directory order or receipt arrival order.
         caller = worker_caller(job)
         try:
-            for path in sorted(root.glob("frame-*.json")):
-                if not path.stem.removeprefix("frame-").isdigit():
-                    continue
-                service.register(caller, read(path))
+            register_frames(service, caller, root)
             for path in sorted(root.glob("segment-*.json")):
-                service.register(caller, read(path), segment=True)
-        except (DomainError, ValueError, OSError):
+                segment = read(path)
+                try:
+                    service.register(caller, segment, segment=True)
+                except DomainError as exc:
+                    if exc.code != "dependency_missing":
+                        raise
+                    register_frames(service, caller, root)
+                    try:
+                        service.register(caller, segment, segment=True)
+                    except DomainError as retry:
+                        if retry.code != "dependency_missing" or terminal is not None:
+                            raise
+                        continue
+        except (DomainError, ValueError, OSError) as exc:
+            if isinstance(exc, DomainError) and exc.code not in INVALID_RECEIPT_CODES:
+                if exc.code != "dependency_missing" or terminal is None:
+                    raise
             # Corrupt/unusable output does not erase earlier published frames. While the
             # exact worker is live, request cancellation rather than permit an unsafe retry.
-            if not (root / "terminal.json").exists():
-                atomic(root / "cancel.json", {"attempt_id": job["attempt_id"]})
+            terminal = terminal or verified_terminal(root, task_sha256)
+            if terminal is None:
+                atomic(
+                    root / "cancel.json",
+                    {"attempt_id": job["attempt_id"], "reason": MEDIA_VALIDATION_FAILED},
+                    immutable=False,
+                )
+                if job["state"] not in TERMINAL and job["state"] != "cancel_requested":
+                    job = service.state(
+                        job,
+                        "cancel_requested",
+                        evidence="Media validation rejected worker receipt; cancellation requested",
+                    )
                 raise
-            terminal = read(root / "terminal.json")
-            if terminal["task_sha256"] != sha((root / "task.json").read_bytes()):
-                raise DomainError("hash_mismatch", 422) from None
             job = service.state(
                 job,
                 "failed",
@@ -501,25 +558,37 @@ def reconcile(service, project_id: str) -> list[dict]:
         extra = publish_proxy(service, job, root) if (root / "proxy-ready.json").exists() else []
         if (root / "assembly-ready.json").exists():
             extra = publish_assembly(service, job, root)
-        if (root / "terminal.json").exists():
-            terminal = read(root / "terminal.json")
-            if terminal["task_sha256"] != sha((root / "task.json").read_bytes()):
-                raise DomainError("hash_mismatch", 422)
+        if terminal is not None:
+            state = terminal["state"]
+            evidence = "Owned detached supervisor terminal journal verified"
+            marker = cancellation_marker(root, job)
+            if marker.get("reason") == MEDIA_VALIDATION_FAILED:
+                state = "failed"
+                evidence = "Terminal worker observed after media validation requested cancellation"
+            elif state == "cancelled" and job["state"] not in {
+                "cancel_requested",
+                "outcome_uncertain",
+            }:
+                if marker:
+                    job = service.state(
+                        job,
+                        "cancel_requested",
+                        evidence="Verified attempt cancellation marker reconciled before terminal state",
+                    )
+                else:
+                    state = "failed"
+                    evidence = (
+                        "Supervisor reported cancelled without matching attempt cancellation marker"
+                    )
             job = service.state(
                 job,
-                terminal["state"],
+                state,
                 exit_code=terminal["native_exit_code"],
-                evidence="Owned detached supervisor terminal journal verified",
+                evidence=evidence,
                 extra_artifacts=extra,
                 error_code=terminal.get("error_code"),
             )
-            services.resources.release(
-                resource_for(job),
-                project_id,
-                job["job_id"],
-                job["attempt_id"],
-                terminal_evidence="Verified owned supervisor terminal journal",
-            )
+            release_owned(services, project_id, job, "Verified owned supervisor terminal journal")
         elif process_path.exists() and not alive(read(process_path)):
             if job["state"] != "outcome_uncertain":
                 job = service.state(
