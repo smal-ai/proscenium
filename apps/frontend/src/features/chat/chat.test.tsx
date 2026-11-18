@@ -331,6 +331,17 @@ test("Conversation collapses consecutive routine completed tools and names speci
   assert.match(markup, /2 tool steps completed/);
   assert.match(markup, /<strong>Specialist<\/strong><span>shot-retry<\/span>/);
   assert.doesNotMatch(markup, /Tool: task/);
+
+  // Adding an in-flight tool keeps a single stable activity-group instead of popping a separate row and collapsing back.
+  const inflightEvents = [
+    event(1, "tool.started", { ...activity, invocation_id: "t1", name: "view", display_name: null, state: "running" }, "2026-11-15T10:00:01Z"),
+    event(2, "tool.started", { ...activity, invocation_id: "t2", name: "bash", display_name: null, state: "running" }, "2026-11-15T10:00:02Z"),
+    event(3, "tool.completed", { ...activity, invocation_id: "t2", name: "bash", display_name: null, state: "completed" }, "2026-11-15T10:00:05Z"),
+    event(4, "tool.started", { ...activity, invocation_id: "t3", name: "get_version", display_name: null, state: "running" }, "2026-11-15T10:00:06Z"),
+  ];
+  const inflightMarkup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={inflightEvents} onRefresh={async () => {}} onError={() => {}} />);
+  assert.equal((inflightMarkup.match(/class="activity activity-group"/g) ?? []).length, 1);
+  assert.match(inflightMarkup, /1 of 3 tool steps · get_version…/);
 });
 
 test("resumableWork offers stopped work only until newer work runs and ChatPanel guards uncertain Stop", () => {

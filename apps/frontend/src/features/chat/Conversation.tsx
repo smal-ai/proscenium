@@ -14,6 +14,8 @@ interface TimelineEntry {
   time: string;
   sequence?: number;
   routineTool?: boolean;
+  toolRunning?: boolean;
+  toolLabel?: string;
   node: ReactNode;
 }
 
@@ -22,7 +24,7 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
   onStarter?: (kind: "asset" | "scene" | "storyboard") => void; items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
 }) {
   const messages = new Map<string, { event: Event; text: string }>();
-  const activities = new Map<string, Event>();
+  const activities = new Map<string, { start: Event; latest: Event }>();
   const agentLabels = new Map<string, string>();
   const hasSubagents = events.some(event => event.event_type.startsWith("subagent."));
   for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
@@ -36,12 +38,14 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
       if (event.event_type.startsWith("subagent.")) {
         agentLabels.set(event.actor.id, activity.display_name || activity.name);
       }
-      activities.set(`${event.native_session_id ?? "app"}:${activity.invocation_id}`, event);
+      const actKey = `${event.native_session_id ?? "app"}:${activity.invocation_id}`;
+      const previous = activities.get(actKey);
+      activities.set(actKey, { start: previous?.start ?? event, latest: event });
     }
   }
   const assigned = new Set<string>();
   const activityOutputs = new Map<string, string[]>();
-  for (const [key, event] of activities) {
+  for (const [key, { latest: event }] of activities) {
     const activity = event.payload as unknown as ActivityEventData;
     const ids = [...activity.artifact_ids, ...retainedArtifacts.filter(summary => summary.invocation_id === activity.invocation_id).map(summary => summary.artifact.artifact_id)].filter(id => !assigned.has(id));
     ids.forEach(id => assigned.add(id)); activityOutputs.set(key, [...new Set(ids)]);
@@ -62,14 +66,24 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
       const specialist = event.actor.kind === "subagent" ? (agentLabels.get(event.actor.id) ?? "authoring-specialist") : null;
       return { key, time: event.occurred_at, sequence: event.sequence, node: <article className="message assistant-message" key={key}><div className="message-heading"><strong>{specialist ? "Specialist" : "Copilot"}</strong>{specialist && <span>{specialist}</span>}</div><p>{text}</p></article> };
     }),
-    ...[...activities.entries()].flatMap(([key, event]) => {
+    ...[...activities.entries()].flatMap(([key, { start, latest: event }]) => {
       const activity = event.payload as unknown as ActivityEventData;
       const outputs = activityOutputs.get(key) ?? [];
       if (hasSubagents && event.event_type.startsWith("tool.") && activity.name === "task" && activity.state !== "failed" && activity.state !== "outcome_uncertain" && !outputs.length && !activity.output_status) {
         return [];
       }
-      const routineTool = event.event_type.startsWith("tool.") && activity.state === "completed" && !outputs.length && !activity.output_status;
-      return [{ key: `activity.${key}`, time: event.occurred_at, sequence: event.sequence, routineTool, node: <ActivityEntry key={key} event={event} api={api} projectId={projectId} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} artifactIds={outputs} /> }];
+      const isTool = event.event_type.startsWith("tool.");
+      const toolRunning = isTool && activity.state !== "completed" && activity.state !== "failed" && activity.state !== "outcome_uncertain";
+      const routineTool = isTool && (activity.state === "completed" || toolRunning) && !outputs.length && !activity.output_status;
+      return [{
+        key: `activity.${key}`,
+        time: start.occurred_at,
+        sequence: start.sequence,
+        routineTool,
+        toolRunning,
+        toolLabel: activity.display_name || activity.name,
+        node: <ActivityEntry key={key} event={event} api={api} projectId={projectId} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} artifactIds={outputs} />,
+      }];
     }),
   ].sort(compareConversationEntries);
 
@@ -80,12 +94,18 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
       while (j < rawEntries.length && rawEntries[j].routineTool) j++;
       if (j - i >= 2) {
         const group = rawEntries.slice(i, j);
+        const runningItems = group.filter(item => item.toolRunning);
+        const doneCount = group.length - runningItems.length;
+        const latestRunning = runningItems.at(-1);
+        const summaryText = latestRunning
+          ? `${doneCount} of ${group.length} tool steps · ${latestRunning.toolLabel}…`
+          : `${group.length} tool steps completed`;
         entries.push({
           key: `group.${group[0].key}`,
           time: group[0].time,
           sequence: group[0].sequence,
           node: <details className="activity activity-group" key={`group.${group[0].key}`}>
-            <summary><span className="activity-dot complete" />{group.length} tool steps completed<span>Show</span></summary>
+            <summary><span className={latestRunning ? "activity-dot" : "activity-dot complete"} /><span className="activity-group-label">{summaryText}</span><span>Show</span></summary>
             <div className="activity-group-items">{group.map(item => <div key={item.key}>{item.node}</div>)}</div>
           </details>,
         });
