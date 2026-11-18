@@ -17,6 +17,7 @@
 .status.warning{color:#fcd34d}.status.offline{color:#fca5a5}
 .studio-body> [hidden],.panel-expanded[hidden]{display:none!important}
 .panel-expanded{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0}
+.left-scroll:has(> .review-catalogue){overflow:hidden}
 .panel-rail{display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px 5px;overflow:auto}
 .right-panel .panel-rail{height:100%;flex:1}
 .panel-rail-status{margin-top:auto;width:100%;display:flex;justify-content:flex-end}
@@ -31,6 +32,13 @@
 .assistant-heading>button{border:0;background:transparent;padding:5px;min-width:28px}
 .assistant-status{color:#c5c5ce}
 .review-heading{padding:10px 16px;min-height:54px;flex-shrink:0}
+.review-heading>div:first-child{min-width:0;overflow-wrap:anywhere}
+.review-version-status{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;max-width:60%;min-width:0}
+.version-status-pill,.draft-kept-pill{padding:4px 7px;border:1px solid #3a3a47;border-radius:20px;background:#1a1a21;color:#d4d4de;font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+.version-status-pill.outdated{background:#211b16;border-color:#654e32;color:#f1d3a8}
+.draft-kept-pill{background:#13211a;border-color:#3a6554;color:#a7dfc2}
+.view-latest-version-btn{min-height:26px;padding:3px 8px;border-color:#5c6194;background:#24243b;color:#e3e3ff;font-size:11px;overflow-wrap:anywhere}
+.view-latest-version-btn:hover:not(:disabled){background:#30304d;border-color:#818cf8}
 .review-surface{display:flex;flex-direction:column;overflow:hidden}
 .review-workspace .viewer-empty{margin:16px;min-height:0;overflow:auto}
 .assistant-starter{padding:10px 13px;border-bottom:1px solid var(--border);color:#a1a1aa;font-size:11px}

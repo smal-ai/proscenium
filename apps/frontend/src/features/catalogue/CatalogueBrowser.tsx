@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronRight, Ellipsis, Plus } from "lucide-react";
 import type { Provenance, RetainedArtifactSummary, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
 import { ApiError } from "../../api/client";
 import type { CatalogueSurfaceProps } from "../../api/studio";
 import { allPages } from "../review/records";
 import { readPendingSelection, writePendingSelection, type PendingSelection } from "./pendingSelection";
 import { mediaUrl } from "../review/media";
+import { displayItemTitle, formatItemStatusLine, shortVersionLabel } from "./catalogueHelpers";
+import "./catalogue.css";
 
 function ProvenanceDetails({provenance}: {provenance: Provenance | undefined}) {
   const source = provenance?.source_url?.trim();
@@ -18,11 +21,13 @@ function ProvenanceDetails({provenance}: {provenance: Provenance | undefined}) {
   </dl>;
 }
 
-export function CatalogueBrowser(props: CatalogueSurfaceProps) {
+type CatalogueProps = CatalogueSurfaceProps & { projectName?: string };
+
+export function CatalogueBrowser(props: CatalogueProps) {
   return <Catalogue key={props.projectId} {...props}/>;
 }
 
-function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, onSelect, retainedArtifacts, onCreateAsset, onInspectArtifact}: CatalogueSurfaceProps) {
+function Catalogue({api, projectId, projectName, items, selectedVersionId, refreshRevision, onSelect, retainedArtifacts, onCreateAsset, onInspectArtifact}: CatalogueProps) {
   const [retained, setRetained] = useState<RetainedArtifactSummary[]>([]);
   const [retainedError, setRetainedError] = useState("");
   const [versions, setVersions] = useState<VersionRecord[]>([]);
@@ -32,6 +37,11 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState<PendingSelection | null>(null);
   const [query, setQuery] = useState("");
+  const [expandedItems, setExpandedItems] = useState(new Map<string, boolean>());
+  const [searchExpansion, setSearchExpansion] = useState(new Map<string, boolean>());
+  const [openItemMenu, setOpenItemMenu] = useState<string | null>(null);
+  const [openVersionMenu, setOpenVersionMenu] = useState<string | null>(null);
+  const [retainedExpanded, setRetainedExpanded] = useState<boolean | null>(null);
   const locked = useRef(false);
 
   useEffect(() => {
@@ -135,48 +145,118 @@ function Catalogue({api, projectId, items, selectedVersionId, refreshRevision, o
     finally {locked.current = false; setBusy(false);}
   }
 
+  const search = query.trim().toLowerCase();
+  const itemNames = items.map(item => item.name);
+  const pendingSlot = pending?.command.slot;
+  const recoveryItemId = pendingSlot?.kind === "item" && items.some(item => item.item_id === pendingSlot.item_id) ? pendingSlot.item_id : null;
+  const cannotSelect = busy || !ready || pending !== null;
+  const recoveryBanner = (pending || !ready) && <div className="catalogue-recovery" role="status">
+    <strong>Owner selection not confirmed</strong>
+    {pending && <small>{pending.state === "acknowledged" ? "Command acknowledged. Reload the recorded choice." : "Original command retained. Retry uses the same operation."}</small>}
+    <div className="catalogue-actions">
+      <button disabled={busy} onClick={() => void reconcile()}>Check selection status</button>
+      {pending && <button disabled={busy} onClick={() => void retry()}>{pending.state === "acknowledged" ? "Reload acknowledged selection" : "Retry original selection"}</button>}
+    </div>
+  </div>;
+  const retainedList = (retainedArtifacts ?? retained).filter(({artifact}) =>
+    artifact.project_id === projectId && artifact.kind === "image" && artifact.state === "ready" && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type));
+  const showRetained = retainedExpanded ?? (items.length === 0 || retainedList.length > 0);
+
   return <section className="review-catalogue" aria-label="Version catalogue">
-    {onCreateAsset && <button className="primary new-asset" onClick={onCreateAsset}>New asset</button>}
-    <label>Search assets<input aria-label="Search assets" type="search" value={query} onChange={event => setQuery(event.target.value)}/></label>
-    {pending && <div role="status">Selection {pending.state}. Original operation {pending.command.operation_id}, selection {pending.command.selection_id}, expected revision {pending.command.expected_revision}.
-      <button disabled={busy} onClick={() => void retry()}>{pending.state === "acknowledged" ? "Reload acknowledged selection" : "Retry original selection"}</button>
-    </div>}
-    <button disabled={busy} onClick={() => void reconcile()}>Reconcile selection status</button>
-    {items.filter(item => [item.name, item.description, ...(item.tags ?? []), item.provenance?.source_url, item.provenance?.creator, item.provenance?.licence, item.provenance?.note].filter(Boolean).join(" ").toLowerCase().includes(query.trim().toLowerCase())).map(item => {
-    const selected = selections.find(s => s.slot.kind === "item" && s.slot.item_id === item.item_id && s.state === "selected");
-    const ownerVersion = selected?.choice?.kind === "version" ? selected.choice.version.version_id : null;
-    const itemVersions = versions.filter(v => v.item_id === item.item_id).sort((a,b) => b.created_at.localeCompare(a.created_at));
-    const activeItemVersion = itemVersions.find(v => v.version_id === (ownerVersion ?? item.current_version_id)) ?? itemVersions[0];
-    return <section key={item.item_id} className="catalogue-item-group">
-      <button className="catalogue-item-header" aria-pressed={!!activeItemVersion && activeItemVersion.version_id === selectedVersionId} onClick={() => { if (activeItemVersion) onSelect(activeItemVersion); }}><strong>{item.name}</strong><span className="catalogue-kind">{item.kind}</span><small>{itemVersions.length} version(s)</small></button>
-      <details className="catalogue-item-meta"><summary>Provenance &amp; selection</summary>
-      {item.description && <p>{item.description}</p>}
-      {!!item.tags?.length && <p>Tags: {item.tags.join(", ")}</p>}
-      <ProvenanceDetails provenance={item.provenance}/>
-      </details>
-      {itemVersions.map(version => <article key={version.version_id}>
-        <button aria-pressed={version.version_id === selectedVersionId} onClick={() => onSelect(version)}>{version.name} <small>{version.version_id}</small></button>
-        <p>{item.current_version_id === version.version_id ? "Current published" : "Historical"}{ownerVersion === version.version_id ? " · Owner selected" : ""}{selectedVersionId === version.version_id ? " · Viewing (pinned)" : ""}</p>
-        {selectedVersionId === version.version_id && item.current_version_id !== version.version_id && <p>Newer published version available. Your view has not moved.</p>}
-        <details className="catalogue-item-meta"><summary>Provenance &amp; selection</summary>
-        <p>Technical assessment: not recorded. Source published · {version.artifact_ids.length} registered artefacts</p>
-        {version.description && <p>{version.description}</p>}
-        <ProvenanceDetails provenance={version.provenance}/>
-        <button disabled={busy || !ready || !!pending || ownerVersion === version.version_id} onClick={() => void select(version)}>Select for item</button>
-        {ownerVersion === version.version_id && <button disabled={busy || !ready || !!pending} onClick={() => void select(version, true)}>Withdraw selection</button>}
-        </details>
-      </article>)}
-    </section>;
-  })}
-    <section className="retained-outputs" aria-label="Retained outputs"><h3>Retained outputs</h3><p>Ready images, separate from published catalogue items. Concept images are not 3D meshes.</p>
-      {(retainedArtifacts ?? retained).filter(record => record.artifact.project_id === projectId && record.artifact.kind === "image" && record.artifact.state === "ready" && ["image/png", "image/jpeg", "image/webp"].includes(record.artifact.media_type)).map(record => {
-        const artifact = record.artifact;
-        return <article key={artifact.artifact_id} className="retained-output"><strong>{artifact.purpose} image</strong><small>{record.published_versions.length ? `Also published · ${record.published_versions.length} version(s)` : "Unpublished retained media"} · {record.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</small>
-          {onInspectArtifact ? <button className="retained-preview" aria-label={`Inspect retained ${artifact.purpose} image ${artifact.artifact_id}`} onClick={() => onInspectArtifact(artifact)}><img src={mediaUrl(projectId, artifact.artifact_id)} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }} /></button> : <img src={mediaUrl(projectId, artifact.artifact_id)} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }} />}
-          <small>{artifact.dimensions ? `${artifact.dimensions.width} × ${artifact.dimensions.height}` : "Dimensions unrecorded"}</small><code>{artifact.artifact_id}</code>
-          <div className="button-row"><a href={mediaUrl(projectId, artifact.artifact_id)} download={artifact.artifact_id}>Download image</a>{onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect image</button>}</div>
-        </article>;
+    <div className="catalogue-toolbar">
+      <input aria-label="Search assets" type="search" placeholder="Search assets…" value={query} onChange={event => {
+        setQuery(event.target.value);
+        setSearchExpansion(new Map());
+      }}/>
+      {onCreateAsset && <button className="primary new-asset-btn" aria-label="New asset" onClick={onCreateAsset}><Plus size={14} aria-hidden="true"/><span className="new-asset-label">New asset</span></button>}
+    </div>
+    <div className="catalogue-scroll">
+      {!recoveryItemId && recoveryBanner}
+      {items.map(item => {
+        const itemVersions = versions.filter(v => v.item_id === item.item_id).sort((a, b) => b.created_at.localeCompare(a.created_at));
+        const versionMatch = !!search && itemVersions.some(v => [v.version_id, v.description].some(value => value?.toLowerCase().includes(search)));
+        const itemMatch = [item.name, item.description, ...(item.tags ?? []), item.provenance?.source_url, item.provenance?.creator, item.provenance?.licence, item.provenance?.note].filter(Boolean).join(" ").toLowerCase().includes(search);
+        if (!itemMatch && !versionMatch && recoveryItemId !== item.item_id) return null;
+
+        const selected = selections.find(s => s.slot.kind === "item" && s.slot.item_id === item.item_id && s.state === "selected");
+        const ownerVersion = selected?.choice?.kind === "version" ? selected.choice.version.version_id : null;
+        const activeItemVersion = itemVersions.find(v => v.version_id === ownerVersion)
+          ?? itemVersions.find(v => v.version_id === item.current_version_id) ?? itemVersions[0];
+        const viewedVersionId = itemVersions.find(v => v.version_id === selectedVersionId)?.version_id ?? null;
+        const isExpanded = (search ? searchExpansion.get(item.item_id) : undefined) ?? (versionMatch || expandedItems.get(item.item_id) === true);
+        const statusLine = formatItemStatusLine({kind: item.kind, viewedVersionId, latestVersionId: item.current_version_id, ownerVersionId: ownerVersion});
+        const itemMenuOpen = openItemMenu === item.item_id;
+
+        return <section key={item.item_id} className="catalogue-item-group">
+          <div className="catalogue-item-row">
+            <button className="catalogue-icon-btn" aria-expanded={isExpanded} aria-label={`Version history for ${item.name}`} onClick={() => {
+              const setExpansion = search ? setSearchExpansion : setExpandedItems;
+              setExpansion(previous => new Map(previous).set(item.item_id, !isExpanded));
+            }}>
+              {isExpanded ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>}
+            </button>
+            <button className="catalogue-item-header" aria-pressed={viewedVersionId !== null} title={item.name} disabled={!activeItemVersion} onClick={() => onSelect(activeItemVersion)}>
+              <span className="catalogue-item-title"><strong>{displayItemTitle(item.name, projectName, itemNames)}</strong><span className="catalogue-version-count">{itemVersions.length} {itemVersions.length === 1 ? "version" : "versions"}</span></span>
+              <span className="catalogue-status-line">{statusLine}</span>
+            </button>
+            <button className="catalogue-icon-btn" aria-label={`Details for ${item.name}`} aria-expanded={itemMenuOpen} onClick={() => setOpenItemMenu(itemMenuOpen ? null : item.item_id)}><Ellipsis size={15} aria-hidden="true"/></button>
+          </div>
+          {itemMenuOpen && <div className="catalogue-details">
+            <strong>{item.name}</strong><code>{item.item_id}</code>
+            {item.description && <p>{item.description}</p>}
+            {!!item.tags?.length && <p>Tags: {item.tags.join(", ")}</p>}
+            <ProvenanceDetails provenance={item.provenance}/>
+          </div>}
+          {recoveryItemId === item.item_id && recoveryBanner}
+          {isExpanded && <div className="catalogue-versions">
+            {itemVersions.map(version => {
+              const viewing = version.version_id === selectedVersionId;
+              const ownerSelected = ownerVersion === version.version_id;
+              const versionMenuOpen = openVersionMenu === version.version_id;
+              return <div key={version.version_id} className="catalogue-version">
+                <div className="catalogue-version-line">
+                  <button className="catalogue-version-row" aria-pressed={viewing} title={`${version.name} (${version.version_id})`} onClick={() => onSelect(version)}>
+                    <code>{shortVersionLabel(version.version_id)}</code>
+                    {viewing && <span className="catalogue-badge viewing">Viewing</span>}
+                    {item.current_version_id === version.version_id && <span className="catalogue-badge">Latest</span>}
+                    {ownerSelected && <span className="catalogue-badge owner-selected">Owner selected</span>}
+                  </button>
+                  <button className="catalogue-icon-btn" aria-label={`Actions for ${version.version_id}`} aria-expanded={versionMenuOpen} onClick={() => setOpenVersionMenu(versionMenuOpen ? null : version.version_id)}><Ellipsis size={15} aria-hidden="true"/></button>
+                </div>
+                {versionMenuOpen && <div className="catalogue-details">
+                  <div className="catalogue-actions">
+                    <button disabled={cannotSelect || ownerSelected} onClick={() => void select(version)}>Select for item</button>
+                    {ownerSelected && <button disabled={cannotSelect} onClick={() => void select(version, true)}>Withdraw selection</button>}
+                  </div>
+                  <code>{version.version_id}</code>
+                  <small>Git {version.source_commit.slice(0, 10)} · {version.artifact_ids.length} {version.artifact_ids.length === 1 ? "artefact" : "artefacts"}</small>
+                  {version.description && <p>{version.description}</p>}
+                  <ProvenanceDetails provenance={version.provenance}/>
+                </div>}
+              </div>;
+            })}
+            {itemVersions.length === 0 && <p>No versions available.</p>}
+          </div>}
+        </section>;
       })}
-      {retainedError && <p role="alert">{retainedError}</p>}
-    </section>{error && <p role="alert">{error}</p>}</section>;
+      <section className="retained-outputs" aria-label="Retained outputs">
+        <h3><button className="retained-outputs-toggle" aria-expanded={showRetained} onClick={() => setRetainedExpanded(!showRetained)}>{showRetained ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>} Retained images ({retainedList.length})</button></h3>
+        {showRetained && <><p>Ready images, separate from published catalogue items. Concept images are not 3D meshes.</p>
+          {retainedList.map(({artifact, published_versions, attribution_status}) => {
+            const url = mediaUrl(projectId, artifact.artifact_id);
+            const preview = <img src={url} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }}/>;
+            return <article key={artifact.artifact_id} className="retained-output">
+              <strong>{artifact.purpose} image</strong>
+              <small>{published_versions.length ? `Also published · ${published_versions.length} version(s)` : "Unpublished retained media"} · {attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</small>
+              {onInspectArtifact ? <button className="retained-preview" aria-label={`Inspect retained ${artifact.purpose} image ${artifact.artifact_id}`} onClick={() => onInspectArtifact(artifact)}>{preview}</button> : preview}
+              <small>{artifact.dimensions ? `${artifact.dimensions.width} × ${artifact.dimensions.height}` : "Dimensions unrecorded"}</small><code>{artifact.artifact_id}</code>
+              <div className="button-row"><a href={url} download={artifact.artifact_id}>Download image</a>{onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect image</button>}</div>
+            </article>;
+          })}
+        </>}
+        {retainedError && <p role="alert">{retainedError}</p>}
+      </section>
+      {error && <p role="alert">{error}</p>}
+    </div>
+  </section>;
 }

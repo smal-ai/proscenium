@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Film, Image, Layers, PanelLeft, PanelRight, Maximize2 as Maximise2, Minimize2 as Minimise2, RefreshCw, Sparkles } from "lucide-react";
 import { ApiClient, ApiError } from "../api";
-import type { Artifact, ConfigurationView, ProjectRecord, VersionRecord } from "../api";
+import type { Artifact, ConfigurationView, ItemRecord, ProjectRecord, VersionRecord } from "../api";
 import { RetainedReview, ReviewEmpty } from "../features/review/ReviewChrome";
 import { typingTarget } from "../features/review/media";
+import { readDrafts } from "../features/review/outbox";
 import type { ComposerSeedIntent, ContextPreparer, ReviewSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
 import { emptySelection } from "../api/studio";
 import { ProjectMenu } from "../features/projects/ProjectMenu";
 import { CatalogueFallback } from "../features/projects/CatalogueFallback";
+import { shortVersionLabel } from "../features/catalogue/catalogueHelpers";
 import { ChatPanel } from "../features/chat/ChatPanel";
 import { useRequestComposer } from "../features/chat/useRequestComposer";
 import { ConfigurationMenu } from "./ConfigurationMenu";
@@ -67,6 +69,14 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const [rightTab, setRightTab] = useState<"Copilot" | "Critic">("Copilot");
   const [version, setVersion] = useState<VersionRecord | null>(() => projectId ? readPrivate(`view.version.${projectId}`) : null);
   const [inspectedArtifact, setInspectedArtifact] = useState<Artifact | null>(null);
+  const [keptDraftNotice, setKeptDraftNotice] = useState("");
+  const [latestError, setLatestError] = useState("");
+  const [loadingLatest, setLoadingLatest] = useState(false);
+  const latestRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => latestRequest.current?.abort(), []);
+  const currentItem = version ? data.items.find(item => item.item_id === version.item_id) : undefined;
+  const latestId = currentItem?.current_version_id ?? version?.version_id;
+  const latestShort = latestId ? shortVersionLabel(latestId) : "";
   const inspectedArtifactSummary = inspectedArtifact ? data.retainedArtifacts.find(r => r.artifact.artifact_id === inspectedArtifact.artifact_id) ?? null : null;
   const onClearArtifact = useCallback(() => setInspectedArtifact(null), []);
   const [selection, setSelection] = useState<TurnSelection>(() => projectId ? readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection() : emptySelection());
@@ -89,7 +99,15 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     setSelection(captured);
     if (projectId) writePrivate(`view.context.${projectId}`, captured);
   }, [projectId]);
+  function resetPublicationStatus() {
+    latestRequest.current?.abort();
+    latestRequest.current = null;
+    setKeptDraftNotice("");
+    setLatestError("");
+    setLoadingLatest(false);
+  }
   function onSelect(next: VersionRecord) {
+    resetPublicationStatus();
     setInspectedArtifact(null);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
     setVersion(next);
@@ -97,7 +115,35 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     if (version && next.project_id === version.project_id && next.item_id === version.item_id && next.version_id === version.version_id) return;
     onContextChange({ ...emptySelection(), item_id: next.item_id, version_id: next.version_id, view_mode: "keyframes" });
   }
+  async function viewLatestVersion(item: ItemRecord, previousVersion: VersionRecord) {
+    if (!projectId || !item.current_version_id || latestRequest.current) return;
+    const controller = new AbortController();
+    latestRequest.current = controller;
+    setLatestError("");
+    setLoadingLatest(true);
+    try {
+      const drafts = await readDrafts(projectId).catch(() => []);
+      if (controller.signal.aborted) return;
+      const hasUnsavedDraft = drafts.some(d => d.state !== "saved" && d.annotation.target.version_id === previousVersion.version_id);
+      const versions = await allPages(cursor => api.call("listItemVersions", {
+        path: { project_id: projectId, item_id: item.item_id }, query: { cursor, limit: 100 }, signal: controller.signal,
+      }));
+      if (controller.signal.aborted) return;
+      const next = versions.find(record => record.version_id === item.current_version_id);
+      if (!next) throw new Error("The latest publication was not returned. Refresh project metadata and try again.");
+      onSelect(next);
+      if (hasUnsavedDraft) setKeptDraftNotice(`Draft kept on ${shortVersionLabel(previousVersion.version_id)}`);
+    } catch (e) {
+      if (!controller.signal.aborted) setLatestError(describeError(e));
+    } finally {
+      if (latestRequest.current === controller) {
+        latestRequest.current = null;
+        setLoadingLatest(false);
+      }
+    }
+  }
   function onNavigate(next: VersionRecord, context: TurnSelection) {
+    resetPublicationStatus();
     setInspectedArtifact(null);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
     setVersion(next);
@@ -105,6 +151,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     onContextChange(context);
   }
   function onInspectArtifact(artifact: Artifact) {
+    resetPublicationStatus();
     setInspectedArtifact(artifact);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
     if (!version) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: [{ artifact_id: artifact.artifact_id, role: "reference" }] });
@@ -128,6 +175,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const Review = components.review;
   const Outliner = components.outliner;
   const Catalogue = components.catalogue ?? CatalogueFallback;
+  const catalogueIdentity = { projectName: projects.find(project => project.project_id === projectId)?.name };
   const Storyboards = components.storyboards;
   const Critic = components.critic;
   const AssistantStatus = components.assistantStatus;
@@ -145,15 +193,22 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       <aside className={`left-panel${layout.navigatorCollapsed ? " collapsed" : ""}`} aria-label="Navigator">
         {layout.navigatorCollapsed && <div className="panel-rail"><button aria-label="Expand Navigator" title="Expand Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: false }))}><PanelLeft size={17} /></button>{(["Shots", "Outliner", "Assets"] as const).map(tab => { const Icon = tab === "Shots" ? Film : tab === "Outliner" ? Layers : Box; return <button key={tab} aria-label={tab} title={tab} onClick={() => { setLeftTab(tab); setLayout(previous => ({ ...previous, navigatorCollapsed: false })); }}><Icon size={17} /></button>; })}</div>}
         <div className="panel-expanded" hidden={layout.navigatorCollapsed}><nav className="panel-tabs" aria-label="Navigator tabs">{(["Shots", "Outliner", "Assets"] as const).map(tab => <button key={tab} aria-selected={leftTab === tab} onClick={() => setLeftTab(tab)}>{tab}</button>)}<button className="panel-control" aria-label="Collapse Navigator" title="Collapse Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: true }))}><PanelLeft size={15} /></button></nav>
-        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.revision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={() => seedNewItem("asset")} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
-        <footer className="panel-footer"><span>Active-project scope</span><code>{projectId ?? "Not selected"}</code></footer>
+        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} {...catalogueIdentity} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.revision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={() => seedNewItem("asset")} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>
-      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} image · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>{inspectedArtifact ? <div className="source-identity"><span>Unpublished retained media · Not a catalogue version</span></div> : version && <div className="source-identity"><code>Git {version.source_commit.slice(0, 10)}</code><span title={version.version_id}>Pinned · {version.version_id}</span></div>}</div>
+      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} image · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>
+        {inspectedArtifact ? <div className="source-identity"><span>Unpublished retained media · Not a catalogue version</span></div> : version && <div className="review-version-status">
+          <span className={latestId === version.version_id ? "version-status-pill" : "version-status-pill outdated"} title={`${version.version_id} · Git ${version.source_commit.slice(0, 10)}`}>
+            Viewing {shortVersionLabel(version.version_id)}{latestId !== version.version_id && ` · ${latestShort} available`}
+          </span>
+          {currentItem && latestId !== version.version_id && <button className="view-latest-version-btn" disabled={loadingLatest} onClick={() => void viewLatestVersion(currentItem, version)}>View {latestShort}</button>}
+          {keptDraftNotice && <span className="draft-kept-pill" role="status">{keptDraftNotice}</span>}
+        </div>}
+      </div>
         {(rootError || data.error) && <div className="metadata-error" role="alert">{rootError || data.error} <span>Reads do not start models or regenerate media.</span></div>}
+        {latestError && <div className="metadata-error" role="alert">{latestError}</div>}
         <div className="review-surface">{projectId && Review ? <Review {...reviewProps} /> : <ReviewFallback {...reviewProps} hasProject={!!projectId} />}</div>
-        <footer className="review-footer"><span>{inspectedArtifact ? "Unpublished retained media · Not a catalogue version" : version ? `${version.kind} · ${version.version_id}` : "No published version selected"}</span><span>{version ? "New publications do not move this view" : "Git-backed sources · Immutable publications"}</span></footer>
       </main>
       {!chatFocus && <div className="splitter-slot">{!layout.assistantCollapsed && <Splitter label="Resize Assistant" direction={-1} value={assistantWidth} min={320} max={assistantMax} onChange={width => setLayout(previous => ({ ...previous, assistantWidth: width }))} />}</div>}
       <aside className={`right-panel${layout.assistantCollapsed ? " collapsed" : ""}`} style={chatFocus && layout.assistantCollapsed ? { gridColumn: 4 } : undefined} aria-label="Assistant panel">

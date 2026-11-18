@@ -33,6 +33,7 @@ export function ProjectMenu({ api, projects, activeId, onRefresh }: {
     <button className="project-trigger" aria-expanded={open} onClick={() => setOpen(!open)}><FolderOpen size={16} /><span>{active?.name ?? "Choose a project"}</span><ChevronDown size={13} /></button>
     {open && <section className="project-popover" aria-label="Projects">
       <div className="section-heading"><h2>Workstation projects</h2><button aria-label="Close projects" onClick={() => setOpen(false)}><X size={15} /></button></div>
+      {active && <p>Active project ID: <code>{active.project_id}</code></p>}
       <p>Register a folder, then activate it explicitly. Switching requires the current project to be settled.</p>
       <label>Saved project<select aria-label="Saved project" value={chosen} onChange={e => setChosen(e.target.value)}><option value="">Select a saved project</option>{projects.map(p => <option key={p.project_id} value={p.project_id}>{p.name} · {p.state}</option>)}</select></label>
       {selected && <div className="project-location"><code>{selected.path}</code><span>{selected.state}</span></div>}
