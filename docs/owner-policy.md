@@ -38,7 +38,7 @@ Automatic permission applies only to work within the active human request, activ
 | Local Git checkpoint of the completed, explicitly owned change set | Automatic. Preserve unrelated staging and user changes. |
 | Configured online asset search, downloads and imports into the active project | Automatic. Record source, creator and licence when the tool actually knows them. Unknown or restrictive rights do not block download, import, local use, checkpoint or publication. Do not invent a cleared licence. |
 | Workflow submission, conditioning-image upload and output retrieval through configured local services | Automatic within the generation budget. |
-| Read-only VLM assessment requested by the user or Copilot | Automatic. Only subsequently user-approved findings become critique instructions. |
+| Read-only VLM assessment requested by the user or Copilot | Automatic. Active work may read its own validated critique via `get_vlm_review` for bounded in-scope self-correction within the existing task budget, or escalate an explicit question via `escalate_vlm_review`. Only owner-submitted `approved_findings` carry owner instruction authority, creative selection or budget extension. |
 | Purchases, paid asset acquisition or a new chargeable external service | Confirm the exact item/service, price where known and intended action. |
 | Software/model installation, upgrades, persistent add-on installation or service configuration/lifecycle changes | Confirm explicitly. Routine generation does not own service installation/start/stop. Running an importer or script to use an asset already in the project is ordinary authoring, not this row. |
 | Remote Git push, external upload/sharing or publishing beyond the agreed reasoning/configured service workflow | Confirm destination and exact scope. |
@@ -57,7 +57,7 @@ Within a broad request, Copilot may research, plan shots, generate concepts, aut
 
 Pause only for a materially missing decision, a user-requested review checkpoint, a consequential action in the matrix, or an exhausted generation budget. Continue independent in-scope work while an answer is pending where the native runtime supports it.
 
-Published content starts `unreviewed`. An agent's technical/visual assessment is recorded separately. User selection is an explicit event. User-approved VLM findings remain a separate requirement and cannot be bypassed by relabelling the critic's output as a tool command.
+Published content starts `unreviewed`. An agent's technical/visual assessment (including work-scoped `get_vlm_review` self-checks) is recorded separately. User selection is an explicit event. Owner-private and historical reviews remain owner-visible unless shared, and only owner-submitted `approved_findings` carry owner instruction authority.
 
 ## 4. Configurable generation budget
 

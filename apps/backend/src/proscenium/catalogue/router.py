@@ -99,9 +99,15 @@ def sequence_map(request: Request, project_id: str, version_id: str, caller: Own
 
 
 @router.get(BASE + "/versions/{version_id}/proxy-mapping", operation_id="getVersionProxyMapping")
-def proxy_mapping(request: Request, project_id: str, version_id: str, caller: Owner) -> dict:
+def proxy_mapping(
+    request: Request,
+    project_id: str,
+    version_id: str,
+    caller: Owner,
+    mapping_artifact_id: str | None = None,
+) -> dict:
     catalogue: Catalogue = get_services(request).extension("catalogue")
-    return catalogue.proxy_mapping(project_id, version_id)
+    return catalogue.proxy_mapping(project_id, version_id, mapping_artifact_id=mapping_artifact_id)
 
 
 @router.put(BASE + "/uploads/{upload_id}", operation_id="uploadImage")

@@ -6,11 +6,34 @@ import os
 import struct
 import sys
 import time
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from geometry_nodes import modifier_kind, reachable_geometry_groups  # type: ignore[import-not-found] # noqa: E402
 from journal import atomic, identity, output, read, sha  # type: ignore[import-not-found] # noqa: E402
+
+
+def runtime_blend_paths(bpy) -> list[str]:
+    """Exclude local-datablock Asset Shelf weak references; keep real runtime paths."""
+    weak_counts: Counter[str] = Counter()
+    bl_rna = getattr(bpy.data, "bl_rna", None)
+    props = getattr(bl_rna, "properties", ()) if bl_rna is not None else ()
+    for prop in props:
+        if getattr(prop, "type", None) != "COLLECTION" or prop.identifier == "rna_properties":
+            continue
+        col = getattr(bpy.data, prop.identifier, None)
+        if col is None:
+            continue
+        for id_block in col:
+            if getattr(id_block, "library", None) is not None:
+                continue
+            lwr = getattr(id_block, "library_weak_reference", None)
+            fp = getattr(lwr, "filepath", None) if lwr is not None else None
+            if isinstance(fp, str) and fp:
+                weak_counts[fp] += 1
+    raw = Counter(bpy.utils.blend_paths(absolute=False, packed=False, local=False))
+    return [bpy.path.abspath(p) for p in (raw - weak_counts).elements()]
 
 
 def dependencies(bpy, source, closure, scene):
@@ -19,7 +42,7 @@ def dependencies(bpy, source, closure, scene):
             if modifier_kind(modifier) == "geometry_nodes":
                 reachable_geometry_groups(modifier)
     declared = {row["destination"]: row["origin"]["sha256"] for row in closure["files"]}
-    paths = list(bpy.utils.blend_paths(absolute=True, packed=False, local=False))
+    paths = runtime_blend_paths(bpy)
     for image in bpy.data.images:
         if image.packed_file or not image.filepath:
             continue
@@ -148,16 +171,49 @@ def camera_override(bpy, scene, record):
     }
 
 
+def _is_tessellated_primitive_instance(instance) -> bool:
+    parent = getattr(instance, "parent", None)
+    obj = getattr(instance, "object", None)
+    if parent is None or obj is None:
+        return False
+    parent_orig = getattr(parent, "original", parent)
+    obj_orig = getattr(obj, "original", obj)
+    return parent_orig == obj_orig and getattr(parent, "type", None) in {
+        "CURVE",
+        "FONT",
+        "SURFACE",
+        "META",
+    }
+
+
+def _has_surface_mesh(obj, depsgraph) -> bool:
+    if obj.type == "MESH":
+        return True
+    if obj.type not in {"CURVE", "FONT", "SURFACE", "META"}:
+        return False
+    evaluated = obj.evaluated_get(depsgraph)
+    mesh = evaluated.to_mesh()
+    try:
+        return mesh is not None and len(mesh.polygons) > 0
+    finally:
+        evaluated.to_mesh_clear()
+
+
 def proxy(bpy, scene, root, task):
     from mathutils import Matrix, Quaternion, Vector  # type: ignore[import-not-found]
 
     scene.frame_set(task["spec"]["frames"]["start"])
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    if any(instance.is_instance for instance in depsgraph.object_instances):
+    if any(
+        instance.is_instance and not _is_tessellated_primitive_instance(instance)
+        for instance in depsgraph.object_instances
+    ):
         raise ValueError(
             "Unresolved geometry/collection/particle instances require an explicit authored instance mapping"
         )
-    meshes = [obj for obj in scene.objects if obj.type == "MESH" and not obj.hide_render]
+    meshes = [
+        obj for obj in scene.objects if not obj.hide_render and _has_surface_mesh(obj, depsgraph)
+    ]
     pairs = [(obj.get("proscenium_object_id"), obj.get("proscenium_instance_id")) for obj in meshes]
     if (
         not meshes
@@ -166,13 +222,21 @@ def proxy(bpy, scene, root, task):
     ):
         raise ValueError("Proxy needs pre-existing, unambiguous object and instance IDs")
     bpy.ops.object.select_all(action="DESELECT")
+    view_objects = bpy.context.view_layer.objects
     for obj in meshes:
+        if obj.name not in view_objects:
+            raise ValueError("Proxy renderable object is excluded from the active view layer")
+        if getattr(obj, "hide_viewport", False):
+            obj.hide_viewport = False
+        if getattr(obj, "hide_select", False):
+            obj.hide_select = False
         obj.select_set(True)
     path = root / "proxy.glb"
     bpy.ops.export_scene.gltf(
         filepath=str(path),
         export_format="GLB",
         use_selection=True,
+        use_active_scene=True,
         export_extras=True,
         export_animations=False,
         export_yup=True,

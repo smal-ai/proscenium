@@ -72,6 +72,13 @@ TOOLS = {
         "submitGenerationJob",
     ),
     "request_vlm_review": ("vlm", "request", "ReviewRequest", "ReviewTicket", "requestToolReview"),
+    "escalate_vlm_review": (
+        "vlm",
+        "escalate",
+        "ReviewEscalate",
+        "ReviewTicket",
+        "escalateToolReview",
+    ),
     "admit_job": ("jobs", "admit", "JobAdmission", "JobRecord", "admitToolJob"),
     "retry_job": ("jobs", "retry", "JobRetry", "JobRecord", "retryToolJob"),
     "update_job_state": ("jobs", "update", "JobStateUpdate", "JobRecord", "updateJobState"),
@@ -83,6 +90,11 @@ READ_TOOLS = {
         "job_id",
         "JobRecord",
         "Read an admitted job without starting or retrying it. Use wait_seconds (0..30) for bounded waiting instead of busy-polling.",
+    ),
+    "get_vlm_review": (
+        "review_id",
+        "ReviewDetail",
+        "Read a VLM critique requested by the current work, including validated findings and diagnostics. Use wait_seconds (0..30) for bounded waiting instead of busy-polling.",
     ),
     "get_artifact": (
         "artifact_id",
@@ -136,7 +148,7 @@ def read_parameters(name: str) -> dict[str, Any]:
     properties = {identity: copy.deepcopy(SCHEMA["$defs"]["Id"])}
     if name == "get_artifact":
         properties["include_image"] = {"type": "boolean", "default": False}
-    elif name == "get_job":
+    elif name in {"get_job", "get_vlm_review"}:
         properties["wait_seconds"] = {"type": "integer", "minimum": 0, "maximum": 30, "default": 0}
     if name == "list_job_frames":
         properties.update(
@@ -176,14 +188,14 @@ def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
     allowed = {identity, "cursor", "limit"} if name == "list_job_frames" else {identity}
     if name == "get_artifact":
         allowed.add("include_image")
-    elif name == "get_job":
+    elif name in {"get_job", "get_vlm_review"}:
         allowed.add("wait_seconds")
     if not isinstance(arguments, dict) or identity not in arguments or set(arguments) - allowed:
         raise DomainError("invalid_request")
     validate("Id", arguments[identity])
     if name == "get_artifact" and type(arguments.get("include_image", False)) is not bool:
         raise DomainError("invalid_request")
-    if name == "get_job":
+    if name in {"get_job", "get_vlm_review"}:
         wait_seconds = arguments.get("wait_seconds", 0)
         if type(wait_seconds) is not int or not 0 <= wait_seconds <= 30:
             raise DomainError("invalid_request")
@@ -216,6 +228,7 @@ SAFE_REASONS = frozenset(
         "Dependency cycle",
         "Displayed image identity mismatch",
         "No exact frame receipt",
+        "Draft motion visual review targets must reference receipt-backed render or sequence frames",
         "Spatial mapping mismatch",
         "Storyboard source must be AuthoredShotPlan JSON",
         "Authored catalogue source is not JSON",
@@ -239,6 +252,11 @@ SAFE_REASONS = frozenset(
         "Image artefact is not ready for inline inspection",
         "Inline image inspection supports ready PNG, JPEG or WebP artefacts only",
         "Image artefact exceeds inline inspection bounds",
+        "Visual review targets must be ready PNG, JPEG or WebP still images",
+        "Stored artefact bytes do not match their recorded SHA-256 digest",
+        "Target displayed_sha256 does not match the registered image artefact",
+        "Target dimensions do not match the registered image artefact",
+        "Artefact purpose is not eligible for visual review; supply concept, reference, keyframe, draft_motion, inspection or final still images",
         "Unstructured target must name its task",
     }
 )
@@ -250,6 +268,8 @@ ERROR_GUIDANCE = {
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
     "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
     "hash_mismatch": "Registered bytes or the source digest do not match. Reconcile the original source/artefact identity; do not reuse this operation ID with changed input.",
+    "frame_conflict": "The frame or its dimensions do not match the registered artefact. Check the original frame receipt before retrying.",
+    "unsupported_media_type": "This operation does not support the supplied media type. Check the supported formats before retrying.",
     "dependency_missing": "A pinned source dependency is missing. Check the published source closure and dependency versions.",
     "idempotency_conflict": "This operation ID already binds different input or invocation authority. Inspect its original receipt; do not blindly repeat the effect.",
     "revision_conflict": "The record revision changed. Read the current record before submitting a corrected command.",
@@ -409,7 +429,9 @@ class Tools:
             operations=tuple(item[4] for item in TOOLS.values()),
         )
 
-    def _read(self, name: str, invocation: ToolInvocation) -> tuple[dict[str, Any], str]:
+    def _read(
+        self, name: str, invocation: ToolInvocation, caller: Caller | None = None
+    ) -> tuple[dict[str, Any], str]:
         args = read_arguments(name, invocation.arguments)
         if name == "get_project_capabilities":
             from .capabilities import get_project_capabilities
@@ -458,6 +480,22 @@ class Tools:
         assert identity is not None
         if name == "get_job":
             result = self.services.jobs.get(self.project_id, args[identity])
+        elif name == "get_vlm_review":
+            if caller is None or not caller.work_id:
+                raise DomainError("scope_denied", 403)
+            reviews = self.services.extension("reviews")
+            with self.services.registry.project_store(self.project_id).transaction(
+                write=False
+            ) as tx:
+                result = reviews.detail(tx, args[identity])
+                job = tx.require("jobs", result["ticket"]["job_id"])
+                if job.get("work_id") != caller.work_id:
+                    raise DomainError("scope_denied", 403)
+            if result.get("project_id") != self.project_id:
+                raise DomainError("scope_denied", 403)
+            if result["ticket"].get("review_id") != args[identity]:
+                raise DomainError("source_conflict", 409)
+            return result, result_schema
         elif name == "get_artifact":
             result = self.services.extension("artifacts").get(self.project_id, args[identity])
         elif name == "get_version":
@@ -510,16 +548,28 @@ class Tools:
                 },
             )
             if name in READ_TOOLS or name in DISCOVERY_READS:
-                result, result_schema = self._read(name, invocation)
-                if name == "get_job" and invocation.arguments.get("wait_seconds", 0) > 0:
+                result, result_schema = self._read(name, invocation, caller)
+                if (
+                    name in {"get_job", "get_vlm_review"}
+                    and invocation.arguments.get("wait_seconds", 0) > 0
+                ):
                     assert caller.work_id is not None
                     deadline = time.monotonic() + invocation.arguments["wait_seconds"]
-                    while result["state"] not in {
-                        "succeeded",
-                        "failed",
-                        "cancelled",
-                        "outcome_uncertain",
-                    }:
+
+                    def settled(payload: dict[str, Any]) -> bool:
+                        if name == "get_job":
+                            return payload["state"] in {
+                                "succeeded",
+                                "failed",
+                                "cancelled",
+                                "outcome_uncertain",
+                            }
+                        ticket = payload["ticket"]
+                        return ticket["status"] in {"ready", "failed"} or (
+                            ticket.get("error_code") == "outcome_uncertain"
+                        )
+
+                    while not settled(result):
                         remaining = deadline - time.monotonic()
                         if remaining <= 0:
                             break
@@ -540,7 +590,7 @@ class Tools:
                         if held:
                             break
                         await asyncio.sleep(min(0.5, remaining))
-                        result, result_schema = self._read(name, invocation)
+                        result, result_schema = self._read(name, invocation, caller)
             elif name == "validate_authored_document":
                 from .capabilities import validate_authored_document
 

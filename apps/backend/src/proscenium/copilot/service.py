@@ -141,6 +141,7 @@ class Copilot:
         self.pause_owner: dict[str, str] = {}
         self.checked_projects: set[str] = set()
         self.read_wait_recovery: dict[str, dict[str, Any]] = {}
+        self.last_health_at: float = 0.0
 
     def restore(self, project_id: str) -> None:
         if project_id:
@@ -395,26 +396,34 @@ class Copilot:
             )
 
     async def check_health(self, project_id: str) -> None:
+        if (
+            hasattr(self.native, "transport_alive")
+            and getattr(self.native, "client", None) is not None
+            and not self.native.transport_alive()
+        ):
+            raise ConnectionError("Copilot runtime transport is not alive")
+        now_mono = time.monotonic()
+        if now_mono - self.last_health_at < 15.0:
+            return
+        self.last_health_at = now_mono
         owner = self.callback_owners.get(project_id)
-        before = owner.progress_sequence if owner else 0
-        started = time.monotonic()
+        started = now_mono
         try:
             await self.native.health()
         except TimeoutError as exc:
             self.runtime_error(project_id, "health_timeout", exc, started)
             if (
-                owner is None
-                or owner.retired
-                or owner.failure
-                or owner is not self.callback_owners.get(project_id)
-                or owner.progress_sequence <= before
-                or time.monotonic() - owner.progress_at > 5
-                or not hasattr(self.native, "transport_alive")
-                or not self.native.transport_alive()
+                owner is not None
+                and not owner.retired
+                and not owner.failure
+                and owner is self.callback_owners.get(project_id)
+                and hasattr(self.native, "transport_alive")
+                and self.native.transport_alive()
             ):
-                raise
-            # One additional five-second probe, never indefinite timeout forgiveness.
-            await self.native.health()
+                # Single-threaded CLI stdio can block RPC pings during large turns/assets while the
+                # pinned OS process and pipe remain healthy; never kill live work on a busy pipe.
+                return
+            raise
 
     async def session(self, project_id: str, *, allow_create: bool = False) -> Any:
         target_models = None
@@ -794,6 +803,8 @@ class Copilot:
                     self.state.work_state(
                         tx, work["work_id"], "running", native_session_id=session.session_id
                     )
+                elif record["submission"]["type"] == "steer":
+                    self.state.invalidate_work_completions(tx, work)
                 save(
                     tx,
                     "copilot.sends",
@@ -904,8 +915,6 @@ class Copilot:
                 return
             work = tx.require("work", idle["work_id"])
             last_delivery = tx.get("copilot.last_delivery", work["work_id"], required=False)
-            if last_delivery and idle.get("delivery_id") != last_delivery["delivery_id"]:
-                return
             requests = [
                 tx.require("requests", r)
                 for r in [work["originating_request_id"], *work["directive_request_ids"]]
@@ -917,25 +926,50 @@ class Copilot:
                 if last_delivery
                 else None
             )
-            continued = bool(
-                continuation
-                and continuation.get("work_id") == work["work_id"]
-                and (
-                    completion := tx.get(
-                        "copilot.completion", continuation["request_id"], required=False
+            if continuation is not None:
+                if (
+                    continuation.get("work_id") != work["work_id"]
+                    or idle.get("delivery_id") != continuation["delivery_id"]
+                    or not (
+                        completion := tx.get(
+                            "copilot.completion", continuation["request_id"], required=False
+                        )
                     )
-                )
-                and completion.get("candidate")
-                and completion.get("delivery_id") == continuation["delivery_id"]
-            )
-            if not continued and any(
-                r["receipt"]["state"] not in TERMINAL
-                and not (tx.get("copilot.completion", r["request_id"], required=False) or {}).get(
-                    "candidate"
-                )
-                for r in requests
-            ):
-                return
+                    or not completion.get("candidate")
+                    or completion.get("delivery_id") != continuation["delivery_id"]
+                ):
+                    return
+            else:
+                non_terminal = [r for r in requests if r["receipt"]["state"] not in TERMINAL]
+                non_terminal_ids = {r["request_id"] for r in non_terminal}
+                if (
+                    not non_terminal_ids
+                    or idle.get("delivery_id") not in non_terminal_ids
+                    or (last_delivery and last_delivery.get("delivery_id") not in non_terminal_ids)
+                    or any(
+                        r["receipt"]["state"] != "acknowledged"
+                        or (tx.get("copilot.sends", r["request_id"], required=False) or {}).get(
+                            "state"
+                        )
+                        != "acknowledged"
+                        for r in non_terminal
+                    )
+                    or any(
+                        r["submission"]["type"] == "steer"
+                        and tx.get("copilot.admitted_messages", r["request_id"], required=False)
+                        is None
+                        for r in non_terminal
+                    )
+                ):
+                    return
+                idle_delivery = str(idle["delivery_id"])
+                completion = tx.get("copilot.completion", idle_delivery, required=False)
+                if (
+                    not completion
+                    or not completion.get("candidate")
+                    or completion.get("delivery_id") != idle_delivery
+                ):
+                    return
             if any(
                 i["work_id"] == work["work_id"] and i["state"] not in TERMINAL
                 for i in tx.all("invocations")
@@ -961,8 +995,14 @@ class Copilot:
 
     async def stop(self, project_id: str, work_id: str, operation_id: str) -> None:
         store = self.services.registry.project_store(project_id)
+        cold_session = project_id not in self.sessions
         try:
             with store.transaction() as tx:
+                prior_invocations = [
+                    i["invocation_id"]
+                    for i in tx.all("invocations")
+                    if i["state"] not in TERMINAL and i.get("invocation_id")
+                ]
                 phase = tx.require("copilot.stops", operation_id)
                 was_terminal = tx.require("work", work_id)["state"] in TERMINAL
                 if phase["phase"] in {"confirmed", "outcome_uncertain"}:
@@ -994,6 +1034,12 @@ class Copilot:
                 phase = tx.require("copilot.stops", operation_id)
                 phase.update(phase="reconciling", abort="acknowledged")
                 save(tx, "copilot.stops", operation_id, phase)
+            history: list[dict[str, Any]] = []
+            if cold_session and hasattr(session, "get_events"):
+                history = [wire(event) for event in await session.get_events()]
+                for event in history:
+                    self.state.replay_event(project_id, session.session_id, event)
+                self.state.drain_pending(project_id, session.session_id)
             pending = await self.native.pending(session)
             with store.transaction(write=False) as tx:
                 records = [
@@ -1030,8 +1076,15 @@ class Copilot:
                 with store.transaction() as tx:
                     save(tx, "copilot.withdrawals", key(operation_id, native_id), result)
                 # removed=False is NOT a successful withdrawal. Re-observe the actual queue.
+            departed_recovered = False
             for _ in range(50):
                 pending = await self.native.pending(session)
+                departed = getattr(self.native, "departed_process", None)
+                if cold_session and not departed_recovered and departed and empty(pending):
+                    departed_recovered = True
+                    await self._recover_departed_session(
+                        project_id, session, history, prior_invocations, pending, departed
+                    )
                 recovery = self.read_wait_recovery.get(project_id)
                 owner = self.callback_owners.get(project_id)
                 if (
@@ -1058,7 +1111,17 @@ class Copilot:
                         if i["work_id"] == work_id and i["state"] not in TERMINAL
                     ]
                     idle = tx.get("copilot.idle", session.session_id, required=False) or {}
-                if empty(pending) and not live and (was_terminal or idle.get("idle")):
+                if (
+                    empty(pending)
+                    and not live
+                    and (
+                        was_terminal
+                        or idle.get("idle")
+                        or (
+                            hasattr(self.native, "inactive") and await self.native.inactive(session)
+                        )
+                    )
+                ):
                     break
                 await asyncio.sleep(0.1)
             else:
@@ -1128,11 +1191,50 @@ class Copilot:
                     raise DomainError(
                         "revision_conflict", 409, current_revision=resource["state_revision"]
                     )
-                if body["mode"] == "continue_work" and (
-                    not body["work_id"]
-                    or resource["state"] not in {"stopped", "failed", "awaiting_resume"}
+                unresolved_stop_work_ids = {
+                    r["receipt"]["work_id"]
+                    for r in tx.all("requests")
+                    if r["submission"]["type"] == "stop"
+                    and r["receipt"]["state"] not in {"completed", "failed", "cancelled"}
+                } | {s["work_id"] for s in tx.all("copilot.stops") if s.get("phase") != "confirmed"}
+                if (
+                    not self.state.control(tx)["fenced"]
+                    and not unresolved_stop_work_ids
+                    and any(
+                        w["state"] in {"running", "awaiting_user", "stop_requested"}
+                        for w in tx.all("work")
+                    )
                 ):
-                    raise DomainError("invalid_state_transition", 409)
+                    raise DomainError(
+                        "project_busy",
+                        409,
+                        "Work is actively running; Stop or wait before resuming.",
+                    )
+                if body["mode"] == "continue_work":
+                    if not body["work_id"] or resource["state"] not in {
+                        "stopped",
+                        "failed",
+                        "awaiting_resume",
+                    }:
+                        raise DomainError("invalid_state_transition", 409)
+                    if unresolved_stop_work_ids or any(
+                        w["work_id"] != body["work_id"] and w["state"] not in TERMINAL | {"pending"}
+                        for w in tx.all("work")
+                    ):
+                        raise DomainError(
+                            "project_busy",
+                            409,
+                            "Reconcile or finish the active work before continuing.",
+                        )
+                if body["mode"] == "release_held_queue" and (
+                    unresolved_stop_work_ids
+                    or any(w["state"] not in TERMINAL | {"pending"} for w in tx.all("work"))
+                ):
+                    raise DomainError(
+                        "project_busy",
+                        409,
+                        "Reconcile, continue or stop the unsettled work before releasing the queue.",
+                    )
                 tx.put("copilot.resumes", body["operation_id"], {"body": body, "state": "pending"})
                 tx.enqueue(body["operation_id"], "copilot.resume", body)
                 return receipt(
@@ -1227,159 +1329,9 @@ class Copilot:
         pending = await self.native.pending(session)
         departed = getattr(self.native, "departed_process", None)
         if cold_resume and departed and empty(pending):
-            raw_history = (
-                [wire(e) for e in await session.get_raw_events()]
-                if hasattr(session, "get_raw_events")
-                else []
+            uncertain_stop_id = await self._recover_departed_session(
+                project_id, session, history, prior_invocations, pending, departed
             )
-            validated_targets: dict[str, str] = {}
-            root = Path(self.services.registry.get(project_id)["path"])
-            for event in raw_history:
-                permission = event.get("data", {}).get("permissionRequest", {})
-                if event["type"] != "permission.requested" or permission.get("kind") != "read":
-                    continue
-                starts = [
-                    e
-                    for e in raw_history
-                    if e["type"] == "tool.execution_start"
-                    and e.get("data", {}).get("toolCallId") == permission.get("toolCallId")
-                ]
-                if len(starts) != 1 or starts[0]["data"].get("toolName") != "rg":
-                    continue
-                try:
-                    targets, special = file_io(root, permission)
-                    args = starts[0]["data"].get("arguments", {})
-                    declared = {**permission, "path": args.get("paths")}
-                    declared.pop("resolvedPath", None)
-                    argument_targets, _ = file_io(root, declared)
-                    if (
-                        not special
-                        and targets == argument_targets
-                        and len(targets) == 1
-                        and not targets[0].is_dir()
-                    ):
-                        validated_targets[event["id"]] = str(targets[0])
-                except DomainError:
-                    pass
-            checkpoint_head: dict[str, Any] = {"verified": False}
-            for event in raw_history:
-                request = event.get("data", {}).get("permissionRequest", {})
-                if (
-                    event["type"] == "permission.requested"
-                    and request.get("kind") == "custom-tool"
-                    and request.get("toolName") == "checkpoint_sources"
-                ):
-                    try:
-                        self.custom_tool_arguments(project_id, request)
-                        from proscenium.sources.common import git
-
-                        head = (
-                            git(
-                                Path(self.services.registry.get(project_id)["path"]),
-                                "rev-parse",
-                                "--verify",
-                                "HEAD",
-                                required=False,
-                            )
-                            .decode()
-                            .strip()
-                            or None
-                        )
-                        checkpoint_head = {"verified": True, "head": head}
-                    except DomainError:
-                        pass
-                    break
-            with self.services.registry.project_store(project_id).transaction() as tx:
-                current_send = any(not task.done() for task in self.sends.values()) or any(
-                    s.get("state") in {"dispatching", "outcome_uncertain"}
-                    for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
-                )
-                uncertain_stop_ids = [
-                    r["request_id"]
-                    for r in tx.all("requests")
-                    if r["submission"]["type"] == "stop"
-                    and r["receipt"]["state"] == "outcome_uncertain"
-                    and tx.require("copilot.stops", r["request_id"])["phase"] == "outcome_uncertain"
-                ]
-                uncertain_stop_id = uncertain_stop_ids[0] if len(uncertain_stop_ids) == 1 else None
-                owner = self.callback_owners.get(project_id)
-                if owner and not owner.retired:
-                    self.read_wait_recovery[project_id] = {
-                        "session_id": session.session_id,
-                        "departed_process": departed,
-                        "callback_generation": owner.generation,
-                        "activity_sequence": owner.activity_sequence,
-                        "proofs": probe_read_wait(
-                            self.state,
-                            tx,
-                            session.session_id,
-                            raw_history,
-                            {
-                                "departed": departed,
-                                "prior_invocations": prior_invocations,
-                                "current_send": current_send,
-                                "uncertain_stop_id": uncertain_stop_id,
-                                "validated_targets": validated_targets,
-                                "pending_empty": {
-                                    "items",
-                                    "steeringMessages",
-                                    "inFlightSteeringCount",
-                                }
-                                <= pending.keys()
-                                and empty(pending),
-                                "permission_fingerprints": {
-                                    e["id"]: hashlib.sha256(
-                                        canonical(e["data"]["permissionRequest"])
-                                    ).hexdigest()
-                                    for e in history
-                                    if e["type"] == "permission.requested"
-                                },
-                            },
-                        ),
-                    }
-                self.state.observe_native_denials(
-                    tx,
-                    session.session_id,
-                    raw_history,
-                    {
-                        **departed,
-                        "invocation_ids": prior_invocations,
-                        "pending_empty": True,
-                        "current_send": current_send,
-                        "permission_fingerprints": {
-                            e["id"]: hashlib.sha256(
-                                canonical(e["data"]["permissionRequest"])
-                            ).hexdigest()
-                            for e in history
-                            if e["type"] == "permission.requested"
-                        },
-                    },
-                )
-                self.state.interrupt_uninvoked_checkpoint(
-                    tx,
-                    session.session_id,
-                    raw_history,
-                    {
-                        **departed,
-                        "invocation_ids": prior_invocations,
-                        "pending_empty": True,
-                        "current_send": current_send,
-                        "checkpoint_head": checkpoint_head,
-                        "permission_fingerprints": {
-                            e["id"]: hashlib.sha256(
-                                canonical(e["data"]["permissionRequest"])
-                            ).hexdigest()
-                            for e in history
-                            if e["type"] == "permission.requested"
-                        },
-                    },
-                )
-                self.state.interrupt_coordinators(
-                    tx,
-                    session.session_id,
-                    history,
-                    {**departed, "invocation_ids": prior_invocations},
-                )
             if uncertain_stop_id:
                 await self.reconcile_cold_stop(project_id, session, uncertain_stop_id)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
@@ -1404,6 +1356,149 @@ class Copilot:
             "duplicate_correlations": len(duplicates),
         }
 
+    async def _recover_departed_session(
+        self,
+        project_id: str,
+        session: Any,
+        history: list[dict[str, Any]],
+        prior_invocations: list[str],
+        pending: dict[str, Any],
+        departed: dict[str, Any],
+    ) -> str | None:
+        raw_history = (
+            [wire(e) for e in await session.get_raw_events()]
+            if hasattr(session, "get_raw_events")
+            else []
+        )
+        validated_targets: dict[str, str] = {}
+        root = Path(self.services.registry.get(project_id)["path"])
+        for event in raw_history:
+            permission = event.get("data", {}).get("permissionRequest", {})
+            if event["type"] != "permission.requested" or permission.get("kind") != "read":
+                continue
+            starts = [
+                e
+                for e in raw_history
+                if e["type"] == "tool.execution_start"
+                and e.get("data", {}).get("toolCallId") == permission.get("toolCallId")
+            ]
+            if len(starts) != 1 or starts[0]["data"].get("toolName") != "rg":
+                continue
+            try:
+                targets, special = file_io(root, permission)
+                args = starts[0]["data"].get("arguments", {})
+                declared = {**permission, "path": args.get("paths")}
+                declared.pop("resolvedPath", None)
+                argument_targets, _ = file_io(root, declared)
+                if (
+                    not special
+                    and targets == argument_targets
+                    and len(targets) == 1
+                    and not targets[0].is_dir()
+                ):
+                    validated_targets[event["id"]] = str(targets[0])
+            except DomainError:
+                pass
+        checkpoint_head: dict[str, Any] = {"verified": False}
+        for event in raw_history:
+            request = event.get("data", {}).get("permissionRequest", {})
+            if (
+                event["type"] == "permission.requested"
+                and request.get("kind") == "custom-tool"
+                and request.get("toolName") == "checkpoint_sources"
+            ):
+                try:
+                    self.custom_tool_arguments(project_id, request)
+                    from proscenium.sources.common import git
+
+                    head = (
+                        git(
+                            Path(self.services.registry.get(project_id)["path"]),
+                            "rev-parse",
+                            "--verify",
+                            "HEAD",
+                            required=False,
+                        )
+                        .decode()
+                        .strip()
+                        or None
+                    )
+                    checkpoint_head = {"verified": True, "head": head}
+                except DomainError:
+                    pass
+                break
+        permission_fingerprints = {
+            e["id"]: hashlib.sha256(canonical(e["data"]["permissionRequest"])).hexdigest()
+            for e in history
+            if e["type"] == "permission.requested"
+        }
+        with self.services.registry.project_store(project_id).transaction() as tx:
+            current_send = any(not task.done() for task in self.sends.values()) or any(
+                s.get("state") in {"dispatching", "outcome_uncertain"}
+                for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
+            )
+            uncertain_stop_ids = [
+                r["request_id"]
+                for r in tx.all("requests")
+                if r["submission"]["type"] == "stop"
+                and r["receipt"]["state"] == "outcome_uncertain"
+                and tx.require("copilot.stops", r["request_id"])["phase"] == "outcome_uncertain"
+            ]
+            uncertain_stop_id = uncertain_stop_ids[0] if len(uncertain_stop_ids) == 1 else None
+            owner = self.callback_owners.get(project_id)
+            if owner and not owner.retired:
+                self.read_wait_recovery[project_id] = {
+                    "session_id": session.session_id,
+                    "departed_process": departed,
+                    "callback_generation": owner.generation,
+                    "activity_sequence": owner.activity_sequence,
+                    "proofs": probe_read_wait(
+                        self.state,
+                        tx,
+                        session.session_id,
+                        raw_history,
+                        {
+                            "departed": departed,
+                            "prior_invocations": prior_invocations,
+                            "current_send": current_send,
+                            "uncertain_stop_id": uncertain_stop_id,
+                            "validated_targets": validated_targets,
+                            "pending_empty": {
+                                "items",
+                                "steeringMessages",
+                                "inFlightSteeringCount",
+                            }
+                            <= pending.keys()
+                            and empty(pending),
+                            "permission_fingerprints": permission_fingerprints,
+                        },
+                    ),
+                }
+            departed_context = {
+                **departed,
+                "invocation_ids": prior_invocations,
+                "pending_empty": True,
+                "current_send": current_send,
+                "permission_fingerprints": permission_fingerprints,
+            }
+            self.state.observe_native_denials(tx, session.session_id, raw_history, departed_context)
+            self.state.interrupt_uninvoked_checkpoint(
+                tx,
+                session.session_id,
+                raw_history,
+                {**departed_context, "checkpoint_head": checkpoint_head},
+            )
+            self.state.interrupt_departed_custom_tools(
+                tx, session.session_id, raw_history, departed_context
+            )
+            self.state.interrupt_coordinators(
+                tx,
+                session.session_id,
+                history,
+                {**departed, "invocation_ids": prior_invocations},
+            )
+        return uncertain_stop_id
+
     async def reconcile_cold_stop(self, project_id: str, session: Any, stop_id: str) -> None:
         sid = session.session_id
         recovery = self.read_wait_recovery.get(project_id)
@@ -1422,7 +1517,11 @@ class Copilot:
         observation_id = key(epoch, stop_id)
         store = self.services.registry.project_store(project_id)
         with store.transaction() as tx:
-            if tx.get("copilot.cold_stop_observations", observation_id, required=False):
+            existing = tx.get("copilot.cold_stop_observations", observation_id, required=False)
+            if existing and (
+                existing.get("status") == "applied"
+                or bool((existing.get("snapshot") or {}).get("rpc"))
+            ):
                 return  # Non-idempotent pause is never retried in this owner epoch.
             phase = tx.require("copilot.stops", stop_id)
             stop = tx.require("requests", stop_id)
@@ -1460,7 +1559,7 @@ class Copilot:
                     ("copilot.permissions", key(session.session_id, proof["native_id"])),
                 )
             ]
-            tx.put("copilot.cold_stop_observations", observation_id, observation)
+            save(tx, "copilot.cold_stop_observations", observation_id, observation)
 
         def owned() -> bool:
             if (
@@ -1513,7 +1612,17 @@ class Copilot:
                         for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
                     )
                     and not any(
-                        r["submission"]["type"] == "steer" and r["receipt"]["state"] not in TERMINAL
+                        r["submission"]["type"] == "steer"
+                        and r["receipt"]["state"] not in TERMINAL
+                        and not (
+                            r["receipt"]["work_id"] == work["work_id"]
+                            and r["request_id"] in work["directive_request_ids"]
+                            and r["receipt"]["state"] == "acknowledged"
+                            and (
+                                tx.get("copilot.sends", r["request_id"], required=False) or {}
+                            ).get("state")
+                            == "acknowledged"
+                        )
                         for r in tx.all("requests")
                     )
                     and not any(d["state"] == "pending" for d in tx.all("decisions"))
@@ -1606,6 +1715,7 @@ class Copilot:
                         w["state"] not in TERMINAL | {"pending"} for w in tx.all("work")
                     ):
                         raise DomainError("project_busy", 409)
+                    has_held = any(r["receipt"]["state"] == "held" for r in tx.all("requests"))
                     control = self.state.control(tx)
                     save(
                         tx,
@@ -1620,7 +1730,8 @@ class Copilot:
                                 "state_revision"
                             ],
                             "revision": control["revision"] + 1,
-                            "queue_released": body["mode"] == "release_held_queue",
+                            "queue_released": body["mode"] == "release_held_queue"
+                            or (body["mode"] == "continue_work" and not has_held),
                         },
                     )
                     if body["mode"] == "continue_work":
@@ -1882,58 +1993,105 @@ class Copilot:
         tool_id = request.get("toolCallId")
         fingerprint = hashlib.sha256(canonical(request)).hexdigest()
         claim_id = uuid4().hex
-        with self.services.registry.project_store(project_id).transaction() as tx:
-            binding = self.state.binding(tx, str(sid), "tool", tool_id)
-            matches = [
-                s
-                for s in tx.all("copilot.permissions")
-                if s.get("session_id") == sid
-                and s.get("tool_call_id") == tool_id
-                and s.get("fingerprint") == fingerprint
-                and s.get("phase") != "completed"
-                and not self.state.native_denied_stage(tx, s)
-                and not self.state.interrupted_custom_stage(tx, s)
-                and not retired_read_stage(tx, s)
-            ]
-            save(
-                tx,
-                "copilot.permission_callbacks",
-                claim_id,
-                {
-                    "session_id": sid,
-                    "tool_call_id": tool_id,
-                    "fingerprint": fingerprint,
-                    "state": "rejected_correlation",
-                    "authority": "host",
-                },
-            )
-            if (
-                not binding
-                or self.state.control(tx)["fenced"]
-                or len(matches) != 1
-                or matches[0].get("phase") != "pending"
-                or any(matches[0].get(k) != v for k, v in binding.items())
-                or tx.require("work", binding["work_id"])["state"]
-                not in {"running", "awaiting_user"}
-            ):
-                self.state.fence(tx, "attribution_unavailable")
-                return PermissionDecisionReject()
-            binding = {**binding, "invocation_id": key(str(sid), "tool", str(tool_id))}
-            stage = matches[0]
-            native_id = stage["native_id"]
-            stage_id = key(str(sid), native_id)
-            stage = {**stage, "phase": "claimed", "claim_id": claim_id, "claimed_at": now()}
-            save(tx, "copilot.permissions", stage_id, stage)
-            save(
-                tx,
-                "copilot.permission_callbacks",
-                claim_id,
-                {
-                    **stage,
-                    "state": "claimed",
-                    "authority": None,
-                },
-            )
+        needs_invocation = request.get("kind") in {"custom-tool", "read", "write"}
+        claimed = False
+        stage_id = ""
+        binding: dict[str, Any] | None = None
+        for attempt in range(41):
+            if attempt > 0:
+                if self.closing:
+                    return PermissionDecisionReject()
+                try:
+                    self.services.gate.require(project_id)
+                except DomainError:
+                    return PermissionDecisionReject()
+                await asyncio.sleep(0.05)
+            with self.services.registry.project_store(project_id).transaction() as tx:
+                fenced = self.state.control(tx)["fenced"]
+                binding = self.state.binding(tx, str(sid), "tool", tool_id)
+                matches = [
+                    s
+                    for s in tx.all("copilot.permissions")
+                    if s.get("session_id") == sid
+                    and s.get("tool_call_id") == tool_id
+                    and s.get("fingerprint") == fingerprint
+                    and s.get("phase") != "completed"
+                    and not self.state.native_denied_stage(tx, s)
+                    and not self.state.interrupted_custom_stage(tx, s)
+                    and not retired_read_stage(tx, s)
+                ]
+                work_ok = bool(
+                    binding
+                    and tx.require("work", binding["work_id"])["state"]
+                    in {"running", "awaiting_user"}
+                )
+                inv_id = key(str(sid), "tool", str(tool_id))
+                inv_ready = not needs_invocation or (
+                    tx.get("invocations", inv_id, required=False) is not None
+                )
+                ready = bool(
+                    not fenced
+                    and binding
+                    and work_ok
+                    and len(matches) == 1
+                    and matches[0].get("phase") == "pending"
+                    and all(matches[0].get(k) == v for k, v in binding.items())
+                    and inv_ready
+                )
+                if ready:
+                    assert binding is not None
+                    binding = {**binding, "invocation_id": inv_id}
+                    stage = matches[0]
+                    native_id = stage["native_id"]
+                    stage_id = key(str(sid), native_id)
+                    stage = {**stage, "phase": "claimed", "claim_id": claim_id, "claimed_at": now()}
+                    save(tx, "copilot.permissions", stage_id, stage)
+                    save(
+                        tx,
+                        "copilot.permission_callbacks",
+                        claim_id,
+                        {
+                            **stage,
+                            "state": "claimed",
+                            "authority": None,
+                        },
+                    )
+                    claimed = True
+                    break
+                definite_conflict = (
+                    fenced
+                    or not sid
+                    or not tool_id
+                    or (binding is not None and not work_ok)
+                    or len(matches) > 1
+                    or (
+                        len(matches) == 1
+                        and (
+                            matches[0].get("phase") != "pending"
+                            or (
+                                binding is not None
+                                and any(matches[0].get(k) != v for k, v in binding.items())
+                            )
+                        )
+                    )
+                )
+                if definite_conflict or attempt == 40:
+                    save(
+                        tx,
+                        "copilot.permission_callbacks",
+                        claim_id,
+                        {
+                            "session_id": sid,
+                            "tool_call_id": tool_id,
+                            "fingerprint": fingerprint,
+                            "state": "rejected_correlation",
+                            "authority": "host",
+                        },
+                    )
+                    self.state.fence(tx, "attribution_unavailable")
+                    return PermissionDecisionReject()
+        if not claimed or binding is None:
+            return PermissionDecisionReject()
 
         def reply(approve: bool, authority: str, denial_reason: str | None = None) -> Any:
             # Commit the exact claim/result before handing control back to the SDK.
@@ -2093,10 +2251,21 @@ class Copilot:
 
     async def user_input(self, project_id: str, request: dict[str, Any], invocation: Any) -> Any:
         sid, native_id = invocation.get("session_id"), request.get("requestId")
-        with self.services.registry.project_store(project_id).transaction() as tx:
-            binding = self.state.binding(tx, str(sid), "decision", native_id)
-            if not binding or not binding.get("invocation_id"):
-                self.state.fence(tx, "attribution_unavailable")
+        binding: dict[str, Any] | None = None
+        for attempt in range(41):
+            if attempt > 0:
+                if self.closing:
+                    raise DomainError("stale_decision", 409)
+                await asyncio.sleep(0.05)
+            with self.services.registry.project_store(project_id).transaction() as tx:
+                if self.state.control(tx)["fenced"]:
+                    break
+                binding = self.state.binding(tx, str(sid), "decision", native_id)
+                if binding and binding.get("invocation_id"):
+                    break
+                if not sid or not native_id or attempt == 40:
+                    self.state.fence(tx, "attribution_unavailable")
+                    break
         if not binding or not binding.get("invocation_id"):
             self.notify()
             raise DomainError("attribution_unavailable", 409)

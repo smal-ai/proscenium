@@ -1,11 +1,16 @@
 import type { ActivityEventData, ApiClient, Artifact, Event, RetainedArtifactSummary } from "../../api";
-import { OutputCards } from "./OutputCards";
+import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 
 export function ActivityEntry({ event, api, projectId, retainedArtifacts = [], onInspectArtifact, artifactIds }: { event: Event; api: ApiClient; projectId: string; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void; artifactIds?: string[] }) {
   const activity = event.payload as unknown as ActivityEventData;
   const label = `${event.event_type.startsWith("subagent.") ? "Native specialist" : "Tool"}: ${activity.display_name || activity.name}`;
-  const correlated = retainedArtifacts.filter(summary => summary.invocation_id === activity.invocation_id);
-  const outputs = <>{activity.output_status === "publication_blocked" && <p className="publication-status" role="status">Finished · publication blocked{activity.summary ? ` · ${activity.summary}` : ""}</p>}{activity.output_status === "retained_unpublished" && <p className="publication-status">Outputs retained · not published</p>}<OutputCards api={api} projectId={projectId} artifactIds={artifactIds ?? [...activity.artifact_ids, ...correlated.map(summary => summary.artifact.artifact_id)]} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></>;
+  const correlated = retainedArtifacts.filter(summary => summary.invocation_id === activity.invocation_id && !isRenderPassStreamArtifact(summary));
+  const summaryById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary]));
+  const fallbackIds = [...activity.artifact_ids.filter(id => {
+    const summary = summaryById.get(id);
+    return !summary || !isRenderPassStreamArtifact(summary);
+  }), ...correlated.map(summary => summary.artifact.artifact_id)];
+  const outputs = <>{activity.output_status === "publication_blocked" && <p className="publication-status" role="status">Finished · publication blocked{activity.summary ? ` · ${activity.summary}` : ""}</p>}{activity.output_status === "retained_unpublished" && <p className="publication-status">Outputs retained · not published</p>}<OutputCards api={api} projectId={projectId} artifactIds={artifactIds ?? fallbackIds} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></>;
   const problem = activity.state === "failed" || activity.state === "outcome_uncertain";
   const diagnostics = <>
     <small>Model: {activity.model_id ?? "not reported"} · {event.actor.kind}: {event.actor.id}</small>

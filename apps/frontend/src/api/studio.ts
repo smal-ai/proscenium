@@ -1,7 +1,7 @@
 /** Integration-owned component seams. All business records come from generated contracts. */
 import type { ComponentType } from "react";
 import type { ApiClient } from "./client";
-import type { Artifact, ContextSnapshot, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RequestTarget, RetainedArtifactSummary, VersionRecord } from "./generated/contracts";
+import type { Artifact, ContextSnapshot, Decision, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RequestTarget, RetainedArtifactSummary, ReviewTicket, VersionRecord } from "./generated/contracts";
 
 export interface ComposerSeedIntent {
   nonce: string;
@@ -72,6 +72,12 @@ export interface CriticSurfaceProps {
   projectId: string;
   selection: TurnSelection;
   refreshRevision: number;
+  reviews?: ReviewTicket[];
+  items?: ItemRecord[];
+  retainedArtifacts?: RetainedArtifactSummary[];
+  pendingDecisions?: Decision[];
+  onInspectArtifact?: (artifact: Artifact) => void;
+  onRefresh?: () => Promise<void>;
   onQueue: (text: string, selection: TurnSelection) => void | Promise<void>;
   onSteer?: (text: string, selection: TurnSelection) => void | Promise<void>;
 }

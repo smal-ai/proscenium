@@ -40,25 +40,35 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
 
 - **Optional starter actions:** Empty projects offer **Plan a storyboard**, **Create an asset** and **Build a scene**, or you can type any prompt directly. Starter buttons prepare a target and draft without sending a request or overwriting existing draft text.
 - **Asset-first workflow:** Use **New asset** at the top of **Navigator → Assets** (or target a new asset in the Composer) to author, import or generate standalone assets without creating a storyboard first.
+- **Version history:** Assets starts with version histories collapsed. Expand an item to inspect its versions without changing the owner selection. Only one item or version `⋯` disclosure stays open at a time. Press `Escape` to close it and return focus to its button. **Check selection status** appears only when a selection change needs reconciliation.
 - **Pinned reuse:** Publishing a new asset version never silently updates existing scenes or storyboards. Dependent items adopt newer versions only through an explicit revision.
+
+## Reviewing published versions
+
+- **Version status:** The Review header shows **Viewing vX · vY available** when there is a newer publication. Use **View vY** to switch. Unsaved drafts stay on their original version. Dismiss **Draft kept on vX** without changing the draft.
+- **3D Inspection:** **Render output format** offers **16:9 · 1920 × 1080**, **16:10 · 1920 × 1200** and **Match viewport**. Fixed formats show a live safe frame inside the canvas, including when inspecting through a restored render camera. Spatial pin placement and editing hide the guide. **Render this view** captures the framed composition at the selected camera aspect, or uses the full viewport at its native pixel size for **Match viewport**. If upload fails, **Retry captured view upload** uses the same capture, camera and retained dimensions rather than taking a new image.
+- **Keyframes:** Arrows step between rendered frames in the selected pass, including over gaps. A pass with one rendered frame disables both arrows. If you enter an unavailable frame, the transport explains why and keeps the frame number in sync with the image shown.
+- **Annotations:** The drawer starts on **This version**. Switch to **All versions of this item** to see historical notes. Opening a historical note takes you to its original version.
+- **Annotation actions:** The 2D editor and 3D pin dock group **Keep draft & close**, **Discard draft** or **Discard edits**, **Save annotation** and **Queue feedback** at the bottom. **Keep draft & close** retains local edits on this browser. **Discard draft** immediately removes an untouched 2D draft and asks for confirmation before removing notes, marks or pins. **Discard edits** keeps the editor open and atomically restores the acknowledged server revision, including its text, markup and pinned view or camera. If the saved revision is unavailable, the draft remains open. Discard never deletes an in-flight save or an operation pending retry, including one started in another tab.
 
 ## Request targeting and references
 
-The **Target** picker above the Composer separates what you are viewing from what you want Copilot to change:
+The **Target** picker above the message input separates what you are viewing from what you want Copilot to change. You can keep editing and send with the picker open. Close it with **Done**, `Escape` or the Target bar to return to your draft.
 
 - **Current view:** Captures the inspected Review item or storyboard shot at submission time (or **Project** when nothing is selected). Subsequent browsing never mutates an admitted request.
 - **Project:** General project discussion, research or cross-item planning.
-- **Specific asset, scene, storyboard or shot:** Pins an exact published version (including older versions) independently of the Review workspace.
-- **New asset / scene / storyboard:** Marks creation intent without inventing a published version ID.
-- **Explicit references:** Add supporting published versions (`reference_versions`) or uploaded images (`attachments`) without changing the primary Request target. Targeting `Project`, a `New` item or a different item never flushes an unrelated hidden Review annotation draft.
+- **Existing…:** Choose a published asset, scene or storyboard and pin an exact version, including older versions. Sending is disabled until you choose an item or switch target mode, even if you close the picker. For a storyboard, choose the entire version or a specific shot. Later publications do not move the pin.
+- **New…:** Choose **Asset**, **Scene** or **Storyboard** and optionally name it. This records creation intent without inventing a published version ID.
+
+Open the separate **References** disclosure to add published versions without changing the primary target. You can also include the current Review version when one is open. The Target bar shows the count of distinct references. Use the Composer's attachment control for supporting images. Explicit targets do not capture hidden Review drafts or viewport images.
 
 ## Composer controls, counters and history
 
 - **Split Send button:** Click the main button to submit using the active mode (**Queue** or **Steer**). Use the chevron menu to switch modes without sending.
 - **Guarded Steer:** Steer is enabled only when eligible work is actively running or awaiting input with execution unfenced. If work finishes or pauses, your Steer selection and draft are preserved with an explicit **Switch to Queue** action.
 - **Prompt history:** Press `ArrowUp` in an empty Composer (or with the caret at index `0`) to recall earlier project prompts, and `ArrowDown` to move forward back to your unsent draft. Recalling history restores text only, keeping your current target, mode and attachments intact.
-- **Panel links:** **Jobs**, **Context** and **Agents** sit beneath the input as interactive pill links that temporarily replace the text box and restore your draft, caret and focus on close:
-  - **Jobs:** Highlights unfinished independent render, encode, generation, VLM and Unity jobs (`N active` with an active indicator), retains settled history (`N done` or attention state on failure/uncertainty) and shows `0` when no jobs exist.
+- **Panel links:** **Jobs**, **Context** and **Agents** sit beneath the input. Opening one closes the Target picker and temporarily replaces the text box. Closing it restores your draft, selection and focus.
+  - **Jobs:** Shows failed, uncertain, running and queued counts separately, in that order. The badge shows a done count only when no jobs are running, queued or uncertain. A `?` marks last known counts or an uncertain outcome. Failed jobs and uncertain outcomes appear first under **Needs attention**. **Finished (N)** contains only succeeded and cancelled jobs and is collapsed by default. Open a row's **Details** for exact IDs, provider information and, where offered, cancellation of that independent job only.
   - **Context:** Counts logical items in the next request (explicit target, reference versions, deduplicated images, object selections, annotations and approved findings), showing active uploads separately until ready.
   - **Agents:** Counts busy or uncertain product-native specialists (`subagent.*`), showing each specialist's task label, state, freshness and model without counting wrapper `task` calls.
 
@@ -77,3 +87,9 @@ The **Target** picker above the Composer separates what you are viewing from wha
   - **Reconcile only:** Inspects native state and settles proven barriers without sending a prompt.
   - **Continue original work:** Resumes the selected work with its latest acknowledged request context and original generation budget.
   - **Release held queue:** Unfences an idle project so held Queue requests can dispatch.
+
+## Visual Critic inbox and chat-aligned review
+
+- **Realtime Critic badge:** The **Critic** tab header counts reviews currently awaiting human attention (once per review, regardless of finding count). Routine agent self-checks stay out of **Pending** unless escalated with an explicit question; owner-requested critiques count while processing and while unreviewed findings remain, clearing automatically on zero-defect completion or when you click **Done without changes**.
+- **Pending / All inbox:** Defaults to **Pending**, listing compact review cards newest-first with only the **review name** and **24-hour SAST date/time** (`Date unavailable` when unrecorded).
+- **Critique conversation & anchored actions:** Selecting a card displays the original criteria, any lead escalation question, and atomic **Critic** finding entries with clickable target images and expandable evidence, above an anchored Composer that submits selected revisions against the reviewed target/version via **Queue** or **Steer**.

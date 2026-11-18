@@ -24,7 +24,7 @@ export interface Operations {
   listItemVersions: { body: never; response: C.VersionPage; path: { project_id: string; item_id: string }; query: { cursor?: string; limit?: number } };
   getVersionShotPlan: { body: never; response: C.ShotPlan; path: { project_id: string; version_id: string }; query: Record<string, never> };
   getVersionSequenceMap: { body: never; response: C.SequenceMap; path: { project_id: string; version_id: string }; query: Record<string, never> };
-  getVersionProxyMapping: { body: never; response: C.ProxyMapping; path: { project_id: string; version_id: string }; query: Record<string, never> };
+  getVersionProxyMapping: { body: never; response: C.ProxyMapping; path: { project_id: string; version_id: string }; query: { mapping_artifact_id?: string } };
   listJobs: { body: never; response: C.JobPage; path: { project_id: string }; query: { cursor?: string; limit?: number } };
   getJob: { body: never; response: C.JobRecord; path: { project_id: string; job_id: string }; query: Record<string, never> };
   getFrameAvailability: { body: never; response: C.FrameAvailability; path: { project_id: string; job_id: string }; query: Record<string, never> };
@@ -41,8 +41,10 @@ export interface Operations {
   saveAnnotation: { body: C.AnnotationSave; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
   listSelections: { body: never; response: C.SelectionPage; path: { project_id: string }; query: { cursor?: string; limit?: number } };
   saveSelection: { body: C.SelectionSave; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
-  listOwnerReviews: { body: never; response: C.ReviewPage; path: { project_id: string }; query: { cursor?: string; limit?: number } };
+  listOwnerReviews: { body: never; response: C.ReviewPage; path: { project_id: string }; query: { cursor?: string; limit?: number; filter?: "pending" | "all" } };
   requestOwnerReview: { body: C.ReviewRequest; response: C.ReviewTicket; path: { project_id: string }; query: Record<string, never> };
+  getOwnerReview: { body: never; response: C.ReviewDetail; path: { project_id: string; review_id: string }; query: Record<string, never> };
+  resolveOwnerReview: { body: C.RevisionCommand; response: C.CommandReceipt; path: { project_id: string; review_id: string }; query: Record<string, never> };
   listOwnerReviewFindings: { body: never; response: C.FindingPage; path: { project_id: string; review_id: string }; query: { cursor?: string; limit?: number } };
   rejectReviewFinding: { body: C.RevisionCommand; response: C.CommandReceipt; path: { project_id: string; review_id: string; finding_id: string }; query: Record<string, never> };
   answerOwnerDecision: { body: C.DecisionAnswer; response: C.CommandReceipt; path: { project_id: string; decision_id: string }; query: Record<string, never> };
@@ -57,6 +59,7 @@ export interface Operations {
   updateJobState: { body: C.JobStateUpdate; response: C.JobRecord; path: { job_id: string }; query: Record<string, never> };
   requestToolReview: { body: C.ReviewRequest; response: C.ReviewTicket; path: Record<string, never>; query: Record<string, never> };
   completeToolReview: { body: C.ReviewComplete; response: C.ReviewTicket; path: { review_id: string }; query: Record<string, never> };
+  escalateToolReview: { body: C.ReviewEscalate; response: C.ReviewTicket; path: { review_id: string }; query: Record<string, never> };
   registerFrameReceipt: { body: C.FrameReceipt; response: C.CommandReceipt; path: Record<string, never>; query: Record<string, never> };
   registerPreviewSegment: { body: C.PreviewSegment; response: C.CommandReceipt; path: Record<string, never>; query: Record<string, never> };
 }
@@ -103,6 +106,8 @@ export const routes = {
   saveSelection: { method: "POST", path: "/api/v1/projects/{project_id}/selections", binary: false },
   listOwnerReviews: { method: "GET", path: "/api/v1/projects/{project_id}/reviews", binary: false },
   requestOwnerReview: { method: "POST", path: "/api/v1/projects/{project_id}/reviews", binary: false },
+  getOwnerReview: { method: "GET", path: "/api/v1/projects/{project_id}/reviews/{review_id}", binary: false },
+  resolveOwnerReview: { method: "POST", path: "/api/v1/projects/{project_id}/reviews/{review_id}/resolve", binary: false },
   listOwnerReviewFindings: { method: "GET", path: "/api/v1/projects/{project_id}/reviews/{review_id}/findings", binary: false },
   rejectReviewFinding: { method: "POST", path: "/api/v1/projects/{project_id}/reviews/{review_id}/findings/{finding_id}/reject", binary: false },
   answerOwnerDecision: { method: "POST", path: "/api/v1/projects/{project_id}/decisions/{decision_id}/answer", binary: false },
@@ -117,6 +122,7 @@ export const routes = {
   updateJobState: { method: "POST", path: "/internal/v1/jobs/{job_id}/state", binary: false },
   requestToolReview: { method: "POST", path: "/internal/v1/reviews", binary: false },
   completeToolReview: { method: "POST", path: "/internal/v1/reviews/{review_id}/complete", binary: false },
+  escalateToolReview: { method: "POST", path: "/internal/v1/reviews/{review_id}/escalate", binary: false },
   registerFrameReceipt: { method: "POST", path: "/internal/v1/frame-receipts", binary: false },
   registerPreviewSegment: { method: "POST", path: "/internal/v1/segments", binary: false },
 } as const;

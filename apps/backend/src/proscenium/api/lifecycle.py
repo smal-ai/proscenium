@@ -22,6 +22,7 @@ class FeatureLifecycle:
         for name, operation, gated in (
             ("job-cancellations", self.services.jobs.dispatch_cancellations, False),
             ("providers", self.services.extension("providers").pump, True),
+            ("vlm-reviews", self.services.extension("providers").pump_reviews, True),
             ("preview-dispatch", self.services.extension("previews").pump, True),
             ("preview-receipts", self.services.extension("previews").reconcile, False),
         ):

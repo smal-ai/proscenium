@@ -232,6 +232,8 @@ async def events(socket: WebSocket) -> None:
                 )
             )
         await socket.close(code=1008, reason=exc.code)
-    except (WebSocketDisconnect, TimeoutError):
-        with suppress(RuntimeError):
+    except TimeoutError:
+        with suppress(RuntimeError, WebSocketDisconnect):
             await socket.close(code=1013)
+    except WebSocketDisconnect:
+        pass

@@ -430,7 +430,16 @@ class Projects:
                     ],
                     jobs=tx.all("jobs"),
                     pending_decisions=[d for d in tx.all("decisions") if d["state"] == "pending"],
-                    reviews=tx.all("reviews"),
+                    reviews=[
+                        self.services.extension("reviews").ticket_view(
+                            tx, tx.require("reviews", row[0])
+                        )
+                        if "reviews" in self.services.extensions
+                        else tx.require("reviews", row[0])
+                        for row in tx.connection.execute(
+                            "SELECT id FROM records WHERE namespace='reviews' ORDER BY rowid DESC"
+                        ).fetchall()
+                    ],
                 )
         validate("ProjectSnapshot", result)
         return result

@@ -68,8 +68,11 @@ The host builds `authoring-specialist` and `unity-specialist` using the pinned P
   ready bytes inline without writing files. Never copy managed artefact content
   just to call `view`. Wait using `get_job(job_id=..., wait_seconds=15)` rather
   than rapid polling. The bounded range is `0..30` seconds.
-- `request_vlm_review` returns only a ticket. Only owner-selected findings in a
-  subsequent host context become critique instructions.
+- `request_vlm_review` admits a structured critique job; active work may call
+  `get_vlm_review(review_id=..., wait_seconds=15)` to read its own validated findings
+  for bounded self-correction within the task budget, or `escalate_vlm_review` with an
+  explicit question when human judgement is needed in **Critic**. Only owner-selected
+  `approved_findings` in host context carry owner instruction authority.
   Request read-only visual assessment for produced storyboards, concepts, keyframes
   and renders when capabilities report a `configured` or `ready` VLM provider.
 - Use `submit_generation` for inference and preserve the original generation task.

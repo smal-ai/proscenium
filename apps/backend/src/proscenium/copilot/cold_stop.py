@@ -195,7 +195,15 @@ def apply(
     )
     require(
         not any(
-            r["submission"]["type"] == "steer" and r["receipt"]["state"] not in TERMINAL
+            r["submission"]["type"] == "steer"
+            and r["receipt"]["state"] not in TERMINAL
+            and not (
+                r["receipt"]["work_id"] == work_id
+                and r["request_id"] in work["directive_request_ids"]
+                and r["receipt"]["state"] == "acknowledged"
+                and (tx.get("copilot.sends", r["request_id"], required=False) or {}).get("state")
+                == "acknowledged"
+            )
             for r in tx.all("requests")
         ),
         "unsettled_steer",

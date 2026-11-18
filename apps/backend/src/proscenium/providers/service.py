@@ -24,11 +24,25 @@ from proscenium.jobs.resources import check_storage, reserve_generation, settle_
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
 from proscenium.providers.targets import admit_target, resolve_target
-from proscenium.providers.vlm import VLMClient, findings
+from proscenium.providers.vlm import (
+    DEFAULT_VLM_MAX_TOKENS,
+    DEFAULT_VLM_REASONING_EFFORT,
+    DEFAULT_VLM_TIMEOUT,
+    RUBRIC_REVISION,
+    VLMClient,
+    findings,
+)
+from proscenium.reviews.references import References
 from proscenium.services import Services
 
 JSON = dict[str, Any]
 Registrar = Callable[[Caller, JSON], JSON]
+REVIEWABLE_IMAGE_PURPOSES = frozenset(
+    {"concept", "reference", "keyframe", "draft_motion", "inspection", "final"}
+)
+DRAFT_MOTION_RECEIPT_REQUIRED = (
+    "Draft motion visual review targets must reference receipt-backed render or sequence frames"
+)
 
 
 def sha(data: bytes) -> str:
@@ -111,6 +125,12 @@ class ProviderService:
         self.owns_client = client is None
         # A replacement adapter in the same ownership epoch shares the dispatch lock.
         self._lock = services.extensions.setdefault("providers.pump_lock", threading.Lock())
+        self._review_claim_lock = services.extensions.setdefault(
+            "providers.review_claim_lock", threading.Lock()
+        )
+        self._inflight_reviews: set[str] = services.extensions.setdefault(
+            "providers.inflight_reviews", set()
+        )
         self._background: asyncio.Task[None] | None = None
         self._stop = asyncio.Event()
         self.options = dict(services.settings.provider_options)
@@ -118,6 +138,8 @@ class ProviderService:
             "review_provider_id",
             "minimum_free_vram_bytes",
             "vlm_max_tokens",
+            "vlm_reasoning_effort",
+            "vlm_timeout",
             "image_profiles",
             "image_recipes",
             "mesh_profiles",
@@ -127,12 +149,28 @@ class ProviderService:
             raise ValueError(
                 "Unknown provider_options keys. Credentials must use a parent transport"
             )
-        for key in ("minimum_free_vram_bytes", "vlm_max_tokens"):
-            value = self.options.get(key, 0 if key == "minimum_free_vram_bytes" else 512)
+        for key in ("minimum_free_vram_bytes", "vlm_max_tokens", "vlm_timeout"):
+            default_val = (
+                0
+                if key == "minimum_free_vram_bytes"
+                else DEFAULT_VLM_MAX_TOKENS
+                if key == "vlm_max_tokens"
+                else int(DEFAULT_VLM_TIMEOUT)
+            )
+            value = self.options.get(key, default_val)
             if type(value) is not int or value < (0 if key == "minimum_free_vram_bytes" else 1):
                 raise ValueError("Invalid provider execution limit")
-        if self.options.get("vlm_max_tokens", 512) > 512:
-            raise ValueError("VLM output is bounded to 512 tokens")
+        if self.options.get("vlm_max_tokens", DEFAULT_VLM_MAX_TOKENS) > DEFAULT_VLM_MAX_TOKENS:
+            raise ValueError(f"VLM output is bounded to {DEFAULT_VLM_MAX_TOKENS} tokens")
+        if self.options.get("vlm_timeout", int(DEFAULT_VLM_TIMEOUT)) > 600:
+            raise ValueError("VLM timeout is bounded to 600 seconds")
+        if self.options.get("vlm_reasoning_effort", DEFAULT_VLM_REASONING_EFFORT) not in {
+            "off",
+            "low",
+            "medium",
+            "high",
+        }:
+            raise ValueError("vlm_reasoning_effort must be off, low, medium or high")
         profiles = self.options.get("image_profiles", {})
         if not isinstance(profiles, dict):
             raise ValueError(
@@ -184,10 +222,17 @@ class ProviderService:
         artifact = self.artifacts.get(project_id, artifact_id)
         if artifact["project_id"] != project_id or artifact["state"] != "ready":
             raise DomainError("media_unavailable", 422)
-        data = self.artifacts.ready_path(project_id, artifact_id).read_bytes()
-        if sha(data) != artifact["sha256"] or len(data) != artifact["bytes"]:
-            raise DomainError("hash_mismatch", 422)
-        return artifact, data
+        try:
+            data = self.artifacts.ready_path(project_id, artifact_id).read_bytes()
+        except DomainError as exc:
+            if exc.code != "hash_mismatch":
+                raise
+        else:
+            if sha(data) == artifact["sha256"] and len(data) == artifact["bytes"]:
+                return artifact, data
+        raise DomainError(
+            "hash_mismatch", 422, "Stored artefact bytes do not match their recorded SHA-256 digest"
+        )
 
     def image_bytes(self, project_id: str, artifact_id: str) -> tuple[JSON, bytes]:
         artifact, data = self.artifact_bytes(project_id, artifact_id)
@@ -196,7 +241,11 @@ class ProviderService:
             "image/jpeg",
             "image/webp",
         }:
-            raise DomainError("unsupported_media_type", 415)
+            raise DomainError(
+                "unsupported_media_type",
+                415,
+                "Visual review targets must be ready PNG, JPEG or WebP still images",
+            )
         with Image.open(io.BytesIO(data)) as image:
             if image.width * image.height > self.services.settings.upload_max_pixels:
                 raise DomainError("image_dimensions_exceeded", 413)
@@ -367,17 +416,52 @@ class ProviderService:
             raise DomainError("capability_unavailable", 501, "Configure a vision model ID")
         hashes = {}
         image_hashes = {}
+        target_purposes = {}
         for target in request["targets"]:
             artifact, clean = self.image_bytes(project_id, target["artifact_id"])
-            if (
-                artifact["sha256"] != target["displayed_sha256"]
-                or artifact.get("dimensions") != target["dimensions"]
-                or artifact["purpose"]
-                not in {"concept", "reference", "keyframe", "inspection", "final"}
-            ):
-                raise DomainError("hash_mismatch", 422)
+            if artifact["sha256"] != target["displayed_sha256"]:
+                raise DomainError(
+                    "hash_mismatch",
+                    422,
+                    "Target displayed_sha256 does not match the registered image artefact",
+                )
+            if artifact.get("dimensions") != target["dimensions"]:
+                raise DomainError(
+                    "frame_conflict",
+                    422,
+                    "Target dimensions do not match the registered image artefact",
+                )
+            if artifact["purpose"] not in REVIEWABLE_IMAGE_PURPOSES:
+                raise DomainError(
+                    "invalid_request",
+                    422,
+                    "Artefact purpose is not eligible for visual review; supply concept, reference, keyframe, draft_motion, inspection or final still images",
+                )
+            if artifact["purpose"] == "draft_motion" and target["origin"] not in {
+                "blender_render",
+                "sequence_render",
+            }:
+                raise DomainError(
+                    "invalid_request",
+                    422,
+                    DRAFT_MOTION_RECEIPT_REQUIRED,
+                )
             hashes[target["artifact_id"]] = artifact["sha256"]
             image_hashes[target["artifact_id"]] = sha(clean)
+            target_purposes[target["artifact_id"]] = artifact["purpose"]
+        refs = References(self.services)
+        with store.transaction(write=False) as tx:
+            frames = tx.all("frames") if "draft_motion" in target_purposes.values() else []
+            for target in request["targets"]:
+                refs.target(tx, target)
+                # Sequence maps prove contributor receipts, not the displayed PNG itself.
+                if target_purposes[target["artifact_id"]] == "draft_motion" and not any(
+                    frame["artifact_id"] == target["artifact_id"]
+                    and frame["sha256"] == target["displayed_sha256"]
+                    and frame["dimensions"] == target["dimensions"]
+                    for frame in frames
+                ):
+                    raise DomainError("invalid_request", 422, DRAFT_MOTION_RECEIPT_REQUIRED)
         for identity in request["telemetry_artifact_ids"]:
             artifact, data = self.artifact_bytes(project_id, identity)
             if artifact["media_type"] != "application/json" or len(data) > 1024 * 1024:
@@ -389,7 +473,13 @@ class ProviderService:
             "provider": provider,
             "hashes": hashes,
             "clean_image_hashes": image_hashes,
-            "vlm_max_tokens": self.options.get("vlm_max_tokens", 512),
+            "target_purposes": target_purposes,
+            "vlm_max_tokens": self.options.get("vlm_max_tokens", DEFAULT_VLM_MAX_TOKENS),
+            "vlm_reasoning_effort": self.options.get(
+                "vlm_reasoning_effort", DEFAULT_VLM_REASONING_EFFORT
+            ),
+            "vlm_timeout": self.options.get("vlm_timeout", int(DEFAULT_VLM_TIMEOUT)),
+            "rubric_revision": RUBRIC_REVISION,
         }
         with store.transaction() as tx:
 
@@ -409,7 +499,7 @@ class ProviderService:
                     provider_id=provider["provider_id"],
                     enqueue_kind="providers.review",
                 )
-                ticket = reviews.create(tx, request, job["job_id"])
+                ticket = reviews.create(tx, request, job["job_id"], caller=caller)
                 validate("ReviewTicket", ticket)
                 if ticket["job_id"] != job["job_id"] or ticket["review_id"] != request["review_id"]:
                     raise DomainError("source_conflict", 409)
@@ -454,7 +544,13 @@ class ProviderService:
         )
         return self.services.jobs.update(self.worker(job), body, evidence="provider observation")[0]
 
-    def complete_review(self, caller: Caller, request: JSON) -> tuple[JSON, bool]:
+    def complete_review(
+        self,
+        caller: Caller,
+        request: JSON,
+        *,
+        diagnostics: JSON | None = None,
+    ) -> tuple[JSON, bool]:
         validate("ReviewComplete", request)
         project_id = request["project_id"]
         self.services.jobs.check_caller(caller, "completeToolReview", project_id)
@@ -498,7 +594,7 @@ class ProviderService:
                 },
             )
         # W05 owns atomic finding storage and its own completion idempotency.
-        ticket = self.reviews.complete(caller, request)
+        ticket = self.reviews.complete(caller, request, diagnostics=diagnostics)
         validate("ReviewTicket", ticket)
         if (
             ticket["review_id"] != request["review_id"]
@@ -802,12 +898,16 @@ class ProviderService:
             telemetry[identity] = json.loads(data)
         job = self.update(job, "starting")
         self.execution(job["project_id"], job["job_id"], {"phase": "submitting"})
-        result = VLMClient(inputs["provider"]["endpoint"], self.client).review(
+        vlm = VLMClient(inputs["provider"]["endpoint"], self.client)
+        result, diagnostics = vlm.review_with_diagnostics(
             inputs["provider"]["model_id"],
             request,
             images,
             telemetry,
-            max_tokens=inputs["vlm_max_tokens"],
+            max_tokens=inputs.get("vlm_max_tokens", DEFAULT_VLM_MAX_TOKENS),
+            reasoning_effort=inputs.get("vlm_reasoning_effort", DEFAULT_VLM_REASONING_EFFORT),
+            target_purposes=inputs.get("target_purposes"),
+            timeout=float(inputs.get("vlm_timeout", DEFAULT_VLM_TIMEOUT)),
         )
         completion = dict(
             schema_version="1.0",
@@ -819,19 +919,177 @@ class ProviderService:
         )
         # Persist only validated output privately for safe DB-completion replay after a crash.
         self.execution(
-            job["project_id"], job["job_id"], {"phase": "review_complete", "completion": completion}
+            job["project_id"],
+            job["job_id"],
+            {"phase": "review_complete", "completion": completion, "diagnostics": diagnostics},
         )
-        self.complete_review(self.worker(job), completion)
+        self.complete_review(self.worker(job), completion, diagnostics=diagnostics)
         return self.services.jobs.get(job["project_id"], job["job_id"])
+
+    def _run_review_job(self, project_id: str, job_id: str) -> JSON | None:
+        """Execute a single vlm_review job outside the shared ComfyUI dispatch lock."""
+        self.services.gate.require(project_id)
+        store = self.services.registry.project_store(project_id)
+        with self._review_claim_lock:
+            if job_id in self._inflight_reviews:
+                return None
+            with store.transaction() as tx:
+                job = tx.require("jobs", job_id)
+                if job["kind"] != "vlm_review" or job["state"] in TERMINAL:
+                    return None
+                execution = tx.get("providers.execution", job_id, required=False) or {}
+                row = tx.connection.execute(
+                    "SELECT state FROM outbox WHERE id=?", (job["attempt_id"],)
+                ).fetchone()
+                if not row:
+                    raise DomainError("scope_denied", 403)
+                if row[0] == "pending":
+                    tx.claim_intent(job["attempt_id"])
+                elif row[0] in {"dispatching", "outcome_uncertain"} and not execution:
+                    return None
+                if execution.get("phase") == "checking":
+                    return None
+                if execution.get("phase") not in {None, "waiting", "review_complete"}:
+                    return None
+                if execution.get("phase") in {None, "waiting"}:
+                    tx.put(
+                        "providers.execution",
+                        job_id,
+                        {"phase": "checking"},
+                        expected_revision=tx.revision("providers.execution", job_id)
+                        if execution
+                        else None,
+                    )
+            self._inflight_reviews.add(job_id)
+        try:
+            self.services.gate.require(project_id)
+            inputs = self.services.jobs.inputs(project_id, job_id)
+            execution = self.execution(project_id, job_id)
+            try:
+                check_storage(store.path.parent, self.services.settings.free_space_reserve_bytes)
+                if execution.get("phase") == "review_complete":
+                    self.complete_review(
+                        self.worker(job),
+                        execution["completion"],
+                        diagnostics=execution.get("diagnostics"),
+                    )
+                    result = self.services.jobs.get(project_id, job_id)
+                else:
+                    result = self._review(job, inputs)
+            except (
+                httpx.HTTPError,
+                DomainError,
+                ValueError,
+                KeyError,
+                OSError,
+                TypeError,
+                IndexError,
+                AttributeError,
+            ) as exc:
+                job = self.services.jobs.get(project_id, job_id)
+                execution = self.execution(project_id, job_id)
+                uncertain = execution.get("phase") == "submitting"
+                code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
+                err_diag = (
+                    exc.details.get("diagnostics")
+                    if isinstance(exc, DomainError)
+                    and isinstance(exc.details.get("diagnostics"), dict)
+                    else None
+                )
+                # A received malformed VLM response is a known failed review, not a relaunch.
+                if isinstance(
+                    exc,
+                    (ValueError, KeyError, DomainError, TypeError, IndexError, AttributeError),
+                ):
+                    uncertain = False
+                if uncertain:
+                    self.reviews.record_diagnostics(
+                        project_id,
+                        inputs["request"]["review_id"],
+                        {"error_code": "outcome_uncertain"},
+                    )
+                result = self.update(
+                    job, "outcome_uncertain" if uncertain else "failed", error_code=code
+                )
+                if not uncertain:
+                    self.complete_review(
+                        self.worker(job),
+                        dict(
+                            schema_version="1.0",
+                            operation_id=inputs["request"]["review_id"] + "-failed",
+                            project_id=project_id,
+                            review_id=inputs["request"]["review_id"],
+                            status="failed",
+                            findings=[],
+                            error_code=code,
+                        ),
+                        diagnostics=err_diag or {"error_code": code},
+                    )
+            with store.transaction() as tx:
+                row = tx.connection.execute(
+                    "SELECT state FROM outbox WHERE id=?", (job["attempt_id"],)
+                ).fetchone()
+                if row and row[0] in {"dispatching", "outcome_uncertain"}:
+                    tx.settle_intent(
+                        job["attempt_id"],
+                        "outcome_uncertain"
+                        if result["state"] == "outcome_uncertain"
+                        else "acknowledged",
+                        {"job_id": job_id, "state": result["state"]},
+                    )
+                if result["state"] == "outcome_uncertain":
+                    review_id = inputs["request"]["review_id"]
+                    ticket = tx.get("reviews", review_id, required=False)
+                    if ticket is not None:
+                        projected = self.reviews.ticket_view(tx, ticket)
+                        if projected.get("human_review_state") != "not_requested":
+                            tx.emit(
+                                "review.changed",
+                                projected,
+                                actor={"kind": "worker", "id": "provider-worker"},
+                                work_id=job.get("work_id"),
+                            )
+            return result
+        finally:
+            with self._review_claim_lock:
+                self._inflight_reviews.discard(job_id)
+
+    def pump_reviews(self, project_id: str) -> list[JSON]:
+        self.services.gate.require(project_id)
+        store = self.services.registry.project_store(project_id)
+        with store.transaction(write=False) as tx:
+            review_job_ids = [
+                row[0]
+                for row in tx.connection.execute(
+                    "SELECT id FROM records WHERE namespace='providers.pending' ORDER BY id"
+                ).fetchall()
+                if (j := tx.get("jobs", row[0], required=False)) is not None
+                and j["kind"] == "vlm_review"
+                and j["state"] not in TERMINAL
+            ]
+        results = []
+        for jid in review_job_ids:
+            self.services.gate.require(project_id)
+            res = self._run_review_job(project_id, jid)
+            if res is not None:
+                results.append(res)
+        return results
 
     def pump(self, project_id: str, job_id: str | None = None) -> list[JSON]:
         """Explicit execution/resume only. Never called by installation, startup or reads.
 
         A parent may call repeatedly after explicit Resume. Unknown prompt acceptance is
-        reconciled read-only. VLM uncertainty is never replayed.
+        reconciled read-only. VLM uncertainty is never replayed, and slow VLM inference
+        runs outside the ComfyUI dispatch lock.
         """
         self.services.gate.require(project_id)
         store = self.services.registry.project_store(project_id)
+        if job_id is not None:
+            with store.transaction(write=False) as tx:
+                single = tx.require("jobs", job_id)
+            if single["kind"] == "vlm_review":
+                res = self._run_review_job(project_id, job_id)
+                return [res] if res is not None else []
         results = []
         with self._lock:
             with store.transaction(write=False) as tx:
@@ -846,7 +1104,7 @@ class ProviderService:
                     ]
                 )
             for job in jobs:
-                if job["state"] in TERMINAL:
+                if job["state"] in TERMINAL or job["kind"] == "vlm_review":
                     continue
                 self.services.gate.require(project_id)
                 inputs = self.services.jobs.inputs(project_id, job["job_id"])
@@ -880,14 +1138,6 @@ class ProviderService:
                     )
                     if job["kind"] in {"image_generation", "mesh_generation"}:
                         result = self._generation(job, inputs, execution)
-                    elif job["kind"] == "vlm_review":
-                        if execution.get("phase") == "review_complete":
-                            self.complete_review(self.worker(job), execution["completion"])
-                            result = self.services.jobs.get(project_id, job["job_id"])
-                        elif execution:
-                            continue
-                        else:
-                            result = self._review(job, inputs)
                     else:
                         raise DomainError("scope_denied", 403)
                 except (
@@ -904,12 +1154,6 @@ class ProviderService:
                     execution = self.execution(project_id, job["job_id"])
                     uncertain = execution.get("phase") == "submitting"
                     code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
-                    # A received malformed VLM response is a known failed review, not a relaunch.
-                    if job["kind"] == "vlm_review" and isinstance(
-                        exc,
-                        (ValueError, KeyError, DomainError, TypeError, IndexError, AttributeError),
-                    ):
-                        uncertain = False
                     if job["kind"] in {"image_generation", "mesh_generation"} and not uncertain:
                         self._settle(job, executed=False)
                         if execution.get("phase") == "preparing":
@@ -917,19 +1161,6 @@ class ProviderService:
                     result = self.update(
                         job, "outcome_uncertain" if uncertain else "failed", error_code=code
                     )
-                    if job["kind"] == "vlm_review" and not uncertain:
-                        self.complete_review(
-                            self.worker(job),
-                            dict(
-                                schema_version="1.0",
-                                operation_id=inputs["request"]["review_id"] + "-failed",
-                                project_id=project_id,
-                                review_id=inputs["request"]["review_id"],
-                                status="failed",
-                                findings=[],
-                                error_code=code,
-                            ),
-                        )
                 with store.transaction() as tx:
                     row = tx.connection.execute(
                         "SELECT state FROM outbox WHERE id=?", (job["attempt_id"],)
@@ -943,6 +1174,8 @@ class ProviderService:
                             {"job_id": job["job_id"], "state": result["state"]},
                         )
                 results.append(result)
+        if job_id is None and "lifecycle" not in self.services.extensions:
+            results.extend(self.pump_reviews(project_id))
         return results
 
     def start(self, project_id: str, *, interval: float = 1) -> None:

@@ -1,6 +1,7 @@
 """Atomic publication, immutable version reads and typed authored projections."""
 
 import json
+import re
 from fractions import Fraction
 from typing import Any
 
@@ -477,26 +478,48 @@ class Catalogue:
                     entry["choice"] = "agent"
         return result
 
-    def proxy_mapping(self, project_id: str, version_id: str) -> dict[str, Any]:
-        version = self.version(project_id, version_id)
+    def proxy_mapping(
+        self,
+        project_id: str,
+        version_id: str,
+        mapping_artifact_id: str | None = None,
+    ) -> dict[str, Any]:
+        if mapping_artifact_id is not None and not re.fullmatch(
+            r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", mapping_artifact_id
+        ):
+            raise DomainError("invalid_request")
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
-            # W03 links newly completed proxy artefacts without rewriting the publication.
-            links = tx.get("version_links", version_id, required=False) or {}
-            ids = list(dict.fromkeys(version["artifact_ids"] + links.get("artifact_ids", [])))
+            version = self.version_view(tx, tx.require("versions", version_id))
+            ids = version["artifact_ids"]
             maps = [
                 identity
                 for identity in ids
                 if tx.require("artifacts", identity)["kind"] == "proxy_map"
             ]
-        if len(maps) != 1:
-            raise DomainError("media_unavailable", 422, "Expected one pinned proxy mapping")
+            if mapping_artifact_id is not None:
+                artifact = tx.require("artifacts", mapping_artifact_id)
+                if artifact["kind"] != "proxy_map" or mapping_artifact_id not in maps:
+                    raise DomainError(
+                        "source_conflict", 409, "Proxy mapping does not belong to version"
+                    )
+                chosen_id = mapping_artifact_id
+            else:
+                if not maps:
+                    raise DomainError("media_unavailable", 422, "No pinned proxy mapping available")
+                ready_maps = [
+                    identity
+                    for identity in maps
+                    if tx.require("artifacts", identity)["state"] == "ready"
+                ]
+                chosen_id = (ready_maps or maps)[-1]
         try:
-            result = json.loads(self.artifacts.ready_path(project_id, maps[0]).read_bytes())
+            result = json.loads(self.artifacts.ready_path(project_id, chosen_id).read_bytes())
         except ValueError as exc:
             raise DomainError("media_unavailable", 422) from exc
         validate("ProxyMapping", result)
         if (
-            result["project_id"] != project_id
+            result.get("mapping_artifact_id") not in (None, chosen_id)
+            or result["project_id"] != project_id
             or result["version_id"] != version_id
             or result["source_closure_digest"] != version["source"]["digest"]
             or result["proxy_artifact_id"] not in ids
@@ -506,4 +529,6 @@ class Catalogue:
         if proxy["kind"] != "proxy":
             raise DomainError("source_conflict", 409)
         self.artifacts.ready_path(project_id, result["proxy_artifact_id"])
-        return dict(result)
+        response = {**result, "mapping_artifact_id": chosen_id}
+        validate("ProxyMapping", response)
+        return response

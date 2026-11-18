@@ -332,26 +332,39 @@ test("Jobs badge updates empty, active, failed attention and all-succeeded histo
   await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
   const first = job("one", "running"), second = job("two", "waiting_resource");
   for (const record of [first, second]) studio.emit("job.state_changed", record);
-  await expect(badge).toHaveClass("active-jobs"); await expect(badge).toHaveText("Jobs2 active");
+  await expect(badge).toHaveClass("active-jobs"); await expect(badge).toHaveText("Jobs1 running · 1 queued");
   await expect(badge.locator(".jobs-indicator")).toBeVisible();
   studio.emit("job.state_changed", { ...first, state: "failed", state_revision: 2, error_code: "corrupt_provider_output" });
+  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1 failed · 1 queued");
   studio.emit("job.state_changed", { ...second, state: "succeeded", state_revision: 2 });
-  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs2 done");
+  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1 failed · 1 done");
   await badge.click();
   const panel = page.getByRole("region", { name: "Independent jobs" });
   await expect(panel.getByText("Failure: corrupt_provider_output", { exact: true })).toBeVisible();
-  await expect(panel.getByText("Provider: synthetic", { exact: true })).toHaveCount(2);
+  const history = panel.locator(".jobs-finished-group");
+  await expect(history).toHaveJSProperty("open", false);
+  await expect(history.locator("summary").first()).toHaveText("Finished (1)");
+  const providers = panel.getByText("Provider: synthetic", { exact: true });
+  await expect(providers).toHaveCount(2);
+  await expect(providers.first()).toBeHidden();
+  await expect(providers.last()).toBeHidden();
+  await panel.locator(".needs-attention .job-row-details > summary").click();
+  await expect(providers.first()).toBeVisible();
+  await history.locator(":scope > summary").click();
+  await history.locator(".job-row-details > summary").click();
+  await expect(providers.last()).toBeVisible();
   studio.emit("job.state_changed", { ...first, state: "succeeded", state_revision: 3 });
   await expect(badge).toHaveClass("done-jobs"); await expect(badge).toHaveText("Jobs2 done");
   await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
   await expect(panel.getByText("Failure: corrupt_provider_output")).toHaveCount(0);
+  await expect(history.locator(":scope > summary")).toHaveText("Finished (2)");
   studio.assertHermetic();
 });
 
 test("Review uses compact mode and transport bars with a single annotation editor", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   const review = page.locator("main.review-panel");
   const modes = review.getByRole("navigation", { name: "Review mode", exact: true });
   await expect(modes).toBeVisible();
@@ -390,7 +403,8 @@ test("Review uses compact mode and transport bars with a single annotation edito
   await expect(modes).toHaveCount(0); await expect(transport).toHaveCount(0);
   const editor = review.getByRole("region", { name: "Pinned annotation", exact: true });
   await expect(editor.locator(":scope > .review-bar")).toHaveCount(1);
-  for (const name of ["Stroke", "Arrow", "Region", "Pin", "Eraser", "Mask", "Close draft"]) await expect(editor.getByRole("button", { name, exact: true })).toBeVisible();
+  for (const name of ["Stroke", "Arrow", "Region", "Pin", "Eraser", "Mask"]) await expect(editor.getByRole("button", { name, exact: true })).toBeVisible();
+  await expect(editor.locator(":scope > .review-bar").getByRole("button", { name: "Close draft", exact: true })).toHaveCount(0);
   const width = editor.getByRole("spinbutton", { name: "Width (image px)", exact: true });
   await expect(width).toBeVisible();
   expect(await width.locator("..").evaluate(label => getComputedStyle(label).flexDirection)).toBe("row");
@@ -399,7 +413,7 @@ test("Review uses compact mode and transport bars with a single annotation edito
   await editor.getByRole("textbox", { name: "Feedback", exact: true }).fill("Do not switch modes while typing");
   await page.keyboard.press("1");
   await expect(editor).toBeVisible();
-  await editor.getByRole("button", { name: "Close draft", exact: true }).click();
+  await editor.getByRole("button", { name: "Keep draft & close", exact: true }).click();
   await expect(modes.getByRole("button", { name: "Keyframes", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(editor).toHaveCount(0); await aligned();
   const surface = review.locator(".review-surface");
@@ -413,7 +427,7 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
   const waiting = job("waiting", "waiting_resource");
   studio.snapshot.jobs = [waiting];
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await expect(page.getByRole("button", { name: "Asset A v2 a-v2" })).toBeVisible();
+  await expect(page.locator(".catalogue-item-header").filter({ hasText: "Asset A" })).toBeVisible();
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   const reads = () => studio.guard!.calls.filter(call => call.method === "GET" && (new URL(call.url, baseURL).pathname === `${base}/artifacts` || /\/items\/[^/]+\/versions$/.test(new URL(call.url, baseURL).pathname)));
   const before = reads().length;
@@ -421,6 +435,445 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
   await expect.poll(() => page.evaluate(project => JSON.parse(localStorage.getItem(`proscenium.owner.cursor.${project}`)!), projectId)).toBe(10);
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   expect(reads().slice(before)).toEqual([]);
-  await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1 active");
+  await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1 queued");
+  studio.assertHermetic();
+});
+
+test("Navigator and Assistant panels open at maximum width by default on an existing project", async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ catalogue: true, savedLayout: false });
+  await studio.open(); await studio.ready();
+  const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
+  const assistant = page.getByRole("complementary", { name: "Assistant panel" });
+  await expect.poll(async () => (await navigator.boundingBox())!.width).toBe(520);
+  await expect.poll(async () => (await assistant.boundingBox())!.width).toBe(760);
+  studio.assertHermetic();
+});
+
+test("Critic realtime badge, Pending/All SAST cards, persisted drafts and human resolution workflow", async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const studio = new StudioFixture(page, baseURL!);
+  const target = {
+    origin: "concept" as const,
+    item_id: "asset-a",
+    version_id: "a-v2",
+    shot_id: null,
+    render_job_id: null,
+    sequence_frame: null,
+    source_frame: null,
+    artifact_id: "verified",
+    media_artifact_id: null,
+    displayed_sha256: "a".repeat(64),
+    dimensions: { width: 1, height: 1 },
+  };
+  // Routine agent self-check starts in All only (0 pending).
+  studio.reviews.push({
+    schema_version: "1.0",
+    project_id: projectId,
+    ticket: {
+      schema_version: "1.0",
+      review_id: "rev-self",
+      job_id: "job-self",
+      status: "ready",
+      title: "Agent internal check",
+      created_at: "2026-11-18T12:00:00Z",
+      revision: 2,
+      human_review_state: "not_requested",
+      awaiting_human: false,
+      question: null,
+      finding_count: 1,
+      unreviewed_count: 1,
+      error_code: null,
+    },
+    criteria: "Routine check.",
+    targets: [target],
+    telemetry_artifact_ids: [],
+    findings: [
+      {
+        schema_version: "1.0",
+        finding_id: "rev-self-f0",
+        review_id: "rev-self",
+        project_id: projectId,
+        revision: 1,
+        target,
+        observation: "Slight rim highlight.",
+        recommendation: "Dim rim light by 10%.",
+        evidence: [{ kind: "visual", artifact_id: "verified", description: "Upper-left edge." }],
+        state: "unreviewed",
+      },
+    ],
+    diagnostics: null,
+  });
+
+  await studio.install({ catalogue: true, savedLayout: true });
+  await studio.open(); await studio.ready();
+
+  const criticTab = page.getByRole("button", { name: "Critic", exact: true });
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "0");
+  await expect(criticTab.locator(".tab-count")).toHaveCount(0);
+
+  // Live escalated review with 2 findings arrives while user is on Copilot -> badge shows 1 (per review, not per finding).
+  const escalatedDetail = {
+    schema_version: "1.0" as const,
+    project_id: projectId,
+    ticket: {
+      schema_version: "1.0" as const,
+      review_id: "rev-escalated",
+      job_id: "job-escalated",
+      status: "ready" as const,
+      title: "Orbital dish collar & rim light",
+      created_at: "2026-11-18T14:05:00Z",
+      revision: 3,
+      human_review_state: "pending" as const,
+      awaiting_human: true,
+      question: "Should the dish silhouette stay centered or offset camera-left?",
+      finding_count: 2,
+      unreviewed_count: 2,
+      error_code: null,
+    },
+    criteria: "Verify dish collar seats flush on dorsal spine and rim light preserves silhouette.",
+    targets: [target],
+    telemetry_artifact_ids: [],
+    findings: [
+      {
+        schema_version: "1.0" as const,
+        finding_id: "rev-esc-f0",
+        review_id: "rev-escalated",
+        project_id: projectId,
+        revision: 1,
+        target,
+        observation: "Dish collar floats above dorsal spine.",
+        recommendation: "Seat dish collar flush against the dorsal spine.",
+        evidence: [{ kind: "visual" as const, artifact_id: "verified", description: "Gap at spine mount." }],
+        state: "unreviewed" as const,
+      },
+      {
+        schema_version: "1.0" as const,
+        finding_id: "rev-esc-f1",
+        review_id: "rev-escalated",
+        project_id: projectId,
+        revision: 1,
+        target,
+        observation: "Rim highlight clips specular detail on dish edge.",
+        recommendation: "Lower rim key exposure by 0.7 stops.",
+        evidence: [{ kind: "visual" as const, artifact_id: "verified", description: "Clipped upper rim." }],
+        state: "unreviewed" as const,
+      },
+    ],
+    diagnostics: {
+      finish_reason: "stop",
+      prompt_tokens: 1800,
+      completion_tokens: 420,
+      reasoning_tokens: 300,
+      reasoning_effort: "medium",
+      rubric_revision: "proscenium-vlm-2",
+      error_code: null,
+    },
+  };
+  studio.reviews.unshift(escalatedDetail);
+  studio.emit("review.changed", escalatedDetail.ticket);
+
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "1");
+  await expect(criticTab.locator(".tab-count")).toHaveText("1");
+
+  await criticTab.click();
+  const critic = page.getByRole("region", { name: "Critic", exact: true });
+  await expect(critic.getByRole("button", { name: "Load existing reviews" })).toHaveCount(0);
+  await expect(critic.locator("select")).toHaveCount(0);
+
+  // Default Pending filter shows 1 card with ONLY review name + 24h SAST date/time.
+  const cards = critic.locator(".critic-review-card");
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first().locator(".critic-card-title")).toHaveText("Orbital dish collar & rim light");
+  await expect(cards.first().locator(".critic-card-time")).toHaveText("2026-11-18 16:05 SAST");
+  expect((await cards.first().innerText()).trim().split(/\n+/)).toEqual([
+    "Orbital dish collar & rim light",
+    "2026-11-18 16:05 SAST",
+  ]);
+
+  // All filter reveals the routine self-check alongside the pending review.
+  await critic.getByRole("button", { name: "All", exact: true }).click();
+  await expect(cards).toHaveCount(2);
+  await critic.getByRole("button", { name: "Pending (1)", exact: true }).click();
+  await expect(cards).toHaveCount(1);
+
+  // Open the pending review thread, stage an edit, and verify persistence across tab switch + reload.
+  await cards.first().click();
+  await expect(critic.locator(".critic-question")).toContainText(
+    "Should the dish silhouette stay centered or offset camera-left?",
+  );
+  await expect(critic.locator(".critic-finding")).toHaveCount(2);
+
+  const secondFinding = critic.locator(".critic-finding").nth(1);
+  await secondFinding.getByRole("checkbox", { name: "Include finding" }).check();
+  const instructionBox = secondFinding.getByRole("textbox", { name: "Approved instruction rev-esc-f1" });
+  await instructionBox.fill("Lower rim key exposure by 0.7 stops and offset dish camera-left.");
+
+  await page.getByRole("button", { name: "Copilot", exact: true }).click();
+  await criticTab.click();
+  await expect(instructionBox).toHaveValue("Lower rim key exposure by 0.7 stops and offset dish camera-left.");
+
+  await page.reload();
+  await studio.ready();
+  await criticTab.click();
+  await expect(critic.getByRole("textbox", { name: "Approved instruction rev-esc-f1" })).toHaveValue(
+    "Lower rim key exposure by 0.7 stops and offset dish camera-left.",
+  );
+
+  // Rejecting finding 0 while finding 1 remains unreviewed keeps badge at 1.
+  await critic.locator(".critic-finding").first().getByRole("button", { name: "Reject finding" }).click();
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "1");
+
+  // Submitting the remaining finding sends approved_findings pinned to asset-a / a-v2 and clears badge to 0!
+  await critic.getByRole("button", { name: "Queue selected findings once" }).click();
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "0");
+  await expect(criticTab.locator(".tab-count")).toHaveCount(0);
+  expect(studio.submissions).toHaveLength(1);
+  expect(studio.contexts.at(-1)?.request_target).toEqual({
+    kind: "item",
+    version: { item_id: "asset-a", version_id: "a-v2" },
+  });
+  expect(studio.contexts.at(-1)?.approved_findings).toEqual([
+    {
+      finding_id: "rev-esc-f1",
+      finding_revision: 1,
+      approved_text: "Lower rim key exposure by 0.7 stops and offset dish camera-left.",
+      target,
+    },
+  ]);
+
+  // Zero-defect escalated question review shows "No defects reported." and clears via "Done without changes".
+  const questionOnly = {
+    schema_version: "1.0" as const,
+    project_id: projectId,
+    ticket: {
+      schema_version: "1.0" as const,
+      review_id: "rev-q-only",
+      job_id: "job-q-only",
+      status: "ready" as const,
+      title: "Zero-defect framing check",
+      created_at: "2026-11-18T15:30:00Z",
+      revision: 2,
+      human_review_state: "pending" as const,
+      awaiting_human: true,
+      question: "Confirm this wide establishing angle before scene assembly?",
+      finding_count: 0,
+      unreviewed_count: 0,
+      error_code: null,
+    },
+    criteria: "Check wide establishing framing.",
+    targets: [target],
+    telemetry_artifact_ids: [],
+    findings: [],
+    diagnostics: null,
+  };
+  studio.reviews.unshift(questionOnly);
+  studio.emit("review.changed", questionOnly.ticket);
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "1");
+  await criticTab.click();
+  await critic.getByRole("button", { name: "Back to reviews" }).click();
+  await critic.locator(".critic-review-card").first().click();
+  await expect(critic).toContainText("No defects reported.");
+  await critic.getByRole("button", { name: "Done without changes" }).click();
+  await expect(criticTab).toHaveAttribute("data-pending-reviews", "0");
+  await expect(critic.getByRole("heading", { name: "No pending reviews" })).toBeVisible();
+
+  studio.assertHermetic();
+});
+
+function projectWorldToCanvasUv(camera: { camera_to_world: number[]; projection: number[] }, world: [number, number, number]): [number, number] {
+  // Invert rigid camera_to_world [R | t; 0 0 0 1] -> [R^T | -R^T t]
+  const m = camera.camera_to_world;
+  const r00 = m[0], r01 = m[1], r02 = m[2], tx = m[3];
+  const r10 = m[4], r11 = m[5], r12 = m[6], ty = m[7];
+  const r20 = m[8], r21 = m[9], r22 = m[10], tz = m[11];
+  const vx = r00 * (world[0] - tx) + r10 * (world[1] - ty) + r20 * (world[2] - tz);
+  const vy = r01 * (world[0] - tx) + r11 * (world[1] - ty) + r21 * (world[2] - tz);
+  const vz = r02 * (world[0] - tx) + r12 * (world[1] - ty) + r22 * (world[2] - tz);
+  const p = camera.projection;
+  const cx = p[0] * vx + p[1] * vy + p[2] * vz + p[3];
+  const cy = p[4] * vx + p[5] * vy + p[6] * vz + p[7];
+  const cw = p[12] * vx + p[13] * vy + p[14] * vz + p[15];
+  return [(cx / cw + 1) / 2, (1 - cy / cw) / 2];
+}
+
+test("3D spatial pin resolves multi-primitive & scaled child instances, survives orbit/reload/v3 switch, and gates unavailable-proxy fallback", async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const studio = new StudioFixture(page, baseURL!);
+  // Register two maps on a-v2 (map-a-v2-early + map-a-v2) to exercise exact mapping_artifact_id retention.
+  studio.installProxyFixture("a-v2", { proxyId: "proxy-a-v2-early", mapId: "map-a-v2-early", sampleFrame: 1 });
+  studio.installProxyFixture("a-v2", { proxyId: "proxy-a-v2", mapId: "map-a-v2", sampleFrame: 12 });
+  await studio.install({ catalogue: true, savedLayout: true });
+  await studio.open();
+  await studio.ready();
+
+  // Open Asset A v2 and switch to 3D Inspection.
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  const review = page.locator("main.review-panel");
+  await expect(review.locator("h1")).toHaveText("Asset A v2");
+  await review.getByRole("button", { name: "3D Inspection", exact: true }).click();
+
+  const pinNoteBtn = review.getByRole("button", { name: "Pin note", exact: true });
+  await expect(pinNoteBtn).toBeEnabled();
+  const canvas = review.locator(".review-proxy canvas");
+  await canvas.evaluate(el => { (el as HTMLElement).dataset.mountToken = "webgl-mounted-once"; });
+
+  // Enable Pin note and verify drag-to-orbit does NOT place a pin.
+  await pinNoteBtn.click();
+  await expect(pinNoteBtn).toHaveAttribute("aria-pressed", "true");
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5 + 48, box.y + box.height * 0.5 + 18, { steps: 6 });
+  await page.mouse.up();
+  await expect(review.getByTestId("proxy-spatial-pin")).toHaveCount(0);
+  await expect(pinNoteBtn).toHaveAttribute("aria-pressed", "true");
+
+  // Read live orbited camera from stored selection context to click exact Housing and Collar centres.
+  const liveCam = await expect.poll(async () => {
+    const raw = await page.evaluate(id => localStorage.getItem(`proscenium.owner.view.context.${id}`), projectId);
+    return raw ? JSON.parse(raw).camera : null;
+  }).not.toBeNull().then(async () => {
+    const raw = await page.evaluate(id => localStorage.getItem(`proscenium.owner.view.context.${id}`), projectId);
+    return JSON.parse(raw!).camera as { camera_to_world: number[]; projection: number[] };
+  });
+
+  // First click multi-primitive parent Housing (proxy [1.6, 0, -1.6] -> Blender [1.6, 1.6, 0]).
+  const [housingU, housingV] = projectWorldToCanvasUv(liveCam, [1.6, 1.6, 0]);
+  await page.mouse.click(box.x + housingU * box.width, box.y + housingV * box.height);
+  await expect(review.locator('[aria-label="Spatial pin tools"]')).toContainText("housing · housing-1");
+  expect(await canvas.evaluate(el => (el as HTMLElement).dataset.mountToken)).toBe("webgl-mounted-once");
+
+  // Reposition onto rotated, non-uniformly scaled child Collar (proxy [-1.6, 0, 1.6] + y=0.2 -> Blender [-1.6, -1.6, 0.2]).
+  // Re-measure canvas bounds after the bottom annotation dock resized the viewport height.
+  await review.getByRole("button", { name: "Reposition pin", exact: true }).click();
+  await expect.poll(async () => {
+    const dims = await canvas.evaluate(el => ({ w: (el as HTMLCanvasElement).width, h: (el as HTMLCanvasElement).height, rectH: Math.round(el.getBoundingClientRect().height) }));
+    return dims.h === dims.rectH ? dims.h : null;
+  }).not.toBeNull();
+  const collarBox = (await canvas.boundingBox())!;
+  const dockedCam = {
+    ...liveCam,
+    projection: [liveCam.projection[5] / (collarBox.width / collarBox.height), ...liveCam.projection.slice(1)],
+  };
+  const [collarU, collarV] = projectWorldToCanvasUv(dockedCam, [-1.6, -1.6, 0.2]);
+  const clickX = collarBox.x + collarU * collarBox.width;
+  const clickY = collarBox.y + collarV * collarBox.height;
+  await page.mouse.click(clickX, clickY);
+  await expect(review.locator('[aria-label="Spatial pin tools"]')).toContainText("collar · collar-1");
+  expect(await canvas.evaluate(el => (el as HTMLElement).dataset.mountToken)).toBe("webgl-mounted-once");
+
+  // Orbiting moves the anchored 3D pin marker on screen; Restore pinned view brings it back.
+  const pinMarker = review.getByTestId("proxy-spatial-pin");
+  await expect(pinMarker).toBeVisible();
+  const initialPinBox = (await pinMarker.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.45 - 90, box.y + box.height * 0.5 + 35, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(async () => {
+    const moved = await pinMarker.boundingBox();
+    return moved ? Math.hypot(moved.x - initialPinBox.x, moved.y - initialPinBox.y) : 0;
+  }).toBeGreaterThan(15);
+
+  await review.getByRole("button", { name: "Restore pinned view", exact: true }).click();
+  await expect.poll(async () => {
+    const restored = await pinMarker.boundingBox();
+    return restored ? Math.hypot(restored.x - initialPinBox.x, restored.y - initialPinBox.y) : 999;
+  }).toBeLessThan(2);
+
+  // Enter note and simulate a lost save acknowledgement followed by page reload.
+  await review.getByRole("textbox", { name: "Feedback" }).fill("Chamfer the collar lip by 2 mm");
+  studio.dropNextSaveAck = true;
+  await review.getByRole("button", { name: "Save annotation", exact: true }).click();
+  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("Save failed");
+  expect(studio.uploadCalls).toHaveLength(2);
+  expect(studio.saveAnnotationCalls).toHaveLength(1);
+  const originalOpId = studio.saveAnnotationCalls[0].operation_id;
+
+  await page.reload();
+  await studio.ready();
+  const retryBtn = review.getByRole("button", { name: "Retry original save", exact: true });
+  await expect(retryBtn).toBeVisible();
+  await retryBtn.click();
+  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("Saved · rev 1");
+  // Zero duplicate image uploads, same operation_id replayed, and Save did NOT queue work.
+  expect(studio.uploadCalls).toHaveLength(2);
+  expect(studio.saveAnnotationCalls).toHaveLength(2);
+  expect(studio.saveAnnotationCalls[1].operation_id).toBe(originalOpId);
+  expect(studio.annotations).toHaveLength(1);
+  expect(studio.submissions).toHaveLength(0);
+
+  // Verify <= 0.5 image pixel pin placement accuracy and unit Blender-world surface normal.
+  const saved = studio.annotations[0];
+  const hit = saved.spatial_hits[0];
+  expect(hit.instance_id).toBe("collar-1");
+  expect(hit.mapping_artifact_id).toBe("map-a-v2");
+  expect(hit.sample_frame).toBe(12);
+  expect(Math.abs(Math.hypot(...hit.normal) - 1)).toBeLessThan(1e-4);
+  const projectedUv = projectWorldToCanvasUv(hit.camera, hit.position);
+  const [pinU, pinV] = saved.markups[0].points[0];
+  const actualClickU = (clickX - collarBox.x) / collarBox.width;
+  const actualClickV = (clickY - collarBox.y) / collarBox.height;
+  expect(Math.abs(pinU - projectedUv[0]) * saved.target.dimensions.width).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(pinV - projectedUv[1]) * saved.target.dimensions.height).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(pinU - actualClickU) * saved.target.dimensions.width).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(pinV - actualClickV) * saved.target.dimensions.height).toBeLessThanOrEqual(0.5);
+
+  // Publish Asset A v3, switch to v3, reopen the v2 spatial annotation, and confirm Queue targets v2!
+  studio.addAssetVersion("a-v3", "Asset A v3");
+  await expect(review.locator('[aria-label="Spatial pin tools"]').getByRole("button", { name: "Close draft", exact: true })).toHaveCount(0);
+  await review.locator(".annotation-dock").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh project metadata" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  await expect(review.locator("h1")).toHaveText("Asset A v3");
+
+  await review.getByRole("button", { name: /Annotations/ }).click();
+  await expect(review.getByRole("button", { name: "This version · v3" })).toHaveAttribute("aria-pressed", "true");
+  await expect(review.getByText("No annotations on v3.")).toBeVisible();
+  await review.getByRole("button", { name: /All versions of this item/ }).click();
+  await review.locator(".review-drawer-items button").filter({ hasText: "Chamfer the collar lip by 2 mm" }).click();
+  await expect(review.locator("h1")).toHaveText("Asset A v2");
+  expect(studio.guard!.calls.some(c => c.url.includes("/versions/a-v2/proxy-mapping?mapping_artifact_id=map-a-v2"))).toBe(true);
+
+  await review.getByRole("button", { name: "Queue feedback", exact: true }).click();
+  await expect(review.getByRole("button", { name: "Feedback queued", exact: true })).toBeVisible();
+  expect(studio.submissions).toHaveLength(1);
+  const queuedCtx = studio.contexts.at(-1)!;
+  expect(queuedCtx.version_id).toBe("a-v2");
+  expect(queuedCtx.request_target).toEqual({ kind: "item", version: { item_id: "asset-a", version_id: "a-v2" } });
+  expect(queuedCtx.view_mode).toBe("3d_inspection");
+  expect(queuedCtx.selected_objects).toEqual([{ object_id: "collar", instance_id: "collar-1" }]);
+  expect(queuedCtx.annotations[0].spatial_hits[0]).toMatchObject({
+    version_id: "a-v2",
+    mapping_artifact_id: "map-a-v2",
+    proxy_artifact_id: "proxy-a-v2",
+    object_id: "collar",
+    instance_id: "collar-1",
+  });
+
+  // Make the original v2 proxy unavailable; reload shows the marked snapshot and blocks Queue until explicit fallback confirmation.
+  studio.unavailableProxyIds.add("map-a-v2");
+  await page.reload();
+  await studio.ready();
+  await expect(review.locator('[aria-label="Unavailable proxy marked snapshot"]')).toBeVisible();
+  const fallbackQueueBtn = review.getByRole("button", { name: "Queue image-only feedback", exact: true });
+  await expect(fallbackQueueBtn).toBeDisabled();
+  await review.getByRole("checkbox", { name: "Send image-only snapshot without 3D spatial hit" }).check();
+  await expect(fallbackQueueBtn).toBeEnabled();
+  await fallbackQueueBtn.click();
+  await expect(review.getByRole("button", { name: "Feedback queued", exact: true })).toBeVisible();
+  expect(studio.submissions).toHaveLength(2);
+  const fallbackCtx = studio.contexts.at(-1)!;
+  expect(fallbackCtx.version_id).toBe("a-v2");
+  expect(fallbackCtx.view_mode).toBe("keyframes");
+  expect(fallbackCtx.selected_objects).toEqual([]);
+  expect(fallbackCtx.annotations[0]).toMatchObject({
+    spatial_hits: [],
+    spatial_status: "unavailable",
+    derived_from: saved.annotation_id,
+  });
+
   studio.assertHermetic();
 });

@@ -325,6 +325,8 @@ paths:
       - {name: version_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
     get:
       operationId: getVersionProxyMapping
+      parameters:
+        - {name: mapping_artifact_id, in: query, schema: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'}}
       responses:
         '200':
           description: ProxyMapping for a published asset or scene version.
@@ -543,7 +545,10 @@ paths:
     parameters: [{$ref: '#/components/parameters/ProjectId'}]
     get:
       operationId: listOwnerReviews
-      parameters: [{$ref: '#/components/parameters/Cursor'}, {$ref: '#/components/parameters/Limit'}]
+      parameters:
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/Limit'}
+        - {name: filter, in: query, schema: {type: string, enum: [pending, all]}}
       responses:
         '200':
           description: Review tickets for the project, ordered newest first.
@@ -558,6 +563,30 @@ paths:
       responses:
         '202': {$ref: '#/components/responses/ReviewTicket'}
         '200': {$ref: '#/components/responses/ReviewTicket'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/reviews/{review_id}:
+    parameters:
+      - {$ref: '#/components/parameters/ProjectId'}
+      - {name: review_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    get:
+      operationId: getOwnerReview
+      responses:
+        '200':
+          description: Review summary, original criteria, targets, findings and sanitised diagnostics.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/ReviewDetail'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/projects/{project_id}/reviews/{review_id}/resolve:
+    parameters:
+      - {$ref: '#/components/parameters/ProjectId'}
+      - {name: review_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    post:
+      operationId: resolveOwnerReview
+      parameters: *ownerWrite
+      requestBody: {$ref: '#/components/requestBodies/RevisionCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/CommandReceipt'}
         default: {$ref: '#/components/responses/Error'}
   /api/v1/projects/{project_id}/reviews/{review_id}/findings:
     parameters:
@@ -760,6 +789,21 @@ paths:
         content:
           application/json:
             schema: {$ref: './schema.json#/$defs/ReviewComplete'}
+      responses:
+        '200': {$ref: '#/components/responses/ReviewTicket'}
+        default: {$ref: '#/components/responses/Error'}
+  /internal/v1/reviews/{review_id}/escalate:
+    parameters:
+      - {name: review_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
+    post:
+      operationId: escalateToolReview
+      security: [{ToolCapability: []}]
+      parameters: *toolWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/ReviewEscalate'}
       responses:
         '200': {$ref: '#/components/responses/ReviewTicket'}
         default: {$ref: '#/components/responses/Error'}

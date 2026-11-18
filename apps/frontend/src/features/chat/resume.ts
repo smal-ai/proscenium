@@ -37,7 +37,26 @@ export function knownWork(snapshot: ProjectSnapshot | null, events: Event[]): Wo
 }
 
 export function resumableWork(snapshot: ProjectSnapshot | null, events: Event[]): WorkRecord[] {
-  return knownWork(snapshot, events).filter(record => ["stopped", "failed", "awaiting_resume"].includes(record.state));
+  if (!snapshot) return [];
+  const all = knownWork(snapshot, events);
+  if (snapshot.active_work) {
+    const current = all.find(record => record.work_id === snapshot.active_work!.work_id) ?? snapshot.active_work;
+    return ["stopped", "failed", "awaiting_resume"].includes(current.state) ? [current] : [];
+  }
+  let latestWorkId: string | null = null;
+  let latestSequence = -1;
+  for (const event of events) {
+    if (event.project_id !== snapshot.project.project_id || event.event_type !== "work.state_changed") continue;
+    const record = event.payload as unknown as WorkRecord;
+    if (record.project_id !== snapshot.project.project_id) continue;
+    if (event.sequence > latestSequence) {
+      latestSequence = event.sequence;
+      latestWorkId = record.work_id;
+    }
+  }
+  if (!latestWorkId) return [];
+  const latest = all.find(record => record.work_id === latestWorkId);
+  return latest && ["stopped", "failed", "awaiting_resume"].includes(latest.state) ? [latest] : [];
 }
 
 export function resumeCommand(

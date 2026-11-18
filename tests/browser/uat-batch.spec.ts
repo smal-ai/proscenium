@@ -32,7 +32,7 @@ test("DPR 1 splitters, remembered tabs, layout and conversation following", asyn
 test("hidden decoded Review preserves mode, frame and local annotation draft", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
   const review = page.locator("main.review-panel");
   await expect(review.locator("img")).toBeVisible();
@@ -57,23 +57,25 @@ test("hidden decoded Review preserves mode, frame and local annotation draft", a
 test("explicit target and historical references stay isolated during async submit", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
-  await page.getByRole("button", { name: "Asset A v2 a-v2" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
   await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
   await page.getByRole("button", { name: "Annotate presented frame" }).click();
   await page.getByRole("textbox", { name: "Feedback" }).fill("Unrelated hidden annotation must never flush");
   await page.getByRole("button", { name: "Chat focus", exact: true }).click();
   await page.getByRole("button", { name: "Choose request target and references" }).click();
-  await page.getByLabel("Published item", { exact: true }).selectOption("asset-a");
-  await expect(page.getByLabel("Published version", { exact: true })).toBeEnabled();
-  await page.getByLabel("Published version", { exact: true }).selectOption("a-v1");
+  await page.locator(".target-references-disclosure > summary").click();
+  await page.getByLabel("Reference item", { exact: true }).selectOption("asset-a");
+  await page.getByLabel("Reference version", { exact: true }).selectOption("a-v1");
   await page.getByRole("button", { name: "Add reference version" }).click();
+  await page.getByRole("button", { name: "Existing…", exact: true }).click();
   await page.getByLabel("Published item", { exact: true }).selectOption("board-b");
   await page.getByLabel("Target storyboard shot").selectOption("shot-1");
   await page.getByRole("textbox", { name: "Message Copilot" }).fill("Use B shot one with A v1");
   const delayed = deferred(); studio.contextGate = delayed.promise;
   await page.getByRole("button", { name: "Queue message", exact: true }).click();
   await expect.poll(() => studio.contexts.length).toBe(1);
-  await page.getByRole("button", { name: "Asset A v1 a-v1" }).click();
+  await page.getByRole("button", { name: "Version history for Asset A" }).click();
+  await page.locator(".catalogue-version-row").getByText("v1", { exact: true }).click();
   delayed.release();
   await expect.poll(() => studio.submissions.length).toBe(1);
   expect(studio.contexts[0]).toMatchObject({ request_target: { kind: "shot", storyboard_version: { item_id: "board-b", version_id: "b-v1" }, shot_id: "shot-1" }, reference_versions: [{ item_id: "asset-a", version_id: "a-v1" }], view_mode: "none", selected_objects: [], target: null, camera: null, range: null, attachments: [], annotations: [] });
@@ -212,7 +214,12 @@ test("Jobs Context Agents replace textarea and restore draft caret plus accepted
     await page.getByRole("button", { name: new RegExp(`^${panel}`) }).click();
     await expect(input).toHaveCount(0);
     if (panel === "Agents") { await expect(page.getByText("Layout shot one", { exact: true }).last()).toBeVisible(); await expect(page.getByRole("button", { name: /^Agents/ })).toContainText("1"); }
-    if (panel === "Jobs") { await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs3 active?"); await expect(page.getByText("Finished job history")).toBeVisible(); }
+    if (panel === "Jobs") {
+      await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs1 uncertain · 1 running · 1 queued?");
+      const history = page.locator(".jobs-finished-group");
+      await expect(history.getByText("Finished (1)")).toBeVisible();
+      await expect(history).toHaveJSProperty("open", false);
+    }
     await page.getByRole("button", { name: "Back to message" }).click();
     await expect(input).toHaveValue("Unsent draft\nSecond line"); await expect(input).toBeFocused();
     expect(await input.evaluate(e => (e as HTMLTextAreaElement).selectionStart)).toBe(3);

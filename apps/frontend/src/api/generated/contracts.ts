@@ -195,6 +195,7 @@ export type Event = {
     | "decision.requested"
     | "decision.resolved"
     | "review.ready"
+    | "review.changed"
     | "usage.recorded";
   request_id: NullableId;
   work_id: NullableId;
@@ -530,6 +531,9 @@ export interface ContractDefinitions {
   RetainedClosureFile: RetainedClosureFile;
   RetainedFile: RetainedFile;
   ReviewComplete: ReviewComplete;
+  ReviewDetail: ReviewDetail;
+  ReviewDiagnostics: ReviewDiagnostics;
+  ReviewEscalate: ReviewEscalate;
   ReviewFinding: ReviewFinding;
   ReviewOutput: ReviewOutput;
   ReviewPage: ReviewPage;
@@ -1374,12 +1378,22 @@ export interface ReviewTicket {
   review_id: Id;
   job_id: Id;
   status: "pending" | "running" | "ready" | "failed";
+  title?: string | null;
+  created_at?: Timestamp | null;
+  revision?: Revision;
+  human_review_state?: "not_requested" | "pending" | "resolved";
+  awaiting_human?: boolean;
+  question?: string | null;
+  finding_count?: number;
+  unreviewed_count?: number;
+  error_code?: string | null;
 }
 export interface ProxyMapping {
   schema_version: "1.0";
   project_id: Id;
   version_id: Id;
   proxy_artifact_id: Id;
+  mapping_artifact_id?: Id;
   source_closure_digest: Sha256;
   sample_frame: number;
   space: "proxy_world_m";
@@ -1461,6 +1475,33 @@ export interface ReviewComplete {
   findings: ReviewFinding[];
   error_code?: string | null;
 }
+export interface ReviewDetail {
+  schema_version: "1.0";
+  project_id: Id;
+  ticket: ReviewTicket;
+  criteria: string;
+  targets: FrameTarget[];
+  telemetry_artifact_ids: Id[];
+  findings: ReviewFinding[];
+  diagnostics?: ReviewDiagnostics | null;
+}
+export interface ReviewDiagnostics {
+  finish_reason?: string | null;
+  prompt_tokens?: number | null;
+  completion_tokens?: number | null;
+  reasoning_tokens?: number | null;
+  reasoning_effort?: string | null;
+  rubric_revision?: string | null;
+  error_code?: string | null;
+}
+export interface ReviewEscalate {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  review_id: Id;
+  question: string;
+  title?: string;
+}
 export interface ReviewRequest {
   schema_version: "1.0";
   review_id: Id;
@@ -1471,6 +1512,9 @@ export interface ReviewRequest {
   targets: [FrameTarget, ...FrameTarget[]];
   criteria: string;
   telemetry_artifact_ids: Id[];
+  title?: string;
+  human_review?: boolean;
+  question?: string;
 }
 export interface RevisionCommand {
   schema_version: "1.0";

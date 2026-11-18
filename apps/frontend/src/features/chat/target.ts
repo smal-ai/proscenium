@@ -4,6 +4,7 @@ import { emptySelection, type ContextPreparer, type TurnSelection } from "../../
 export type DraftTarget = "current_view" | RequestTarget;
 export function resolveTarget(target: DraftTarget, selection: TurnSelection): RequestTarget {
   if (target !== "current_view") return structuredClone(target);
+  if (selection.request_target) return structuredClone(selection.request_target);
   if (!selection.item_id || !selection.version_id) return { kind: "project" };
   const version = { item_id: selection.item_id, version_id: selection.version_id };
   return selection.target?.shot_id ? { kind: "shot", storyboard_version: version, shot_id: selection.target.shot_id } : { kind: "item", version };

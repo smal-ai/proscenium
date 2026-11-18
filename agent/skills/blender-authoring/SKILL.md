@@ -19,9 +19,13 @@ description: Author and inspect Blender content inside the active Proscenium pro
    inspection of the original launch receipt before any retry. A missing configured
    MCP server/add-on remains `capability_unavailable`, not permission to install one.
 3. Before mutation inspect `get_addon_status`, `get_scene_info`,
-   `bpy.data.filepath` and `bpy.data.is_dirty`. Preserve unsaved work. An unsaved
-   scene or a scene outside the active project requires an owner decision, not a
-   new-file command or an overwrite. Do not close an independent Blender session.
+   `bpy.data.filepath` and `bpy.data.is_dirty`. Preserve unsaved user work: if a
+   scene is dirty (`bpy.data.is_dirty` is true), saved outside the active project,
+   or contains non-default unsaved objects beyond a pristine factory startup scene
+   (`Camera`, `Cube`, `Light` with `filepath == ""` and `is_dirty == False`), ask
+   an owner decision rather than overwriting. A pristine untouched factory startup
+   scene may be initialised directly for the active project without asking. Do not
+   close an independent Blender session.
 4. Assign one authoring owner per live instance and use the accepted toolchain's
    resource lock and base-state checks. A stale base is `source_conflict`.
    Never interpret parallel tool availability as permission for concurrent writers.
@@ -44,10 +48,14 @@ description: Author and inspect Blender content inside the active Proscenium pro
    `CheckpointRequest.expected_head` is the observed repository HEAD, not the item
    version ID. Publish the receipt's `source_commit` and use
    `expected_current_version_id` for the item head. Before proxy export, authored
-   meshes carry stable `proscenium_object_id` and `proscenium_instance_id` custom
-   properties. Instance IDs are unique, even when instances share an object ID.
-   Do not substitute object names or transient glTF indices for those identities.
-7. Call `request_preview` against the pinned published source. Pass the exact host
+   renderable surface objects (`MESH` plus extruded/beveled `CURVE`, `FONT`,
+   `SURFACE` and `META`) carry stable `proscenium_object_id` and
+   `proscenium_instance_id` custom properties. Instance IDs are unique, even when
+   instances share an object ID. Do not substitute object names or transient glTF
+   indices for those identities.
+7. Call `request_preview` against the pinned published source (including a
+   `purpose: "proxy"` single-frame preview on the primary stage so **3D Inspection**
+   is populated alongside `keyframe` / `inspection` still renders). Pass the exact host
    camera for “Render this view”. A preview receipt admits a job, not a finished
    render. Observe its real state and registered outputs.
    Use `get_version(version_id)` for the pinned publication/source record and
@@ -72,10 +80,12 @@ description: Author and inspect Blender content inside the active Proscenium pro
    actionable tool errors and the original receipt instead of looping on failure.
 8. Use the budgeted generation adapter for inference. Do not install/start/stop
    ComfyUI, LM Studio, Unity or other independent services as a workaround.
-9. Request `request_vlm_review` for produced renders/keyframes when capabilities
-   report a `configured` or `ready` VLM provider. A ticket is not a critique.
-   Do not retrieve unapproved findings into
-   model context. Only owner-selected findings in host context authorise repairs.
+9. Request `request_vlm_review` (with a short `title`, concise visual `criteria`, and any
+   comparison `reference` / `start` frame in `targets`) for produced renders/keyframes when
+   capabilities report a `configured` or `ready` VLM provider. Read your current work's
+   critique with `get_vlm_review(review_id=..., wait_seconds=15)` for bounded self-correction,
+   or call `escalate_vlm_review` with an explicit question when human judgement is needed.
+   Only owner-selected findings in host context carry owner instruction or selection authority.
 10. After compaction re-read the brief and current plan. Stop is not rollback.
     Late publication/job results belong to their original source, work and attempt.
 

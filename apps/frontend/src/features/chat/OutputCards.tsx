@@ -3,11 +3,39 @@ import type { ApiClient, Artifact, RetainedArtifactSummary } from "../../api";
 import { describeError } from "../../app/storage";
 import { artifactUrl } from "./ContextPreview";
 
+const INLINE_CARD_LIMIT = 3;
+
+export function isRenderPassStreamArtifact(summary: RetainedArtifactSummary): boolean {
+  const { artifact, job_id, published_versions = [] } = summary;
+  if (artifact.purpose === "draft_motion" || artifact.purpose === "inspection") return true;
+  if (artifact.kind === "video" && artifact.artifact_id.startsWith("attempt-")) return true;
+  if (job_id && (published_versions.length > 0 || artifact.artifact_id.startsWith("preview-") || artifact.purpose === "keyframe" || artifact.purpose === "final")) {
+    return true;
+  }
+  return false;
+}
+
 export function OutputCards({ api, projectId, artifactIds, retainedArtifacts = [], onInspectArtifact }: {
   api: ApiClient; projectId: string; artifactIds: string[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
 }) {
-  return <div className="retained-output-cards">{[...new Set(artifactIds)].map(id => <OutputCard key={id} api={api} projectId={projectId} artifactId={id} known={retainedArtifacts.find(summary => summary.artifact.artifact_id === id)?.artifact} onInspectArtifact={onInspectArtifact} />)}</div>;
+  const uniqueIds = [...new Set(artifactIds)];
+  if (!uniqueIds.length) return null;
+  const knownById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary.artifact]));
+  const visibleIds = uniqueIds.slice(0, INLINE_CARD_LIMIT);
+  const hiddenIds = uniqueIds.slice(INLINE_CARD_LIMIT);
+  return <>
+    <div className="retained-output-cards">
+      {visibleIds.map(id => <OutputCard key={id} api={api} projectId={projectId} artifactId={id} known={knownById.get(id)} onInspectArtifact={onInspectArtifact} />)}
+    </div>
+    {hiddenIds.length > 0 && <details className="retained-output-more">
+      <summary>Show {hiddenIds.length} more retained {hiddenIds.length === 1 ? "output" : "outputs"}</summary>
+      <div className="retained-output-cards">
+        {hiddenIds.map(id => <OutputCard key={id} api={api} projectId={projectId} artifactId={id} known={knownById.get(id)} onInspectArtifact={onInspectArtifact} />)}
+      </div>
+    </details>}
+  </>;
 }
+
 function OutputCard({ api, projectId, artifactId, known, onInspectArtifact }: { api: ApiClient; projectId: string; artifactId: string; known?: Artifact; onInspectArtifact?: (artifact: Artifact) => void }) {
   const [artifact, setArtifact] = useState<Artifact | null>(known ?? null);
   const [error, setError] = useState("");

@@ -61,10 +61,11 @@ Never query private SQLite to recover tool results or guess filesystem-latest.
 Inspect registered images with get_artifact(artifact_id=..., include_image=true). NEVER bash cp
 .proscenium/artefacts/.../content just to call view. The host verifies ready bytes and their hash inline without copying.
 Wait for admitted jobs with get_job(job_id=..., wait_seconds=15), not rapid polling loops. Waiting never submits work.
-Use submit_generation for budgeted inference, request_vlm_review for read-only assessment. Its ticket is not a critique.
-Only owner-selected approved_findings in host context authorise critique instructions. Never request raw unapproved findings.
+Use submit_generation for budgeted inference, request_vlm_review for read-only assessment, and get_vlm_review(review_id=..., wait_seconds=15) to read the validated findings for your current work.
+Include a short human-readable title in request_vlm_review, write concise visual criteria without policy boilerplate, and pass reference/start comparison frames alongside candidate targets when checking continuity.
+You may use your active work's get_vlm_review findings for bounded self-correction within the brief and remaining task budget, or call escalate_vlm_review with a concrete question when you need human creative judgement in Critic.
 When producing storyboards, keyframes, concept images or renders and get_project_capabilities reports a configured
-or ready vlm provider, call request_vlm_review for read-only visual assessment. Only owner-approved findings become revision instructions.
+or ready vlm provider, call request_vlm_review for read-only visual assessment. Only owner-approved findings in host context carry owner instruction authority, creative selection or budget extension.
 Routine in-scope creative stages progress automatically. Request exact owner permission for software/service installation,
 new charges, remote push/sharing or destructive retained-source operations. Do not treat tool permissions as creative selection.
 Do not install, start or stop independent model services. Preserve unsaved Blender/Unity work. One live scene writer and Git index owner.
@@ -87,6 +88,7 @@ Delegate multi-step authoring, storyboard creation, image/mesh generation waves 
 authoring-specialist, and Unity workflows to unity-specialist. Do not run long authoring or generation loops inline
 in the root turn. Give each specialist an explicit slice, pinned inputs, expected outputs and remaining budget.
 Keep one live scene writer and one Git index owner. Reconcile specialist receipts before progressing dependencies.
+Once a synchronous task specialist has completed, delegate follow-up work with a new task call rather than write_agent.
 """
     + SHARED_INSTRUCTIONS
 )
@@ -177,6 +179,8 @@ class Configuration:
                 "register_artifact",
                 "submit_generation",
                 "request_vlm_review",
+                "get_vlm_review",
+                "escalate_vlm_review",
                 "get_job",
                 "get_artifact",
                 "get_version",
@@ -291,6 +295,9 @@ UNITY_TOOLS = [
     "bash",
     "run_unity_workflow",
     "get_unity_result",
+    "request_vlm_review",
+    "get_vlm_review",
+    "escalate_vlm_review",
     "get_job",
     "get_version",
     "get_artifact",
@@ -640,6 +647,30 @@ class Native:
         validate(self.latest_cold_stop_snapshot, session.session_id)
         return self.latest_cold_stop_snapshot
 
+    async def inactive(self, session: Any) -> bool:
+        """Positive RPC proof that a paused, aborted session has no active turn, task or tool wait."""
+        if not hasattr(session, "rpc"):
+            return False
+        raw_tasks = await session.rpc.tasks.list(timeout=5)
+        tasks = raw_tasks.to_dict() if hasattr(raw_tasks, "to_dict") else raw_tasks
+        if not tasks_inactive(tasks):
+            return False
+        raw_external = await session.rpc.tools.list_pending_requests(timeout=5)
+        external = raw_external.to_dict() if hasattr(raw_external, "to_dict") else raw_external
+        if not external_empty(external):
+            return False
+        raw_interrupted = await session.rpc.interrupt_main_turn(
+            InterruptMainTurnRequest(flush_queued=False), timeout=5
+        )
+        interrupted = (
+            raw_interrupted.to_dict() if hasattr(raw_interrupted, "to_dict") else raw_interrupted
+        )
+        if not (isinstance(interrupted, dict) and interrupted.get("interrupted") is False):
+            return False
+        raw_after = await session.rpc.queue.pending_items(timeout=5)
+        after = raw_after.to_dict() if hasattr(raw_after, "to_dict") else raw_after
+        return queue_empty(after)
+
     async def pause(self, session: Any, paused: bool) -> None:
         await session.rpc.queue.set_drain_paused(
             QueueSetDrainPausedRequest(paused=paused), timeout=10
@@ -657,7 +688,7 @@ class Native:
 
     async def health(self) -> None:
         if self.client:
-            await asyncio.wait_for(self.client.ping(), 5)
+            await asyncio.wait_for(self.client.ping(), 15)
 
     def transport_alive(self) -> bool:
         """Positive exact-process/connected-transport evidence, not absence of an error."""

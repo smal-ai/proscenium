@@ -1,19 +1,23 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ActivityEventData, ApiClient, Artifact, Event, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary } from "../../api";
+import type { ActivityEventData, ApiClient, Artifact, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
-import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget } from "./target";
+import { mergeReviews } from "../../app/useProjectData";
+import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
+import { CriticPanel, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
+import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation } from "./Conversation";
 import { OutputCards } from "./OutputCards";
-import { awaitResume } from "./resume";
+import { awaitResume, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowQueueHold, type ChatPanelProps } from "./ChatPanel";
 import { JobList, jobsBadgeState } from "./ComposerPanel";
+import { TargetPicker } from "./TargetPicker";
 
 const api = { call: () => { throw new Error("Unconfigured API operation in offline test"); } } as unknown as ApiClient;
 const ref = { item_id: "asset-a", version_id: "version-old" };
@@ -22,7 +26,12 @@ const request = (request_id: string, accepted_at: string, text: string, type = "
 const snapshot = (state = "running", fenced = false) => ({ project: { project_id: "project", state: "active" }, active_work: { work_id: "work", state, native_session_id: "session" }, pending_decisions: [], execution: { fenced, hold_reason: fenced ? "Owner stopped work" : null, active_agents: [], work_outputs: [] }, items: [] }) as unknown as ProjectSnapshot;
 const event = (sequence: number, event_type: Event["event_type"], payload: object, occurred_at = "2026-11-15T10:00:00Z") => ({ sequence, event_type, payload, occurred_at, project_id: "project", actor: { kind: "lead", id: "lead" }, native_session_id: "session", request_id: "request", work_id: "work" }) as Event;
 const activity: ActivityEventData = { invocation_id: "invocation", name: "image specialist", state: "running", summary: "", artifact_ids: [], model_id: "reported-model", display_name: "Prepare concept" };
-const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({ job_id, state, kind: "image_generation", provider_id: "local-comfy" }) as JobRecord;
+const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
+  schema_version: "1.0", job_id, state, kind: "image_generation", provider_id: "local-comfy", target: { target_id: job_id, version: null, shot_id: null },
+  expected_frames: null, completed_frames: null, render_spec: null, project_id: "project", work_id: null, owner_operation_id: null,
+  attempt_id: `attempt-${job_id}`, attempt_number: 1, state_revision: 1, availability: "pending", input_digest: "a".repeat(64), external_job_id: null, owner_epoch: "test", artifact_ids: [],
+});
+const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
 const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => false, stop: async () => {}, retry: async () => false };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
 
@@ -66,7 +75,8 @@ test("live tool calls provide readable working steps and reconnecting status", (
   const labels = {
     prepare_image_generation: "Preparing image", submit_generation: "Submitting image", get_job: "Waiting on job",
     get_artifact: "Inspecting output", validate_authored_document: "Validating plan", checkpoint_sources: "Checkpointing sources",
-    publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", request_preview: "Requesting preview",
+    publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", get_vlm_review: "Waiting on VLM critique",
+    escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",
     assemble_sequence: "Assembling sequence", run_unity_workflow: "Running Unity workflow", bash: "Running command",
     skill: "Loading skill", view: "Reading project file", get_project_capabilities: "Checking capabilities", custom_tool: "custom tool",
   };
@@ -116,28 +126,35 @@ test("unfinished jobs provide live status with snapshot fallback and settled job
   assert.equal(assistantState({ ...props, snapshot: current }).label, "Working…");
 });
 
-test("Jobs badge distinguishes empty, active, uncertain, settled and failed history", () => {
+test("Jobs badge partitions every job into running, queued, uncertain, failed or settled without double-counting", () => {
   assert.deepEqual(jobsBadgeState([], false), { text: "0", ariaLabel: "Jobs: 0", tone: "empty" });
   assert.equal(jobsBadgeState([], true).text, "0?");
+  const queued = [job("planned", "one"), job("planned", "two"), job("planned", "three"), job("planned", "four"), job("waiting_resource")];
+  assert.deepEqual(jobsBadgeState([job("running"), ...queued], false), { text: "1 running · 5 queued", ariaLabel: "Jobs: 1 running · 5 queued", tone: "active" });
+  assert.equal(jobsBadgeState(queued, false).text, "5 queued");
+  assert.equal(jobsBadgeState([job("cancel_requested"), job("starting")], false).text, "2 running");
   const active = [job("running"), job("planned")];
-  assert.deepEqual(jobsBadgeState(active, false), { text: "2 active", ariaLabel: "Jobs: 2 active", tone: "active" });
-  assert.equal(jobsBadgeState(active, true).text, "2 active?");
-  const uncertain = jobsBadgeState([...active, job("outcome_uncertain")], false);
-  assert.equal(uncertain.text, "3 active?"); assert.equal(uncertain.tone, "attention"); assert.match(uncertain.ariaLabel, /uncertain/);
+  assert.equal(jobsBadgeState(active, true).text, "1 running · 1 queued?");
+  assert.match(jobsBadgeState(active, true).ariaLabel, /last known/);
+  const uncertain = job("outcome_uncertain");
+  assert.equal(jobsBadgeState([uncertain], false).text, "1 uncertain?");
+  assert.deepEqual(jobsBadgeState([...active, uncertain, job("succeeded")], false), { text: "1 uncertain · 1 running · 1 queued?", ariaLabel: "Jobs: 1 uncertain · 1 running · 1 queued? · uncertain job outcome", tone: "attention" });
   const settled = [job("succeeded", "a"), job("succeeded", "b"), job("cancelled", "c"), job("succeeded", "d")];
   assert.equal(jobsBadgeState(settled, false).text, "4 done"); assert.equal(jobsBadgeState(settled, false).tone, "done");
   assert.equal(jobsBadgeState(settled, true).text, "4 done?");
-  const failed = jobsBadgeState([{ ...job("failed"), error_code: "corrupt_provider_output" }], false);
-  assert.equal(failed.tone, "attention"); assert.match(failed.ariaLabel, /failed job/);
+  const failed = job("failed");
+  assert.deepEqual(jobsBadgeState([failed, job("succeeded")], false), { text: "1 failed · 1 done", ariaLabel: "Jobs: 1 failed · 1 done · failed job recorded", tone: "attention" });
+  assert.deepEqual(jobsBadgeState([failed, job("running"), ...queued, ...settled.slice(0, 2)], false), { text: "1 failed · 1 running · 5 queued", ariaLabel: "Jobs: 1 failed · 1 running · 5 queued · failed job recorded", tone: "attention" });
+  assert.equal(jobsBadgeState([failed, uncertain, ...active], false).text, "1 failed · 1 uncertain · 1 running · 1 queued?");
 });
 
 test("Composer renders accented Jobs counts and its status as the final bottom-right footer row", () => {
   for (const [jobs, text, tone] of [
     [[], "0", "empty"],
-    [[job("running"), job("planned")], "2 active", "active"],
-    [[job("running"), job("planned"), job("outcome_uncertain")], "3 active?", "attention"],
+    [[job("running"), job("planned")], "1 running · 1 queued", "active"],
+    [[job("running"), job("planned"), job("outcome_uncertain")], "1 uncertain · 1 running · 1 queued?", "attention"],
     [[job("succeeded", "a"), job("cancelled", "b"), job("succeeded", "c"), job("succeeded", "d")], "4 done", "done"],
-    [[{ ...job("failed"), error_code: "corrupt_provider_output" }], "1 done", "attention"],
+    [[{ ...job("failed"), error_code: "corrupt_provider_output" }], "1 failed", "attention"],
   ] as [JobRecord[], string, string][]) {
     const markup = chatMarkup(jobs);
     assert.ok(markup.includes(`class="${tone}-jobs"`));
@@ -147,16 +164,54 @@ test("Composer renders accented Jobs counts and its status as the final bottom-r
     assert.ok(markup.indexOf('class="composer-footer"') > markup.indexOf('class="composer-actions"'));
     if (["active", "attention"].includes(tone)) assert.match(markup, /class="jobs-indicator" aria-hidden="true"/);
   }
-  assert.match(chatMarkup([job("running")], { connection: "Reconnecting" }), /1 active\?/);
+  assert.match(chatMarkup([job("running")], { connection: "Reconnecting" }), /1 running\?/);
   assert.equal((chatMarkup([], { showHeaderStatus: true }).match(/class="assistant-status /g) ?? []).length, 2);
 });
 
-test("Jobs panel reports failed provider output diagnostics and retains unfinished uncertain jobs", () => {
-  const markup = renderToStaticMarkup(<JobList api={api} projectId="project" jobs={[{ ...job("failed"), error_code: "corrupt_provider_output" }, job("outcome_uncertain")]} onRefresh={async () => {}} onError={() => {}} />);
-  assert.match(markup, /Failure: corrupt_provider_output/); assert.match(markup, /Provider: local-comfy/);
-  assert.match(markup, /Finished job history/); assert.match(markup, /Unfinished jobs/);
-  assert.equal((markup.match(/Request job cancellation/g) ?? []).length, 1);
-  assert.equal((markup.match(/needs-attention/g) ?? []).length, 2);
+test("Independent jobs shows real frame progress, attention first and only settled work in collapsed history", () => {
+  const render = ([shot_id, expected_frames, completed_frames]: [string | null, number, number | null], index: number): JobRecord => ({
+    ...job(index === 0 ? "running" : "planned", `render-${index}`), kind: "render", expected_frames, completed_frames,
+    target: { target_id: shot_id ?? "proxy-relay", version: ref, shot_id },
+    render_spec: { purpose: shot_id ? "draft_motion" : "proxy" } as JobRecord["render_spec"],
+  });
+  const renders = ([
+    ["sl-01-dormant-macro", 72, 28], ["sl-02-conduit", 96, null], ["sl-03-console", 72, null], ["sl-04-exterior", 120, null], ["sl-05-title", 72, null], [null, 1, null],
+  ] satisfies [string | null, number, number | null][]).map(render);
+  const markupFor = (jobs: JobRecord[]) => renderToStaticMarkup(<JobList api={api} projectId="project" jobs={jobs} items={[asset]} onRefresh={async () => {}} onError={() => {}} />);
+  assert.doesNotMatch(markupFor(renders), /Finished/);
+  const markup = markupFor([...renders, { ...job("failed"), error_code: "corrupt_provider_output" }, job("outcome_uncertain"), job("succeeded"), job("cancelled")]);
+  assert.match(markup, /Needs attention \(2\)[\s\S]*Running \(1\)[\s\S]*Planned \/ waiting \(5\)[\s\S]*<details class="jobs-finished-group"><summary>Finished \(2\)<\/summary>/);
+  assert.match(markup, /sl-01-dormant-macro<\/strong>[\s\S]*28\/72 frames<span class="job-progress-bar" aria-hidden="true"><span class="job-progress-fill" style="width:39%"/);
+  for (const frames of [96, 72, 120]) assert.match(markup, new RegExp(`class="job-progress">${frames} frames`));
+  assert.match(markup, /Proxy · Relay dish<\/strong>[\s\S]*class="job-progress">1 frame</);
+  assert.doesNotMatch(markup, /0\/96/);
+  assert.match(markup, /Failure: corrupt_provider_output[\s\S]*<small role="status">Needs attention · reconcile the original job outcome before retrying\./);
+  assert.match(markup, /<details class="job-row-details"><summary>Details<\/summary><small>Job ID: <code>render-0<\/code><\/small>[\s\S]*Provider: local-comfy/);
+  assert.equal((markup.match(/Request job cancellation/g) ?? []).length, 7);
+  assert.equal((markup.match(/class="job-row(?: needs-attention)?"/g) ?? []).length, 10);
+});
+
+test("Target picker exposes four distinct modes and references do not require an existing primary target", () => {
+  const markupFor = (target: DraftTarget, references = [ref], open = true, pendingExisting?: boolean, items = [asset]) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={items} target={target} selection={emptySelection()} references={references} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={pendingExisting} {...(open ? { open } : {})} />);
+  const current = markupFor("current_view", []);
+  assert.match(current, /Target mode.*aria-pressed="true">Current view.*aria-pressed="false">Project.*aria-pressed="false">Existing….*aria-pressed="false">New…/);
+  assert.match(current, /Nothing open in Review · resolves to Project on submit/);
+  assert.match(current, /<details class="target-references-disclosure">/);
+  assert.doesNotMatch(markupFor("current_view", [], false), /class="target-options"/);
+  const pending = markupFor("current_view", [], true, true);
+  assert.match(pending, /aria-invalid="true".*Target:<\/span> Choose published item….*aria-pressed="true">Existing…/);
+  assert.match(pending, /class="target-pending-hint">Select a published item to enable sending, or choose another target mode\./);
+  const unpublished = markupFor("current_view", [], true, true, [{ ...asset, current_version_id: null }]);
+  assert.match(unpublished, /<select aria-label="Published item" disabled=""><option[^>]*>No published items yet<\/option><\/select>/);
+  assert.match(unpublished, /No published items exist yet\. Choose another target mode to enable sending\./);
+  assert.match(markupFor("current_view", [], false, true), /aria-expanded="false".*Target:<\/span> Choose published item…/);
+  assert.match(markupFor({ kind: "project" }), /aria-pressed="true">Project.*Project-wide planning/);
+  const existing = markupFor({ kind: "item", version: ref });
+  assert.match(existing, /aria-pressed="true">Existing….*aria-label="Published item".*aria-label="Published version".*value="version-old" selected/);
+  const newItem = markupFor({ kind: "new_item", item_kind: "asset", intent_id: "intent", name: "Broken relay dish" });
+  assert.match(newItem, /aria-expanded="true".*aria-pressed="true">New….*aria-pressed="true">Asset.*New item name.*value="Broken relay dish"/);
+  assert.doesNotMatch(newItem, /aria-label="Published item"/);
+  assert.match(newItem, /<details class="target-references-disclosure" open="">.*type="checkbox" disabled="".*none open in Review.*aria-label="Reference item".*aria-label="Reference version".*Relay dish · version-old/);
 });
 
 test("explicit target context strips Review media and retains the older version pin", async () => {
@@ -313,4 +368,174 @@ test("Resume waits for real completion, preserves uncertainty and bounds polling
   await assert.rejects(awaitResume(pendingApi, "project", "original-operation", 5), /still awaiting confirmation/);
   const legacyApi = { call: async () => { throw new Error("getResumeOperation not implemented"); } } as unknown as ApiClient;
   assert.equal(await awaitResume(legacyApi, "project", "original-operation"), null);
+});
+
+test("Conversation collapses consecutive routine completed tools and names specialists cleanly", () => {
+  const events = [
+    { ...event(1, "subagent.started", { ...activity, invocation_id: "child-inv", name: "authoring-specialist", display_name: "shot-retry" }), actor: { kind: "subagent" as const, id: "uuid-9488c0fc" } },
+    event(2, "tool.completed", { ...activity, invocation_id: "task-wrap", name: "task", state: "completed" }, "2026-11-15T10:00:01Z"),
+    event(3, "tool.completed", { ...activity, invocation_id: "t1", name: "view", state: "completed" }, "2026-11-15T10:00:02Z"),
+    event(4, "tool.completed", { ...activity, invocation_id: "t2", name: "bash", state: "completed" }, "2026-11-15T10:00:03Z"),
+    { ...event(5, "assistant.completed", { message_id: "sub-msg", text: "Checked hull connection", native_agent_id: "uuid-9488c0fc" }, "2026-11-15T10:00:04Z"), actor: { kind: "subagent" as const, id: "uuid-9488c0fc" } },
+  ];
+  const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={events} onRefresh={async () => {}} onError={() => {}} />);
+  assert.match(markup, /2 tool steps completed/);
+  assert.match(markup, /<strong>Specialist<\/strong><span>shot-retry<\/span>/);
+  assert.doesNotMatch(markup, /Tool: task/);
+
+  // Adding an in-flight tool keeps a single stable activity-group instead of popping a separate row and collapsing back.
+  const inflightEvents = [
+    event(1, "tool.started", { ...activity, invocation_id: "t1", name: "view", display_name: null, state: "running" }, "2026-11-15T10:00:01Z"),
+    event(2, "tool.started", { ...activity, invocation_id: "t2", name: "bash", display_name: null, state: "running" }, "2026-11-15T10:00:02Z"),
+    event(3, "tool.completed", { ...activity, invocation_id: "t2", name: "bash", display_name: null, state: "completed" }, "2026-11-15T10:00:05Z"),
+    event(4, "tool.started", { ...activity, invocation_id: "t3", name: "get_version", display_name: null, state: "running" }, "2026-11-15T10:00:06Z"),
+  ];
+  const inflightMarkup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={inflightEvents} onRefresh={async () => {}} onError={() => {}} />);
+  assert.equal((inflightMarkup.match(/class="activity activity-group"/g) ?? []).length, 1);
+  assert.match(inflightMarkup, /1 of 3 tool steps · get_version…/);
+});
+
+test("resumableWork offers stopped work only until newer work runs and ChatPanel guards uncertain Stop", () => {
+  const idle = { ...snapshot(), active_work: null };
+  const oldStopped = event(10, "work.state_changed", { work_id: "work-old", project_id: "project", state: "stopped", state_revision: 4 });
+  assert.deepEqual(resumableWork(idle, [oldStopped]).map(w => w.work_id), ["work-old"]);
+  const newerCompleted = event(20, "work.state_changed", { work_id: "work-new", project_id: "project", state: "completed", state_revision: 2 });
+  assert.deepEqual(resumableWork(idle, [oldStopped, newerCompleted]), []);
+
+  const uncertainReq = { ...request("stop-1", "2026-11-17T10:00:00Z", "", "stop"), receipt: { state: "outcome_uncertain", state_revision: 1 } } as RequestRecord;
+  const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true), requests: [uncertainReq] });
+  assert.match(markup, /<option value="continue_work" disabled="">Continue original work<\/option>/);
+  assert.match(markup, /<option value="release_held_queue" disabled="">Release held queue<\/option>/);
+});
+
+test("default Studio split layout starts Navigator and Assistant at maximum width", () => {
+  assert.equal(NAVIGATOR_MAX_WIDTH, 520);
+  assert.equal(ASSISTANT_MAX_WIDTH, 760);
+  assert.deepEqual(defaultStudioLayout, {
+    mode: "split",
+    navigatorCollapsed: false,
+    assistantCollapsed: false,
+    navigatorWidth: 520,
+    assistantWidth: 760,
+  });
+});
+
+test("Critic SAST timestamps, revision-monotonic review merges and compact card markup", () => {
+  assert.equal(formatReviewTimeSast("2026-11-18T14:05:00Z"), "2026-11-18 16:05 SAST");
+  assert.equal(formatReviewTimeSast("2026-11-18T22:00:00Z"), "2026-11-19 00:00 SAST");
+  assert.equal(formatReviewTimeSast(null), "Date unavailable");
+
+  const olderPending: ReviewTicket = {
+    schema_version: "1.0",
+    review_id: "rev-1",
+    job_id: "job-1",
+    status: "ready",
+    title: "Shot 4 hull containment",
+    created_at: "2026-11-18T14:05:00Z",
+    revision: 2,
+    human_review_state: "pending",
+    awaiting_human: true,
+    finding_count: 2,
+    unreviewed_count: 2,
+  };
+  const resolvedNewer: ReviewTicket = {
+    ...olderPending,
+    revision: 3,
+    human_review_state: "resolved",
+    awaiting_human: false,
+    unreviewed_count: 0,
+  };
+  const selfCheck: ReviewTicket = {
+    schema_version: "1.0",
+    review_id: "rev-self",
+    job_id: "job-2",
+    status: "ready",
+    title: "Routine self check",
+    created_at: "2026-11-18T15:00:00Z",
+    revision: 2,
+    human_review_state: "not_requested",
+    awaiting_human: false,
+    finding_count: 1,
+    unreviewed_count: 1,
+  };
+
+  // Stale lower-revision snapshot cannot resurrect a resolved review's awaiting_human state.
+  const merged = mergeReviews([resolvedNewer], [olderPending, selfCheck]);
+  assert.equal(merged.find(r => r.review_id === "rev-1")?.awaiting_human, false);
+  assert.equal(isPendingReview(olderPending), true);
+  assert.equal(isPendingReview(selfCheck), false);
+  assert.equal(reviewDisplayName({ ...olderPending, title: "  " }), "rev-1");
+
+  const markup = renderToStaticMarkup(
+    <CriticPanel
+      api={api}
+      projectId="project"
+      selection={emptySelection()}
+      refreshRevision={0}
+      reviews={[olderPending, selfCheck]}
+      onQueue={async () => {}}
+    />,
+  );
+  assert.match(markup, /Pending \(1\)/);
+  assert.match(markup, /Shot 4 hull containment/);
+  assert.match(markup, /2026-11-18 16:05 SAST/);
+  assert.doesNotMatch(markup, /Routine self check/);
+  assert.doesNotMatch(markup, /Load existing reviews/);
+  assert.doesNotMatch(markup, /<select/);
+});
+
+test("Conversation suppresses draft_motion frame/segment floods inside user bubbles and OutputCards collapses >3 outputs", () => {
+  const req = { ...request("req-anim", "2026-11-18T14:20:00Z", "let's generate the animation"), receipt: { state: "running", work_id: "work-anim", state_revision: 1 } } as RequestRecord;
+  const streamSummaries: RetainedArtifactSummary[] = [
+    {
+      schema_version: "1.0",
+      artifact: { schema_version: "1.0", artifact_id: "attempt-bd7475de-seg-1", project_id: "project", state: "ready", kind: "video", purpose: "draft_motion", media_type: "video/mp4", sha256: "a".repeat(64), bytes: 1024, dimensions: { width: 1280, height: 720 }, derived_from: [] },
+      attribution_status: "verified",
+      request_id: "req-anim",
+      work_id: "work-anim",
+      invocation_id: null,
+      job_id: "preview-a44c700c",
+      published_versions: [{ item_id: "corridor", version_id: "corridor-v2" }],
+    },
+    {
+      schema_version: "1.0",
+      artifact: { schema_version: "1.0", artifact_id: "preview-a44c700c-f0001", project_id: "project", state: "ready", kind: "image", purpose: "draft_motion", media_type: "image/png", sha256: "b".repeat(64), bytes: 2048, dimensions: { width: 1280, height: 720 }, derived_from: [] },
+      attribution_status: "verified",
+      request_id: "req-anim",
+      work_id: "work-anim",
+      invocation_id: null,
+      job_id: "preview-a44c700c",
+      published_versions: [{ item_id: "corridor", version_id: "corridor-v2" }],
+    },
+    {
+      schema_version: "1.0",
+      artifact: { schema_version: "1.0", artifact_id: "concept-unpublished-1", project_id: "project", state: "ready", kind: "image", purpose: "concept", media_type: "image/png", sha256: "c".repeat(64), bytes: 2048, dimensions: { width: 1024, height: 1024 }, derived_from: [] },
+      attribution_status: "verified",
+      request_id: "req-anim",
+      work_id: "work-anim",
+      invocation_id: null,
+      job_id: null,
+      published_versions: [],
+    },
+  ];
+  const markup = renderToStaticMarkup(
+    <Conversation api={api} projectId="project" requests={[req]} events={[]} retainedArtifacts={streamSummaries} onRefresh={async () => {}} onError={() => {}} />,
+  );
+  assert.doesNotMatch(markup, /attempt-bd7475de-seg-1/);
+  assert.doesNotMatch(markup, /preview-a44c700c-f0001/);
+  assert.match(markup, /concept-unpublished-1/);
+  // User prompt bubble itself never contains OutputCards figures.
+  const userBubble = markup.match(/<article class="message user-message"[\s\S]*?<\/article>/)?.[0] ?? "";
+  assert.ok(userBubble.length > 0);
+  assert.doesNotMatch(userBubble, /retained-output-card/);
+
+  const fiveIds = ["c1", "c2", "c3", "c4", "c5"];
+  const fiveSummaries = fiveIds.map(id => ({
+    ...streamSummaries[2],
+    artifact: { ...streamSummaries[2].artifact, artifact_id: id },
+  }));
+  const batchMarkup = renderToStaticMarkup(
+    <OutputCards api={api} projectId="project" artifactIds={fiveIds} retainedArtifacts={fiveSummaries} />,
+  );
+  assert.match(batchMarkup, /Show 2 more retained outputs/);
 });

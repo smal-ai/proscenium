@@ -400,3 +400,102 @@ def test_uncertain_stop_is_preserved_without_an_exact_current_barrier(runtime, c
         assert "session.send" not in json.dumps(client.messages)
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("acknowledged", [True, False])
+def test_settled_stop_reconciles_acknowledged_steers_and_rejects_unacknowledged_steer(
+    runtime, acknowledged
+):
+    copilot, store, _ = runtime
+    with store.transaction() as tx:
+        work = tx.require("work", WORK)
+        work.update(
+            directive_request_ids=["steer-one"],
+            state_revision=tx.revision("work", WORK) + 1,
+        )
+        save(tx, "work", WORK, work)
+        tx.put(
+            "requests",
+            "steer-one",
+            {
+                "schema_version": "1.0",
+                "request_id": "steer-one",
+                "project_id": PROJECT,
+                "accepted_at": "2026-11-15T00:00:01Z",
+                "effective_profile_id": None,
+                "generation_task_id": "task",
+                "submission": {
+                    "schema_version": "1.0",
+                    "request_id": "steer-one",
+                    "project_id": PROJECT,
+                    "type": "steer",
+                    "text": "Follow-up steer",
+                    "context_id": "fixture-context",
+                    "target_work_id": WORK,
+                },
+                "receipt": {
+                    "schema_version": "1.0",
+                    "request_id": "steer-one",
+                    "project_id": PROJECT,
+                    "type": "steer",
+                    "state": "acknowledged" if acknowledged else "dispatching",
+                    "state_revision": 0,
+                    "work_id": WORK,
+                    "native_message_id": "steer-msg" if acknowledged else None,
+                    "replayed": False,
+                },
+            },
+            schema="RequestRecord",
+        )
+        tx.put(
+            "copilot.sends",
+            "steer-one",
+            {
+                "state": "acknowledged" if acknowledged else "dispatching",
+                "session_id": SESSION,
+            },
+        )
+    evidence = asyncio.run(copilot.reconcile(PROJECT))
+    with store.transaction(write=False) as tx:
+        if acknowledged:
+            assert evidence["uncertain_stops"] == 0
+            assert tx.require("copilot.stops", STOP)["phase"] == "confirmed"
+            assert tx.require("work", WORK)["state"] == "stopped"
+            assert tx.require("requests", "steer-one")["receipt"]["state"] == "stopped"
+        else:
+            assert evidence["uncertain_stops"] == 1
+            assert tx.require("copilot.stops", STOP)["phase"] == "outcome_uncertain"
+
+
+def test_stop_on_inactive_resumed_session_confirms_via_rpc_without_idle_event(runtime):
+    copilot, store, _ = runtime
+
+    async def abort_noop():
+        return None
+
+    async def run():
+        session = await copilot.session(PROJECT)
+        session.abort = abort_noop
+        with store.transaction() as tx:
+            tx.connection.execute(
+                "DELETE FROM records WHERE namespace IN ('copilot.stops') OR (namespace='requests' AND id=?)",
+                (STOP,),
+            )
+            tx.connection.execute("DELETE FROM outbox WHERE id=?", (STOP,))
+        copilot.state.submit(
+            OWNER,
+            {
+                "schema_version": "1.0",
+                "project_id": PROJECT,
+                "request_id": "fresh-stop",
+                "type": "stop",
+                "target_work_id": WORK,
+            },
+        )
+        await copilot.stop(PROJECT, WORK, "fresh-stop")
+
+    asyncio.run(run())
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.stops", "fresh-stop")["phase"] == "confirmed"
+        assert tx.require("requests", "fresh-stop")["receipt"]["state"] == "completed"
+        assert tx.require("work", WORK)["state"] == "stopped"

@@ -32,10 +32,12 @@ class Checkpoints:
 
     def checkpoint(self, caller: Caller, request: dict[str, Any]) -> dict[str, Any]:
         validate("CheckpointRequest", request)
+        paths = request["paths"]
         project_id, identity = request["project_id"], request["operation_id"]
         root = active(self.services, caller, "checkpoint_sources", project_id)
         store = self.services.registry.project_store(project_id)
-        immutable = binding(caller, request)
+        normalized = {**request, "paths": sorted(paths)}
+        immutable = binding(caller, normalized)
         lockpath = store.path.parent / "checkpoint.lock"
         with os.fdopen(
             os.open(lockpath, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600), "a+b"
@@ -43,7 +45,14 @@ class Checkpoints:
             fcntl.flock(lock, fcntl.LOCK_EX)
             self.validate_closure_inputs(project_id, root, request)
             with store.transaction() as tx:
-                previous = replay(tx, "sources.checkpoint", identity, immutable)
+                try:
+                    previous = replay(tx, "sources.checkpoint", identity, immutable)
+                except DomainError as exc:
+                    if exc.code != "idempotency_conflict":
+                        raise
+                    previous = self._legacy_completed_replay(tx, root, request, identity)
+                    if previous is None:
+                        raise
                 if previous:
                     saved = tx.require("checkpoint_intents", identity)
                     reference = "refs/proscenium/checkpoints/" + sha(identity.encode())
@@ -62,7 +71,6 @@ class Checkpoints:
                     raise DomainError("idempotency_conflict", 409)
                 if not intent:
                     admitted(self.services, tx, caller)
-                    paths = request["paths"]
                     if len(set(paths)) != len(paths):
                         raise DomainError("invalid_request")
                     branch = git(root, "symbolic-ref", "-q", "HEAD").decode().strip()
@@ -379,6 +387,33 @@ class Checkpoints:
         finally:
             index.unlink(missing_ok=True)
             Path(name + ".lock").unlink(missing_ok=True)
+
+    def _legacy_completed_replay(
+        self, tx: Any, root: Path, request: dict[str, Any], identity: str
+    ) -> dict[str, Any] | None:
+        import json
+
+        saved = tx.get("checkpoint_intents", identity, required=False)
+        if not saved or saved.get("state") != "completed":
+            return None
+        row = tx.connection.execute(
+            "SELECT result FROM operations WHERE scope='sources.checkpoint' AND id=?",
+            (identity,),
+        ).fetchone()
+        if not row:
+            return None
+        if saved.get("parent") != request["expected_head"] or [
+            r["path"] for r in saved.get("files", [])
+        ] != sorted(request["paths"]):
+            return None
+        candidate = saved.get("candidate")
+        if not isinstance(candidate, str) or not candidate:
+            return None
+        commit_msg = git(root, "show", "-s", "--format=%B", candidate, required=False).decode()
+        subject = commit_msg.split("\n\nProscenium-Checkpoint:", 1)[0]
+        if subject != request["message"].rstrip():
+            return None
+        return dict(json.loads(row[0]))
 
     def verify(
         self, project_id: str, request: dict[str, Any], intent: dict[str, Any], commit: str

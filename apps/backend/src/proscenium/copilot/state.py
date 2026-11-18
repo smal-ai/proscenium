@@ -294,6 +294,9 @@ class State:
                         },
                     )
                 elif kind == "steer":
+                    self.invalidate_work_completions(tx, work)
+                    if work.get("native_session_id"):
+                        save(tx, "copilot.idle", work["native_session_id"], {"idle": False})
                     self.work_state(
                         tx,
                         work_id,
@@ -377,6 +380,17 @@ class State:
             return tx.operation(
                 "request.cancel", body["operation_id"], {**body, "request_id": request_id}, effect
             )
+
+    def invalidate_work_completions(self, tx: Transaction, work: dict[str, Any]) -> None:
+        for req_id in [work["originating_request_id"], *work["directive_request_ids"]]:
+            existing = tx.get("copilot.completion", req_id, required=False)
+            if existing and (existing.get("candidate") or existing.get("public_terminal_message")):
+                save(
+                    tx,
+                    "copilot.completion",
+                    req_id,
+                    {**existing, "candidate": False, "public_terminal_message": False},
+                )
 
     def cancel_decisions(self, tx: Transaction, work_id: str) -> None:
         for stage in tx.all("copilot.permissions"):
@@ -570,6 +584,20 @@ class State:
                         request["receipt"]["state"],
                         native_message_id=data["messageId"],
                     )
+                    save(
+                        tx,
+                        "copilot.admitted_messages",
+                        request["request_id"],
+                        {
+                            "message_id": data["messageId"],
+                            "work_id": request["receipt"]["work_id"],
+                            "native_event_id": identity,
+                        },
+                    )
+                    if request["submission"]["type"] == "steer":
+                        self.invalidate_work_completions(
+                            tx, tx.require("work", request["receipt"]["work_id"])
+                        )
             binding = (
                 binding
                 or self.binding(tx, session_id, "message", data.get("originatingMessageId"))
@@ -622,10 +650,21 @@ class State:
                         },
                     )
                 if kind == "permission.requested":
-                    permission = data["permissionRequest"]
-                    tool_call = permission.get("toolCallId")
+                    permission = data.get("permissionRequest")
+                    tool_call = (
+                        permission.get("toolCallId") if isinstance(permission, dict) else None
+                    )
+                    if not isinstance(tool_call, str) or not tool_call:
+                        self.fence(tx, "attribution_unavailable")
+                        return
                     permission_binding = self.binding(tx, session_id, "tool", tool_call)
-                    if not permission_binding or not tool_call:
+                    if permission_binding is None:
+                        self.bind(tx, session_id, "tool", tool_call, binding)
+                        permission_binding = binding
+                    elif any(
+                        permission_binding.get(k) != binding.get(k)
+                        for k in ("work_id", "request_id", "delivery_id")
+                    ):
                         self.fence(tx, "attribution_unavailable")
                         return
                     stage_id = key(session_id, data["requestId"])
@@ -987,11 +1026,27 @@ class State:
             if kind == "abort" and not agent:
                 work = tx.require("work", work_id)
                 last_delivery = tx.get("copilot.last_delivery", work_id, required=False)
+                work_requests = {work["originating_request_id"], *work["directive_request_ids"]}
+                current_delivery = bool(
+                    last_delivery
+                    and (
+                        last_delivery.get("delivery_id") == binding.get("delivery_id")
+                        or (
+                            last_delivery.get("delivery_id") in work["directive_request_ids"]
+                            and tx.get(
+                                "copilot.admitted_messages",
+                                last_delivery["delivery_id"],
+                                required=False,
+                            )
+                            is not None
+                            and binding.get("delivery_id") in work_requests
+                        )
+                    )
+                )
                 if (
                     work["native_session_id"] == session_id
                     and work["state"] in {"running", "awaiting_user"}
-                    and last_delivery
-                    and last_delivery.get("delivery_id") == binding.get("delivery_id")
+                    and current_delivery
                     and not self.control(tx)["fenced"]
                 ):
                     # An unsolicited native abort interrupts work, but is not a confirmed Stop
@@ -1530,6 +1585,274 @@ class State:
                     "name": invocation["name"],
                     "state": "cancelled",
                     "summary": "Departed checkpoint permission wait interrupted. No checkpoint intent, successful tool return or owner answer observed.",
+                    "artifact_ids": [],
+                    "model_id": invocation.get("model_id"),
+                },
+                actor=SYSTEM,
+                work_id=invocation["work_id"],
+                request_id=invocation["request_id"],
+            )
+            count += 1
+        return count
+
+    def interrupt_departed_custom_tools(
+        self,
+        tx: Transaction,
+        session_id: str,
+        history: list[dict[str, Any]],
+        departed: dict[str, Any],
+    ) -> int:
+        """Settle departed read-only or uninvoked host custom tools; never infer mutating effects."""
+        if (
+            departed.get("session_id") != session_id
+            or departed.get("observed_identity") == departed.get("start")
+            or departed.get("pending_empty") is not True
+            or departed.get("current_send") is not False
+        ):
+            return 0
+        from .tools import DISCOVERY_READS, READ_TOOLS, TOOLS
+        from .workflows import WORKFLOW_TOOLS
+
+        read_only_tools = frozenset(
+            {*READ_TOOLS, *DISCOVERY_READS, "validate_authored_document", "get_unity_result"}
+        )
+        mutating_tools = frozenset({*TOOLS, *WORKFLOW_TOOLS}) - read_only_tools
+        count = 0
+        for invocation in tx.all("invocations"):
+            tool_name = invocation.get("name")
+            if (
+                invocation.get("session_id") != session_id
+                or invocation["state"] in TERMINAL
+                or invocation.get("invocation_id") not in departed.get("invocation_ids", [])
+                or invocation.get("kind") != "tool"
+                or tool_name not in read_only_tools | mutating_tools
+            ):
+                continue
+            tool = invocation["native_id"]
+            binding = self.binding(tx, session_id, "tool", tool)
+            work = tx.get("work", invocation["work_id"], required=False)
+            if (
+                not binding
+                or not work
+                or work["native_session_id"] != session_id
+                or work["originating_request_id"] != invocation["request_id"]
+                or work["state"]
+                not in {"stop_requested", "awaiting_user", "awaiting_resume", "outcome_uncertain"}
+                or any(
+                    binding.get(k) != invocation.get(k)
+                    for k in ("work_id", "request_id", "delivery_id")
+                )
+            ):
+                continue
+            starts = [
+                e
+                for e in history
+                if e["type"] == "tool.execution_start"
+                and e.get("data", {}).get("toolCallId") == tool
+            ]
+            if len(starts) != 1 or starts[0]["data"].get("toolName") != tool_name:
+                continue
+            args = starts[0]["data"].get("arguments")
+            if (
+                not isinstance(args, dict)
+                or invocation.get("arguments_sha256") != hashlib.sha256(canonical(args)).hexdigest()
+            ):
+                continue
+            if any(
+                e["type"] == "tool.execution_complete"
+                and e.get("data", {}).get("toolCallId") == tool
+                for e in history
+            ):
+                continue
+            perm_requests = [
+                e
+                for e in history
+                if e["type"] == "permission.requested"
+                and e.get("data", {}).get("permissionRequest", {}).get("toolCallId") == tool
+            ]
+            if any(
+                e["data"]["permissionRequest"].get("kind") != "custom-tool"
+                or e["data"]["permissionRequest"].get("toolName") != tool_name
+                for e in perm_requests
+            ):
+                continue
+            perm_ids = {
+                e["data"]["requestId"]
+                for e in perm_requests
+                if isinstance(e.get("data", {}).get("requestId"), str)
+            }
+            stages = [
+                s
+                for s in tx.all("copilot.permissions")
+                if s.get("session_id") == session_id and s.get("tool_call_id") == tool
+            ]
+            if any(
+                any(
+                    s.get(k) != invocation.get(k)
+                    for k in ("work_id", "request_id", "invocation_id", "delivery_id")
+                )
+                for s in stages
+            ):
+                continue
+            outcome = get_tool_outcome(tx, invocation["invocation_id"])
+            is_read_only = tool_name in read_only_tools
+            if is_read_only:
+                if outcome is not None and (
+                    outcome.get("status") != "failed"
+                    or outcome.get("artifact_ids")
+                    or outcome.get("published_versions")
+                    or outcome.get("job_ids")
+                    or outcome.get("publication_id") is not None
+                ):
+                    continue
+            else:
+                if outcome is not None:
+                    continue
+                if any(
+                    (
+                        e["type"] == "external_tool.requested"
+                        and e.get("data", {}).get("toolCallId") == tool
+                    )
+                    or (
+                        e["type"].startswith("tool.execution_")
+                        and e["type"] != "tool.execution_start"
+                        and e.get("data", {}).get("toolCallId") == tool
+                    )
+                    or (
+                        e["type"] == "permission.completed"
+                        and (
+                            e.get("data", {}).get("toolCallId") == tool
+                            or e.get("data", {}).get("requestId") in perm_ids
+                        )
+                        and e.get("data", {}).get("result", {}).get("kind")
+                        in {"approved", "approve-once"}
+                    )
+                    for e in history
+                ):
+                    continue
+                if any(
+                    s.get("reply") == "approve"
+                    or s.get("native_result") in {"approved", "approve-once"}
+                    or any(
+                        c.get("result") in {"approved", "approve-once"}
+                        for c in s.get("completions", [])
+                    )
+                    for s in stages
+                ):
+                    continue
+                op_id = args.get("operation_id")
+                if isinstance(op_id, str) and op_id:
+                    if tx.get("checkpoint_intents", op_id, required=False) or (
+                        tx.connection.execute(
+                            "SELECT 1 FROM operations WHERE id=?", (op_id,)
+                        ).fetchone()
+                    ):
+                        continue
+                job_id = args.get("job_id")
+                if (
+                    isinstance(job_id, str)
+                    and job_id
+                    and tool_name
+                    in {
+                        "admit_job",
+                        "submit_generation",
+                        "request_preview",
+                        "assemble_sequence",
+                        "run_unity_workflow",
+                    }
+                    and tx.get("jobs", job_id, required=False)
+                ):
+                    continue
+            decisions = [
+                d for d in tx.all("decisions") if d["invocation_id"] == invocation["invocation_id"]
+            ]
+            if any(
+                d["state"] == "pending"
+                and (
+                    d["work_id"] != invocation["work_id"]
+                    or d["response"] is not None
+                    or d["resolved_by"] is not None
+                    or d["delivery_state"] != "not_sent"
+                )
+                for d in decisions
+            ):
+                continue
+            for decision in decisions:
+                if decision["state"] == "pending":
+                    revision = tx.revision("decisions", decision["decision_id"])
+                    decision.update(state="cancelled", state_revision=revision + 1)
+                    tx.put(
+                        "decisions",
+                        decision["decision_id"],
+                        decision,
+                        expected_revision=revision,
+                        schema="Decision",
+                    )
+                    tx.emit(
+                        "decision.resolved",
+                        decision,
+                        actor=SYSTEM,
+                        work_id=invocation["work_id"],
+                        request_id=invocation["request_id"],
+                    )
+            source_event_ids = [starts[0]["id"], *(e["id"] for e in perm_requests)]
+            base_fields = {
+                k: invocation[k] for k in ("work_id", "request_id", "invocation_id", "delivery_id")
+            }
+            for stage in stages:
+                stage_native_id = stage["native_id"]
+                save(
+                    tx,
+                    "copilot.permission_outcomes",
+                    key(session_id, stage_native_id),
+                    {
+                        **base_fields,
+                        "session_id": session_id,
+                        "native_id": stage_native_id,
+                        "tool_call_id": tool,
+                        "kind": "uninvoked_custom_tool_interrupted",
+                        "tool_name": tool_name,
+                        "read_only": is_read_only,
+                        "source_event_ids": source_event_ids,
+                        "departed_process": departed,
+                        "native_return_observed": False,
+                        "at": now(),
+                    },
+                )
+            evidence = {
+                **base_fields,
+                "session_id": session_id,
+                "tool_call_id": tool,
+                "tool_name": tool_name,
+                "kind": (
+                    "departed_read_only_custom_tool_interrupted"
+                    if is_read_only
+                    else "uninvoked_custom_tool_interrupted"
+                ),
+                "read_only": is_read_only,
+                "source_event_ids": source_event_ids,
+                "departed_process": departed,
+                "native_return_observed": False,
+                "at": now(),
+            }
+            save(tx, "copilot.recovery_evidence", invocation["invocation_id"], evidence)
+            save(
+                tx,
+                "invocations",
+                invocation["invocation_id"],
+                {**invocation, "state": "cancelled", "recovery": evidence},
+            )
+            tx.emit(
+                "tool.completed",
+                {
+                    "invocation_id": invocation["invocation_id"],
+                    "name": invocation["name"],
+                    "state": "cancelled",
+                    "summary": (
+                        "Departed read-only host tool call interrupted after owner process exit; no side effects exist."
+                        if is_read_only
+                        else "Departed uninvoked host tool call interrupted before execution; no host effect observed."
+                    ),
                     "artifact_ids": [],
                     "model_id": invocation.get("model_id"),
                 },

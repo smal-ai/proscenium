@@ -1151,3 +1151,402 @@ def test_observe_native_denials_recovers_subagent_shell_rejected_on_graceful_shu
         assert recovered == 1
         assert tx.require("invocations", inv_id)["state"] == "failed"
         assert tx.require("decisions", dec_id)["state"] == "cancelled"
+
+
+def test_check_health_tolerates_busy_rpc_when_transport_alive_and_fails_when_dead(runtime):
+    state, _, _, _ = runtime
+    pings = 0
+    alive = True
+
+    async def slow_ping():
+        nonlocal pings
+        pings += 1
+        raise TimeoutError
+
+    native = SimpleNamespace(
+        client=object(),
+        health=slow_ping,
+        transport_alive=lambda: alive,
+    )
+    copilot = Copilot(state.services, native=native)
+    from proscenium.copilot.service import CallbackOwner
+
+    copilot.callback_owners[PROJECT] = CallbackOwner(PROJECT, SESSION)
+    asyncio.run(copilot.check_health(PROJECT))
+    assert pings == 1
+    # Throttled inside the 15-second window while transport remains alive.
+    asyncio.run(copilot.check_health(PROJECT))
+    assert pings == 1
+
+    alive = False
+    with pytest.raises(ConnectionError):
+        asyncio.run(copilot.check_health(PROJECT))
+
+
+def test_admit_resume_rejects_busy_release_and_continue_work_releases_empty_queue(runtime):
+    state, store, _, project = runtime
+    set_work(store, "awaiting_resume")
+    with store.transaction() as tx:
+        state.fence(tx, "awaiting_resume")
+        work = tx.require("work", WORK)
+        tx.put(
+            "copilot.payloads",
+            REQUEST,
+            {"context_id": "ctx-1", "attached_files": [], "request_target": {"kind": "project"}},
+        )
+        tx.put(
+            "contexts",
+            "ctx-1",
+            {
+                "schema_version": "1.0",
+                "context_id": "ctx-1",
+                "project_id": PROJECT,
+                "captured_at": "2026-11-17T10:00:00Z",
+                "item_id": None,
+                "version_id": None,
+                "view_mode": "none",
+                "target": None,
+                "camera": None,
+                "range": None,
+                "selected_objects": [],
+                "attachments": [],
+                "annotations": [],
+                "approved_findings": [],
+                "request_target": {"kind": "project"},
+                "reference_versions": [],
+                "execution_scope": "default",
+            },
+        )
+        save(
+            tx,
+            "copilot.control",
+            "gate",
+            {
+                "fenced": True,
+                "epoch": "epoch",
+                "revision": 2,
+                "queue_released": False,
+                "reason": "awaiting_resume",
+            },
+        )
+    copilot = Copilot(state.services)
+    copilot.contexts.validate_references = lambda tx, snapshot: validate(
+        "ContextSnapshot", snapshot
+    )
+    with pytest.raises(DomainError) as busy:
+        copilot.admit_resume(
+            OWNER,
+            {
+                "schema_version": "1.0",
+                "project_id": PROJECT,
+                "operation_id": "bad-release",
+                "mode": "release_held_queue",
+                "work_id": None,
+                "expected_revision": state.services.registry.get(PROJECT)["state_revision"],
+            },
+        )
+    assert busy.value.code == "project_busy"
+    with store.transaction(write=False) as tx:
+        assert tx.get("copilot.resumes", "bad-release", required=False) is None
+
+    async def send(*args, **kwargs):
+        return "continued-msg"
+
+    session = SimpleNamespace(session_id=SESSION, send=send)
+
+    async def open_session(pid, **kwargs):
+        copilot.sessions[pid] = session
+        return session
+
+    copilot.session = open_session
+    copilot.native = SimpleNamespace(
+        pending=lambda s: asyncio.sleep(
+            0, result={"items": [], "steeringMessages": [], "inFlightSteeringCount": 0}
+        )
+    )
+    copilot.admit_resume(
+        OWNER,
+        {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "operation_id": "continue-ok",
+            "mode": "continue_work",
+            "work_id": WORK,
+            "expected_revision": work["state_revision"],
+        },
+    )
+    asyncio.run(copilot.resume(PROJECT, "continue-ok"))
+    with store.transaction(write=False) as tx:
+        gate = copilot.state.control(tx)
+        assert not gate["fenced"] and gate["queue_released"] is True
+
+
+def test_interrupt_departed_custom_tools_and_cold_stop_recovery(runtime):
+    state, store, _, _ = runtime
+    set_work(store, "awaiting_resume")
+    cap_call = "call-cap"
+    prep_uninvoked = "call-prep-uninvoked"
+    prep_invoked = "call-prep-invoked"
+    cap_id = key(SESSION, "tool", cap_call)
+    prep_uninvoked_id = key(SESSION, "tool", prep_uninvoked)
+    prep_invoked_id = key(SESSION, "tool", prep_invoked)
+    empty_sha = hashlib.sha256(canonical({})).hexdigest()
+    prep_args = {"operation_id": "prep-op-1", "prompt": "Relay dish", "seed": 42}
+    prep_sha = hashlib.sha256(canonical(prep_args)).hexdigest()
+    perm_req = {
+        "kind": "custom-tool",
+        "toolCallId": cap_call,
+        "toolName": "get_project_capabilities",
+        "args": {},
+    }
+    perm_fp = hashlib.sha256(canonical(perm_req)).hexdigest()
+    binding = {"work_id": WORK, "request_id": REQUEST, "delivery_id": REQUEST}
+    with store.transaction() as tx:
+        for tc, inv_id, name, sha_val in (
+            (cap_call, cap_id, "get_project_capabilities", empty_sha),
+            (prep_uninvoked, prep_uninvoked_id, "prepare_image_generation", prep_sha),
+            (prep_invoked, prep_invoked_id, "prepare_image_generation", prep_sha),
+        ):
+            state.bind(tx, SESSION, "tool", tc, binding)
+            save(
+                tx,
+                "invocations",
+                inv_id,
+                {
+                    **binding,
+                    "invocation_id": inv_id,
+                    "session_id": SESSION,
+                    "native_id": tc,
+                    "agent_id": None,
+                    "owner_epoch": "prior-epoch",
+                    "kind": "tool",
+                    "state": "running",
+                    "name": name,
+                    "model_id": "gpt-6.1-sol",
+                    "updated_at": "2026-11-17T10:23:52Z",
+                    "display_name": None,
+                    "arguments_sha256": sha_val,
+                },
+            )
+        save(
+            tx,
+            "copilot.permissions",
+            key(SESSION, "perm-cap"),
+            {
+                **binding,
+                "invocation_id": cap_id,
+                "session_id": SESSION,
+                "native_id": "perm-cap",
+                "tool_call_id": cap_call,
+                "fingerprint": perm_fp,
+                "phase": "outcome_uncertain",
+                "reply": None,
+                "authority": None,
+                "delivery_state": "not_sent",
+            },
+        )
+    raw_history = [
+        {
+            "id": "ev-1",
+            "type": "tool.execution_start",
+            "data": {
+                "toolCallId": cap_call,
+                "toolName": "get_project_capabilities",
+                "arguments": {},
+            },
+        },
+        {
+            "id": "ev-2",
+            "type": "permission.requested",
+            "data": {"requestId": "perm-cap", "permissionRequest": perm_req},
+        },
+        {
+            "id": "ev-3",
+            "type": "tool.execution_start",
+            "data": {
+                "toolCallId": prep_uninvoked,
+                "toolName": "prepare_image_generation",
+                "arguments": prep_args,
+            },
+        },
+        {
+            "id": "ev-4",
+            "type": "tool.execution_start",
+            "data": {
+                "toolCallId": prep_invoked,
+                "toolName": "prepare_image_generation",
+                "arguments": prep_args,
+            },
+        },
+        {
+            "id": "ev-5",
+            "type": "external_tool.requested",
+            "data": {
+                "toolCallId": prep_invoked,
+                "toolName": "prepare_image_generation",
+                "arguments": prep_args,
+            },
+        },
+    ]
+    with store.transaction() as tx:
+        recovered = state.interrupt_departed_custom_tools(
+            tx,
+            SESSION,
+            raw_history,
+            {
+                "session_id": SESSION,
+                "pid": 12345,
+                "start": "old-start",
+                "observed_identity": None,
+                "invocation_ids": [cap_id, prep_uninvoked_id, prep_invoked_id],
+                "pending_empty": True,
+                "current_send": False,
+            },
+        )
+        assert recovered == 2
+        assert tx.require("invocations", cap_id)["state"] == "cancelled"
+        assert (
+            tx.require("invocations", cap_id)["recovery"]["kind"]
+            == "departed_read_only_custom_tool_interrupted"
+        )
+        assert tx.require("invocations", prep_uninvoked_id)["state"] == "cancelled"
+        assert (
+            tx.require("invocations", prep_uninvoked_id)["recovery"]["kind"]
+            == "uninvoked_custom_tool_interrupted"
+        )
+        # Invoked mutating tool without execution_complete must NOT be guessed cancelled.
+        assert tx.require("invocations", prep_invoked_id)["state"] == "running"
+        stage = tx.require("copilot.permissions", key(SESSION, "perm-cap"))
+        assert state.interrupted_custom_stage(tx, stage) is True
+
+    # Also verify Copilot.stop() on a cold session settles a departed read-only custom tool
+    # instead of timing out into outcome_uncertain.
+    with store.transaction() as tx:
+        tx.connection.execute(
+            "DELETE FROM records WHERE namespace='invocations' AND id=?",
+            (prep_invoked_id,),
+        )
+        cap_inv = tx.require("invocations", cap_id)
+        save(tx, "invocations", cap_id, {**cap_inv, "state": "running"})
+        save(tx, "copilot.sends", REQUEST, {"state": "acknowledged", "session_id": SESSION})
+    copilot = Copilot(state.services)
+    copilot.native = SimpleNamespace(
+        departed_process={
+            "session_id": SESSION,
+            "pid": 12345,
+            "start": "old-start",
+            "observed_identity": None,
+        },
+        pause=lambda s, p: asyncio.sleep(0),
+        pending=lambda s: asyncio.sleep(
+            0, result={"items": [], "steeringMessages": [], "inFlightSteeringCount": 0}
+        ),
+        inactive=lambda s: asyncio.sleep(0, result=True),
+    )
+
+    async def get_empty():
+        return []
+
+    async def get_raw():
+        return raw_history[:2]
+
+    cold_sess = SimpleNamespace(
+        session_id=SESSION,
+        abort=lambda: asyncio.sleep(0),
+        get_events=get_empty,
+        get_raw_events=get_raw,
+    )
+
+    async def open_cold(pid, **kwargs):
+        from proscenium.copilot.service import CallbackOwner
+
+        owner = CallbackOwner(pid, SESSION)
+        copilot.callback_owners[pid] = owner
+        copilot.session_callback_owners[id(cold_sess)] = owner
+        copilot.sessions[pid] = cold_sess
+        return cold_sess
+
+    copilot.session = open_cold
+    copilot.state.submit(
+        OWNER,
+        {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "request_id": "cold-stop-ok",
+            "type": "stop",
+            "target_work_id": WORK,
+        },
+    )
+    asyncio.run(copilot.stop(PROJECT, WORK, "cold-stop-ok"))
+    with store.transaction(write=False) as tx:
+        assert tx.require("invocations", cap_id)["state"] == "cancelled"
+        assert tx.require("copilot.stops", "cold-stop-ok")["phase"] == "confirmed"
+        assert tx.require("work", WORK)["state"] == "stopped"
+
+
+def test_admit_resume_guards_running_work_and_uncertain_stops(runtime):
+    state, store, _, _ = runtime
+    copilot = Copilot(state.services)
+    set_work(store, "running")
+    with store.transaction() as tx:
+        save(
+            tx,
+            "copilot.control",
+            "gate",
+            {
+                "fenced": False,
+                "epoch": state.services.ownership.epoch,
+                "revision": 1,
+                "queue_released": True,
+            },
+        )
+    with store.transaction(write=False) as tx:
+        running_rev = tx.require("work", WORK)["state_revision"]
+    # Reject reconcile_only synchronously while unfenced work is actively running.
+    with pytest.raises(DomainError) as running_err:
+        copilot.admit_resume(
+            OWNER,
+            {
+                "schema_version": "1.0",
+                "project_id": PROJECT,
+                "operation_id": "reconcile-while-running",
+                "mode": "reconcile_only",
+                "work_id": WORK,
+                "expected_revision": running_rev,
+            },
+        )
+    assert running_err.value.code == "project_busy"
+
+    # Reject release_held_queue and continue_work while an uncertain Stop awaits reconciliation.
+    set_work(store, "awaiting_resume")
+    with store.transaction() as tx:
+        state.fence(tx, "outcome_uncertain")
+        save(
+            tx,
+            "copilot.stops",
+            "uncertain-stop-1",
+            {
+                "phase": "outcome_uncertain",
+                "pause": "acknowledged",
+                "abort": "acknowledged",
+                "work_id": WORK,
+            },
+        )
+        work_rev = tx.require("work", WORK)["state_revision"]
+    for mode, wid, rev in (
+        ("continue_work", WORK, work_rev),
+        ("release_held_queue", None, state.services.registry.get(PROJECT)["state_revision"]),
+    ):
+        with pytest.raises(DomainError) as stop_err:
+            copilot.admit_resume(
+                OWNER,
+                {
+                    "schema_version": "1.0",
+                    "project_id": PROJECT,
+                    "operation_id": f"blocked-{mode}",
+                    "mode": mode,
+                    "work_id": wid,
+                    "expected_revision": rev,
+                },
+            )
+        assert stop_err.value.code == "project_busy"

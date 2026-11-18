@@ -53,6 +53,18 @@ same-ID capture receipts. Consumers must accept historical records without them.
 - `ProviderCapabilitySummary` optionally reports nullable `default_dimensions`,
   `default_steps` and `max_pixels`. `ImageGenerationPrepare` permits omitted
   `project_id` and `generation_task_id`, while preserving supplied historical identities.
+- `ReviewRequest` optionally carries `title`, `human_review` and `question` without
+  changing required fields or historical fingerprints. `ReviewTicket` optionally projects
+  `title`, `created_at`, `revision`, `human_review_state`, `awaiting_human`, `question`,
+  `finding_count`, `unreviewed_count` and `error_code`. `getOwnerReview` reads
+  `ReviewDetail`, `resolveOwnerReview` resolves an open human review, `listOwnerReviews`
+  accepts `filter` (`pending` or `all`) with filter-bound pagination cursors,
+  `escalateToolReview` (`ReviewEscalate`) attaches an idempotent human review question,
+  and `Event` includes `review.changed` alongside `review.ready`.
+- `ProxyMapping` optionally reports `mapping_artifact_id`, and `getVersionProxyMapping`
+  accepts an optional `mapping_artifact_id` query parameter so spatial annotations can
+  retain and reopen an exact proxy map even when a version links multiple proxy passes,
+  while existing stored `proxy-map.json` payloads remain valid without migration.
 - `CheckpointRequest` optionally declares `entry_path`, `dependencies`,
   `required_runtime` and `retained_files`. Closure inputs require an entry path and
   are validated before checkpoint intent or Git ref changes. Completed receipts

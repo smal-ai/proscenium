@@ -116,6 +116,13 @@ def create_app(
         def index() -> FileResponse:
             return FileResponse(frontend / "index.html")
 
+        if (frontend / "favicon.svg").is_file():
+
+            @app.get("/favicon.svg", include_in_schema=False)
+            @app.get("/favicon.ico", include_in_schema=False)
+            def favicon() -> FileResponse:
+                return FileResponse(frontend / "favicon.svg", media_type="image/svg+xml")
+
         # Vite copies these bundled, licensed public resources unchanged.
         for directory in ("fonts", "licences"):
             if (frontend / directory).is_dir():

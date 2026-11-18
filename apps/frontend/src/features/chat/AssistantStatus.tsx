@@ -9,7 +9,7 @@ export type { AssistantStatusProps } from "../../api/studio";
 const toolLabels: Record<string, string> = {
   prepare_image_generation: "Preparing image", submit_generation: "Submitting image", get_job: "Waiting on job",
   get_artifact: "Inspecting output", validate_authored_document: "Validating plan", checkpoint_sources: "Checkpointing sources",
-  publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", request_preview: "Requesting preview",
+  publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", get_vlm_review: "Waiting on VLM critique", escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",
   assemble_sequence: "Assembling sequence", run_unity_workflow: "Running Unity workflow", bash: "Running command",
   skill: "Loading skill", view: "Reading project file", get_project_capabilities: "Checking capabilities",
 };
