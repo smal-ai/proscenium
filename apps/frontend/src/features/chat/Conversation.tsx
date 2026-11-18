@@ -3,6 +3,7 @@ import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Eve
 import { durableCommand, id } from "../../app/storage";
 import { StoredContext } from "./ContextPreview";
 import { ActivityEntry } from "./ActivityEntry";
+import { ChatMarkdown } from "./ChatMarkdown";
 import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 
 export function compareConversationEntries(a: { time: string; sequence?: number; key: string }, b: { time: string; sequence?: number; key: string }): number {
@@ -84,7 +85,7 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
     }),
     ...[...messages.entries()].filter(([, message]) => message.text.trim()).map(([key, { event, text }]) => {
       const specialist = event.actor.kind === "subagent" ? (agentLabels.get(event.actor.id) ?? "authoring-specialist") : null;
-      return { key, time: event.occurred_at, sequence: event.sequence, node: <article className="message assistant-message" key={key}><div className="message-heading"><strong>{specialist ? "Specialist" : "Copilot"}</strong>{specialist && <span>{specialist}</span>}</div><p>{text}</p></article> };
+      return { key, time: event.occurred_at, sequence: event.sequence, node: <article className="message assistant-message" key={key}><div className="message-heading"><strong>{specialist ? "Specialist" : "Copilot"}</strong>{specialist && <span>{specialist}</span>}</div><ChatMarkdown text={text} /></article> };
     }),
     ...[...activities.entries()].flatMap(([key, { start, latest: event }]) => {
       const activity = event.payload as unknown as ActivityEventData;
