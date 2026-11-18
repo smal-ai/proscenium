@@ -881,3 +881,56 @@ def test_owner_review_inbox_badge_lifecycle_and_http_routes(vlm_runtime):
     assert legacy_detail["ticket"]["title"] == "shot-04 · hull panel alignment"
     assert legacy_detail["ticket"]["created_at"] is not None
     assert validate("ReviewDetail", legacy_detail)["ticket"]["awaiting_human"] is False
+
+
+def test_blender_worker_ignores_local_asset_shelf_weak_refs_and_allows_curve_font_tessellation():
+    from types import SimpleNamespace
+
+    from proscenium.previews.blender_worker import (
+        _is_tessellated_primitive_instance,
+        runtime_blend_paths,
+    )
+
+    gp_brush = "//../../../../.local/opt/blender-4.5/datafiles/assets/brushes/essentials_brushes-gp_draw.blend"
+    local_mat = SimpleNamespace(
+        library=None,
+        library_weak_reference=SimpleNamespace(filepath=gp_brush),
+    )
+    linked_mat = SimpleNamespace(
+        library=SimpleNamespace(filepath="//linked_kit.blend"),
+        library_weak_reference=SimpleNamespace(filepath="//linked_kit.blend"),
+    )
+    fake_bpy = SimpleNamespace(
+        data=SimpleNamespace(
+            bl_rna=SimpleNamespace(
+                properties=[
+                    SimpleNamespace(type="COLLECTION", identifier="materials"),
+                    SimpleNamespace(type="POINTER", identifier="rna_type"),
+                ]
+            ),
+            materials=[local_mat, linked_mat],
+        ),
+        utils=SimpleNamespace(
+            blend_paths=lambda **_: [gp_brush, "//linked_kit.blend", "//textures/albedo.png"]
+        ),
+        path=SimpleNamespace(abspath=lambda p: f"/abs/{p.lstrip('/')}"),
+    )
+    # Local weak ref (gp_brush) is stripped; linked_mat (library != None) and unpacked texture remain!
+    assert runtime_blend_paths(fake_bpy) == [
+        "/abs/linked_kit.blend",
+        "/abs/textures/albedo.png",
+    ]
+
+    curve_orig = SimpleNamespace(name="Cable", type="CURVE")
+    curve_inst = SimpleNamespace(
+        is_instance=True,
+        parent=SimpleNamespace(original=curve_orig, type="CURVE"),
+        object=SimpleNamespace(original=curve_orig, type="MESH"),
+    )
+    collection_inst = SimpleNamespace(
+        is_instance=True,
+        parent=SimpleNamespace(original=SimpleNamespace(name="Empty"), type="EMPTY"),
+        object=SimpleNamespace(original=SimpleNamespace(name="Bolt"), type="MESH"),
+    )
+    assert _is_tessellated_primitive_instance(curve_inst) is True
+    assert _is_tessellated_primitive_instance(collection_inst) is False

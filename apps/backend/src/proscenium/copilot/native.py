@@ -88,6 +88,7 @@ Delegate multi-step authoring, storyboard creation, image/mesh generation waves 
 authoring-specialist, and Unity workflows to unity-specialist. Do not run long authoring or generation loops inline
 in the root turn. Give each specialist an explicit slice, pinned inputs, expected outputs and remaining budget.
 Keep one live scene writer and one Git index owner. Reconcile specialist receipts before progressing dependencies.
+Once a synchronous task specialist has completed, delegate follow-up work with a new task call rather than write_agent.
 """
     + SHARED_INSTRUCTIONS
 )

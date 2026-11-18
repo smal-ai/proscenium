@@ -3,7 +3,30 @@
 import hashlib
 import json
 import sys
+from collections import Counter
 from pathlib import Path
+from typing import Any
+
+
+def _runtime_blend_paths(bpy: Any) -> list[str]:
+    weak_counts: Counter[str] = Counter()
+    bl_rna = getattr(bpy.data, "bl_rna", None)
+    props = getattr(bl_rna, "properties", ()) if bl_rna is not None else ()
+    for prop in props:
+        if getattr(prop, "type", None) != "COLLECTION" or prop.identifier == "rna_properties":
+            continue
+        col = getattr(bpy.data, prop.identifier, None)
+        if col is None:
+            continue
+        for id_block in col:
+            if getattr(id_block, "library", None) is not None:
+                continue
+            lwr = getattr(id_block, "library_weak_reference", None)
+            fp = getattr(lwr, "filepath", None) if lwr is not None else None
+            if isinstance(fp, str) and fp:
+                weak_counts[fp] += 1
+    raw = Counter(bpy.utils.blend_paths(absolute=False, packed=False, local=False))
+    return [bpy.path.abspath(p) for p in (raw - weak_counts).elements()]
 
 
 def inspect() -> None:
@@ -15,7 +38,7 @@ def inspect() -> None:
     declared = receipt["files"]
     missing = []
     dependencies = []
-    for raw in bpy.utils.blend_paths(absolute=True, packed=False, local=False):
+    for raw in _runtime_blend_paths(bpy):
         path = Path(bpy.path.abspath(raw)).resolve()
         try:
             name = path.relative_to(root).as_posix()
