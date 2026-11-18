@@ -3,7 +3,38 @@ import { X } from "lucide-react";
 import type { AnnotationSnapshot, VersionRecord } from "../../api/generated/contracts";
 import type { Draft } from "./outbox";
 
-type AnnotationEntry = { annotation: AnnotationSnapshot; state: Draft["state"] };
+export type AnnotationEntry = { annotation: AnnotationSnapshot; state: Draft["state"]; draftKey: string | null; source: "draft" | "server" };
+
+const revision = (annotation: AnnotationSnapshot) => annotation.saved_revision ?? 0;
+const snapshotState = (annotation: AnnotationSnapshot) => annotation.saved_revision !== null ? "saved" : "browser-local";
+const draftState = (draft: Draft) => draft.state === "saved" ? snapshotState(draft.annotation) : draft.state;
+const normaliseDraft = (draft: Draft): Draft => draft.state === "saved" && draft.annotation.saved_revision === null
+  ? {...draft, state: "browser-local"} : draft;
+
+export function draftFromSnapshot(annotation: AnnotationSnapshot, projectId: string): Draft {
+  return {key: annotation.annotation_id, projectId, annotation: structuredClone(annotation), state: snapshotState(annotation)};
+}
+
+export function resolveAnnotationEntry(entry: AnnotationEntry, drafts: readonly Draft[], projectId: string): Draft {
+  const local = entry.source === "draft" && entry.draftKey
+    ? drafts.find(d => d.key === entry.draftKey && d.annotation.annotation_id === entry.annotation.annotation_id)
+    : undefined;
+  if (local && (local.state !== "saved" || revision(local.annotation) >= revision(entry.annotation))) {
+    return normaliseDraft(local);
+  }
+  return draftFromSnapshot(entry.annotation, projectId);
+}
+
+export function mergeHydratedDrafts(stored: readonly Draft[], current: readonly Draft[]): Draft[] {
+  const byKey = new Map(stored.map(d => [d.key, d]));
+  for (const draft of current) {
+    const hydrated = byKey.get(draft.key);
+    if (!hydrated || (hydrated.state === "saved" && revision(hydrated.annotation) < revision(draft.annotation))) {
+      byKey.set(draft.key, draft);
+    }
+  }
+  return [...byKey.values()].map(normaliseDraft);
+}
 
 export function shortVersionTag(versionId: string | null | undefined): string {
   return versionId?.match(/v\d+$/i)?.[0].toLowerCase() ?? versionId ?? "unversioned";
@@ -14,18 +45,21 @@ export function mergeItemAnnotations({itemId, currentVersionId, drafts, saved, i
 }) {
   const belongsToItem = ({target}: AnnotationSnapshot) => target.item_id === itemId || (target.item_id === null && target.version_id === currentVersionId);
   const byId = new Map<string, AnnotationEntry>();
-  const revision = (annotation: AnnotationSnapshot) => annotation.saved_revision ?? 0;
 
   for (const annotation of saved) {
     if (!belongsToItem(annotation)) continue;
     const previous = byId.get(annotation.annotation_id);
-    if (!previous || revision(annotation) >= revision(previous.annotation)) byId.set(annotation.annotation_id, {annotation, state: "saved"});
+    if (!previous || revision(annotation) >= revision(previous.annotation)) {
+      byId.set(annotation.annotation_id, {annotation, state: snapshotState(annotation), draftKey: null, source: "server"});
+    }
   }
-  for (const {annotation, state} of drafts) {
+  for (const draft of drafts) {
+    const {annotation, key} = draft;
     if (!belongsToItem(annotation)) continue;
     const previous = byId.get(annotation.annotation_id);
+    const state = draftState(draft);
     if (!previous || state !== "saved" || (previous.state === "saved" && revision(annotation) >= revision(previous.annotation))) {
-      byId.set(annotation.annotation_id, {annotation, state});
+      byId.set(annotation.annotation_id, {annotation, state, draftKey: key, source: "draft"});
     }
   }
 
@@ -53,14 +87,14 @@ export function formatAnnotationTitle(annotation: AnnotationSnapshot): string {
   return annotation.text.trim() || `Untitled ${annotation.spatial_hits.length ? "3D pin" : "markup"} · Frame ${annotationFrame(annotation)}`;
 }
 
-export function formatAnnotationMeta({annotation, state}: AnnotationEntry): {detail: string; statusLabel: string} {
+export function formatAnnotationMeta({annotation, state}: Pick<AnnotationEntry, "annotation" | "state">): {detail: string; statusLabel: string} {
   const hit = annotation.spatial_hits[0];
   const count = annotation.markups.length;
   const kind = hit ? `3D pin (${hit.instance_id})` : count ? `${count} markup${count === 1 ? "" : "s"}` : "Note";
   const statusLabels = {
     "browser-local": "Draft on this browser",
     saving: "Saving…",
-    saved: `Saved · rev ${annotation.saved_revision ?? 0}`,
+    saved: annotation.saved_revision !== null ? `Saved · rev ${annotation.saved_revision}` : "Draft on this browser",
     failed: "Save failed",
     conflict: "Conflict",
   };
@@ -71,7 +105,7 @@ export function AnnotationsDrawer({version, merged, onClose, onRestore}: {
   version: VersionRecord;
   merged: ReturnType<typeof mergeItemAnnotations>;
   onClose: () => void;
-  onRestore: (annotation: AnnotationSnapshot) => void;
+  onRestore: (entry: AnnotationEntry) => void;
 }) {
   const [scopeTab, setScopeTab] = useState<"this_version" | "all_item">("this_version");
   useEffect(() => { setScopeTab("this_version"); }, [version.item_id]);
@@ -82,7 +116,7 @@ export function AnnotationsDrawer({version, merged, onClose, onRestore}: {
     const {annotation, state} = entry;
     const {detail, statusLabel} = formatAnnotationMeta(entry);
     const entryVersionId = annotation.target.version_id;
-    return <button type="button" className="toolbar-btn review-annotation-row" key={annotation.annotation_id} onClick={() => onRestore(annotation)}>
+    return <button type="button" className="toolbar-btn review-annotation-row" key={annotation.annotation_id} onClick={() => onRestore(entry)}>
       <strong>{formatAnnotationTitle(annotation)}</strong>
       <span className="review-annotation-meta">
         <span>{detail}</span>
@@ -104,7 +138,7 @@ export function AnnotationsDrawer({version, merged, onClose, onRestore}: {
     <div className="review-drawer-items">
       {scopeTab === "this_version" ? (merged.thisVersion.length ? merged.thisVersion.map(row) : <div className="review-annotations-empty">
         <span>No annotations on {shortVersion}.</span>
-        {merged.olderVersionCount > 0 && <button type="button" className="toolbar-btn" onClick={() => setScopeTab("all_item")}>Show {merged.olderVersionCount} on older versions</button>}
+        {merged.olderVersionCount > 0 && <button type="button" className="toolbar-btn" onClick={() => setScopeTab("all_item")}>Show {merged.olderVersionCount} on other versions</button>}
       </div>) : (totalItemCount ? merged.allItemGroups.map(({versionId, entries}) => <section key={versionId ? `version:${versionId}` : "unversioned"} className="review-annotation-version">
         <h3>{shortVersionTag(versionId)}{versionId === version.version_id ? " · Current view" : ""}</h3>
         {entries.map(row)}

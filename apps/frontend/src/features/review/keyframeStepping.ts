@@ -23,9 +23,11 @@ export function canStepKeyframePass(readyFrames: readonly FrameReceipt[], displa
 }
 
 const isRendering = (job: JobRecord | undefined) => Boolean(job && ["queued", "waiting_resource", "running"].includes(job.state));
+const isTerminalJob = (job: JobRecord | undefined) => Boolean(job && ["succeeded", "failed", "cancelled"].includes(job.state));
 const inIntervals = (n: number, ranges: readonly FrameRange[]) => ranges.some(r => r.start <= n && n <= r.end);
 
 export function isFrameRendering(ordinal: number, job: JobRecord | undefined, availability: FrameAvailability | null): boolean {
+  if (isTerminalJob(job)) return false;
   return availability ? inIntervals(ordinal, availability.pending_ranges)
     : Boolean(isRendering(job) && job?.render_spec && inIntervals(ordinal, [job.render_spec.frames]));
 }
@@ -35,7 +37,7 @@ export function describeKeyframePassStatus({readyFrames, displayedFrame, job, av
 }): string | null {
   const count = readyFrames.length;
   if (count === 0) return null;
-  const hasPendingRanges = (availability?.pending_ranges.length ?? 0) > 0 || isRendering(job);
+  const hasPendingRanges = !isTerminalJob(job) && ((availability?.pending_ranges.length ?? 0) > 0 || isRendering(job));
   if (count === 1) return hasPendingRanges ? "1 frame ready · rendering…" : "Only rendered frame";
   const idx = readyFrames.findIndex(frame => frame.source_frame === displayedFrame) + 1;
   const readiness = idx > 0 ? `${idx} of ${count} ready` : `${count} frames ready`;
@@ -47,7 +49,7 @@ export function resolveDirectKeyframeJump({requestedOrdinal, displayedFrame, rea
 }): { kind: "found"; frame: FrameReceipt } | { kind: "unavailable"; revertFrame: number; message: string } {
   const frame = readyFrames.find(frame => frame.source_frame === requestedOrdinal);
   if (frame) return {kind: "found", frame};
-  const status = isFrameRendering(requestedOrdinal, job, availability) ? "is rendering" : availability && inIntervals(requestedOrdinal, availability.failed_ranges)
-    ? "failed to render" : "is outside this pass";
+  const status = availability && inIntervals(requestedOrdinal, availability.failed_ranges) ? "failed to render"
+    : isFrameRendering(requestedOrdinal, job, availability) ? "is rendering" : "is outside this pass";
   return {kind: "unavailable", revertFrame: displayedFrame, message: `Frame ${requestedOrdinal} ${status}. Showing frame ${displayedFrame}.`};
 }

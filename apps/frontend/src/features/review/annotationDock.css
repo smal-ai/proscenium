@@ -36,6 +36,10 @@
   overflow-wrap: anywhere;
 }
 
+.annotation-status-banner {
+  overflow-wrap: anywhere;
+}
+
 .review-workspace .annotation-dock .toolbar-btn-subtle-danger {
   color: #fca5a5;
 }

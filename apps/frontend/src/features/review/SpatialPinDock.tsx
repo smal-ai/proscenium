@@ -3,16 +3,19 @@ import { MapPin, PenLine, RotateCcw } from "lucide-react";
 import type { AnnotationSave, AnnotationSnapshot } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
+import { shortVersionLabel } from "../catalogue/catalogueHelpers";
 import { annotationContext } from "./context";
 import { mediaUrl, stableJson } from "./media";
-import { classifyDraftDiscard, deleteDraft, flushDraft, formatDraftStateBadge, saveDraft, saveDraftEdit, waitForDraftEdits, VECTOR_MASK, type DiscardMode, type Draft } from "./outbox";
+import { classifyDraftDiscard, discardDraftAtomically, flushDraft, formatDraftStateBadge, saveDraft, saveDraftEdit, waitForDraftEdits, VECTOR_MASK, type DiscardMode, type Draft } from "./outbox";
 import { greyPng } from "./png";
 import { allPages } from "./records";
 import { paintMarkups, renderCompositeFromBlob, syncSpatialPinMarkup } from "./spatial";
 import "./annotationDock.css";
 
-type DiscardHandler = (draftKey: string, mode: DiscardMode) => void | Promise<void>;
+export type DiscardHandler = (draftKey: string, mode: DiscardMode, restored?: Draft) => void | Promise<void>;
+export type DiscardBaselineResolver = (draft: Draft) => AnnotationSnapshot | null | Promise<AnnotationSnapshot | null>;
 const noop = () => {};
+const baselineUnavailable = "Saved annotation baseline is unavailable; reload annotations before discarding edits.";
 
 export function useDraftDiscard(
   draft: Draft | undefined,
@@ -20,62 +23,114 @@ export function useDraftDiscard(
   writes: RefObject<Promise<void>>,
   isSubmitting: () => boolean,
   setError: (message: string) => void,
+  {resolveBaseline, api, onChange}: {resolveBaseline?: DiscardBaselineResolver; api?: ApiClient; onChange?: (draft: Draft) => void} = {},
 ) {
-  const [confirmation, setConfirmation] = useState<Draft | null>(null);
+  const [confirmation, setConfirmation] = useState<{draft: Draft; baseline: AnnotationSnapshot | null} | null>(null);
   const [discarding, setDiscarding] = useState(false);
   const discardLatch = useRef(false);
-  const policy = draft ? classifyDraftDiscard(draft) : {allowed: false} as const;
-  const confirmingDiscard = confirmation !== null && confirmation === draft;
+  const mounted = useRef(true);
+  const submitting = useRef(isSubmitting); submitting.current = isSubmitting;
+  const currentConfirmation = confirmation?.draft === draft ? confirmation : null;
+  const policy = draft ? classifyDraftDiscard(draft, currentConfirmation?.baseline?.saved_revision) : {allowed: false} as const;
+  const confirmingDiscard = currentConfirmation !== null;
   const cancel = () => setConfirmation(null);
   useEffect(() => { setConfirmation(null); }, [draft]);
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
-  async function discard(onDiscard: DiscardHandler | undefined, onClose: () => void, confirmed = false) {
+  async function discard(onDiscard: DiscardHandler | undefined, onClose: () => void, confirmed = false, resolver = resolveBaseline) {
     const current = live.current;
-    if (!current || current !== draft || discardLatch.current || isSubmitting()) return;
+    if (!current || current !== draft || discardLatch.current || submitting.current()) return;
     const policy = classifyDraftDiscard(current);
     if (!policy.allowed || (confirmed && !confirmingDiscard)) return;
-    if (policy.requiresConfirmation && !confirmed) {
-      setConfirmation(current);
+    if (policy.mode === "delete_new" && policy.requiresConfirmation && !confirmed) {
+      setConfirmation({draft: current, baseline: null});
       return;
     }
     discardLatch.current = true;
     setDiscarding(true);
     setError("");
+    const isCurrent = () => mounted.current && live.current === current;
     try {
+      let baseline = currentConfirmation?.baseline ?? null;
+      if (policy.mode === "revert_edits" && !confirmed) {
+        const isAcknowledged = (candidate: AnnotationSnapshot | null): candidate is AnnotationSnapshot =>
+          !!candidate && candidate.annotation_id === current.annotation.annotation_id && candidate.saved_revision !== null
+          && candidate.saved_revision >= (current.annotation.saved_revision ?? 0);
+        if (resolver) {
+          try { baseline = await resolver(current); }
+          catch { baseline = null; }
+        }
+        if (!isCurrent() || submitting.current()) return;
+        if (!isAcknowledged(baseline) && api) {
+          try {
+            const annotations = await allPages(cursor => api.call("listAnnotations", {
+              path: {project_id: current.projectId},
+              query: {cursor, limit: 100, version_id: current.annotation.target.version_id ?? undefined},
+            }));
+            baseline = annotations.find(isAcknowledged) ?? null;
+          } catch { baseline = null; }
+        }
+        if (!isCurrent() || submitting.current()) return;
+        if (!isAcknowledged(baseline)) {
+          setError(baselineUnavailable);
+          return;
+        }
+        setConfirmation({draft: current, baseline: structuredClone(baseline)});
+        return;
+      }
+
       await writes.current;
       await waitForDraftEdits(current);
-      // Do not delete if navigation or another editor replaced this snapshot while waiting.
-      if (live.current !== current) return;
-      await deleteDraft(current.key);
-      if (onDiscard) await onDiscard(current.key, policy.mode);
-      else onClose();
+      if (!isCurrent() || submitting.current()) return;
+      const outcome = await discardDraftAtomically({
+        projectId: current.projectId, key: current.key, expectedSnapshotJson: stableJson(current.annotation),
+        expectedState: current.state, mode: policy.mode, cleanBaseline: baseline,
+      });
+      if (!isCurrent()) return;
       cancel();
+      if (outcome.status === "deleted") {
+        if (onDiscard) await onDiscard(current.key, "delete_new");
+        else onClose();
+      } else if (outcome.status === "reverted") {
+        onChange?.(outcome.restored);
+        await onDiscard?.(current.key, "revert_edits", outcome.restored);
+      } else {
+        // A key collision across projects is not permission to load the other project's draft.
+        if (outcome.stored?.projectId === current.projectId) onChange?.(outcome.stored);
+        setError(outcome.status === "protected"
+          ? "This draft now has a save operation in progress or pending retry and cannot be discarded."
+          : "This draft changed in another tab; refreshed the latest draft instead of discarding.");
+      }
     } catch (e) {
-      setError(`Could not discard draft: ${e instanceof Error ? e.message : String(e)}`);
+      if (mounted.current) setError(`Could not discard draft: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       discardLatch.current = false;
-      setDiscarding(false);
+      if (mounted.current) setDiscarding(false);
     }
   }
 
   return {policy, confirmingDiscard, discarding, discardLatch, cancel, discard};
 }
 
-export function AnnotationDockActions({discard, onDiscard, onClose, busy, children}: {
+export function AnnotationDockActions({discard, onDiscard, onClose, busy, resolveDiscardBaseline, children}: {
   discard: ReturnType<typeof useDraftDiscard>;
   onDiscard?: DiscardHandler;
   onClose: () => void;
   busy: boolean;
+  resolveDiscardBaseline?: DiscardBaselineResolver;
   children: ReactNode;
 }) {
   const {policy, confirmingDiscard, discarding} = discard;
   return <div className="toolbar-group annotation-dock-actions">
     {confirmingDiscard && policy.allowed ? <>
       <span className="discard-confirm-prompt" role="status">{policy.confirmPrompt}</span>
-      <button className="toolbar-btn toolbar-btn-danger" disabled={discarding} onClick={() => void discard.discard(onDiscard, onClose, true)}>Confirm discard</button>
-      <button className="toolbar-btn" disabled={discarding} onClick={discard.cancel}>Keep editing</button>
+      <button className="toolbar-btn toolbar-btn-danger" disabled={busy || discarding} onClick={() => void discard.discard(onDiscard, onClose, true)}>Confirm discard</button>
+      <button className="toolbar-btn" disabled={busy || discarding} onClick={discard.cancel}>Keep editing</button>
     </> : <>
-      {policy.allowed && <button className="toolbar-btn toolbar-btn-subtle-danger" disabled={busy || discarding} onClick={() => void discard.discard(onDiscard, onClose)}>{policy.buttonLabel}</button>}
+      {policy.allowed && <button className="toolbar-btn toolbar-btn-subtle-danger" disabled={busy || discarding} onClick={() => void discard.discard(onDiscard, onClose, false, resolveDiscardBaseline)}>{policy.buttonLabel}</button>}
       {children}
     </>}
   </div>;
@@ -84,8 +139,9 @@ export function AnnotationDockActions({discard, onDiscard, onClose, busy, childr
 export function AnnotationTargetChip({annotation}: {annotation: AnnotationSnapshot}) {
   const {target, spatial_hits: [hit]} = annotation;
   const version = target.version_id ?? target.artifact_id;
-  const shortVersion = version.length > 18 ? `${version.slice(0, 15)}…` : version;
-  const frame = hit?.sample_frame ?? target.sequence_frame ?? target.source_frame;
+  const label = shortVersionLabel(version);
+  const shortVersion = label.length > 18 ? `…${label.slice(-15)}` : label;
+  const frame = hit?.sample_frame ?? target.sequence_frame ?? target.source_frame ?? null;
   const suffix = frame === null ? " · image" : ` · frame ${frame}`;
   return <span className="toolbar-chip" title={`Pinned ${version}${suffix}`}>Pinned {shortVersion}{suffix}</span>;
 }
@@ -93,6 +149,7 @@ export function AnnotationTargetChip({annotation}: {annotation: AnnotationSnapsh
 export interface SpatialPinController {
   discard: ReturnType<typeof useDraftDiscard>;
   busy: boolean;
+  placementCommitting?: boolean;
   saving: boolean;
   queueState: "idle" | "submitting" | "submitted";
   error: string;
@@ -114,6 +171,8 @@ export function useSpatialPinController({
   onChange,
   onQueue,
   onContextPreparer,
+  resolveDiscardBaseline,
+  placementCommitting,
 }: {
   enabled: boolean;
   api: ApiClient;
@@ -122,6 +181,8 @@ export function useSpatialPinController({
   onChange: (draft: Draft) => void;
   onQueue: (text: string, context: TurnSelection) => void | Promise<void>;
   onContextPreparer?: (prepare: ContextPreparer | null) => void;
+  resolveDiscardBaseline?: DiscardBaselineResolver;
+  placementCommitting?: boolean;
 }): SpatialPinController {
   const [saving, setSaving] = useState(false);
   const [queueState, setQueueState] = useState<"idle" | "submitting" | "submitted">("idle");
@@ -136,7 +197,8 @@ export function useSpatialPinController({
   const writes = useRef(Promise.resolve());
   const live = useRef(draft);
   live.current = draft;
-  const discard = useDraftDiscard(draft, live, writes, () => saveLatch.current || queueInFlight.current, setError);
+  const discard = useDraftDiscard(draft, live, writes, () => Boolean(placementCommitting) || saveLatch.current || queueInFlight.current,
+    setError, {resolveBaseline: resolveDiscardBaseline, api, onChange});
 
   const draftKey = draft?.key ?? null;
   useEffect(() => {
@@ -158,6 +220,7 @@ export function useSpatialPinController({
 
   const busy = Boolean(
     !draft
+      || placementCommitting
       || saving
       || discard.discarding
       || queueState === "submitting"
@@ -230,7 +293,7 @@ export function useSpatialPinController({
   }
 
   async function prepareSavedDraft(): Promise<Draft> {
-    if (saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
+    if (placementCommitting || saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
     discard.cancel();
     const current = live.current;
     if (!current) throw new Error("No active spatial annotation draft");
@@ -344,7 +407,7 @@ export function useSpatialPinController({
       if (!confirmImageOnly) {
         throw new Error("Original 3D proxy is unavailable. Confirm image-only fallback in Review before sending.");
       }
-      if (saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
+      if (placementCommitting || saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
       discard.cancel();
       saveLatch.current = true;
       setSaving(true);
@@ -373,7 +436,7 @@ export function useSpatialPinController({
   }
 
   async function queue() {
-    if (queueLatch.current || saveLatch.current || discard.discardLatch.current || !live.current) return;
+    if (placementCommitting || queueLatch.current || saveLatch.current || discard.discardLatch.current || !live.current) return;
     if (proxyUnavailableReason && !confirmImageOnly) {
       setError("Confirm image-only fallback before sending without live 3D proxy verification.");
       return;
@@ -441,6 +504,7 @@ export function useSpatialPinController({
   return {
     discard,
     busy,
+    placementCommitting,
     saving,
     queueState,
     error,
@@ -463,6 +527,7 @@ export function SpatialPinHeader({
   onTogglePinMode,
   onRestoreView,
   onEdit2D,
+  placementCommitting,
 }: {
   draft: Draft;
   pinMode: boolean;
@@ -472,20 +537,22 @@ export function SpatialPinHeader({
   onRestoreView: () => void;
   onEdit2D: () => void;
   onClose?: () => void;
+  placementCommitting?: boolean;
 }) {
   const hit = draft.annotation.spatial_hits[0];
+  const busy = controller.busy || Boolean(placementCommitting);
   return (
     <div className="review-bar" aria-label="Spatial pin tools">
       {hit && <span className="toolbar-chip">{hit.object_id} · {hit.instance_id}</span>}
       {!proxyUnavailableReason && (
         <div className="toolbar-group">
-          <button className="toolbar-btn" onClick={onRestoreView}><RotateCcw size={13}/>Restore pinned view</button>
+          <button className="toolbar-btn" disabled={Boolean(placementCommitting || controller.placementCommitting)} onClick={onRestoreView}><RotateCcw size={13}/>Restore pinned view</button>
           {draft.annotation.saved_revision === null && (
-            <button className="toolbar-btn" aria-pressed={pinMode} disabled={controller.busy} onClick={() => { controller.discard.cancel(); onTogglePinMode(); }}>
+            <button className="toolbar-btn" aria-pressed={pinMode} disabled={busy} onClick={() => { controller.discard.cancel(); onTogglePinMode(); }}>
               <MapPin size={13}/>Reposition pin
             </button>
           )}
-          <button className="toolbar-btn" disabled={controller.busy} onClick={onEdit2D}><PenLine size={13}/>Edit 2D markup</button>
+          <button className="toolbar-btn" disabled={busy} onClick={onEdit2D}><PenLine size={13}/>Edit 2D markup</button>
         </div>
       )}
       <div className="toolbar-spacer"/>
@@ -548,15 +615,23 @@ export function SpatialPinDock({
   controller,
   onClose = noop,
   onDiscard,
+  resolveDiscardBaseline,
+  placementCommitting,
 }: {
   draft: Draft;
   proxyUnavailableReason: string | null;
   controller: SpatialPinController;
   onClose?: () => void;
   onDiscard?: DiscardHandler;
+  resolveDiscardBaseline?: DiscardBaselineResolver;
+  placementCommitting?: boolean;
 }) {
   const annotation = draft.annotation;
-  const busyClose = controller.saving || controller.queueState === "submitting" || controller.discard.discarding;
+  const committingPlacement = Boolean(placementCommitting || controller.placementCommitting);
+  const busy = controller.busy || committingPlacement;
+  const busyClose = committingPlacement || controller.saving || controller.queueState === "submitting" || controller.discard.discarding;
+  const statusMessage = controller.error || (draft.state === "failed" ? draft.error : "") || (draft.state === "conflict"
+    ? "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit." : "");
   const canQueueNormal = !proxyUnavailableReason && !controller.saving && draft.state === "saved" && controller.queueState === "idle";
   const canQueueFallback = Boolean(
     proxyUnavailableReason
@@ -575,7 +650,7 @@ export function SpatialPinDock({
             id="spatial-pin-feedback"
             aria-label="Feedback"
             placeholder="Describe the change for Copilot at this 3D surface pin…"
-            disabled={controller.busy}
+            disabled={busy}
             value={annotation.text}
             onChange={e => controller.editText(e.target.value)}
           />
@@ -585,7 +660,7 @@ export function SpatialPinDock({
             <button className="toolbar-btn" disabled={busyClose} onClick={onClose}>{draft.state === "saved" ? "Close" : "Keep draft & close"}</button>
             <AnnotationTargetChip annotation={annotation}/>
           </div>
-          <AnnotationDockActions discard={controller.discard} onDiscard={onDiscard} onClose={onClose} busy={controller.busy}>
+          <AnnotationDockActions discard={controller.discard} onDiscard={onDiscard} onClose={onClose} busy={busy} resolveDiscardBaseline={resolveDiscardBaseline}>
             {!proxyUnavailableReason && (
               <button
                 className="toolbar-btn"
@@ -611,11 +686,7 @@ export function SpatialPinDock({
           </AnnotationDockActions>
         </div>
       </div>
-      {(controller.error || draft.state === "conflict") && (
-        <div className="review-status-banner" role="alert">
-          {controller.error || "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit."}
-        </div>
-      )}
+      {statusMessage && <div className="review-status-banner annotation-status-banner" role="alert">{statusMessage}</div>}
       {draft.state === "conflict" && (
         <button onClick={controller.loadServerRevision}>Load server revision for comparison</button>
       )}

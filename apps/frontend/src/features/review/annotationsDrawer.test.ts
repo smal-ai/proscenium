@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import type { AnnotationSnapshot, Camera, Markup, Matrix4, VersionRecord } from "../../api/generated/contracts";
-import { formatAnnotationMeta, formatAnnotationTitle, mergeItemAnnotations, shortVersionTag } from "./AnnotationsDrawer";
+import { AnnotationsDrawer, draftFromSnapshot, formatAnnotationMeta, formatAnnotationTitle, mergeHydratedDrafts, mergeItemAnnotations, resolveAnnotationEntry, shortVersionTag } from "./AnnotationsDrawer";
 import type { Draft } from "./outbox";
 
 const itemId = "asset-a";
@@ -48,6 +50,56 @@ test("prefers unsaved changes or equally new local acknowledgements over server 
   assert.equal(entries[1].annotation, drafts[1].annotation);
   assert.equal(entries[2].annotation, saved[2]);
   assert.equal(entries[3].annotation, drafts[3].annotation);
+});
+
+test("restores a copied winning entry using its real draft key without promoting a stale clean record", () => {
+  const server = note("annotation", currentVersionId, itemId, 4);
+  const clean = {...draft(note("annotation", currentVersionId, itemId, 3), "saved"), key: "legacy-key"};
+  const dirty = {...clean, state: "failed" as const, targetBlob: new Blob(["local capture"])};
+  const entries = (drafts: Draft[]) => mergeItemAnnotations({itemId, currentVersionId, saved: [server], drafts}).thisVersion;
+  const [serverEntry] = entries([clean]);
+  assert.deepEqual(serverEntry, {annotation: server, state: "saved", draftKey: null, source: "server"});
+  const restored = resolveAnnotationEntry(structuredClone(serverEntry), [clean], "project");
+  assert.deepEqual(restored, draft(server, "saved"));
+  assert.notEqual(restored.annotation, server);
+  const [localEntry] = entries([dirty]);
+  assert.equal(localEntry.source, "draft");
+  assert.equal(localEntry.draftKey, "legacy-key");
+  assert.equal(resolveAnnotationEntry(structuredClone(localEntry), [dirty], "project"), dirty);
+  const acknowledged = {...clean, annotation: server};
+  assert.deepEqual(resolveAnnotationEntry(entries([acknowledged])[0], [clean], "project"), draft(server, "saved"));
+  assert.notEqual(resolveAnnotationEntry(localEntry, [{...dirty, annotation: note("different")}], "project").key, dirty.key);
+});
+
+test("never treats a null revision as acknowledged, even on restore fallback", () => {
+  const annotation = note("local", currentVersionId, itemId, null);
+  const malformed = draft(annotation, "saved");
+  const entries = (drafts: Draft[]) => mergeItemAnnotations({itemId, currentVersionId, saved: [annotation], drafts}).thisVersion;
+  for (const [entry] of [entries([]), entries([malformed])]) {
+    assert.equal(entry.state, "browser-local");
+    assert.equal(resolveAnnotationEntry(entry, [], "project").state, "browser-local");
+  }
+  assert.equal(resolveAnnotationEntry(entries([malformed])[0], [malformed], "project").state, "browser-local");
+});
+
+test("hydration retains a server-only navigation draft and rejects stale clean storage", () => {
+  const navigated = draftFromSnapshot(note("external", currentVersionId, itemId, 4), "project");
+  const stale = draft(note("external", currentVersionId, itemId, 3), "saved");
+  const equal = {...stale, annotation: {...stale.annotation, saved_revision: 4}};
+  const newer = {...equal, annotation: {...equal.annotation, saved_revision: 5}};
+  const unsaved = {...stale, state: "browser-local" as const};
+  const other = draft(note("unrelated"));
+  assert.deepEqual(mergeHydratedDrafts([], [navigated]), [navigated]);
+  assert.deepEqual(mergeHydratedDrafts([stale, other], [navigated]), [navigated, other]);
+  for (const stored of [equal, newer, unsaved]) assert.equal(mergeHydratedDrafts([stored], [navigated])[0], stored);
+});
+
+test("labels annotations on newer versions as other versions when viewing v1", () => {
+  const version = {version_id: "a-v1", name: "Asset A"} as VersionRecord;
+  const merged = mergeItemAnnotations({itemId, currentVersionId: version.version_id, saved: [note("newer", "a-v2")], drafts: []});
+  assert.equal(merged.olderVersionCount, 1);
+  const html = renderToStaticMarkup(createElement(AnnotationsDrawer, {version, merged, onClose: () => {}, onRestore: () => {}}));
+  assert.match(html, /Show 1 on other versions/);
 });
 
 test("puts the current version first, then honours item version order or descending version IDs", () => {

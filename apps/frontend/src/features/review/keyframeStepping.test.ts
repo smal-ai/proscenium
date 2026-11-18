@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { FrameAvailability, FrameReceipt, JobRecord } from "../../api/generated/contracts";
-import { canStepKeyframePass, describeKeyframePassStatus, resolveDirectKeyframeJump, sortedReadyFrames, stepKeyframePass } from "./keyframeStepping";
+import { canStepKeyframePass, describeKeyframePassStatus, isFrameRendering, resolveDirectKeyframeJump, sortedReadyFrames, stepKeyframePass } from "./keyframeStepping";
 
 const dimensions = {width: 1920, height: 1080};
 const fps = {numerator: 24, denominator: 1};
@@ -74,6 +74,24 @@ test("an active job range is a fallback only before availability arrives", () =>
   assert.deepEqual(resolveDirectKeyframeJump({...params, requestedOrdinal: 24}), {kind: "unavailable", revertFrame: 1, message: "Frame 24 is rendering. Showing frame 1."});
   for (const input of [{...params, requestedOrdinal: 25}, {...params, requestedOrdinal: 2, availability: availability()}, {...params, requestedOrdinal: 2, job: job("succeeded")}]) {
     assert.deepEqual(resolveDirectKeyframeJump(input), {kind: "unavailable", revertFrame: 1, message: `Frame ${input.requestedOrdinal} is outside this pass. Showing frame 1.`});
+  }
+});
+
+test("the backend's succeeded sparse 1–24 pass leaves holes pending without rendering them", () => {
+  const readyFrames = [frame(1), frame(12), frame(24)];
+  const missing = [{start: 2, end: 11}, {start: 13, end: 23}];
+  const sparse = availability({available_ranges: [{start: 1, end: 1}, {start: 12, end: 12}, {start: 24, end: 24}], pending_ranges: missing});
+  const succeeded = {...job("succeeded"), completed_frames: 3};
+  const params = {readyFrames, displayedFrame: 1, job: succeeded, availability: sparse};
+  assert.equal(isFrameRendering(2, succeeded, sparse), false);
+  assert.equal(describeKeyframePassStatus(params), "1 of 3 ready");
+  assert.deepEqual(resolveDirectKeyframeJump({...params, requestedOrdinal: 2}), {kind: "unavailable", revertFrame: 1, message: "Frame 2 is outside this pass. Showing frame 1."});
+  assert.deepEqual(resolveDirectKeyframeJump({...params, requestedOrdinal: 1}), {kind: "found", frame: readyFrames[0]});
+  for (const state of ["failed", "cancelled"] as const) {
+    const terminal = {...params, job: job(state), availability: {...sparse, failed_ranges: missing}};
+    assert.equal(isFrameRendering(2, terminal.job, sparse), false);
+    assert.equal(describeKeyframePassStatus(terminal), "1 of 3 ready");
+    assert.deepEqual(resolveDirectKeyframeJump({...terminal, requestedOrdinal: 2}), {kind: "unavailable", revertFrame: 1, message: "Frame 2 failed to render. Showing frame 1."});
   }
 });
 

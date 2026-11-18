@@ -4,7 +4,7 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Matrix4, OrthographicCamera, PerspectiveCamera, Raycaster, Vector2, Vector3, type Camera as ThreeCamera, type Object3D, type Scene, type WebGLRenderer } from "three";
 import type { Camera, ObjectSelection, ProxyMapping } from "../../api/generated/contracts";
 import { captureCamera, projectBlenderPoint } from "./media";
-import { computeFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
+import { computeCanvasFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
 import { indexProxyScene, projectBlenderPointVisible, proxyPointToBlender, proxySurfaceNormalToBlender, resolveProxyNode, type ProxyNode } from "./spatial";
 import "./renderFraming.css";
 
@@ -52,6 +52,7 @@ function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCame
       throw new Error("Inspection framebuffer is unavailable at the requested dimensions");
     }
     const prevPixelRatio = gl.getPixelRatio();
+    // R3F sizes the renderer from the fitted Canvas, not the overlay host.
     const prevCssSize = gl.getSize(new Vector2());
     const dimensions = {width: targetW, height: targetH};
     const framedCam = deriveFramedCamera(camera,
@@ -321,6 +322,7 @@ export function ProxyView({
   onCamera,
   onCaptureReady,
   renderPreset = "viewport",
+  suppressFramingGate = false,
   onViewportPixels,
   onPlacePin,
   onPinMiss,
@@ -336,6 +338,7 @@ export function ProxyView({
   onCamera: (camera: Camera) => void;
   onCaptureReady: (capture: ProxyCapture | null) => void;
   renderPreset?: RenderPresetId;
+  suppressFramingGate?: boolean;
   onViewportPixels?: (pixels: ViewportPixels) => void;
   onPlacePin?: (placement: ProxyPinPlacement) => void;
   onPinMiss?: (reason: "empty" | "unmapped", fallback?: FrozenProxyCapture & {clickUv: [number, number]}) => void;
@@ -380,12 +383,13 @@ export function ProxyView({
     renderer.current?.setFrameloop(visible ? "always" : "never");
     onCaptureReady(visible && size.width > 0 && size.height > 0 && capture.current ? captureVisible : null);
   }, [visible, size.width, size.height, onCaptureReady, captureVisible]);
-  const width = restoreCamera && size.width ? Math.min(size.width,size.height*restoreCamera.aspect) : size.width;
-  const height = restoreCamera && width ? width/restoreCamera.aspect : size.height;
-  const canvasBoxStyle = restoreCamera && size.width ? {position:"absolute" as const,left:(size.width-width)/2,top:(size.height-height)/2,width,height} : undefined;
+  const width = restoreCamera && size.width ? Math.min(size.width, size.height * restoreCamera.aspect) : size.width;
+  const height = restoreCamera && width ? width / restoreCamera.aspect : size.height;
+  const canvasRect = {left: (size.width - width) / 2, top: (size.height - height) / 2, width, height};
+  const canvasBoxStyle = restoreCamera && size.width ? {position: "absolute" as const, ...canvasRect} : undefined;
   const projectionCamera = liveCamera ?? restoreCamera;
-  const gate = !restoreCamera && renderPreset !== "viewport"
-    ? computeFramingGate(size.width, size.height, resolveRenderTargetDimensions(renderPreset))
+  const gate = !suppressFramingGate && !pinMode && renderPreset !== "viewport"
+    ? computeCanvasFramingGate(canvasRect, resolveRenderTargetDimensions(renderPreset))
     : null;
   return <div ref={host} className={`review-proxy${pinMode ? " pin-mode" : ""}`} aria-label={`Static proxy, source frame ${mapping.sample_frame}`}>
     <Canvas frameloop={visible ? "always" : "never"} onCreated={state => { renderer.current = state; state.setFrameloop(visibleRef.current ? "always" : "never"); }} style={canvasBoxStyle} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: 50}}>
