@@ -1,5 +1,6 @@
 import type { AnnotationSave, AnnotationSnapshot } from "../../api/generated/contracts";
-import { ApiClient, ApiError } from "../../api/client";
+import { type ApiClient, ApiError } from "../../api/client";
+import { stableJson } from "./media";
 
 export type DraftState = "browser-local" | "saving" | "saved" | "conflict" | "failed";
 export const VECTOR_MASK = "Editable binary brush mask";
@@ -27,15 +28,18 @@ export type DiscardPolicy =
   | { allowed: false }
   | { allowed: true; mode: DiscardMode; requiresConfirmation: boolean; buttonLabel: "Discard draft" | "Discard edits"; confirmPrompt: string };
 
-export function classifyDraftDiscard(draft: Draft): DiscardPolicy {
+export function classifyDraftDiscard(draft: Draft, restoreRevision?: number | null): DiscardPolicy {
   if (draft.state === "saving" || draft.state === "conflict" || draft.state === "saved" || draft.operation || draft.fallbackOperation) {
     return {allowed: false};
   }
   const {saved_revision, spatial_hits, target, markups, text} = draft.annotation;
   if (saved_revision !== null) {
     if (draft.state !== "browser-local") return {allowed: false};
+    const targetRev = restoreRevision ?? saved_revision;
     return {allowed: true, mode: "revert_edits", requiresConfirmation: true, buttonLabel: "Discard edits",
-      confirmPrompt: `Discard unsaved edits and restore revision ${saved_revision}?`};
+      confirmPrompt: targetRev !== saved_revision
+        ? `Discard unsaved edits and restore latest server revision ${targetRev} (edited from rev ${saved_revision})?`
+        : `Discard unsaved edits and restore revision ${targetRev}?`};
   }
   // Only an untouched browser-local 2D draft can disappear without confirmation.
   const requiresConfirmation = draft.state !== "browser-local" || spatial_hits.length > 0
@@ -44,9 +48,16 @@ export function classifyDraftDiscard(draft: Draft): DiscardPolicy {
     confirmPrompt: requiresConfirmation ? "Discard this draft?" : ""};
 }
 
-export function formatDraftStateBadge(draft: Draft): string {
-  return `${draft.state === "browser-local" ? "Draft on this browser" : draft.state}${draft.error ? `: ${draft.error}` : ""}`;
+export function formatDraftStatusLabel(draft: {state: DraftState; annotation: Pick<AnnotationSnapshot, "saved_revision">}): string {
+  switch (draft.state) {
+    case "browser-local": return "Draft on this browser";
+    case "saving": return "Saving…";
+    case "saved": return draft.annotation.saved_revision !== null ? `Saved · rev ${draft.annotation.saved_revision}` : "Draft on this browser";
+    case "failed": return "Save failed";
+    case "conflict": return "Conflict";
+  }
 }
+export const formatDraftStateBadge = formatDraftStatusLabel;
 
 function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -71,6 +82,82 @@ export const saveDraft = async (draft: Draft) => { await transaction("readwrite"
 export const deleteDraft = async (key: string): Promise<void> => {
   await transaction("readwrite", store => store.delete(key));
 };
+
+export type AtomicDiscardResult =
+  | {status: "deleted"}
+  | {status: "reverted"; restored: Draft}
+  | {status: "mismatch"; stored: Draft | null}
+  | {status: "protected"; stored: Draft};
+
+export async function discardDraftAtomically(options: {
+  projectId: string;
+  key: string;
+  expectedSnapshotJson: string;
+  expectedState: DraftState;
+  mode: DiscardMode;
+  cleanBaseline?: AnnotationSnapshot | null;
+}): Promise<AtomicDiscardResult> {
+  const {projectId, key, expectedSnapshotJson, expectedState, mode, cleanBaseline} = options;
+  let restored: Draft | undefined;
+  if (mode === "revert_edits") {
+    if (!cleanBaseline || cleanBaseline.saved_revision === null) {
+      throw new Error("Acknowledged server baseline is required to discard edits");
+    }
+    restored = {key: cleanBaseline.annotation_id, projectId, annotation: structuredClone(cleanBaseline), state: "saved"};
+  }
+  const db = await database();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("drafts", "readwrite");
+    const store = tx.objectStore("drafts");
+    let outcome: AtomicDiscardResult;
+    tx.oncomplete = () => { db.close(); resolve(outcome); };
+    tx.onabort = () => { db.close(); reject(tx.error ?? new Error("Draft discard transaction aborted")); };
+
+    const getReq = store.get(key);
+    getReq.onsuccess = () => {
+      const stored = getReq.result as Draft | undefined;
+      if (stored) {
+        if (stored.projectId !== projectId || stored.key !== key) {
+          outcome = {status: "mismatch", stored};
+          return;
+        }
+        // Check the raw durable state: even an interrupted save shown as failed is protected.
+        const storedPolicy = classifyDraftDiscard(stored);
+        if (!storedPolicy.allowed) {
+          outcome = {status: "protected", stored};
+          return;
+        }
+        if (stored.state !== expectedState || storedPolicy.mode !== mode || stableJson(stored.annotation) !== expectedSnapshotJson
+          || (restored && restored.annotation.annotation_id !== stored.annotation.annotation_id)) {
+          outcome = {status: "mismatch", stored};
+          return;
+        }
+      }
+
+      if (!restored) {
+        if (stored) store.delete(key);
+        outcome = {status: "deleted"};
+        return;
+      }
+
+      const clean = restored;
+      const replace = () => {
+        if (stored && key !== clean.key) store.delete(key);
+        store.put(clean);
+        outcome = {status: "reverted", restored: clean};
+      };
+      if (key === clean.key) replace();
+      else {
+        // A legacy key may differ from the annotation ID. Do not overwrite another record there.
+        const destination = store.get(clean.key);
+        destination.onsuccess = () => {
+          if (destination.result) outcome = {status: "mismatch", stored: stored ?? null};
+          else replace();
+        };
+      }
+    };
+  });
+}
 
 // A 3D pin and its 2D markup editor share a record, even across a view switch.
 const pendingEdits = new Map<string, Promise<void>>();

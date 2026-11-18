@@ -4,24 +4,25 @@ import type { AnnotationSnapshot, Markup } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
 import { contentRect, imagePoint, mediaUrl, stableJson } from "./media";
-import { flushDraft, formatDraftStateBadge, saveDraft, saveDraftEdit, waitForDraftEdits, VECTOR_MASK, type DiscardMode, type Draft } from "./outbox";
+import { flushDraft, formatDraftStateBadge, saveDraft, saveDraftEdit, waitForDraftEdits, VECTOR_MASK, type Draft } from "./outbox";
 import { greyPng } from "./png";
 import { annotationContext } from "./context";
 import { allPages } from "./records";
 import { canvasPngBlob, paintMarkups, syncSpatialPinMarkup } from "./spatial";
-import { AnnotationDockActions, AnnotationTargetChip, useDraftDiscard } from "./SpatialPinDock";
+import { AnnotationDockActions, AnnotationTargetChip, useDraftDiscard, type DiscardBaselineResolver, type DiscardHandler } from "./SpatialPinDock";
 import "./annotationDock.css";
 
 type Tool = Markup["kind"] | "eraser";
 const tools: Tool[] = ["stroke", "arrow", "region", "pin", "eraser", "mask"];
 const toolIcons = {stroke: Pencil, arrow: MoveUpRight, region: Square, pin: MapPin, eraser: Eraser, mask: Layers};
 
-export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDiscard, onReturnTo3D, onContextPreparer}: {
+export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDiscard, onReturnTo3D, onContextPreparer, resolveDiscardBaseline}: {
   api: ApiClient; draft: Draft; onChange: (draft: Draft) => void;
   onQueue: (text: string, context: TurnSelection) => void | Promise<void>; onClose: () => void;
-  onDiscard?: (draftKey: string, mode: DiscardMode) => void | Promise<void>;
+  onDiscard?: DiscardHandler;
   onReturnTo3D?: () => void;
   onContextPreparer?: (prepare: ContextPreparer | null) => void;
+  resolveDiscardBaseline?: DiscardBaselineResolver;
 }) {
   const [tool, setTool] = useState<Tool>("stroke");
   const [width, setWidth] = useState(4);
@@ -39,11 +40,14 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDisc
   const active = useRef<string | null>(null);
   const live = useRef(draft); live.current = draft;
   const writes = useRef(Promise.resolve());
-  const discard = useDraftDiscard(draft, live, writes, () => saveLatch.current || queueInFlight.current, setError);
+  const discard = useDraftDiscard(draft, live, writes, () => saveLatch.current || queueInFlight.current,
+    setError, {resolveBaseline: resolveDiscardBaseline, api, onChange});
   const busyClose = saving || queueState === "submitting" || discard.discarding;
   const busy = busyClose || draft.state === "saving" || draft.state === "conflict"
     || (!!draft.operation && draft.state !== "saved") || (!!draft.fallbackOperation && !draft.fallbackSaved);
   const annotation = draft.annotation;
+  const statusMessage = error || (draft.state === "failed" ? draft.error : "") || (draft.state === "conflict"
+    ? "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit." : "");
   const {width: iw, height: ih} = annotation.target.dimensions;
   const localTargetUrl = useMemo(() => draft.targetBlob && !draft.targetUploaded ? URL.createObjectURL(draft.targetBlob) : null, [draft.targetBlob, draft.targetUploaded]);
   useEffect(() => () => { if (localTargetUrl) URL.revokeObjectURL(localTargetUrl); }, [localTargetUrl]);
@@ -204,7 +208,7 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDisc
         </AnnotationDockActions>
       </div>
     </div>
-    {(error || draft.state === "conflict") && <div className="review-status-banner" role="alert">{error || "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit."}</div>}
+    {statusMessage && <div className="review-status-banner annotation-status-banner" role="alert">{statusMessage}</div>}
     {draft.state === "conflict" && <button onClick={() => {
       void allPages(cursor => api.call("listAnnotations",{path:{project_id:draft.projectId},query:{cursor,limit:100,version_id:annotation.target.version_id ?? undefined}}))
         .then(items => {const current=items.find(a=>a.annotation_id===annotation.annotation_id);if (!current) throw new Error("Current annotation unavailable");setServerRevision(current);}).catch(e=>setError(String(e)));
