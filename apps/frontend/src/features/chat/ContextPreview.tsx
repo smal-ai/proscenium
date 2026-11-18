@@ -34,5 +34,5 @@ export function StoredContext({ api, projectId, contextId, items = [] }: { api: 
     if (!context) void api.call("getContext", { path: { project_id: projectId, context_id: contextId } }).then(c => { if (!disposed) setContext(c); }).catch(e => { if (!disposed) setError(describeError(e)); });
     return () => { disposed = true; };
   }, [api, projectId, contextId, context, open]);
-  return <>{context?.request_target && <span className="target-badge" title={JSON.stringify(context.request_target)}>Target: {targetLabel(context.request_target, items)}</span>}<details onToggle={e => setOpen(e.currentTarget.open)}><summary>Original captured context</summary>{context ? <ContextPreview projectId={projectId} selection={context} /> : <small>{error || "Loading original context…"}</small>}</details></>;
+  return <div className="stored-context-row">{context?.request_target && <span className="target-badge" title={JSON.stringify(context.request_target)}>Target: {targetLabel(context.request_target, items)}</span>}<details className="stored-context" onToggle={e => setOpen(e.currentTarget.open)}><summary>Original captured context</summary>{context ? <ContextPreview projectId={projectId} selection={context} /> : <small>{error || "Loading original context…"}</small>}</details></div>;
 }

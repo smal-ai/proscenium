@@ -53,7 +53,14 @@
 .target-quick,.starter-actions{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
 .target-quick button,.starter-actions button{font-size:11px;padding:5px 7px;cursor:pointer}
 .reference-versions>div,.reference-version{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:6px 0;overflow-wrap:anywhere}
-.target-badge{display:inline-block;padding:3px 6px;margin:4px 0;border:1px solid #3d3d50;border-radius:5px;color:#cacade;font-size:10px}
+.target-badge{display:inline-block;padding:2px 6px;margin:0;border:1px solid #3d3d50;border-radius:5px;color:#cacade;font-size:10px}
+.stored-context-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:6px}
+.stored-context{display:inline-block;margin:0}
+.stored-context[open]{display:block;flex-basis:100%;width:100%}
+.stored-context>summary{display:list-item;list-style-position:inside;width:fit-content;padding:2px 6px;border-radius:4px;font-size:11px;color:#9494a2;line-height:1.4}
+.stored-context>summary:hover{color:#d4d4dc;background:#22222a}
+.stored-context[open]>summary{margin-bottom:6px}
+.stored-context .context-preview{padding:8px;border:1px solid #2c2c36;border-radius:6px;background:#131317}
 .context-preview code{display:block;overflow-wrap:anywhere;font-size:10px}
 .split-send{position:relative;display:flex;margin-left:auto}
 .composer-actions .split-send .send{display:flex;align-items:center;gap:6px;min-width:68px;width:auto;border-radius:5px 0 0 5px;font-size:11px}
@@ -90,3 +97,7 @@
 .retained-output-card figcaption{display:flex;flex-direction:column;gap:5px;padding:7px;font-size:10px}
 .retained-output-card code{display:block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .retained-output-card a{color:#bbbbfa;text-decoration:underline}
+.retained-output-more{margin:4px 0}
+.retained-output-more>summary{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:11px;color:#9494a2}
+.retained-output-more[open]>.retained-output-cards{margin-top:6px}
+.retained-turn-outputs{margin:-10px 0 14px}

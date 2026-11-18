@@ -432,3 +432,59 @@ test("Critic SAST timestamps, revision-monotonic review merges and compact card 
   assert.doesNotMatch(markup, /Load existing reviews/);
   assert.doesNotMatch(markup, /<select/);
 });
+
+test("Conversation suppresses draft_motion frame/segment floods inside user bubbles and OutputCards collapses >3 outputs", () => {
+  const req = { ...request("req-anim", "2026-11-18T14:20:00Z", "let's generate the animation"), receipt: { state: "running", work_id: "work-anim", state_revision: 1 } } as RequestRecord;
+  const streamSummaries: RetainedArtifactSummary[] = [
+    {
+      schema_version: "1.0",
+      artifact: { schema_version: "1.0", artifact_id: "attempt-bd7475de-seg-1", project_id: "project", state: "ready", kind: "video", purpose: "draft_motion", media_type: "video/mp4", sha256: "a".repeat(64), bytes: 1024, dimensions: { width: 1280, height: 720 }, derived_from: [] },
+      attribution_status: "verified",
+      request_id: "req-anim",
+      work_id: "work-anim",
+      invocation_id: null,
+      job_id: "preview-a44c700c",
+      published_versions: [{ item_id: "corridor", version_id: "corridor-v2" }],
+    },
+    {
+      schema_version: "1.0",
+      artifact: { schema_version: "1.0", artifact_id: "preview-a44c700c-f0001", project_id: "project", state: "ready", kind: "image", purpose: "draft_motion", media_type: "image/png", sha256: "b".repeat(64), bytes: 2048, dimensions: { width: 1280, height: 720 }, derived_from: [] },
+      attribution_status: "verified",
+      request_id: "req-anim",
+      work_id: "work-anim",
+      invocation_id: null,
+      job_id: "preview-a44c700c",
+      published_versions: [{ item_id: "corridor", version_id: "corridor-v2" }],
+    },
+    {
+      schema_version: "1.0",
+      artifact: { schema_version: "1.0", artifact_id: "concept-unpublished-1", project_id: "project", state: "ready", kind: "image", purpose: "concept", media_type: "image/png", sha256: "c".repeat(64), bytes: 2048, dimensions: { width: 1024, height: 1024 }, derived_from: [] },
+      attribution_status: "verified",
+      request_id: "req-anim",
+      work_id: "work-anim",
+      invocation_id: null,
+      job_id: null,
+      published_versions: [],
+    },
+  ];
+  const markup = renderToStaticMarkup(
+    <Conversation api={api} projectId="project" requests={[req]} events={[]} retainedArtifacts={streamSummaries} onRefresh={async () => {}} onError={() => {}} />,
+  );
+  assert.doesNotMatch(markup, /attempt-bd7475de-seg-1/);
+  assert.doesNotMatch(markup, /preview-a44c700c-f0001/);
+  assert.match(markup, /concept-unpublished-1/);
+  // User prompt bubble itself never contains OutputCards figures.
+  const userBubble = markup.match(/<article class="message user-message"[\s\S]*?<\/article>/)?.[0] ?? "";
+  assert.ok(userBubble.length > 0);
+  assert.doesNotMatch(userBubble, /retained-output-card/);
+
+  const fiveIds = ["c1", "c2", "c3", "c4", "c5"];
+  const fiveSummaries = fiveIds.map(id => ({
+    ...streamSummaries[2],
+    artifact: { ...streamSummaries[2].artifact, artifact_id: id },
+  }));
+  const batchMarkup = renderToStaticMarkup(
+    <OutputCards api={api} projectId="project" artifactIds={fiveIds} retainedArtifacts={fiveSummaries} />,
+  );
+  assert.match(batchMarkup, /Show 2 more retained outputs/);
+});

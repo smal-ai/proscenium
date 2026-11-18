@@ -16,7 +16,7 @@ import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarg
 import { canNavigateHistory, promptHistory, stepHistory, type HistoryCursor } from "./promptHistory";
 import { busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
 import { SendControl } from "./SendControl";
-import { OutputCards } from "./OutputCards";
+import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 import { steerWorkId, stopWorkId } from "./controls";
 import "./chat.css";
 
@@ -72,9 +72,18 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   agentsRef.current = agents;
   const history = promptHistory(projectId, requests);
   const catalogue = items ?? snapshot?.items ?? [];
-  const renderedOutputIds = new Set(events.filter(event => event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")).flatMap(event => (event.payload as unknown as { artifact_ids: string[] }).artifact_ids ?? []));
+  const summaryById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary]));
+  const renderedOutputIds = new Set(
+    events
+      .filter(event => event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent."))
+      .flatMap(event => (event.payload as unknown as { artifact_ids: string[] }).artifact_ids ?? [])
+      .filter(artifactId => {
+        const summary = summaryById.get(artifactId);
+        return !summary || !isRenderPassStreamArtifact(summary);
+      }),
+  );
   for (const summary of retainedArtifacts) {
-    if (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id)))) renderedOutputIds.add(summary.artifact.artifact_id);
+    if (!isRenderPassStreamArtifact(summary) && (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && summary.published_versions.length === 0 && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id))))) renderedOutputIds.add(summary.artifact.artifact_id);
   }
   const resumable = resumableWork(snapshot, events);
   const chosenResumeWork = resumeWorkId
@@ -174,7 +183,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   }
   return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
     <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus snapshot={snapshot} requests={requests} events={events} jobs={jobs} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} />}</div>
-    {snapshot?.execution?.work_outputs.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => <section className="publication-status" key={output.work_id} role="status"><strong>{output.status === "publication_blocked" ? "Finished · publication blocked" : "Outputs retained · not published"}</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p><OutputCards api={api} projectId={projectId} artifactIds={output.artifact_ids.filter(id => !renderedOutputIds.has(id))} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></section>)}
+    {snapshot?.execution?.work_outputs.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => <section className="publication-status" key={output.work_id} role="status"><strong>{output.status === "publication_blocked" ? "Finished · publication blocked" : "Outputs retained · not published"}</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p><OutputCards api={api} projectId={projectId} artifactIds={output.artifact_ids.filter(id => !renderedOutputIds.has(id) && !(summaryById.get(id) && isRenderPassStreamArtifact(summaryById.get(id)!)))} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></section>)}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
     <Conversation api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
   </div></div>

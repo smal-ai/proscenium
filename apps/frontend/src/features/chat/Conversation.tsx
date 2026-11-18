@@ -3,7 +3,7 @@ import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Eve
 import { durableCommand, id } from "../../app/storage";
 import { StoredContext } from "./ContextPreview";
 import { ActivityEntry } from "./ActivityEntry";
-import { OutputCards } from "./OutputCards";
+import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 
 export function compareConversationEntries(a: { time: string; sequence?: number; key: string }, b: { time: string; sequence?: number; key: string }): number {
   return Date.parse(a.time) - Date.parse(b.time) || (a.sequence ?? 0) - (b.sequence ?? 0) || a.key.localeCompare(b.key);
@@ -44,24 +44,44 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
     }
   }
   const assigned = new Set<string>();
+  const summaryById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary]));
   const activityOutputs = new Map<string, string[]>();
   for (const [key, { latest: event }] of activities) {
     const activity = event.payload as unknown as ActivityEventData;
-    const ids = [...activity.artifact_ids, ...retainedArtifacts.filter(summary => summary.invocation_id === activity.invocation_id).map(summary => summary.artifact.artifact_id)].filter(id => !assigned.has(id));
+    const explicitIds = activity.artifact_ids.filter(artifactId => {
+      const summary = summaryById.get(artifactId);
+      return !summary || !isRenderPassStreamArtifact(summary);
+    });
+    const correlatedIds = retainedArtifacts
+      .filter(summary => summary.invocation_id === activity.invocation_id && !isRenderPassStreamArtifact(summary))
+      .map(summary => summary.artifact.artifact_id);
+    const ids = [...explicitIds, ...correlatedIds].filter(id => !assigned.has(id));
     ids.forEach(id => assigned.add(id)); activityOutputs.set(key, [...new Set(ids)]);
   }
   const requestOutputs = new Map<string, string[]>();
   for (const record of requests) {
-    const ids = retainedArtifacts.filter(summary => !assigned.has(summary.artifact.artifact_id) && !summary.invocation_id && (summary.request_id === record.request_id || (record.receipt.work_id && summary.work_id === record.receipt.work_id))).map(summary => summary.artifact.artifact_id);
+    const ids = retainedArtifacts
+      .filter(summary => !assigned.has(summary.artifact.artifact_id) && !summary.invocation_id && summary.published_versions.length === 0 && !isRenderPassStreamArtifact(summary) && (summary.request_id === record.request_id || (record.receipt.work_id && summary.work_id === record.receipt.work_id)))
+      .map(summary => summary.artifact.artifact_id);
     ids.forEach(id => assigned.add(id)); requestOutputs.set(record.request_id, ids);
   }
   const rawEntries: TimelineEntry[] = [
-    ...requests.map(record => ({ key: `request.${record.request_id}`, time: record.accepted_at, node: <article className="message user-message" key={record.request_id} data-request-id={record.request_id}><div className="message-heading"><strong>You</strong><span>{record.submission.type} · {record.receipt.state}</span></div><p>{record.submission.type === "stop" ? `Stop work ${record.submission.target_work_id}${record.submission.reason ? `: ${record.submission.reason}` : ""}` : record.submission.text}</p>
-      {record.submission.type === "steer" && <small>Target work: {record.submission.target_work_id}. Already executed actions are not undone.</small>}
-      {record.submission.type !== "stop" && <StoredContext api={api} projectId={projectId} contextId={record.submission.context_id} items={items} />}
-      <OutputCards api={api} projectId={projectId} artifactIds={requestOutputs.get(record.request_id) ?? []} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
-      {record.receipt.state === "held" && <button className="subtle" onClick={() => void durableCommand<RevisionCommand, unknown>(`cancel.${record.request_id}`, () => ({ schema_version: "1.0", operation_id: id(), project_id: projectId, expected_revision: record.receipt.state_revision }), body => api.call("cancelHeldRequest", { path: { project_id: projectId, request_id: record.request_id }, body, idempotencyKey: body.operation_id })).then(onRefresh).catch(onError)}>Cancel held request</button>}
-    </article> })),
+    ...requests.flatMap(record => {
+      const standaloneOutputs = requestOutputs.get(record.request_id) ?? [];
+      return [
+        { key: `request.${record.request_id}`, time: record.accepted_at, sequence: -1, node: <article className="message user-message" key={record.request_id} data-request-id={record.request_id}><div className="message-heading"><strong>You</strong><span>{record.submission.type} · {record.receipt.state}</span></div><p>{record.submission.type === "stop" ? `Stop work ${record.submission.target_work_id}${record.submission.reason ? `: ${record.submission.reason}` : ""}` : record.submission.text}</p>
+          {record.submission.type === "steer" && <small>Target work: {record.submission.target_work_id}. Already executed actions are not undone.</small>}
+          {record.submission.type !== "stop" && <StoredContext api={api} projectId={projectId} contextId={record.submission.context_id} items={items} />}
+          {record.receipt.state === "held" && <button className="subtle" onClick={() => void durableCommand<RevisionCommand, unknown>(`cancel.${record.request_id}`, () => ({ schema_version: "1.0", operation_id: id(), project_id: projectId, expected_revision: record.receipt.state_revision }), body => api.call("cancelHeldRequest", { path: { project_id: projectId, request_id: record.request_id }, body, idempotencyKey: body.operation_id })).then(onRefresh).catch(onError)}>Cancel held request</button>}
+        </article> },
+        ...(standaloneOutputs.length ? [{
+          key: `request.outputs.${record.request_id}`,
+          time: record.accepted_at,
+          sequence: 0,
+          node: <div className="retained-turn-outputs"><OutputCards api={api} projectId={projectId} artifactIds={standaloneOutputs} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></div>,
+        }] : []),
+      ];
+    }),
     ...[...messages.entries()].filter(([, message]) => message.text.trim()).map(([key, { event, text }]) => {
       const specialist = event.actor.kind === "subagent" ? (agentLabels.get(event.actor.id) ?? "authoring-specialist") : null;
       return { key, time: event.occurred_at, sequence: event.sequence, node: <article className="message assistant-message" key={key}><div className="message-heading"><strong>{specialist ? "Specialist" : "Copilot"}</strong>{specialist && <span>{specialist}</span>}</div><p>{text}</p></article> };

@@ -190,8 +190,13 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
       {pending && <button disabled={busy} onClick={() => void retry()}>{pending.state === "acknowledged" ? "Reload acknowledged selection" : "Retry original selection"}</button>}
     </div>
   </div>;
-  const retainedList = (retainedArtifacts ?? retained).filter(({artifact}) =>
-    artifact.project_id === projectId && artifact.kind === "image" && artifact.state === "ready" && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type));
+  const retainedList = (retainedArtifacts ?? retained).filter(({artifact, job_id, published_versions = []}) =>
+    artifact.project_id === projectId
+    && artifact.kind === "image"
+    && artifact.state === "ready"
+    && artifact.purpose !== "draft_motion"
+    && !(Boolean(job_id) && published_versions.length > 0 && artifact.artifact_id.startsWith("preview-"))
+    && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type));
   const showRetained = retainedExpanded ?? (items.length === 0 || retainedList.length > 0);
 
   return <section className="review-catalogue" aria-label="Version catalogue">
