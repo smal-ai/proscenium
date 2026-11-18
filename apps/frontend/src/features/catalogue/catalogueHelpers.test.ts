@@ -1,6 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { displayItemTitle, formatItemStatusLine, shortVersionLabel } from "./catalogueHelpers";
+import { disclosureKey, displayItemTitle, formatItemStatusLine, shortVersionLabel } from "./catalogueHelpers";
+
+test("keys disclosures by kind, item and version without delimiter collisions", () => {
+  const keys = [
+    disclosureKey({kind: "item", itemId: "asset:v2"}),
+    disclosureKey({kind: "version", itemId: "asset", versionId: "v2"}),
+    disclosureKey({kind: "version", itemId: "other", versionId: "v2"}),
+    disclosureKey({kind: "version", itemId: "asset", versionId: "v3"}),
+    disclosureKey({kind: "version", itemId: "asset:v2", versionId: "v3"}),
+    disclosureKey({kind: "version", itemId: "asset", versionId: "v2:v3"}),
+  ];
+  assert.equal(new Set(keys).size, keys.length);
+  assert.equal(disclosureKey({kind: "version", itemId: "asset", versionId: "v2"}), keys[1]);
+});
 
 test("shortens a version suffix, including bare, uppercase and underscore forms", () => {
   for (const [id, label] of [

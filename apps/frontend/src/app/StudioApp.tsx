@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Film, Image, Layers, PanelLeft, PanelRight, Maximize2 as Maximise2, Minimize2 as Minimise2, RefreshCw, Sparkles } from "lucide-react";
+import { Box, Film, Image, Layers, PanelLeft, PanelRight, Maximize2 as Maximise2, Minimize2 as Minimise2, RefreshCw, Sparkles, X } from "lucide-react";
 import { ApiClient, ApiError } from "../api";
 import type { Artifact, ConfigurationView, ItemRecord, ProjectRecord, VersionRecord } from "../api";
 import { RetainedReview, ReviewEmpty } from "../features/review/ReviewChrome";
@@ -115,21 +115,27 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     if (version && next.project_id === version.project_id && next.item_id === version.item_id && next.version_id === version.version_id) return;
     onContextChange({ ...emptySelection(), item_id: next.item_id, version_id: next.version_id, view_mode: "keyframes" });
   }
-  async function viewLatestVersion(item: ItemRecord, previousVersion: VersionRecord) {
-    if (!projectId || !item.current_version_id || latestRequest.current) return;
+  async function viewLatestVersion(item: ItemRecord, previousVersion: VersionRecord, targetVersionId: string) {
+    if (!projectId || latestRequest.current) return;
     const controller = new AbortController();
     latestRequest.current = controller;
     setLatestError("");
     setLoadingLatest(true);
     try {
-      const drafts = await readDrafts(projectId).catch(() => []);
+      let drafts: Awaited<ReturnType<typeof readDrafts>>;
+      try {
+        drafts = await readDrafts(projectId);
+      } catch (err) {
+        if (!controller.signal.aborted) setLatestError(`Could not verify browser drafts before switching versions: ${describeError(err)}`);
+        return;
+      }
       if (controller.signal.aborted) return;
       const hasUnsavedDraft = drafts.some(d => d.state !== "saved" && d.annotation.target.version_id === previousVersion.version_id);
       const versions = await allPages(cursor => api.call("listItemVersions", {
         path: { project_id: projectId, item_id: item.item_id }, query: { cursor, limit: 100 }, signal: controller.signal,
       }));
       if (controller.signal.aborted) return;
-      const next = versions.find(record => record.version_id === item.current_version_id);
+      const next = versions.find(record => record.version_id === targetVersionId);
       if (!next) throw new Error("The latest publication was not returned. Refresh project metadata and try again.");
       onSelect(next);
       if (hasUnsavedDraft) setKeptDraftNotice(`Draft kept on ${shortVersionLabel(previousVersion.version_id)}`);
@@ -202,8 +208,8 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
           <span className={latestId === version.version_id ? "version-status-pill" : "version-status-pill outdated"} title={`${version.version_id} · Git ${version.source_commit.slice(0, 10)}`}>
             Viewing {shortVersionLabel(version.version_id)}{latestId !== version.version_id && ` · ${latestShort} available`}
           </span>
-          {currentItem && latestId !== version.version_id && <button className="view-latest-version-btn" disabled={loadingLatest} onClick={() => void viewLatestVersion(currentItem, version)}>View {latestShort}</button>}
-          {keptDraftNotice && <span className="draft-kept-pill" role="status">{keptDraftNotice}</span>}
+          {currentItem && latestId && latestId !== version.version_id && <button className="view-latest-version-btn" disabled={loadingLatest} onClick={() => void viewLatestVersion(currentItem, version, latestId)}>View {latestShort}</button>}
+          {keptDraftNotice && <span className="draft-kept-pill"><span role="status">{keptDraftNotice}</span><button type="button" className="draft-kept-dismiss" aria-label="Dismiss kept draft notice" onClick={() => setKeptDraftNotice("")}><X size={12} aria-hidden="true" /></button></span>}
         </div>}
       </div>
         {(rootError || data.error) && <div className="metadata-error" role="alert">{rootError || data.error} <span>Reads do not start models or regenerate media.</span></div>}

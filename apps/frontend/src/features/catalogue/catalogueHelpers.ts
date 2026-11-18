@@ -1,3 +1,11 @@
+export type OpenDisclosure = {kind: "item"; itemId: string} | {kind: "version"; itemId: string; versionId: string} | null;
+
+export function disclosureKey(disclosure: Exclude<OpenDisclosure, null>): string {
+  return JSON.stringify(disclosure.kind === "item"
+    ? [disclosure.kind, disclosure.itemId]
+    : [disclosure.kind, disclosure.itemId, disclosure.versionId]);
+}
+
 export function shortVersionLabel(versionId: string): string {
   const suffix = /[-_]?v(\d+)$/i.exec(versionId);
   return suffix ? `v${suffix[1]}` : versionId;

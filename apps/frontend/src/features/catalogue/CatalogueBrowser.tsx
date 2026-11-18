@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Ellipsis, Plus } from "lucide-react";
 import type { Provenance, RetainedArtifactSummary, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
 import { ApiError } from "../../api/client";
@@ -6,7 +6,7 @@ import type { CatalogueSurfaceProps } from "../../api/studio";
 import { allPages } from "../review/records";
 import { readPendingSelection, writePendingSelection, type PendingSelection } from "./pendingSelection";
 import { mediaUrl } from "../review/media";
-import { displayItemTitle, formatItemStatusLine, shortVersionLabel } from "./catalogueHelpers";
+import { disclosureKey, displayItemTitle, formatItemStatusLine, shortVersionLabel, type OpenDisclosure } from "./catalogueHelpers";
 import "./catalogue.css";
 
 function ProvenanceDetails({provenance}: {provenance: Provenance | undefined}) {
@@ -39,10 +39,42 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   const [query, setQuery] = useState("");
   const [expandedItems, setExpandedItems] = useState(new Map<string, boolean>());
   const [searchExpansion, setSearchExpansion] = useState(new Map<string, boolean>());
-  const [openItemMenu, setOpenItemMenu] = useState<string | null>(null);
-  const [openVersionMenu, setOpenVersionMenu] = useState<string | null>(null);
+  const [openDisclosure, setOpenDisclosure] = useState<OpenDisclosure>(null);
+  const disclosureTriggers = useRef(new Map<string, HTMLButtonElement>());
+  const openKey = openDisclosure ? disclosureKey(openDisclosure) : null;
   const [retainedExpanded, setRetainedExpanded] = useState<boolean | null>(null);
   const locked = useRef(false);
+
+  // Check after refs and parent visibility are committed, including when the Navigator is hidden.
+  useLayoutEffect(() => {
+    if (!openKey) return;
+    const trigger = disclosureTriggers.current.get(openKey);
+    if (!trigger?.getClientRects().length) {
+      setOpenDisclosure(null);
+      return;
+    }
+    function dismiss(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      setOpenDisclosure(null);
+      trigger?.focus();
+    }
+    window.addEventListener("keydown", dismiss);
+    return () => window.removeEventListener("keydown", dismiss);
+  });
+
+  function disclosureTrigger(disclosure: Exclude<OpenDisclosure, null>) {
+    const key = disclosureKey(disclosure);
+    const expanded = key === openKey;
+    return {
+      ref: (button: HTMLButtonElement | null) => {
+        if (button) disclosureTriggers.current.set(key, button);
+        else disclosureTriggers.current.delete(key);
+      },
+      "aria-expanded": expanded,
+      onClick: () => setOpenDisclosure(expanded ? null : disclosure),
+    };
+  }
 
   useEffect(() => {
     if (retainedArtifacts !== undefined) return;
@@ -167,6 +199,7 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
       <input aria-label="Search assets" type="search" placeholder="Search assets…" value={query} onChange={event => {
         setQuery(event.target.value);
         setSearchExpansion(new Map());
+        setOpenDisclosure(null);
       }}/>
       {onCreateAsset && <button className="primary new-asset-btn" aria-label="New asset" onClick={onCreateAsset}><Plus size={14} aria-hidden="true"/><span className="new-asset-label">New asset</span></button>}
     </div>
@@ -185,7 +218,7 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
         const viewedVersionId = itemVersions.find(v => v.version_id === selectedVersionId)?.version_id ?? null;
         const isExpanded = (search ? searchExpansion.get(item.item_id) : undefined) ?? (versionMatch || expandedItems.get(item.item_id) === true);
         const statusLine = formatItemStatusLine({kind: item.kind, viewedVersionId, latestVersionId: item.current_version_id, ownerVersionId: ownerVersion});
-        const itemMenuOpen = openItemMenu === item.item_id;
+        const itemTrigger = disclosureTrigger({kind: "item", itemId: item.item_id});
 
         return <section key={item.item_id} className="catalogue-item-group">
           <div className="catalogue-item-row">
@@ -199,9 +232,9 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
               <span className="catalogue-item-title"><strong>{displayItemTitle(item.name, projectName, itemNames)}</strong><span className="catalogue-version-count">{itemVersions.length} {itemVersions.length === 1 ? "version" : "versions"}</span></span>
               <span className="catalogue-status-line">{statusLine}</span>
             </button>
-            <button className="catalogue-icon-btn" aria-label={`Details for ${item.name}`} aria-expanded={itemMenuOpen} onClick={() => setOpenItemMenu(itemMenuOpen ? null : item.item_id)}><Ellipsis size={15} aria-hidden="true"/></button>
+            <button type="button" className="catalogue-icon-btn" aria-label={`Details for ${item.name}`} {...itemTrigger}><Ellipsis size={15} aria-hidden="true"/></button>
           </div>
-          {itemMenuOpen && <div className="catalogue-details">
+          {itemTrigger["aria-expanded"] && <div className="catalogue-details">
             <strong>{item.name}</strong><code>{item.item_id}</code>
             {item.description && <p>{item.description}</p>}
             {!!item.tags?.length && <p>Tags: {item.tags.join(", ")}</p>}
@@ -212,7 +245,7 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
             {itemVersions.map(version => {
               const viewing = version.version_id === selectedVersionId;
               const ownerSelected = ownerVersion === version.version_id;
-              const versionMenuOpen = openVersionMenu === version.version_id;
+              const versionTrigger = disclosureTrigger({kind: "version", itemId: item.item_id, versionId: version.version_id});
               return <div key={version.version_id} className="catalogue-version">
                 <div className="catalogue-version-line">
                   <button className="catalogue-version-row" aria-pressed={viewing} title={`${version.name} (${version.version_id})`} onClick={() => onSelect(version)}>
@@ -221,9 +254,9 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
                     {item.current_version_id === version.version_id && <span className="catalogue-badge">Latest</span>}
                     {ownerSelected && <span className="catalogue-badge owner-selected">Owner selected</span>}
                   </button>
-                  <button className="catalogue-icon-btn" aria-label={`Actions for ${version.version_id}`} aria-expanded={versionMenuOpen} onClick={() => setOpenVersionMenu(versionMenuOpen ? null : version.version_id)}><Ellipsis size={15} aria-hidden="true"/></button>
+                  <button type="button" className="catalogue-icon-btn" aria-label={`Actions for ${version.version_id}`} {...versionTrigger}><Ellipsis size={15} aria-hidden="true"/></button>
                 </div>
-                {versionMenuOpen && <div className="catalogue-details">
+                {versionTrigger["aria-expanded"] && <div className="catalogue-details">
                   <div className="catalogue-actions">
                     <button disabled={cannotSelect || ownerSelected} onClick={() => void select(version)}>Select for item</button>
                     {ownerSelected && <button disabled={cannotSelect} onClick={() => void select(version, true)}>Withdraw selection</button>}
