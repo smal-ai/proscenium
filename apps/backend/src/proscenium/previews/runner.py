@@ -430,7 +430,7 @@ def publish_assembly(service, job: dict, root: Path) -> list[str]:
 def cancellation_marker(root: Path, job: dict) -> dict:
     try:
         marker = read(root / "cancel.json")
-    except (FileNotFoundError, TypeError, ValueError):
+    except (OSError, TypeError, ValueError):
         return {}
     return marker if marker.get("attempt_id") == job["attempt_id"] else {}
 
@@ -440,8 +440,16 @@ def verified_terminal(root: Path, task_sha256: str) -> dict | None:
         terminal = read(root / "terminal.json")
     except FileNotFoundError:
         return None
-    if terminal["task_sha256"] != task_sha256:
+    if terminal.get("task_sha256") != task_sha256:
         raise DomainError("hash_mismatch", 422)
+    if terminal.get("state") not in TERMINAL or (
+        "native_exit_code" not in terminal
+        or (
+            terminal["native_exit_code"] is not None
+            and type(terminal["native_exit_code"]) is not int
+        )
+    ):
+        raise DomainError("invalid_request", 422, "Invalid supervisor terminal journal")
     return terminal
 
 
@@ -460,11 +468,11 @@ def reconcile(service, project_id: str) -> list[dict]:
             for j in tx.all("jobs")
             if (j["kind"] == "render" or tx.get("preview_assemblies", j["job_id"], required=False))
         ]
-    results = []
-    for job in jobs:
+
+    def reconcile_job(job: dict) -> dict | None:
         root = service.root(job)
         if not (root / "task.json").exists():
-            continue
+            return None
         task = read(root / "task.json")
         if any(task[key] != job[key] for key in ("job_id", "attempt_id", "input_digest")):
             raise DomainError("scope_denied", 403)
@@ -480,7 +488,7 @@ def reconcile(service, project_id: str) -> list[dict]:
                     job,
                     "Recovered claim release from verified terminal journal",
                 )
-            continue
+            return None
         process_path = root / "process.json"
         if process_path.exists():
             process = read(process_path)
@@ -553,8 +561,7 @@ def reconcile(service, project_id: str) -> list[dict]:
                 evidence="Terminal worker observed, media validation rejected output",
             )
             release_owned(services, project_id, job, "Terminal worker and rejected media verified")
-            results.append(job)
-            continue
+            return job
         extra = publish_proxy(service, job, root) if (root / "proxy-ready.json").exists() else []
         if (root / "assembly-ready.json").exists():
             extra = publish_assembly(service, job, root)
@@ -565,20 +572,17 @@ def reconcile(service, project_id: str) -> list[dict]:
             if marker.get("reason") == MEDIA_VALIDATION_FAILED:
                 state = "failed"
                 evidence = "Terminal worker observed after media validation requested cancellation"
-            elif state == "cancelled" and job["state"] not in {
-                "cancel_requested",
-                "outcome_uncertain",
-            }:
-                if marker:
+            elif state == "cancelled":
+                if not marker:
+                    state = "failed"
+                    evidence = (
+                        "Supervisor reported cancelled without matching attempt cancellation marker"
+                    )
+                elif job["state"] not in {"cancel_requested", "outcome_uncertain"}:
                     job = service.state(
                         job,
                         "cancel_requested",
                         evidence="Verified attempt cancellation marker reconciled before terminal state",
-                    )
-                else:
-                    state = "failed"
-                    evidence = (
-                        "Supervisor reported cancelled without matching attempt cancellation marker"
                     )
             job = service.state(
                 job,
@@ -609,5 +613,23 @@ def reconcile(service, project_id: str) -> list[dict]:
                 "outcome_uncertain",
                 evidence="Launch claim exists but original supervisor identity is not yet provable",
             )
-        results.append(job)
+        return job
+
+    results = []
+    deferred_error: DomainError | None = None
+    for job in jobs:
+        try:
+            result = reconcile_job(job)
+        except DomainError as exc:
+            if deferred_error is None:
+                deferred_error = exc
+        except (ValueError, OSError, KeyError, TypeError):
+            # Keep malformed journals visible to lifecycle callers without killing the watcher.
+            if deferred_error is None:
+                deferred_error = DomainError("invalid_request", 422, "Invalid preview journal")
+        else:
+            if result is not None:
+                results.append(result)
+    if deferred_error is not None:
+        raise deferred_error
     return results

@@ -12,6 +12,7 @@ type PickerProps = Lookups & {
   items: ItemRecord[]; selection: TurnSelection; target: DraftTarget; references: VersionRef[];
   includeCurrentViewAsReference: boolean; onTarget: (target: DraftTarget) => void; onReferences: (refs: VersionRef[]) => void; onIncludeView: (include: boolean) => void;
   open?: boolean; onOpenChange?: (open: boolean) => void;
+  pendingExisting?: boolean; onPendingExistingChange?: (pending: boolean) => void;
 };
 
 const modes: [Mode, string][] = [["current_view", "Current view"], ["project", "Project"], ["existing", "Existing…"], ["new", "New…"]];
@@ -77,7 +78,7 @@ function VersionSelect({ label, result, versionId, current, onChange, hasItem = 
   </select></label>;
 }
 
-function ExistingTarget({ api, projectId, items, target, onTarget, plan }: Lookups & Pick<PickerProps, "items" | "target" | "onTarget"> & { plan: ReturnType<typeof useShotPlan> }) {
+function ExistingTarget({ api, projectId, items, target, onTarget, plan, pending }: Lookups & Pick<PickerProps, "items" | "target" | "onTarget"> & { plan: ReturnType<typeof useShotPlan>; pending: boolean }) {
   const pinned = pinnedVersion(target);
   const itemId = pinned?.item_id ?? "";
   const versionId = pinned?.version_id ?? "";
@@ -100,6 +101,7 @@ function ExistingTarget({ api, projectId, items, target, onTarget, plan }: Looku
       <option value="">Entire storyboard version</option>
       {plan.plan.shots.map(shot => <option key={shot.shot_id} value={shot.shot_id}>{shot.intent || shot.shot_id}</option>)}
     </select></label>}
+    {pending && <small className="target-pending-hint">Select a published item to enable sending, or choose another target mode.</small>}
     {error && <small role="alert">{error}</small>}
   </div>;
 }
@@ -133,15 +135,14 @@ function References({ api, projectId, items, target, selection, references, incl
   </details>;
 }
 
-function TargetOptions({ props, count, friendly, close, plan }: { props: PickerProps; count: number; friendly: string; close: () => void; plan: ReturnType<typeof useShotPlan> }) {
+function TargetOptions({ props, count, friendly, close, plan, pending, chooseExisting }: { props: PickerProps; count: number; friendly: string; close: () => void; plan: ReturnType<typeof useShotPlan>; pending: boolean; chooseExisting: () => void }) {
   const { target, onTarget, selection } = props;
-  const [choosingExisting, setChoosingExisting] = useState(false);
   const newTarget = target !== "current_view" && target.kind === "new_item" ? target : null;
   const [previousNew, setPreviousNew] = useState<NewTarget | null>(null);
-  const mode: Mode = choosingExisting || pinnedVersion(target) ? "existing" : target === "current_view" ? "current_view" : newTarget ? "new" : "project";
+  const mode: Mode = pending || pinnedVersion(target) ? "existing" : target === "current_view" ? "current_view" : newTarget ? "new" : "project";
   function chooseMode(next: Mode) {
-    setChoosingExisting(next === "existing");
     if (newTarget) setPreviousNew(newTarget);
+    if (next === "existing" && !pinnedVersion(target)) chooseExisting();
     if (next === "current_view") onTarget("current_view");
     if (next === "project") onTarget({ kind: "project" });
     if (next === "new") onTarget(newTarget ?? previousNew ?? { kind: "new_item", item_kind: "asset", intent_id: id() });
@@ -153,7 +154,7 @@ function TargetOptions({ props, count, friendly, close, plan }: { props: PickerP
     )}</div>
     {mode === "current_view" && <small className="target-mode-summary">{selection.version_id ? `Captures ${friendly} from Review on submit.` : "Nothing open in Review · resolves to Project on submit."}</small>}
     {mode === "project" && <small className="target-mode-summary">Project-wide planning or discussion. Hidden Review drafts are not captured.</small>}
-    {mode === "existing" && <ExistingTarget {...props} plan={plan} />}
+    {mode === "existing" && <ExistingTarget {...props} plan={plan} pending={pending} />}
     {mode === "new" && newTarget && <>
       <div className="target-kind-tabs" role="group" aria-label="New item kind">{(Object.keys(newKinds) as NewTarget["item_kind"][]).map(kind =>
         <button key={kind} aria-pressed={newTarget.item_kind === kind} onClick={() => onTarget({ ...newTarget, item_kind: kind })}>{newKinds[kind][0]}</button>
@@ -170,26 +171,36 @@ function TargetOptions({ props, count, friendly, close, plan }: { props: PickerP
 export function TargetPicker(props: PickerProps) {
   const { api, projectId, items, selection, target, references, includeCurrentViewAsReference } = props;
   const [localOpen, setLocalOpen] = useState(false);
+  const [localPendingExisting, setLocalPendingExisting] = useState(false);
   const open = props.open ?? localOpen;
   function changeOpen(next: boolean) {
     if (props.open === undefined) setLocalOpen(next);
     props.onOpenChange?.(next);
   }
+  function setPendingExisting(next: boolean) {
+    if (props.pendingExisting === undefined) setLocalPendingExisting(next);
+    props.onPendingExistingChange?.(next);
+  }
+  function chooseTarget(next: DraftTarget) {
+    setPendingExisting(false);
+    props.onTarget(next);
+  }
   const resolved = resolveTarget(target, selection);
   const pinned = pinnedVersion(target);
+  const pending = (props.pendingExisting ?? localPendingExisting) && !pinned;
   const browsingStoryboard = open && items.some(item => item.item_id === pinned?.item_id && item.kind === "storyboard");
   const plan = useShotPlan({ api, projectId }, resolved.kind === "shot" ? resolved.storyboard_version.version_id : browsingStoryboard ? pinned?.version_id : undefined);
   const friendly = targetLabel(resolved, items);
   const shotName = resolved.kind === "shot" ? plan?.plan?.shots.find(shot => shot.shot_id === resolved.shot_id)?.intent : null;
   const targetName = shotName && resolved.kind === "shot" ? `Shot · ${items.find(item => item.item_id === resolved.storyboard_version.item_id)?.name ?? "Storyboard"} · ${shotName}` : friendly;
-  const label = target === "current_view" && resolved.kind !== "project" ? `Current view · ${targetName}` : targetName;
+  const label = pending ? "Choose published item…" : target === "current_view" && resolved.kind !== "project" ? `Current view · ${targetName}` : targetName;
   const count = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]).length;
   return <div className="target-picker" onKeyDown={event => {
     if (open && event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); changeOpen(false); }
   }}>
-    <button className="target-bar" aria-label="Choose request target and references" aria-expanded={open} aria-controls="request-target-picker" onClick={() => changeOpen(!open)} title={JSON.stringify(resolved)}>
+    <button className="target-bar" aria-label="Choose request target and references" aria-expanded={open} aria-controls="request-target-picker" aria-invalid={pending || undefined} onClick={() => changeOpen(!open)} title={pending ? undefined : JSON.stringify(resolved)}>
       <span className="target-bar-label"><span>Target:</span> {label}</span>{count > 0 && <span className="target-ref-count">+{count} ref</span>}<ChevronDown size={13} />
     </button>
-    {open && <TargetOptions props={props} count={count} friendly={targetName} close={() => changeOpen(false)} plan={plan} />}
+    {open && <TargetOptions props={{ ...props, onTarget: chooseTarget }} count={count} friendly={targetName} close={() => changeOpen(false)} plan={plan} pending={pending} chooseExisting={() => setPendingExisting(true)} />}
   </div>;
 }

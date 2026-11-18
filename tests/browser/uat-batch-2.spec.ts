@@ -335,6 +335,7 @@ test("Jobs badge updates empty, active, failed attention and all-succeeded histo
   await expect(badge).toHaveClass("active-jobs"); await expect(badge).toHaveText("Jobs1 running · 1 queued");
   await expect(badge.locator(".jobs-indicator")).toBeVisible();
   studio.emit("job.state_changed", { ...first, state: "failed", state_revision: 2, error_code: "corrupt_provider_output" });
+  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1 failed · 1 queued");
   studio.emit("job.state_changed", { ...second, state: "succeeded", state_revision: 2 });
   await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1 failed · 1 done");
   await badge.click();

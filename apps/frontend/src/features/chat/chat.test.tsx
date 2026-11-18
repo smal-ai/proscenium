@@ -138,20 +138,21 @@ test("Jobs badge partitions every job into running, queued, uncertain, failed or
   assert.match(jobsBadgeState(active, true).ariaLabel, /last known/);
   const uncertain = job("outcome_uncertain");
   assert.equal(jobsBadgeState([uncertain], false).text, "1 uncertain?");
-  assert.deepEqual(jobsBadgeState([...active, uncertain], false), { text: "1 running · 1 queued?", ariaLabel: "Jobs: 1 running · 1 queued? · uncertain job outcome", tone: "attention" });
+  assert.deepEqual(jobsBadgeState([...active, uncertain, job("succeeded")], false), { text: "1 uncertain · 1 running · 1 queued?", ariaLabel: "Jobs: 1 uncertain · 1 running · 1 queued? · uncertain job outcome", tone: "attention" });
   const settled = [job("succeeded", "a"), job("succeeded", "b"), job("cancelled", "c"), job("succeeded", "d")];
   assert.equal(jobsBadgeState(settled, false).text, "4 done"); assert.equal(jobsBadgeState(settled, false).tone, "done");
   assert.equal(jobsBadgeState(settled, true).text, "4 done?");
   const failed = job("failed");
   assert.deepEqual(jobsBadgeState([failed, job("succeeded")], false), { text: "1 failed · 1 done", ariaLabel: "Jobs: 1 failed · 1 done · failed job recorded", tone: "attention" });
-  assert.equal(jobsBadgeState([failed, job("running")], false).tone, "attention");
+  assert.deepEqual(jobsBadgeState([failed, job("running"), ...queued, ...settled.slice(0, 2)], false), { text: "1 failed · 1 running · 5 queued", ariaLabel: "Jobs: 1 failed · 1 running · 5 queued · failed job recorded", tone: "attention" });
+  assert.equal(jobsBadgeState([failed, uncertain, ...active], false).text, "1 failed · 1 uncertain · 1 running · 1 queued?");
 });
 
 test("Composer renders accented Jobs counts and its status as the final bottom-right footer row", () => {
   for (const [jobs, text, tone] of [
     [[], "0", "empty"],
     [[job("running"), job("planned")], "1 running · 1 queued", "active"],
-    [[job("running"), job("planned"), job("outcome_uncertain")], "1 running · 1 queued?", "attention"],
+    [[job("running"), job("planned"), job("outcome_uncertain")], "1 uncertain · 1 running · 1 queued?", "attention"],
     [[job("succeeded", "a"), job("cancelled", "b"), job("succeeded", "c"), job("succeeded", "d")], "4 done", "done"],
     [[{ ...job("failed"), error_code: "corrupt_provider_output" }], "1 failed", "attention"],
   ] as [JobRecord[], string, string][]) {
@@ -180,7 +181,7 @@ test("Independent jobs shows real frame progress, attention first and only settl
   assert.doesNotMatch(markupFor(renders), /Finished/);
   const markup = markupFor([...renders, { ...job("failed"), error_code: "corrupt_provider_output" }, job("outcome_uncertain"), job("succeeded"), job("cancelled")]);
   assert.match(markup, /Needs attention \(2\)[\s\S]*Running \(1\)[\s\S]*Planned \/ waiting \(5\)[\s\S]*<details class="jobs-finished-group"><summary>Finished \(2\)<\/summary>/);
-  assert.match(markup, /sl-01-dormant-macro<\/strong>[\s\S]*28\/72 frames<progress[^>]*value="28" max="72"/);
+  assert.match(markup, /sl-01-dormant-macro<\/strong>[\s\S]*28\/72 frames<span class="job-progress-bar" aria-hidden="true"><span class="job-progress-fill" style="width:39%"/);
   for (const frames of [96, 72, 120]) assert.match(markup, new RegExp(`class="job-progress">${frames} frames`));
   assert.match(markup, /Proxy · Relay dish<\/strong>[\s\S]*class="job-progress">1 frame</);
   assert.doesNotMatch(markup, /0\/96/);
@@ -191,12 +192,16 @@ test("Independent jobs shows real frame progress, attention first and only settl
 });
 
 test("Target picker exposes four distinct modes and references do not require an existing primary target", () => {
-  const markupFor = (target: DraftTarget, references = [ref], open: boolean | undefined = true) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={[asset]} target={target} selection={emptySelection()} references={references} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} {...(open === false ? {} : { open })} />);
+  const markupFor = (target: DraftTarget, references = [ref], open = true, pendingExisting?: boolean) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={[asset]} target={target} selection={emptySelection()} references={references} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={pendingExisting} {...(open ? { open } : {})} />);
   const current = markupFor("current_view", []);
   assert.match(current, /Target mode.*aria-pressed="true">Current view.*aria-pressed="false">Project.*aria-pressed="false">Existing….*aria-pressed="false">New…/);
   assert.match(current, /Nothing open in Review · resolves to Project on submit/);
   assert.match(current, /<details class="target-references-disclosure">/);
   assert.doesNotMatch(markupFor("current_view", [], false), /class="target-options"/);
+  const pending = markupFor("current_view", [], true, true);
+  assert.match(pending, /aria-invalid="true".*Target:<\/span> Choose published item….*aria-pressed="true">Existing…/);
+  assert.match(pending, /class="target-pending-hint">Select a published item to enable sending, or choose another target mode\./);
+  assert.match(markupFor("current_view", [], false, true), /aria-expanded="false".*Target:<\/span> Choose published item…/);
   assert.match(markupFor({ kind: "project" }), /aria-pressed="true">Project.*Project-wide planning/);
   const existing = markupFor({ kind: "item", version: ref });
   assert.match(existing, /aria-pressed="true">Existing….*aria-label="Published item".*aria-label="Published version".*value="version-old" selected/);

@@ -86,11 +86,12 @@ def plan_render(studio, job_id="render-one", end=28):
         )
 
 
-def attempt(studio, end=28):
-    job = plan_render(studio, end=end)
-    assert studio.services.resources.acquire(
-        runner.RESOURCE, PROJECT, job["job_id"], job["attempt_id"]
-    )
+def attempt(studio, end=28, *, job_id="render-one", acquire=True):
+    job = plan_render(studio, job_id, end=end)
+    if acquire:
+        assert studio.services.resources.acquire(
+            runner.RESOURCE, PROJECT, job["job_id"], job["attempt_id"]
+        )
     root = studio.previews.root(job)
     atomic(root / "task.json", {**receipt_binding(job), "config": {}})
     (root / "launch.claim").touch()
@@ -184,25 +185,13 @@ def claim(studio):
 
 
 def test_stranded_cancelled_render_keeps_partial_media_and_releases_only_its_claim(studio):
-    job, root = attempt(studio)
-    frames = [frame_receipt(job, root, n) for n in (1, 14, 28)]
+    job, root = attempt(studio, end=72)
+    frames = [frame_receipt(job, root, n) for n in range(1, 29)]
     for frame in frames:
         studio.previews.register(worker_caller(job), frame)
-    segment = segment_receipt(job, root, 25, 28)
-    # Seed an already registered segment in the sparse historical fixture. New
-    # segments must prove every constituent frame, covered by the race tests.
-    artefacts = studio.previews.artifacts
-    video = artefacts.promote(
-        PROJECT,
-        segment["artifact_id"],
-        VIDEO,
-        kind="video",
-        purpose="draft_motion",
-        media_type="video/mp4",
-    )
-    with studio.store.transaction() as tx:
-        artefacts.put(tx, video)
-        tx.put("segments", segment["segment_id"], segment, schema="PreviewSegment")
+    segments = [segment_receipt(job, root, first, first + 3) for first in range(1, 29, 4)]
+    for segment in segments:
+        studio.previews.register(worker_caller(job), segment, segment=True)
     atomic(root / "cancel.json", {"attempt_id": job["attempt_id"]})
     terminal(root)
 
@@ -216,10 +205,14 @@ def test_stranded_cancelled_render_keeps_partial_media_and_releases_only_its_cla
         settled["availability"],
         settled["completed_frames"],
         settled["native_exit_code"],
-    ) == ("cancelled", "partial", 3, -9)
-    assert set(settled["artifact_ids"]) == {row["artifact_id"] for row in [*frames, segment]}
+    ) == ("cancelled", "partial", 28, -9)
+    assert settled["expected_frames"] == 72
+    assert set(settled["artifact_ids"]) == {row["artifact_id"] for row in [*frames, *segments]}
     assert sorted(records(studio, "frames"), key=lambda row: row["source_frame"]) == frames
-    assert records(studio, "segments") == [segment]
+    assert (
+        sorted(records(studio, "segments"), key=lambda row: row["source_frames"]["start"])
+        == segments
+    )
     assert claim(studio) is None
     assert studio.services.resources.acquire(
         runner.RESOURCE, PROJECT, successor["job_id"], successor["attempt_id"]
@@ -229,25 +222,69 @@ def test_stranded_cancelled_render_keeps_partial_media_and_releases_only_its_cla
     assert studio.services.jobs.get(PROJECT, job["job_id"]) == settled
 
 
-def test_mismatched_terminal_task_digest_never_releases_claim(studio):
-    job, root = attempt(studio)
-    atomic(root / "cancel.json", {"attempt_id": job["attempt_id"]})
-    terminal(root, digest="0" * 64)
+@pytest.mark.parametrize(
+    ("initial", "acquire", "corruption", "code"),
+    [
+        ("running", True, "digest", "hash_mismatch"),
+        ("running", False, "digest", "hash_mismatch"),
+        ("cancelled", True, "digest", "hash_mismatch"),
+        ("cancelled", True, "json", "invalid_request"),
+        ("cancelled", True, "shape", "invalid_request"),
+    ],
+)
+def test_corrupt_terminal_never_releases_its_claim_or_starves_later_jobs(
+    studio, initial, acquire, corruption, code
+):
+    bad, bad_root = attempt(studio, job_id="render-a", acquire=acquire)
+    atomic(bad_root / "cancel.json", {"attempt_id": bad["attempt_id"]})
+    if initial == "cancelled":
+        bad = studio.previews.state(bad, "cancel_requested")
+        bad = studio.previews.state(bad, "cancelled")
+    if corruption == "digest":
+        terminal(bad_root, digest="0" * 64)
+    elif corruption == "json":
+        (bad_root / "terminal.json").write_text("{")
+    else:
+        atomic(bad_root / "terminal.json", {"task_sha256": task_hash(bad_root)})
+
+    good, good_root = attempt(studio, end=4, job_id="render-b", acquire=False)
+    frames = [frame_receipt(good, good_root, frame) for frame in range(1, 5)]
+    terminal(good_root, "succeeded")
     with pytest.raises(DomainError) as error:
         studio.previews.reconcile(PROJECT)
-    assert error.value.code == "hash_mismatch"
-    assert claim(studio) == (PROJECT, job["job_id"], job["attempt_id"])
-    assert studio.services.jobs.get(PROJECT, job["job_id"])["state"] == "running"
+    assert error.value.code == code
+    assert claim(studio) == ((PROJECT, bad["job_id"], bad["attempt_id"]) if acquire else None)
+    assert studio.services.jobs.get(PROJECT, bad["job_id"]) == bad
+    good = studio.services.jobs.get(PROJECT, good["job_id"])
+    assert (good["state"], good["completed_frames"]) == ("succeeded", 4)
+    assert records(studio, "frames") == frames
 
 
-@pytest.mark.parametrize("marker", [None, {"attempt_id": "different-attempt"}])
-def test_supervisor_cancelled_without_matching_marker_settles_failed(studio, marker):
-    _, root = attempt(studio)
+@pytest.mark.parametrize(
+    ("initial", "marker", "expected"),
+    [
+        ("running", None, "failed"),
+        ("running", "different-attempt", "failed"),
+        ("outcome_uncertain", None, "failed"),
+        ("cancel_requested", None, "failed"),
+        ("cancel_requested", "different-attempt", "failed"),
+        ("cancel_requested", "matching", "cancelled"),
+    ],
+)
+def test_supervisor_cancelled_requires_matching_marker(studio, initial, marker, expected):
+    job, root = attempt(studio)
+    if initial != "running":
+        job = studio.previews.state(job, initial)
+    if initial == "outcome_uncertain":
+        atomic(root / "process.json", {"task_sha256": task_hash(root), "pid": 999}, immutable=False)
     if marker is not None:
-        atomic(root / "cancel.json", marker)
+        atomic(
+            root / "cancel.json",
+            {"attempt_id": job["attempt_id"] if marker == "matching" else marker},
+        )
     terminal(root)
     [settled] = studio.previews.reconcile(PROJECT)
-    assert (settled["state"], settled["native_exit_code"]) == ("failed", -9)
+    assert (settled["state"], settled["native_exit_code"]) == (expected, -9)
     assert claim(studio) is None
 
 
@@ -341,6 +378,72 @@ def review_request(targets):
         "criteria": "Check motion continuity across the sampled frames.",
         "telemetry_artifact_ids": [],
     }
+
+
+@pytest.mark.parametrize("origin", ["concept", "reference", "blender_render"])
+def test_vlm_draft_motion_stills_require_exact_receipt_before_job_admission(
+    studio, monkeypatch, origin
+):
+    raw = png(1)
+    staging = ".proscenium/tool-output/staging/standalone.png"
+    path = studio.root / staging
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+    artefact, status = invoke(
+        studio,
+        "register_artifact",
+        {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "operation_id": "register-standalone",
+            "artifact_id": "standalone-frame",
+            "staging_path": staging,
+            "kind": "image",
+            "purpose": "draft_motion",
+            "media_type": "image/png",
+            "sha256": sha(raw),
+        },
+        identity="call-register",
+    )
+    assert status == "success", artefact
+    target = {
+        "origin": origin,
+        "item_id": None,
+        "version_id": None,
+        "shot_id": None,
+        "render_job_id": None,
+        "source_frame": None,
+        "artifact_id": artefact["artifact_id"],
+        "media_artifact_id": None,
+        "displayed_sha256": artefact["sha256"],
+        "dimensions": artefact["dimensions"],
+    }
+    code = "invalid_request"
+    message = (
+        "Draft motion visual review targets must reference receipt-backed render or sequence frames"
+    )
+    if origin == "blender_render":
+        job = plan_render(studio)
+        with studio.store.transaction() as tx:
+            tx.put("versions", VERSION["version_id"], {**VERSION, "project_id": PROJECT})
+        target.update(**VERSION, render_job_id=job["job_id"], shot_id="shot-one", source_frame=1)
+        code = "source_conflict"
+        message = "No exact frame receipt"
+
+    def forbid_job_creation(*args, **kwargs):
+        pytest.fail("Target preflight must reject before attempting review job allocation")
+
+    monkeypatch.setattr(studio.services.jobs, "create", forbid_job_creation)
+    prior_jobs = records(studio, "jobs")
+    error, status = invoke(
+        studio, "request_vlm_review", review_request([target]), identity="call-reject"
+    )
+    assert (status, error["error"], error["message"]) == ("failure", code, message)
+    assert records(studio, "frames") == []
+    assert records(studio, "reviews") == []
+    assert records(studio, "providers.tickets") == []
+    assert records(studio, "jobs") == prior_jobs
+    assert studio.vlm_state["requests"] == []
 
 
 def test_vlm_draft_motion_stills_are_admitted_replayed_and_labelled(studio):

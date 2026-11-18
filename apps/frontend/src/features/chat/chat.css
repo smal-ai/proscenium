@@ -56,7 +56,8 @@
 .job-state-pill{margin-left:auto}
 .needs-attention .job-state-pill{color:#ffe0a0;border-color:#6b542f;background:#352b19}
 .job-progress{display:flex;align-items:center;gap:6px;color:#c0c0cc;font-size:10px;font-variant-numeric:tabular-nums}
-.job-progress-bar{width:46px;height:4px;accent-color:var(--accent)}
+.job-progress-bar{width:56px;height:6px;border-radius:999px;background:#272734;border:1px solid #3f3f52;overflow:hidden}
+.job-progress-fill{display:block;height:100%;border-radius:inherit;background:#9b9dff}
 .job-row>small{grid-column:1;font-size:10px;line-height:1.4}
 .job-row-details{grid-column:2;min-width:0}
 .job-row-details[open]{grid-column:1/-1;padding:3px 0}
@@ -67,6 +68,8 @@
 .target-bar{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;text-align:left;border:1px solid #3b3b48;background:#202027;border-radius:5px;padding:5px 8px;cursor:pointer}
 .target-bar-label{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .target-bar-label>span{color:#b4b4c3}
+.target-bar[aria-invalid=true]{border-color:#806744}
+.target-options .target-pending-hint{color:#e1c594}
 .target-bar svg,.target-bar .target-ref-count{flex-shrink:0}
 .target-bar svg{transition:transform .15s ease}
 .target-bar[aria-expanded=true] svg{transform:rotate(180deg)}

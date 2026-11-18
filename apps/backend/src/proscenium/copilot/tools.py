@@ -228,6 +228,7 @@ SAFE_REASONS = frozenset(
         "Dependency cycle",
         "Displayed image identity mismatch",
         "No exact frame receipt",
+        "Draft motion visual review targets must reference receipt-backed render or sequence frames",
         "Spatial mapping mismatch",
         "Storyboard source must be AuthoredShotPlan JSON",
         "Authored catalogue source is not JSON",

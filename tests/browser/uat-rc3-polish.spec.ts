@@ -923,6 +923,64 @@ test("Target picker keeps naming, References and Composer panels independent at 
   studio.assertHermetic();
 });
 
+test("Pending Existing target blocks queue and hidden Review capture until a target is chosen", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
+  await navigator(page).locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  const review = reviewPanel(page);
+  await review.getByRole("button", { name: "Annotate presented frame" }).click();
+  await feedbackBox(review).fill("This hidden Review draft must not be captured.");
+  await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+  const bar = targetBar(page);
+  const input = composerMessage(page);
+  const assistant = assistantPanel(page);
+  const queue = assistant.getByRole("button", { name: "Queue message", exact: true });
+  const picker = assistant.locator("#request-target-picker");
+  const mode = (name: string) => picker.getByRole("button", { name, exact: true });
+  const warning = "Choose a published item for Existing… or switch target mode before sending.";
+  await input.fill("Use a published target only");
+  await expect(bar).toContainText("Target: Current view");
+  await expect(queue).toBeEnabled();
+  await bar.click();
+  await mode("Existing…").click();
+  await expect(bar).toHaveText("Target: Choose published item…");
+  await expect(bar).toHaveAttribute("aria-invalid", "true");
+  await expect(picker.locator(".target-pending-hint")).toBeVisible();
+  await expect(queue).toBeDisabled();
+  await input.press("Control+Enter");
+  await expect(assistant.getByRole("alert")).toHaveText(warning);
+  expect(studio.contexts).toEqual([]);
+  expect(studio.submissions).toEqual([]);
+  // Preparing this hidden Review draft would have tried to persist the annotation.
+  expect(studio.guard?.calls.filter(call => ["POST", "PUT", "PATCH", "DELETE"].includes(call.method))).toEqual([]);
+
+  await mode("Close target picker").click();
+  await expect(picker).toHaveCount(0);
+  await expect(bar).toHaveText("Target: Choose published item…");
+  await expect(queue).toBeDisabled();
+  await bar.click();
+  await expect(mode("Existing…")).toHaveAttribute("aria-pressed", "true");
+  await expect(picker.getByRole("combobox", { name: "Published item", exact: true })).toHaveValue("");
+  await mode("Project").click();
+  await expect(queue).toBeEnabled();
+  await expect(assistant.getByText(warning, { exact: true })).toHaveCount(0);
+  await mode("Existing…").click();
+  await expect(queue).toBeDisabled();
+  await mode("Current view").click();
+  await expect(queue).toBeEnabled();
+  await mode("Existing…").click();
+  await expect(queue).toBeDisabled();
+  await picker.getByRole("combobox", { name: "Published item", exact: true }).selectOption("board-b");
+  await expect(bar).not.toHaveAttribute("aria-invalid");
+  await expect(queue).toBeEnabled();
+  await queue.click();
+  await expect.poll(() => studio.submissions.length).toBe(1);
+  expect(studio.contexts).toHaveLength(1);
+  expect(studio.contexts[0]).toMatchObject({ request_target: { kind: "item", version: { item_id: "board-b", version_id: "b-v1" } }, annotations: [], attachments: [] });
+  expect(studio.guard?.calls.filter(call => call.method === "POST").map(call => call.url)).toEqual([`${base}/contexts`, `${base}/requests`]);
+  studio.assertHermetic();
+});
+
 test("Independent jobs shows real frame progress, actionable failure and collapsed settled history", async ({ page, baseURL }, testInfo) => {
   const studio = new StudioFixture(page, baseURL!);
   studio.retained = [];
@@ -946,7 +1004,7 @@ test("Independent jobs shows real frame progress, actionable failure and collaps
   await draft.fill("Don't queue the final assembly yet.");
   await draft.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(6, 11));
   const badge = jobsPill(page);
-  await expect(badge).toHaveText("Jobs1 running · 5 queued");
+  await expect(badge).toHaveText("Jobs1 failed · 1 running · 5 queued");
   await expect(badge).toHaveClass("attention-jobs");
   await badge.click();
   const panel = assistantPanel(page).getByRole("region", { name: "Independent jobs" });
@@ -955,7 +1013,11 @@ test("Independent jobs shows real frame progress, actionable failure and collaps
   const row = (title: string) => panel.locator(".job-row").filter({ has: page.getByText(title, { exact: true }) });
   const macro = row("sl-01-dormant-macro");
   await expect(macro).toContainText("28/72 frames");
-  await expect(macro.locator(".job-progress-bar")).toHaveAttribute("max", "72");
+  const progress = macro.locator(".job-progress-bar");
+  const fill = progress.locator(".job-progress-fill");
+  await expect(progress).toHaveAttribute("aria-hidden", "true");
+  await expect(fill).toHaveAttribute("style", /width: 39%/);
+  await expect(fill).toHaveCSS("background-color", "rgb(155, 157, 255)");
   await expect(row("sl-02-conduit").locator(".job-progress")).toHaveText("96 frames");
   await expect(row("sl-03-console").locator(".job-progress")).toHaveText("72 frames");
   await expect(row("sl-04-exterior").locator(".job-progress")).toHaveText("120 frames");

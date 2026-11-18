@@ -22,6 +22,8 @@ import "./chat.css";
 
 export { AssistantStatus } from "./AssistantStatus";
 
+const pendingExistingError = "Choose a published item for Existing… or switch target mode before sending.";
+
 export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "queue" | "steer"): boolean {
   if (mode !== "queue" || !snapshot) return false;
   const execution = snapshot.execution;
@@ -44,6 +46,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [mode, setMode] = useState<"queue" | "steer">("queue");
   const [draftTarget, setDraftTarget] = useState<DraftTarget>(() => readPrivate<DraftTarget>(`target.${projectId}`) ?? "current_view");
+  const [pendingExisting, setPendingExisting] = useState(false);
   const [references, setReferences] = useState<VersionRef[]>(() => readPrivate<VersionRef[]>(`ref_versions.${projectId}`) ?? []);
   const [includeCurrentViewAsReference, setIncludeCurrentViewAsReference] = useState(() => readPrivate<boolean>(`include_current_view_ref.${projectId}`) ?? false);
   const [targetWork, setTargetWork] = useState("");
@@ -101,7 +104,12 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
   const currentSelection: TurnSelection = draftTarget === "current_view" && (selection.version_id || selection.annotations.length || selection.attachments.length) ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] } : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
   function changeDraft(value: string) { setDraft(value); writePrivate(`draft.${projectId}`, value); }
-  function changeTarget(target: DraftTarget) { setDraftTarget(target); writePrivate(`target.${projectId}`, target); }
+  function changeTarget(target: DraftTarget) {
+    setPendingExisting(false);
+    setError(previous => previous === pendingExistingError ? "" : previous);
+    setDraftTarget(target);
+    writePrivate(`target.${projectId}`, target);
+  }
   function changeReferences(versions: VersionRef[]) { setReferences(versions); writePrivate(`ref_versions.${projectId}`, versions); }
   function changeIncludeView(include: boolean) { setIncludeCurrentViewAsReference(include); writePrivate(`include_current_view_ref.${projectId}`, include); }
   function restoreMessageCaret(focus: boolean) {
@@ -163,6 +171,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     } catch (e) { setUploads(old => old.map(u => u.uploadId === value.uploadId ? { ...u, busy: false, error: describeError(e) } : u)); }
   }
   async function send() {
+    if (pendingExisting) { setError(pendingExistingError); return; }
     if (preparingLatch.current || composer.busy || composer.pending || uploads.length || !draft.trim()) return;
     if (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId)) { setError("Steer is unavailable for this work. Switch to Queue deliberately to send a new request."); return; }
     preparingLatch.current = true; setPreparing(true); setError("");
@@ -228,7 +237,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       {composer.pendingStop && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
       {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
       {shouldShowQueueHold(snapshot, mode) && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
-      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />
+      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
         if (e.nativeEvent.isComposing) return;
@@ -254,7 +263,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       {mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId) && <div className="steer-unavailable" role="status"><p>{!canSteerWorkId ? `Steer is unavailable because work is ${work?.state.replaceAll("_", " ") ?? "not active"}${snapshot?.execution?.fenced ? " or execution is paused" : ""}. Your draft and mode are retained.` : "Select the eligible work explicitly before sending Steer."}</p><button onClick={() => setMode("queue")}>Switch to Queue</button></div>}
       <div className="composer-actions"><label className="attach-button" title="Attach PNG, JPEG or WebP"><Paperclip size={15} /><span className="sr-only">Attach images</span><input aria-label="Attach images" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e => { const next = [...(e.target.files ?? [])].map(file => ({ uploadId: id(), name: file.name, file, artifact: null, busy: true, error: "" })); setUploads(old => [...old, ...next]); next.forEach(u => void upload(u)); e.target.value = ""; }} /></label>
         <button className="stop" disabled={!canStopWorkId || uncertainStop || composer.stopping || !!composer.pendingStop || work?.state === "stop_requested"} onClick={() => { if (canStopWorkId && stopWorkId(snapshotRef.current) === canStopWorkId) void composer.stop(canStopWorkId); }}><Square size={11} fill="currentColor" />{composer.stopping || work?.state === "stop_requested" ? "Stop requested" : "Stop"}</button>
-        <SendControl mode={mode} onMode={setMode} disabled={composerPanel !== "message" || !draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId))} onSend={() => void send()} />
+        <SendControl mode={mode} onMode={setMode} disabled={composerPanel !== "message" || !draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || pendingExisting || (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId))} onSend={() => void send()} />
       </div><div className="composer-footer"><small className="composer-hint">Ctrl+Enter to {mode} · Context is captured on submit</small><AssistantStatus snapshot={snapshot} requests={requests} events={events} jobs={jobs} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} /></div>
     </div>
   </div>;

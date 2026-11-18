@@ -32,6 +32,7 @@ from proscenium.providers.vlm import (
     VLMClient,
     findings,
 )
+from proscenium.reviews.references import References
 from proscenium.services import Services
 
 JSON = dict[str, Any]
@@ -433,9 +434,22 @@ class ProviderService:
                     422,
                     "Artefact purpose is not eligible for visual review; supply concept, reference, keyframe, draft_motion, inspection or final still images",
                 )
+            if artifact["purpose"] == "draft_motion" and target["origin"] not in {
+                "blender_render",
+                "sequence_render",
+            }:
+                raise DomainError(
+                    "invalid_request",
+                    422,
+                    "Draft motion visual review targets must reference receipt-backed render or sequence frames",
+                )
             hashes[target["artifact_id"]] = artifact["sha256"]
             image_hashes[target["artifact_id"]] = sha(clean)
             target_purposes[target["artifact_id"]] = artifact["purpose"]
+        refs = References(self.services)
+        with store.transaction(write=False) as tx:
+            for target in request["targets"]:
+                refs.target(tx, target)
         for identity in request["telemetry_artifact_ids"]:
             artifact, data = self.artifact_bytes(project_id, identity)
             if artifact["media_type"] != "application/json" or len(data) > 1024 * 1024:

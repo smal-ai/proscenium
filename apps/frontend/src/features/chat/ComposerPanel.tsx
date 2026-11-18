@@ -20,14 +20,11 @@ export function jobsBadgeState(jobs: JobRecord[], stale: boolean): { text: strin
   const { running, queued, uncertain, failed, settled } = partitionJobs(jobs);
   const unfinished = running.length + queued.length + uncertain.length > 0;
   const parts: string[] = [];
-  if (unfinished) {
-    if (running.length) parts.push(`${running.length} running`);
-    if (queued.length) parts.push(`${queued.length} queued`);
-    if (!parts.length) parts.push(`${uncertain.length} uncertain`);
-  } else {
-    if (failed.length) parts.push(`${failed.length} failed`);
-    if (settled.length) parts.push(`${settled.length} done`);
-  }
+  if (failed.length) parts.push(`${failed.length} failed`);
+  if (uncertain.length) parts.push(`${uncertain.length} uncertain`);
+  if (running.length) parts.push(`${running.length} running`);
+  if (queued.length) parts.push(`${queued.length} queued`);
+  if (!unfinished && settled.length) parts.push(`${settled.length} done`);
   const text = (parts.join(" · ") || "0") + (stale || uncertain.length ? "?" : "");
   const tone = uncertain.length || failed.length ? "attention" : unfinished ? "active" : jobs.length ? "done" : "empty";
   return { text, ariaLabel: `Jobs: ${text}${stale ? " · last known" : ""}${uncertain.length ? " · uncertain job outcome" : ""}${failed.length ? " · failed job recorded" : ""}`, tone };
@@ -57,7 +54,7 @@ function JobRow({ job, itemName, cancel }: { job: JobRecord; itemName?: string; 
     </div>
     {expected !== null && <span className="job-progress">
       {completed !== null ? `${completed}/${expected} frames` : `${expected} ${expected === 1 ? "frame" : "frames"}`}
-      {completed !== null && expected > 1 && <progress className="job-progress-bar" aria-hidden="true" value={completed} max={expected} />}
+      {completed !== null && expected > 1 && <span className="job-progress-bar" aria-hidden="true"><span className="job-progress-fill" style={{ width: `${Math.min(100, Math.round((completed / expected) * 100))}%` }} /></span>}
     </span>}
     {group === "failed" && job.error_code && <small className="activity-error">Failure: {job.error_code}</small>}
     {group === "uncertain" && <small role="status">Needs attention · reconcile the original job outcome before retrying.</small>}

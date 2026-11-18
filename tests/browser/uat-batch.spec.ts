@@ -215,7 +215,7 @@ test("Jobs Context Agents replace textarea and restore draft caret plus accepted
     await expect(input).toHaveCount(0);
     if (panel === "Agents") { await expect(page.getByText("Layout shot one", { exact: true }).last()).toBeVisible(); await expect(page.getByRole("button", { name: /^Agents/ })).toContainText("1"); }
     if (panel === "Jobs") {
-      await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs1 running · 1 queued?");
+      await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs1 uncertain · 1 running · 1 queued?");
       const history = page.locator(".jobs-finished-group");
       await expect(history.getByText("Finished (1)")).toBeVisible();
       await expect(history).toHaveJSProperty("open", false);
