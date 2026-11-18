@@ -3,9 +3,9 @@ import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, In
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, Markup, PreviewSegment, ProxyMapping, SpatialHit, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { AnnotationEditor } from "./AnnotationEditor";
-import { AnnotationsDrawer, mergeItemAnnotations } from "./AnnotationsDrawer";
-import { frameTarget, mediaUrl, sequenceTarget, typingTarget } from "./media";
-import { flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
+import { AnnotationsDrawer, draftFromSnapshot, mergeHydratedDrafts, mergeItemAnnotations, resolveAnnotationEntry, type AnnotationEntry } from "./AnnotationsDrawer";
+import { frameTarget, mediaUrl, sequenceTarget, stableJson, typingTarget } from "./media";
+import { deleteDraft, flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
 import { SequencePlayer } from "./SequencePlayer";
 import { ProxyView, type FrozenProxyCapture, type ProxyCapture, type ProxyPinPlacement, type SpatialPinMarker } from "./ProxyView";
@@ -27,6 +27,21 @@ type Mode = "3d_inspection" | "keyframes" | "animation";
 type StoryboardPanel = { shot_id: string; frame_id: string; role: string; composition: string; artifact_id: string };
 type StoryboardTarget = StoryboardPanel & { target: FrameTarget };
 type UnmappedCapture = FrozenProxyCapture & { clickUv: [number, number] };
+
+function formatTargetOrigin(origin: FrameTarget["origin"]): string {
+  if (origin === "proxy_capture") return "3D capture";
+  return origin.replaceAll("_", " ").replace(/^./, c => c.toUpperCase());
+}
+
+function mergeSavedSnapshots(previous: AnnotationSnapshot[], incoming: readonly AnnotationSnapshot[]) {
+  const newest = new Map(previous.map(a => [a.annotation_id, a]));
+  for (const annotation of incoming) {
+    if ((annotation.saved_revision ?? 0) >= (newest.get(annotation.annotation_id)?.saved_revision ?? 0)) {
+      newest.set(annotation.annotation_id, annotation);
+    }
+  }
+  return [...newest.values()];
+}
 
 class MediaBoundary extends Component<{children: ReactNode; onError?: (message: string) => void}, {error: string}> {
   state = {error: ""};
@@ -74,10 +89,27 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [frameInput, setFrameInput] = useState("1");
   const [frameNotice, setFrameNotice] = useState("");
   const framePointerDown = useRef(false);
+  const frameInputEdited = useRef(false);
   const [playing, setPlaying] = useState(false);
-  useEffect(() => { if (!visible) { setPlaying(false); setCaptureReady(false); setPinMode(false); } }, [visible]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftId, setDraftId] = useState<string | null>(null);
+  const draftsRef = useRef(drafts);
+  draftsRef.current = drafts;
+  const draftIdRef = useRef(draftId);
+  draftIdRef.current = draftId;
+  const placementTokenRef = useRef(0);
+  const [placementCommitting, setPlacementCommitting] = useState(false);
+  const invalidatePendingPlacement = useCallback(() => {
+    placementTokenRef.current += 1;
+    setPlacementCommitting(false);
+  }, []);
+  useLayoutEffect(() => () => { placementTokenRef.current += 1; }, []);
+  useLayoutEffect(() => {
+    if (!visible) {
+      invalidatePendingPlacement();
+      setPlaying(false); setCaptureReady(false); setPinMode(false); setUnmappedCapture(null);
+    }
+  }, [visible, invalidatePendingPlacement]);
   const [saved, setSaved] = useState<AnnotationSnapshot[]>([]);
   const [error, setError] = useState("");
   const [queueingView,setQueueingView]=useState(false);
@@ -119,7 +151,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const displayedFrame = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame ?? Math.max(1, storyboardIndex + 1)) : requestedFrame;
   const imageOrdinal = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame) : (target?.sequence_frame ?? target?.source_frame);
   const passStatus = mode === "keyframes" ? describeKeyframePassStatus({readyFrames, displayedFrame, job: activeJob, availability}) : null;
-  useEffect(() => { setFrameInput(String(displayedFrame)); }, [displayedFrame, mode, draftId]);
+  const activeFrameOrdinal = mode === "keyframes" ? displayedFrame : requestedFrame;
+  useEffect(() => {
+    frameInputEdited.current = false;
+    setFrameInput(String(activeFrameOrdinal));
+  }, [activeFrameOrdinal, mode, draftId]);
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
   const mappedSequence = mode === "animation" && !!assembly && !!frameMap;
   const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
@@ -130,13 +166,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const changeDraft = useCallback((next: Draft) => {
     setDrafts(previous => [...previous.filter(d => d.key !== next.key), next]);
-    if (next.state === "saved") {
+    if (next.state === "saved" && next.annotation.saved_revision !== null) {
       // Discard needs the acknowledged snapshot even if no list refresh follows Save.
-      setSaved(previous => {
-        const existing = previous.find(a => a.annotation_id === next.annotation.annotation_id);
-        if ((existing?.saved_revision ?? 0) > (next.annotation.saved_revision ?? 0)) return previous;
-        return [...previous.filter(a => a.annotation_id !== next.annotation.annotation_id), structuredClone(next.annotation)];
-      });
+      setSaved(previous => mergeSavedSnapshots(previous, [structuredClone(next.annotation)]));
     }
   }, []);
 
@@ -199,6 +231,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     onQueue,
     onContextPreparer: registerEditorPreparer,
   });
+  const spatialBusyRef = useRef(spatialController.busy);
+  spatialBusyRef.current = spatialController.busy;
 
   useEffect(() => {
     let active = true;
@@ -215,7 +249,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   },[version?.kind,frameMap,target]);
 
   useEffect(() => {
-    if (!external?.target || externalPrimary === emittedPrimary.current) return;
+    if (externalPrimary === emittedPrimary.current) return;
+    invalidatePendingPlacement();
+    setUnmappedCapture(null);
+    if (!external?.target) return;
     initialised.current = true; setPlaying(false); setCaptureReady(false); setPinMode(false); setEditing2D(false); setFrameNotice("");
     setSequenceJobId(null);
     const annotation = external.annotations.find(a => a.target.artifact_id === external.target?.artifact_id);
@@ -231,13 +268,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         setRestorePinCamera(structuredClone(annotation.camera));
         setRestorePinNonce(n => n + 1);
       }
-      const restored: Draft = {key: annotation.annotation_id, projectId, annotation: structuredClone(annotation), state: annotation.saved_revision ? "saved" : "browser-local"};
-      setDrafts(previous => {
-        const retained = previous.find(d => d.key === restored.key);
-        // Navigation must never reconstruct an unacknowledged operation from its snapshot.
-        const chosen = retained && (retained.state !== "saved" || retained.annotation.saved_revision === restored.annotation.saved_revision) ? retained : restored;
-        return [...previous.filter(d => d.key !== restored.key), chosen];
-      }); setDraftId(restored.key);
+      const restored = draftFromSnapshot(annotation, projectId);
+      // Navigation must never reconstruct an unacknowledged operation from its snapshot.
+      setDrafts(previous => mergeHydratedDrafts(previous, [restored]));
+      setDraftId(restored.key);
     } else setDraftId(null);
   }, [externalPrimary]);
 
@@ -245,7 +279,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     let active = true;
     readDrafts(projectId).then(result => {
       if (!active) return;
-      setDrafts(result);
+      setDrafts(previous => mergeHydratedDrafts(result, previous));
       if (!autoRecoveredInterrupted.current && version) {
         autoRecoveredInterrupted.current = true;
         const interrupted = result.find(d => d.state === "failed" && d.operation && d.annotation.target.version_id === version.version_id);
@@ -377,11 +411,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100}})).then(result => {
       if (active) setSaved(previous => {
         const scoped = result.filter(({target}) => target.item_id === version.item_id || (target.item_id === null && target.version_id === version.version_id));
-        const newest = new Map(previous.map(a => [a.annotation_id, a]));
-        for (const a of scoped) {
-          if ((a.saved_revision ?? 0) >= (newest.get(a.annotation_id)?.saved_revision ?? 0)) newest.set(a.annotation_id, a);
-        }
-        return [...newest.values()];
+        return mergeSavedSnapshots(previous, scoped);
       });
     }).catch(e => {if (active) setError(String(e));});
     return () => {active = false;};
@@ -447,11 +477,16 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     setFrameNotice("");
   }
 
-  function commitKeyframeInput(value: string) {
-    const ordinal = Number(value);
-    if (!value || !Number.isSafeInteger(ordinal) || ordinal === displayedFrame) {
-      setFrameInput(String(displayedFrame));
-      setRequestedFrame(displayedFrame);
+  function commitFrameInput(raw: string) {
+    frameInputEdited.current = false;
+    const ordinal = Number(raw);
+    if (!raw.trim() || !Number.isFinite(ordinal) || ordinal < 1 || (mode === "keyframes" && !Number.isSafeInteger(ordinal))) {
+      setFrameInput(String(activeFrameOrdinal));
+      return;
+    }
+    if (mode === "animation") {
+      const next = Math.trunc(ordinal);
+      setPlaying(false); setCaptureReady(false); setRequestedFrame(next); setFrameInput(String(next)); setFrameNotice("");
       return;
     }
     if (!readyFrames.length && storyboardPanel && storyboardTargets[ordinal - 1]) {
@@ -460,7 +495,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     }
     const result = resolveDirectKeyframeJump({requestedOrdinal: ordinal, displayedFrame, readyFrames, job: activeJob, availability});
     if (result.kind === "found") showKeyframe(result.frame);
-    else {
+    else if (!readyFrames.length && ordinal === displayedFrame) {
+      setFrameInput(String(displayedFrame));
+      setFrameNotice("");
+    } else {
       setFrameInput(String(result.revertFrame));
       setRequestedFrame(result.revertFrame);
       setFrameNotice(result.message);
@@ -520,6 +558,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function changeMode(next: Mode) {
     if (mode !== next) {
+      invalidatePendingPlacement();
       setCaptureReady(false);
       setPlaying(false);
       setPinMode(false);
@@ -542,20 +581,41 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
   });
 
+  function beginPinPlacement(expected: Draft | undefined) {
+    const token = ++placementTokenRef.current;
+    const expectedKey = draftIdRef.current;
+    const expectedJson = expected ? stableJson(expected.annotation) : null;
+    setPlacementCommitting(true);
+    return {
+      current: () => placementTokenRef.current === token,
+      canWrite: () => {
+        if (placementTokenRef.current !== token || draftIdRef.current !== expectedKey) return false;
+        if (!expectedKey) return true;
+        const live = draftsRef.current.find(d => d.key === expectedKey);
+        return Boolean(live && live === expected && live.state === "browser-local" && !live.operation && !live.fallbackOperation
+          && !spatialBusyRef.current && !spatialController.discard.discardLatch.current && stableJson(live.annotation) === expectedJson);
+      },
+      finish: () => { if (placementTokenRef.current === token) setPlacementCommitting(false); },
+    };
+  }
+
   async function handlePlacePin(placement: ProxyPinPlacement) {
+    if (placementCommitting || !visible) return;
     setFrameNotice("");
     if (!version || !activeMapping?.mapping_artifact_id) {
       setError("Pinned proxy mapping artefact identity is unavailable.");
       return;
     }
+    const existing = draft && isSpatialDraft && draft.annotation.saved_revision === null ? draft : null;
+    const commit = beginPinPlacement(draft);
     setPinMode(false);
     setUnmappedCapture(null);
     setError("");
     try {
       const png = await placement.capture.png;
       const displayedSha256 = await sha256Hex(png);
+      if (!commit.canWrite()) return;
       const shotId = versionJobs.find(job => job.artifact_ids.includes(activeMapping.proxy_artifact_id))?.target.shot_id ?? null;
-      const existing = draft && isSpatialDraft && draft.annotation.saved_revision === null ? draft : null;
       const noteText = existing?.annotation.text ?? "";
       const hit: SpatialHit = {
         proxy_artifact_id: activeMapping.proxy_artifact_id,
@@ -605,7 +665,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         spatial_status: "valid",
       };
       const next: Draft = {
-        key: annotation.annotation_id,
+        key: existing?.key ?? annotation.annotation_id,
         projectId,
         annotation,
         state: "browser-local",
@@ -613,12 +673,15 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         targetUploaded: false,
       };
       await saveDraftEdit(next);
+      if (!commit.canWrite()) return;
       changeDraft(next);
       setDraftId(next.key);
       setEditing2D(false);
       setRestorePinCamera(null);
     } catch (e) {
-      setError(String(e));
+      if (commit.current()) setError(String(e));
+    } finally {
+      commit.finish();
     }
   }
 
@@ -633,13 +696,15 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }
 
   async function startUnmappedSnapshotNote() {
-    if (!unmappedCapture || !version || !activeMapping) return;
+    if (!unmappedCapture || !version || !activeMapping || placementCommitting || !visible) return;
     const captured = unmappedCapture;
+    const commit = beginPinPlacement(draft);
     setUnmappedCapture(null);
     setError("");
     try {
       const png = await captured.png;
       const displayedSha256 = await sha256Hex(png);
+      if (!commit.canWrite()) return;
       const shotId = versionJobs.find(job => job.artifact_ids.includes(activeMapping.proxy_artifact_id))?.target.shot_id ?? null;
       const pinnedTarget: FrameTarget = {
         origin: "proxy_capture",
@@ -680,23 +745,26 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         targetUploaded: false,
       };
       await saveDraftEdit(next);
+      if (!commit.canWrite()) return;
       changeDraft(next);
       setDraftId(next.key);
       setEditing2D(true);
     } catch (e) {
-      setError(String(e));
+      if (commit.current()) setError(String(e));
+    } finally {
+      commit.finish();
     }
   }
 
   async function renderThisView() {
-    if (!visible || captureLatch.current || !version || !mapping || !captureStoreReady) return;
+    if (!visible || captureLatch.current || !version || !captureStoreReady) return;
     captureLatch.current = true; setQueueingView(true); setError("");
     try {
       let pending = pendingCaptureRef.current;
       if (pending && pending.phase !== "upload") throw new Error("Resolve the retained Copilot request before dismissing this capture. It will not be queued again automatically.");
       if (!pending) {
         const capture = captureHandler.current;
-        if (!capture) throw new Error("The published inspection proxy is not ready to capture");
+        if (!capture || !mapping) throw new Error("The published inspection proxy is not ready to capture");
         // All source identities, camera, selected pairs and actual pixels freeze
         // before any await. The upload is not a request to render/generate.
         const frozen = capture({targetDimensions: resolveRenderTargetDimensions(renderPreset)});
@@ -744,17 +812,28 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     try {await saveDraft(next); changeDraft(next); setEditing2D(false); setDraftId(next.key);} catch (e) {setError(String(e));}
   }
 
-  async function restore(annotation: AnnotationSnapshot) {
+  function applyAnnotationView(annotation: AnnotationSnapshot) {
+    const spatial = annotation.spatial_hits.length > 0;
+    setTarget(structuredClone(annotation.target));
+    setMode(spatial ? "3d_inspection" : annotation.target.media_artifact_id ? "animation" : "keyframes");
+    setRequestedFrame(annotation.target.sequence_frame ?? annotation.target.source_frame ?? 1);
+    setTargetCamera(structuredClone(annotation.camera));
+    setRange(structuredClone(annotation.range));
+    choice.select(scope, annotation.spatial_hits.map(h => ({object_id: h.object_id, instance_id: h.instance_id})));
+    setRestorePinCamera(spatial ? structuredClone(annotation.camera) : null);
+    if (spatial && annotation.camera) setRestorePinNonce(n => n + 1);
+  }
+
+  async function restore(entry: AnnotationEntry) {
+    invalidatePendingPlacement();
     setFrameNotice("");
     setSequenceJobId(null);
     setPlaying(false);
     setPinMode(false);
+    setUnmappedCapture(null);
     setEditing2D(false);
     setDrawer(null);
-    // The drawer already chose the top revision. Keep outbox data only when its
-    // snapshot won the merge, not when a newer server snapshot was selected.
-    const local = drafts.find(d => d.annotation === annotation);
-    const next: Draft = local ?? {key: annotation.annotation_id, projectId, annotation, state: "saved"};
+    const next = resolveAnnotationEntry(entry, drafts, projectId);
     if (onNavigate && next.annotation.target.version_id && next.annotation.target.item_id && version?.version_id !== next.annotation.target.version_id) {
       try {
         const targetVersion = (await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: next.annotation.target.item_id!}, query: {cursor, limit: 100}}))).find(v => v.version_id === next.annotation.target.version_id);
@@ -764,17 +843,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         return;
       } catch (e) {setError(String(e)); return;}
     }
-    const spatial = next.annotation.spatial_hits.length > 0;
-    setTarget(next.annotation.target);
-    setMode(spatial ? "3d_inspection" : next.annotation.target.media_artifact_id ? "animation" : "keyframes");
-    setRequestedFrame(next.annotation.target.sequence_frame ?? next.annotation.target.source_frame ?? 1);
-    setTargetCamera(structuredClone(next.annotation.camera));
-    setRange(next.annotation.range);
-    if (spatial && next.annotation.camera) {
-      setRestorePinCamera(structuredClone(next.annotation.camera));
-      setRestorePinNonce(n => n + 1);
-      choice.select(scope, next.annotation.spatial_hits.map(h => ({object_id: h.object_id, instance_id: h.instance_id})));
-    }
+    applyAnnotationView(next.annotation);
     changeDraft(next);
     setDraftId(next.key);
     try {await saveDraft(next);} catch (e) {setError(String(e)); return;}
@@ -784,23 +853,54 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }
 
   function closeDraft() {
+    invalidatePendingPlacement();
     setPinMode(false);
+    setUnmappedCapture(null);
     setEditing2D(false);
     setRestorePinCamera(null);
     setDraftId(null);
   }
 
-  async function discardActiveDraft(draftKey: string, mode: "delete_new" | "revert_edits") {
-    const active = drafts.find(d => d.key === draftKey);
-    const server = mode === "revert_edits" ? saved.find(a => a.annotation_id === (active?.annotation.annotation_id ?? draftKey)) : undefined;
-    if (server) {
-      const restored: Draft = {key: server.annotation_id, projectId, annotation: structuredClone(server), state: "saved"};
-      setDrafts(previous => [...previous.filter(d => d.key !== draftKey && d.key !== restored.key), restored]);
-      if (draftId === draftKey) setDraftId(restored.key);
-    } else {
-      setDrafts(previous => previous.filter(d => d.key !== draftKey));
-      if (draftId === draftKey) closeDraft();
+  const resolveDiscardBaseline = useCallback(async (current: Draft): Promise<AnnotationSnapshot | null> => {
+    const matches = (annotation: AnnotationSnapshot) => annotation.annotation_id === current.annotation.annotation_id
+      && annotation.saved_revision !== null && annotation.saved_revision >= (current.annotation.saved_revision ?? 0);
+    const cached = saved.find(matches);
+    if (cached) return cached;
+    try {
+      const fetched = await allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100, version_id: current.annotation.target.version_id ?? undefined}}));
+      setSaved(previous => mergeSavedSnapshots(previous, fetched));
+      return fetched.find(matches) ?? null;
+    } catch {
+      return null;
     }
+  }, [api, projectId, saved]);
+
+  async function discardActiveDraft(draftKey: string, mode: "delete_new" | "revert_edits", restoredFromOutbox?: Draft) {
+    invalidatePendingPlacement();
+    setPinMode(false);
+    setUnmappedCapture(null);
+    if (mode === "delete_new") {
+      setDrafts(previous => previous.filter(d => d.key !== draftKey));
+      if (draftIdRef.current === draftKey) closeDraft();
+      return;
+    }
+    const active = draftsRef.current.find(d => d.key === draftKey);
+    const serverSnapshot = restoredFromOutbox?.annotation ?? (active ? await resolveDiscardBaseline(active) : null);
+    if (!serverSnapshot || serverSnapshot.saved_revision === null) {
+      setError("Saved annotation baseline is unavailable; reload annotations before discarding edits.");
+      return;
+    }
+    const restored = restoredFromOutbox ?? draftFromSnapshot(serverSnapshot, projectId);
+    if (!restoredFromOutbox) {
+      if (draftsRef.current.find(d => d.key === draftKey) !== active) return;
+      await saveDraft(restored);
+      if (draftKey !== restored.key) await deleteDraft(draftKey);
+    }
+    setError("");
+    setDrafts(previous => [...previous.filter(d => d.key !== draftKey && d.key !== restored.key), restored]);
+    if (draftIdRef.current !== draftKey) return;
+    applyAnnotationView(serverSnapshot);
+    setDraftId(restored.key);
   }
 
   const merged = useMemo(() => version ? mergeItemAnnotations({itemId: version.item_id, currentVersionId: version.version_id, drafts, saved, itemVersions}) : null,
@@ -821,22 +921,25 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     : target?.version_id === activeMapping?.version_id && target?.source_frame === activeMapping?.sample_frame
       ? targetCamera
       : null;
+  // Compatible with the current dock and the placement-aware dock on integration.
+  const placementProps = {placementCommitting};
 
   return <section className="review-workspace" aria-label="Review workspace">
     {show2DEditor ? null : draft && isSpatialDraft ? (
       <SpatialPinHeader
+        {...placementProps}
         draft={draft}
         pinMode={pinMode}
         proxyUnavailableReason={proxyUnavailableReason}
         controller={spatialController}
-        onTogglePinMode={() => setPinMode(p => !p)}
+        onTogglePinMode={() => { if (!placementCommitting) setPinMode(p => !p); }}
         onRestoreView={() => {
           if (draft.annotation.camera) {
             setRestorePinCamera(structuredClone(draft.annotation.camera));
             setRestorePinNonce(n => n + 1);
           }
         }}
-        onEdit2D={() => { setPinMode(false); setEditing2D(true); }}
+        onEdit2D={() => { invalidatePendingPlacement(); setPinMode(false); setUnmappedCapture(null); setEditing2D(true); }}
       />
     ) : (
       <nav className="review-bar" aria-label="Review mode"><ReviewModeSwitcher mode={mode} onChange={changeMode}/>
@@ -851,30 +954,33 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
             <button
               className="toolbar-btn"
               aria-pressed={pinMode}
-              disabled={!visible || !proxyReady || !mapping?.mapping_artifact_id || queueingView}
+              disabled={!visible || !proxyReady || !mapping?.mapping_artifact_id || queueingView || placementCommitting}
               onClick={() => { setUnmappedCapture(null); setPinMode(p => !p); }}
             >
               <MapPin size={14}/>Pin note
             </button>
-            <label className="toolbar-field">
-              <span className="sr-only">Render output format</span>
-              <select
-                aria-label="Render output format"
-                disabled={!visible || !proxyReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")}
-                value={renderPreset}
-                onChange={e => setRenderPreset(e.target.value as RenderPresetId)}
-              >
-                {RENDER_PRESETS.map(preset => (
-                  <option key={preset.id} value={preset.id}>{formatRenderPresetOption(preset.id, viewportPixels)}</option>
-                ))}
-              </select>
-            </label>
-            <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || !proxyReady || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? "Retry captured view upload" : "Render this view"}</button>
+            <div className="toolbar-group render-capture-group">
+              <label className="toolbar-field">
+                <span className="sr-only">Render output format</span>
+                <select
+                  aria-label="Render output format"
+                  disabled={!visible || !proxyReady || queueingView || !!pendingCapture}
+                  value={pendingCapture ? "retained" : renderPreset}
+                  onChange={e => setRenderPreset(e.target.value as RenderPresetId)}
+                >
+                  {pendingCapture && <option value="retained">{pendingCapture.dimensions.width} × {pendingCapture.dimensions.height} retained</option>}
+                  {RENDER_PRESETS.map(preset => (
+                    <option key={preset.id} value={preset.id}>{formatRenderPresetOption(preset.id, viewportPixels)}</option>
+                  ))}
+                </select>
+              </label>
+              <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || (!pendingCapture && !proxyReady) || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? `Retry captured view upload (${pendingCapture.dimensions.width} × ${pendingCapture.dimensions.height})` : "Render this view"}</button>
+            </div>
           </> : !mappedSequence && <button className="toolbar-btn toolbar-btn-accent" aria-label="Annotate presented frame" disabled={!visible || !target || !readyToCapture} onClick={() => void annotate()}><PenLine size={14}/>Annotate</button>}
         </div>
       </nav>
     )}
-    {!draft && drawer === "annotations" && <AnnotationsDrawer version={version} merged={merged} onClose={() => setDrawer(null)} onRestore={annotation => void restore(annotation)}/>}
+    {!draft && drawer === "annotations" && <AnnotationsDrawer version={version} merged={merged} onClose={() => setDrawer(null)} onRestore={entry => void restore(entry)}/>}
     {!draft && drawer === "details" && <section className="review-drawer" aria-label="Pinned version details">
       <button className="toolbar-btn toolbar-icon-btn drawer-close" aria-label="Close review drawer" onClick={() => setDrawer(null)}><X size={14}/></button>
       <h2>Pinned version details</h2>
@@ -928,7 +1034,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
          }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
            : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">No ready review image. Rendering is an explicit Queue request.</div>}
     {show2DEditor ? null : draft && isSpatialDraft ? (
-      <SpatialPinDock draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft}/>
+      <SpatialPinDock {...placementProps} draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft}/>
     ) : (
       <div className={`review-bar review-transport-bar${mode === "3d_inspection" ? "" : " review-playback-transport"}`} aria-label="Review transport">
         {mode === "3d_inspection" ? <>
@@ -942,32 +1048,31 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           <div className="toolbar-group">
             {mode === "animation" && !mappedSequence && <button className="toolbar-btn toolbar-icon-btn" aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"} disabled={!visible} onClick={() => setPlaying(!playing)}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button>}
             <button className="toolbar-btn toolbar-icon-btn" aria-label="Previous frame" title="Previous frame (←)" disabled={mode === "keyframes" && !canStepKeyframe(-1)} onClick={() => step(-1)}><ChevronLeft size={15}/></button>
-            <label className="toolbar-field"><span>Frame</span><input aria-label="Frame" type="number" min="1" value={mode === "keyframes" ? frameInput : requestedFrame}
+            <label className="toolbar-field"><span>Frame</span><input aria-label="Frame" type="number" min="1" value={frameInput}
               onPointerDown={() => { framePointerDown.current = true; }}
               onPointerUp={() => { framePointerDown.current = false; }}
               onPointerCancel={() => { framePointerDown.current = false; }}
               onPointerLeave={() => { framePointerDown.current = false; }}
               onBlur={e => {
                 framePointerDown.current = false;
-                if (mode === "keyframes") commitKeyframeInput(e.currentTarget.value);
+                if (frameInputEdited.current) commitFrameInput(e.currentTarget.value);
               }}
               onKeyDown={e => {
-                if (mode !== "keyframes") return;
-                if (e.key === "Enter") commitKeyframeInput(e.currentTarget.value);
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitFrameInput(e.currentTarget.value);
+                }
                 else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
                   e.preventDefault();
                   const ordinal = e.currentTarget.valueAsNumber;
-                  commitKeyframeInput(String(Math.max(1, (Number.isFinite(ordinal) ? ordinal : displayedFrame) + (e.key === "ArrowUp" ? 1 : -1))));
+                  commitFrameInput(String(Math.max(1, (Number.isFinite(ordinal) ? Math.trunc(ordinal) : activeFrameOrdinal) + (e.key === "ArrowUp" ? 1 : -1))));
                 }
               }}
               onChange={e => {
-                const {value, valueAsNumber} = e.currentTarget;
-                if (mode === "keyframes") {
-                  setFrameInput(value);
-                  if (framePointerDown.current || document.activeElement !== e.currentTarget || readyFrames.some(f => f.source_frame === valueAsNumber)) commitKeyframeInput(value);
-                } else {
-                  setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(value))); setFrameNotice("");
-                }
+                const {value} = e.currentTarget;
+                frameInputEdited.current = true;
+                setFrameInput(value);
+                if (framePointerDown.current || document.activeElement !== e.currentTarget) commitFrameInput(value);
               }}/></label>
             <button className="toolbar-btn toolbar-icon-btn" aria-label="Next frame" title="Next frame (→)" disabled={mode === "keyframes" && !canStepKeyframe(1)} onClick={() => step(1)}><ChevronRight size={15}/></button>
           </div>
@@ -976,7 +1081,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           {!readyFrames.length && storyboardPanel && <span className="toolbar-chip" title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
           {versionJobs.length > 0 && <label className="toolbar-field"><span>Pass</span><select aria-label="Shot / render job" value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? job.render_spec?.scene_name ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>}
           <div className="toolbar-spacer"/>
-          {target && <span className="toolbar-chip">{target.dimensions.width} × {target.dimensions.height} · {target.origin} · {imageOrdinal == null ? "still" : `f${imageOrdinal}`}</span>}
+          {target && <span className="toolbar-chip">{target.dimensions.width} × {target.dimensions.height} · {formatTargetOrigin(target.origin)} · {imageOrdinal == null ? "still" : `f${imageOrdinal}`}</span>}
           {activeJob?.render_spec && <span className="toolbar-meta">{activeJob.render_spec.engine} · {activeJob.render_spec.purpose} · {activeJob.render_spec.samples} spp</span>}
         </>}
       </div>
