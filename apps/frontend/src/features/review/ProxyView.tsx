@@ -4,7 +4,9 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Matrix4, OrthographicCamera, PerspectiveCamera, Raycaster, Vector2, Vector3, type Camera as ThreeCamera, type Object3D, type Scene, type WebGLRenderer } from "three";
 import type { Camera, ObjectSelection, ProxyMapping } from "../../api/generated/contracts";
 import { captureCamera, projectBlenderPoint } from "./media";
+import { computeFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
 import { indexProxyScene, projectBlenderPointVisible, proxyPointToBlender, proxySurfaceNormalToBlender, resolveProxyNode, type ProxyNode } from "./spatial";
+import "./renderFraming.css";
 
 const DRAG_THRESHOLD_PX = 4;
 
@@ -13,7 +15,10 @@ export interface FrozenProxyCapture {
   dimensions: {width: number; height: number};
   png: Promise<Blob>;
 }
-export type ProxyCapture = () => FrozenProxyCapture;
+export interface ProxyCaptureOptions {
+  targetDimensions?: {width: number; height: number} | null;
+}
+export type ProxyCapture = (options?: ProxyCaptureOptions) => FrozenProxyCapture;
 
 export interface ProxyPinPlacement {
   node: ProxyNode;
@@ -30,9 +35,54 @@ export interface SpatialPinMarker {
   label: string;
 }
 
-function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCamera): FrozenProxyCapture {
+function toBlobPromise(copy: HTMLCanvasElement): Promise<Blob> {
+  return new Promise<Blob>((resolve, reject) => {
+    copy.toBlob(blob => blob ? resolve(blob) : reject(new Error("Inspection PNG capture failed")), "image/png");
+  });
+}
+
+function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCamera, options?: ProxyCaptureOptions): FrozenProxyCapture {
   if (!(camera instanceof PerspectiveCamera || camera instanceof OrthographicCamera)) {
     throw new Error("Unsupported inspection camera");
+  }
+  if (options?.targetDimensions) {
+    const {width: targetW, height: targetH} = options.targetDimensions;
+    const webgl = gl.getContext();
+    if (!Number.isInteger(targetW) || !Number.isInteger(targetH) || targetW <= 0 || targetH <= 0 || webgl.isContextLost()) {
+      throw new Error("Inspection framebuffer is unavailable at the requested dimensions");
+    }
+    const prevPixelRatio = gl.getPixelRatio();
+    const prevCssSize = gl.getSize(new Vector2());
+    const dimensions = {width: targetW, height: targetH};
+    const framedCam = deriveFramedCamera(camera,
+      prevCssSize.x || gl.domElement.width / prevPixelRatio,
+      prevCssSize.y || gl.domElement.height / prevPixelRatio,
+      dimensions,
+    );
+    const frozenCamera = captureCamera(framedCam);
+    const copy = document.createElement("canvas"); copy.width = targetW; copy.height = targetH;
+    const context = copy.getContext("2d");
+    if (!context) throw new Error("PNG capture is unavailable");
+    // Keep resize, copy and restore in one turn, before the compositor can paint.
+    try {
+      gl.setPixelRatio(1);
+      gl.setSize(targetW, targetH, false);
+      gl.setViewport(0, 0, targetW, targetH);
+      gl.render(scene, framedCam);
+      if (gl.domElement.width !== targetW || gl.domElement.height !== targetH) {
+        throw new Error(`Inspection framebuffer clamped to ${gl.domElement.width}×${gl.domElement.height}; requested ${targetW}×${targetH}`);
+      }
+      if (webgl.drawingBufferWidth !== targetW || webgl.drawingBufferHeight !== targetH) {
+        throw new Error(`Inspection framebuffer clamped to ${webgl.drawingBufferWidth}×${webgl.drawingBufferHeight}; requested ${targetW}×${targetH}`);
+      }
+      context.drawImage(gl.domElement, 0, 0);
+    } finally {
+      gl.setPixelRatio(prevPixelRatio);
+      gl.setSize(prevCssSize.x, prevCssSize.y, false);
+      gl.setViewport(0, 0, prevCssSize.x, prevCssSize.y);
+      gl.render(scene, camera);
+    }
+    return {camera: frozenCamera, dimensions, png: toBlobPromise(copy)};
   }
   const {width, height} = gl.domElement;
   if (!width || !height || gl.getContext().isContextLost()) {
@@ -61,9 +111,7 @@ function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCame
   return {
     camera: frozenCamera,
     dimensions: {width, height},
-    png: new Promise<Blob>((resolve, reject) => {
-      copy.toBlob(blob => blob ? resolve(blob) : reject(new Error("Inspection PNG capture failed")), "image/png");
-    }),
+    png: toBlobPromise(copy),
   };
 }
 
@@ -232,14 +280,31 @@ function RestoreCamera({record, nonce = 0, controls}: {record: Camera | null; no
   return null;
 }
 
-function CaptureBinding({ready, bind}: {ready: boolean; bind: (capture: ProxyCapture | null) => void}) {
+type ViewportPixels = {width: number; height: number};
+
+function CaptureBinding({ready, bind, onViewportPixels}: {
+  ready: boolean;
+  bind: (capture: ProxyCapture | null) => void;
+  onViewportPixels?: (pixels: ViewportPixels) => void;
+}) {
   const {gl, scene, camera, size} = useThree();
   const available = useRef(ready); available.current = ready;
+  const previousPixels = useRef<ViewportPixels | null>(null);
+  useFrame(() => {
+    if (!onViewportPixels) return;
+    // Read the intrinsic buffer after R3F applies CSS size and DPR, never while
+    // the synchronous target-resolution capture has temporarily resized it.
+    const {width, height} = gl.domElement;
+    if (width > 0 && height > 0 && (width !== previousPixels.current?.width || height !== previousPixels.current?.height)) {
+      previousPixels.current = {width, height};
+      onViewportPixels(previousPixels.current);
+    }
+  });
   useLayoutEffect(() => {
     if (!ready || !size.width || !size.height || !gl.domElement.width || !gl.domElement.height) { bind(null); return; }
-    bind(() => {
+    bind(options => {
       if (!available.current) throw new Error("Inspection capture requires a visible, ready viewport");
-      return captureCleanViewport(gl, scene, camera);
+      return captureCleanViewport(gl, scene, camera, options);
     });
     return () => bind(null);
   }, [ready, bind, camera, gl, scene, size.width, size.height]);
@@ -255,6 +320,8 @@ export function ProxyView({
   onSelect,
   onCamera,
   onCaptureReady,
+  renderPreset = "viewport",
+  onViewportPixels,
   onPlacePin,
   onPinMiss,
   restoreCamera = null,
@@ -268,6 +335,8 @@ export function ProxyView({
   onSelect: (selection: ObjectSelection[]) => void;
   onCamera: (camera: Camera) => void;
   onCaptureReady: (capture: ProxyCapture | null) => void;
+  renderPreset?: RenderPresetId;
+  onViewportPixels?: (pixels: ViewportPixels) => void;
   onPlacePin?: (placement: ProxyPinPlacement) => void;
   onPinMiss?: (reason: "empty" | "unmapped", fallback?: FrozenProxyCapture & {clickUv: [number, number]}) => void;
   restoreCamera?: Camera | null;
@@ -282,9 +351,9 @@ export function ProxyView({
   const renderer = useRef<RootState | null>(null);
   const visibleRef = useRef(visible); visibleRef.current = visible;
   const capture = useRef<ProxyCapture | null>(null);
-  const captureVisible = useCallback(() => {
+  const captureVisible = useCallback<ProxyCapture>(options => {
     if (!visibleRef.current || !capture.current) throw new Error("Inspection capture requires a visible, ready viewport");
-    return capture.current();
+    return capture.current(options);
   }, []);
   const bindCapture = useCallback((next: ProxyCapture | null) => {
     capture.current = next;
@@ -315,15 +384,24 @@ export function ProxyView({
   const height = restoreCamera && width ? width/restoreCamera.aspect : size.height;
   const canvasBoxStyle = restoreCamera && size.width ? {position:"absolute" as const,left:(size.width-width)/2,top:(size.height-height)/2,width,height} : undefined;
   const projectionCamera = liveCamera ?? restoreCamera;
+  const gate = !restoreCamera && renderPreset !== "viewport"
+    ? computeFramingGate(size.width, size.height, resolveRenderTargetDimensions(renderPreset))
+    : null;
   return <div ref={host} className={`review-proxy${pinMode ? " pin-mode" : ""}`} aria-label={`Static proxy, source frame ${mapping.sample_frame}`}>
     <Canvas frameloop={visible ? "always" : "never"} onCreated={state => { renderer.current = state; state.setFrameloop(visibleRef.current ? "always" : "never"); }} style={canvasBoxStyle} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: 50}}>
       <ambientLight intensity={0.8}/><directionalLight position={[4,8,4]} intensity={1.5}/>
       <Suspense fallback={null}><Model url={url} mapping={mapping} pinMode={pinMode} onSelect={onSelect} onSceneReady={setModelState}/></Suspense>
       <OrbitControls ref={controls} makeDefault enableDamping={false}/>
       <RestoreCamera record={restoreCamera} nonce={restoreCameraNonce} controls={controls}/><CameraObserver onCamera={handleCamera}/>
-      <CaptureBinding ready={visible && ready && size.width > 0 && size.height > 0} bind={bindCapture}/>
+      <CaptureBinding ready={visible && ready && size.width > 0 && size.height > 0} bind={bindCapture} onViewportPixels={onViewportPixels}/>
       <SurfacePinController enabled={visible && ready && pinMode} model={modelState} onSelect={onSelect} onPlacePin={onPlacePin} onPinMiss={onPinMiss}/>
     </Canvas>
+    {gate?.active && gate.width > 0 && gate.height > 0 && (
+      <div className="proxy-frame-gate" data-testid="proxy-frame-gate" data-preset={renderPreset} aria-hidden="true"
+        style={{left: gate.left, top: gate.top, width: gate.width, height: gate.height}}>
+        <span className="proxy-frame-gate-badge">{formatRenderPresetOption(renderPreset)}</span>
+      </div>
+    )}
     {projectionCamera && pins.length > 0 && width > 0 && height > 0 && (
       <div className="proxy-pin-layer" style={canvasBoxStyle ?? {position: "absolute", inset: 0}} aria-label="Anchored 3D spatial pins">
         {pins.map(pin => {

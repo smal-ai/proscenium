@@ -1,22 +1,25 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Box, Eraser, Layers, MapPin, MoveUpRight, Pencil, Square, X } from "lucide-react";
+import { Box, Eraser, Layers, MapPin, MoveUpRight, Pencil, Square } from "lucide-react";
 import type { AnnotationSnapshot, Markup } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
 import { contentRect, imagePoint, mediaUrl, stableJson } from "./media";
-import { flushDraft, saveDraft, VECTOR_MASK, type Draft } from "./outbox";
+import { flushDraft, formatDraftStateBadge, saveDraft, saveDraftEdit, waitForDraftEdits, VECTOR_MASK, type DiscardMode, type Draft } from "./outbox";
 import { greyPng } from "./png";
 import { annotationContext } from "./context";
 import { allPages } from "./records";
 import { canvasPngBlob, paintMarkups, syncSpatialPinMarkup } from "./spatial";
+import { AnnotationDockActions, AnnotationTargetChip, useDraftDiscard } from "./SpatialPinDock";
+import "./annotationDock.css";
 
 type Tool = Markup["kind"] | "eraser";
 const tools: Tool[] = ["stroke", "arrow", "region", "pin", "eraser", "mask"];
 const toolIcons = {stroke: Pencil, arrow: MoveUpRight, region: Square, pin: MapPin, eraser: Eraser, mask: Layers};
 
-export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onReturnTo3D, onContextPreparer}: {
+export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDiscard, onReturnTo3D, onContextPreparer}: {
   api: ApiClient; draft: Draft; onChange: (draft: Draft) => void;
   onQueue: (text: string, context: TurnSelection) => void | Promise<void>; onClose: () => void;
+  onDiscard?: (draftKey: string, mode: DiscardMode) => void | Promise<void>;
   onReturnTo3D?: () => void;
   onContextPreparer?: (prepare: ContextPreparer | null) => void;
 }) {
@@ -36,7 +39,10 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
   const active = useRef<string | null>(null);
   const live = useRef(draft); live.current = draft;
   const writes = useRef(Promise.resolve());
-  const busy = saving || queueState === "submitting" || draft.state === "saving" || (!!draft.operation && draft.state !== "saved");
+  const discard = useDraftDiscard(draft, live, writes, () => saveLatch.current || queueInFlight.current, setError);
+  const busyClose = saving || queueState === "submitting" || discard.discarding;
+  const busy = busyClose || draft.state === "saving" || draft.state === "conflict"
+    || (!!draft.operation && draft.state !== "saved") || (!!draft.fallbackOperation && !draft.fallbackSaved);
   const annotation = draft.annotation;
   const {width: iw, height: ih} = annotation.target.dimensions;
   const localTargetUrl = useMemo(() => draft.targetBlob && !draft.targetUploaded ? URL.createObjectURL(draft.targetBlob) : null, [draft.targetBlob, draft.targetUploaded]);
@@ -44,14 +50,17 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
   const targetImageSrc = localTargetUrl ?? mediaUrl(draft.projectId, annotation.target.artifact_id);
 
   function edit(next: AnnotationSnapshot) {
-    if (saveLatch.current || queueInFlight.current) return;
+    if (busy || saveLatch.current || queueInFlight.current || discard.discardLatch.current) return;
+    discard.cancel();
+    queueLatch.current = false;
+    setQueueState("idle");
     const hit = next.spatial_hits[0];
     const normalized = hit && next.camera
       ? {...next, markups: syncSpatialPinMarkup(next.markups, next.camera, hit, next.text)}
       : next;
-    const updated: Draft = {...live.current, annotation: normalized, operation: undefined, state: "browser-local", error: undefined, markup: undefined, mask: undefined, markupUploadId: undefined, maskUploadId: undefined};
+    const updated: Draft = {...live.current, annotation: normalized, operation: undefined, state: "browser-local", error: undefined, markup: undefined, mask: undefined, markupUploadId: undefined, maskUploadId: undefined, fallbackOperation: undefined, fallbackSaved: undefined};
     live.current = updated; onChange(updated);
-    writes.current = writes.current.then(() => saveDraft(updated)).catch(e => setError(`Local draft could not be saved: ${String(e)}`));
+    writes.current = saveDraftEdit(updated).catch(e => setError(`Local draft could not be saved: ${String(e)}`));
   }
 
   function point(event: React.PointerEvent) {
@@ -60,7 +69,7 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
   }
 
   function start(event: React.PointerEvent<HTMLDivElement>) {
-    if (busy || saveLatch.current || queueInFlight.current || event.button !== 0) return;
+    if (busy || saveLatch.current || queueInFlight.current || discard.discardLatch.current || event.button !== 0) return;
     const p = point(event); if (!p) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     if (tool === "eraser") {
@@ -87,7 +96,8 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
   }
 
   async function prepareSavedDraft(): Promise<Draft> {
-    if (saveLatch.current || queueInFlight.current) throw new Error("Annotation submission is already in progress");
+    if (saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
+    discard.cancel();
     // Freeze both the editable record and intrinsic canvas pixels before any await.
     // A later navigation/unmount cannot replace this target with the new viewport.
     let frozen = structuredClone(live.current);
@@ -118,6 +128,7 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
         }
       }
       await writes.current;
+      await waitForDraftEdits(frozen);
       if (markupCanvas) {
         frozen = {...frozen, operation: undefined, markup: await canvasPngBlob(markupCanvas),
           mask: maskPixels ? await greyPng(width, height, maskPixels) : undefined};
@@ -146,7 +157,8 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
   async function save() {try {await prepareSavedDraft();} catch { /* The failed outbox and visible error are retained. */ }}
 
   async function queue() {
-    if (queueLatch.current || saveLatch.current) return;
+    if (queueLatch.current || saveLatch.current || discard.discardLatch.current) return;
+    discard.cancel();
     const snapshot = structuredClone(live.current.annotation);
     queueLatch.current = true; setQueueState("submitting");
     queueInFlight.current = true;
@@ -156,15 +168,14 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
   }
 
   return <section className="review-annotation" aria-label="Pinned annotation">
-    <div className="review-bar" aria-label="Annotation drawing tools"><span className="toolbar-badge accent">Annotating</span>
+    <div className="review-bar" aria-label="Annotation drawing tools">
       <div className="segmented-control">{tools.map(t => {const Icon = toolIcons[t]; return <button key={t} aria-pressed={tool === t} disabled={busy} onClick={() => setTool(t)}><Icon size={14}/>{t[0].toUpperCase() + t.slice(1)}</button>;})}</div>
       <div className="toolbar-divider"/>
       <label className="toolbar-field"><span>Size</span><input aria-label="Width (image px)" disabled={busy} type="number" min="1" max="256" value={width} onChange={e => setWidth(Math.min(256, Math.max(1, Number(e.target.value))))} /><span>px</span></label>
-      {tool === "pin" && <input className="toolbar-inline-input" aria-label="Pin text" placeholder="Pin label…" value={pinText} onChange={e => setPinText(e.target.value)} />}
+      {tool === "pin" && <input className="toolbar-inline-input" aria-label="Pin text" placeholder="Pin label…" disabled={busy} value={pinText} onChange={e => { discard.cancel(); setPinText(e.target.value); }} />}
       <div className="toolbar-spacer"/>
-      {onReturnTo3D && <button className="toolbar-btn" disabled={saving || queueState === "submitting"} onClick={onReturnTo3D}><Box size={14}/>Back to 3D view</button>}
-      <output className="toolbar-chip" aria-live="polite">{draft.state}{draft.error ? `: ${draft.error}` : ""}</output>
-      <button className="toolbar-btn" disabled={saving || queueState === "submitting"} onClick={onClose}><X size={14}/>Close draft</button>
+      {onReturnTo3D && <button className="toolbar-btn" disabled={busyClose} onClick={onReturnTo3D}><Box size={14}/>Back to 3D view</button>}
+      <output className="toolbar-chip" aria-live="polite">{formatDraftStateBadge(draft)}</output>
     </div>
     <div className="review-canvas" ref={host} onPointerDown={start} onPointerMove={move} onPointerUp={() => {active.current = null;}} onPointerCancel={() => {active.current = null;}}>
       <img ref={image} src={targetImageSrc} alt="Pinned clean annotation target" draggable={false} onError={() => setError(`media_unavailable: ${annotation.target.artifact_id}`)} />
@@ -179,15 +190,18 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onRetu
     <div className="annotation-dock">
       <div className="annotation-feedback"><label className="sr-only" htmlFor="annotation-feedback">Feedback</label><textarea id="annotation-feedback" aria-label="Feedback" placeholder="Describe the change for Copilot on this pinned frame…" disabled={busy} value={annotation.text} onChange={e => edit({...annotation, text: e.target.value})}/></div>
       <div className="review-bar review-transport-bar">
-        <span className="toolbar-chip">Pinned {annotation.target.version_id ?? annotation.target.artifact_id} · frame {annotation.target.sequence_frame ?? annotation.target.source_frame ?? "image"}</span>
-        <div className="toolbar-group">
-          <label className="toolbar-field"><span>Range</span><input aria-label="Range start" placeholder="Start" disabled={busy || annotation.spatial_hits.length > 0} type="number" min="1" value={annotation.range?.start ?? ""} onChange={e => edit({...annotation, range: e.target.value ? {start: Number(e.target.value), end: Math.max(Number(e.target.value), annotation.range?.end ?? Number(e.target.value))} : null})}/></label><span>–</span>
-          <label className="toolbar-field"><span className="sr-only">Range end</span><input aria-label="Range end" placeholder="End" disabled={busy || !annotation.range || annotation.spatial_hits.length > 0} type="number" min={annotation.range?.start ?? 1} value={annotation.range?.end ?? ""} onChange={e => annotation.range && edit({...annotation, range: {...annotation.range, end: Math.max(annotation.range.start, Number(e.target.value))}})}/></label>
+        <div className="toolbar-group annotation-dock-target">
+          <button className="toolbar-btn" disabled={busyClose} onClick={onClose}>{draft.state === "saved" ? "Close" : "Keep draft & close"}</button>
+          <AnnotationTargetChip annotation={annotation}/>
+          {annotation.spatial_hits.length === 0 && <div className="toolbar-group">
+            <label className="toolbar-field"><span>Range</span><input aria-label="Range start" placeholder="Start" disabled={busy} type="number" min="1" value={annotation.range?.start ?? ""} onChange={e => edit({...annotation, range: e.target.value ? {start: Number(e.target.value), end: Math.max(Number(e.target.value), annotation.range?.end ?? Number(e.target.value))} : null})}/></label><span>–</span>
+            <label className="toolbar-field"><span className="sr-only">Range end</span><input aria-label="Range end" placeholder="End" disabled={busy || !annotation.range} type="number" min={annotation.range?.start ?? 1} value={annotation.range?.end ?? ""} onChange={e => annotation.range && edit({...annotation, range: {...annotation.range, end: Math.max(annotation.range.start, Number(e.target.value))}})}/></label>
+          </div>}
         </div>
-        <div className="toolbar-spacer"/><div className="toolbar-group">
-          <button className="toolbar-btn" disabled={saving || queueState === "submitting" || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>
-          <button className="toolbar-btn toolbar-btn-accent" disabled={saving || draft.state !== "saved" || queueState !== "idle"} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : "Queue feedback"}</button>
-        </div>
+        <AnnotationDockActions discard={discard} onDiscard={onDiscard} onClose={onClose} busy={busy}>
+          <button className="toolbar-btn" disabled={busyClose || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>
+          <button className="toolbar-btn toolbar-btn-accent" disabled={busyClose || draft.state !== "saved" || queueState !== "idle"} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : "Queue feedback"}</button>
+        </AnnotationDockActions>
       </div>
     </div>
     {(error || draft.state === "conflict") && <div className="review-status-banner" role="alert">{error || "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit."}</div>}

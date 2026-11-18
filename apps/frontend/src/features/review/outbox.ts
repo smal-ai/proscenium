@@ -22,6 +22,32 @@ export interface Draft {
   supersededOperations?: AnnotationSave[];
 }
 
+export type DiscardMode = "delete_new" | "revert_edits";
+export type DiscardPolicy =
+  | { allowed: false }
+  | { allowed: true; mode: DiscardMode; requiresConfirmation: boolean; buttonLabel: "Discard draft" | "Discard edits"; confirmPrompt: string };
+
+export function classifyDraftDiscard(draft: Draft): DiscardPolicy {
+  if (draft.state === "saving" || draft.state === "conflict" || draft.state === "saved" || draft.operation || draft.fallbackOperation) {
+    return {allowed: false};
+  }
+  const {saved_revision, spatial_hits, target, markups, text} = draft.annotation;
+  if (saved_revision !== null) {
+    if (draft.state !== "browser-local") return {allowed: false};
+    return {allowed: true, mode: "revert_edits", requiresConfirmation: true, buttonLabel: "Discard edits",
+      confirmPrompt: `Discard unsaved edits and restore revision ${saved_revision}?`};
+  }
+  // Only an untouched browser-local 2D draft can disappear without confirmation.
+  const requiresConfirmation = draft.state !== "browser-local" || spatial_hits.length > 0
+    || target.origin === "proxy_capture" || markups.length > 0 || text.trim() !== "";
+  return {allowed: true, mode: "delete_new", requiresConfirmation, buttonLabel: "Discard draft",
+    confirmPrompt: requiresConfirmation ? "Discard this draft?" : ""};
+}
+
+export function formatDraftStateBadge(draft: Draft): string {
+  return `${draft.state === "browser-local" ? "Draft on this browser" : draft.state}${draft.error ? `: ${draft.error}` : ""}`;
+}
+
 function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("proscenium-review-v1", 1);
@@ -42,6 +68,26 @@ async function transaction<T>(mode: IDBTransactionMode, action: (store: IDBObjec
 }
 
 export const saveDraft = async (draft: Draft) => { await transaction("readwrite", store => store.put(draft)); };
+export const deleteDraft = async (key: string): Promise<void> => {
+  await transaction("readwrite", store => store.delete(key));
+};
+
+// A 3D pin and its 2D markup editor share a record, even across a view switch.
+const pendingEdits = new Map<string, Promise<void>>();
+const draftIdentity = (draft: Draft) => `${draft.projectId}:${draft.key}`;
+export function saveDraftEdit(draft: Draft): Promise<void> {
+  const identity = draftIdentity(draft);
+  const write = waitForDraftEdits(draft).then(() => saveDraft(draft));
+  const settled = write.then(() => {}, () => {});
+  pendingEdits.set(identity, settled);
+  void settled.then(() => { if (pendingEdits.get(identity) === settled) pendingEdits.delete(identity); });
+  return write;
+}
+
+export async function waitForDraftEdits(draft: Draft): Promise<void> {
+  await pendingEdits.get(draftIdentity(draft));
+}
+
 export const readDrafts = async (projectId: string): Promise<Draft[]> =>
   (await transaction<Draft[]>("readonly", store => store.getAll())).filter(d => d.projectId === projectId)
     .map(d => d.state === "saving" ? {...d,state:"failed",error:"Save interrupted. Original operation retained for retry."} : d);
@@ -49,7 +95,7 @@ export const readDrafts = async (projectId: string): Promise<Draft[]> =>
 /** Persist each identity before its first network effect. A retry never reconstructs a command. */
 const inFlight = new Set<string>();
 export async function flushDraft(api: ApiClient, source: Draft, notify: (draft: Draft) => void): Promise<Draft> {
-  const identity = `${source.projectId}:${source.key}`;
+  const identity = draftIdentity(source);
   if (inFlight.has(identity)) throw new Error("This annotation save is already in progress");
   inFlight.add(identity);
   try {return await flushOriginalDraft(api, source, notify);}

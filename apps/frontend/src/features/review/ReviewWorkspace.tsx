@@ -3,6 +3,7 @@ import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, In
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, Markup, PreviewSegment, ProxyMapping, SpatialHit, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { AnnotationEditor } from "./AnnotationEditor";
+import { AnnotationsDrawer, mergeItemAnnotations } from "./AnnotationsDrawer";
 import { frameTarget, mediaUrl, sequenceTarget, typingTarget } from "./media";
 import { flushDraft, readDrafts, saveDraft, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
@@ -14,6 +15,7 @@ import { annotationContext, cleanTargetRole } from "./context";
 import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
 import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
+import { canStepKeyframePass, describeKeyframePassStatus, isFrameRendering, resolveDirectKeyframeJump, sortedReadyFrames, stepKeyframePass } from "./keyframeStepping";
 import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
 import { useReviewSelection } from "./state";
@@ -40,6 +42,7 @@ export function ReviewWorkspace(props: ReviewSurfaceProps) {
 function Workspace({visible: surfaceVisible = true, api, projectId, version: suppliedVersion, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
   const visible = surfaceVisible && !inspectedArtifact;
   const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
+  const [itemVersions, setItemVersions] = useState<VersionRecord[]>([]);
   const version = refreshedVersion ?? suppliedVersion;
   const [mode, setMode] = useState<Mode>("keyframes");
   const [drawer, setDrawer] = useState<"annotations" | "details" | null>(null);
@@ -67,6 +70,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [targetCamera, setTargetCamera] = useState<Camera | null>(null);
   const [range, setRange] = useState<FrameRange | null>(null);
   const [requestedFrame, setRequestedFrame] = useState(1);
+  const [frameInput, setFrameInput] = useState("1");
+  const [frameNotice, setFrameNotice] = useState("");
+  const framePointerDown = useRef(false);
   const [playing, setPlaying] = useState(false);
   useEffect(() => { if (!visible) { setPlaying(false); setCaptureReady(false); setPinMode(false); } }, [visible]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -102,14 +108,34 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const currentFrames=useMemo(()=>frames.filter(f=>!reviewJobId||f.job_id===reviewJobId),[frames,reviewJobId]);
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
   const availability=availabilityByJob[reviewJobId ?? ""] ?? null;
+  const readyFrames = useMemo(() => reviewJobId ? sortedReadyFrames(currentFrames) : [], [currentFrames, reviewJobId]);
+  const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
+  const matchesPanel = (panel: StoryboardTarget) => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id;
+  const storyboardIndex = activeStoryboardPanel && matchesPanel(activeStoryboardPanel) ? storyboardPanelIndex : storyboardTargets.findIndex(matchesPanel);
+  const storyboardPanel = storyboardTargets[storyboardIndex];
+  const displayedFrame = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame ?? Math.max(1, storyboardIndex + 1)) : requestedFrame;
+  const imageOrdinal = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame) : (target?.sequence_frame ?? target?.source_frame);
+  const passStatus = mode === "keyframes" ? describeKeyframePassStatus({readyFrames, displayedFrame, job: activeJob, availability}) : null;
+  useEffect(() => { setFrameInput(String(displayedFrame)); }, [displayedFrame, mode, draftId]);
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
+  const mappedSequence = mode === "animation" && !!assembly && !!frameMap;
   const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
   const deliveryManifest = deliveryJob ? artifacts.find(a => deliveryJob.artifact_ids.includes(a.artifact_id) && a.kind === "document" && a.purpose === "metadata" && a.state === "ready") : undefined;
   const readyToCapture = visible && (mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady);
   const imageFailure = useCallback((message: string) => setError(message), []);
   const handleProxyError = useCallback((message: string) => setProxyLoadError(message), []);
 
-  function changeDraft(next: Draft) { setDrafts(previous => [...previous.filter(d => d.key !== next.key), next]); }
+  const changeDraft = useCallback((next: Draft) => {
+    setDrafts(previous => [...previous.filter(d => d.key !== next.key), next]);
+    if (next.state === "saved") {
+      // Discard needs the acknowledged snapshot even if no list refresh follows Save.
+      setSaved(previous => {
+        const existing = previous.find(a => a.annotation_id === next.annotation.annotation_id);
+        if ((existing?.saved_revision ?? 0) > (next.annotation.saved_revision ?? 0)) return previous;
+        return [...previous.filter(a => a.annotation_id !== next.annotation.annotation_id), structuredClone(next.annotation)];
+      });
+    }
+  }, []);
 
   // Resolve exact pinned ProxyMapping by mapping_artifact_id when a spatial annotation is active.
   const matchingCurrentMap = useMemo(() => {
@@ -187,7 +213,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   useEffect(() => {
     if (!external?.target || externalPrimary === emittedPrimary.current) return;
-    initialised.current = true; setPlaying(false); setCaptureReady(false); setPinMode(false); setEditing2D(false);
+    initialised.current = true; setPlaying(false); setCaptureReady(false); setPinMode(false); setEditing2D(false); setFrameNotice("");
     setSequenceJobId(null);
     const annotation = external.annotations.find(a => a.target.artifact_id === external.target?.artifact_id);
     const spatial = Boolean(annotation && annotation.spatial_hits.length > 0);
@@ -247,13 +273,13 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         const pending = (await readDrafts(projectId)).filter(d => d.state === "failed" && (d.operation || d.markup));
         for (const draft of pending) {
           if (!active) break;
-          await flushDraft(api,draft,next => {if (active) setDrafts(previous => [...previous.filter(d => d.key !== next.key),next]);});
+          await flushDraft(api,draft,next => {if (active) changeDraft(next);});
         }
       } catch (e) {if (active) setError(`Outbox reconciliation failed: ${String(e)}`);} finally {flushing=false;}
     }
     window.addEventListener("online",reconnect);
     return () => {active=false;window.removeEventListener("online",reconnect);};
-  },[api,projectId]);
+  },[api,projectId,changeDraft]);
 
   useEffect(() => {
     if (!version) return;
@@ -267,6 +293,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       let pinned = version!;
       try {
         const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version!.item_id}, query: {cursor, limit: 100}}));
+        if (active) setItemVersions(versions.filter(v => v.project_id === projectId && v.item_id === version!.item_id).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.version_id.localeCompare(a.version_id, undefined, {numeric: true})));
         const current = versions.find(v => v.version_id === version!.version_id);
         if (current) {
           if (current.project_id !== projectId || current.item_id !== version!.item_id || current.source.digest !== version!.source.digest || current.source_commit !== version!.source_commit) throw new Error("Pinned source version identity changed");
@@ -345,7 +372,14 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if (active) setMapping(previous => previous ?? result);
     }).catch(() => { /* Keep an already validated mapping available offline. */ });
     allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100}})).then(result => {
-      if (active) setSaved(result.filter(a => a.target.item_id === version.item_id || a.target.version_id === version.version_id));
+      if (active) setSaved(previous => {
+        const scoped = result.filter(({target}) => target.item_id === version.item_id || (target.item_id === null && target.version_id === version.version_id));
+        const newest = new Map(previous.map(a => [a.annotation_id, a]));
+        for (const a of scoped) {
+          if ((a.saved_revision ?? 0) >= (newest.get(a.annotation_id)?.saved_revision ?? 0)) newest.set(a.annotation_id, a);
+        }
+        return [...newest.values()];
+      });
     }).catch(e => {if (active) setError(String(e));});
     return () => {active = false;};
   }, [api, projectId, version, refreshRevision]);
@@ -385,7 +419,56 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }, [onContextPreparer]);
   useEffect(() => {const selection = JSON.parse(contextKey) as TurnSelection; emittedPrimary.current = JSON.stringify({target: selection.target, annotation: selection.annotations.map(a => [a.annotation_id,a.saved_revision])}); onContextChange(selection);}, [contextKey, onContextChange]);
 
-  function step(delta: number, shot = false) {
+  function showKeyframe(receipt: FrameReceipt) {
+    if (!version) return;
+    const frame = frameTarget(receipt, version);
+    setTarget(frame);
+    setTargetCamera(frameCamera(frame, jobs));
+    setRequestedFrame(receipt.source_frame);
+    setFrameInput(String(receipt.source_frame));
+    setPlaying(false);
+    setCaptureReady(false);
+    setFrameNotice("");
+  }
+
+  function showStoryboardPanel(index: number) {
+    const panel = storyboardTargets[index];
+    if (!panel) return;
+    setTarget(panel.target);
+    setStoryboardPanelIndex(index);
+    setRequestedFrame(index + 1);
+    setFrameInput(String(index + 1));
+    setTargetCamera(null);
+    setPlaying(false);
+    setCaptureReady(false);
+    setFrameNotice("");
+  }
+
+  function commitKeyframeInput(value: string) {
+    const ordinal = Number(value);
+    if (!value || !Number.isSafeInteger(ordinal) || ordinal === displayedFrame) {
+      setFrameInput(String(displayedFrame));
+      setRequestedFrame(displayedFrame);
+      return;
+    }
+    if (!readyFrames.length && storyboardPanel && storyboardTargets[ordinal - 1]) {
+      showStoryboardPanel(ordinal - 1);
+      return;
+    }
+    const result = resolveDirectKeyframeJump({requestedOrdinal: ordinal, displayedFrame, readyFrames, job: activeJob, availability});
+    if (result.kind === "found") showKeyframe(result.frame);
+    else {
+      setFrameInput(String(result.revertFrame));
+      setRequestedFrame(result.revertFrame);
+      setFrameNotice(result.message);
+    }
+  }
+
+  const storyboardCount = storyboardPanel ? storyboardTargets.length : 0;
+  const canStepKeyframe = (delta: -1 | 1) => canStepKeyframePass(readyFrames, displayedFrame, delta, storyboardCount);
+
+  function step(delta: -1 | 1, shot = false) {
+    if (draftId) return;
     setPlaying(false);
     if (shot) {
       const currentIndex=versionJobs.findIndex(j=>j.job_id===reviewJobId);
@@ -394,34 +477,42 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if(next) chooseJob(next.job_id);
       return;
     }
-    if (!currentFrames.length && storyboardTargets.length) {
-      if (draftId) return;
-      const activePanel = storyboardTargets[storyboardPanelIndex];
-      const index = activePanel && target && activePanel.target.artifact_id === target.artifact_id && activePanel.shot_id === target.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
-      const next = index >= 0 ? storyboardTargets[index + delta] : undefined;
-      if (next) {setTarget(next.target);setStoryboardPanelIndex(index + delta);setRequestedFrame(index + delta + 1);setTargetCamera(null);setCaptureReady(false);setMode("keyframes");}
+    if (mode === "keyframes") {
+      if (!canStepKeyframe(delta)) return;
+      const next = stepKeyframePass(readyFrames, displayedFrame, delta);
+      if (next) showKeyframe(next);
+      else if (storyboardPanel) showStoryboardPanel(storyboardIndex + delta);
+      return;
+    }
+    if (mode !== "animation") return;
+    if (mappedSequence && frameMap) {
+      setRequestedFrame(Math.min(frameMap.map.frame_count, Math.max(1, requestedFrame + delta)));
+      setFrameNotice("");
+      return;
+    }
+    if (!currentFrames.length && storyboardPanel && storyboardTargets[storyboardIndex + delta]) {
+      showStoryboardPanel(storyboardIndex + delta);
+      setMode("keyframes");
       return;
     }
     if (!currentFrames.length) return;
     const current = target?.sequence_frame ?? target?.source_frame ?? requestedFrame;
-    const candidates = currentFrames.filter(f => delta > 0 ? f.source_frame > current : f.source_frame < current).filter(f => !shot || f.shot_id !== target?.shot_id);
-    const ordinal = shot ? (delta > 0 ? candidates[0] : candidates.at(-1))?.source_frame : Math.max(1,current+delta);
-    if (!ordinal) return;
+    const ordinal = Math.max(1, current + delta);
     setRequestedFrame(ordinal); setCaptureReady(false);
-    const next = currentFrames.find(f => f.source_frame === ordinal);
-    if (mode === "keyframes" && version && next) {const frame=frameTarget(next,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));}
-    else if (!next) setError(`Frame ${ordinal} is pending. Last identified image retained.`);
+    const pending = !currentFrames.some(f => f.source_frame === ordinal) && isFrameRendering(ordinal, activeJob, availability);
+    setFrameNotice(pending ? `Frame ${ordinal} is pending. Last identified image retained.` : "");
   }
 
   function chooseJob(identity:string) {
+    setFrameNotice("");
     const first=frames.find(f=>f.job_id===identity);
     const job=versionJobs.find(j=>j.job_id===identity);
     const image=job ? generationOutputs(job,artifacts)[0] : undefined;
     if (!version || (!first && !image)) {setError(`No ready review output for ${identity}. Current image and job retained.`);return;}
     setSequenceJobId(first && version.kind === "sequence" ? identity : null);
     setPlaying(false);setCaptureReady(false);setRange(null);setTargetCamera(null);setError("");
-    if(first){const frame=frameTarget(first,version);setTarget(frame);setTargetCamera(frameCamera(frame,jobs));setRequestedFrame(first.source_frame);}
-    else if(image){setMode("keyframes");setTarget(imageTarget(image,version,versionJobs));setRequestedFrame(1);}
+    if(first) showKeyframe(first);
+    else if(image){setMode("keyframes");setTarget(imageTarget(image,version,versionJobs));setRequestedFrame(1);setFrameInput("1");}
   }
 
   function changeMode(next: Mode) {
@@ -430,6 +521,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       setPlaying(false);
       setPinMode(false);
       setUnmappedCapture(null);
+      setFrameNotice("");
       setMode(next);
     }
   }
@@ -448,6 +540,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   });
 
   async function handlePlacePin(placement: ProxyPinPlacement) {
+    setFrameNotice("");
     if (!version || !activeMapping?.mapping_artifact_id) {
       setError("Pinned proxy mapping artefact identity is unavailable.");
       return;
@@ -634,12 +727,14 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   async function annotate() {
     setPlaying(false);
+    setFrameNotice("");
     if (!visible || !target || !readyToCapture || mode === "3d_inspection") return;
     // The target comes from a decoded image or rVFC-confirmed animation presentation.
     await startDraft(target);
   }
 
   async function startDraft(pinned: FrameTarget) {
+    setFrameNotice("");
     const annotation: AnnotationSnapshot = {annotation_id: crypto.randomUUID(), saved_revision: null,
       target: structuredClone(pinned), range, camera: pinned.render_job_id ? frameCamera(pinned,jobs) : pinned.origin === "sequence_render" ? null : structuredClone(targetCamera), markups: [], text: "", spatial_hits: [], spatial_status: "unavailable"};
     const next: Draft = {key: annotation.annotation_id, projectId, annotation, state: "browser-local"};
@@ -647,12 +742,15 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }
 
   async function restore(annotation: AnnotationSnapshot) {
+    setFrameNotice("");
     setSequenceJobId(null);
     setPlaying(false);
     setPinMode(false);
     setEditing2D(false);
     setDrawer(null);
-    const local = drafts.find(d => d.key === annotation.annotation_id);
+    // The drawer already chose the top revision. Keep outbox data only when its
+    // snapshot won the merge, not when a newer server snapshot was selected.
+    const local = drafts.find(d => d.annotation === annotation);
     const next: Draft = local ?? {key: annotation.annotation_id, projectId, annotation, state: "saved"};
     if (onNavigate && next.annotation.target.version_id && next.annotation.target.item_id && version?.version_id !== next.annotation.target.version_id) {
       try {
@@ -689,13 +787,25 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     setDraftId(null);
   }
 
+  async function discardActiveDraft(draftKey: string, mode: "delete_new" | "revert_edits") {
+    const active = drafts.find(d => d.key === draftKey);
+    const server = mode === "revert_edits" ? saved.find(a => a.annotation_id === (active?.annotation.annotation_id ?? draftKey)) : undefined;
+    if (server) {
+      const restored: Draft = {key: server.annotation_id, projectId, annotation: structuredClone(server), state: "saved"};
+      setDrafts(previous => [...previous.filter(d => d.key !== draftKey && d.key !== restored.key), restored]);
+      if (draftId === draftKey) setDraftId(restored.key);
+    } else {
+      setDrafts(previous => previous.filter(d => d.key !== draftKey));
+      if (draftId === draftKey) closeDraft();
+    }
+  }
+  void discardActiveDraft; // Lane B5 connects the two dock callbacks.
+
+  const merged = useMemo(() => version ? mergeItemAnnotations({itemId: version.item_id, currentVersionId: version.version_id, drafts, saved, itemVersions}) : null,
+    [version, drafts, saved, itemVersions]);
+
   if (inspectedArtifact) return <RetainedReview {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
-  if (!version) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
-  const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
-  const storyboardIndex = activeStoryboardPanel && target && activeStoryboardPanel.target.artifact_id === target.artifact_id && activeStoryboardPanel.shot_id === target.shot_id ? storyboardPanelIndex : storyboardTargets.findIndex(panel => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id);
-  const storyboardPanel = storyboardIndex >= 0 ? storyboardTargets[storyboardIndex] : undefined;
-  const mappedSequence = mode === "animation" && !!assembly && !!frameMap;
-  const unsavedCount = saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).length;
+  if (!version || !merged) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
   const activePins: SpatialPinMarker[] = draft && isSpatialDraft
     ? draft.annotation.spatial_hits.map((hit, idx) => ({
       id: `${draft.key}-${idx}`,
@@ -734,7 +844,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
             <a className="toolbar-btn" title="Final encode · technical completion is not owner selection" href={mediaUrl(projectId,assembly.artifact_id)} download={`${version.version_id}.mp4`}><Download size={13}/>Download final video</a>
             <a className="toolbar-btn" title="Final encode · technical completion is not owner selection" href={mediaUrl(projectId,deliveryManifest.artifact_id)} download={`${version.version_id}-manifest.json`}><Download size={13}/>Download delivery manifest</a>
           </>}
-          <button className="toolbar-btn" aria-pressed={drawer === "annotations"} onClick={() => setDrawer(drawer === "annotations" ? null : "annotations")}><Bookmark size={13}/>Annotations{drafts.length + unsavedCount > 0 && <span className="toolbar-count">{drafts.length + unsavedCount}</span>}</button>
+          <button className="toolbar-btn" aria-pressed={drawer === "annotations"} onClick={() => setDrawer(drawer === "annotations" ? null : "annotations")}><Bookmark size={13}/>Annotations{merged.thisVersion.length > 0 && <span className="toolbar-count">{merged.thisVersion.length}</span>}</button>
           <button className="toolbar-btn" aria-pressed={drawer === "details"} onClick={() => setDrawer(drawer === "details" ? null : "details")}><Info size={13}/>Details</button>
           {mode === "3d_inspection" ? <>
             <button
@@ -750,14 +860,14 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         </div>
       </nav>
     )}
-    {!draft && drawer ? <section className="review-drawer" aria-label={drawer === "annotations" ? "Saved annotations and local drafts" : "Pinned version details"}>
+    {!draft && drawer === "annotations" && <AnnotationsDrawer version={version} merged={merged} onClose={() => setDrawer(null)} onRestore={annotation => void restore(annotation)}/>}
+    {!draft && drawer === "details" && <section className="review-drawer" aria-label="Pinned version details">
       <button className="toolbar-btn toolbar-icon-btn drawer-close" aria-label="Close review drawer" onClick={() => setDrawer(null)}><X size={14}/></button>
-      {drawer === "annotations" ? <div className="review-drawer-items">
-        {!drafts.length && !saved.length && <span className="toolbar-meta">No saved annotations or local drafts</span>}
-        {drafts.map(d => <button className="toolbar-btn" key={d.key} onClick={() => void restore(d.annotation)}>{d.annotation.text || d.annotation.annotation_id} · {d.state} · {d.annotation.target.version_id}</button>)}
-        {saved.filter(a => !drafts.some(d => d.key === a.annotation_id)).map(a => <button className="toolbar-btn" key={a.annotation_id} onClick={() => void restore(a)}>{a.text || a.annotation_id} · revision {a.saved_revision} · {a.target.version_id}</button>)}
-      </div> : <><p>Pinned version: {version.name} · {version.version_id} · {version.artifact_ids.length} version artefacts</p><div className="review-drawer-items"><strong>Published image artefacts</strong>{artifacts.filter(a => a.kind === "image").map(a => <span className="toolbar-chip" key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose}</span>)}</div></>}
-    </section> : null}
+      <h2>Pinned version details</h2>
+      <div className="review-version-identity"><code>Git {version.source_commit.slice(0, 10)}</code><code>{version.version_id}</code></div>
+      <p>{version.name} · {version.artifact_ids.length} version artefacts</p>
+      <div className="review-drawer-items"><strong>Published image artefacts</strong>{artifacts.filter(a => a.kind === "image").map(a => <span className="toolbar-chip" key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose}</span>)}</div>
+    </section>}
     {draft && show2DEditor ? (
       <AnnotationEditor
         key={draft.key}
@@ -803,7 +913,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     {show2DEditor ? null : draft && isSpatialDraft ? (
       <SpatialPinDock draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController}/>
     ) : (
-      <div className="review-bar review-transport-bar" aria-label="Review transport">
+      <div className={`review-bar review-transport-bar${mode === "3d_inspection" ? "" : " review-playback-transport"}`} aria-label="Review transport">
         {mode === "3d_inspection" ? <>
           <span className="toolbar-chip">Sample frame {mapping?.sample_frame ?? 1}</span>
           {selected.length > 0 && <span className="toolbar-chip">{selected.length} object(s) selected</span>}
@@ -814,14 +924,42 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         </> : <>
           <div className="toolbar-group">
             {mode === "animation" && !mappedSequence && <button className="toolbar-btn toolbar-icon-btn" aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"} disabled={!visible} onClick={() => setPlaying(!playing)}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button>}
-            <button className="toolbar-btn toolbar-icon-btn" aria-label="Previous frame" title="Previous frame (←)" onClick={() => step(-1)}><ChevronLeft size={15}/></button>
-            <label className="toolbar-field"><span>Frame</span><input aria-label="Frame" type="number" min="1" value={requestedFrame} onChange={e => {setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(e.target.value))); if (mode === "keyframes") {const frame = currentFrames.find(f => f.source_frame === Number(e.target.value)); if (frame) {const next=frameTarget(frame,version);setTarget(next);setTargetCamera(frameCamera(next,jobs));} else setError(`Frame ${e.target.value} is pending. Last identified image retained.`);}}}/></label>
-            <button className="toolbar-btn toolbar-icon-btn" aria-label="Next frame" title="Next frame (→)" onClick={() => step(1)}><ChevronRight size={15}/></button>
+            <button className="toolbar-btn toolbar-icon-btn" aria-label="Previous frame" title="Previous frame (←)" disabled={mode === "keyframes" && !canStepKeyframe(-1)} onClick={() => step(-1)}><ChevronLeft size={15}/></button>
+            <label className="toolbar-field"><span>Frame</span><input aria-label="Frame" type="number" min="1" value={mode === "keyframes" ? frameInput : requestedFrame}
+              onPointerDown={() => { framePointerDown.current = true; }}
+              onPointerUp={() => { framePointerDown.current = false; }}
+              onPointerCancel={() => { framePointerDown.current = false; }}
+              onPointerLeave={() => { framePointerDown.current = false; }}
+              onBlur={e => {
+                framePointerDown.current = false;
+                if (mode === "keyframes") commitKeyframeInput(e.currentTarget.value);
+              }}
+              onKeyDown={e => {
+                if (mode !== "keyframes") return;
+                if (e.key === "Enter") commitKeyframeInput(e.currentTarget.value);
+                else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                  const ordinal = e.currentTarget.valueAsNumber;
+                  commitKeyframeInput(String(Math.max(1, (Number.isFinite(ordinal) ? ordinal : displayedFrame) + (e.key === "ArrowUp" ? 1 : -1))));
+                }
+              }}
+              onChange={e => {
+                const {value, valueAsNumber} = e.currentTarget;
+                if (mode === "keyframes") {
+                  setFrameInput(value);
+                  if (framePointerDown.current || document.activeElement !== e.currentTarget || readyFrames.some(f => f.source_frame === valueAsNumber)) commitKeyframeInput(value);
+                } else {
+                  setPlaying(false); setCaptureReady(false); setRequestedFrame(Math.max(1, Number(value))); setFrameNotice("");
+                }
+              }}/></label>
+            <button className="toolbar-btn toolbar-icon-btn" aria-label="Next frame" title="Next frame (→)" disabled={mode === "keyframes" && !canStepKeyframe(1)} onClick={() => step(1)}><ChevronRight size={15}/></button>
           </div>
-          {!currentFrames.length && storyboardPanel && <span className="toolbar-chip" title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
+          {passStatus && <span className="toolbar-chip" title={passStatus === "Only rendered frame" ? `Only frame ${readyFrames[0].source_frame} was rendered in this pass` : undefined}>{passStatus}</span>}
+          {frameNotice && <span className="toolbar-chip review-frame-notice" role="status">{frameNotice}</span>}
+          {!readyFrames.length && storyboardPanel && <span className="toolbar-chip" title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
           {versionJobs.length > 0 && <label className="toolbar-field"><span>Pass</span><select aria-label="Shot / render job" value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? job.render_spec?.scene_name ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>}
           <div className="toolbar-spacer"/>
-          {target && <span className="toolbar-chip">{target.dimensions.width} × {target.dimensions.height} · {target.origin} · {target.sequence_frame ?? target.source_frame ? `f${target.sequence_frame ?? target.source_frame}` : "still"}</span>}
+          {target && <span className="toolbar-chip">{target.dimensions.width} × {target.dimensions.height} · {target.origin} · {imageOrdinal == null ? "still" : `f${imageOrdinal}`}</span>}
           {activeJob?.render_spec && <span className="toolbar-meta">{activeJob.render_spec.engine} · {activeJob.render_spec.purpose} · {activeJob.render_spec.samples} spp</span>}
         </>}
       </div>

@@ -1,0 +1,57 @@
+.annotation-dock .annotation-feedback {
+  padding: 6px 12px;
+}
+
+.review-workspace .annotation-dock .annotation-feedback textarea {
+  box-sizing: border-box;
+  min-height: 44px;
+  height: 48px;
+  max-height: 55px;
+}
+
+.annotation-dock .review-transport-bar {
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 4px 12px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.annotation-dock .annotation-dock-target,
+.annotation-dock .annotation-dock-actions {
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.annotation-dock .annotation-dock-actions {
+  margin-inline-start: auto;
+  justify-content: flex-end;
+}
+
+.annotation-dock .discard-confirm-prompt {
+  color: #fecaca;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.review-workspace .annotation-dock .toolbar-btn-subtle-danger {
+  color: #fca5a5;
+}
+
+.review-workspace .annotation-dock .toolbar-btn-subtle-danger:hover:not(:disabled) {
+  background: #2f1e25;
+  border-color: #7f3b4a;
+}
+
+.review-workspace .annotation-dock .toolbar-btn-danger {
+  background: #4b202a;
+  border-color: #a74d5c;
+  color: #fff1f2;
+}
+
+.review-workspace .annotation-dock .toolbar-btn-danger:hover:not(:disabled) {
+  background: #612734;
+  border-color: #e27f8d;
+}
