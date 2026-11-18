@@ -53,21 +53,22 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
 
 ## Request targeting and references
 
-The **Target** picker above the Composer separates what you are viewing from what you want Copilot to change:
+The **Target** picker above the message input separates what you are viewing from what you want Copilot to change. You can keep editing and send with the picker open. Close it with **Done**, `Escape` or the Target bar to return to your draft.
 
 - **Current view:** Captures the inspected Review item or storyboard shot at submission time (or **Project** when nothing is selected). Subsequent browsing never mutates an admitted request.
 - **Project:** General project discussion, research or cross-item planning.
-- **Specific asset, scene, storyboard or shot:** Pins an exact published version (including older versions) independently of the Review workspace.
-- **New asset / scene / storyboard:** Marks creation intent without inventing a published version ID.
-- **Explicit references:** Add supporting published versions (`reference_versions`) or uploaded images (`attachments`) without changing the primary Request target. Targeting `Project`, a `New` item or a different item never flushes an unrelated hidden Review annotation draft.
+- **Existing…:** Choose a published asset, scene or storyboard and pin an exact version, including older versions. For a storyboard, choose the entire version or a specific shot. Later publications do not move the pin.
+- **New…:** Choose **Asset**, **Scene** or **Storyboard** and optionally name it. This records creation intent without inventing a published version ID.
+
+Open the separate **References** disclosure to add published versions without changing the primary target. You can also include the current Review version when one is open. The Target bar shows the count of distinct references. Use the Composer's attachment control for supporting images. Explicit targets do not capture hidden Review drafts or viewport images.
 
 ## Composer controls, counters and history
 
 - **Split Send button:** Click the main button to submit using the active mode (**Queue** or **Steer**). Use the chevron menu to switch modes without sending.
 - **Guarded Steer:** Steer is enabled only when eligible work is actively running or awaiting input with execution unfenced. If work finishes or pauses, your Steer selection and draft are preserved with an explicit **Switch to Queue** action.
 - **Prompt history:** Press `ArrowUp` in an empty Composer (or with the caret at index `0`) to recall earlier project prompts, and `ArrowDown` to move forward back to your unsent draft. Recalling history restores text only, keeping your current target, mode and attachments intact.
-- **Panel links:** **Jobs**, **Context** and **Agents** sit beneath the input as interactive pill links that temporarily replace the text box and restore your draft, caret and focus on close:
-  - **Jobs:** Highlights unfinished independent render, encode, generation, VLM and Unity jobs (`N active` with an active indicator), retains settled history (`N done` or attention state on failure/uncertainty) and shows `0` when no jobs exist.
+- **Panel links:** **Jobs**, **Context** and **Agents** sit beneath the input. Opening one closes the Target picker and temporarily replaces the text box. Closing it restores your draft, selection and focus.
+  - **Jobs:** Counts running and queued independent jobs separately. A `?` marks last known counts or an uncertain outcome. Failed jobs and uncertain outcomes appear first under **Needs attention**. **Finished (N)** contains only succeeded and cancelled jobs and is collapsed by default. Open a row's **Details** for exact IDs, provider information and, where offered, cancellation of that independent job only.
   - **Context:** Counts logical items in the next request (explicit target, reference versions, deduplicated images, object selections, annotations and approved findings), showing active uploads separately until ready.
   - **Agents:** Counts busy or uncertain product-native specialists (`subagent.*`), showing each specialist's task label, state, freshness and model without counting wrapper `task` calls.
 

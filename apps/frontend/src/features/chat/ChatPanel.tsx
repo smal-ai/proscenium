@@ -56,6 +56,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const preparingLatch = useRef(false);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const [composerPanel, setComposerPanel] = useState<"message" | "jobs" | "context" | "agents">("message");
+  const [targetOpen, setTargetOpen] = useState(false);
   const caret = useRef({ start: 0, end: 0 });
   const historyCursor = useRef<HistoryCursor | null>(null);
   const seenSeeds = useRef(new Set<string>());
@@ -103,8 +104,28 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   function changeTarget(target: DraftTarget) { setDraftTarget(target); writePrivate(`target.${projectId}`, target); }
   function changeReferences(versions: VersionRef[]) { setReferences(versions); writePrivate(`ref_versions.${projectId}`, versions); }
   function changeIncludeView(include: boolean) { setIncludeCurrentViewAsReference(include); writePrivate(`include_current_view_ref.${projectId}`, include); }
-  function focusMessage() {
-    requestAnimationFrame(() => { const input = messageRef.current; if (input) { input.focus(); input.setSelectionRange(caret.current.start, caret.current.end); } });
+  function restoreMessageCaret(focus: boolean) {
+    requestAnimationFrame(() => {
+      const input = messageRef.current;
+      if (!input) return;
+      if (focus) input.focus();
+      input.setSelectionRange(caret.current.start, caret.current.end);
+    });
+  }
+  function focusMessage() { restoreMessageCaret(true); }
+  function rememberCaret() {
+    if (messageRef.current) caret.current = { start: messageRef.current.selectionStart, end: messageRef.current.selectionEnd };
+  }
+  function openTargetPicker() {
+    const remountingMessage = !messageRef.current;
+    rememberCaret();
+    setComposerPanel("message");
+    setTargetOpen(true);
+    if (remountingMessage) restoreMessageCaret(false);
+  }
+  function closeTargetPicker() {
+    setTargetOpen(false);
+    focusMessage();
   }
   function starter(kind: "asset" | "scene" | "storyboard") {
     changeTarget({ kind: "new_item", item_kind: kind, intent_id: id() });
@@ -112,14 +133,14 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       const text = kind === "storyboard" ? "Plan a storyboard for " : kind === "asset" ? "Create an asset: " : "Build a scene: ";
       changeDraft(text); caret.current = { start: text.length, end: text.length };
     }
-    setComposerPanel("message"); focusMessage();
+    setTargetOpen(false); setComposerPanel("message"); focusMessage();
   }
   useEffect(() => {
     if (!seedIntent || seenSeeds.current.has(seedIntent.nonce)) return;
     seenSeeds.current.add(seedIntent.nonce);
     changeTarget(structuredClone(seedIntent.target));
     if (!draft.trim() && seedIntent.templateText) { changeDraft(seedIntent.templateText); caret.current = { start: seedIntent.templateText.length, end: seedIntent.templateText.length }; }
-    setComposerPanel("message"); focusMessage();
+    setTargetOpen(false); setComposerPanel("message"); focusMessage();
   }, [seedIntent, projectId]);
   function changeAttachments(value: Attachment[]) { setAttachments(value); writePrivate(`attachments.${projectId}`, value); }
   function closePanel() {
@@ -127,7 +148,8 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     focusMessage();
   }
   function togglePanel(panel: "jobs" | "context" | "agents") {
-    if (messageRef.current) caret.current = { start: messageRef.current.selectionStart, end: messageRef.current.selectionEnd };
+    rememberCaret();
+    setTargetOpen(false);
     if (composerPanel === panel) closePanel();
     else setComposerPanel(panel);
   }
@@ -198,13 +220,15 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       </section>}
       {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}
     </div>
-    <div className="composer">
+    <div className="composer" onKeyDown={event => {
+      if (targetOpen && event.key === "Escape" && !event.nativeEvent.isComposing && !event.defaultPrevented) closeTargetPicker();
+    }}>
       {(composer.error || error) && <p role="alert">{composer.error || error}</p>}
       {composer.pending && <div className="retry-card"><strong>Request awaiting confirmation</strong><code>{composer.pending.submission.request_id}</code><p>Its original text and context are frozen. Your draft is retained.</p><button disabled={composer.busy} onClick={() => void composer.retry(false)}>Reconcile original request / retry same ID</button></div>}
       {composer.pendingStop && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
       {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
       {shouldShowQueueHold(snapshot, mode) && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
-      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} />
+      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
         if (e.nativeEvent.isComposing) return;
@@ -215,7 +239,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
           if (next.text !== draft || next.cursor) { e.preventDefault(); historyCursor.current = next.cursor; changeDraft(next.text); caret.current = { start: next.text.length, end: next.text.length }; focusMessage(); }
         }
       }} /></>}
-      {composerPanel === "jobs" && <ComposerPanel panelId="composer-jobs" title="Independent jobs" onClose={closePanel}><JobList api={api} projectId={projectId} jobs={jobs} onRefresh={onRefresh} onError={e => setError(describeError(e))} /></ComposerPanel>}
+      {composerPanel === "jobs" && <ComposerPanel panelId="composer-jobs" title="Independent jobs" onClose={closePanel}><JobList api={api} projectId={projectId} jobs={jobs} items={catalogue} onRefresh={onRefresh} onError={e => setError(describeError(e))} /></ComposerPanel>}
       {composerPanel === "context" && <ComposerPanel panelId="composer-context" title="Next request context" onClose={closePanel}>
         <ContextPreview projectId={projectId} selection={currentSelection} />
         {references.map(ref => <div className="reference-version" key={`${ref.item_id}:${ref.version_id}`}><code>{ref.item_id} · {ref.version_id}</code><button aria-label={`Remove reference version ${ref.version_id}`} onClick={() => changeReferences(references.filter(value => value.item_id !== ref.item_id || value.version_id !== ref.version_id))}>Remove reference</button></div>)}

@@ -332,19 +332,31 @@ test("Jobs badge updates empty, active, failed attention and all-succeeded histo
   await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
   const first = job("one", "running"), second = job("two", "waiting_resource");
   for (const record of [first, second]) studio.emit("job.state_changed", record);
-  await expect(badge).toHaveClass("active-jobs"); await expect(badge).toHaveText("Jobs2 active");
+  await expect(badge).toHaveClass("active-jobs"); await expect(badge).toHaveText("Jobs1 running · 1 queued");
   await expect(badge.locator(".jobs-indicator")).toBeVisible();
   studio.emit("job.state_changed", { ...first, state: "failed", state_revision: 2, error_code: "corrupt_provider_output" });
   studio.emit("job.state_changed", { ...second, state: "succeeded", state_revision: 2 });
-  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs2 done");
+  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1 failed · 1 done");
   await badge.click();
   const panel = page.getByRole("region", { name: "Independent jobs" });
   await expect(panel.getByText("Failure: corrupt_provider_output", { exact: true })).toBeVisible();
-  await expect(panel.getByText("Provider: synthetic", { exact: true })).toHaveCount(2);
+  const history = panel.locator(".jobs-finished-group");
+  await expect(history).toHaveJSProperty("open", false);
+  await expect(history.locator("summary").first()).toHaveText("Finished (1)");
+  const providers = panel.getByText("Provider: synthetic", { exact: true });
+  await expect(providers).toHaveCount(2);
+  await expect(providers.first()).toBeHidden();
+  await expect(providers.last()).toBeHidden();
+  await panel.locator(".needs-attention .job-row-details > summary").click();
+  await expect(providers.first()).toBeVisible();
+  await history.locator(":scope > summary").click();
+  await history.locator(".job-row-details > summary").click();
+  await expect(providers.last()).toBeVisible();
   studio.emit("job.state_changed", { ...first, state: "succeeded", state_revision: 3 });
   await expect(badge).toHaveClass("done-jobs"); await expect(badge).toHaveText("Jobs2 done");
   await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
   await expect(panel.getByText("Failure: corrupt_provider_output")).toHaveCount(0);
+  await expect(history.locator(":scope > summary")).toHaveText("Finished (2)");
   studio.assertHermetic();
 });
 
@@ -422,7 +434,7 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
   await expect.poll(() => page.evaluate(project => JSON.parse(localStorage.getItem(`proscenium.owner.cursor.${project}`)!), projectId)).toBe(10);
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   expect(reads().slice(before)).toEqual([]);
-  await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1 active");
+  await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1 queued");
   studio.assertHermetic();
 });
 

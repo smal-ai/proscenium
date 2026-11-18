@@ -113,7 +113,7 @@ test("raw HTML and unsafe destinations are inert and images never load automatic
   assert.match(markup, /&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.match(markup, /&lt;iframe src=&quot;https:\/\/example\.com\/frame&quot;&gt;/);
   assert.match(markup, /&lt;div data-label=&quot;\[attribute\]\(https:\/\/example\.com\)&quot;&gt;literal&lt;\/div&gt;/);
-  assert.match(markup, /<br\/>click data rel<br\/>vb file scheme-relative embedded<br\/>entity malformed mail-authority/);
+  assert.match(markup, /<br\/>click data rel<br\/>vb file scheme-relative \[embedded\]\(java\tscript:alert\(1\)\)<br\/>entity malformed mail-authority/);
   assert.deepEqual(markup.match(/<a [^>]+>.*?<\/a>/g), [
     '<a href="https://example.com/pixel.png" target="_blank" rel="noopener noreferrer">[Image: remote]</a>',
     '<a href="https://example.com/docs" target="_blank" rel="noopener noreferrer">docs</a>',
@@ -121,6 +121,12 @@ test("raw HTML and unsafe destinations are inert and images never load automatic
     '<a href="mailto:studio@example.com" target="_blank" rel="noopener noreferrer">email</a>',
   ]);
   assert.match(markup, /\[Image: local\] \[Image: inline\] \[Image: mail\]/);
+});
+
+test("whitespace invalidates link destinations, but unsafe single tokens preserve label formatting", () => {
+  const markup = markdown("items[0](first arg), [Note](see section 2), [Split](two\nlines), [**click**](javascript:alert(1))");
+  assert.match(markup, /items\[0\]\(first arg\), \[Note\]\(see section 2\), \[Split\]\(two<br\/>lines\), <strong>click<\/strong>/);
+  assert.doesNotMatch(markup, /<a\b|\*\*click\*\*|javascript:/);
 });
 
 test("fences preserve literal code, matching markers and an unfinished streaming tail", () => {

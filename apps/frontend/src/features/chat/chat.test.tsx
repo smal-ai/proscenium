@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ActivityEventData, ApiClient, Artifact, Event, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
+import type { ActivityEventData, ApiClient, Artifact, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
 import { mergeReviews } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
 import { CriticPanel, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
-import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget } from "./target";
+import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { busyAgent, nativeAgents } from "./agents";
@@ -17,6 +17,7 @@ import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowQueueHold, type ChatPanelProps } from "./ChatPanel";
 import { JobList, jobsBadgeState } from "./ComposerPanel";
+import { TargetPicker } from "./TargetPicker";
 
 const api = { call: () => { throw new Error("Unconfigured API operation in offline test"); } } as unknown as ApiClient;
 const ref = { item_id: "asset-a", version_id: "version-old" };
@@ -25,7 +26,12 @@ const request = (request_id: string, accepted_at: string, text: string, type = "
 const snapshot = (state = "running", fenced = false) => ({ project: { project_id: "project", state: "active" }, active_work: { work_id: "work", state, native_session_id: "session" }, pending_decisions: [], execution: { fenced, hold_reason: fenced ? "Owner stopped work" : null, active_agents: [], work_outputs: [] }, items: [] }) as unknown as ProjectSnapshot;
 const event = (sequence: number, event_type: Event["event_type"], payload: object, occurred_at = "2026-11-15T10:00:00Z") => ({ sequence, event_type, payload, occurred_at, project_id: "project", actor: { kind: "lead", id: "lead" }, native_session_id: "session", request_id: "request", work_id: "work" }) as Event;
 const activity: ActivityEventData = { invocation_id: "invocation", name: "image specialist", state: "running", summary: "", artifact_ids: [], model_id: "reported-model", display_name: "Prepare concept" };
-const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({ job_id, state, kind: "image_generation", provider_id: "local-comfy" }) as JobRecord;
+const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
+  schema_version: "1.0", job_id, state, kind: "image_generation", provider_id: "local-comfy", target: { target_id: job_id, version: null, shot_id: null },
+  expected_frames: null, completed_frames: null, render_spec: null, project_id: "project", work_id: null, owner_operation_id: null,
+  attempt_id: `attempt-${job_id}`, attempt_number: 1, state_revision: 1, availability: "pending", input_digest: "a".repeat(64), external_job_id: null, owner_epoch: "test", artifact_ids: [],
+});
+const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
 const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => false, stop: async () => {}, retry: async () => false };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
 
@@ -120,28 +126,34 @@ test("unfinished jobs provide live status with snapshot fallback and settled job
   assert.equal(assistantState({ ...props, snapshot: current }).label, "Working…");
 });
 
-test("Jobs badge distinguishes empty, active, uncertain, settled and failed history", () => {
+test("Jobs badge partitions every job into running, queued, uncertain, failed or settled without double-counting", () => {
   assert.deepEqual(jobsBadgeState([], false), { text: "0", ariaLabel: "Jobs: 0", tone: "empty" });
   assert.equal(jobsBadgeState([], true).text, "0?");
+  const queued = [job("planned", "one"), job("planned", "two"), job("planned", "three"), job("planned", "four"), job("waiting_resource")];
+  assert.deepEqual(jobsBadgeState([job("running"), ...queued], false), { text: "1 running · 5 queued", ariaLabel: "Jobs: 1 running · 5 queued", tone: "active" });
+  assert.equal(jobsBadgeState(queued, false).text, "5 queued");
+  assert.equal(jobsBadgeState([job("cancel_requested"), job("starting")], false).text, "2 running");
   const active = [job("running"), job("planned")];
-  assert.deepEqual(jobsBadgeState(active, false), { text: "2 active", ariaLabel: "Jobs: 2 active", tone: "active" });
-  assert.equal(jobsBadgeState(active, true).text, "2 active?");
-  const uncertain = jobsBadgeState([...active, job("outcome_uncertain")], false);
-  assert.equal(uncertain.text, "3 active?"); assert.equal(uncertain.tone, "attention"); assert.match(uncertain.ariaLabel, /uncertain/);
+  assert.equal(jobsBadgeState(active, true).text, "1 running · 1 queued?");
+  assert.match(jobsBadgeState(active, true).ariaLabel, /last known/);
+  const uncertain = job("outcome_uncertain");
+  assert.equal(jobsBadgeState([uncertain], false).text, "1 uncertain?");
+  assert.deepEqual(jobsBadgeState([...active, uncertain], false), { text: "1 running · 1 queued?", ariaLabel: "Jobs: 1 running · 1 queued? · uncertain job outcome", tone: "attention" });
   const settled = [job("succeeded", "a"), job("succeeded", "b"), job("cancelled", "c"), job("succeeded", "d")];
   assert.equal(jobsBadgeState(settled, false).text, "4 done"); assert.equal(jobsBadgeState(settled, false).tone, "done");
   assert.equal(jobsBadgeState(settled, true).text, "4 done?");
-  const failed = jobsBadgeState([{ ...job("failed"), error_code: "corrupt_provider_output" }], false);
-  assert.equal(failed.tone, "attention"); assert.match(failed.ariaLabel, /failed job/);
+  const failed = job("failed");
+  assert.deepEqual(jobsBadgeState([failed, job("succeeded")], false), { text: "1 failed · 1 done", ariaLabel: "Jobs: 1 failed · 1 done · failed job recorded", tone: "attention" });
+  assert.equal(jobsBadgeState([failed, job("running")], false).tone, "attention");
 });
 
 test("Composer renders accented Jobs counts and its status as the final bottom-right footer row", () => {
   for (const [jobs, text, tone] of [
     [[], "0", "empty"],
-    [[job("running"), job("planned")], "2 active", "active"],
-    [[job("running"), job("planned"), job("outcome_uncertain")], "3 active?", "attention"],
+    [[job("running"), job("planned")], "1 running · 1 queued", "active"],
+    [[job("running"), job("planned"), job("outcome_uncertain")], "1 running · 1 queued?", "attention"],
     [[job("succeeded", "a"), job("cancelled", "b"), job("succeeded", "c"), job("succeeded", "d")], "4 done", "done"],
-    [[{ ...job("failed"), error_code: "corrupt_provider_output" }], "1 done", "attention"],
+    [[{ ...job("failed"), error_code: "corrupt_provider_output" }], "1 failed", "attention"],
   ] as [JobRecord[], string, string][]) {
     const markup = chatMarkup(jobs);
     assert.ok(markup.includes(`class="${tone}-jobs"`));
@@ -151,16 +163,47 @@ test("Composer renders accented Jobs counts and its status as the final bottom-r
     assert.ok(markup.indexOf('class="composer-footer"') > markup.indexOf('class="composer-actions"'));
     if (["active", "attention"].includes(tone)) assert.match(markup, /class="jobs-indicator" aria-hidden="true"/);
   }
-  assert.match(chatMarkup([job("running")], { connection: "Reconnecting" }), /1 active\?/);
+  assert.match(chatMarkup([job("running")], { connection: "Reconnecting" }), /1 running\?/);
   assert.equal((chatMarkup([], { showHeaderStatus: true }).match(/class="assistant-status /g) ?? []).length, 2);
 });
 
-test("Jobs panel reports failed provider output diagnostics and retains unfinished uncertain jobs", () => {
-  const markup = renderToStaticMarkup(<JobList api={api} projectId="project" jobs={[{ ...job("failed"), error_code: "corrupt_provider_output" }, job("outcome_uncertain")]} onRefresh={async () => {}} onError={() => {}} />);
-  assert.match(markup, /Failure: corrupt_provider_output/); assert.match(markup, /Provider: local-comfy/);
-  assert.match(markup, /Finished job history/); assert.match(markup, /Unfinished jobs/);
-  assert.equal((markup.match(/Request job cancellation/g) ?? []).length, 1);
-  assert.equal((markup.match(/needs-attention/g) ?? []).length, 2);
+test("Independent jobs shows real frame progress, attention first and only settled work in collapsed history", () => {
+  const render = ([shot_id, expected_frames, completed_frames]: [string | null, number, number | null], index: number): JobRecord => ({
+    ...job(index === 0 ? "running" : "planned", `render-${index}`), kind: "render", expected_frames, completed_frames,
+    target: { target_id: shot_id ?? "proxy-relay", version: ref, shot_id },
+    render_spec: { purpose: shot_id ? "draft_motion" : "proxy" } as JobRecord["render_spec"],
+  });
+  const renders = ([
+    ["sl-01-dormant-macro", 72, 28], ["sl-02-conduit", 96, null], ["sl-03-console", 72, null], ["sl-04-exterior", 120, null], ["sl-05-title", 72, null], [null, 1, null],
+  ] satisfies [string | null, number, number | null][]).map(render);
+  const markupFor = (jobs: JobRecord[]) => renderToStaticMarkup(<JobList api={api} projectId="project" jobs={jobs} items={[asset]} onRefresh={async () => {}} onError={() => {}} />);
+  assert.doesNotMatch(markupFor(renders), /Finished/);
+  const markup = markupFor([...renders, { ...job("failed"), error_code: "corrupt_provider_output" }, job("outcome_uncertain"), job("succeeded"), job("cancelled")]);
+  assert.match(markup, /Needs attention \(2\)[\s\S]*Running \(1\)[\s\S]*Planned \/ waiting \(5\)[\s\S]*<details class="jobs-finished-group"><summary>Finished \(2\)<\/summary>/);
+  assert.match(markup, /sl-01-dormant-macro<\/strong>[\s\S]*28\/72 frames<progress[^>]*value="28" max="72"/);
+  for (const frames of [96, 72, 120]) assert.match(markup, new RegExp(`class="job-progress">${frames} frames`));
+  assert.match(markup, /Proxy · Relay dish<\/strong>[\s\S]*class="job-progress">1 frame</);
+  assert.doesNotMatch(markup, /0\/96/);
+  assert.match(markup, /Failure: corrupt_provider_output[\s\S]*<small role="status">Needs attention · reconcile the original job outcome before retrying\./);
+  assert.match(markup, /<details class="job-row-details"><summary>Details<\/summary><small>Job ID: <code>render-0<\/code><\/small>[\s\S]*Provider: local-comfy/);
+  assert.equal((markup.match(/Request job cancellation/g) ?? []).length, 7);
+  assert.equal((markup.match(/class="job-row(?: needs-attention)?"/g) ?? []).length, 10);
+});
+
+test("Target picker exposes four distinct modes and references do not require an existing primary target", () => {
+  const markupFor = (target: DraftTarget, references = [ref], open: boolean | undefined = true) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={[asset]} target={target} selection={emptySelection()} references={references} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} {...(open === false ? {} : { open })} />);
+  const current = markupFor("current_view", []);
+  assert.match(current, /Target mode.*aria-pressed="true">Current view.*aria-pressed="false">Project.*aria-pressed="false">Existing….*aria-pressed="false">New…/);
+  assert.match(current, /Nothing open in Review · resolves to Project on submit/);
+  assert.match(current, /<details class="target-references-disclosure">/);
+  assert.doesNotMatch(markupFor("current_view", [], false), /class="target-options"/);
+  assert.match(markupFor({ kind: "project" }), /aria-pressed="true">Project.*Project-wide planning/);
+  const existing = markupFor({ kind: "item", version: ref });
+  assert.match(existing, /aria-pressed="true">Existing….*aria-label="Published item".*aria-label="Published version".*value="version-old" selected/);
+  const newItem = markupFor({ kind: "new_item", item_kind: "asset", intent_id: "intent", name: "Broken relay dish" });
+  assert.match(newItem, /aria-expanded="true".*aria-pressed="true">New….*aria-pressed="true">Asset.*New item name.*value="Broken relay dish"/);
+  assert.doesNotMatch(newItem, /aria-label="Published item"/);
+  assert.match(newItem, /<details class="target-references-disclosure" open="">.*type="checkbox" disabled="".*none open in Review.*aria-label="Reference item".*aria-label="Reference version".*Relay dish · version-old/);
 });
 
 test("explicit target context strips Review media and retains the older version pin", async () => {

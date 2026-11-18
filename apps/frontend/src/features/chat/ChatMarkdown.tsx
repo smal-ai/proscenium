@@ -141,13 +141,15 @@ function parseInline(source: string, allowLinks = true): Inline[] {
       const close = pairs.labels.get(open);
       const end = close === undefined ? undefined : pairs.destinations.get(close + 1);
       if (close !== undefined && end !== undefined) {
+        const rawTarget = source.slice(close + 2, end);
+        if (/\s/.test(rawTarget.trim())) { text(char); index++; continue; }
         const label = source.slice(open + 1, close);
-        const target = source.slice(close + 2, end).replace(/\\([!-/:-@[-`{-~])/g, "$1");
+        const target = rawTarget.replace(/\\([!-/:-@[-`{-~])/g, "$1");
         const href = safeHref(target, image);
         if (image && !href) text(`[Image: ${label}]`);
         else if (image && href) current().push({ kind: "link", href, children: [{ kind: "text", value: `[Image: ${label}]` }] });
         else if (href) current().push({ kind: "link", href, children: parseInline(label, false) });
-        else text(label);
+        else current().push(...parseInline(label, false));
         index = end + 1;
         continue;
       }

@@ -63,10 +63,11 @@ test("explicit target and historical references stay isolated during async submi
   await page.getByRole("textbox", { name: "Feedback" }).fill("Unrelated hidden annotation must never flush");
   await page.getByRole("button", { name: "Chat focus", exact: true }).click();
   await page.getByRole("button", { name: "Choose request target and references" }).click();
-  await page.getByLabel("Published item", { exact: true }).selectOption("asset-a");
-  await expect(page.getByLabel("Published version", { exact: true })).toBeEnabled();
-  await page.getByLabel("Published version", { exact: true }).selectOption("a-v1");
+  await page.locator(".target-references-disclosure > summary").click();
+  await page.getByLabel("Reference item", { exact: true }).selectOption("asset-a");
+  await page.getByLabel("Reference version", { exact: true }).selectOption("a-v1");
   await page.getByRole("button", { name: "Add reference version" }).click();
+  await page.getByRole("button", { name: "Existing…", exact: true }).click();
   await page.getByLabel("Published item", { exact: true }).selectOption("board-b");
   await page.getByLabel("Target storyboard shot").selectOption("shot-1");
   await page.getByRole("textbox", { name: "Message Copilot" }).fill("Use B shot one with A v1");
@@ -213,7 +214,12 @@ test("Jobs Context Agents replace textarea and restore draft caret plus accepted
     await page.getByRole("button", { name: new RegExp(`^${panel}`) }).click();
     await expect(input).toHaveCount(0);
     if (panel === "Agents") { await expect(page.getByText("Layout shot one", { exact: true }).last()).toBeVisible(); await expect(page.getByRole("button", { name: /^Agents/ })).toContainText("1"); }
-    if (panel === "Jobs") { await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs3 active?"); await expect(page.getByText("Finished job history")).toBeVisible(); }
+    if (panel === "Jobs") {
+      await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs1 running · 1 queued?");
+      const history = page.locator(".jobs-finished-group");
+      await expect(history.getByText("Finished (1)")).toBeVisible();
+      await expect(history).toHaveJSProperty("open", false);
+    }
     await page.getByRole("button", { name: "Back to message" }).click();
     await expect(input).toHaveValue("Unsent draft\nSecond line"); await expect(input).toBeFocused();
     expect(await input.evaluate(e => (e as HTMLTextAreaElement).selectionStart)).toBe(3);

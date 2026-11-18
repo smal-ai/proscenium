@@ -1,11 +1,11 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
-import type { Camera } from "../../apps/frontend/src/api";
+import type { Camera, JobRecord } from "../../apps/frontend/src/api";
 import { projectBlenderPoint } from "../../apps/frontend/src/features/review/media";
 import type { Draft } from "../../apps/frontend/src/features/review/outbox";
 import { boardName, kitId, kitName, kitV, makePolishStudio, restoredRenderCamera } from "./rc3-polish-fixture";
-import { base, deferred, projectId } from "./studio-fixture";
+import { base, deferred, job, projectId, request, StudioFixture } from "./studio-fixture";
 
 const screenshotDir = process.env.PROSCENIUM_UAT_SCREENSHOT_DIR;
 const reviewPanel = (page: Page) => page.locator("main.review-panel");
@@ -724,5 +724,266 @@ test("Publication announces a newer version and switching preserves the old loca
   expect(studio.saveAnnotationCalls).toEqual([]);
   expect(studio.submissions).toEqual([]);
   expect(studio.contexts).toEqual([]);
+  studio.assertHermetic();
+});
+
+// The saved Signal Lost UAT reply, also exercised by chatMarkdown.test.tsx.
+const signalLostReport = `Resumed without repeating renders or rebuilding source.
+
+- **Source verified:** \`signal-lost-animation-v1\`, commit \`488544962f01b2455a00b14f5fb83fa3610ea63c\`.
+- **Sequence validated and published:** \`signal-lost-animation-draft-v1\`, commit \`6054ad2181ee3359faf3ed131d5da76aa8f2c23e\`.
+
+| Contributor | State | Verified frames |
+|---|---|---:|
+| Macro | Running; unchanged on second check | 28/72 |
+| Conduit | Planned | 0/96 |
+| Console | Planned | 0/72 |
+| Exterior | Planned | 0/120 |
+| Title | Planned | 0/72 |
+| Proxy | Planned | 0/1 |
+
+Inspected macro frames 1, 14 and 28. Verified partial MP4: \`attempt-bd7475de-6bb0-4f1a-bf55-a4f3f247d50a-s25-28\`—only four frames, not a finished shot.
+
+**Blockers:** contributors remain incomplete; assembly was not submitted. VLM admission returned \`hash_mismatch\`; no review ticket was returned.
+
+Full receipts and continuation state saved under \`assets/signal-lost-animation/audit-2e4c256e/\`, including \`resume-observations-r2.json\`.
+
+Target remains 18 seconds, 24fps, 640×360, silent. Glass/transmission, sampling noise, nonphysical flare and separate title-stage cut limitations remain. **No completed final movie yet.**`;
+
+const assistantPanel = (page: Page) => page.getByRole("complementary", { name: "Assistant panel" });
+const composerMessage = (page: Page) => assistantPanel(page).getByRole("textbox", { name: "Message Copilot" });
+const jobsPill = (page: Page) => assistantPanel(page).getByRole("button", { name: /^Jobs:/ });
+const targetBar = (page: Page) => assistantPanel(page).getByRole("button", { name: "Choose request target and references" });
+
+async function narrowAssistant(page: Page) {
+  const resize = page.getByRole("separator", { name: "Resize Assistant" });
+  await resize.press("Home");
+  await expect(resize).toHaveAttribute("aria-valuenow", "320");
+  await expect.poll(async () => (await assistantPanel(page).boundingBox())?.width).toBe(320);
+}
+
+async function noHorizontalOverflow(...regions: Locator[]) {
+  for (const region of regions) {
+    await expect.poll(() => region.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+  }
+}
+
+test("Signal Lost report renders as Markdown and live deltas respect manual scrolling", async ({ page, baseURL }, testInfo) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.requests = Array.from({ length: 20 }, (_, i) => request(`earlier-${i}`, `Previous render observation ${i + 1}.`, "completed", "2026-11-15T07:59:59Z"));
+  studio.requests.push(request("initial", "Report on the saved Signal Lost animation without repeating renders."));
+  await studio.install(); await studio.open(); await studio.ready();
+  const conversation = assistantPanel(page).locator(".conversation");
+  const scroll = assistantPanel(page).locator(".chat-scroll");
+  const delta = (text: string) => studio.emit("assistant.delta", { message_id: "saved-signal-lost-report", text });
+  const split = signalLostReport.indexOf("Macro") + 2;
+  delta(signalLostReport.slice(0, split));
+  await expect(conversation.getByText("Resumed without repeating renders or rebuilding source.", { exact: true })).toBeVisible();
+  delta(signalLostReport.slice(split));
+  const table = conversation.getByRole("table");
+  await expect(table.locator("tbody tr")).toHaveCount(6);
+  await expect(table.getByRole("cell", { name: "28/72", exact: true })).toHaveCSS("text-align", "right");
+  await expect(conversation.locator("strong").filter({ hasText: /^Blockers:$/ })).toBeVisible();
+  await expect(conversation.locator("code").filter({ hasText: /^hash_mismatch$/ })).toBeVisible();
+  await noHorizontalOverflow(conversation, scroll);
+  await expect(table).toBeInViewport({ ratio: 1 });
+  await screenshot(page, testInfo, "09a-chat-markdown-report.png");
+
+  await narrowAssistant(page);
+  await noHorizontalOverflow(conversation, scroll);
+  await scroll.hover();
+  await page.mouse.wheel(0, -480);
+  const jump = assistantPanel(page).getByRole("button", { name: "Jump to latest" });
+  await expect(jump).toBeVisible();
+  const before = await scroll.evaluate(el => ({ top: el.scrollTop, height: el.scrollHeight }));
+  delta("\n\n" + "Additional streaming progress, not an outcome. ".repeat(12));
+  await expect(conversation.getByText(/^Additional streaming progress/)).toBeAttached();
+  await expect.poll(() => scroll.evaluate(el => el.scrollHeight)).toBeGreaterThan(before.height);
+  await expect(scroll).toHaveJSProperty("scrollTop", before.top);
+  await expect(jump).toBeVisible();
+  await noHorizontalOverflow(conversation, scroll);
+  await jump.click();
+  await expect.poll(() => scroll.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop)).toBeLessThan(2);
+  studio.assertHermetic();
+});
+
+test("Target picker keeps naming, References and Composer panels independent at 320px", async ({ page, baseURL }, testInfo) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.retained = [];
+  await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
+  const assistant = assistantPanel(page);
+  const composer = assistant.locator(".composer");
+  const input = composerMessage(page);
+  const bar = targetBar(page);
+  const picker = assistant.locator("#request-target-picker");
+  const modes = picker.getByRole("group", { name: "Target mode" });
+  const kinds = picker.getByRole("group", { name: "New item kind" });
+  const disclosure = picker.locator(".target-references-disclosure");
+  const referenceToggle = disclosure.locator(":scope > summary");
+  const button = (label: string) => picker.getByRole("button", { name: label, exact: true });
+  const name = picker.getByRole("textbox", { name: "New item name" });
+  const close = button("Close target picker");
+  const draft = "Keep this Composer draft unsent";
+  await input.fill(draft);
+  await input.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(3, 10));
+  await bar.click();
+  await expect(modes.getByRole("button")).toHaveText(["Current view", "Project", "Existing…", "New…"]);
+  await expect(modes.getByRole("button", { name: "Current view" })).toHaveAttribute("aria-pressed", "true");
+  await button("Project").click();
+  await expect(picker.getByText(/^Project-wide planning/)).toBeVisible();
+  await button("New…").click();
+  await kinds.getByRole("button", { name: "Asset", exact: true }).click();
+  await expect(name).toBeVisible();
+  await name.fill("Broken relay dish");
+  const intentId = JSON.parse((await bar.getAttribute("title"))!).intent_id;
+  expect(intentId).toBeTruthy();
+  await kinds.getByRole("button", { name: "Scene", exact: true }).click();
+  await expect(name).toHaveValue("Broken relay dish");
+  await kinds.getByRole("button", { name: "Asset", exact: true }).click();
+  expect(JSON.parse((await bar.getAttribute("title"))!).intent_id).toBe(intentId);
+  await expect(picker.getByRole("combobox", { name: "Published item", exact: true })).toHaveCount(0);
+  await expect(assistant.getByRole("button", { name: "Queue message" })).toBeEnabled();
+  await expect(input).toBeVisible();
+  await expect(disclosure).toHaveJSProperty("open", false);
+  await screenshot(page, testInfo, "09b-target-picker-new-asset.png");
+
+  await narrowAssistant(page);
+  await referenceToggle.click();
+  const checkbox = disclosure.getByRole("checkbox", { name: "Include current Review version (none open in Review)" });
+  await expect(checkbox).toBeDisabled();
+  const [box, labelBox] = await Promise.all([checkbox.boundingBox(), disclosure.locator(".target-checkbox-row span").boundingBox()]);
+  expect(box!.width).toBeLessThanOrEqual(20);
+  expect(Math.abs(box!.y - labelBox!.y)).toBeLessThanOrEqual(6);
+  expect(box!.x + box!.width).toBeLessThan(labelBox!.x);
+  await disclosure.getByRole("combobox", { name: "Reference item", exact: true }).selectOption("asset-a");
+  await disclosure.getByRole("combobox", { name: "Reference version", exact: true }).selectOption("a-v1");
+  await button("Add reference version").click();
+  await expect(bar).toContainText("New asset · Broken relay dish");
+  await expect(bar).toContainText("+1 ref");
+  await expect(disclosure.locator(".reference-chip")).toContainText("Asset A · a-v1");
+  await noHorizontalOverflow(picker, composer, composer.locator(".composer-links"));
+  expect(await picker.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(280);
+  const overlaps = await composer.evaluate(el => {
+    const controls = Array.from(el.querySelectorAll(".target-bar, .target-options button, .target-options select, .target-options input, .target-options summary, textarea, .composer-links button, .composer-actions button"));
+    const boxes = controls.flatMap(control => Array.from(control.getClientRects(), rect => {
+      const clip = (control.closest(".target-options") ?? el).getBoundingClientRect();
+      return { left: Math.max(rect.left, clip.left), right: Math.min(rect.right, clip.right), top: Math.max(rect.top, clip.top), bottom: Math.min(rect.bottom, clip.bottom) };
+    }));
+    return boxes.some((a, i) => boxes.slice(i + 1).some(b => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1));
+  });
+  expect(overlaps).toBe(false);
+
+  await name.press("Enter");
+  await expect(picker).toHaveCount(0);
+  await expect(input).toBeFocused();
+  await expect(input).toHaveJSProperty("selectionStart", 3);
+  await expect(input).toHaveJSProperty("selectionEnd", 10);
+  await bar.click();
+  await expect(disclosure).toHaveJSProperty("open", true);
+  await jobsPill(page).click();
+  const jobs = assistant.getByRole("region", { name: "Independent jobs" });
+  await expect(jobs).toBeVisible();
+  await expect(picker).toHaveCount(0);
+  await expect(input).toHaveCount(0);
+  await bar.click();
+  await expect(jobs).toHaveCount(0);
+  await expect(input).toBeVisible();
+  await button("Existing…").click();
+  const publishedItem = picker.getByRole("combobox", { name: "Published item" });
+  const publishedVersion = picker.getByRole("combobox", { name: "Published version" });
+  await publishedItem.selectOption("asset-a");
+  await publishedVersion.selectOption("a-v1");
+  studio.addAssetVersion("a-v3", "Asset A v3");
+  await page.getByRole("button", { name: "Refresh project metadata" }).click();
+  await expect(navigator(page).locator(".catalogue-item-header").filter({ hasText: "Asset A" })).toContainText("Latest v3");
+  await expect(publishedVersion.locator('option[value="a-v3"]')).toBeAttached();
+  await expect(publishedVersion).toHaveValue("a-v1");
+  expect(JSON.parse((await bar.getAttribute("title"))!)).toEqual({ kind: "item", version: { item_id: "asset-a", version_id: "a-v1" } });
+  await publishedItem.selectOption("board-b");
+  const shots = picker.getByRole("combobox", { name: "Target storyboard shot" });
+  await shots.selectOption("shot-1");
+  await expect(shots).toHaveValue("shot-1");
+  await expect(disclosure.locator(".reference-chip")).toContainText("Asset A · a-v1");
+  await noHorizontalOverflow(picker, composer);
+  await page.getByRole("separator", { name: "Resize Assistant" }).press("End");
+  await screenshot(page, testInfo, "09c-target-picker-existing-refs.png");
+  await shots.selectOption("");
+  expect(JSON.parse((await bar.getAttribute("title"))!)).toEqual({ kind: "item", version: { item_id: "board-b", version_id: "b-v1" } });
+  await shots.press("Escape");
+  await expect(input).toBeFocused();
+  await expect(picker).toHaveCount(0);
+  await bar.click(); await close.click();
+  await expect(input).toBeFocused();
+  await bar.click(); await bar.click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue(draft);
+  await expect(input).toHaveJSProperty("selectionStart", 3);
+  await expect(input).toHaveJSProperty("selectionEnd", 10);
+  expect(studio.submissions).toEqual([]);
+  studio.assertHermetic();
+});
+
+test("Independent jobs shows real frame progress, actionable failure and collapsed settled history", async ({ page, baseURL }, testInfo) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.retained = [];
+  const render = (id: string, shot_id: string | null, expected_frames: number, completed_frames: number | null): JobRecord => ({
+    ...job(id, completed_frames === null ? "planned" : "running"), kind: "render", completed_frames, expected_frames,
+    provider_id: null, target: { target_id: shot_id ?? "asset-a", shot_id, version: shot_id ? { item_id: "board-b", version_id: "b-v1" } : { item_id: "asset-a", version_id: "a-v1" } },
+    availability: completed_frames === null ? "pending" : "partial",
+    render_spec: { intent_id: id, shot_id, purpose: shot_id ? "draft_motion" : "proxy", source_closure_digest: "a".repeat(64), scene_name: "Signal Lost", camera: null,
+      frames: { start: 1, end: expected_frames }, fps: { numerator: 24, denominator: 1 }, dimensions: { width: 640, height: 360 }, engine: "Cycles", device: "CPU", samples: 32,
+      colour_management: { view_transform: "AgX", look: "None", exposure: 0, gamma: 1 }, renderer_revision: "synthetic" },
+  });
+  studio.snapshot.jobs = [
+    render("macro-render", "sl-01-dormant-macro", 72, 28), render("conduit-render", "sl-02-conduit", 96, null), render("console-render", "sl-03-console", 72, null),
+    render("exterior-render", "sl-04-exterior", 120, null), render("title-render", "sl-05-title", 72, null), render("preview-relay", null, 1, null),
+    { ...job("finished-lookdev", "succeeded"), target: { target_id: "lookdev", version: { item_id: "asset-a", version_id: "a-v2" }, shot_id: null } },
+    { ...job("finished-concept", "succeeded"), target: { target_id: "relay concept", version: null, shot_id: null } },
+    { ...job("failed-review", "failed"), kind: "vlm_review", error_code: "hash_mismatch", target: { target_id: "animation draft", version: null, shot_id: null } },
+  ];
+  await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
+  const draft = composerMessage(page);
+  await draft.fill("Don't queue the final assembly yet.");
+  await draft.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(6, 11));
+  const badge = jobsPill(page);
+  await expect(badge).toHaveText("Jobs1 running · 5 queued");
+  await expect(badge).toHaveClass("attention-jobs");
+  await badge.click();
+  const panel = assistantPanel(page).getByRole("region", { name: "Independent jobs" });
+  await expect(panel.getByRole("heading")).toHaveText(["Needs attention (1)", "Running (1)", "Planned / waiting (5)"]);
+  await expect(panel.getByText("Failure: hash_mismatch", { exact: true })).toBeVisible();
+  const row = (title: string) => panel.locator(".job-row").filter({ has: page.getByText(title, { exact: true }) });
+  const macro = row("sl-01-dormant-macro");
+  await expect(macro).toContainText("28/72 frames");
+  await expect(macro.locator(".job-progress-bar")).toHaveAttribute("max", "72");
+  await expect(row("sl-02-conduit").locator(".job-progress")).toHaveText("96 frames");
+  await expect(row("sl-03-console").locator(".job-progress")).toHaveText("72 frames");
+  await expect(row("sl-04-exterior").locator(".job-progress")).toHaveText("120 frames");
+  await expect(row("sl-05-title").locator(".job-progress")).toHaveText("72 frames");
+  await expect(row("Proxy · Asset A").locator(".job-progress")).toHaveText("1 frame");
+  await expect(panel.getByText("0/96 frames", { exact: true })).toHaveCount(0);
+  const history = panel.locator(".jobs-finished-group");
+  const finished = history.locator(":scope > summary");
+  await expect(finished).toHaveText("Finished (2)");
+  await expect(history).toHaveJSProperty("open", false);
+  await expect(panel.getByText("Asset A · image generation", { exact: true })).toBeHidden();
+  await expect(panel.getByRole("button", { name: "Request job cancellation" })).toHaveCount(0);
+  await expect(finished).toBeInViewport({ ratio: 1 });
+  await screenshot(page, testInfo, "09d-independent-jobs-collapsed-history.png");
+
+  await finished.click();
+  await expect(history).toHaveJSProperty("open", true);
+  await expect(history.locator(".job-state-pill")).toHaveText(["succeeded", "succeeded"]);
+  await expect(history.getByText("Asset A · image generation", { exact: true })).toBeVisible();
+  await macro.getByText("Details", { exact: true }).click();
+  await expect(macro.locator("code").filter({ hasText: /^macro-render$/ })).toBeVisible();
+  await expect(macro.getByText("Provider: not reported", { exact: true })).toBeVisible();
+  await expect(macro.getByRole("button", { name: "Request job cancellation" })).toBeEnabled();
+  await panel.getByRole("button", { name: "Back to message" }).click();
+  await expect(draft).toBeFocused();
+  await expect(draft).toHaveValue("Don't queue the final assembly yet.");
+  await expect(draft).toHaveJSProperty("selectionStart", 6);
+  await expect(draft).toHaveJSProperty("selectionEnd", 11);
+  expect(studio.guard!.calls.filter(call => call.method === "POST")).toEqual([]);
   studio.assertHermetic();
 });
