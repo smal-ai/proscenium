@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { AnnotationSnapshot, VersionRecord } from "../../api/generated/contracts";
-import type { Draft } from "./outbox";
+import { formatDraftStatusLabel, type Draft } from "./outbox";
 
 export type AnnotationEntry = { annotation: AnnotationSnapshot; state: Draft["state"]; draftKey: string | null; source: "draft" | "server" };
 
@@ -91,14 +91,7 @@ export function formatAnnotationMeta({annotation, state}: Pick<AnnotationEntry, 
   const hit = annotation.spatial_hits[0];
   const count = annotation.markups.length;
   const kind = hit ? `3D pin (${hit.instance_id})` : count ? `${count} markup${count === 1 ? "" : "s"}` : "Note";
-  const statusLabels = {
-    "browser-local": "Draft on this browser",
-    saving: "Saving…",
-    saved: annotation.saved_revision !== null ? `Saved · rev ${annotation.saved_revision}` : "Draft on this browser",
-    failed: "Save failed",
-    conflict: "Conflict",
-  };
-  return {detail: `Frame ${annotationFrame(annotation)} · ${kind}`, statusLabel: statusLabels[state]};
+  return {detail: `Frame ${annotationFrame(annotation)} · ${kind}`, statusLabel: formatDraftStatusLabel({state, annotation})};
 }
 
 export function AnnotationsDrawer({version, merged, onClose, onRestore}: {

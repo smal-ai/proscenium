@@ -64,7 +64,9 @@ export function useDraftDiscard(
           catch { baseline = null; }
         }
         if (!isCurrent() || submitting.current()) return;
-        if (!isAcknowledged(baseline) && api) {
+        // A supplied resolver owns both cache and server lookup. Don't issue
+        // a second read if that resolver could not verify the baseline.
+        if (!resolver && api) {
           try {
             const annotations = await allPages(cursor => api.call("listAnnotations", {
               path: {project_id: current.projectId},

@@ -5,7 +5,7 @@ import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type Tur
 import { AnnotationEditor } from "./AnnotationEditor";
 import { AnnotationsDrawer, draftFromSnapshot, mergeHydratedDrafts, mergeItemAnnotations, resolveAnnotationEntry, type AnnotationEntry } from "./AnnotationsDrawer";
 import { frameTarget, mediaUrl, sequenceTarget, stableJson, typingTarget } from "./media";
-import { deleteDraft, flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
+import { flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
 import { SequencePlayer } from "./SequencePlayer";
 import { ProxyView, type FrozenProxyCapture, type ProxyCapture, type ProxyPinPlacement, type SpatialPinMarker } from "./ProxyView";
@@ -222,6 +222,20 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const activeMapping = pinnedHit ? (matchingCurrentMap ?? pinnedMapping) : mapping;
   const proxyUnavailableReason = pinnedHit ? (pinnedMappingError ?? proxyLoadError) : null;
 
+  const resolveDiscardBaseline = useCallback(async (current: Draft): Promise<AnnotationSnapshot | null> => {
+    const matches = (annotation: AnnotationSnapshot) => annotation.annotation_id === current.annotation.annotation_id
+      && annotation.saved_revision !== null && annotation.saved_revision >= (current.annotation.saved_revision ?? 0);
+    const cached = saved.find(matches);
+    if (cached) return cached;
+    try {
+      const fetched = await allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100, version_id: current.annotation.target.version_id ?? undefined}}));
+      setSaved(previous => mergeSavedSnapshots(previous, fetched));
+      return fetched.find(matches) ?? null;
+    } catch {
+      return null;
+    }
+  }, [api, projectId, saved]);
+
   const spatialController = useSpatialPinController({
     enabled: Boolean(draft && isSpatialDraft && !editing2D),
     api,
@@ -230,9 +244,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     onChange: changeDraft,
     onQueue,
     onContextPreparer: registerEditorPreparer,
+    placementCommitting,
+    resolveDiscardBaseline,
   });
-  const spatialBusyRef = useRef(spatialController.busy);
-  spatialBusyRef.current = spatialController.busy;
 
   useEffect(() => {
     let active = true;
@@ -592,15 +606,17 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         if (placementTokenRef.current !== token || draftIdRef.current !== expectedKey) return false;
         if (!expectedKey) return true;
         const live = draftsRef.current.find(d => d.key === expectedKey);
+        // The controller is busy *because* this placement is committing. Check
+        // draft identity and competing operations, not the combined busy flag.
         return Boolean(live && live === expected && live.state === "browser-local" && !live.operation && !live.fallbackOperation
-          && !spatialBusyRef.current && !spatialController.discard.discardLatch.current && stableJson(live.annotation) === expectedJson);
+          && !spatialController.discard.discardLatch.current && stableJson(live.annotation) === expectedJson);
       },
       finish: () => { if (placementTokenRef.current === token) setPlacementCommitting(false); },
     };
   }
 
   async function handlePlacePin(placement: ProxyPinPlacement) {
-    if (placementCommitting || !visible) return;
+    if (placementCommitting || !visible || (draft && spatialController.busy)) return;
     setFrameNotice("");
     if (!version || !activeMapping?.mapping_artifact_id) {
       setError("Pinned proxy mapping artefact identity is unavailable.");
@@ -861,21 +877,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     setDraftId(null);
   }
 
-  const resolveDiscardBaseline = useCallback(async (current: Draft): Promise<AnnotationSnapshot | null> => {
-    const matches = (annotation: AnnotationSnapshot) => annotation.annotation_id === current.annotation.annotation_id
-      && annotation.saved_revision !== null && annotation.saved_revision >= (current.annotation.saved_revision ?? 0);
-    const cached = saved.find(matches);
-    if (cached) return cached;
-    try {
-      const fetched = await allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100, version_id: current.annotation.target.version_id ?? undefined}}));
-      setSaved(previous => mergeSavedSnapshots(previous, fetched));
-      return fetched.find(matches) ?? null;
-    } catch {
-      return null;
-    }
-  }, [api, projectId, saved]);
-
-  async function discardActiveDraft(draftKey: string, mode: "delete_new" | "revert_edits", restoredFromOutbox?: Draft) {
+  function discardActiveDraft(draftKey: string, mode: "delete_new" | "revert_edits", restored?: Draft) {
     invalidatePendingPlacement();
     setPinMode(false);
     setUnmappedCapture(null);
@@ -884,22 +886,15 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if (draftIdRef.current === draftKey) closeDraft();
       return;
     }
-    const active = draftsRef.current.find(d => d.key === draftKey);
-    const serverSnapshot = restoredFromOutbox?.annotation ?? (active ? await resolveDiscardBaseline(active) : null);
-    if (!serverSnapshot || serverSnapshot.saved_revision === null) {
+    // The discard transaction has already persisted the acknowledged baseline.
+    if (!restored || restored.annotation.saved_revision === null) {
       setError("Saved annotation baseline is unavailable; reload annotations before discarding edits.");
       return;
-    }
-    const restored = restoredFromOutbox ?? draftFromSnapshot(serverSnapshot, projectId);
-    if (!restoredFromOutbox) {
-      if (draftsRef.current.find(d => d.key === draftKey) !== active) return;
-      await saveDraft(restored);
-      if (draftKey !== restored.key) await deleteDraft(draftKey);
     }
     setError("");
     setDrafts(previous => [...previous.filter(d => d.key !== draftKey && d.key !== restored.key), restored]);
     if (draftIdRef.current !== draftKey) return;
-    applyAnnotationView(serverSnapshot);
+    applyAnnotationView(restored.annotation);
     setDraftId(restored.key);
   }
 
@@ -999,6 +994,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         onReturnTo3D={isSpatialDraft && !proxyUnavailableReason ? () => setEditing2D(false) : undefined}
         onClose={closeDraft}
         onDiscard={discardActiveDraft}
+        resolveDiscardBaseline={resolveDiscardBaseline}
       />
     ) : draft && isSpatialDraft && proxyUnavailableReason ? (
       <SpatialPinFallbackView draft={draft} reason={proxyUnavailableReason} controller={spatialController}/>
@@ -1020,6 +1016,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
             onPinMiss={handlePinMiss}
             restoreCamera={effectiveRestoreCamera}
             restoreCameraNonce={restorePinNonce}
+            suppressFramingGate={Boolean(draft && isSpatialDraft)}
           />
         </MediaBoundary>
       ) : pinnedHit ? (
@@ -1034,7 +1031,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
          }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
            : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">No ready review image. Rendering is an explicit Queue request.</div>}
     {show2DEditor ? null : draft && isSpatialDraft ? (
-      <SpatialPinDock {...placementProps} draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft}/>
+      <SpatialPinDock {...placementProps} draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft} resolveDiscardBaseline={resolveDiscardBaseline}/>
     ) : (
       <div className={`review-bar review-transport-bar${mode === "3d_inspection" ? "" : " review-playback-transport"}`} aria-label="Review transport">
         {mode === "3d_inspection" ? <>

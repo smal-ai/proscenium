@@ -108,7 +108,7 @@ test("DPR 2 3D spatial pin placement stays within 0.5 image pixel and keeps dock
   await expect(review.locator('[aria-label="Spatial pin tools"]')).toContainText("collar · collar-1");
 
   await review.getByRole("button", { name: "Save annotation", exact: true }).click();
-  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("saved");
+  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("Saved · rev 1");
 
   const saved = studio.annotations[0];
   expect(saved.markups.map(m => m.kind)).toEqual(["pin", "stroke"]);

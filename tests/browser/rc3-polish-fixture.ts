@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import type { Page } from "@playwright/test";
+import { PerspectiveCamera } from "three";
 import type { AnnotationSnapshot, FrameAvailability, FrameReceipt, JobRecord, SelectionRecord, SelectionSave, ShotPlan } from "../../apps/frontend/src/api";
+import { captureCamera } from "../../apps/frontend/src/features/review/media";
 import type { MockRoute } from "./fixtures";
 import { base, job, pageOf, projectId, retained, StudioFixture, version } from "./studio-fixture";
 
@@ -12,6 +14,11 @@ export const kitV = (n: number) => `${kitId}-v${n}`;
 const boardV = (n: number) => `${boardId}-v${n}`;
 const publishedAt = (n: number) => `2026-11-${14 + n}T08:00:00Z`;
 const dimensions = { width: 1280, height: 720 };
+
+const sourceCamera = new PerspectiveCamera(50, 4 / 3, 0.01, 10000);
+sourceCamera.position.set(5, 4, 5);
+sourceCamera.lookAt(0, 0, 0);
+export const restoredRenderCamera = captureCamera(sourceCamera);
 
 // Generated in Chromium, not taken from a workstation project. SVG gives the
 // decoded frame and markup editor a recognisable, deterministic lookdev plate.
@@ -68,6 +75,13 @@ export async function makePolishStudio(page: Page, origin: string) {
   studio.versionRecords.push(...[1, 2, 3, 4].map(n => ({ ...version(boardId, boardV(n), boardName, "storyboard"), created_at: publishedAt(n) })));
   const kit = { schema_version: "1.0" as const, project_id: projectId, item_id: kitId, kind: "asset" as const, name: kitName, current_version_id: kitV(3), selected_version_id: kitV(2), state_revision: 3 };
   studio.snapshot.items = [kit, { ...kit, item_id: boardId, kind: "storyboard", name: boardName, current_version_id: boardV(4), selected_version_id: null, state_revision: 4 }];
+  // Enough real catalogue rows to exercise the scroll region independently of its toolbar.
+  for (let n = 1; n <= 24; n++) {
+    const itemId = `signal-lost-reference-material-for-orbital-relay-${n}`;
+    const name = `Reference material · Panel study ${n}`;
+    studio.versionRecords.push(version(itemId, `${itemId}-v1`, name));
+    studio.snapshot.items.push({...kit, item_id: itemId, name, current_version_id: `${itemId}-v1`, selected_version_id: null, state_revision: 1});
+  }
   studio.installProxyFixture(kitV(3));
   function pass(id: string, ordinals: number[], state: JobRecord["state"] = "succeeded") {
     const frames = { start: 1, end: ordinals.at(-1)! };
@@ -75,7 +89,7 @@ export async function makePolishStudio(page: Page, origin: string) {
     const passJob: JobRecord = {
       ...job(id, state), kind: "render", target: { target_id: id, version: { item_id: kitId, version_id: kitV(3) }, shot_id: null },
       availability: state === "succeeded" ? "complete" : "partial", completed_frames: ordinals.length, expected_frames: frames.end,
-      render_spec: { intent_id: id, shot_id: null, purpose: "keyframe", source_closure_digest: "a".repeat(64), scene_name: "First Lookdev", camera: null, frames, fps, dimensions, engine: "Cycles", device: "CPU", samples: 32, colour_management: { view_transform: "AgX", look: "None", exposure: 0, gamma: 1 }, renderer_revision: "synthetic" },
+      render_spec: { intent_id: id, shot_id: null, purpose: "keyframe", source_closure_digest: "a".repeat(64), scene_name: "First Lookdev", camera: id === "single-frame" ? restoredRenderCamera : null, frames, fps, dimensions, engine: "Cycles", device: "CPU", samples: 32, colour_management: { view_transform: "AgX", look: "None", exposure: 0, gamma: 1 }, renderer_revision: "synthetic" },
     };
     const receipts = ordinals.map((source_frame): FrameReceipt => {
       const artifact = image(`${id}-f${source_frame}`);
@@ -83,6 +97,7 @@ export async function makePolishStudio(page: Page, origin: string) {
       return { schema_version: "1.0", receipt_id: artifact.artifact_id, project_id: projectId, job_id: id, attempt_id: passJob.attempt_id, version_id: kitV(3), shot_id: null, source_frame, artifact_id: artifact.artifact_id, output_path: `${artifact.artifact_id}.png`, sha256, dimensions, input_digest: passJob.input_digest };
     });
     const availability: FrameAvailability = { schema_version: "1.0", project_id: projectId, job_id: id, version_id: kitV(3), source_range: frames, fps, available_ranges: ordinals.map(f => ({ start: f, end: f })), playable_ranges: [], pending_ranges: [], failed_ranges: [], state_revision: 1 };
+    if (id === "sparse-lookdev") availability.pending_ranges = [{ start: 2, end: 11 }, { start: 13, end: 23 }];
     if (state === "running") {
       availability.source_range = { start: 1, end: 24 };
       availability.pending_ranges = [{ start: 2, end: 12 }];

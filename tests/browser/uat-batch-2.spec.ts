@@ -774,7 +774,7 @@ test("3D spatial pin resolves multi-primitive & scaled child instances, survives
   await review.getByRole("textbox", { name: "Feedback" }).fill("Chamfer the collar lip by 2 mm");
   studio.dropNextSaveAck = true;
   await review.getByRole("button", { name: "Save annotation", exact: true }).click();
-  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toContainText("failed");
+  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("Save failed");
   expect(studio.uploadCalls).toHaveLength(2);
   expect(studio.saveAnnotationCalls).toHaveLength(1);
   const originalOpId = studio.saveAnnotationCalls[0].operation_id;
@@ -784,7 +784,7 @@ test("3D spatial pin resolves multi-primitive & scaled child instances, survives
   const retryBtn = review.getByRole("button", { name: "Retry original save", exact: true });
   await expect(retryBtn).toBeVisible();
   await retryBtn.click();
-  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("saved");
+  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("Saved · rev 1");
   // Zero duplicate image uploads, same operation_id replayed, and Save did NOT queue work.
   expect(studio.uploadCalls).toHaveLength(2);
   expect(studio.saveAnnotationCalls).toHaveLength(2);

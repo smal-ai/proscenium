@@ -1,3 +1,8 @@
+.render-capture-group select {
+  /* Size for the selected format, not the widest possible viewport label. */
+  field-sizing: content;
+}
+
 .proxy-frame-gate {
   position: absolute;
   box-sizing: border-box;
