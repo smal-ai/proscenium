@@ -24,7 +24,7 @@ export interface Operations {
   listItemVersions: { body: never; response: C.VersionPage; path: { project_id: string; item_id: string }; query: { cursor?: string; limit?: number } };
   getVersionShotPlan: { body: never; response: C.ShotPlan; path: { project_id: string; version_id: string }; query: Record<string, never> };
   getVersionSequenceMap: { body: never; response: C.SequenceMap; path: { project_id: string; version_id: string }; query: Record<string, never> };
-  getVersionProxyMapping: { body: never; response: C.ProxyMapping; path: { project_id: string; version_id: string }; query: Record<string, never> };
+  getVersionProxyMapping: { body: never; response: C.ProxyMapping; path: { project_id: string; version_id: string }; query: { mapping_artifact_id?: string } };
   listJobs: { body: never; response: C.JobPage; path: { project_id: string }; query: { cursor?: string; limit?: number } };
   getJob: { body: never; response: C.JobRecord; path: { project_id: string; job_id: string }; query: Record<string, never> };
   getFrameAvailability: { body: never; response: C.FrameAvailability; path: { project_id: string; job_id: string }; query: Record<string, never> };

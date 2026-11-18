@@ -10,10 +10,15 @@ export interface Draft {
   operation?: AnnotationSave;
   state: DraftState;
   error?: string;
+  targetBlob?: Blob;
+  targetUploadId?: string;
+  targetUploaded?: boolean;
   markup?: Blob;
   mask?: Blob;
   markupUploadId?: string;
   maskUploadId?: string;
+  fallbackOperation?: AnnotationSave;
+  fallbackSaved?: AnnotationSnapshot;
   supersededOperations?: AnnotationSave[];
 }
 
@@ -58,13 +63,22 @@ async function flushOriginalDraft(api: ApiClient, source: Draft, notify: (draft:
   try {
     const annotation = structuredClone(draft.annotation);
     if (!draft.operation) {
+      if (draft.targetBlob && !draft.targetUploaded) {
+        if (!draft.targetUploadId) await update({...draft, targetUploadId: crypto.randomUUID()});
+        const targetArtifact = await api.call("uploadImage", {path: {project_id: draft.projectId, upload_id: draft.targetUploadId!}, body: draft.targetBlob, idempotencyKey: draft.targetUploadId});
+        if (targetArtifact.project_id !== draft.projectId || targetArtifact.state !== "ready" || targetArtifact.kind !== "image" || targetArtifact.sha256 !== annotation.target.displayed_sha256 || targetArtifact.dimensions?.width !== annotation.target.dimensions.width || targetArtifact.dimensions.height !== annotation.target.dimensions.height) {
+          throw new Error("Clean capture upload acknowledgement does not match frozen PNG hash/dimensions");
+        }
+        annotation.target.artifact_id = targetArtifact.artifact_id;
+        await update({...draft, annotation, targetUploaded: true});
+      }
       if (draft.markup) {
-        if (!draft.markupUploadId) await update({...draft, markupUploadId: crypto.randomUUID()});
+        if (!draft.markupUploadId) await update({...draft, annotation, markupUploadId: crypto.randomUUID()});
         const artifact = await api.call("uploadImage", {path: {project_id: draft.projectId, upload_id: draft.markupUploadId!}, body: draft.markup, idempotencyKey: draft.markupUploadId});
         annotation.markup_artifact_id = artifact.artifact_id;
       }
       if (draft.mask) {
-        if (!draft.maskUploadId) await update({...draft, maskUploadId: crypto.randomUUID()});
+        if (!draft.maskUploadId) await update({...draft, annotation, maskUploadId: crypto.randomUUID()});
         const artifact = await api.call("uploadImage", {path: {project_id: draft.projectId, upload_id: draft.maskUploadId!}, body: draft.mask, idempotencyKey: draft.maskUploadId});
         for (const markup of annotation.markups) if (markup.kind === "mask" && markup.text === VECTOR_MASK) markup.mask_artifact_id = artifact.artifact_id;
       }

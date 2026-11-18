@@ -12,7 +12,7 @@ from PIL import Image
 
 from proscenium.api.errors import DomainError
 from proscenium.catalogue.service import Catalogue
-from proscenium.contracts import validate
+from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.db.paths import project_path
 from proscenium.services import Services
@@ -130,25 +130,32 @@ class Contexts:
         for annotation in context["annotations"]:
             target = annotation["target"]
             self.target(tx, target)  # Each annotation retains its OWN frame identity.
-            self.camera(annotation["camera"])
+            self.camera(annotation["camera"], dimensions=target["dimensions"])
             if annotation["range"] and annotation["range"]["end"] < annotation["range"]["start"]:
                 raise DomainError("invalid_frame_mapping", 422)
             hits = annotation["spatial_hits"]
-            if hits and annotation["spatial_status"] != "valid":
+            if (annotation["spatial_status"] == "valid") != bool(hits):
                 raise DomainError("frame_conflict", 422)
             for hit in hits:
                 if (
                     hit["version_id"] != target["version_id"]
                     or hit["sample_frame"] != target["source_frame"]
-                    or hit["camera"] != annotation["camera"]
+                    or annotation["camera"] is None
+                    or canonical(hit["camera"]) != canonical(annotation["camera"])
                 ):
                     raise DomainError("frame_conflict", 422)
-                self.artifact(tx, hit["proxy_artifact_id"])
-                _, path = self.artifact(tx, hit["mapping_artifact_id"])
+                proxy_artifact, _ = self.artifact(tx, hit["proxy_artifact_id"])
+                map_artifact, path = self.artifact(tx, hit["mapping_artifact_id"])
                 mapping = validate("ProxyMapping", json.loads(path.read_text()))
                 version = tx.require("versions", hit["version_id"])
+                version_ids = set(Catalogue.version_view(tx, version)["artifact_ids"])
                 if (
-                    mapping["project_id"] != tx.project_id
+                    proxy_artifact["kind"] != "proxy"
+                    or map_artifact["kind"] != "proxy_map"
+                    or hit["proxy_artifact_id"] not in version_ids
+                    or hit["mapping_artifact_id"] not in version_ids
+                    or mapping.get("mapping_artifact_id") not in (None, hit["mapping_artifact_id"])
+                    or mapping["project_id"] != tx.project_id
                     or mapping["version_id"] != hit["version_id"]
                     or mapping["sample_frame"] != hit["sample_frame"]
                     or mapping["proxy_artifact_id"] != hit["proxy_artifact_id"]
@@ -158,6 +165,7 @@ class Contexts:
                         and n["instance_id"] == hit["instance_id"]
                         for n in mapping["nodes"]
                     )
+                    or not all(math.isfinite(v) for v in (*hit["position"], *hit["normal"]))
                     or not math.isclose(sum(v * v for v in hit["normal"]), 1.0, abs_tol=0.01)
                 ):
                     raise DomainError("frame_conflict", 422)
@@ -210,8 +218,33 @@ class Contexts:
                 raise DomainError("source_conflict", 409)
 
     @staticmethod
-    def camera(camera: dict[str, Any] | None) -> None:
-        if camera and camera["near_m"] >= camera["far_m"]:
+    def camera(camera: dict[str, Any] | None, *, dimensions: dict[str, int] | None = None) -> None:
+        if not camera:
+            return
+        matrix = camera["camera_to_world"]
+        axes = [[matrix[row * 4 + col] for row in range(3)] for col in range(3)]
+        rigid = all(
+            math.isclose(
+                sum(a * b for a, b in zip(axes[i], axes[j], strict=True)),
+                float(i == j),
+                abs_tol=1e-6,
+            )
+            for i in range(3)
+            for j in range(3)
+        )
+        if (
+            not rigid
+            or matrix[12:] != [0, 0, 0, 1]
+            or camera["near_m"] >= camera["far_m"]
+            or (
+                dimensions is not None
+                and not math.isclose(
+                    camera["aspect"],
+                    dimensions["width"] / dimensions["height"],
+                    abs_tol=1e-6,
+                )
+            )
+        ):
             raise DomainError("frame_conflict", 422)
 
     @staticmethod

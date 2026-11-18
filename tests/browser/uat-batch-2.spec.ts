@@ -667,3 +667,195 @@ test("Critic realtime badge, Pending/All SAST cards, persisted drafts and human 
 
   studio.assertHermetic();
 });
+
+function projectWorldToCanvasUv(camera: { camera_to_world: number[]; projection: number[] }, world: [number, number, number]): [number, number] {
+  // Invert rigid camera_to_world [R | t; 0 0 0 1] -> [R^T | -R^T t]
+  const m = camera.camera_to_world;
+  const r00 = m[0], r01 = m[1], r02 = m[2], tx = m[3];
+  const r10 = m[4], r11 = m[5], r12 = m[6], ty = m[7];
+  const r20 = m[8], r21 = m[9], r22 = m[10], tz = m[11];
+  const vx = r00 * (world[0] - tx) + r10 * (world[1] - ty) + r20 * (world[2] - tz);
+  const vy = r01 * (world[0] - tx) + r11 * (world[1] - ty) + r21 * (world[2] - tz);
+  const vz = r02 * (world[0] - tx) + r12 * (world[1] - ty) + r22 * (world[2] - tz);
+  const p = camera.projection;
+  const cx = p[0] * vx + p[1] * vy + p[2] * vz + p[3];
+  const cy = p[4] * vx + p[5] * vy + p[6] * vz + p[7];
+  const cw = p[12] * vx + p[13] * vy + p[14] * vz + p[15];
+  return [(cx / cw + 1) / 2, (1 - cy / cw) / 2];
+}
+
+test("3D spatial pin resolves multi-primitive & scaled child instances, survives orbit/reload/v3 switch, and gates unavailable-proxy fallback", async ({ page, baseURL }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const studio = new StudioFixture(page, baseURL!);
+  // Register two maps on a-v2 (map-a-v2-early + map-a-v2) to exercise exact mapping_artifact_id retention.
+  studio.installProxyFixture("a-v2", { proxyId: "proxy-a-v2-early", mapId: "map-a-v2-early", sampleFrame: 1 });
+  studio.installProxyFixture("a-v2", { proxyId: "proxy-a-v2", mapId: "map-a-v2", sampleFrame: 12 });
+  await studio.install({ catalogue: true, savedLayout: true });
+  await studio.open();
+  await studio.ready();
+
+  // Open Asset A v2 and switch to 3D Inspection.
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  const review = page.locator("main.review-panel");
+  await expect(review.locator("h1")).toHaveText("Asset A v2");
+  await review.getByRole("button", { name: "3D Inspection", exact: true }).click();
+
+  const pinNoteBtn = review.getByRole("button", { name: "Pin note", exact: true });
+  await expect(pinNoteBtn).toBeEnabled();
+  const canvas = review.locator(".review-proxy canvas");
+  await canvas.evaluate(el => { (el as HTMLElement).dataset.mountToken = "webgl-mounted-once"; });
+
+  // Enable Pin note and verify drag-to-orbit does NOT place a pin.
+  await pinNoteBtn.click();
+  await expect(pinNoteBtn).toHaveAttribute("aria-pressed", "true");
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5 + 48, box.y + box.height * 0.5 + 18, { steps: 6 });
+  await page.mouse.up();
+  await expect(review.getByTestId("proxy-spatial-pin")).toHaveCount(0);
+  await expect(pinNoteBtn).toHaveAttribute("aria-pressed", "true");
+
+  // Read live orbited camera from stored selection context to click exact Housing and Collar centres.
+  const liveCam = await expect.poll(async () => {
+    const raw = await page.evaluate(id => localStorage.getItem(`proscenium.owner.view.context.${id}`), projectId);
+    return raw ? JSON.parse(raw).camera : null;
+  }).not.toBeNull().then(async () => {
+    const raw = await page.evaluate(id => localStorage.getItem(`proscenium.owner.view.context.${id}`), projectId);
+    return JSON.parse(raw!).camera as { camera_to_world: number[]; projection: number[] };
+  });
+
+  // First click multi-primitive parent Housing (proxy [1.6, 0, -1.6] -> Blender [1.6, 1.6, 0]).
+  const [housingU, housingV] = projectWorldToCanvasUv(liveCam, [1.6, 1.6, 0]);
+  await page.mouse.click(box.x + housingU * box.width, box.y + housingV * box.height);
+  await expect(review.locator('[aria-label="Spatial pin tools"]')).toContainText("housing · housing-1");
+  expect(await canvas.evaluate(el => (el as HTMLElement).dataset.mountToken)).toBe("webgl-mounted-once");
+
+  // Reposition onto rotated, non-uniformly scaled child Collar (proxy [-1.6, 0, 1.6] + y=0.2 -> Blender [-1.6, -1.6, 0.2]).
+  // Re-measure canvas bounds after the bottom annotation dock resized the viewport height.
+  await review.getByRole("button", { name: "Reposition pin", exact: true }).click();
+  await expect.poll(async () => {
+    const dims = await canvas.evaluate(el => ({ w: (el as HTMLCanvasElement).width, h: (el as HTMLCanvasElement).height, rectH: Math.round(el.getBoundingClientRect().height) }));
+    return dims.h === dims.rectH ? dims.h : null;
+  }).not.toBeNull();
+  const collarBox = (await canvas.boundingBox())!;
+  const dockedCam = {
+    ...liveCam,
+    projection: [liveCam.projection[5] / (collarBox.width / collarBox.height), ...liveCam.projection.slice(1)],
+  };
+  const [collarU, collarV] = projectWorldToCanvasUv(dockedCam, [-1.6, -1.6, 0.2]);
+  const clickX = collarBox.x + collarU * collarBox.width;
+  const clickY = collarBox.y + collarV * collarBox.height;
+  await page.mouse.click(clickX, clickY);
+  await expect(review.locator('[aria-label="Spatial pin tools"]')).toContainText("collar · collar-1");
+  expect(await canvas.evaluate(el => (el as HTMLElement).dataset.mountToken)).toBe("webgl-mounted-once");
+
+  // Orbiting moves the anchored 3D pin marker on screen; Restore pinned view brings it back.
+  const pinMarker = review.getByTestId("proxy-spatial-pin");
+  await expect(pinMarker).toBeVisible();
+  const initialPinBox = (await pinMarker.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.45 - 90, box.y + box.height * 0.5 + 35, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(async () => {
+    const moved = await pinMarker.boundingBox();
+    return moved ? Math.hypot(moved.x - initialPinBox.x, moved.y - initialPinBox.y) : 0;
+  }).toBeGreaterThan(15);
+
+  await review.getByRole("button", { name: "Restore pinned view", exact: true }).click();
+  await expect.poll(async () => {
+    const restored = await pinMarker.boundingBox();
+    return restored ? Math.hypot(restored.x - initialPinBox.x, restored.y - initialPinBox.y) : 999;
+  }).toBeLessThan(2);
+
+  // Enter note and simulate a lost save acknowledgement followed by page reload.
+  await review.getByRole("textbox", { name: "Feedback" }).fill("Chamfer the collar lip by 2 mm");
+  studio.dropNextSaveAck = true;
+  await review.getByRole("button", { name: "Save annotation", exact: true }).click();
+  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toContainText("failed");
+  expect(studio.uploadCalls).toHaveLength(2);
+  expect(studio.saveAnnotationCalls).toHaveLength(1);
+  const originalOpId = studio.saveAnnotationCalls[0].operation_id;
+
+  await page.reload();
+  await studio.ready();
+  const retryBtn = review.getByRole("button", { name: "Retry original save", exact: true });
+  await expect(retryBtn).toBeVisible();
+  await retryBtn.click();
+  await expect(review.locator('[aria-label="Spatial pin tools"] output')).toHaveText("saved");
+  // Zero duplicate image uploads, same operation_id replayed, and Save did NOT queue work.
+  expect(studio.uploadCalls).toHaveLength(2);
+  expect(studio.saveAnnotationCalls).toHaveLength(2);
+  expect(studio.saveAnnotationCalls[1].operation_id).toBe(originalOpId);
+  expect(studio.annotations).toHaveLength(1);
+  expect(studio.submissions).toHaveLength(0);
+
+  // Verify <= 0.5 image pixel pin placement accuracy and unit Blender-world surface normal.
+  const saved = studio.annotations[0];
+  const hit = saved.spatial_hits[0];
+  expect(hit.instance_id).toBe("collar-1");
+  expect(hit.mapping_artifact_id).toBe("map-a-v2");
+  expect(hit.sample_frame).toBe(12);
+  expect(Math.abs(Math.hypot(...hit.normal) - 1)).toBeLessThan(1e-4);
+  const projectedUv = projectWorldToCanvasUv(hit.camera, hit.position);
+  const [pinU, pinV] = saved.markups[0].points[0];
+  const actualClickU = (clickX - collarBox.x) / collarBox.width;
+  const actualClickV = (clickY - collarBox.y) / collarBox.height;
+  expect(Math.abs(pinU - projectedUv[0]) * saved.target.dimensions.width).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(pinV - projectedUv[1]) * saved.target.dimensions.height).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(pinU - actualClickU) * saved.target.dimensions.width).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(pinV - actualClickV) * saved.target.dimensions.height).toBeLessThanOrEqual(0.5);
+
+  // Publish Asset A v3, switch to v3, reopen the v2 spatial annotation, and confirm Queue targets v2!
+  studio.addAssetVersion("a-v3", "Asset A v3");
+  await review.getByRole("button", { name: "Close draft", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh project metadata" }).click();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  await expect(review.locator("h1")).toHaveText("Asset A v3");
+
+  await review.getByRole("button", { name: /Annotations/ }).click();
+  await review.locator(".review-drawer-items button").filter({ hasText: "Chamfer the collar lip by 2 mm" }).click();
+  await expect(review.locator("h1")).toHaveText("Asset A v2");
+  expect(studio.guard!.calls.some(c => c.url.includes("/versions/a-v2/proxy-mapping?mapping_artifact_id=map-a-v2"))).toBe(true);
+
+  await review.getByRole("button", { name: "Queue feedback", exact: true }).click();
+  await expect(review.getByRole("button", { name: "Feedback queued", exact: true })).toBeVisible();
+  expect(studio.submissions).toHaveLength(1);
+  const queuedCtx = studio.contexts.at(-1)!;
+  expect(queuedCtx.version_id).toBe("a-v2");
+  expect(queuedCtx.request_target).toEqual({ kind: "item", version: { item_id: "asset-a", version_id: "a-v2" } });
+  expect(queuedCtx.view_mode).toBe("3d_inspection");
+  expect(queuedCtx.selected_objects).toEqual([{ object_id: "collar", instance_id: "collar-1" }]);
+  expect(queuedCtx.annotations[0].spatial_hits[0]).toMatchObject({
+    version_id: "a-v2",
+    mapping_artifact_id: "map-a-v2",
+    proxy_artifact_id: "proxy-a-v2",
+    object_id: "collar",
+    instance_id: "collar-1",
+  });
+
+  // Make the original v2 proxy unavailable; reload shows the marked snapshot and blocks Queue until explicit fallback confirmation.
+  studio.unavailableProxyIds.add("map-a-v2");
+  await page.reload();
+  await studio.ready();
+  await expect(review.locator('[aria-label="Unavailable proxy marked snapshot"]')).toBeVisible();
+  const fallbackQueueBtn = review.getByRole("button", { name: "Queue image-only feedback", exact: true });
+  await expect(fallbackQueueBtn).toBeDisabled();
+  await review.getByRole("checkbox", { name: "Send image-only snapshot without 3D spatial hit" }).check();
+  await expect(fallbackQueueBtn).toBeEnabled();
+  await fallbackQueueBtn.click();
+  await expect(review.getByRole("button", { name: "Feedback queued", exact: true })).toBeVisible();
+  expect(studio.submissions).toHaveLength(2);
+  const fallbackCtx = studio.contexts.at(-1)!;
+  expect(fallbackCtx.version_id).toBe("a-v2");
+  expect(fallbackCtx.view_mode).toBe("keyframes");
+  expect(fallbackCtx.selected_objects).toEqual([]);
+  expect(fallbackCtx.annotations[0]).toMatchObject({
+    spatial_hits: [],
+    spatial_status: "unavailable",
+    derived_from: saved.annotation_id,
+  });
+
+  studio.assertHermetic();
+});

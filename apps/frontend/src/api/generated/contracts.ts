@@ -1393,6 +1393,7 @@ export interface ProxyMapping {
   project_id: Id;
   version_id: Id;
   proxy_artifact_id: Id;
+  mapping_artifact_id?: Id;
   source_closure_digest: Sha256;
   sample_frame: number;
   space: "proxy_world_m";

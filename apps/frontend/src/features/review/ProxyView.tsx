@@ -1,9 +1,71 @@
-import { Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
 import { Canvas, useFrame, useThree, type RootState, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
-import { Matrix4, OrthographicCamera, PerspectiveCamera, Vector3, type Object3D } from "three";
+import { Matrix4, OrthographicCamera, PerspectiveCamera, Raycaster, Vector2, Vector3, type Camera as ThreeCamera, type Object3D, type Scene, type WebGLRenderer } from "three";
 import type { Camera, ObjectSelection, ProxyMapping } from "../../api/generated/contracts";
-import { captureCamera } from "./media";
+import { captureCamera, projectBlenderPoint } from "./media";
+import { indexProxyScene, projectBlenderPointVisible, proxyPointToBlender, proxySurfaceNormalToBlender, resolveProxyNode, type ProxyNode } from "./spatial";
+
+const DRAG_THRESHOLD_PX = 4;
+
+export interface FrozenProxyCapture {
+  camera: Camera;
+  dimensions: {width: number; height: number};
+  png: Promise<Blob>;
+}
+export type ProxyCapture = () => FrozenProxyCapture;
+
+export interface ProxyPinPlacement {
+  node: ProxyNode;
+  position: [number, number, number];
+  normal: [number, number, number];
+  pinUv: [number, number];
+  capture: FrozenProxyCapture;
+}
+
+export interface SpatialPinMarker {
+  id: string;
+  position: readonly number[];
+  instanceId: string;
+  label: string;
+}
+
+function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCamera): FrozenProxyCapture {
+  if (!(camera instanceof PerspectiveCamera || camera instanceof OrthographicCamera)) {
+    throw new Error("Unsupported inspection camera");
+  }
+  const {width, height} = gl.domElement;
+  if (!width || !height || gl.getContext().isContextLost()) {
+    throw new Error("Inspection framebuffer is unavailable");
+  }
+  // Fractional CSS bounds and DPR can round to a different intrinsic aspect.
+  // Make the projection authoritative for these exact output pixels.
+  if (camera instanceof PerspectiveCamera) camera.aspect = width / height;
+  else {
+    const centre = (camera.left + camera.right) / 2;
+    const halfWidth = (camera.top - camera.bottom) * width / height / 2;
+    camera.left = centre - halfWidth; camera.right = centre + halfWidth;
+  }
+  camera.updateProjectionMatrix();
+  camera.updateMatrixWorld();
+  const frozenCamera = captureCamera(camera);
+  // Explicitly render and synchronously copy actual pixels before WebGL's
+  // default drawing buffer is discarded. Never redraw with 2D/fake lighting.
+  const dpr = gl.getPixelRatio();
+  gl.setViewport(0, 0, width / dpr, height / dpr);
+  gl.render(scene, camera);
+  const copy = document.createElement("canvas"); copy.width = width; copy.height = height;
+  const context = copy.getContext("2d");
+  if (!context) throw new Error("PNG capture is unavailable");
+  context.drawImage(gl.domElement, 0, 0);
+  return {
+    camera: frozenCamera,
+    dimensions: {width, height},
+    png: new Promise<Blob>((resolve, reject) => {
+      copy.toBlob(blob => blob ? resolve(blob) : reject(new Error("Inspection PNG capture failed")), "image/png");
+    }),
+  };
+}
 
 function CameraObserver({onCamera}: {onCamera: (camera: Camera) => void}) {
   const previous = useRef("");
@@ -16,46 +78,124 @@ function CameraObserver({onCamera}: {onCamera: (camera: Camera) => void}) {
   return null;
 }
 
-function Model({url, mapping, onSelect, onReady}: {url: string; mapping: ProxyMapping; onSelect: (selection: ObjectSelection[]) => void; onReady: (ready: boolean) => void}) {
+function Model({
+  url,
+  mapping,
+  pinMode,
+  onSelect,
+  onSceneReady,
+}: {
+  url: string;
+  mapping: ProxyMapping;
+  pinMode: boolean;
+  onSelect: (selection: ObjectSelection[]) => void;
+  onSceneReady: (value: {scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null) => void;
+}) {
   const gltf = useGLTF(url);
   const scene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
-  useLayoutEffect(() => {onReady(true); return () => onReady(false);}, [onReady, scene]);
-  const nodes = useMemo(() => {
-    const pairs = new Map<Object3D, ProxyMapping["nodes"][number]>();
-    for (const node of mapping.nodes) {
-      let object: Object3D | undefined = scene;
-      // glTF node_path indexes the scene's children, never object names.
-      for (const index of node.node_path) object = object?.children[index];
-      if (object) pairs.set(object, node);
-    }
-    return pairs;
-  }, [mapping, scene]);
+  const nodes = useMemo(() => indexProxyScene(scene, mapping), [mapping, scene]);
+  useLayoutEffect(() => {
+    onSceneReady({scene, nodes});
+    return () => onSceneReady(null);
+  }, [nodes, onSceneReady, scene]);
   function pick(event: ThreeEvent<MouseEvent>) {
-    // A draw-instance index is not a stable source instance ID. Require explicit nodes.
+    if (pinMode || event.delta > DRAG_THRESHOLD_PX) return;
+    // A draw-instance index is not a stable source instance ID. Require explicit authored nodes.
     if (event.instanceId !== undefined) return;
-    let object: Object3D | null = event.object;
-    while (object && !nodes.has(object)) object = object.parent;
-    if (!object) return;
+    const node = resolveProxyNode(event.object, nodes);
+    if (!node) return;
     event.stopPropagation();
-    const node = nodes.get(object)!;
     onSelect([{object_id: node.object_id, instance_id: node.instance_id}]);
   }
   return <primitive object={scene} onClick={pick}/>;
 }
 
-export interface FrozenProxyCapture {
-  camera: Camera;
-  dimensions: {width: number; height: number};
-  png: Promise<Blob>;
-}
-export type ProxyCapture = () => FrozenProxyCapture;
+function SurfacePinController({
+  enabled,
+  model,
+  onSelect,
+  onPlacePin,
+  onPinMiss,
+}: {
+  enabled: boolean;
+  model: {scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null;
+  onSelect: (selection: ObjectSelection[]) => void;
+  onPlacePin?: (placement: ProxyPinPlacement) => void;
+  onPinMiss?: (reason: "empty" | "unmapped", fallback?: FrozenProxyCapture & {clickUv: [number, number]}) => void;
+}) {
+  const {gl, scene, camera} = useThree();
+  const stateRef = useRef({enabled, model, onSelect, onPlacePin, onPinMiss});
+  stateRef.current = {enabled, model, onSelect, onPlacePin, onPinMiss};
 
-function RestoreCamera({record, controls}: {record: Camera | null; controls: RefObject<ComponentRef<typeof OrbitControls> | null>}) {
+  useEffect(() => {
+    const dom = gl.domElement;
+    let gesture: {pointerId: number; startX: number; startY: number; moved: boolean} | null = null;
+    function down(event: PointerEvent) {
+      if (!stateRef.current.enabled || event.button !== 0) return;
+      gesture = {pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, moved: false};
+    }
+    function move(event: PointerEvent) {
+      if (!gesture || event.pointerId !== gesture.pointerId) return;
+      if (Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) > DRAG_THRESHOLD_PX) {
+        gesture.moved = true;
+      }
+    }
+    function cancel(event: PointerEvent) {
+      if (gesture && event.pointerId === gesture.pointerId) gesture = null;
+    }
+    function up(event: PointerEvent) {
+      if (!gesture || event.pointerId !== gesture.pointerId || event.button !== 0) return;
+      const moved = gesture.moved;
+      gesture = null;
+      const current = stateRef.current;
+      if (moved || !current.enabled || !current.model) return;
+      const rect = dom.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const u = (event.clientX - rect.left) / rect.width;
+      const v = (event.clientY - rect.top) / rect.height;
+      if (u < 0 || u > 1 || v < 0 || v > 1) return;
+      const captured = captureCleanViewport(gl, scene, camera);
+      current.model.scene.updateMatrixWorld(true);
+      const raycaster = new Raycaster();
+      raycaster.setFromCamera(new Vector2(u * 2 - 1, 1 - v * 2), camera);
+      const hits = raycaster.intersectObject(current.model.scene, true);
+      const hit = hits.find(entry => entry.instanceId === undefined);
+      if (!hit) {
+        current.onPinMiss?.("empty");
+        return;
+      }
+      const node = resolveProxyNode(hit.object, current.model.nodes);
+      const localNormal = hit.face && hit.face.normal.lengthSq() > 1e-12 ? hit.face.normal : hit.normal;
+      if (!node || !localNormal) {
+        current.onPinMiss?.("unmapped", {...captured, clickUv: [u, v]});
+        return;
+      }
+      const position = proxyPointToBlender(hit.point);
+      const normal = proxySurfaceNormalToBlender(hit.object, localNormal, raycaster.ray.direction);
+      const pinUv = projectBlenderPoint(captured.camera, position);
+      current.onSelect([{object_id: node.object_id, instance_id: node.instance_id}]);
+      current.onPlacePin?.({node, position, normal, pinUv, capture: captured});
+    }
+    dom.addEventListener("pointerdown", down);
+    dom.addEventListener("pointermove", move);
+    dom.addEventListener("pointercancel", cancel);
+    dom.addEventListener("pointerup", up);
+    return () => {
+      dom.removeEventListener("pointerdown", down);
+      dom.removeEventListener("pointermove", move);
+      dom.removeEventListener("pointercancel", cancel);
+      dom.removeEventListener("pointerup", up);
+    };
+  }, [camera, gl, scene]);
+  return null;
+}
+
+function RestoreCamera({record, nonce = 0, controls}: {record: Camera | null; nonce?: number; controls: RefObject<ComponentRef<typeof OrbitControls> | null>}) {
   const {camera, set} = useThree();
-  const applied = useRef<{record: Camera; camera: PerspectiveCamera | OrthographicCamera} | null>(null);
+  const applied = useRef<{record: Camera; nonce: number; camera: PerspectiveCamera | OrthographicCamera} | null>(null);
   useLayoutEffect(() => {
     if (!record) return;
-    if (applied.current?.record !== record) {
+    if (applied.current?.record !== record || applied.current.nonce !== nonce) {
       const restored = record.kind === "perspective"
         ? new PerspectiveCamera(record.vertical_fov_degrees!, record.aspect, record.near_m, record.far_m)
         : new OrthographicCamera(-record.orthographic_height_m! * record.aspect / 2, record.orthographic_height_m! * record.aspect / 2, record.orthographic_height_m! / 2, -record.orthographic_height_m! / 2, record.near_m, record.far_m);
@@ -68,7 +208,7 @@ function RestoreCamera({record, controls}: {record: Camera | null; controls: Ref
         restored.left+=x;restored.right+=x;restored.bottom+=y;restored.top+=y;
       }
       Object.assign(restored, {manual: true}); // R3F must not silently replace the saved projection on resize.
-      applied.current = {record, camera: restored};
+      applied.current = {record, nonce, camera: restored};
       set({camera: restored});
       return;
     }
@@ -88,7 +228,7 @@ function RestoreCamera({record, controls}: {record: Camera | null; controls: Ref
     restored.projectionMatrix.fromArray(record.projection).transpose();
     restored.projectionMatrixInverse.copy(restored.projectionMatrix).invert();
     restored.updateMatrixWorld();
-  }, [record, camera, controls, set]);
+  }, [record, nonce, camera, controls, set]);
   return null;
 }
 
@@ -99,39 +239,43 @@ function CaptureBinding({ready, bind}: {ready: boolean; bind: (capture: ProxyCap
     if (!ready || !size.width || !size.height || !gl.domElement.width || !gl.domElement.height) { bind(null); return; }
     bind(() => {
       if (!available.current) throw new Error("Inspection capture requires a visible, ready viewport");
-      if (!(camera instanceof PerspectiveCamera || camera instanceof OrthographicCamera)) throw new Error("Unsupported inspection camera");
-      const {width, height} = gl.domElement;
-      if (!width || !height || gl.getContext().isContextLost()) throw new Error("Inspection framebuffer is unavailable");
-      // Fractional CSS bounds and DPR can round to a different intrinsic aspect.
-      // Make the projection authoritative for these exact output pixels.
-      if (camera instanceof PerspectiveCamera) camera.aspect = width / height;
-      else {
-        const centre = (camera.left + camera.right) / 2;
-        const halfWidth = (camera.top - camera.bottom) * width / height / 2;
-        camera.left = centre - halfWidth; camera.right = centre + halfWidth;
-      }
-      camera.updateProjectionMatrix();
-      const frozenCamera = captureCamera(camera);
-      // Explicitly render and synchronously copy actual pixels before WebGL's
-      // default drawing buffer is discarded. Never redraw with 2D/fake lighting.
-      const dpr = gl.getPixelRatio();
-      gl.setViewport(0, 0, width / dpr, height / dpr);
-      gl.render(scene, camera);
-      const copy = document.createElement("canvas"); copy.width = width; copy.height = height;
-      const context = copy.getContext("2d");
-      if (!context) throw new Error("PNG capture is unavailable");
-      context.drawImage(gl.domElement, 0, 0);
-      return {camera: frozenCamera, dimensions: {width, height}, png: new Promise<Blob>((resolve, reject) => {
-        copy.toBlob(blob => blob ? resolve(blob) : reject(new Error("Inspection PNG capture failed")), "image/png");
-      })};
+      return captureCleanViewport(gl, scene, camera);
     });
     return () => bind(null);
   }, [ready, bind, camera, gl, scene, size.width, size.height]);
   return null;
 }
 
-export function ProxyView({visible = true, url, mapping, onSelect, onCamera, onCaptureReady, restoreCamera = null}: {visible?: boolean; url: string; mapping: ProxyMapping; onSelect: (selection: ObjectSelection[]) => void; onCamera: (camera: Camera) => void; onCaptureReady: (capture: ProxyCapture | null) => void; restoreCamera?: Camera | null}) {
-  const [ready, setReady] = useState(false);
+export function ProxyView({
+  visible = true,
+  url,
+  mapping,
+  pinMode = false,
+  pins = [],
+  onSelect,
+  onCamera,
+  onCaptureReady,
+  onPlacePin,
+  onPinMiss,
+  restoreCamera = null,
+  restoreCameraNonce = 0,
+}: {
+  visible?: boolean;
+  url: string;
+  mapping: ProxyMapping;
+  pinMode?: boolean;
+  pins?: SpatialPinMarker[];
+  onSelect: (selection: ObjectSelection[]) => void;
+  onCamera: (camera: Camera) => void;
+  onCaptureReady: (capture: ProxyCapture | null) => void;
+  onPlacePin?: (placement: ProxyPinPlacement) => void;
+  onPinMiss?: (reason: "empty" | "unmapped", fallback?: FrozenProxyCapture & {clickUv: [number, number]}) => void;
+  restoreCamera?: Camera | null;
+  restoreCameraNonce?: number;
+}) {
+  const [modelState, setModelState] = useState<{scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null>(null);
+  const ready = modelState !== null;
+  const [liveCamera, setLiveCamera] = useState<Camera | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const [size, setSize] = useState({width:0,height:0});
@@ -146,6 +290,10 @@ export function ProxyView({visible = true, url, mapping, onSelect, onCamera, onC
     capture.current = next;
     onCaptureReady(visibleRef.current && next ? captureVisible : null);
   }, [onCaptureReady, captureVisible]);
+  const handleCamera = useCallback((next: Camera) => {
+    setLiveCamera(next);
+    onCamera(next);
+  }, [onCamera]);
   useLayoutEffect(() => {
     const element = host.current; if (!element) return;
     const measure = () => {
@@ -165,14 +313,37 @@ export function ProxyView({visible = true, url, mapping, onSelect, onCamera, onC
   }, [visible, size.width, size.height, onCaptureReady, captureVisible]);
   const width = restoreCamera && size.width ? Math.min(size.width,size.height*restoreCamera.aspect) : size.width;
   const height = restoreCamera && width ? width/restoreCamera.aspect : size.height;
-  return <div ref={host} className="review-proxy" aria-label={`Static proxy, source frame ${mapping.sample_frame}`}>
-    <Canvas frameloop={visible ? "always" : "never"} onCreated={state => { renderer.current = state; state.setFrameloop(visibleRef.current ? "always" : "never"); }} style={restoreCamera && size.width ? {position:"absolute",left:(size.width-width)/2,top:(size.height-height)/2,width,height} : undefined} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: 50}}>
+  const canvasBoxStyle = restoreCamera && size.width ? {position:"absolute" as const,left:(size.width-width)/2,top:(size.height-height)/2,width,height} : undefined;
+  const projectionCamera = liveCamera ?? restoreCamera;
+  return <div ref={host} className={`review-proxy${pinMode ? " pin-mode" : ""}`} aria-label={`Static proxy, source frame ${mapping.sample_frame}`}>
+    <Canvas frameloop={visible ? "always" : "never"} onCreated={state => { renderer.current = state; state.setFrameloop(visibleRef.current ? "always" : "never"); }} style={canvasBoxStyle} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: 50}}>
       <ambientLight intensity={0.8}/><directionalLight position={[4,8,4]} intensity={1.5}/>
-      <Suspense fallback={null}><Model url={url} mapping={mapping} onSelect={onSelect} onReady={setReady}/></Suspense>
+      <Suspense fallback={null}><Model url={url} mapping={mapping} pinMode={pinMode} onSelect={onSelect} onSceneReady={setModelState}/></Suspense>
       <OrbitControls ref={controls} makeDefault enableDamping={false}/>
-      <RestoreCamera record={restoreCamera} controls={controls}/><CameraObserver onCamera={onCamera}/>
+      <RestoreCamera record={restoreCamera} nonce={restoreCameraNonce} controls={controls}/><CameraObserver onCamera={handleCamera}/>
       <CaptureBinding ready={visible && ready && size.width > 0 && size.height > 0} bind={bindCapture}/>
+      <SurfacePinController enabled={visible && ready && pinMode} model={modelState} onSelect={onSelect} onPlacePin={onPlacePin} onPinMiss={onPinMiss}/>
     </Canvas>
+    {projectionCamera && pins.length > 0 && width > 0 && height > 0 && (
+      <div className="proxy-pin-layer" style={canvasBoxStyle ?? {position: "absolute", inset: 0}} aria-label="Anchored 3D spatial pins">
+        {pins.map(pin => {
+          const projected = projectBlenderPointVisible(projectionCamera, pin.position);
+          if (!projected.visible) return null;
+          return (
+            <div
+              key={pin.id}
+              className="proxy-spatial-pin"
+              data-testid="proxy-spatial-pin"
+              data-instance-id={pin.instanceId}
+              style={{left: `${projected.uv[0] * 100}%`, top: `${projected.uv[1] * 100}%`}}
+            >
+              <span className="proxy-spatial-pin-dot" aria-hidden="true"/>
+              <span className="proxy-spatial-pin-tag">{pin.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    )}
     <span className="review-proxy-label">Static inspection proxy · sample frame {mapping.sample_frame} · not material evidence</span>
   </div>;
 }

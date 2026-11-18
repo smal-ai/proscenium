@@ -325,6 +325,8 @@ paths:
       - {name: version_id, in: path, required: true, schema: {$ref: './schema.json#/$defs/Id'}}
     get:
       operationId: getVersionProxyMapping
+      parameters:
+        - {name: mapping_artifact_id, in: query, schema: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'}}
       responses:
         '200':
           description: ProxyMapping for a published asset or scene version.

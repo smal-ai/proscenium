@@ -7,6 +7,7 @@ from fractions import Fraction
 from typing import Any
 
 from proscenium.api.errors import DomainError
+from proscenium.catalogue.service import Catalogue
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.services import Services
@@ -220,20 +221,30 @@ class References:
                 dimensions=target["dimensions"],
                 semantics=markup["mask_encoding"]["semantics"],
             )
-        if annotation["spatial_status"] != "valid" and annotation["spatial_hits"]:
+        if (annotation["spatial_status"] == "valid") != bool(annotation["spatial_hits"]):
             raise DomainError("source_conflict", 409)
         for hit in annotation["spatial_hits"]:
             version = self.version(tx, target)
+            version_ids = set(Catalogue.version_view(tx, version)["artifact_ids"])
+            map_record = self.artifact(tx, hit["mapping_artifact_id"])
             mapping = self.payload(tx, hit["mapping_artifact_id"], "ProxyMapping")
-            self.artifact(tx, hit["proxy_artifact_id"])
+            proxy = self.artifact(tx, hit["proxy_artifact_id"])
             if (
-                hit["version_id"] != target["version_id"]
+                map_record["kind"] != "proxy_map"
+                or proxy["kind"] != "proxy"
+                or hit["mapping_artifact_id"] not in version_ids
+                or hit["proxy_artifact_id"] not in version_ids
+                or mapping.get("mapping_artifact_id") not in (None, hit["mapping_artifact_id"])
+                or hit["version_id"] != target["version_id"]
                 or hit["sample_frame"] != target["source_frame"]
                 or mapping["version_id"] != hit["version_id"]
                 or mapping["sample_frame"] != hit["sample_frame"]
                 or mapping["proxy_artifact_id"] != hit["proxy_artifact_id"]
                 or mapping["source_closure_digest"] != version["source"]["digest"]
+                or annotation["camera"] is None
                 or canonical(hit["camera"]) != canonical(annotation["camera"])
+                or not all(math.isfinite(v) for v in (*hit["position"], *hit["normal"]))
+                or not math.isclose(sum(v * v for v in hit["normal"]), 1.0, abs_tol=0.01)
                 or not any(
                     n["object_id"] == hit["object_id"] and n["instance_id"] == hit["instance_id"]
                     for n in mapping["nodes"]
