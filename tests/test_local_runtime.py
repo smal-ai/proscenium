@@ -730,6 +730,12 @@ def test_compiled_ui_and_owner_boundary(tmp_path):
         assert browser.get("/health").status_code == 200
         response = browser.get("/")
         assert response.status_code == 200
+        assert 'href="/favicon.svg"' in response.text
+        favicon = browser.get("/favicon.svg")
+        assert favicon.status_code == 200
+        assert favicon.headers["content-type"].startswith("image/svg+xml")
+        assert favicon.content == (FRONTEND / "favicon.svg").read_bytes()
+        assert browser.get("/favicon.ico").status_code == 200
         assets = re.findall(r'(?:src|href)="(/assets/[^\"]+)"', response.text)
         assert any(path.endswith(".js") for path in assets)
         assert any(path.endswith(".css") for path in assets)
