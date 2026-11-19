@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FrameAvailability, FrameReceipt, FrameTarget, PreviewSegment, VersionRecord } from "../../api/generated/contracts";
 import { frameCentre, frameTarget, mediaUrl, presentedFrame, segmentAt } from "./media";
 
+const frameFailed = (availability: FrameAvailability | null, frame: number) =>
+  availability?.failed_ranges.some(range => range.start <= frame && frame <= range.end) ?? false;
+
 /** Two independently decoded elements, at most current + immediate next interval.
  * Identity is admitted from rVFC mediaTime, never video.currentTime or a requested seek.
  */
@@ -17,6 +20,7 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
 }) {
   const [activeFrame, setActiveFrame] = useState(requestedFrame);
   const [message, setMessage] = useState("");
+  const [stoppedAtGap, setStoppedAtGap] = useState<number | null>(null);
   const video = useRef<HTMLVideoElement>(null);
   const nextVideo = useRef<HTMLVideoElement>(null);
   const wantsPlay = useRef(playing); wantsPlay.current = visible && playing;
@@ -25,6 +29,8 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
   const awaitingFirstPresentation = useRef(true);
   const frameAtSeek = useRef(activeFrame);
   const onPresentedRef = useRef(onPresented); onPresentedRef.current = onPresented;
+  const onUnpresentedRef = useRef(onUnpresented); onUnpresentedRef.current = onUnpresented;
+  const onPlaybackStoppedRef = useRef(onPlaybackStopped); onPlaybackStoppedRef.current = onPlaybackStopped;
   const previousRequest = useRef({frame: requestedFrame, nonce: seekNonce});
   const segment = segmentAt(segments, activeFrame);
   const next = segment ? segmentAt(segments, segment.source_frames.end + 1) ?? nextPassSegment : undefined;
@@ -35,7 +41,7 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
   useEffect(() => {
     if (previousRequest.current.frame !== requestedFrame || previousRequest.current.nonce !== seekNonce) {
       previousRequest.current = {frame: requestedFrame, nonce: seekNonce};
-      setActiveFrame(requestedFrame); setMessage("");
+      setActiveFrame(requestedFrame); setMessage(""); setStoppedAtGap(null);
       const current = video.current; const selected = segmentAt(segments, requestedFrame);
       if (current && selected && selected.segment_id === segment?.segment_id) {
         const centre = frameCentre(requestedFrame, selected);
@@ -79,7 +85,12 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
           awaitingFirstPresentation.current = false;
           if (wantsPlay.current) void element.play().catch(e => setMessage(String(e)));
         }
-      } else setMessage(`Presented frame ${frame ?? "unknown"} has no verified frame receipt`);
+      } else {
+        presented.current = null;
+        confirmedSegment.current = "";
+        onUnpresentedRef.current?.();
+        setMessage(`Presented frame ${frame ?? "unknown"} has no verified frame receipt`);
+      }
       callback = element.requestVideoFrameCallback(observe);
     };
     callback = element.requestVideoFrameCallback(observe);
@@ -117,14 +128,13 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
     }
     const nextSegment = segmentAt(segments, nextFrame);
     if (!nextSegment) {
-      const failed = availability?.failed_ranges.some(r => r.start <= nextFrame && nextFrame <= r.end) ?? false;
-      const missingTerminal = Boolean(jobTerminal && !frames.some(f => f.source_frame === nextFrame));
-      if (failed || missingTerminal) {
-        onUnpresented?.();
+      onUnpresentedRef.current?.();
+      const hasStill = frames.some(f => f.source_frame === nextFrame);
+      if (!hasStill && (jobTerminal || frameFailed(availability, nextFrame))) {
         onPlaying(false);
-        onPlaybackStopped?.();
+        onPlaybackStoppedRef.current?.();
         setActiveFrame(nextFrame);
-        setMessage(failed ? `Frame ${nextFrame} failed to render. Playback stopped.` : `Frame ${nextFrame} is unavailable. Playback stopped.`);
+        setStoppedAtGap(nextFrame);
         return;
       }
     }
@@ -135,15 +145,31 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
 
   const isolated = !segment ? frames.find(f => f.source_frame === activeFrame) : undefined;
   useEffect(() => {
-    if (!segment && !isolated) onUnpresented?.();
-  }, [segment, isolated, onUnpresented]);
+    if (!segment && !isolated) onUnpresentedRef.current?.();
+  }, [segment, isolated]);
+  useEffect(() => {
+    if (visible && playing && !segment && (jobTerminal || frameFailed(availability, activeFrame))) {
+      onPlaying(false);
+      onPlaybackStoppedRef.current?.();
+      if (!isolated) onUnpresentedRef.current?.();
+      setStoppedAtGap(activeFrame);
+    }
+  }, [visible, playing, segment, isolated, activeFrame, availability, jobTerminal, onPlaying]);
+
+  // Job settlement may arrive before the refreshed failed ranges. Keep the
+  // stopped frame and update its diagnosis when the availability read settles.
+  const status = !segment && stoppedAtGap === activeFrame
+    ? isolated ? `Video segment unavailable at frame ${activeFrame}. Playback stopped on verified frame.`
+      : frameFailed(availability, activeFrame) ? `Frame ${activeFrame} failed to render. Playback stopped.`
+        : `Frame ${activeFrame} is unavailable. Playback stopped.`
+    : message;
   return <section className="review-player" aria-label="Progressive animation">
     {segment ? <video key={segment.segment_id} ref={video} src={mediaUrl(projectId, segment.artifact_id)} muted playsInline preload="auto" onLoadedMetadata={ready} onEnded={ended} onError={() => setMessage(`media_unavailable: ${segment.artifact_id}`)}/>
       : isolated ? <img src={mediaUrl(projectId, isolated.artifact_id)} alt={`Available frame ${activeFrame}`} onLoad={() => {const target = frameTarget(isolated, version); presented.current = target; onPresentedRef.current(target);}}/>
-      : !message && <p role="status">Frame {activeFrame} pending. No later interval substituted.</p>}
+      : !status && <p role="status">Frame {activeFrame} pending. No later interval substituted.</p>}
     {next && <video key={next.segment_id} ref={nextVideo} src={mediaUrl(projectId, next.artifact_id)} muted preload="auto" className="review-prebuffer" aria-hidden="true"/>}
-    {(availability || message) && <div className="review-player-status">
-      {message && <output aria-live="polite">{message}</output>}
+    {(availability || status) && <div className="review-player-status">
+      {status && <output aria-live="polite">{status}</output>}
       {availability && <div className="review-intervals" aria-label="Available, pending and failed intervals">{([['Available',availability.available_ranges],['Playable',availability.playable_ranges],['Pending',availability.pending_ranges],['Failed',availability.failed_ranges]] as const).map(([label,ranges])=><span key={label}>{label}: {ranges.map(r=>`${r.start}–${r.end}`).join(", ")||"none"}</span>)}</div>}
     </div>}
   </section>;

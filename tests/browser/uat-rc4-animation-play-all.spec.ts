@@ -32,15 +32,16 @@ function webmClip(input: string[]): Buffer {
   }
 }
 
-function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, {ready = true, failedTail = false, reportAvailability = true}: {
-  ready?: boolean; failedTail?: boolean; reportAvailability?: boolean;
+function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, {ready = true, tail, omitSecondReceipt = false, reportAvailability = true}: {
+  ready?: boolean; tail?: "pending" | "failed" | "retained"; omitSecondReceipt?: boolean; reportAvailability?: boolean;
 } = {}): JobRecord {
   const {id, start, shot, colour} = scenes[index];
   const proxy = index === 3;
   const purpose = proxy ? "proxy" : "draft_motion";
   const shotId = proxy ? null : shot;
   const playable = {start, end: start + (proxy ? 0 : 1)};
-  const frames = {start, end: playable.end + (failedTail ? 2 : 0)};
+  const frames = {start, end: playable.end + (tail ? 2 : 0)};
+  const receiptEnd = playable.end + (tail === "retained" ? 1 : 0) - (omitSecondReceipt ? 1 : 0);
   const identity = {schema_version: "1.0" as const, project_id: projectId, job_id: id, attempt_id: `attempt-${id}`,
     version_id: sceneVersion.version_id, shot_id: shotId, input_digest: sceneVersion.source.digest};
   const input = ["-v", "error", "-f", "lavfi", "-i", `color=${colour}:s=${dimensions.width}x${dimensions.height}:r=${fps.numerator}`];
@@ -57,7 +58,7 @@ function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, 
   }
   if (ready) {
     const png = execFileSync("ffmpeg", [...input, "-frames:v", "1", "-threads", "1", "-c:v", "png", "-f", "image2pipe", "pipe:1"]);
-    for (let source_frame = start; source_frame <= playable.end; source_frame++) {
+    for (let source_frame = start; source_frame <= receiptEnd; source_frame++) {
       const {artifact_id, sha256} = media(`${shot}-f${source_frame}`, png, "image", "image/png");
       receipts.push({...identity, source_frame, receipt_id: artifact_id, artifact_id, sha256, dimensions, output_path: `${artifact_id}.png`});
     }
@@ -68,9 +69,9 @@ function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, 
     }
   }
   const availability: FrameAvailability = {schema_version: "1.0", project_id: projectId, job_id: id,
-    version_id: sceneVersion.version_id, source_range: frames, fps, available_ranges: ready ? [playable] : [],
-    playable_ranges: segments.length ? [playable] : [], pending_ranges: ready ? [] : [frames],
-    failed_ranges: failedTail ? [{start: playable.end + 1, end: frames.end}] : [], state_revision: 1};
+    version_id: sceneVersion.version_id, source_range: frames, fps, available_ranges: ready ? [{start, end: receiptEnd}] : [],
+    playable_ranges: segments.length ? [playable] : [], pending_ranges: !ready ? [frames] : tail === "pending" ? [{start: playable.end + 1, end: frames.end}] : [],
+    failed_ranges: tail === "failed" || tail === "retained" ? [{start: receiptEnd + 1, end: frames.end}] : [], state_revision: 1};
   routes.push({path: `${base}/jobs/${id}/frames`, body: pageOf(receipts)}, {path: `${base}/jobs/${id}/segments`, body: pageOf(segments)},
     reportAvailability ? {path: `${base}/jobs/${id}/availability`, body: availability}
       : {path: `${base}/jobs/${id}/availability`, status: 503, body: {error: {code: "temporarily_unavailable"}}});
@@ -90,8 +91,8 @@ function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, 
       }});
     }});
   }
-  return {...job(id, failedTail ? "failed" : ready ? "succeeded" : "planned"), kind: "render", target: {target_id: shot, shot_id: shotId,
-    version: {item_id: sceneVersion.item_id, version_id: sceneVersion.version_id}}, availability: failedTail ? "partial" : ready ? "complete" : "pending",
+  return {...job(id, tail === "pending" ? "running" : tail ? "failed" : ready ? "succeeded" : "planned"), kind: "render", target: {target_id: shot, shot_id: shotId,
+    version: {item_id: sceneVersion.item_id, version_id: sceneVersion.version_id}}, availability: tail || omitSecondReceipt ? "partial" : ready ? "complete" : "pending",
     completed_frames: receipts.length, expected_frames: frames.end - start + 1, artifact_ids,
     render_spec: {intent_id: id, shot_id: shotId, scene_name: shot, purpose, source_closure_digest: sceneVersion.source.digest,
       camera: null, frames, fps, dimensions, engine: "Cycles", device: "CPU", samples: 32, renderer_revision: "synthetic",
@@ -192,7 +193,7 @@ test("indexed scene playback follows real presented frames and updates after a l
 for (const reportAvailability of [true, false]) {
   test(`Play all stops inside a partial pass ${reportAvailability ? "with failed ranges" : "before availability is reported"}`, async ({page, baseURL}) => {
     const {studio} = await openScene(page, baseURL!, (fixture, routes) => [
-      renderScene(fixture, routes, 1), renderScene(fixture, routes, 0, {failedTail: true, reportAvailability}),
+      renderScene(fixture, routes, 1), renderScene(fixture, routes, 0, {tail: "failed", reportAvailability}),
     ]);
     const review = page.locator("main.review-panel");
     const transport = review.getByLabel("Review transport", {exact: true});
@@ -212,6 +213,87 @@ for (const reportAvailability of [true, false]) {
     studio.assertHermetic();
   });
 }
+
+test("an unreceipted video frame invalidates annotation until a verified frame is presented", async ({page, baseURL}) => {
+  const {studio} = await openScene(page, baseURL!, (fixture, routes) => [renderScene(fixture, routes, 0, {omitSecondReceipt: true})]);
+  const review = page.locator("main.review-panel");
+  const transport = review.getByLabel("Review transport", {exact: true});
+  const annotate = review.getByRole("button", {name: "Annotate presented frame"});
+  await review.getByRole("button", {name: "Animation", exact: true}).click();
+  await expect(annotate).toBeEnabled();
+  await transport.getByRole("button", {name: "Play", exact: true}).click();
+  await expect(review.getByText("Presented frame 2 has no verified frame receipt", {exact: true})).toBeVisible();
+  await expect(annotate).toBeDisabled();
+  await expect(review.getByText("Playback complete", {exact: true})).toBeVisible();
+  await expect(annotate).toBeDisabled();
+  await transport.getByRole("button", {name: "Previous frame", exact: true}).click();
+  await expect(annotate).toBeEnabled();
+  studio.assertHermetic();
+});
+
+test("Play all stops when a buffering gap becomes terminal before failed ranges arrive", async ({page, baseURL}) => {
+  const {studio, routes} = await openScene(page, baseURL!, (fixture, mediaRoutes) => [
+    renderScene(fixture, mediaRoutes, 1), renderScene(fixture, mediaRoutes, 0, {tail: "pending"}),
+  ]);
+  const review = page.locator("main.review-panel");
+  const transport = review.getByLabel("Review transport", {exact: true});
+  const annotate = review.getByRole("button", {name: "Annotate presented frame"});
+  const pause = transport.getByRole("button", {name: "Pause", exact: true});
+  const pauseAll = transport.getByRole("button", {name: "Pause all", exact: true});
+  const pending = studio.snapshot.jobs.find(job => job.job_id === scenes[0].id)!;
+  const route = routes.find(route => route.path === `${base}/jobs/${pending.job_id}/availability`)!;
+  const availability = route.body as FrameAvailability;
+  const failed: JobRecord = {...pending, state: "failed", state_revision: pending.state_revision + 1};
+  const failedAvailability: FrameAvailability = {...availability, pending_ranges: [], failed_ranges: [{start: 3, end: 4}], state_revision: 2};
+  let releaseAvailability!: () => void;
+  const availabilityGate = new Promise<void>(resolve => {releaseAvailability = resolve;});
+
+  await review.getByRole("button", {name: "Animation", exact: true}).click();
+  await expect(annotate).toBeEnabled();
+  await transport.getByRole("button", {name: "Play all", exact: true}).click();
+  await expect(review.getByText("Buffering at frame 3", {exact: true})).toBeVisible();
+  await expect(pause).toBeVisible();
+  await expect(pauseAll).toBeVisible();
+  await expect(annotate).toBeDisabled();
+  try {
+    route.handler = async request => {
+      await availabilityGate;
+      await request.fulfill({json: failedAvailability});
+    };
+    studio.snapshot.jobs = studio.snapshot.jobs.map(job => job.job_id === failed.job_id ? failed : job);
+    studio.emit("job.state_changed", failed);
+    await expect(review.getByText("Frame 3 is unavailable. Playback stopped.", {exact: true})).toBeVisible();
+    await expect(pause).toHaveCount(0);
+    await expect(pauseAll).toHaveCount(0);
+  } finally {
+    releaseAvailability();
+  }
+  await expect(review.getByText("Frame 3 failed to render. Playback stopped.", {exact: true})).toBeVisible();
+  await expect(annotate).toBeDisabled();
+  await expect(transport.getByRole("combobox", {name: "Shot / render job"})).toHaveValue(scenes[0].id);
+  studio.assertHermetic();
+});
+
+test("Play all stops on a terminal still without a segment and keeps it annotatable", async ({page, baseURL}) => {
+  const {studio} = await openScene(page, baseURL!, (fixture, routes) => [
+    renderScene(fixture, routes, 1), renderScene(fixture, routes, 0, {tail: "retained"}),
+  ]);
+  const review = page.locator("main.review-panel");
+  const transport = review.getByLabel("Review transport", {exact: true});
+  const annotate = review.getByRole("button", {name: "Annotate presented frame"});
+  await review.getByRole("button", {name: "Animation", exact: true}).click();
+  await expect(annotate).toBeEnabled();
+  await transport.getByRole("button", {name: "Play all", exact: true}).click();
+  await expect(review.getByText("Video segment unavailable at frame 3. Playback stopped on verified frame.", {exact: true})).toBeVisible();
+  await expect(review.getByRole("img", {name: "Available frame 3"})).toBeVisible();
+  await expect(transport.getByRole("button", {name: "Pause", exact: true})).toHaveCount(0);
+  await expect(transport.getByRole("button", {name: "Pause all", exact: true})).toHaveCount(0);
+  await expect(transport.getByRole("spinbutton", {name: "Frame", exact: true})).toHaveValue("3");
+  await expect(annotate).toBeEnabled();
+  await expect.poll(() => page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.view.context.${id}`)!).target, projectId))
+    .toMatchObject({source_frame: 3, artifact_id: "sl-01-dormant-macro-f3", render_job_id: scenes[0].id, media_artifact_id: null});
+  studio.assertHermetic();
+});
 
 test("Pass 1 stays selected while its first frame is pending, then shows the new receipt", async ({page, baseURL}) => {
   const {studio, routes} = await openScene(page, baseURL!, (fixture, mediaRoutes) => [
