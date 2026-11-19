@@ -218,7 +218,15 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   }
   return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
     <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus snapshot={snapshot} requests={requests} events={events} jobs={jobs} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} />}</div>
-    {snapshot?.execution?.work_outputs.filter(output => output.status === "publication_blocked").map(output => <section className="publication-status" key={output.work_id} role="status"><strong>Finished · publication blocked</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p><OutputCards api={api} projectId={projectId} artifactIds={output.artifact_ids.filter(id => !renderedOutputIds.has(id) && !(summaryById.get(id) && isRenderPassStreamArtifact(summaryById.get(id)!)))} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></section>)}
+    {snapshot?.execution?.work_outputs.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => {
+      const unrenderedIds = output.artifact_ids.filter(id => {
+        const summary = summaryById.get(id);
+        return !renderedOutputIds.has(id) && (!summary || !isRenderPassStreamArtifact(summary));
+      });
+      const cards = <OutputCards api={api} projectId={projectId} artifactIds={unrenderedIds} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />;
+      if (output.status === "publication_blocked") return <section className="publication-status" key={output.work_id} role="status"><strong>Finished · publication blocked</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p>{cards}</section>;
+      return unrenderedIds.length > 0 ? <div className="retained-turn-outputs" key={output.work_id}>{cards}</div> : null;
+    })}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
     <Conversation api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
   </div></div>

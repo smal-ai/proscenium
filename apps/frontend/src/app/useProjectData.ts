@@ -295,9 +295,9 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         setJobs(old => mergeJobs(old, [job]));
         const draftMotion = job.kind === "render" && job.render_spec?.purpose === "draft_motion";
         const terminal = TERMINAL_JOB.has(job.state);
-        // Review reads frame receipts directly. Refresh retained artefacts at settlement even if all IDs were already streamed.
+        // Review reads frame receipts directly. Refresh at settlement even if the artefact IDs have not changed.
         const draftSettled = draftMotion && terminal && (!prevJob || !TERMINAL_JOB.has(prevJob.state));
-        if (job.artifact_ids.length > 0 && (!draftMotion || terminal) && (nextArtifacts !== prevArtifacts || draftSettled)) void loadRetainedArtifacts();
+        if (draftSettled || ((!draftMotion || terminal) && job.artifact_ids.length > 0 && nextArtifacts !== prevArtifacts)) void loadRetainedArtifacts();
       }
       if (event.event_type === "subagent.started" || event.event_type === "tool.completed" || event.event_type === "subagent.completed") {
         const activity = event.payload as unknown as ActivityEventData;

@@ -441,7 +441,7 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
 
 test("draft motion frames cause no retained artefact reads until settlement and overlapping refreshes coalesce", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
-  const draft: JobRecord = {
+  const draft = {
     ...job("draft-motion", "running"), kind: "render", completed_frames: 0, expected_frames: 5,
     render_spec: {
       intent_id: "draft-motion", shot_id: null, purpose: "draft_motion", source_closure_digest: "a".repeat(64),
@@ -449,7 +449,7 @@ test("draft motion frames cause no retained artefact reads until settlement and 
       dimensions: { width: 640, height: 360 }, engine: "Cycles", device: "CPU", samples: 32,
       colour_management: { view_transform: "AgX", look: "None", exposure: 0, gamma: 1 }, renderer_revision: "synthetic",
     },
-  };
+  } satisfies JobRecord;
   studio.snapshot.jobs = [draft];
   await studio.install({ savedLayout: true });
   const activeCrawl = deferred();
@@ -498,6 +498,16 @@ test("draft motion frames cause no retained artefact reads until settlement and 
   await expect.poll(() => [...cursors]).toEqual([null, "page-2", null, "page-2"]);
   await through(9);
   expect(cursors).toEqual([null, "page-2", null, "page-2"]);
+
+  const noFramesId = "cancelled-before-first-frame";
+  const noFrames = { ...draft, job_id: noFramesId, attempt_id: `attempt-${noFramesId}`, render_spec: { ...draft.render_spec, intent_id: noFramesId }, artifact_ids: [] };
+  studio.emit("job.state_changed", noFrames);
+  await through(10);
+  expect(cursors).toHaveLength(4);
+  studio.emit("job.state_changed", { ...noFrames, state: "cancelled", state_revision: 2 });
+  await expect.poll(() => cursors.slice(4)).toEqual([null, "page-2"]);
+  await through(11);
+  expect(cursors).toHaveLength(6);
   studio.assertHermetic();
 });
 

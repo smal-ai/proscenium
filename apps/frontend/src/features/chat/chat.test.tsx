@@ -438,19 +438,23 @@ test("Chat and standalone activity warn only when publication is blocked", () =>
   const current = snapshot();
   const artifact = { artifact_id: "image", project_id: "project", state: "ready", kind: "image", purpose: "concept", media_type: "image/png" } as Artifact;
   const retainedArtifacts = [{ artifact, attribution_status: "verified", invocation_id: "invocation", request_id: "request", work_id: "work" }] as RetainedArtifactSummary[];
+  const toolEvent = (output_status: ActivityEventData["output_status"]) => event(1, "tool.completed", { ...activity, state: "completed", artifact_ids: ["image"], output_status });
   const renderActivity = (output_status: ActivityEventData["output_status"]) => renderToStaticMarkup(
-    <ActivityEntry api={api} projectId="project" event={event(1, "tool.completed", { ...activity, state: "completed", artifact_ids: ["image"], output_status })} retainedArtifacts={retainedArtifacts} />,
+    <ActivityEntry api={api} projectId="project" event={toolEvent(output_status)} retainedArtifacts={retainedArtifacts} />,
   );
   const retained = { work_id: "work", request_id: "request", status: "retained_unpublished" as const, artifact_ids: ["image"], published_versions: [], reason_code: null, summary: null };
   current.execution!.work_outputs = [retained];
-  const retainedActivity = renderActivity("retained_unpublished");
-  for (const markup of [chatMarkup([], { snapshot: current, retainedArtifacts }), retainedActivity]) {
+  const snapshotOnly = chatMarkup([], { snapshot: current, retainedArtifacts });
+  const withToolEvent = chatMarkup([], { snapshot: current, events: [toolEvent("retained_unpublished")], retainedArtifacts });
+  for (const markup of [snapshotOnly, withToolEvent, renderActivity("retained_unpublished")]) {
     assert.doesNotMatch(markup, /Outputs retained · not published|class="publication-status"/);
+    assert.equal((markup.match(/class="retained-output-card"/g) ?? []).length, 1);
+    assert.match(markup, /<img[^>]+\/artifacts\/image\/content/);
   }
-  assert.match(retainedActivity, /class="retained-output-card"/);
-  assert.match(retainedActivity, /<img[^>]+\/artifacts\/image\/content/);
+  assert.match(snapshotOnly, /class="retained-turn-outputs"/);
+  assert.doesNotMatch(withToolEvent, /class="retained-turn-outputs"/);
 
-  current.execution!.work_outputs.push({ ...retained, work_id: "blocked", status: "publication_blocked", summary: "Storyboard document validation failed" });
+  current.execution!.work_outputs = [{ ...retained, status: "publication_blocked", summary: "Storyboard document validation failed" }];
   for (const markup of [chatMarkup([], { snapshot: current, retainedArtifacts }), renderActivity("publication_blocked")]) {
     assert.equal((markup.match(/class="publication-status" role="status"/g) ?? []).length, 1);
     assert.match(markup, /Finished · publication blocked/);
