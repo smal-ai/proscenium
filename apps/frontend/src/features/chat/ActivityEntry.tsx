@@ -10,7 +10,7 @@ export function ActivityEntry({ event, api, projectId, retainedArtifacts = [], o
     const summary = summaryById.get(id);
     return !summary || !isRenderPassStreamArtifact(summary);
   }), ...correlated.map(summary => summary.artifact.artifact_id)];
-  const outputs = <>{activity.output_status === "publication_blocked" && <p className="publication-status" role="status">Finished · publication blocked{activity.summary ? ` · ${activity.summary}` : ""}</p>}{activity.output_status === "retained_unpublished" && <p className="publication-status">Outputs retained · not published</p>}<OutputCards api={api} projectId={projectId} artifactIds={artifactIds ?? fallbackIds} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></>;
+  const outputs = <>{activity.output_status === "publication_blocked" && <p className="publication-status" role="status">Finished · publication blocked{activity.summary ? ` · ${activity.summary}` : ""}</p>}<OutputCards api={api} projectId={projectId} artifactIds={artifactIds ?? fallbackIds} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></>;
   const problem = activity.state === "failed" || activity.state === "outcome_uncertain";
   const diagnostics = <>
     <small>Model: {activity.model_id ?? "not reported"} · {event.actor.kind}: {event.actor.id}</small>

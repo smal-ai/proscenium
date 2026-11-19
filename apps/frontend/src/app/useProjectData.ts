@@ -5,6 +5,7 @@ import { routes } from "../api/generated/operations";
 import { describeError, writePrivate } from "./storage";
 
 const TERMINAL_WORK = new Set(["completed", "failed", "stopped"]);
+const TERMINAL_JOB = new Set<JobRecord["state"]>(["succeeded", "failed", "cancelled"]);
 
 export async function allPages<T>(load: (cursor?: string) => Promise<{ items: T[]; next_cursor: string | null }>): Promise<T[]> {
   const items: T[] = [];
@@ -156,6 +157,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     let hydrateEpoch = 0;
     let appliedHydrateEpoch = 0;
     let replaying: Promise<void> | null = null;
+    let retainedLoading = false;
+    let retainedQueued = false;
     const path = { project_id: projectId };
     const seenNative = new Set<string>();
     const journal = new Map<number, Event>();
@@ -173,11 +176,24 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       if (e instanceof ApiError && e.status === 401) onUnauthorised();
     };
     async function loadRetainedArtifacts(): Promise<void> {
+      if (disposed) return;
+      if (retainedLoading) {
+        retainedQueued = true;
+        return;
+      }
+      retainedLoading = true;
       try {
-        const summaries = await allPages(c => api.call("listRetainedArtifacts", { path, query: { cursor: c, limit: 100 } }));
-        if (!disposed) setRetainedArtifacts(summaries);
-      } catch (e) {
-        if (e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
+        do {
+          retainedQueued = false;
+          try {
+            const summaries = await allPages(c => api.call("listRetainedArtifacts", { path, query: { cursor: c, limit: 100 } }));
+            if (!disposed) setRetainedArtifacts(summaries);
+          } catch (e) {
+            if (e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
+          }
+        } while (retainedQueued && !disposed);
+      } finally {
+        retainedLoading = false;
       }
     }
     async function hydrate() {
@@ -277,7 +293,11 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
           || job.error_code !== prevJob.error_code;
         recordJobs([job]);
         setJobs(old => mergeJobs(old, [job]));
-        if (job.artifact_ids.length > 0 && nextArtifacts !== prevArtifacts) void loadRetainedArtifacts();
+        const draftMotion = job.kind === "render" && job.render_spec?.purpose === "draft_motion";
+        const terminal = TERMINAL_JOB.has(job.state);
+        // Review reads frame receipts directly. Refresh retained artefacts at settlement even if all IDs were already streamed.
+        const draftSettled = draftMotion && terminal && (!prevJob || !TERMINAL_JOB.has(prevJob.state));
+        if (job.artifact_ids.length > 0 && (!draftMotion || terminal) && (nextArtifacts !== prevArtifacts || draftSettled)) void loadRetainedArtifacts();
       }
       if (event.event_type === "subagent.started" || event.event_type === "tool.completed" || event.event_type === "subagent.completed") {
         const activity = event.payload as unknown as ActivityEventData;

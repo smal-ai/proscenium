@@ -12,6 +12,7 @@ import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory"
 import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation } from "./Conversation";
+import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
 import { awaitResume, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
@@ -431,6 +432,30 @@ test("Conversation renders retained media once across duplicate tool and special
   const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={events} retainedArtifacts={retainedArtifacts} onRefresh={async () => {}} onError={() => {}} />);
   assert.equal((markup.match(/<img/g) ?? []).length, 1);
   assert.match(markup, /Finished · publication blocked/); assert.match(markup, /Storyboard document validation failed/);
+});
+
+test("Chat and standalone activity warn only when publication is blocked", () => {
+  const current = snapshot();
+  const artifact = { artifact_id: "image", project_id: "project", state: "ready", kind: "image", purpose: "concept", media_type: "image/png" } as Artifact;
+  const retainedArtifacts = [{ artifact, attribution_status: "verified", invocation_id: "invocation", request_id: "request", work_id: "work" }] as RetainedArtifactSummary[];
+  const renderActivity = (output_status: ActivityEventData["output_status"]) => renderToStaticMarkup(
+    <ActivityEntry api={api} projectId="project" event={event(1, "tool.completed", { ...activity, state: "completed", artifact_ids: ["image"], output_status })} retainedArtifacts={retainedArtifacts} />,
+  );
+  const retained = { work_id: "work", request_id: "request", status: "retained_unpublished" as const, artifact_ids: ["image"], published_versions: [], reason_code: null, summary: null };
+  current.execution!.work_outputs = [retained];
+  const retainedActivity = renderActivity("retained_unpublished");
+  for (const markup of [chatMarkup([], { snapshot: current, retainedArtifacts }), retainedActivity]) {
+    assert.doesNotMatch(markup, /Outputs retained · not published|class="publication-status"/);
+  }
+  assert.match(retainedActivity, /class="retained-output-card"/);
+  assert.match(retainedActivity, /<img[^>]+\/artifacts\/image\/content/);
+
+  current.execution!.work_outputs.push({ ...retained, work_id: "blocked", status: "publication_blocked", summary: "Storyboard document validation failed" });
+  for (const markup of [chatMarkup([], { snapshot: current, retainedArtifacts }), renderActivity("publication_blocked")]) {
+    assert.equal((markup.match(/class="publication-status" role="status"/g) ?? []).length, 1);
+    assert.match(markup, /Finished · publication blocked/);
+    assert.doesNotMatch(markup, /Outputs retained · not published/);
+  }
 });
 
 test("retained images use authenticated routes, deduplicate and never preview SVG or HTML", () => {
