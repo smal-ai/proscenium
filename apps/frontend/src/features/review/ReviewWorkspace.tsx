@@ -2,6 +2,7 @@ import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, us
 import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, Info, MapPin, Pause, PenLine, Play, X } from "lucide-react";
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, Markup, PreviewSegment, ProxyMapping, SpatialHit, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
+import { versionRequestTarget } from "../chat/target";
 import { AnnotationEditor } from "./AnnotationEditor";
 import { AnnotationsDrawer, draftFromSnapshot, mergeHydratedDrafts, mergeItemAnnotations, resolveAnnotationEntry, type AnnotationEntry } from "./AnnotationsDrawer";
 import { frameTarget, mediaUrl, sequenceTarget, stableJson, typingTarget } from "./media";
@@ -240,6 +241,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     enabled: Boolean(draft && isSpatialDraft && !editing2D),
     api,
     draft,
+    versionKind: version?.kind,
     proxyUnavailableReason,
     onChange: changeDraft,
     onQueue,
@@ -442,8 +444,12 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }, [draftId, frameMap, version?.kind,jobs]);
 
   const hasServerTarget = !draft?.targetBlob || Boolean(draft.targetUploaded);
-  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft ? {...annotationContext(draft.annotation), annotations: draft.state === "saved" ? [draft.annotation] : [],
-    attachments: draft.state === "saved" ? annotationContext(draft.annotation).attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
+  const draftContext = draft ? annotationContext(draft.annotation, version?.kind) : null;
+  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
+    // A local capture has no stable artefact ID until the outbox uploads it.
+    target: hasServerTarget ? draftContext.target : null,
+    attachments: draft.state === "saved" ? draftContext.attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
+    request_target: version ? versionRequestTarget(version, version.kind, mode === "3d_inspection" ? null : target?.shot_id) : undefined,
     view_mode: mode, target: mode === "3d_inspection" || !readyToCapture ? null : target,
     camera: mode === "3d_inspection" ? camera : targetCamera, selected_objects: selected,
     range: mode === "3d_inspection" && mapping ? {start: mapping.sample_frame, end: mapping.sample_frame} : range,
@@ -785,7 +791,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         // before any await. The upload is not a request to render/generate.
         const frozen = capture({targetDimensions: resolveRenderTargetDimensions(renderPreset)});
         const uploadId = crypto.randomUUID();
-        const selection = structuredClone({...context, request_target: {kind: "item" as const, version: {item_id: version.item_id, version_id: version.version_id}}, target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
+        const selection = structuredClone({...context, request_target: versionRequestTarget(version, version.kind), target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
         const sampleFrame = mapping.sample_frame;
         const shotId = versionJobs.find(job => job.artifact_ids.includes(mapping.proxy_artifact_id))?.target.shot_id ?? null;
         const png = await frozen.png;
@@ -796,7 +802,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       await writeProxyCapture(pending.key, pending, pending.uploadId);
       const artifact = await api.call("uploadImage", {path: {project_id: projectId, upload_id: pending.uploadId}, body: pending.png, idempotencyKey: pending.uploadId});
       if (artifact.project_id !== projectId || artifact.state !== "ready" || artifact.kind !== "image" || artifact.media_type !== "image/png" || artifact.sha256 !== pending.sha256 || artifact.bytes !== pending.png.size || artifact.dimensions?.width !== pending.dimensions.width || artifact.dimensions.height !== pending.dimensions.height) throw new Error("Capture upload acknowledgement does not match the frozen PNG hash/dimensions");
-      const selection: TurnSelection = {...pending.selection, request_target: {kind: "item", version: {item_id: pending.selection.item_id!, version_id: pending.selection.version_id!}}, target: {origin: "proxy_capture", artifact_id: artifact.artifact_id, displayed_sha256: pending.sha256, dimensions: pending.dimensions, item_id: pending.selection.item_id, version_id: pending.selection.version_id, source_frame: pending.sampleFrame, shot_id: pending.shotId, render_job_id: null, media_artifact_id: null}, attachments: [{artifact_id: artifact.artifact_id, role: "reference"}]};
+      const selection: TurnSelection = {...pending.selection, request_target: versionRequestTarget(version, version.kind), target: {origin: "proxy_capture", artifact_id: artifact.artifact_id, displayed_sha256: pending.sha256, dimensions: pending.dimensions, item_id: pending.selection.item_id, version_id: pending.selection.version_id, source_frame: pending.sampleFrame, shot_id: pending.shotId, render_job_id: null, media_artifact_id: null}, attachments: [{artifact_id: artifact.artifact_id, role: "reference"}]};
       pending = {...pending, selection, phase: "handoff"};
       await writeProxyCapture(pending.key, pending, pending.uploadId);
       pendingCaptureRef.current = pending; setPendingCapture(pending);
@@ -855,7 +861,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         const targetVersion = (await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: next.annotation.target.item_id!}, query: {cursor, limit: 100}}))).find(v => v.version_id === next.annotation.target.version_id);
         if (!targetVersion) throw new Error(`Version unavailable: ${next.annotation.target.version_id}`);
         await saveDraft(next);
-        onNavigate(targetVersion, annotationContext(next.annotation));
+        onNavigate(targetVersion, annotationContext(next.annotation, targetVersion.kind));
         return;
       } catch (e) {setError(String(e)); return;}
     }
@@ -864,7 +870,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     setDraftId(next.key);
     try {await saveDraft(next);} catch (e) {setError(String(e)); return;}
     if (onNavigate && version && next.annotation.target.version_id === version.version_id) {
-      onNavigate(version, annotationContext(next.annotation));
+      onNavigate(version, annotationContext(next.annotation, version.kind));
     }
   }
 
@@ -988,6 +994,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         key={draft.key}
         api={api}
         draft={draft}
+        versionKind={version?.kind}
         onChange={changeDraft}
         onQueue={onQueue}
         onContextPreparer={registerEditorPreparer}

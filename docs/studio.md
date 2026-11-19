@@ -55,7 +55,7 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
 
 The **Target** picker above the message input separates what you are viewing from what you want Copilot to change. You can keep editing and send with the picker open. Close it with **Done**, `Escape` or the Target bar to return to your draft.
 
-- **Current view:** Captures the inspected Review item or storyboard shot at submission time (or **Project** when nothing is selected). Subsequent browsing never mutates an admitted request.
+- **Current view:** Pins the inspected asset, scene, storyboard version or storyboard shot at submission time. An inspected sequence or Unity result is attached as a viewed version (`request_target: null`), not as an item or shot target. With nothing selected, the target is **Project**. Subsequent browsing never changes an admitted request.
 - **Project:** General project discussion, research or cross-item planning.
 - **Existing…:** Choose a published asset, scene or storyboard and pin an exact version, including older versions. Sending is disabled until you choose an item or switch target mode, even if you close the picker. For a storyboard, choose the entire version or a specific shot. Later publications do not move the pin.
 - **New…:** Choose **Asset**, **Scene** or **Storyboard** and optionally name it. This records creation intent without inventing a published version ID.

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Box, Eraser, Layers, MapPin, MoveUpRight, Pencil, Square } from "lucide-react";
-import type { AnnotationSnapshot, Markup } from "../../api/generated/contracts";
+import type { AnnotationSnapshot, Markup, VersionRecord } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
 import { contentRect, imagePoint, mediaUrl, stableJson } from "./media";
@@ -16,8 +16,8 @@ type Tool = Markup["kind"] | "eraser";
 const tools: Tool[] = ["stroke", "arrow", "region", "pin", "eraser", "mask"];
 const toolIcons = {stroke: Pencil, arrow: MoveUpRight, region: Square, pin: MapPin, eraser: Eraser, mask: Layers};
 
-export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDiscard, onReturnTo3D, onContextPreparer, resolveDiscardBaseline}: {
-  api: ApiClient; draft: Draft; onChange: (draft: Draft) => void;
+export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, onClose, onDiscard, onReturnTo3D, onContextPreparer, resolveDiscardBaseline}: {
+  api: ApiClient; draft: Draft; versionKind?: VersionRecord["kind"]; onChange: (draft: Draft) => void;
   onQueue: (text: string, context: TurnSelection) => void | Promise<void>; onClose: () => void;
   onDiscard?: DiscardHandler;
   onReturnTo3D?: () => void;
@@ -150,8 +150,9 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDisc
     } finally {saveLatch.current = false; if (mounted.current) setSaving(false);}
   }
 
-  const prepareRef = useRef<ContextPreparer>(async () => structuredClone(annotationContext((await prepareSavedDraft()).annotation)));
-  prepareRef.current = async () => structuredClone(annotationContext((await prepareSavedDraft()).annotation));
+  const prepare = async () => structuredClone(annotationContext((await prepareSavedDraft()).annotation, versionKind));
+  const prepareRef = useRef<ContextPreparer>(prepare);
+  prepareRef.current = prepare;
   useLayoutEffect(() => {
     mounted.current = true;
     onContextPreparer?.(() => prepareRef.current());
@@ -166,7 +167,7 @@ export function AnnotationEditor({api, draft, onChange, onQueue, onClose, onDisc
     const snapshot = structuredClone(live.current.annotation);
     queueLatch.current = true; setQueueState("submitting");
     queueInFlight.current = true;
-    try {await onQueue(snapshot.text || "Apply this annotated feedback.", annotationContext(snapshot)); setQueueState("submitted");}
+    try {await onQueue(snapshot.text || "Apply this annotated feedback.", annotationContext(snapshot, versionKind)); setQueueState("submitted");}
     catch (e) {setError(String(e)); queueLatch.current = false; setQueueState("idle");}
     finally {queueInFlight.current = false;}
   }
