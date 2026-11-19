@@ -326,13 +326,8 @@ def publish_proxy(service, job: dict, root: Path) -> list[str]:
                 (previous or {}).get("artifact_ids", []) + [a["artifact_id"] for a in artifacts]
             )
         )
-        if not previous or previous["artifact_ids"] != links:
-            tx.put(
-                "version_links",
-                version_id,
-                {"artifact_ids": links},
-                expected_revision=tx.revision("version_links", version_id) if previous else None,
-            )
+        if not previous or previous.get("artifact_ids") != links:
+            service.update_version_links(tx, version_id, artifact_ids=links)
     return [a["artifact_id"] for a in artifacts]
 
 
@@ -417,13 +412,8 @@ def publish_assembly(service, job: dict, root: Path) -> list[str]:
                 (previous or {}).get("artifact_ids", []) + [a["artifact_id"] for a in artifacts]
             )
         )
-        if not previous or previous["artifact_ids"] != links:
-            tx.put(
-                "version_links",
-                version_id,
-                {"artifact_ids": links},
-                expected_revision=tx.revision("version_links", version_id) if previous else None,
-            )
+        if not previous or previous.get("artifact_ids") != links:
+            service.update_version_links(tx, version_id, artifact_ids=links)
     return [a["artifact_id"] for a in artifacts]
 
 

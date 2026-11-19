@@ -6,7 +6,7 @@ import { describeError, writePrivate } from "./storage";
 
 const TERMINAL_WORK = new Set(["completed", "failed", "stopped"]);
 const TERMINAL_JOB = new Set<JobRecord["state"]>(["succeeded", "failed", "cancelled"]);
-const REFRESH_EVENTS = new Set<string>(["publication.created", "preview.order_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
+const REFRESH_EVENTS = new Set<Event["event_type"]>(["publication.created", "preview.order_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
 
 export async function allPages<T>(load: (cursor?: string) => Promise<{ items: T[]; next_cursor: string | null }>): Promise<T[]> {
   const items: T[] = [];

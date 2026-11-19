@@ -1,5 +1,6 @@
 """Preview ordering regressions using disposable records and no renderer or provider."""
 
+import struct
 import subprocess
 from dataclasses import replace
 from threading import RLock
@@ -10,11 +11,12 @@ from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from proscenium.api.errors import DomainError
 from proscenium.auth import Auth
-from proscenium.contracts import validate
+from proscenium.contracts import canonical, validate
 from proscenium.copilot.outcomes import get_tool_outcome
 from proscenium.db import Store
-from proscenium.previews import install, router
+from proscenium.previews import install, media, router, runner
 from proscenium.previews.config import REVISION
+from proscenium.previews.journal import atomic, sha
 from proscenium.sources.common import fingerprint
 from test_rc4_retry_and_context import (
     DIMENSIONS,
@@ -26,6 +28,7 @@ from test_rc4_retry_and_context import (
     invocation,
     publish,
     run_tool,
+    seed_frames,
 )
 from test_request_targeting import context, request_record
 from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK
@@ -151,13 +154,14 @@ def order_invocation(studio, *ids, **kwargs):
     return invocation(studio, "set_preview_order", order_body(*ids), work=WORK, **kwargs)
 
 
-def request_preview(studio, shot, *, operation=None):
+def request_preview(studio, shot, *, operation=None, ref=SCENE):
+    version = studio.services.extension("catalogue").version(PROJECT, ref["version_id"])
     body = dict(
         schema_version="1.0",
         operation_id=operation or f"request-{shot}",
         project_id=PROJECT,
-        version=SCENE,
-        spec=spec(studio.version, f"intent-{shot}", shot, 1, 24),
+        version=ref,
+        spec=spec(version, f"intent-{shot}", shot, 1, 24),
     )
     call = invocation(studio, "request_preview", body, work=WORK)
     return studio.previews.request(studio.tools.caller(call), body)
@@ -218,6 +222,144 @@ def test_admission_order_preserves_inline_and_artefact_links(studio):
         "preview-historical",
     ]
     assert current["artifact_ids"] == ["proxy-map"]
+
+
+def proxy_completion(studio):
+    job = historical_job(studio, "proxy-preview", None, 1, 1, purpose="proxy")
+    root = studio.previews.root(job)
+    proxy_id = "proxy-result"
+    closure = studio.version["source"]
+    atomic(root / "task.json", {"closure": closure, "proxy_artifact_id": proxy_id})
+    gltf = b'{"asset":{"version":"2.0"},"scenes":[{}],"scene":0}'
+    gltf += b" " * (-len(gltf) % 4)
+    glb = struct.pack("<4sIII4s", b"glTF", 2, 20 + len(gltf), len(gltf), b"JSON") + gltf
+    mapping = canonical(
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            version_id=SCENE["version_id"],
+            proxy_artifact_id=proxy_id,
+            source_closure_digest=closure["digest"],
+            sample_frame=1,
+            space="proxy_world_m",
+            nodes=[],
+        )
+    )
+    (root / "proxy.glb").write_bytes(glb)
+    (root / "proxy-map.json").write_bytes(mapping)
+    atomic(root / "proxy-ready.json", {"proxy_sha256": sha(glb), "mapping_sha256": sha(mapping)})
+    return job, root, [proxy_id, proxy_id + "-map"]
+
+
+def assembly_completion(studio, monkeypatch):
+    source = historical_job(studio, "assembly-source", "shot-source", 1, 1)
+    seed_frames(studio, source, 1, 1)
+    identity = "encode-preview"
+    frame_map = dict(
+        schema_version="1.0",
+        project_id=PROJECT,
+        sequence_version_id=DRAFT["version_id"],
+        fps=FPS,
+        frame_count=1,
+        blend_space="linear_rgb",
+        frames=[
+            dict(
+                sequence_frame=1,
+                contributors=[
+                    dict(
+                        version_id=SCENE["version_id"],
+                        job_id=source["job_id"],
+                        shot_id="shot-source",
+                        source_frame=1,
+                        weight={"numerator": 1, "denominator": 1},
+                    )
+                ],
+            )
+        ],
+    )
+    snapshot = dict(
+        frame_map=frame_map,
+        input_frames=[{"artifact_id": "assembly-source-f1", "dimensions": DIMENSIONS}],
+    )
+    digest = fingerprint(snapshot)
+    with studio.store.transaction() as tx:
+        job = studio.services.jobs.create(
+            tx,
+            job_id=identity,
+            kind="encode",
+            target={"target_id": DRAFT["item_id"], "version": DRAFT, "shot_id": None},
+            input_digest=digest,
+            operation_id="seed-encode",
+            work_id=WORK,
+        )
+    root = studio.previews.root(job)
+    atomic(root / "task.json", {"assembly": snapshot, "config": {}})
+    mapping, video = canonical(frame_map), b"fixture video bytes"
+    (root / "frame-map.json").write_bytes(mapping)
+    (root / "delivery.mp4").write_bytes(video)
+    atomic(
+        root / "assembly-manifest.json",
+        dict(
+            input_digest=digest,
+            video_sha256=sha(video),
+            frame_map_sha256=sha(mapping),
+        ),
+    )
+
+    def verify_fixture_video(path, fps, frame_count, dimensions, config):
+        # FFprobe is the only substituted adapter. The publisher still verifies the
+        # committed hashes, validates artefact records and writes the actual links.
+        assert path.read_bytes() == video
+        assert (fps, frame_count, dimensions) == (FPS, 1, DIMENSIONS)
+
+    monkeypatch.setattr(media, "verify_video", verify_fixture_video)
+    return job, root, [f"{identity}-{suffix}" for suffix in ("delivery", "frame-map", "manifest")]
+
+
+@pytest.mark.parametrize("completion", ["proxy", "assembly"])
+def test_preview_order_survives_artefact_publication(studio, monkeypatch, completion):
+    ref = SCENE if completion == "proxy" else DRAFT
+    if completion == "assembly":
+        publish(studio, DRAFT, "sequence")
+    version_id = ref["version_id"]
+    request_context(studio, request_target={"kind": "item", "version": ref})
+    with studio.store.transaction() as tx:
+        tx.put("version_links", version_id, {"artifact_ids": ["existing-artefact"]})
+    job_b, _ = request_preview(studio, "shot-b", ref=ref)
+    job_a, _ = request_preview(studio, "shot-a", ref=ref)
+    call = invocation(
+        studio,
+        "set_preview_order",
+        {**order_body(job_a["job_id"]), "version": ref},
+        work=WORK,
+    )
+    assert run_tool(studio, call)[0] == "success"
+    with studio.store.transaction(write=False) as tx:
+        before = tx.require("version_links", version_id)
+    assert before["added_preview_job_ids"] == [job_b["job_id"], job_a["job_id"]]
+    assert before["ordered_preview_job_ids"] == [job_a["job_id"], job_b["job_id"]]
+
+    if completion == "proxy":
+        job, root, ids = proxy_completion(studio)
+        publish_media = runner.publish_proxy
+    else:
+        job, root, ids = assembly_completion(studio, monkeypatch)
+        publish_media = runner.publish_assembly
+    assert publish_media(studio.previews, job, root) == ids
+    with studio.store.transaction(write=False) as tx:
+        assert tx.require("version_links", version_id) == {
+            **before,
+            "artifact_ids": ["existing-artefact", *ids],
+        }
+        assert all(tx.require("artifacts", identity)["state"] == "ready" for identity in ids)
+        revision = tx.revision("version_links", version_id)
+    view = studio.services.extension("catalogue").version(PROJECT, version_id)
+    assert view["artifact_ids"] == ["existing-artefact", *ids]
+    trailing = [job["job_id"]] if completion == "proxy" else []
+    assert view["preview_job_ids"] == [*before["ordered_preview_job_ids"], *trailing]
+    assert publish_media(studio.previews, job, root) == ids
+    with studio.store.transaction(write=False) as tx:
+        assert tx.revision("version_links", version_id) == revision
 
 
 def test_http_order_preserves_omitted_jobs_and_replays_after_new_admission(historical):
