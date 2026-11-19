@@ -5,11 +5,13 @@ import { frameCentre, frameTarget, mediaUrl, presentedFrame, segmentAt } from ".
 /** Two independently decoded elements, at most current + immediate next interval.
  * Identity is admitted from rVFC mediaTime, never video.currentTime or a requested seek.
  */
-export function ProgressivePlayer({visible = true, projectId, version, frames, segments, availability, requestedFrame, playing, onPlaying, onPresented}: {
+export function ProgressivePlayer({visible = true, projectId, version, frames, segments, availability, requestedFrame, seekNonce, nextPassSegment, playing, onPlaying, onPresented, onEndedPass, completionMessage = "Playback complete"}: {
   visible?: boolean;
   projectId: string; version: VersionRecord; frames: FrameReceipt[]; segments: PreviewSegment[];
   availability: FrameAvailability | null; requestedFrame: number; playing: boolean;
+  seekNonce?: number; nextPassSegment?: PreviewSegment;
   onPlaying: (playing: boolean) => void; onPresented: (target: FrameTarget) => void;
+  onEndedPass?: () => boolean; completionMessage?: string;
 }) {
   const [activeFrame, setActiveFrame] = useState(requestedFrame);
   const [message, setMessage] = useState("");
@@ -20,22 +22,31 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
   const confirmedSegment = useRef("");
   const awaitingFirstPresentation = useRef(true);
   const onPresentedRef = useRef(onPresented); onPresentedRef.current = onPresented;
-  const previousRequest = useRef(requestedFrame);
+  const previousRequest = useRef({frame: requestedFrame, nonce: seekNonce});
   const segment = segmentAt(segments, activeFrame);
-  const next = segment ? segmentAt(segments, segment.source_frames.end + 1) : undefined;
+  const next = segment ? segmentAt(segments, segment.source_frames.end + 1) ?? nextPassSegment : undefined;
   useLayoutEffect(() => {
     if (!visible) { video.current?.pause(); nextVideo.current?.pause(); confirmedSegment.current = ""; awaitingFirstPresentation.current = true; }
   }, [visible]);
 
   useEffect(() => {
-    if (previousRequest.current !== requestedFrame) {
-      previousRequest.current = requestedFrame; setActiveFrame(requestedFrame);
+    if (previousRequest.current.frame !== requestedFrame || previousRequest.current.nonce !== seekNonce) {
+      previousRequest.current = {frame: requestedFrame, nonce: seekNonce};
+      setActiveFrame(requestedFrame); setMessage("");
       const current = video.current; const selected = segmentAt(segments, requestedFrame);
       if (current && selected && selected.segment_id === segment?.segment_id) {
-        current.pause(); current.currentTime = frameCentre(requestedFrame, selected);
+        const centre = frameCentre(requestedFrame, selected);
+        if (!current.seeking && Math.abs(current.currentTime - centre) < 1e-6 && confirmedSegment.current === selected.segment_id && presented.current?.source_frame === requestedFrame) {
+          // A no-op seek need not produce another video frame callback.
+          onPresentedRef.current(presented.current);
+        } else {
+          confirmedSegment.current = "";
+          awaitingFirstPresentation.current = true;
+          current.pause(); current.currentTime = centre;
+        }
       }
     }
-  }, [requestedFrame, segment, segments]);
+  }, [requestedFrame, seekNonce, segment, segments]);
 
   useEffect(() => {
     const element = video.current;
@@ -72,7 +83,7 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
     if (!element) return;
     if (visible && playing && segment && element.readyState >= 2 && confirmedSegment.current === segment.segment_id && !awaitingFirstPresentation.current) void element.play().catch(e => setMessage(String(e)));
     else element.pause();
-  }, [playing, segment, visible]);
+  }, [playing, segment, seekNonce, requestedFrame, visible]);
 
   function ready() {
     const element = video.current;
@@ -86,7 +97,10 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
   function ended() {
     if (!segment || !wantsPlay.current) return;
     const nextFrame = segment.source_frames.end + 1;
-    if (availability && nextFrame > availability.source_range.end) {onPlaying(false);setMessage("Playback complete");return;}
+    if (availability ? nextFrame > availability.source_range.end : !segments.some(clip => clip.source_frames.end >= nextFrame)) {
+      if (!onEndedPass?.()) {onPlaying(false);setMessage(completionMessage);}
+      return;
+    }
     // Do not skip holes, even when a later segment is already available.
     setActiveFrame(nextFrame);
     if (!segmentAt(segments, nextFrame)) setMessage(`Buffering at frame ${nextFrame}`);

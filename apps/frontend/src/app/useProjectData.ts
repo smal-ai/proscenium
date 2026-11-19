@@ -6,6 +6,7 @@ import { describeError, writePrivate } from "./storage";
 
 const TERMINAL_WORK = new Set(["completed", "failed", "stopped"]);
 const TERMINAL_JOB = new Set<JobRecord["state"]>(["succeeded", "failed", "cancelled"]);
+const REFRESH_EVENTS = new Set<string>(["publication.created", "preview.order_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
 
 export async function allPages<T>(load: (cursor?: string) => Promise<{ items: T[]; next_cursor: string | null }>): Promise<T[]> {
   const items: T[] = [];
@@ -316,7 +317,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         const ticket = event.payload as unknown as ReviewTicket;
         setReviews(prev => mergeReviews(prev, [ticket]));
       }
-      if (["publication.created", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"].includes(event.event_type) || (event.event_type === "job.state_changed" && jobMaterialChange)) setRevision(n => n + 1);
+      if (REFRESH_EVENTS.has(event.event_type) || (event.event_type === "job.state_changed" && jobMaterialChange)) setRevision(n => n + 1);
     }
     async function replay() {
       if (replaying) return replaying;
