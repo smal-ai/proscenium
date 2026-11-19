@@ -519,6 +519,23 @@ def test_new_item_work_can_reorder_its_own_publication_using_steer_context(histo
     assert order_events(studio)[0]["request_id"] == ORIGIN
 
 
+def test_steer_item_pin_overrides_same_work_publication(historical):
+    studio = historical
+    publish(studio, OTHER, "scene")
+    request_context(studio, request_target=NEW_ITEM)
+    request_context(
+        studio, request_id="steer-one", request_target={"kind": "item", "version": OTHER}
+    )
+    with studio.store.transaction() as tx:
+        tx.put("publications", studio.version["publication_id"], {"work_id": WORK})
+    call = order_invocation(studio, PASS_IDS[4], context_request="steer-one")
+    with pytest.raises(DomainError) as denied:
+        studio.previews.set_order(studio.tools.caller(call), call.arguments)
+    assert (denied.value.status, denied.value.code) == (403, "scope_denied")
+    assert get_version(studio)["preview_job_ids"] == PASS_IDS
+    assert not order_events(studio)
+
+
 @pytest.mark.parametrize("semantic_validity", [True, False])
 def test_legacy_sequence_scope_requires_a_valid_contributor(historical, semantic_validity):
     studio = historical

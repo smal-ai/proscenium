@@ -5,12 +5,14 @@ import { frameCentre, frameTarget, mediaUrl, presentedFrame, segmentAt } from ".
 /** Two independently decoded elements, at most current + immediate next interval.
  * Identity is admitted from rVFC mediaTime, never video.currentTime or a requested seek.
  */
-export function ProgressivePlayer({visible = true, projectId, version, frames, segments, availability, requestedFrame, seekNonce, nextPassSegment, playing, onPlaying, onPresented, onEndedPass, completionMessage = "Playback complete"}: {
+export function ProgressivePlayer({visible = true, projectId, version, frames, segments, availability, expectedEndFrame, jobTerminal, requestedFrame, seekNonce, nextPassSegment, playing, onPlaying, onPresented, onUnpresented, onPlaybackStopped, onEndedPass, completionMessage = "Playback complete"}: {
   visible?: boolean;
   projectId: string; version: VersionRecord; frames: FrameReceipt[]; segments: PreviewSegment[];
   availability: FrameAvailability | null; requestedFrame: number; playing: boolean;
   seekNonce?: number; nextPassSegment?: PreviewSegment;
+  expectedEndFrame?: number; jobTerminal?: boolean;
   onPlaying: (playing: boolean) => void; onPresented: (target: FrameTarget) => void;
+  onUnpresented?: () => void; onPlaybackStopped?: () => void;
   onEndedPass?: () => boolean; completionMessage?: string;
 }) {
   const [activeFrame, setActiveFrame] = useState(requestedFrame);
@@ -21,6 +23,7 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
   const presented = useRef<FrameTarget | null>(null);
   const confirmedSegment = useRef("");
   const awaitingFirstPresentation = useRef(true);
+  const frameAtSeek = useRef(activeFrame);
   const onPresentedRef = useRef(onPresented); onPresentedRef.current = onPresented;
   const previousRequest = useRef({frame: requestedFrame, nonce: seekNonce});
   const segment = segmentAt(segments, activeFrame);
@@ -36,26 +39,37 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
       const current = video.current; const selected = segmentAt(segments, requestedFrame);
       if (current && selected && selected.segment_id === segment?.segment_id) {
         const centre = frameCentre(requestedFrame, selected);
-        if (!current.seeking && Math.abs(current.currentTime - centre) < 1e-6 && confirmedSegment.current === selected.segment_id && presented.current?.source_frame === requestedFrame) {
-          // A no-op seek need not produce another video frame callback.
+        if (!current.ended && confirmedSegment.current === selected.segment_id && presented.current?.render_job_id === selected.job_id && presented.current.source_frame === requestedFrame) {
+          // A confirmed frame is already displayed, even if the media time was quantised.
           onPresentedRef.current(presented.current);
-        } else {
+        } else if (current.ended || !awaitingFirstPresentation.current || activeFrame !== requestedFrame || Math.abs(current.currentTime - centre) >= 1e-3) {
+          // Do not restart an in-flight initial presentation for the same frame.
           confirmedSegment.current = "";
           awaitingFirstPresentation.current = true;
+          frameAtSeek.current = requestedFrame;
           current.pause(); current.currentTime = centre;
         }
       }
     }
-  }, [requestedFrame, seekNonce, segment, segments]);
+  }, [requestedFrame, seekNonce, segment, segments, activeFrame]);
 
   useEffect(() => {
     const element = video.current;
     if (!visible || !element || !segment) return;
     if (!element.requestVideoFrameCallback) { setMessage("Frame provenance unavailable in this browser. Use receipted keyframes for annotation."); return; }
+    if (confirmedSegment.current !== segment.segment_id) {
+      awaitingFirstPresentation.current = true;
+      frameAtSeek.current = activeFrame;
+    }
     let callback = 0; let disposed = false;
     const observe: VideoFrameRequestCallback = (_now, metadata) => {
       if (disposed) return;
       const frame = presentedFrame(metadata.mediaTime, segment);
+      // Initial decode can submit frame zero before an exact seek is presented.
+      if (awaitingFirstPresentation.current && frame !== frameAtSeek.current) {
+        callback = element.requestVideoFrameCallback(observe);
+        return;
+      }
       const receipt = frames.find(f => f.job_id === segment.job_id && f.version_id === segment.version_id && f.shot_id === segment.shot_id && f.source_frame === frame);
       if (receipt) {
         const target = frameTarget(receipt, version, segment);
@@ -69,11 +83,10 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
       callback = element.requestVideoFrameCallback(observe);
     };
     callback = element.requestVideoFrameCallback(observe);
-    // React reuses the already-decoded prebuffer element at this boundary. Its
-    // loadeddata event happened while hidden, so explicitly request a presentation.
-    if (element.readyState >= 2 && confirmedSegment.current !== segment.segment_id) {
-      awaitingFirstPresentation.current = true;
-      element.currentTime = frameCentre(activeFrame, segment);
+    // A reused prebuffer may already have loaded metadata while hidden.
+    if (element.readyState >= 1 && confirmedSegment.current !== segment.segment_id) {
+      const centre = frameCentre(activeFrame, segment);
+      if (Math.abs(element.currentTime - centre) >= 1e-3) element.currentTime = centre;
     }
     return () => {disposed = true; element.cancelVideoFrameCallback(callback);};
   }, [segment, frames, version, visible]);
@@ -88,29 +101,46 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
   function ready() {
     const element = video.current;
     if (!visible || !element || !segment) return;
-    awaitingFirstPresentation.current = true;
-    // A new segment already decodes frame zero. Seeking it and immediately playing
-    // can discard that first presentation. The rVFC acknowledgement starts playback.
-    element.currentTime = frameCentre(activeFrame, segment);
+    // Seek as soon as the timeline is known, before the default decode is accepted.
+    // The rVFC acknowledgement of the requested frame still starts playback.
+    const centre = frameCentre(activeFrame, segment);
+    if (Math.abs(element.currentTime - centre) >= 1e-3) element.currentTime = centre;
   }
 
   function ended() {
     if (!segment || !wantsPlay.current) return;
     const nextFrame = segment.source_frames.end + 1;
-    if (availability ? nextFrame > availability.source_range.end : !segments.some(clip => clip.source_frames.end >= nextFrame)) {
+    const endFrame = availability?.source_range.end ?? expectedEndFrame;
+    if (endFrame !== undefined ? nextFrame > endFrame : !segments.some(clip => clip.source_frames.end >= nextFrame)) {
       if (!onEndedPass?.()) {onPlaying(false);setMessage(completionMessage);}
       return;
     }
+    const nextSegment = segmentAt(segments, nextFrame);
+    if (!nextSegment) {
+      const failed = availability?.failed_ranges.some(r => r.start <= nextFrame && nextFrame <= r.end) ?? false;
+      const missingTerminal = Boolean(jobTerminal && !frames.some(f => f.source_frame === nextFrame));
+      if (failed || missingTerminal) {
+        onUnpresented?.();
+        onPlaying(false);
+        onPlaybackStopped?.();
+        setActiveFrame(nextFrame);
+        setMessage(failed ? `Frame ${nextFrame} failed to render. Playback stopped.` : `Frame ${nextFrame} is unavailable. Playback stopped.`);
+        return;
+      }
+    }
     // Do not skip holes, even when a later segment is already available.
     setActiveFrame(nextFrame);
-    if (!segmentAt(segments, nextFrame)) setMessage(`Buffering at frame ${nextFrame}`);
+    if (!nextSegment) setMessage(`Buffering at frame ${nextFrame}`);
   }
 
   const isolated = !segment ? frames.find(f => f.source_frame === activeFrame) : undefined;
+  useEffect(() => {
+    if (!segment && !isolated) onUnpresented?.();
+  }, [segment, isolated, onUnpresented]);
   return <section className="review-player" aria-label="Progressive animation">
-    {segment ? <video key={segment.segment_id} ref={video} src={mediaUrl(projectId, segment.artifact_id)} muted playsInline preload="auto" onLoadedData={ready} onEnded={ended} onError={() => setMessage(`media_unavailable: ${segment.artifact_id}`)}/>
+    {segment ? <video key={segment.segment_id} ref={video} src={mediaUrl(projectId, segment.artifact_id)} muted playsInline preload="auto" onLoadedMetadata={ready} onEnded={ended} onError={() => setMessage(`media_unavailable: ${segment.artifact_id}`)}/>
       : isolated ? <img src={mediaUrl(projectId, isolated.artifact_id)} alt={`Available frame ${activeFrame}`} onLoad={() => {const target = frameTarget(isolated, version); presented.current = target; onPresentedRef.current(target);}}/>
-      : <p role="status">Frame {activeFrame} pending. No later interval substituted.</p>}
+      : !message && <p role="status">Frame {activeFrame} pending. No later interval substituted.</p>}
     {next && <video key={next.segment_id} ref={nextVideo} src={mediaUrl(projectId, next.artifact_id)} muted preload="auto" className="review-prebuffer" aria-hidden="true"/>}
     {(availability || message) && <div className="review-player-status">
       {message && <output aria-live="polite">{message}</output>}

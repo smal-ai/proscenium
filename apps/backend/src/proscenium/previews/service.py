@@ -308,7 +308,7 @@ class PreviewService:
                         403,
                         "New-item requests cannot reorder an existing item's preview passes",
                     )
-                case "item" if target["version"] != reference and not same_work:
+                case "item" if target["version"] != reference:
                     raise DomainError(
                         "scope_denied",
                         403,

@@ -1,7 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { expect, test } from "@playwright/test";
-import type { Artifact, Event, FrameAvailability, FrameReceipt, JobRecord, PreviewSegment } from "../../apps/frontend/src/api";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { expect, test, type Page } from "@playwright/test";
+import type { Artifact, FrameAvailability, FrameReceipt, JobRecord, PreviewSegment } from "../../apps/frontend/src/api";
 import type { MockRoute } from "./fixtures";
 import { base, job, pageOf, projectId, retained, StudioFixture, version } from "./studio-fixture";
 
@@ -16,12 +19,28 @@ const scenes = [
   {prefix: "2bd7", shot: "SL04_Exterior", start: 1, colour: "yellow"},
 ].map(scene => ({...scene, id: `preview-${scene.prefix}${hash(Buffer.from(scene.shot)).slice(4)}`}));
 
-function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, ready = true): JobRecord {
+function webmClip(input: string[]): Buffer {
+  // A file output finalises duration and seek metadata. The pipe muxer leaves
+  // Chromium treating the last frame's start time as the whole clip duration.
+  const dir = mkdtempSync(join(tmpdir(), "proscenium-clip-"));
+  try {
+    const path = join(dir, "clip.webm");
+    execFileSync("ffmpeg", [...input, "-frames:v", "2", "-threads", "1", "-c:v", "libvpx", "-f", "webm", path]);
+    return readFileSync(path);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+}
+
+function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, {ready = true, failedTail = false, reportAvailability = true}: {
+  ready?: boolean; failedTail?: boolean; reportAvailability?: boolean;
+} = {}): JobRecord {
   const {id, start, shot, colour} = scenes[index];
   const proxy = index === 3;
   const purpose = proxy ? "proxy" : "draft_motion";
   const shotId = proxy ? null : shot;
-  const frames = {start, end: start + (proxy ? 0 : 1)};
+  const playable = {start, end: start + (proxy ? 0 : 1)};
+  const frames = {start, end: playable.end + (failedTail ? 2 : 0)};
   const identity = {schema_version: "1.0" as const, project_id: projectId, job_id: id, attempt_id: `attempt-${id}`,
     version_id: sceneVersion.version_id, shot_id: shotId, input_digest: sceneVersion.source.digest};
   const input = ["-v", "error", "-f", "lavfi", "-i", `color=${colour}:s=${dimensions.width}x${dimensions.height}:r=${fps.numerator}`];
@@ -38,43 +57,67 @@ function renderScene(studio: StudioFixture, routes: MockRoute[], index: number, 
   }
   if (ready) {
     const png = execFileSync("ffmpeg", [...input, "-frames:v", "1", "-threads", "1", "-c:v", "png", "-f", "image2pipe", "pipe:1"]);
-    for (let source_frame = start; source_frame <= frames.end; source_frame++) {
+    for (let source_frame = start; source_frame <= playable.end; source_frame++) {
       const {artifact_id, sha256} = media(`${shot}-f${source_frame}`, png, "image", "image/png");
       receipts.push({...identity, source_frame, receipt_id: artifact_id, artifact_id, sha256, dimensions, output_path: `${artifact_id}.png`});
     }
     if (!proxy) {
-      const clip = execFileSync("ffmpeg", [...input, "-frames:v", "2", "-threads", "1", "-c:v", "libvpx", "-f", "webm", "pipe:1"]);
+      const clip = webmClip(input);
       const {artifact_id, sha256} = media(`${shot}-clip`, clip, "video", "video/webm");
-      segments.push({...identity, source_frames: frames, segment_id: artifact_id, frame_count: 2, fps, artifact_id, sha256, output_path: `${artifact_id}.webm`});
+      segments.push({...identity, source_frames: playable, segment_id: artifact_id, frame_count: 2, fps, artifact_id, sha256, output_path: `${artifact_id}.webm`});
     }
   }
   const availability: FrameAvailability = {schema_version: "1.0", project_id: projectId, job_id: id,
-    version_id: sceneVersion.version_id, source_range: frames, fps, available_ranges: ready ? [frames] : [],
-    playable_ranges: segments.length ? [frames] : [], pending_ranges: ready ? [] : [frames], failed_ranges: [], state_revision: 1};
+    version_id: sceneVersion.version_id, source_range: frames, fps, available_ranges: ready ? [playable] : [],
+    playable_ranges: segments.length ? [playable] : [], pending_ranges: ready ? [] : [frames],
+    failed_ranges: failedTail ? [{start: playable.end + 1, end: frames.end}] : [], state_revision: 1};
   routes.push({path: `${base}/jobs/${id}/frames`, body: pageOf(receipts)}, {path: `${base}/jobs/${id}/segments`, body: pageOf(segments)},
-    {path: `${base}/jobs/${id}/availability`, body: availability});
-  return {...job(id, ready ? "succeeded" : "planned"), kind: "render", target: {target_id: shot, shot_id: shotId,
-    version: {item_id: sceneVersion.item_id, version_id: sceneVersion.version_id}}, availability: ready ? "complete" : "pending",
+    reportAvailability ? {path: `${base}/jobs/${id}/availability`, body: availability}
+      : {path: `${base}/jobs/${id}/availability`, status: 503, body: {error: {code: "temporarily_unavailable"}}});
+  if (!proxy) {
+    const clipId = `${shot}-clip`;
+    routes.push({path: `${base}/artifacts/${clipId}/content`, handler: route => {
+      const clip = studio.artifactContent.get(clipId);
+      if (!clip) return route.fulfill({status: 404});
+      const {bytes, contentType} = clip;
+      const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range ?? "");
+      if (!range) return route.fulfill({contentType, body: bytes});
+      const from = Number(range[1]);
+      const to = range[2] ? Math.min(Number(range[2]), bytes.length - 1) : bytes.length - 1;
+      if (from > to) return route.fulfill({status: 416, headers: {"content-range": `bytes */${bytes.length}`}});
+      return route.fulfill({status: 206, contentType, body: bytes.subarray(from, to + 1), headers: {
+        "accept-ranges": "bytes", "content-range": `bytes ${from}-${to}/${bytes.length}`,
+      }});
+    }});
+  }
+  return {...job(id, failedTail ? "failed" : ready ? "succeeded" : "planned"), kind: "render", target: {target_id: shot, shot_id: shotId,
+    version: {item_id: sceneVersion.item_id, version_id: sceneVersion.version_id}}, availability: failedTail ? "partial" : ready ? "complete" : "pending",
     completed_frames: receipts.length, expected_frames: frames.end - start + 1, artifact_ids,
     render_spec: {intent_id: id, shot_id: shotId, scene_name: shot, purpose, source_closure_digest: sceneVersion.source.digest,
       camera: null, frames, fps, dimensions, engine: "Cycles", device: "CPU", samples: 32, renderer_revision: "synthetic",
+      ...(proxy ? {} : {review_output: {media_type: "image/png", encoding: "view_transformed_srgb", bit_depth: 8}}),
       colour_management: {view_transform: "AgX", look: "None", exposure: 0, gamma: 1}}};
 }
 
-test("indexed scene playback follows real presented frames and updates after a live preview reorder", async ({page, baseURL}, testInfo) => {
-  const studio = new StudioFixture(page, baseURL!);
+async function openScene(page: Page, baseURL: string, render: (studio: StudioFixture, routes: MockRoute[]) => JobRecord[]) {
+  const studio = new StudioFixture(page, baseURL);
   studio.retained = [];
   const published = structuredClone(sceneVersion);
   studio.versionRecords = [published];
   studio.snapshot.items = [{schema_version: "1.0", project_id: projectId, kind: "scene", name: published.name,
     item_id: published.item_id, current_version_id: published.version_id, selected_version_id: null, state_revision: 1}];
   const routes: MockRoute[] = [];
-  studio.snapshot.jobs = [2, 1, 3, 0].map(index => renderScene(studio, routes, index));
+  studio.snapshot.jobs = render(studio, routes);
   await studio.install({savedLayout: true, routes});
   await studio.open();
   await studio.ready();
-  expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === "chromium-dpr2" ? 2 : 1);
   await page.locator(".catalogue-item-header").filter({hasText: "Signal Lost"}).click();
+  return {studio, published, routes};
+}
+
+test("indexed scene playback follows real presented frames and updates after a live preview reorder", async ({page, baseURL}, testInfo) => {
+  const {studio, published} = await openScene(page, baseURL!, (fixture, routes) => [2, 1, 3, 0].map(index => renderScene(fixture, routes, index)));
+  expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === "chromium-dpr2" ? 2 : 1);
   const review = page.locator("main.review-panel");
   const transport = review.getByLabel("Review transport", {exact: true});
   const passes = transport.getByRole("combobox", {name: "Shot / render job"});
@@ -96,8 +139,8 @@ test("indexed scene playback follows real presented frames and updates after a l
   await expect(frame).toHaveValue("1");
   await compact();
 
-  await passes.selectOption(scenes[1].id);
-  await expect(frame).toHaveValue("3");
+  // Start directly on default Pass 1, including when its first video frame is already confirmed.
+  await expect(annotate).toBeEnabled();
   await playAll.click();
   await expect(passes).toHaveValue(scenes[0].id);
   await expect(transport.getByText("Scene 1 of 3", {exact: true})).toBeVisible();
@@ -117,6 +160,14 @@ test("indexed scene playback follows real presented frames and updates after a l
   await expect.poll(() => page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.view.context.${id}`)!).target, projectId))
     .toMatchObject({source_frame: 6, artifact_id: "sl-03-console-wake-f6", render_job_id: scenes[2].id, media_artifact_id: "sl-03-console-wake-clip"});
 
+  await review.getByRole("button", {name: "Keyframes", exact: true}).click();
+  await expect(frame).toHaveValue("6");
+  await expect(review.locator(".review-image img")).toHaveAttribute("src", /sl-03-console-wake-f6\/content$/);
+  await expect(annotate).toBeEnabled();
+  await review.getByRole("button", {name: "Animation", exact: true}).click();
+  await expect(annotate).toBeEnabled();
+  await expect(frame).toHaveValue("6");
+
   // Replay the last pass with the same requested start frame and a fresh seek nonce.
   await play.click();
   await expect(frame).toHaveValue("5");
@@ -124,8 +175,7 @@ test("indexed scene playback follows real presented frames and updates after a l
   await expect(frame).toHaveValue("6");
 
   published.preview_job_ids = [2, 0, 1].map(index => scenes[index].id);
-  // The backend worktree owns regeneration of the new event discriminant.
-  studio.emit("preview.order_changed" as Event["event_type"], {item_id: published.item_id, version_id: published.version_id, preview_job_ids: published.preview_job_ids});
+  studio.emit("preview.order_changed", {...sceneVersion, preview_job_ids: published.preview_job_ids});
   await expect(passes.locator("option")).toHaveText(expectedOptions([2, 0, 1]));
   await playAll.click();
   await expect(passes).toHaveValue(scenes[2].id);
@@ -136,5 +186,60 @@ test("indexed scene playback follows real presented frames and updates after a l
   await expect(complete).toBeVisible();
   await expect(frame).toHaveValue("4");
   await expect(annotate).toBeEnabled();
+  studio.assertHermetic();
+});
+
+for (const reportAvailability of [true, false]) {
+  test(`Play all stops inside a partial pass ${reportAvailability ? "with failed ranges" : "before availability is reported"}`, async ({page, baseURL}) => {
+    const {studio} = await openScene(page, baseURL!, (fixture, routes) => [
+      renderScene(fixture, routes, 1), renderScene(fixture, routes, 0, {failedTail: true, reportAvailability}),
+    ]);
+    const review = page.locator("main.review-panel");
+    const transport = review.getByLabel("Review transport", {exact: true});
+    const passes = transport.getByRole("combobox", {name: "Shot / render job"});
+    const annotate = review.getByRole("button", {name: "Annotate presented frame"});
+    await expect(passes).toHaveValue(scenes[0].id);
+    await review.getByRole("button", {name: "Animation", exact: true}).click();
+    await transport.getByRole("button", {name: "Play all", exact: true}).click();
+    await expect(transport.getByRole("button", {name: "Pause all", exact: true})).toBeVisible();
+    await expect(transport.getByRole("spinbutton", {name: "Frame", exact: true})).toHaveValue("2");
+    await expect(review.getByText(reportAvailability ? "Frame 3 failed to render. Playback stopped." : "Frame 3 is unavailable. Playback stopped.", {exact: true})).toBeVisible();
+    await expect(review.getByText("Frame 3 pending. No later interval substituted.", {exact: true})).toHaveCount(0);
+    await expect(passes).toHaveValue(scenes[0].id);
+    await expect(transport.getByRole("button", {name: "Pause", exact: true})).toHaveCount(0);
+    await expect(transport.getByRole("button", {name: "Pause all", exact: true})).toHaveCount(0);
+    await expect(annotate).toBeDisabled();
+    studio.assertHermetic();
+  });
+}
+
+test("Pass 1 stays selected while its first frame is pending, then shows the new receipt", async ({page, baseURL}) => {
+  const {studio, routes} = await openScene(page, baseURL!, (fixture, mediaRoutes) => [
+    renderScene(fixture, mediaRoutes, 1), renderScene(fixture, mediaRoutes, 0, {ready: false}),
+  ]);
+  const review = page.locator("main.review-panel");
+  const passes = review.getByRole("combobox", {name: "Shot / render job"});
+  const annotate = review.getByRole("button", {name: "Annotate presented frame"});
+  await expect(passes).toHaveValue(scenes[0].id);
+  await expect(passes.locator("option:checked")).toHaveText(/^1 · sl-01-dormant-macro/);
+  await expect(review.getByText("Frame 1 pending. No ready review image yet.", {exact: true})).toBeVisible();
+  await expect(annotate).toBeDisabled();
+  await review.getByRole("button", {name: "Animation", exact: true}).click();
+  await expect(passes).toHaveValue(scenes[0].id);
+  await expect(review.getByText("Frame 1 pending. No later interval substituted.", {exact: true})).toBeVisible();
+  await passes.selectOption(scenes[1].id);
+  await expect(annotate).toBeEnabled();
+  await passes.selectOption(scenes[0].id);
+  await expect(review.getByText("Frame 1 pending. No later interval substituted.", {exact: true})).toBeVisible();
+  await expect(annotate).toBeDisabled();
+
+  const newlyReadyRoutes: MockRoute[] = [];
+  const ready = {...renderScene(studio, newlyReadyRoutes, 0), state_revision: 2};
+  for (const route of newlyReadyRoutes) Object.assign(routes.find(existing => existing.path === route.path)!, route);
+  studio.snapshot.jobs = studio.snapshot.jobs.map(job => job.job_id === ready.job_id ? ready : job);
+  studio.emit("job.state_changed", ready);
+  await expect(annotate).toBeEnabled();
+  await expect(passes).toHaveValue(scenes[0].id);
+  await expect(review.getByRole("spinbutton", {name: "Frame", exact: true})).toHaveValue("1");
   studio.assertHermetic();
 });

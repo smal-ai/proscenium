@@ -81,6 +81,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap} | null>(null);
   const [availabilityByJob, setAvailabilityByJob] = useState<Record<string,FrameAvailability>>({});
   const [sequenceJobId, setSequenceJobId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [target, setTarget] = useState<FrameTarget | null>(null);
   const [captureReady, setCaptureReady] = useState(false);
   const [decodedImage, setDecodedImage] = useState<string | null>(null);
@@ -90,6 +91,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [requestedFrame, setRequestedFrame] = useState(1);
   const [frameInput, setFrameInput] = useState("1");
   const [frameNotice, setFrameNotice] = useState("");
+  // A media refresh may finish after the user changes mode, pass or frame.
+  const readSelection = useRef({mode, selectedJobId, target});
+  readSelection.current = {mode, selectedJobId, target};
   const framePointerDown = useRef(false);
   const frameInputEdited = useRef(false);
   const [playing, setPlaying] = useState(false);
@@ -148,7 +152,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const pinnedHit = isSpatialDraft ? draft!.annotation.spatial_hits[0] : null;
   const editorPreparer = useRef<ContextPreparer | null>(null);
   const registerEditorPreparer = useCallback((prepare: ContextPreparer | null) => {editorPreparer.current = prepare;}, []);
-  const reviewJobId=targetJobId(draft?.annotation.target ?? target, versionJobs, artifacts, sequenceJobId);
+  const reviewJobId = (draft ? targetJobId(draft.annotation.target, orderedVersionJobs, artifacts, sequenceJobId) : null)
+    ?? selectedJobId ?? targetJobId(target, orderedVersionJobs, artifacts, sequenceJobId);
   const currentAnimIndex = animationPasses.findIndex(job => job.job_id === reviewJobId);
   const nextAnimJobId = playAll && currentAnimIndex >= 0 ? animationPasses[currentAnimIndex + 1]?.job_id : undefined;
   const nextPassSegment = useMemo(() => nextAnimJobId ? segments.filter(clip => clip.job_id === nextAnimJobId)
@@ -157,12 +162,15 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const currentFrames=useMemo(()=>frames.filter(f=>!reviewJobId||f.job_id===reviewJobId),[frames,reviewJobId]);
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
   const availability=availabilityByJob[reviewJobId ?? ""] ?? null;
+  const jobTerminal = activeJob ? ["succeeded", "failed", "cancelled"].includes(activeJob.state) : false;
+  const clearPresentation = useCallback(() => setCaptureReady(false), []);
+  const stopPlayAll = useCallback(() => setPlayAll(false), []);
   const readyFrames = useMemo(() => reviewJobId ? sortedReadyFrames(currentFrames) : [], [currentFrames, reviewJobId]);
   const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
   const matchesPanel = (panel: StoryboardTarget) => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id;
   const storyboardIndex = activeStoryboardPanel && matchesPanel(activeStoryboardPanel) ? storyboardPanelIndex : storyboardTargets.findIndex(matchesPanel);
   const storyboardPanel = storyboardTargets[storyboardIndex];
-  const displayedFrame = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame ?? Math.max(1, storyboardIndex + 1)) : requestedFrame;
+  const displayedFrame = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame ?? (reviewJobId ? requestedFrame : Math.max(1, storyboardIndex + 1))) : requestedFrame;
   const imageOrdinal = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame) : (target?.sequence_frame ?? target?.source_frame);
   const passStatus = mode === "keyframes" ? describeKeyframePassStatus({readyFrames, displayedFrame, job: activeJob, availability}) : null;
   const activeFrameOrdinal = mode === "keyframes" ? displayedFrame : (captureReady && target ? (target.sequence_frame ?? target.source_frame ?? requestedFrame) : requestedFrame);
@@ -284,6 +292,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     if (!external?.target) return;
     initialised.current = true; setPlaying(false); setCaptureReady(false); setPinMode(false); setEditing2D(false); setFrameNotice("");
     setSequenceJobId(null);
+    setSelectedJobId(external.target.render_job_id);
     const annotation = external.annotations.find(a => a.target.artifact_id === external.target?.artifact_id);
     const spatial = Boolean(annotation && annotation.spatial_hits.length > 0);
     setTarget(structuredClone(external.target));
@@ -411,18 +420,39 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         const rank = new Map(ordered.map((job, index) => [job.job_id, index]));
         receipts.sort((a,b) => (rank.get(a.job_id) ?? Infinity) - (rank.get(b.job_id) ?? Infinity) || a.source_frame - b.source_frame);
         setFrames(receipts); setSegments(clips); setArtifacts(orderedMedia);
-        const visualJobs = new Set(selectablePassJobs(ordered, "keyframes", orderedMedia).map(job => job.job_id));
-        const initialReceipt = receipts.find(receipt => visualJobs.has(receipt.job_id));
-        if (!initialised.current && (initialReceipt || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
-          initialised.current = true;
-          if (initialReceipt) {const first=frameTarget(initialReceipt,version!);setTarget(first);setTargetCamera(frameCamera(first,jobs));setRequestedFrame(initialReceipt.source_frame);}
-          else if (panels[0]) {setTarget(panels[0].target);setStoryboardPanelIndex(0);setTargetCamera(null);setMode("keyframes");}
-          else {
+        const selection = readSelection.current;
+        const setReceipt = (receipt: FrameReceipt, initial: boolean) => {
+          const first = frameTarget(receipt, pinned);
+          setTarget(first); setTargetCamera(frameCamera(first, jobs));
+          if (initial) setRequestedFrame(receipt.source_frame);
+        };
+        if (!initialised.current) {
+          const [firstPass] = selectablePassJobs(ordered, selection.mode, orderedMedia);
+          if (firstPass) {
+            initialised.current = true;
+            setSelectedJobId(firstPass.job_id);
+            const first = receipts.find(receipt => receipt.job_id === firstPass.job_id);
+            const image = generationOutputs(firstPass, orderedMedia)[0];
+            if (first) setReceipt(first, true);
+            else if (image) setTarget(imageTarget(image, pinned, versionJobs));
+            else {
+              setTarget(null); setCaptureReady(false);
+              setRequestedFrame(firstPass.render_spec?.frames.start ?? 1);
+            }
+          } else if (panels[0]) {
+            initialised.current = true;
+            setTarget(panels[0].target); setStoryboardPanelIndex(0); setTargetCamera(null); setMode("keyframes");
+          } else {
             const image = orderedMedia.find(a => pinned.artifact_ids.includes(a.artifact_id) && a.kind === "image" && a.state === "ready" && a.dimensions)
               ?? versionJobs.flatMap(job => generationOutputs(job, orderedMedia))[0];
-            if (image) setTarget(imageTarget(image, version!, versionJobs));
-            else initialised.current = false;
+            if (image) {
+              initialised.current = true;
+              setTarget(imageTarget(image, pinned, versionJobs));
+            }
           }
+        } else if (selection.selectedJobId && !selection.target) {
+          const first = receipts.find(receipt => receipt.job_id === selection.selectedJobId);
+          if (first) setReceipt(first, selection.mode === "keyframes");
         }
         if (errors.length) setError(`Some review data is unavailable: ${[...new Set(errors)].join(". ")}`);
       }
@@ -493,6 +523,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     if (!version) return;
     frameInputEdited.current = false;
     const frame = frameTarget(receipt, version);
+    setSelectedJobId(receipt.job_id);
     setTarget(frame);
     setTargetCamera(frameCamera(frame, jobs));
     setRequestedFrame(receipt.source_frame);
@@ -507,6 +538,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     const panel = storyboardTargets[index];
     if (!panel) return;
     frameInputEdited.current = false;
+    setSelectedJobId(null);
     setTarget(panel.target);
     setStoryboardPanelIndex(index);
     setRequestedFrame(index + 1);
@@ -592,17 +624,28 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     const first=frames.find(f=>f.job_id===identity);
     const job=versionJobs.find(j=>j.job_id===identity);
     const image=job ? generationOutputs(job,artifacts)[0] : undefined;
-    if (!version || (!first && !image)) {setError(`No ready review output for ${identity}. Current image and job retained.`);return;}
+    const selectable = passJobs.some(pass => pass.job_id === identity);
+    if (!version || (!first && !image && !selectable)) {setError(`No ready review output for ${identity}. Current image and job retained.`);return;}
+    initialised.current = true;
+    setSelectedJobId(identity);
     setSequenceJobId(first && version.kind === "sequence" ? identity : null);
     setCaptureReady(false);setRange(null);setTargetCamera(null);setError("");
     if(first) showKeyframe(first);
     else if(image){setMode("keyframes");setTarget(imageTarget(image,version,versionJobs));setRequestedFrame(1);setFrameInput("1");}
+    else {
+      const start = job?.render_spec?.frames.start ?? 1;
+      setTarget(null); setRequestedFrame(start); setFrameInput(String(start)); setSeekNonce(n => n + 1);
+    }
   }
 
   function changeMode(next: Mode) {
     if (mode !== next) {
       invalidatePendingPlacement();
       frameInputEdited.current = false;
+      if (!draftId && target && reviewJobId && targetJobId(target, orderedVersionJobs, artifacts, sequenceJobId) === reviewJobId) {
+        const confirmed = target.sequence_frame ?? target.source_frame;
+        if (confirmed != null) {setRequestedFrame(confirmed); setFrameInput(String(confirmed));}
+      }
       setCaptureReady(false);
       setPlaying(false);
       setPlayAll(false);
@@ -613,8 +656,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if (next === "animation" && !(assembly && frameMap)) {
         const passes = selectablePassJobs(orderedVersionJobs, next, artifacts);
         if (!passes.some(job => job.job_id === reviewJobId)) {
-          const firstReady = passes.find(job => frames.some(frame => frame.job_id === job.job_id));
-          if (firstReady) chooseJob(firstReady.job_id);
+          if (passes[0]) chooseJob(passes[0].job_id);
         }
       }
     }
@@ -645,16 +687,20 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       return false;
     }
     const firstTarget = frameTarget(first, version);
+    const atConfirmedStart = reviewJobId === job.job_id && captureReady && target?.render_job_id === job.job_id && target.source_frame === startFrame;
     frameInputEdited.current = false;
-    setTarget(firstTarget);
-    setTargetCamera(frameCamera(firstTarget, jobs));
+    setSelectedJobId(job.job_id);
+    if (!atConfirmedStart) {
+      setTarget(firstTarget);
+      setTargetCamera(frameCamera(firstTarget, jobs));
+      setCaptureReady(false);
+      setSeekNonce(n => n + 1);
+    }
     setSequenceJobId(job.job_id);
     setRange(null);
     setError("");
     setFrameNotice("");
-    setCaptureReady(false);
     setRequestedFrame(startFrame);
-    setSeekNonce(n => n + 1);
     setPlayAll(true);
     setPlaying(true);
     return true;
@@ -922,6 +968,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function applyAnnotationView(annotation: AnnotationSnapshot) {
     const spatial = annotation.spatial_hits.length > 0;
+    setSelectedJobId(annotation.target.render_job_id);
     setTarget(structuredClone(annotation.target));
     setMode(spatial ? "3d_inspection" : annotation.target.media_artifact_id ? "animation" : "keyframes");
     setRequestedFrame(annotation.target.sequence_frame ?? annotation.target.source_frame ?? 1);
@@ -1122,8 +1169,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
-         }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} seekNonce={seekNonce} nextPassSegment={nextPassSegment} playing={playing} onPlaying={setPlaying} onPresented={present} onEndedPass={advancePlayAll} completionMessage={playAll ? "Full animation playback complete" : "Playback complete"}/>
-           : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">No ready review image. Rendering is an explicit Queue request.</div>}
+         }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} expectedEndFrame={availability?.source_range.end ?? activeJob?.render_spec?.frames.end} jobTerminal={jobTerminal} requestedFrame={requestedFrame} seekNonce={seekNonce} nextPassSegment={nextPassSegment} playing={playing} onPlaying={setPlaying} onPresented={present} onUnpresented={clearPresentation} onPlaybackStopped={stopPlayAll} onEndedPass={advancePlayAll} completionMessage={playAll ? "Full animation playback complete" : "Playback complete"}/>
+           : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">{activeJob?.render_spec && !jobTerminal ? `Frame ${requestedFrame} pending. No ready review image yet.` : "No ready review image. Rendering is an explicit Queue request."}</div>}
     {show2DEditor ? null : draft && isSpatialDraft ? (
       <SpatialPinDock {...placementProps} draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft} resolveDiscardBaseline={resolveDiscardBaseline}/>
     ) : (
