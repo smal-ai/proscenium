@@ -510,6 +510,101 @@ def test_non_terminal_origin_is_not_recoverable(signal_lost, state):
     rejection(signal_lost, MACRO, "scope_denied", EARLIER_RENDER, status=403)
 
 
+def assert_direct_retry_denied(studio, caller, body):
+    before = {
+        name: records(studio, name) for name in ("jobs", "attempts", "job_retry_authorisations")
+    }
+    with pytest.raises(DomainError) as denied:
+        studio.services.jobs.retry(caller, body)
+    assert (denied.value.status, denied.value.code, denied.value.message) == (
+        403,
+        "scope_denied",
+        EARLIER_RENDER,
+    )
+    assert {name: records(studio, name) for name in before} == before
+
+
+@pytest.mark.parametrize(
+    "invalid", ["no-id", "missing", "completed", "failed", "stale-epoch", "wrong-work"]
+)
+def test_direct_cross_turn_retry_requires_a_live_invocation(signal_lost, invalid):
+    studio = signal_lost
+    new_turn(studio, {"request_target": SCENE_TARGET})
+    call = retry(studio, MACRO)
+    caller = studio.tools.caller(call)
+    identity = caller.invocation_id
+    assert identity is not None
+    with studio.store.transaction(write=False) as tx:
+        live = tx.require("invocations", identity)
+
+    def save_invocation(record):
+        with studio.store.transaction() as tx:
+            tx.put(
+                "invocations",
+                identity,
+                record,
+                expected_revision=tx.revision("invocations", identity),
+            )
+
+    changes = {
+        "completed": {"state": "completed"},
+        "failed": {"state": "failed"},
+        "stale-epoch": {"owner_epoch": "previous-epoch"},
+        "wrong-work": {"work_id": WORK},
+    }.get(invalid)
+    if changes:
+        bad_caller = caller
+        save_invocation({**live, **changes})
+    else:
+        bad_caller = replace(
+            caller, invocation_id=None if invalid == "no-id" else "unknown-invocation"
+        )
+    assert_direct_retry_denied(studio, bad_caller, call.arguments)
+    with studio.store.transaction(write=False) as tx:
+        assert studio.previews.can_retry_cross_work(tx, bad_caller, studio.jobs[MACRO]) is None
+
+    save_invocation({**live, "state": "admitted"})
+    recovered, replayed = studio.services.jobs.retry(caller, call.arguments)
+    assert (recovered["attempt_number"], replayed) == (2, False)
+    if changes:
+        save_invocation({**live, **changes})
+    attempts = records(studio, "attempts")
+    audit = records(studio, "job_retry_authorisations")
+    assert studio.services.jobs.retry(bad_caller, call.arguments) == (recovered, True)
+    assert records(studio, "attempts") == attempts
+    assert records(studio, "job_retry_authorisations") == audit
+
+
+def test_direct_same_turn_retry_rejects_an_invalid_supplied_invocation(signal_lost):
+    studio = signal_lost
+    set_work_state(studio, WORK, "awaiting_user")
+    call = retry(studio, MACRO, work=WORK)
+    caller = studio.tools.caller(call)
+    assert_direct_retry_denied(
+        studio, replace(caller, invocation_id="unknown-invocation"), call.arguments
+    )
+    recovered, replayed = studio.services.jobs.retry(
+        replace(caller, invocation_id=None), call.arguments
+    )
+    assert (recovered["attempt_number"], replayed) == (2, False)
+
+
+@pytest.mark.parametrize("origin", [None, "missing-work"])
+def test_direct_cross_turn_retry_requires_an_existing_origin(signal_lost, origin):
+    studio = signal_lost
+    new_turn(studio, {"request_target": SCENE_TARGET})
+    with studio.store.transaction() as tx:
+        job = tx.require("jobs", MACRO)
+        revision = tx.revision("jobs", MACRO)
+        job.update(work_id=origin, state_revision=revision + 1)
+        if origin is None:
+            job["owner_operation_id"] = "owner-render"
+        tx.put("jobs", MACRO, job, schema="JobRecord", expected_revision=revision)
+    studio.jobs[MACRO] = job
+    call = retry(studio, MACRO)
+    assert_direct_retry_denied(studio, studio.tools.caller(call), call.arguments)
+
+
 @pytest.mark.parametrize("identity", [MACRO, "encode-earlier", "unity-earlier"])
 def test_same_work_retry_remains_available(signal_lost, identity):
     set_work_state(signal_lost, WORK, "awaiting_user")
@@ -627,64 +722,81 @@ def test_sequence_transition_requires_an_exact_pinned_contributor(signal_lost, v
         mapping_artifact_id="dissolve-map",
         contributors=contributors,
     )
-    if via_frame_map:
-        frames = []
-        for entry in document["entries"]:
-            sources = contributors if entry is macro else [entry]
-            first, last = entry["sequence_frames"]["start"], entry["sequence_frames"]["end"]
-            for frame in range(first, last + 1):
-                frames.append(
-                    dict(
-                        sequence_frame=frame,
-                        contributors=[
-                            dict(
-                                shot_id=s["shot_id"],
-                                version_id=s["version_id"],
-                                job_id=s["job_id"],
-                                source_frame=s["source_frames"]["start"] + frame - first,
-                                weight=dict(numerator=1, denominator=len(sources)),
-                            )
-                            for s in sources
-                        ],
-                    )
+    frames = []
+    for entry in document["entries"]:
+        sources = contributors if entry is macro else [entry]
+        first, last = entry["sequence_frames"]["start"], entry["sequence_frames"]["end"]
+        for frame in range(first, last + 1):
+            frames.append(
+                dict(
+                    sequence_frame=frame,
+                    contributors=[
+                        dict(
+                            shot_id=s["shot_id"],
+                            version_id=s["version_id"],
+                            job_id=s["job_id"],
+                            source_frame=s["source_frames"]["start"] + frame - first,
+                            weight=dict(numerator=1, denominator=len(sources)),
+                        )
+                        for s in sources
+                    ],
                 )
-        contributors[0]["job_id"] = None
-        mapping = dict(
-            schema_version="1.0",
-            project_id=PROJECT,
-            sequence_version_id=dissolve["version_id"],
-            fps=FPS,
-            frame_count=document["frame_count"],
-            blend_space="linear_rgb",
-            frames=frames,
-        )
-        map_id = macro["mapping_artifact_id"]
-        artifacts = studio.services.extension("artifacts")
-        data = canonical(mapping)
-        with studio.store.transaction() as tx:
-            sequence_map(tx, document, dissolve["version_id"], {map_id: mapping})
-            artifacts.put(
-                tx,
-                artifacts.promote(
-                    PROJECT,
-                    map_id,
-                    data,
-                    kind="frame_map",
-                    purpose="metadata",
-                    media_type="application/json",
-                ),
             )
+    if via_frame_map:
+        contributors[0]["job_id"] = None
+    mapping = dict(
+        schema_version="1.0",
+        project_id=PROJECT,
+        sequence_version_id=dissolve["version_id"],
+        fps=FPS,
+        frame_count=document["frame_count"],
+        blend_space="linear_rgb",
+        frames=frames,
+    )
+    map_id = macro["mapping_artifact_id"]
+    artifacts = studio.services.extension("artifacts")
+
+    def promote(frame_map):
+        return artifacts.promote(
+            PROJECT,
+            map_id,
+            canonical(frame_map),
+            kind="frame_map",
+            purpose="metadata",
+            media_type="application/json",
+        )
+
     publish(studio, dissolve, "sequence", document, dependencies=[SCENE])
     new_turn(studio, {**DRAFT_VIEW, **dissolve})
     call = retry(studio, MACRO)
     caller = studio.tools.caller(call)
     job = studio.jobs[MACRO]
-    if via_frame_map:
-        path = artifacts.ready_path(PROJECT, map_id)
-        path.chmod(0o600)
-        path.write_bytes(data.replace(b'"source_frame":1,', b'"source_frame":2,', 1))
-        rejection(studio, MACRO, "scope_denied", EARLIER_RENDER, status=403)
-        path.write_bytes(data)
+    # Neither a direct contributor nor a mapped contributor authorises retry without the full map.
+    assert_direct_retry_denied(studio, caller, call.arguments)
+    mismatched = deepcopy(mapping)
+    # Valid JSON, hash, and source job, but the last row cannot cite a transition contributor.
+    mismatched["frames"][-1]["contributors"] = [
+        {**frames[0]["contributors"][0], "weight": {"numerator": 1, "denominator": 1}}
+    ]
+    with studio.store.transaction() as tx:
+        artifacts.put(tx, promote(mismatched))
+    assert_direct_retry_denied(studio, caller, call.arguments)
+
+    with studio.store.transaction() as tx:
+        sequence_map(tx, document, dissolve["version_id"], {map_id: mapping})
+        tx.put(
+            "artifacts",
+            map_id,
+            promote(mapping),
+            schema="Artifact",
+            expected_revision=tx.revision("artifacts", map_id),
+        )
+    data = canonical(mapping)
+    path = artifacts.ready_path(PROJECT, map_id)
+    path.chmod(0o600)
+    path.write_bytes(data.replace(b'"source_frame":1,', b'"source_frame":2,', 1))
+    assert_direct_retry_denied(studio, caller, call.arguments)
+    path.write_bytes(data)
     with studio.store.transaction(write=False) as tx:
         assert studio.previews.can_retry_cross_work(tx, caller, job) == NEW_REQUEST
         unpinned = {**job, "target": {**job["target"], "shot_id": "different-shot"}}

@@ -16,20 +16,34 @@ from proscenium.jobs.resources import check_storage
 
 TRANSITIONS = json.loads(files("proscenium.contracts").joinpath("transitions.json").read_text())
 TERMINAL = {"succeeded", "failed", "cancelled"}
+EARLIER_RENDER_RETRY_DENIED = "This job belongs to an earlier request. No render was started."
 
 
 def retry_context(
-    tx: Transaction, caller: Caller, work: dict[str, Any]
+    tx: Transaction,
+    caller: Caller,
+    work: dict[str, Any],
+    *,
+    owner_epoch: str,
+    require_invocation: bool,
 ) -> tuple[str, dict[str, Any] | None]:
     """Use the invocation's captured Queue or Steer context, never the latest workspace view."""
-    invocation = tx.get("invocations", str(caller.invocation_id), required=False)
-    if invocation and invocation["work_id"] != work["work_id"]:
-        raise DomainError("scope_denied", 403)
-    request_id = (
-        invocation.get("context_request_id") or invocation["request_id"]
-        if invocation
-        else work["originating_request_id"]
-    )
+    if caller.invocation_id is None and not require_invocation:
+        request_id = work["originating_request_id"]
+    else:
+        invocation = (
+            tx.get("invocations", str(caller.invocation_id), required=False)
+            if caller.invocation_id is not None
+            else None
+        )
+        if (
+            not invocation
+            or invocation.get("work_id") != work["work_id"]
+            or invocation.get("owner_epoch") != owner_epoch
+            or invocation.get("state") not in {"admitted", "running"}
+        ):
+            raise DomainError("scope_denied", 403, EARLIER_RENDER_RETRY_DENIED)
+        request_id = invocation.get("context_request_id") or invocation["request_id"]
     request = tx.get("requests", request_id, required=False)
     context_id = request["submission"].get("context_id") if request else None
     return request_id, tx.require("contexts", context_id) if context_id else None
@@ -325,29 +339,40 @@ class JobService:
                     "awaiting_user",
                 }:
                     raise DomainError("no_active_work", 409)
-                _, context = retry_context(tx, caller, active_work)
+                job = tx.require("jobs", body["job_id"])
+                if job["project_id"] != body["project_id"]:
+                    raise DomainError("scope_denied", 403)
+                cross_work = job["work_id"] != caller.work_id
+                _, context = retry_context(
+                    tx,
+                    caller,
+                    active_work,
+                    owner_epoch=self.owner_epoch,
+                    require_invocation=cross_work,
+                )
                 if context and context.get("execution_scope") == "planning_only":
                     raise DomainError(
                         "scope_denied",
                         403,
                         "Retry is unavailable while execution_scope is planning_only. No render was started.",
                     )
-                job = tx.require("jobs", body["job_id"])
-                if job["project_id"] != body["project_id"]:
-                    raise DomainError("scope_denied", 403)
                 authorising_request_id = None
-                if job["work_id"] != caller.work_id:
+                if cross_work:
                     if job["kind"] != "render":
                         raise DomainError(
                             "scope_denied",
                             403,
                             "This job belongs to an earlier request. No job was started.",
                         )
-                    denied = "This job belongs to an earlier request. No render was started."
+                    denied = EARLIER_RENDER_RETRY_DENIED
                     origin = (
                         tx.get("work", job["work_id"], required=False) if job["work_id"] else None
                     )
-                    if origin and origin["state"] not in {"completed", "failed", "stopped"}:
+                    if (
+                        not origin
+                        or origin.get("project_id") != body["project_id"]
+                        or origin.get("state") not in {"completed", "failed", "stopped"}
+                    ):
                         raise DomainError("scope_denied", 403, denied)
                     probe = self.retry_eligibility.get("render")
                     if probe is None or (authorising_request_id := probe(tx, caller, job)) is None:

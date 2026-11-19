@@ -10,6 +10,7 @@ from PIL import Image
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
+from proscenium.catalogue.validation import sequence_map as validate_sequence_map
 from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.jobs import TERMINAL, retry_context
@@ -70,7 +71,13 @@ class PreviewService:
         ):
             return None
         try:
-            request_id, context = retry_context(tx, caller, work)
+            request_id, context = retry_context(
+                tx,
+                caller,
+                work,
+                owner_epoch=self.services.jobs.owner_epoch,
+                require_invocation=True,
+            )
         except DomainError:
             return None
         if (
@@ -121,24 +128,7 @@ class PreviewService:
         ):
             return None
 
-        def matches(contributor: dict[str, Any]) -> bool:
-            return (
-                contributor.get("job_id") == job["job_id"]
-                and contributor.get("version_id") == job_version["version_id"]
-                and contributor.get("shot_id") == job_target.get("shot_id")
-            )
-
-        if any(
-            matches(entry)
-            or (
-                entry["transform"] == "transition"
-                and any(matches(contributor) for contributor in entry["contributors"])
-            )
-            for entry in doc["entries"]
-        ):
-            return request_id
-
-        # A transition can leave its job IDs to the explicit FrameMap.
+        maps: dict[str, dict[str, Any]] = {}
         for artifact_id in dict.fromkeys(entry["mapping_artifact_id"] for entry in doc["entries"]):
             if artifact_id is None:
                 continue
@@ -149,23 +139,41 @@ class PreviewService:
                 or artifact["kind"] != "frame_map"
                 or artifact["state"] != "ready"
             ):
-                continue
+                return None
             try:
                 raw = self.artifacts.ready_path(str(tx.project_id), artifact_id).read_bytes()
                 if sha(raw) != artifact["sha256"]:
-                    continue
+                    return None
                 mapping = json.loads(raw)
                 validate("FrameMap", mapping)
             except (DomainError, OSError, ValueError):
-                continue
-            if (
-                mapping["project_id"] == tx.project_id
-                and mapping["sequence_version_id"] == version["version_id"]
-                and any(
-                    matches(contributor)
-                    for row in mapping["frames"]
-                    for contributor in row["contributors"]
-                )
+                return None
+            maps[artifact_id] = mapping
+        try:
+            validate_sequence_map(tx, doc, version["version_id"], maps)
+        except DomainError:
+            return None
+
+        def matches(contributor: dict[str, Any]) -> bool:
+            return (
+                contributor.get("job_id") == job["job_id"]
+                and contributor.get("version_id") == job_version["version_id"]
+                and contributor.get("shot_id") == job_target.get("shot_id")
+            )
+
+        for entry in doc["entries"]:
+            if matches(entry) or (
+                entry["transform"] == "transition"
+                and any(matches(contributor) for contributor in entry["contributors"])
+            ):
+                return request_id
+            artifact_id = entry["mapping_artifact_id"]
+            bounds = entry["sequence_frames"]
+            if artifact_id is not None and any(
+                matches(contributor)
+                for row in maps[artifact_id]["frames"]
+                if bounds["start"] <= row["sequence_frame"] <= bounds["end"]
+                for contributor in row["contributors"]
             ):
                 return request_id
         return None

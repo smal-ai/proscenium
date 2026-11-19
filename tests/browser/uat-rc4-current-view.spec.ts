@@ -12,6 +12,7 @@ const board = version("storyboard-signal-lost-orbital-relay", "signal-lost-orbit
 const sceneRef = { item_id: scene.item_id, version_id: scene.version_id };
 const shotId = "sl-01-dormant-macro";
 const secondShotId = "sl-02-conduit";
+const macroJobId = `preview-${shotId}`;
 
 async function openStudio(page: Page, origin: string) {
   const studio = new StudioFixture(page, origin);
@@ -21,32 +22,38 @@ async function openStudio(page: Page, origin: string) {
     current_version_id: v.version_id, selected_version_id: null, state_revision: 1,
   }));
   const routes: MockRoute[] = [];
+  const receiptsByJob = new Map<string, FrameReceipt[]>();
   const sha256 = createHash("sha256").update(png).digest("hex");
   const dimensions = { width: 1, height: 1 };
   const fps = { numerator: 24, denominator: 1 };
 
   function addPass(attempt: number, ordinals: number[], shot: string, frames: { start: number; end: number }) {
-    const id = `${shot}-attempt-${attempt}`;
+    const id = `preview-${shot}`;
+    const previousAttemptId = id === macroJobId ? "attempt-1" : `attempt-${id}`;
     const render: JobRecord = {
       ...job(id, "running"), kind: "render", target: { target_id: shot, version: sceneRef, shot_id: shot },
-      availability: "partial", attempt_number: attempt, expected_frames: frames.end - frames.start + 1, completed_frames: ordinals.length,
+      availability: "partial", attempt_number: attempt, attempt_id: attempt === 2 ? "attempt-2" : previousAttemptId, expected_frames: frames.end - frames.start + 1, completed_frames: ordinals.length,
       render_spec: { intent_id: shot, shot_id: shot, purpose: "draft_motion", source_closure_digest: scene.source.digest, scene_name: scene.name, camera: null, frames, fps, dimensions, engine: "Cycles", device: "CPU", samples: 32, colour_management: { view_transform: "AgX", look: "None", exposure: 0, gamma: 1 }, renderer_revision: "synthetic" },
     };
     const receipts = ordinals.map((source_frame): FrameReceipt => {
-      const artifact_id = `${id}-frame-${source_frame}`;
+      const artifact_id = `${id}-f${source_frame}`;
       const summary = retained(artifact_id, "verified");
       Object.assign(summary.artifact, { purpose: "draft_motion", sha256, dimensions, source_version_id: scene.version_id });
       studio.retained.push({ ...summary, job_id: id });
       render.artifact_ids.push(artifact_id);
-      return { schema_version: "1.0", receipt_id: artifact_id, project_id: projectId, job_id: id, attempt_id: render.attempt_id, version_id: scene.version_id, shot_id: shot, source_frame, artifact_id, output_path: `${artifact_id}.png`, sha256, dimensions, input_digest: render.input_digest };
+      return { schema_version: "1.0", receipt_id: `${previousAttemptId}-f${source_frame}`, project_id: projectId, job_id: id, attempt_id: previousAttemptId, version_id: scene.version_id, shot_id: shot, source_frame, artifact_id, output_path: `${artifact_id}.png`, sha256, dimensions, input_digest: render.input_digest };
     });
+    if (attempt === 2) {
+      const opening = receipts.find(receipt => receipt.source_frame === 1)!;
+      receipts.splice(1, 0, { ...opening, receipt_id: "attempt-2-f1", attempt_id: render.attempt_id });
+    }
     const last = ordinals.at(-1)!;
     const availability: FrameAvailability = { schema_version: "1.0", project_id: projectId, job_id: id, version_id: scene.version_id, source_range: frames, fps, available_ranges: [{ start: ordinals[0], end: last }], playable_ranges: [], pending_ranges: [{ start: last + 1, end: frames.end }], failed_ranges: [], state_revision: 1 };
     studio.snapshot.jobs.push(render);
+    receiptsByJob.set(id, receipts);
     routes.push({ path: `${base}/jobs/${id}/frames`, body: pageOf(receipts) }, { path: `${base}/jobs/${id}/segments`, body: pageOf([]) }, { path: `${base}/jobs/${id}/availability`, body: availability });
   }
-  addPass(1, Array.from({ length: 28 }, (_, index) => index + 1), shotId, { start: 1, end: 72 });
-  addPass(2, [1], shotId, { start: 1, end: 72 });
+  addPass(2, Array.from({ length: 28 }, (_, index) => index + 1), shotId, { start: 1, end: 72 });
   addPass(1, [73], secondShotId, { start: 73, end: 168 });
 
   const shot = (shot_id: string, intent: string, start: number, end: number): ShotPlan["shots"][number] => ({
@@ -76,6 +83,24 @@ async function openStudio(page: Page, origin: string) {
       await route.fulfill({ status: 409, json: { schema_version: "1.0", error: { code: "source_conflict", message: "Request target conflicts with source version", operation_id: null, retryable: false, details: {} } } });
       return;
     }
+    const frame = context.target;
+    if (frame?.render_job_id) {
+      const render = studio.snapshot.jobs.find(job => job.job_id === frame.render_job_id);
+      const slotReceipts = (receiptsByJob.get(frame.render_job_id) ?? []).filter(receipt => receipt.source_frame === frame.source_frame);
+      if (frame.render_job_id === macroJobId && frame.source_frame === 1) {
+        expect(slotReceipts.length).toBeGreaterThanOrEqual(2);
+        expect(slotReceipts.map(receipt => receipt.receipt_id)).toEqual(["attempt-1-f1", "attempt-2-f1"]);
+        expect(slotReceipts.map(receipt => receipt.attempt_id)).toEqual(["attempt-1", "attempt-2"]);
+      }
+      if (render?.target.version?.version_id !== frame.version_id || !slotReceipts.length || slotReceipts.some(receipt =>
+        receipt.artifact_id !== frame.artifact_id || receipt.version_id !== frame.version_id || receipt.shot_id !== frame.shot_id
+        || receipt.sha256 !== frame.displayed_sha256 || receipt.input_digest !== render?.input_digest
+        || receipt.dimensions.width !== frame.dimensions.width || receipt.dimensions.height !== frame.dimensions.height
+      )) {
+        await route.fulfill({ status: 422, json: { schema_version: "1.0", error: { code: "frame_conflict", message: "Conflicting retained frame receipts", operation_id: null, retryable: false, details: {} } } });
+        return;
+      }
+    }
     studio.contexts.push(context);
     await route.fulfill({ status: 201, json: context });
   } });
@@ -104,8 +129,8 @@ async function selectSceneFrameOne(page: Page) {
   await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
   await expect(page.getByRole("spinbutton", { name: "Frame", exact: true })).toHaveValue("1");
   const pass = page.getByRole("combobox", { name: "Shot / render job" });
-  await expect(pass).toHaveValue(`${shotId}-attempt-1`);
-  await expect(pass.locator(`option[value="${shotId}-attempt-2"]`)).toHaveCount(1);
+  await expect(pass).toHaveValue(macroJobId);
+  await expect(pass.locator('option[value^="preview-"]')).toHaveCount(2);
 }
 
 async function queueAndVerifyReceipts(page: Page, text: string) {
@@ -149,7 +174,7 @@ test("Current view keeps the scene target and the exact shot-labelled frame rece
   expect(studio.contexts).toHaveLength(1);
   expect(studio.contexts[0]).toMatchObject({
     ...sceneRef, request_target: { kind: "item", version: sceneRef },
-    target: { artifact_id: `${shotId}-attempt-1-frame-1`, render_job_id: `${shotId}-attempt-1`, shot_id: shotId, source_frame: 1 },
+    target: { artifact_id: `${macroJobId}-f1`, render_job_id: macroJobId, shot_id: shotId, source_frame: 1 },
   });
   expect(studio.submissions).toHaveLength(1);
   expect(studio.submissions[0]).toMatchObject({ context_id: studio.contexts[0].context_id });
@@ -210,7 +235,7 @@ test("Current view aborts same-shot frame drift before any context or request wr
 
   await page.getByRole("button", { name: "Next frame", exact: true }).click();
   await expect(page.getByRole("spinbutton", { name: "Frame", exact: true })).toHaveValue("2");
-  await expect(page.getByRole("combobox", { name: "Shot / render job" })).toHaveValue(`${shotId}-attempt-1`);
+  await expect(page.getByRole("combobox", { name: "Shot / render job" })).toHaveValue(macroJobId);
   await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
   await gate.release();
 
