@@ -3,6 +3,7 @@
 import io
 import json
 import threading
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,21 @@ from proscenium.sources.read_only import read_authored_json
 from .config import Rendering
 from .journal import output, read, sha
 from .media import verify_video
+
+
+def sequence_contributors(
+    document: dict[str, Any], maps: dict[str, dict[str, Any]]
+) -> Iterator[dict[str, Any]]:
+    for entry in document["entries"]:
+        yield entry
+        if entry["transform"] == "transition":
+            yield from entry["contributors"]
+        artifact_id = entry["mapping_artifact_id"]
+        bounds = entry["sequence_frames"]
+        if artifact_id is not None:
+            for row in maps[artifact_id]["frames"]:
+                if bounds["start"] <= row["sequence_frame"] <= bounds["end"]:
+                    yield from row["contributors"]
 
 
 def ranges(frames: set[int]) -> list[dict[str, int]]:
@@ -112,6 +128,19 @@ class PreviewService:
             or version["kind"] != "sequence"
         ):
             return None
+        sequence = self.validated_sequence(tx, version)
+        if sequence and any(
+            contributor.get("job_id") == job["job_id"]
+            and contributor.get("version_id") == job_version["version_id"]
+            and contributor.get("shot_id") == job_target.get("shot_id")
+            for contributor in sequence_contributors(*sequence)
+        ):
+            return request_id
+        return None
+
+    def validated_sequence(
+        self, tx: Transaction, version: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]] | None:
         try:
             doc = read_authored_json(
                 self.services,
@@ -153,30 +182,19 @@ class PreviewService:
             validate_sequence_map(tx, doc, version["version_id"], maps)
         except DomainError:
             return None
+        return doc, maps
 
-        def matches(contributor: dict[str, Any]) -> bool:
-            return (
-                contributor.get("job_id") == job["job_id"]
-                and contributor.get("version_id") == job_version["version_id"]
-                and contributor.get("shot_id") == job_target.get("shot_id")
-            )
-
-        for entry in doc["entries"]:
-            if matches(entry) or (
-                entry["transform"] == "transition"
-                and any(matches(contributor) for contributor in entry["contributors"])
-            ):
-                return request_id
-            artifact_id = entry["mapping_artifact_id"]
-            bounds = entry["sequence_frames"]
-            if artifact_id is not None and any(
-                matches(contributor)
-                for row in maps[artifact_id]["frames"]
-                if bounds["start"] <= row["sequence_frame"] <= bounds["end"]
-                for contributor in row["contributors"]
-            ):
-                return request_id
-        return None
+    @staticmethod
+    def update_version_links(tx: Transaction, version_id: str, **updates: Any) -> None:
+        previous = tx.get("version_links", version_id, required=False)
+        tx.put(
+            "version_links",
+            version_id,
+            {"artifact_ids": [], **(previous or {}), **updates},
+            expected_revision=tx.revision("version_links", version_id)
+            if previous is not None
+            else None,
+        )
 
     def request(self, caller: Caller, request: Any) -> tuple[dict, bool]:
         body = request.model_dump(mode="json") if hasattr(request, "model_dump") else request
@@ -238,6 +256,14 @@ class PreviewService:
                     spec["intent_id"],
                     {"version": body["version"], "render_spec": spec, "job_id": job_id},
                 )
+                version_id = version["version_id"]
+                links = tx.get("version_links", version_id, required=False) or {}
+                order_updates = {
+                    key: list(dict.fromkeys(links.get(key, []) + [job_id]))
+                    for key in ("added_preview_job_ids", "ordered_preview_job_ids")
+                    if key == "added_preview_job_ids" or key in links
+                }
+                self.update_version_links(tx, version_id, **order_updates)
                 self.services.jobs.freeze_inputs(
                     tx,
                     job_id,
@@ -256,6 +282,127 @@ class PreviewService:
                 "previews.request", body["operation_id"], immutable, effect
             )
             return result, replayed or reused_intent
+
+    def check_order_scope(
+        self,
+        tx: Transaction,
+        work: dict[str, Any],
+        context: dict[str, Any],
+        version: dict[str, Any],
+    ) -> None:
+        publication = tx.get("publications", version["publication_id"], required=False)
+        same_work = publication is not None and publication.get("work_id") == work["work_id"]
+        reference = {key: version[key] for key in ("item_id", "version_id")}
+        target = context.get("request_target")
+        if target is not None:
+            match target["kind"]:
+                case "shot":
+                    raise DomainError(
+                        "scope_denied",
+                        403,
+                        "Storyboard shot targets cannot reorder scene preview passes",
+                    )
+                case "new_item" if not same_work:
+                    raise DomainError(
+                        "scope_denied",
+                        403,
+                        "New-item requests cannot reorder an existing item's preview passes",
+                    )
+                case "item" if target["version"] != reference and not same_work:
+                    raise DomainError(
+                        "scope_denied",
+                        403,
+                        "Target version is outside the active pinned item scope",
+                    )
+            return
+
+        selected_id = context.get("version_id")
+        if same_work or selected_id == version["version_id"]:
+            return
+        selected = tx.get("versions", selected_id, required=False) if selected_id else None
+        if selected and selected["kind"] == "sequence" and selected["project_id"] == tx.project_id:
+            sequence = self.validated_sequence(tx, selected)
+            if sequence and any(
+                contributor["version_id"] == version["version_id"]
+                for contributor in sequence_contributors(*sequence)
+            ):
+                return
+        raise DomainError(
+            "scope_denied", 403, "Pin the target version before reordering its preview passes"
+        )
+
+    def set_order(self, caller: Caller, request: Any) -> tuple[dict[str, Any], bool]:
+        body = request.model_dump(mode="json") if hasattr(request, "model_dump") else request
+        validate("PreviewOrderUpdate", body)
+        project_id = body["project_id"]
+        active(self.services, caller, "setPreviewOrder", project_id)
+        store = self.services.registry.project_store(project_id)
+        immutable = binding(caller, body)
+        with self.services.activation_lock, store.transaction() as tx:
+            previous = replay(tx, "previews.order", body["operation_id"], immutable)
+            if previous:
+                return previous, True
+
+            def effect() -> dict[str, Any]:
+                try:
+                    work = admitted(self.services, tx, caller)
+                except DomainError as exc:
+                    if exc.code == "not_found":
+                        raise DomainError("attribution_unavailable", 409) from exc
+                    raise
+                _, context = retry_context(
+                    tx,
+                    caller,
+                    work,
+                    owner_epoch=self.services.jobs.owner_epoch,
+                    require_invocation=True,
+                )
+                if not context or context["project_id"] != project_id:
+                    raise DomainError("scope_denied", 403)
+                if context.get("execution_scope") == "planning_only":
+                    raise DomainError(
+                        "scope_denied",
+                        403,
+                        "Preview passes cannot be reordered in planning-only work",
+                    )
+                version_id = body["version"]["version_id"]
+                version = tx.require("versions", version_id)
+                if (
+                    version["project_id"] != project_id
+                    or version["item_id"] != body["version"]["item_id"]
+                ):
+                    raise DomainError("scope_denied", 403)
+                self.check_order_scope(tx, work, context, version)
+                for job_id in body["job_ids"]:
+                    job = tx.get("jobs", job_id, required=False)
+                    if (
+                        not job
+                        or job["project_id"] != project_id
+                        or job["kind"] != "render"
+                        or job["target"].get("version") != body["version"]
+                    ):
+                        raise DomainError(
+                            "source_conflict",
+                            409,
+                            "All ordered preview jobs must be render passes on the target version",
+                        )
+                catalogue = self.services.extension("catalogue")
+                current_ids = catalogue.version_view(tx, version)["preview_job_ids"]
+                merged_ids = list(dict.fromkeys(body["job_ids"] + current_ids))
+                self.update_version_links(tx, version_id, ordered_preview_job_ids=merged_ids)
+                view = catalogue.version_view(tx, version)
+                validate("VersionRecord", view)
+                tx.emit(
+                    "preview.order_changed",
+                    view,
+                    actor={"kind": "tool", "id": caller.subject_id},
+                    work_id=caller.work_id,
+                    request_id=work["originating_request_id"],
+                    native_session_id=work["native_session_id"],
+                )
+                return view
+
+            return tx.operation("previews.order", body["operation_id"], immutable, effect)
 
     def root(self, job: dict) -> Path:
         project = Path(self.services.registry.get(job["project_id"])["path"])

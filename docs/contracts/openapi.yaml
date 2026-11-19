@@ -704,6 +704,23 @@ paths:
             application/json:
               schema: {$ref: './schema.json#/$defs/JobRecord'}
         default: {$ref: '#/components/responses/Error'}
+  /internal/v1/previews/order:
+    post:
+      operationId: setPreviewOrder
+      security: [{ToolCapability: []}]
+      parameters: *toolWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schema.json#/$defs/PreviewOrderUpdate'}
+      responses:
+        '200':
+          description: Updated or replayed preview pass order for a published version.
+          content:
+            application/json:
+              schema: {$ref: './schema.json#/$defs/VersionRecord'}
+        default: {$ref: '#/components/responses/Error'}
   /internal/v1/generation-jobs:
     post:
       operationId: submitGenerationJob

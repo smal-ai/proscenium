@@ -222,6 +222,9 @@ class OwnerSession(ContractModel):
 class Point2(ContractModel):
     definition = "Point2"
 
+class PreviewOrderUpdate(ContractModel):
+    definition = "PreviewOrderUpdate"
+
 class PreviewRequest(ContractModel):
     definition = "PreviewRequest"
 

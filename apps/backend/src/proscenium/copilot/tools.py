@@ -57,6 +57,13 @@ TOOLS = {
         "publishOutputs",
     ),
     "request_preview": ("previews", "request", "PreviewRequest", "JobRecord", "requestPreview"),
+    "set_preview_order": (
+        "previews",
+        "set_order",
+        "PreviewOrderUpdate",
+        "VersionRecord",
+        "setPreviewOrder",
+    ),
     "register_artifact": (
         "artifacts",
         "register",
@@ -218,6 +225,12 @@ SAFE_REASONS = frozenset(
         "Rendering profile is not enabled",
         "Execution profile is not configured",
         "A proxy is a single static sample",
+        "Storyboard shot targets cannot reorder scene preview passes",
+        "New-item requests cannot reorder an existing item's preview passes",
+        "Target version is outside the active pinned item scope",
+        "Pin the target version before reordering its preview passes",
+        "Preview passes cannot be reordered in planning-only work",
+        "All ordered preview jobs must be render passes on the target version",
         "Extra outputs are not configured",
         "Original rendering configuration is unavailable",
         "Original launch must be reconciled",
@@ -550,6 +563,7 @@ class Tools:
                     "checkpoint_sources",
                     "publish_outputs",
                     "register_artifact",
+                    "set_preview_order",
                     "prepare_image_generation",
                     "validate_authored_document",
                     *READ_TOOLS,
@@ -671,6 +685,8 @@ class Tools:
                         aid for item in body["items"] for aid in item.get("artifact_ids", [])
                     ],
                 )
+            elif name == "set_preview_order":
+                outcome.update(job_ids=list(body["job_ids"]))
             elif name in {
                 "submit_generation",
                 "request_preview",

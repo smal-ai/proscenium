@@ -61,7 +61,11 @@ description: Author and inspect Blender content inside the active Proscenium pro
    Use `get_version(version_id)` for the pinned publication/source record and
    `list_job_frames(job_id, cursor?, limit?)` for ready frame receipts, following
    `next_cursor` until null. Call `get_artifact(artifact_id)` for each desired
-   output's metadata. Inspect registered images with
+   output's metadata. For multi-scene or multi-shot animation previews, call
+   `set_preview_order` with the desired preview job IDs from the published version.
+   This changes the pass order in place without re-rendering. Omitted passes keep
+   their relative order at the end.
+   Inspect registered images with
    `get_artifact(artifact_id=..., include_image=true)`. Never copy managed
    `.proscenium/artefacts/.../content` just to call `view`. Wait with
    `get_job(job_id=..., wait_seconds=15)` (bounded `0..30`), not rapid polling.

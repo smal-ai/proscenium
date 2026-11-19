@@ -9,6 +9,10 @@ the backend/frontend bindings. Wire `schema_version` remains `1.0`.
 
 ## Compatible UAT extensions
 
+- `setPreviewOrder` (`set_preview_order`) accepts an idempotent `PreviewOrderUpdate`
+  for a published version in the active request scope. Listed render jobs move to
+  the front; omitted jobs keep their relative order. No frames are rendered again.
+  The response and `preview.order_changed` payload are the updated `VersionRecord`.
 - Owner `GET /api/v1/configuration/status` returns bounded read-only provider and
   workstation bridge observations (`ConfigurationStatus`), without starting services
   or reserving generation budgets. Configuration remains independently readable.

@@ -34,6 +34,7 @@ RECOMMENDED_TOOLS = frozenset(
         "checkpoint_sources",
         "publish_outputs",
         "request_preview",
+        "set_preview_order",
         "register_artifact",
         "submit_generation",
         "request_vlm_review",

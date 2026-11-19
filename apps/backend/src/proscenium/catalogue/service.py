@@ -20,6 +20,23 @@ from .artifacts import Artifacts
 METADATA = ("description", "tags", "provenance")
 
 
+def natural_render_job_key(job: dict[str, Any]) -> tuple[int, int, int, tuple, str]:
+    spec = job.get("render_spec") or {}
+    frames = spec.get("frames") or {}
+    label = str(job.get("target", {}).get("shot_id") or spec.get("scene_name") or "")
+    tokens = tuple(
+        (0, int(token)) if token.isdecimal() else (1, token)
+        for token in re.split(r"(\d+)", label.casefold())
+    )
+    return (
+        int(spec.get("purpose") == "proxy"),
+        int(frames.get("start", 0)),
+        int(frames.get("end", 0)),
+        tokens,
+        job["job_id"],
+    )
+
+
 class Catalogue:
     def __init__(self, services: Services, sources: Sources, artifacts: Artifacts):
         self.services, self.sources, self.artifacts = services, sources, artifacts
@@ -57,11 +74,21 @@ class Catalogue:
             for job in tx.all("jobs")
             if job["target"]["version"] == reference and job["kind"] == "render"
         ]
+        jobs.sort(key=natural_render_job_key)
+        valid_ids = {job["job_id"] for job in jobs}
+        inline_ids = row["preview_job_ids"]
+        ordered_override = links.get("ordered_preview_job_ids")
+        base_ids = (
+            ordered_override
+            if isinstance(ordered_override, list)
+            else inline_ids + links.get("added_preview_job_ids", [])
+        )
+        base_ids = [
+            identity for identity in base_ids if identity in valid_ids or identity in inline_ids
+        ]
         return {
             **row,
-            "preview_job_ids": list(
-                dict.fromkeys(row["preview_job_ids"] + [job["job_id"] for job in jobs])
-            ),
+            "preview_job_ids": list(dict.fromkeys(base_ids + [job["job_id"] for job in jobs])),
             "artifact_ids": list(
                 dict.fromkeys(
                     row["artifact_ids"]

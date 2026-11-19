@@ -276,6 +276,10 @@
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "version", "spec"],
       "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "version": {"$ref": "#/$defs/VersionRef"}, "spec": {"$ref": "#/$defs/RenderSpec"}}
     },
+    "PreviewOrderUpdate": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "version", "job_ids"],
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "version": {"$ref": "#/$defs/VersionRef"}, "job_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/Id"}}}
+    },
     "ProjectRebind": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "expected_revision", "new_path"],
       "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "new_path": {"type": "string", "minLength": 1}}
@@ -547,7 +551,7 @@
     },
     "Event": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "sequence", "occurred_at", "event_type", "request_id", "work_id", "actor", "native_session_id", "native_event_id", "payload"],
-      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "sequence": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}, "occurred_at": {"$ref": "#/$defs/Timestamp"}, "event_type": {"enum": ["project.state_changed", "work.state_changed", "request.accepted", "request.state_changed", "assistant.delta", "assistant.completed", "tool.started", "tool.completed", "subagent.started", "subagent.completed", "publication.created", "job.state_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "decision.requested", "decision.resolved", "review.ready", "review.changed", "usage.recorded"]}, "request_id": {"$ref": "#/$defs/NullableId"}, "work_id": {"$ref": "#/$defs/NullableId"}, "actor": {"$ref": "#/$defs/Actor"}, "native_session_id": {"type": ["string", "null"]}, "native_event_id": {"type": ["string", "null"]}, "payload": {"type": "object"}},
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "sequence": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}, "occurred_at": {"$ref": "#/$defs/Timestamp"}, "event_type": {"enum": ["project.state_changed", "work.state_changed", "request.accepted", "request.state_changed", "assistant.delta", "assistant.completed", "tool.started", "tool.completed", "subagent.started", "subagent.completed", "publication.created", "job.state_changed", "frame.available", "segment.available", "preview.order_changed", "annotation.saved", "selection.changed", "decision.requested", "decision.resolved", "review.ready", "review.changed", "usage.recorded"]}, "request_id": {"$ref": "#/$defs/NullableId"}, "work_id": {"$ref": "#/$defs/NullableId"}, "actor": {"$ref": "#/$defs/Actor"}, "native_session_id": {"type": ["string", "null"]}, "native_event_id": {"type": ["string", "null"]}, "payload": {"type": "object"}},
       "allOf": [
         {"if": {"properties": {"event_type": {"const": "project.state_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ProjectRecord"}}}},
         {"if": {"properties": {"event_type": {"const": "work.state_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/WorkRecord"}}}},
@@ -558,6 +562,7 @@
         {"if": {"properties": {"event_type": {"const": "job.state_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/JobRecord"}}}},
         {"if": {"properties": {"event_type": {"const": "frame.available"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/FrameReceipt"}}}},
         {"if": {"properties": {"event_type": {"const": "segment.available"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/PreviewSegment"}}}},
+        {"if": {"properties": {"event_type": {"const": "preview.order_changed"}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/VersionRecord"}}}},
         {"if": {"properties": {"event_type": {"enum": ["annotation.saved", "selection.changed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/CommandReceipt"}}}},
         {"if": {"properties": {"event_type": {"enum": ["decision.requested", "decision.resolved"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/Decision"}}}},
         {"if": {"properties": {"event_type": {"enum": ["review.ready", "review.changed"]}}}, "then": {"properties": {"payload": {"$ref": "#/$defs/ReviewTicket"}}}},

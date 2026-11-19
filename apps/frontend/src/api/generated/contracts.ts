@@ -190,6 +190,7 @@ export type Event = {
     | "job.state_changed"
     | "frame.available"
     | "segment.available"
+    | "preview.order_changed"
     | "annotation.saved"
     | "selection.changed"
     | "decision.requested"
@@ -497,6 +498,7 @@ export interface ContractDefinitions {
   OwnerBootstrap: OwnerBootstrap;
   OwnerSession: OwnerSession;
   Point2: Point2;
+  PreviewOrderUpdate: PreviewOrderUpdate;
   PreviewRequest: PreviewRequest;
   PreviewSegment: PreviewSegment;
   ProjectCapabilities: ProjectCapabilities;
@@ -1229,6 +1231,16 @@ export interface OwnerSession {
   owner_session_id: Id;
   csrf_token: string;
   expires_at: Timestamp;
+}
+export interface PreviewOrderUpdate {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  version: VersionRef;
+  /**
+   * @minItems 1
+   */
+  job_ids: [Id, ...Id[]];
 }
 export interface PreviewRequest {
   schema_version: "1.0";
