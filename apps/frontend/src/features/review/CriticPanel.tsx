@@ -29,7 +29,8 @@ export function criticRequestTarget(targets: FrameTarget[], items: ItemRecord[])
   }
   const effectiveKind = items.find(item => item.item_id === first.item_id)?.kind
     ?? (first.origin === "sequence_render" ? "sequence" : undefined);
-  return versionRequestTarget({ item_id: first.item_id, version_id: first.version_id }, effectiveKind, first.shot_id);
+  const shotId = targets.every(target => target.shot_id === first.shot_id) ? first.shot_id : null;
+  return versionRequestTarget({ item_id: first.item_id, version_id: first.version_id }, effectiveKind, shotId);
 }
 
 interface StagedFinding {

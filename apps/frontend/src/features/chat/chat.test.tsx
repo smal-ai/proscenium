@@ -304,6 +304,15 @@ test("annotation and Critic submissions resolve matching target kinds without lo
   assert.deepEqual(criticRequestTarget([reviewFrame("storyboard"), reviewFrame("scene")], [reviewItem("storyboard"), reviewItem("scene")]), { kind: "project" });
 });
 
+test("Critic findings target a storyboard shot only when all findings share it", () => {
+  const first = { ...reviewFrame("storyboard"), shot_id: "shot-1" };
+  const second = { ...first, artifact_id: "attempt-1-f2", source_frame: 2 };
+  const items = [reviewItem("storyboard")];
+  const version = reviewVersion("storyboard");
+  assert.deepEqual(criticRequestTarget([first, second], items), { kind: "shot", storyboard_version: version, shot_id: "shot-1" });
+  assert.deepEqual(criticRequestTarget([first, { ...second, shot_id: "shot-2" }], items), { kind: "item", version });
+});
+
 test("current-view capture freezes target and attachments before asynchronous preparation", async () => {
   const selection = { ...emptySelection(), ...ref };
   const attachments = [{ artifact_id: "chosen", role: "reference" as const }];

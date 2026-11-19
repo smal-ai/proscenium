@@ -1,6 +1,7 @@
 """Preview admission and verified, incremental immutable media publication."""
 
 import io
+import json
 import threading
 from pathlib import Path
 from typing import Any
@@ -136,6 +137,37 @@ class PreviewService:
             for entry in doc["entries"]
         ):
             return request_id
+
+        # A transition can leave its job IDs to the explicit FrameMap.
+        for artifact_id in dict.fromkeys(entry["mapping_artifact_id"] for entry in doc["entries"]):
+            if artifact_id is None:
+                continue
+            artifact = tx.get("artifacts", artifact_id, required=False)
+            if (
+                not artifact
+                or artifact["project_id"] != tx.project_id
+                or artifact["kind"] != "frame_map"
+                or artifact["state"] != "ready"
+            ):
+                continue
+            try:
+                raw = self.artifacts.ready_path(str(tx.project_id), artifact_id).read_bytes()
+                if sha(raw) != artifact["sha256"]:
+                    continue
+                mapping = json.loads(raw)
+                validate("FrameMap", mapping)
+            except (DomainError, OSError, ValueError):
+                continue
+            if (
+                mapping["project_id"] == tx.project_id
+                and mapping["sequence_version_id"] == version["version_id"]
+                and any(
+                    matches(contributor)
+                    for row in mapping["frames"]
+                    for contributor in row["contributors"]
+                )
+            ):
+                return request_id
         return None
 
     def request(self, caller: Caller, request: Any) -> tuple[dict, bool]:

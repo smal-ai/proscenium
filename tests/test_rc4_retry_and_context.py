@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 from proscenium.api.dependencies import owner
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
+from proscenium.catalogue.validation import sequence_map
 from proscenium.contracts import canonical, validate
 from proscenium.copilot.context import Contexts
 from proscenium.copilot.outcomes import get_tool_outcome
@@ -608,7 +609,8 @@ def test_recover_four_pinned_shots_and_never_assemble_missing_frames(
     assert not any(j["job_id"] == "draft-movie" for j in records(studio, "jobs"))
 
 
-def test_sequence_transition_requires_an_exact_pinned_contributor(signal_lost):
+@pytest.mark.parametrize("via_frame_map", [False, True], ids=["direct", "frame-map"])
+def test_sequence_transition_requires_an_exact_pinned_contributor(signal_lost, via_frame_map):
     studio = signal_lost
     dissolve = {**DRAFT, "version_id": "signal-lost-dissolve-v1"}
     document = deepcopy(studio.sequence)
@@ -625,11 +627,64 @@ def test_sequence_transition_requires_an_exact_pinned_contributor(signal_lost):
         mapping_artifact_id="dissolve-map",
         contributors=contributors,
     )
+    if via_frame_map:
+        frames = []
+        for entry in document["entries"]:
+            sources = contributors if entry is macro else [entry]
+            first, last = entry["sequence_frames"]["start"], entry["sequence_frames"]["end"]
+            for frame in range(first, last + 1):
+                frames.append(
+                    dict(
+                        sequence_frame=frame,
+                        contributors=[
+                            dict(
+                                shot_id=s["shot_id"],
+                                version_id=s["version_id"],
+                                job_id=s["job_id"],
+                                source_frame=s["source_frames"]["start"] + frame - first,
+                                weight=dict(numerator=1, denominator=len(sources)),
+                            )
+                            for s in sources
+                        ],
+                    )
+                )
+        contributors[0]["job_id"] = None
+        mapping = dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            sequence_version_id=dissolve["version_id"],
+            fps=FPS,
+            frame_count=document["frame_count"],
+            blend_space="linear_rgb",
+            frames=frames,
+        )
+        map_id = macro["mapping_artifact_id"]
+        artifacts = studio.services.extension("artifacts")
+        data = canonical(mapping)
+        with studio.store.transaction() as tx:
+            sequence_map(tx, document, dissolve["version_id"], {map_id: mapping})
+            artifacts.put(
+                tx,
+                artifacts.promote(
+                    PROJECT,
+                    map_id,
+                    data,
+                    kind="frame_map",
+                    purpose="metadata",
+                    media_type="application/json",
+                ),
+            )
     publish(studio, dissolve, "sequence", document, dependencies=[SCENE])
     new_turn(studio, {**DRAFT_VIEW, **dissolve})
     call = retry(studio, MACRO)
     caller = studio.tools.caller(call)
     job = studio.jobs[MACRO]
+    if via_frame_map:
+        path = artifacts.ready_path(PROJECT, map_id)
+        path.chmod(0o600)
+        path.write_bytes(data.replace(b'"source_frame":1,', b'"source_frame":2,', 1))
+        rejection(studio, MACRO, "scope_denied", EARLIER_RENDER, status=403)
+        path.write_bytes(data)
     with studio.store.transaction(write=False) as tx:
         assert studio.previews.can_retry_cross_work(tx, caller, job) == NEW_REQUEST
         unpinned = {**job, "target": {**job["target"], "shot_id": "different-shot"}}
