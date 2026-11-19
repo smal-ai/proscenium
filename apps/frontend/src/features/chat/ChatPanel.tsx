@@ -100,7 +100,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     else if (work?.state === "awaiting_resume" && chosenResumeWork) setResumeMode("continue_work");
     else if (canReleaseQueue) setResumeMode("release_held_queue");
   }, [recoveryStateKey, Boolean(chosenResumeWork)]);
-  const resolvedTarget = resolveTarget(draftTarget, selection);
+  const resolvedTarget = resolveTarget(draftTarget, selection, catalogue);
   const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
   const currentSelection: TurnSelection = pendingExisting
     ? { ...cleanTargetContext({ kind: "project" }, effectiveReferences, attachments), request_target: undefined }
@@ -189,7 +189,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     const capturedAttachments = structuredClone(attachments);
     const submittedIds = new Set(capturedAttachments.map(a => a.artifact_id));
     try {
-      const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments }, prepareContext);
+      const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments, items: catalogue }, prepareContext);
       if (submittedMode === "steer" && steerWorkId(snapshotRef.current) !== submittedWorkId) throw new Error("Work is no longer steerable. Your Steer mode and draft are retained. Switch to Queue deliberately.");
       const ok = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId);
       if (ok) {
@@ -254,7 +254,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       }} /></>}
       {composerPanel === "jobs" && <ComposerPanel panelId="composer-jobs" title="Independent jobs" onClose={closePanel}><JobList api={api} projectId={projectId} jobs={jobs} items={catalogue} onRefresh={onRefresh} onError={e => setError(describeError(e))} /></ComposerPanel>}
       {composerPanel === "context" && <ComposerPanel panelId="composer-context" title="Next request context" onClose={closePanel}>
-        <ContextPreview projectId={projectId} selection={currentSelection} />
+        <ContextPreview projectId={projectId} selection={currentSelection} items={catalogue} />
         {references.map(ref => <div className="reference-version" key={`${ref.item_id}:${ref.version_id}`}><code>{ref.item_id} · {ref.version_id}</code><button aria-label={`Remove reference version ${ref.version_id}`} onClick={() => changeReferences(references.filter(value => value.item_id !== ref.item_id || value.version_id !== ref.version_id))}>Remove reference</button></div>)}
         {attachments.map((a, i) => <div className="attachment-controls" key={`${a.artifact_id}.${i}`}><select aria-label={`Image ${i + 1} role`} value={a.role} onChange={e => changeAttachments(attachments.map((x, j) => i === j ? { ...x, role: e.target.value as Attachment["role"] } : x))}>{["reference", "concept", "render", "markup", "mask"].map(role => <option key={role}>{role}</option>)}</select><button aria-label={`Remove image ${i + 1}`} onClick={() => changeAttachments(attachments.filter((_, j) => i !== j))}><X size={13} /></button></div>)}
       </ComposerPanel>}

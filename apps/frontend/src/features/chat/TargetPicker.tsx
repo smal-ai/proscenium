@@ -3,7 +3,7 @@ import { ChevronDown, X } from "lucide-react";
 import type { ApiClient, ItemRecord, ShotPlan, VersionRecord, VersionRef } from "../../api";
 import type { TurnSelection } from "../../api/studio";
 import { describeError, id } from "../../app/storage";
-import { resolveTarget, targetLabel, uniqueVersions, type DraftTarget } from "./target";
+import { resolveTarget, targetLabel, uniqueVersions, viewedSelectionLabel, type DraftTarget } from "./target";
 
 type NewTarget = Extract<DraftTarget, { kind: "new_item" }>;
 type Mode = "current_view" | "project" | "existing" | "new";
@@ -186,20 +186,21 @@ export function TargetPicker(props: PickerProps) {
     setPendingExisting(false);
     props.onTarget(next);
   }
-  const resolved = resolveTarget(target, selection);
+  const resolved = resolveTarget(target, selection, items);
   const pinned = pinnedVersion(target);
   const pending = (props.pendingExisting ?? localPendingExisting) && !pinned;
   const browsingStoryboard = open && items.some(item => item.item_id === pinned?.item_id && item.kind === "storyboard");
-  const plan = useShotPlan({ api, projectId }, resolved.kind === "shot" ? resolved.storyboard_version.version_id : browsingStoryboard ? pinned?.version_id : undefined);
-  const friendly = targetLabel(resolved, items);
-  const shotName = resolved.kind === "shot" ? plan?.plan?.shots.find(shot => shot.shot_id === resolved.shot_id)?.intent : null;
-  const targetName = shotName && resolved.kind === "shot" ? `Shot · ${items.find(item => item.item_id === resolved.storyboard_version.item_id)?.name ?? "Storyboard"} · ${shotName}` : friendly;
-  const label = pending ? "Choose published item…" : target === "current_view" && resolved.kind !== "project" ? `Current view · ${targetName}` : targetName;
+  const plan = useShotPlan({ api, projectId }, resolved?.kind === "shot" ? resolved.storyboard_version.version_id : browsingStoryboard ? pinned?.version_id : undefined);
+  const viewed = viewedSelectionLabel(selection, items);
+  const friendly = resolved ? targetLabel(resolved, items) : (viewed ?? "Project");
+  const shotName = resolved?.kind === "shot" ? plan?.plan?.shots.find(shot => shot.shot_id === resolved.shot_id)?.intent : null;
+  const targetName = shotName && resolved?.kind === "shot" ? `Shot · ${items.find(item => item.item_id === resolved.storyboard_version.item_id)?.name ?? "Storyboard"} · ${shotName}` : friendly;
+  const label = pending ? "Choose published item…" : target === "current_view" && (resolved ? resolved.kind !== "project" : viewed) ? `Current view · ${targetName}` : targetName;
   const count = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]).length;
   return <div className="target-picker" onKeyDown={event => {
     if (open && event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); changeOpen(false); }
   }}>
-    <button className="target-bar" aria-label="Choose request target and references" aria-expanded={open} aria-controls="request-target-picker" aria-invalid={pending || undefined} onClick={() => changeOpen(!open)} title={pending ? undefined : JSON.stringify(resolved)}>
+    <button className="target-bar" aria-label="Choose request target and references" aria-expanded={open} aria-controls="request-target-picker" aria-invalid={pending || undefined} onClick={() => changeOpen(!open)} title={pending ? undefined : JSON.stringify(resolved ?? { viewed_version: { item_id: selection.item_id, version_id: selection.version_id } })}>
       <span className="target-bar-label"><span>Target:</span> {label}</span>{count > 0 && <span className="target-ref-count">+{count} ref</span>}<ChevronDown size={13} />
     </button>
     {open && <TargetOptions props={{ ...props, onTarget: chooseTarget }} count={count} friendly={targetName} close={() => changeOpen(false)} plan={plan} pending={pending} chooseExisting={() => setPendingExisting(true)} />}

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { MapPin, PenLine, RotateCcw } from "lucide-react";
-import type { AnnotationSave, AnnotationSnapshot } from "../../api/generated/contracts";
+import type { AnnotationSave, AnnotationSnapshot, VersionRecord } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
 import { shortVersionLabel } from "../catalogue/catalogueHelpers";
@@ -169,6 +169,7 @@ export function useSpatialPinController({
   enabled,
   api,
   draft,
+  versionKind,
   proxyUnavailableReason,
   onChange,
   onQueue,
@@ -179,6 +180,7 @@ export function useSpatialPinController({
   enabled: boolean;
   api: ApiClient;
   draft: Draft | undefined;
+  versionKind?: VersionRecord["kind"];
   proxyUnavailableReason: string | null;
   onChange: (draft: Draft) => void;
   onQueue: (text: string, context: TurnSelection) => void | Promise<void>;
@@ -414,13 +416,13 @@ export function useSpatialPinController({
       saveLatch.current = true;
       setSaving(true);
       try {
-        return structuredClone(annotationContext(await prepareFallbackSnapshot()));
+        return structuredClone(annotationContext(await prepareFallbackSnapshot(), versionKind));
       } finally {
         saveLatch.current = false;
         if (mounted.current) setSaving(false);
       }
     }
-    return structuredClone(annotationContext((await prepareSavedDraft()).annotation));
+    return structuredClone(annotationContext((await prepareSavedDraft()).annotation, versionKind));
   };
 
   useLayoutEffect(() => {
@@ -452,7 +454,7 @@ export function useSpatialPinController({
       const snapshot = proxyUnavailableReason
         ? await prepareFallbackSnapshot()
         : structuredClone(live.current.annotation);
-      await onQueue(snapshot.text || "Apply this annotated feedback.", annotationContext(snapshot));
+      await onQueue(snapshot.text || "Apply this annotated feedback.", annotationContext(snapshot, versionKind));
       submittedAnnotation.current = live.current?.annotation ?? null;
       setQueueState("submitted");
     } catch (e) {
