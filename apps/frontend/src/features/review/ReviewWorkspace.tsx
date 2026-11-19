@@ -1,11 +1,11 @@
 import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, Info, MapPin, Pause, PenLine, Play, X } from "lucide-react";
-import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, Markup, PreviewSegment, ProxyMapping, SpatialHit, VersionRecord } from "../../api/generated/contracts";
+import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, JobRecord, Markup, PreviewSegment, ProxyMapping, SpatialHit, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { versionRequestTarget } from "../chat/target";
 import { AnnotationEditor } from "./AnnotationEditor";
 import { AnnotationsDrawer, draftFromSnapshot, mergeHydratedDrafts, mergeItemAnnotations, resolveAnnotationEntry, type AnnotationEntry } from "./AnnotationsDrawer";
-import { frameTarget, mediaUrl, sequenceTarget, stableJson, typingTarget } from "./media";
+import { frameTarget, mediaUrl, segmentAt, sequenceTarget, stableJson, typingTarget } from "./media";
 import { flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
 import { SequencePlayer } from "./SequencePlayer";
@@ -18,6 +18,7 @@ import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
 import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
 import { canStepKeyframePass, describeKeyframePassStatus, isFrameRendering, resolveDirectKeyframeJump, sortedReadyFrames, stepKeyframePass } from "./keyframeStepping";
+import { formatPassOptionLabels, orderVersionJobs, selectablePassJobs } from "./passOrder";
 import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
 import { useReviewSelection } from "./state";
@@ -92,6 +93,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const framePointerDown = useRef(false);
   const frameInputEdited = useRef(false);
   const [playing, setPlaying] = useState(false);
+  const [playAll, setPlayAll] = useState(false);
+  const [seekNonce, setSeekNonce] = useState(0);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftId, setDraftId] = useState<string | null>(null);
   const draftsRef = useRef(drafts);
@@ -108,7 +111,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   useLayoutEffect(() => {
     if (!visible) {
       invalidatePendingPlacement();
-      setPlaying(false); setCaptureReady(false); setPinMode(false); setUnmappedCapture(null);
+      setPlaying(false); setPlayAll(false); setCaptureReady(false); setPinMode(false); setUnmappedCapture(null);
     }
   }, [visible, invalidatePendingPlacement]);
   const [saved, setSaved] = useState<AnnotationSnapshot[]>([]);
@@ -131,7 +134,13 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const choice = useReviewSelection();
   const scope = `${projectId}:${version?.version_id}`;
   const selected = choice.scope === scope ? choice.selected : [];
-  const versionJobs = jobs.filter(j => j.target.version?.version_id === version?.version_id);
+  const versionId = version?.version_id;
+  const versionJobs = useMemo(() => jobs.filter(j => j.target.version?.version_id === versionId), [jobs, versionId]);
+  const orderedVersionJobs = useMemo(() => orderVersionJobs(versionJobs, version?.preview_job_ids), [versionJobs, version?.preview_job_ids]);
+  const passJobs = useMemo(() => selectablePassJobs(orderedVersionJobs, mode, artifacts), [orderedVersionJobs, mode, artifacts]);
+  const passLabels = useMemo(() => formatPassOptionLabels(passJobs), [passJobs]);
+  const animationPasses = useMemo(() => selectablePassJobs(orderedVersionJobs, "animation", artifacts).filter(job =>
+    job.kind === "render" && (job.render_spec?.purpose === "draft_motion" || job.render_spec?.purpose === "final" || (job.expected_frames ?? 0) > 1)), [orderedVersionJobs, artifacts]);
   const jobsKey = versionJobs.map(j => `${j.job_id}:${j.state_revision}:${j.artifact_ids.join(",")}`).join("|");
   const draft = drafts.find(d => d.key === draftId);
   const isSpatialDraft = Boolean(draft && draft.annotation.spatial_hits.length > 0);
@@ -140,6 +149,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const editorPreparer = useRef<ContextPreparer | null>(null);
   const registerEditorPreparer = useCallback((prepare: ContextPreparer | null) => {editorPreparer.current = prepare;}, []);
   const reviewJobId=targetJobId(draft?.annotation.target ?? target, versionJobs, artifacts, sequenceJobId);
+  const currentAnimIndex = animationPasses.findIndex(job => job.job_id === reviewJobId);
+  const nextAnimJobId = playAll && currentAnimIndex >= 0 ? animationPasses[currentAnimIndex + 1]?.job_id : undefined;
+  const nextPassSegment = useMemo(() => nextAnimJobId ? segments.filter(clip => clip.job_id === nextAnimJobId)
+    .sort((a, b) => a.source_frames.start - b.source_frames.start)[0] : undefined, [nextAnimJobId, segments]);
   const activeJob = jobs.find(j => j.job_id === reviewJobId);
   const currentFrames=useMemo(()=>frames.filter(f=>!reviewJobId||f.job_id===reviewJobId),[frames,reviewJobId]);
   const currentSegments=useMemo(()=>segments.filter(s=>!reviewJobId||s.job_id===reviewJobId),[segments,reviewJobId]);
@@ -152,10 +165,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const displayedFrame = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame ?? Math.max(1, storyboardIndex + 1)) : requestedFrame;
   const imageOrdinal = mode === "keyframes" ? (target?.source_frame ?? target?.sequence_frame) : (target?.sequence_frame ?? target?.source_frame);
   const passStatus = mode === "keyframes" ? describeKeyframePassStatus({readyFrames, displayedFrame, job: activeJob, availability}) : null;
-  const activeFrameOrdinal = mode === "keyframes" ? displayedFrame : requestedFrame;
+  const activeFrameOrdinal = mode === "keyframes" ? displayedFrame : (captureReady && target ? (target.sequence_frame ?? target.source_frame ?? requestedFrame) : requestedFrame);
   useEffect(() => {
-    frameInputEdited.current = false;
-    setFrameInput(String(activeFrameOrdinal));
+    if (!frameInputEdited.current) setFrameInput(String(activeFrameOrdinal));
   }, [activeFrameOrdinal, mode, draftId]);
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
   const mappedSequence = mode === "animation" && !!assembly && !!frameMap;
@@ -266,6 +278,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   useEffect(() => {
     if (externalPrimary === emittedPrimary.current) return;
+    setPlayAll(false);
     invalidatePendingPlacement();
     setUnmappedCapture(null);
     if (!external?.target) return;
@@ -277,6 +290,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     setTargetCamera(annotation ? structuredClone(annotation.camera) : external.target.render_job_id ? frameCamera(external.target, jobs) : structuredClone(external.camera));
     setRange(external.range);
     setRequestedFrame(external.target.sequence_frame ?? external.target.source_frame ?? 1);
+    setSeekNonce(n => n + 1);
     setMode(spatial || external.view_mode === "3d_inspection" ? "3d_inspection" : external.view_mode === "animation" ? "animation" : "keyframes");
     choice.select(scope, external.selected_objects);
     if (annotation) {
@@ -385,7 +399,6 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         } catch (e) {captureError(e);}
       }
       if (active) {
-        receipts.sort((a,b) => a.source_frame - b.source_frame);
         // Keep admission order, not asynchronous HTTP completion order, for initial display.
         const orderedMedia = artifactIds.flatMap(id => media.filter(a => a.artifact_id === id));
         const panels: StoryboardTarget[] = storyboardPanels.flatMap(panel => {
@@ -394,11 +407,15 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           return [{...panel, target: {origin: artifact.purpose === "reference" ? "reference" as const : "concept" as const, artifact_id: artifact.artifact_id, displayed_sha256: artifact.sha256, dimensions: artifact.dimensions, item_id: pinned.item_id, version_id: pinned.version_id, shot_id: panel.shot_id, render_job_id: null, source_frame: null, media_artifact_id: null}}];
         });
         setStoryboardTargets(panels);
-        receipts.sort((a,b) => versionJobs.findIndex(j => j.job_id === a.job_id) - versionJobs.findIndex(j => j.job_id === b.job_id) || a.source_frame - b.source_frame);
+        const ordered = pinned === version ? orderedVersionJobs : orderVersionJobs(versionJobs, pinned.preview_job_ids);
+        const rank = new Map(ordered.map((job, index) => [job.job_id, index]));
+        receipts.sort((a,b) => (rank.get(a.job_id) ?? Infinity) - (rank.get(b.job_id) ?? Infinity) || a.source_frame - b.source_frame);
         setFrames(receipts); setSegments(clips); setArtifacts(orderedMedia);
-        if (!initialised.current && (receipts.length || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
+        const visualJobs = new Set(selectablePassJobs(ordered, "keyframes", orderedMedia).map(job => job.job_id));
+        const initialReceipt = receipts.find(receipt => visualJobs.has(receipt.job_id));
+        if (!initialised.current && (initialReceipt || media.some(a => a.kind === "image" && a.state === "ready" && a.dimensions))) {
           initialised.current = true;
-          if (receipts[0]) {const first=frameTarget(receipts[0],version!);setTarget(first);setTargetCamera(frameCamera(first,jobs));setRequestedFrame(receipts[0].source_frame);}
+          if (initialReceipt) {const first=frameTarget(initialReceipt,version!);setTarget(first);setTargetCamera(frameCamera(first,jobs));setRequestedFrame(initialReceipt.source_frame);}
           else if (panels[0]) {setTarget(panels[0].target);setStoryboardPanelIndex(0);setTargetCamera(null);setMode("keyframes");}
           else {
             const image = orderedMedia.find(a => pinned.artifact_ids.includes(a.artifact_id) && a.kind === "image" && a.state === "ready" && a.dimensions)
@@ -474,10 +491,12 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function showKeyframe(receipt: FrameReceipt) {
     if (!version) return;
+    frameInputEdited.current = false;
     const frame = frameTarget(receipt, version);
     setTarget(frame);
     setTargetCamera(frameCamera(frame, jobs));
     setRequestedFrame(receipt.source_frame);
+    setSeekNonce(n => n + 1);
     setFrameInput(String(receipt.source_frame));
     setPlaying(false);
     setCaptureReady(false);
@@ -487,6 +506,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   function showStoryboardPanel(index: number) {
     const panel = storyboardTargets[index];
     if (!panel) return;
+    frameInputEdited.current = false;
     setTarget(panel.target);
     setStoryboardPanelIndex(index);
     setRequestedFrame(index + 1);
@@ -498,6 +518,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }
 
   function commitFrameInput(raw: string) {
+    setPlayAll(false);
     frameInputEdited.current = false;
     const ordinal = Number(raw);
     if (!raw.trim() || !Number.isFinite(ordinal) || ordinal < 1 || (mode === "keyframes" && !Number.isSafeInteger(ordinal))) {
@@ -506,7 +527,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     }
     if (mode === "animation") {
       const next = Math.trunc(ordinal);
-      setPlaying(false); setCaptureReady(false); setRequestedFrame(next); setFrameInput(String(next)); setFrameNotice("");
+      setPlaying(false); setCaptureReady(false); setRequestedFrame(next); setSeekNonce(n => n + 1); setFrameInput(String(next)); setFrameNotice("");
       return;
     }
     if (!readyFrames.length && storyboardPanel && storyboardTargets[ordinal - 1]) {
@@ -530,11 +551,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function step(delta: -1 | 1, shot = false) {
     if (draftId) return;
+    setPlayAll(false);
     setPlaying(false);
     if (shot) {
-      const currentIndex=versionJobs.findIndex(j=>j.job_id===reviewJobId);
-      const candidates=delta>0?versionJobs.slice(currentIndex+1):versionJobs.slice(0,currentIndex).reverse();
-      const next=candidates.find(j=>j.target.shot_id!==activeJob?.target.shot_id);
+      const currentIndex = passJobs.findIndex(job => job.job_id === reviewJobId);
+      const next = passJobs[currentIndex + delta];
       if(next) chooseJob(next.job_id);
       return;
     }
@@ -557,21 +578,23 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       return;
     }
     if (!currentFrames.length) return;
-    const current = target?.sequence_frame ?? target?.source_frame ?? requestedFrame;
-    const ordinal = Math.max(1, current + delta);
-    setRequestedFrame(ordinal); setCaptureReady(false);
+    const ordinal = Math.max(1, activeFrameOrdinal + delta);
+    setRequestedFrame(ordinal); setSeekNonce(n => n + 1); setCaptureReady(false);
     const pending = !currentFrames.some(f => f.source_frame === ordinal) && isFrameRendering(ordinal, activeJob, availability);
     setFrameNotice(pending ? `Frame ${ordinal} is pending. Last identified image retained.` : "");
   }
 
   function chooseJob(identity:string) {
+    setPlayAll(false);
+    setPlaying(false);
+    frameInputEdited.current = false;
     setFrameNotice("");
     const first=frames.find(f=>f.job_id===identity);
     const job=versionJobs.find(j=>j.job_id===identity);
     const image=job ? generationOutputs(job,artifacts)[0] : undefined;
     if (!version || (!first && !image)) {setError(`No ready review output for ${identity}. Current image and job retained.`);return;}
     setSequenceJobId(first && version.kind === "sequence" ? identity : null);
-    setPlaying(false);setCaptureReady(false);setRange(null);setTargetCamera(null);setError("");
+    setCaptureReady(false);setRange(null);setTargetCamera(null);setError("");
     if(first) showKeyframe(first);
     else if(image){setMode("keyframes");setTarget(imageTarget(image,version,versionJobs));setRequestedFrame(1);setFrameInput("1");}
   }
@@ -579,13 +602,75 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   function changeMode(next: Mode) {
     if (mode !== next) {
       invalidatePendingPlacement();
+      frameInputEdited.current = false;
       setCaptureReady(false);
       setPlaying(false);
+      setPlayAll(false);
       setPinMode(false);
       setUnmappedCapture(null);
       setFrameNotice("");
       setMode(next);
+      if (next === "animation" && !(assembly && frameMap)) {
+        const passes = selectablePassJobs(orderedVersionJobs, next, artifacts);
+        if (!passes.some(job => job.job_id === reviewJobId)) {
+          const firstReady = passes.find(job => frames.some(frame => frame.job_id === job.job_id));
+          if (firstReady) chooseJob(firstReady.job_id);
+        }
+      }
     }
+  }
+
+  function togglePlayback() {
+    if (!visible || mappedSequence) return;
+    if (playing) {setPlaying(false);return;}
+    const endFrame = availability?.source_range.end ?? activeJob?.render_spec?.frames.end;
+    if (endFrame !== undefined && activeFrameOrdinal >= endFrame && !playAll) {
+      const startFrame = availability?.source_range.start ?? activeJob?.render_spec?.frames.start ?? currentFrames[0]?.source_frame ?? 1;
+      setCaptureReady(false);
+      setRequestedFrame(startFrame);
+      setSeekNonce(n => n + 1);
+    }
+    setPlaying(true);
+  }
+
+  function playScene(job: JobRecord, index: number) {
+    if (!version) return false;
+    const first = frames.find(receipt => receipt.job_id === job.job_id);
+    const startFrame = availabilityByJob[job.job_id]?.source_range.start ?? job.render_spec?.frames.start ?? first?.source_frame ?? 1;
+    const firstClip = segmentAt(segments.filter(clip => clip.job_id === job.job_id), startFrame);
+    if (!first || first.source_frame !== startFrame || !firstClip) {
+      setPlaying(false);
+      setPlayAll(false);
+      setFrameNotice(`Scene ${index + 1} is not ready to play. Full animation playback stopped.`);
+      return false;
+    }
+    const firstTarget = frameTarget(first, version);
+    frameInputEdited.current = false;
+    setTarget(firstTarget);
+    setTargetCamera(frameCamera(firstTarget, jobs));
+    setSequenceJobId(job.job_id);
+    setRange(null);
+    setError("");
+    setFrameNotice("");
+    setCaptureReady(false);
+    setRequestedFrame(startFrame);
+    setSeekNonce(n => n + 1);
+    setPlayAll(true);
+    setPlaying(true);
+    return true;
+  }
+
+  function startPlayAll() {
+    if (visible && animationPasses[0]) playScene(animationPasses[0], 0);
+  }
+
+  function advancePlayAll() {
+    if (!playAll || currentAnimIndex < 0) return false;
+    const next = animationPasses[currentAnimIndex + 1];
+    if (!next) {setPlayAll(false);return false;}
+    // On failure playScene stops and reports the missing start instead of claiming completion.
+    playScene(next, currentAnimIndex + 1);
+    return true;
   }
 
   useEffect(() => {
@@ -595,7 +680,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
       const modes: Record<string, Mode> = {"1": "3d_inspection", "2": "keyframes", "3": "animation"};
       if (modes[event.key]) {event.preventDefault(); changeMode(modes[event.key]);}
-      else if (event.code === "Space" && mode === "animation") {event.preventDefault(); setPlaying(p => !p);}
+      else if (event.code === "Space" && mode === "animation" && !mappedSequence) {event.preventDefault(); togglePlayback();}
       else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {event.preventDefault(); step(event.key === "ArrowLeft" ? -1 : 1, event.shiftKey);}
     }
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
@@ -820,6 +905,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   async function annotate() {
     setPlaying(false);
+    setPlayAll(false);
     setFrameNotice("");
     if (!visible || !target || !readyToCapture || mode === "3d_inspection") return;
     // The target comes from a decoded image or rVFC-confirmed animation presentation.
@@ -851,6 +937,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     setFrameNotice("");
     setSequenceJobId(null);
     setPlaying(false);
+    setPlayAll(false);
     setPinMode(false);
     setUnmappedCapture(null);
     setEditing2D(false);
@@ -1035,7 +1122,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
-         }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} playing={playing} onPlaying={setPlaying} onPresented={present}/>
+         }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} requestedFrame={requestedFrame} seekNonce={seekNonce} nextPassSegment={nextPassSegment} playing={playing} onPlaying={setPlaying} onPresented={present} onEndedPass={advancePlayAll} completionMessage={playAll ? "Full animation playback complete" : "Playback complete"}/>
            : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">No ready review image. Rendering is an explicit Queue request.</div>}
     {show2DEditor ? null : draft && isSpatialDraft ? (
       <SpatialPinDock {...placementProps} draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft} resolveDiscardBaseline={resolveDiscardBaseline}/>
@@ -1050,7 +1137,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           </span>
         </> : <>
           <div className="toolbar-group">
-            {mode === "animation" && !mappedSequence && <button className="toolbar-btn toolbar-icon-btn" aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"} disabled={!visible} onClick={() => setPlaying(!playing)}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button>}
+            {mode === "animation" && !mappedSequence && <button className="toolbar-btn toolbar-icon-btn" aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"} disabled={!visible} onClick={togglePlayback}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button>}
+            {mode === "animation" && !mappedSequence && animationPasses.length > 1 && (playing && playAll
+              ? <button className="toolbar-btn toolbar-btn-accent" aria-label="Pause all" aria-pressed="true" title="Pause full animation playback" onClick={() => {setPlaying(false);setPlayAll(false);}}><Pause size={13}/>Pause all</button>
+              : <button className="toolbar-btn" aria-label="Play all" aria-pressed="false" title="Play all scenes in order" disabled={!visible} onClick={startPlayAll}><Play size={13}/>Play all</button>)}
             <button className="toolbar-btn toolbar-icon-btn" aria-label="Previous frame" title="Previous frame (←)" disabled={mode === "keyframes" && !canStepKeyframe(-1)} onClick={() => step(-1)}><ChevronLeft size={15}/></button>
             <label className="toolbar-field"><span>Frame</span><input aria-label="Frame" type="number" min="1" value={frameInput}
               onPointerDown={() => { framePointerDown.current = true; }}
@@ -1080,10 +1170,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
               }}/></label>
             <button className="toolbar-btn toolbar-icon-btn" aria-label="Next frame" title="Next frame (→)" disabled={mode === "keyframes" && !canStepKeyframe(1)} onClick={() => step(1)}><ChevronRight size={15}/></button>
           </div>
+          {playAll && currentAnimIndex >= 0 && <span className="toolbar-chip">Scene {currentAnimIndex + 1} of {animationPasses.length}</span>}
           {passStatus && <span className="toolbar-chip" title={passStatus === "Only rendered frame" ? `Only frame ${readyFrames[0].source_frame} was rendered in this pass` : undefined}>{passStatus}</span>}
           {frameNotice && <span className="toolbar-chip review-frame-notice" role="status">{frameNotice}</span>}
           {!readyFrames.length && storyboardPanel && <span className="toolbar-chip" title={`${storyboardPanel.role} · ${storyboardPanel.composition}`}>{storyboardPanel.shot_id} · {storyboardPanel.frame_id} ({storyboardIndex + 1} of {storyboardTargets.length})</span>}
-          {versionJobs.length > 0 && <label className="toolbar-field"><span>Pass</span><select aria-label="Shot / render job" value={reviewJobId ?? ""} onChange={e=>chooseJob(e.target.value)}><option value="" disabled>No associated job</option>{versionJobs.map(job=><option key={job.job_id} value={job.job_id}>{job.target.shot_id ?? job.render_spec?.scene_name ?? "Scene"} · {job.render_spec?.purpose ?? job.kind} · {job.job_id}</option>)}</select></label>}
+          {passJobs.length > 0 && <label className="toolbar-field"><span>Pass</span><select aria-label="Shot / render job" value={reviewJobId && passLabels.has(reviewJobId) ? reviewJobId : ""} onChange={e=>chooseJob(e.target.value)}>{(!reviewJobId || !passLabels.has(reviewJobId)) && <option value="" disabled>No associated job</option>}{passJobs.map(job=><option key={job.job_id} value={job.job_id}>{passLabels.get(job.job_id)}</option>)}</select></label>}
           <div className="toolbar-spacer"/>
           {target && <span className="toolbar-chip">{target.dimensions.width} × {target.dimensions.height} · {formatTargetOrigin(target.origin)} · {imageOrdinal == null ? "still" : `f${imageOrdinal}`}</span>}
           {activeJob?.render_spec && <span className="toolbar-meta">{activeJob.render_spec.engine} · {activeJob.render_spec.purpose} · {activeJob.render_spec.samples} spp</span>}
