@@ -98,6 +98,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const frameInputEdited = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [playAll, setPlayAll] = useState(false);
+  const [stoppedAtTerminalGap, setStoppedAtTerminalGap] = useState(false);
   const [seekNonce, setSeekNonce] = useState(0);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -115,7 +116,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   useLayoutEffect(() => {
     if (!visible) {
       invalidatePendingPlacement();
-      setPlaying(false); setPlayAll(false); setCaptureReady(false); setPinMode(false); setUnmappedCapture(null);
+      setPlaying(false); setPlayAll(false); setStoppedAtTerminalGap(false); setCaptureReady(false); setPinMode(false); setUnmappedCapture(null);
     }
   }, [visible, invalidatePendingPlacement]);
   const [saved, setSaved] = useState<AnnotationSnapshot[]>([]);
@@ -164,7 +165,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const availability=availabilityByJob[reviewJobId ?? ""] ?? null;
   const jobTerminal = activeJob ? ["succeeded", "failed", "cancelled"].includes(activeJob.state) : false;
   const clearPresentation = useCallback(() => setCaptureReady(false), []);
-  const stopPlayAll = useCallback(() => setPlayAll(false), []);
+  const stopPlayAll = useCallback(() => {
+    setPlayAll(false);
+    setStoppedAtTerminalGap(true);
+  }, []);
   const readyFrames = useMemo(() => reviewJobId ? sortedReadyFrames(currentFrames) : [], [currentFrames, reviewJobId]);
   const activeStoryboardPanel = storyboardTargets[storyboardPanelIndex];
   const matchesPanel = (panel: StoryboardTarget) => panel.target.artifact_id === target?.artifact_id && panel.shot_id === target?.shot_id;
@@ -287,6 +291,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   useEffect(() => {
     if (externalPrimary === emittedPrimary.current) return;
     setPlayAll(false);
+    setStoppedAtTerminalGap(false);
     invalidatePendingPlacement();
     setUnmappedCapture(null);
     if (!external?.target) return;
@@ -521,6 +526,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function showKeyframe(receipt: FrameReceipt) {
     if (!version) return;
+    setStoppedAtTerminalGap(false);
     frameInputEdited.current = false;
     const frame = frameTarget(receipt, version);
     setSelectedJobId(receipt.job_id);
@@ -537,6 +543,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   function showStoryboardPanel(index: number) {
     const panel = storyboardTargets[index];
     if (!panel) return;
+    setStoppedAtTerminalGap(false);
     frameInputEdited.current = false;
     setSelectedJobId(null);
     setTarget(panel.target);
@@ -551,6 +558,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function commitFrameInput(raw: string) {
     setPlayAll(false);
+    setStoppedAtTerminalGap(false);
     frameInputEdited.current = false;
     const ordinal = Number(raw);
     if (!raw.trim() || !Number.isFinite(ordinal) || ordinal < 1 || (mode === "keyframes" && !Number.isSafeInteger(ordinal))) {
@@ -584,6 +592,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   function step(delta: -1 | 1, shot = false) {
     if (draftId) return;
     setPlayAll(false);
+    setStoppedAtTerminalGap(false);
     setPlaying(false);
     if (shot) {
       const currentIndex = passJobs.findIndex(job => job.job_id === reviewJobId);
@@ -618,6 +627,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function chooseJob(identity:string) {
     setPlayAll(false);
+    setStoppedAtTerminalGap(false);
     setPlaying(false);
     frameInputEdited.current = false;
     setFrameNotice("");
@@ -649,6 +659,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       setCaptureReady(false);
       setPlaying(false);
       setPlayAll(false);
+      setStoppedAtTerminalGap(false);
       setPinMode(false);
       setUnmappedCapture(null);
       setFrameNotice("");
@@ -666,10 +677,14 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     if (!visible || mappedSequence) return;
     if (playing) {setPlaying(false);return;}
     const endFrame = availability?.source_range.end ?? activeJob?.render_spec?.frames.end;
-    if (endFrame !== undefined && activeFrameOrdinal >= endFrame && !playAll) {
+    const restartAtStart = !playAll && (stoppedAtTerminalGap || (endFrame !== undefined && activeFrameOrdinal >= endFrame));
+    setStoppedAtTerminalGap(false);
+    if (restartAtStart) {
       const startFrame = availability?.source_range.start ?? activeJob?.render_spec?.frames.start ?? currentFrames[0]?.source_frame ?? 1;
-      setCaptureReady(false);
+      if (activeFrameOrdinal !== startFrame) setCaptureReady(false);
       setRequestedFrame(startFrame);
+      // The requested ordinal may already be the start while the player is
+      // stopped on an internal gap. Reapply the seek even in that case.
       setSeekNonce(n => n + 1);
     }
     setPlaying(true);
@@ -677,6 +692,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function playScene(job: JobRecord, index: number) {
     if (!version) return false;
+    setStoppedAtTerminalGap(false);
     const first = frames.find(receipt => receipt.job_id === job.job_id);
     const startFrame = availabilityByJob[job.job_id]?.source_range.start ?? job.render_spec?.frames.start ?? first?.source_frame ?? 1;
     const firstClip = segmentAt(segments.filter(clip => clip.job_id === job.job_id), startFrame);
@@ -968,6 +984,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   function applyAnnotationView(annotation: AnnotationSnapshot) {
     const spatial = annotation.spatial_hits.length > 0;
+    setStoppedAtTerminalGap(false);
     setSelectedJobId(annotation.target.render_job_id);
     setTarget(structuredClone(annotation.target));
     setMode(spatial ? "3d_inspection" : annotation.target.media_artifact_id ? "animation" : "keyframes");

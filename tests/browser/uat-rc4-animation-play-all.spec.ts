@@ -199,17 +199,30 @@ for (const reportAvailability of [true, false]) {
     const transport = review.getByLabel("Review transport", {exact: true});
     const passes = transport.getByRole("combobox", {name: "Shot / render job"});
     const annotate = review.getByRole("button", {name: "Annotate presented frame"});
+    const frame = transport.getByRole("spinbutton", {name: "Frame", exact: true});
+    const pause = transport.getByRole("button", {name: "Pause", exact: true});
+    const pauseAll = transport.getByRole("button", {name: "Pause all", exact: true});
+    const stoppedAtGap = async () => {
+      await expect(review.getByText(reportAvailability ? "Frame 3 failed to render. Playback stopped." : "Frame 3 is unavailable. Playback stopped.", {exact: true})).toBeVisible();
+      await expect(review.getByText("Frame 3 pending. No later interval substituted.", {exact: true})).toHaveCount(0);
+      await expect(passes).toHaveValue(scenes[0].id);
+      await expect(pause).toHaveCount(0);
+      await expect(pauseAll).toHaveCount(0);
+      await expect(annotate).toBeDisabled();
+    };
     await expect(passes).toHaveValue(scenes[0].id);
     await review.getByRole("button", {name: "Animation", exact: true}).click();
     await transport.getByRole("button", {name: "Play all", exact: true}).click();
-    await expect(transport.getByRole("button", {name: "Pause all", exact: true})).toBeVisible();
-    await expect(transport.getByRole("spinbutton", {name: "Frame", exact: true})).toHaveValue("2");
-    await expect(review.getByText(reportAvailability ? "Frame 3 failed to render. Playback stopped." : "Frame 3 is unavailable. Playback stopped.", {exact: true})).toBeVisible();
-    await expect(review.getByText("Frame 3 pending. No later interval substituted.", {exact: true})).toHaveCount(0);
-    await expect(passes).toHaveValue(scenes[0].id);
-    await expect(transport.getByRole("button", {name: "Pause", exact: true})).toHaveCount(0);
-    await expect(transport.getByRole("button", {name: "Pause all", exact: true})).toHaveCount(0);
-    await expect(annotate).toBeDisabled();
+    await expect(pauseAll).toBeVisible();
+    await expect(frame).toHaveValue("2");
+    await stoppedAtGap();
+
+    await transport.getByRole("button", {name: "Play", exact: true}).click();
+    await expect(pause).toBeVisible();
+    await expect(review.locator("video:not(.review-prebuffer)")).toBeVisible();
+    await expect(frame).toHaveValue("1");
+    await expect(frame).toHaveValue("2");
+    await stoppedAtGap();
     studio.assertHermetic();
   });
 }
@@ -299,6 +312,12 @@ test("Play all can replay from a terminal still without losing annotation", asyn
 
   await playAll.click();
   await expect(pauseAll).toBeVisible();
+  await expect(frame).toHaveValue("1");
+  await expect(frame).toHaveValue("2");
+  await stoppedOnStill();
+
+  await transport.getByRole("button", {name: "Play", exact: true}).click();
+  await expect(transport.getByRole("button", {name: "Pause", exact: true})).toBeVisible();
   await expect(frame).toHaveValue("1");
   await expect(frame).toHaveValue("2");
   await stoppedOnStill();
