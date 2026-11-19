@@ -32,6 +32,9 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
   const onUnpresentedRef = useRef(onUnpresented); onUnpresentedRef.current = onUnpresented;
   const onPlaybackStoppedRef = useRef(onPlaybackStopped); onPlaybackStoppedRef.current = onPlaybackStopped;
   const previousRequest = useRef({frame: requestedFrame, nonce: seekNonce});
+  // The seek effect updates the request ref before activeFrame commits. Capture
+  // that mismatch now so the gap effects never act on the frame being left.
+  const seekPending = previousRequest.current.frame !== requestedFrame || previousRequest.current.nonce !== seekNonce;
   const segment = segmentAt(segments, activeFrame);
   const next = segment ? segmentAt(segments, segment.source_frames.end + 1) ?? nextPassSegment : undefined;
   useLayoutEffect(() => {
@@ -145,16 +148,22 @@ export function ProgressivePlayer({visible = true, projectId, version, frames, s
 
   const isolated = !segment ? frames.find(f => f.source_frame === activeFrame) : undefined;
   useEffect(() => {
-    if (!segment && !isolated) onUnpresentedRef.current?.();
-  }, [segment, isolated]);
+    if (seekPending || segment) return;
+    // The video was unmounted. Returning to the same segment still needs
+    // confirmation from the new decoder before playback can resume.
+    confirmedSegment.current = "";
+    awaitingFirstPresentation.current = true;
+    if (!isolated) onUnpresentedRef.current?.();
+  }, [seekPending, segment, isolated]);
   useEffect(() => {
+    if (seekPending) return;
     if (visible && playing && !segment && (jobTerminal || frameFailed(availability, activeFrame))) {
       onPlaying(false);
       onPlaybackStoppedRef.current?.();
       if (!isolated) onUnpresentedRef.current?.();
       setStoppedAtGap(activeFrame);
     }
-  }, [visible, playing, segment, isolated, activeFrame, availability, jobTerminal, onPlaying]);
+  }, [seekPending, visible, playing, segment, isolated, activeFrame, availability, jobTerminal, onPlaying]);
 
   // Job settlement may arrive before the refreshed failed ranges. Keep the
   // stopped frame and update its diagnosis when the availability read settles.

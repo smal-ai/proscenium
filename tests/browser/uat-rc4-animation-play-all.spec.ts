@@ -274,22 +274,35 @@ test("Play all stops when a buffering gap becomes terminal before failed ranges 
   studio.assertHermetic();
 });
 
-test("Play all stops on a terminal still without a segment and keeps it annotatable", async ({page, baseURL}) => {
+test("Play all can replay from a terminal still without losing annotation", async ({page, baseURL}) => {
   const {studio} = await openScene(page, baseURL!, (fixture, routes) => [
     renderScene(fixture, routes, 1), renderScene(fixture, routes, 0, {tail: "retained"}),
   ]);
   const review = page.locator("main.review-panel");
   const transport = review.getByLabel("Review transport", {exact: true});
   const annotate = review.getByRole("button", {name: "Annotate presented frame"});
+  const frame = transport.getByRole("spinbutton", {name: "Frame", exact: true});
+  const playAll = transport.getByRole("button", {name: "Play all", exact: true});
+  const pauseAll = transport.getByRole("button", {name: "Pause all", exact: true});
+  const stoppedOnStill = async () => {
+    await expect(review.getByText("Video segment unavailable at frame 3. Playback stopped on verified frame.", {exact: true})).toBeVisible();
+    await expect(review.getByRole("img", {name: "Available frame 3"})).toBeVisible();
+    await expect(transport.getByRole("button", {name: "Pause", exact: true})).toHaveCount(0);
+    await expect(pauseAll).toHaveCount(0);
+    await expect(frame).toHaveValue("3");
+    await expect(annotate).toBeEnabled();
+  };
   await review.getByRole("button", {name: "Animation", exact: true}).click();
   await expect(annotate).toBeEnabled();
-  await transport.getByRole("button", {name: "Play all", exact: true}).click();
-  await expect(review.getByText("Video segment unavailable at frame 3. Playback stopped on verified frame.", {exact: true})).toBeVisible();
-  await expect(review.getByRole("img", {name: "Available frame 3"})).toBeVisible();
-  await expect(transport.getByRole("button", {name: "Pause", exact: true})).toHaveCount(0);
-  await expect(transport.getByRole("button", {name: "Pause all", exact: true})).toHaveCount(0);
-  await expect(transport.getByRole("spinbutton", {name: "Frame", exact: true})).toHaveValue("3");
-  await expect(annotate).toBeEnabled();
+  await playAll.click();
+  await stoppedOnStill();
+
+  await playAll.click();
+  await expect(pauseAll).toBeVisible();
+  await expect(frame).toHaveValue("1");
+  await expect(frame).toHaveValue("2");
+  await stoppedOnStill();
+
   await expect.poll(() => page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.view.context.${id}`)!).target, projectId))
     .toMatchObject({source_frame: 3, artifact_id: "sl-01-dormant-macro-f3", render_job_id: scenes[0].id, media_artifact_id: null});
   studio.assertHermetic();
