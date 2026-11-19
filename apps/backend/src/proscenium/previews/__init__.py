@@ -19,4 +19,5 @@ def install(services: Services) -> PreviewService:
 
     services.jobs.cancellers["render"] = cancel_render
     services.jobs.cancellers["encode"] = cancel_render
+    services.jobs.retry_eligibility["render"] = previews.can_retry_cross_work
     return previews

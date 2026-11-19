@@ -221,6 +221,9 @@ SAFE_REASONS = frozenset(
         "Extra outputs are not configured",
         "Original rendering configuration is unavailable",
         "Original launch must be reconciled",
+        "This job belongs to an earlier request. No render was started.",
+        "This job belongs to an earlier request. No job was started.",
+        "Retry is unavailable while execution_scope is planning_only. No render was started.",
         "Binary authoring files require Git LFS tracking",
         "Invalid Git LFS pointer",
         "Local Git LFS object missing",
@@ -228,6 +231,7 @@ SAFE_REASONS = frozenset(
         "Dependency cycle",
         "Displayed image identity mismatch",
         "No exact frame receipt",
+        "Conflicting frame receipts across attempts",
         "Draft motion visual review targets must reference receipt-backed render or sequence frames",
         "Spatial mapping mismatch",
         "Storyboard source must be AuthoredShotPlan JSON",
@@ -263,7 +267,7 @@ SAFE_REASONS = frozenset(
 ERROR_GUIDANCE = {
     "corrupt_provider_output": "The provider returned a corrupted raster image. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
     "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
-    "scope_denied": "The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on prepare_image_generation, or use an existing published item/slot.",
+    "scope_denied": "The requested resource or target is outside the active request scope. Check the active project and pinned request target before retrying.",
     "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
     "source_conflict": "The source identity or base state does not match. Read the pinned item/version and source hashes before making a corrected request.",
@@ -292,6 +296,12 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
         )
     )
     details: dict[str, Any] = {}
+    if (
+        name == "prepare_image_generation"
+        and error.code == "scope_denied"
+        and error.message not in SAFE_REASONS
+    ):
+        message = "The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on prepare_image_generation, or use an existing published item/slot."
     if (
         name in {"prepare_image_generation", "validate_authored_document"}
         and error.code == "invalid_request"
@@ -666,6 +676,7 @@ class Tools:
                 "request_preview",
                 "assemble_sequence",
                 "run_unity_workflow",
+                "retry_job",
             }:
                 outcome.update(
                     job_ids=[result["job_id"]], artifact_ids=result.get("artifact_ids", [])

@@ -76,24 +76,26 @@ class References:
                 "version_id": target["version_id"],
             }:
                 raise DomainError("source_conflict", 409)
-            frames = [
+            slot_receipts = [
                 f
                 for f in tx.all("frames")
-                if all(
-                    f[k] == target[t]
-                    for k, t in (
-                        ("job_id", "render_job_id"),
-                        ("version_id", "version_id"),
-                        ("shot_id", "shot_id"),
-                        ("source_frame", "source_frame"),
-                        ("artifact_id", "artifact_id"),
-                        ("sha256", "displayed_sha256"),
-                        ("dimensions", "dimensions"),
-                    )
-                )
+                if f["job_id"] == target["render_job_id"]
+                and f["source_frame"] == target["source_frame"]
             ]
-            if not frames:
+            if not slot_receipts:
                 raise DomainError("source_conflict", 409, message="No exact frame receipt")
+            if any(
+                any(
+                    f[key] != target[key]
+                    for key in ("version_id", "shot_id", "artifact_id", "dimensions")
+                )
+                or f["sha256"] != target["displayed_sha256"]
+                or f["input_digest"] != job["input_digest"]
+                for f in slot_receipts
+            ):
+                raise DomainError(
+                    "source_conflict", 409, message="Conflicting frame receipts across attempts"
+                )
             if media_id and not any(
                 s["artifact_id"] == media_id
                 and s["job_id"] == job["job_id"]

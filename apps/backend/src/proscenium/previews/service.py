@@ -11,10 +11,11 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import validate
 from proscenium.db import Transaction
-from proscenium.jobs import TERMINAL
+from proscenium.jobs import TERMINAL, retry_context
 from proscenium.jobs.resources import check_storage
 from proscenium.services import Services
 from proscenium.sources.common import active, admitted, binding, fingerprint, managed, replay
+from proscenium.sources.read_only import read_authored_json
 
 from .config import Rendering
 from .journal import output, read, sha
@@ -56,6 +57,86 @@ class PreviewService:
     @property
     def artifacts(self) -> Any:
         return self.services.extension("artifacts")
+
+    def can_retry_cross_work(
+        self, tx: Transaction, caller: Caller, job: dict[str, Any]
+    ) -> str | None:
+        work = tx.get("work", str(caller.work_id), required=False)
+        if (
+            not work
+            or work["project_id"] != tx.project_id
+            or work["state"] not in {"running", "awaiting_user"}
+        ):
+            return None
+        try:
+            request_id, context = retry_context(tx, caller, work)
+        except DomainError:
+            return None
+        if (
+            not context
+            or context["project_id"] != tx.project_id
+            or context.get("execution_scope") == "planning_only"
+        ):
+            return None
+        job_target = job.get("target") or {}
+        job_version = job_target.get("version")
+        if not isinstance(job_version, dict) or not {"item_id", "version_id"} <= job_version.keys():
+            return None
+        target = context.get("request_target")
+        if target and target["kind"] == "item":
+            ref = target["version"]
+            version = tx.get("versions", ref["version_id"], required=False)
+            if (
+                version
+                and version["project_id"] == tx.project_id
+                and version["item_id"] == ref["item_id"]
+                and version["kind"] == "scene"
+                and job_version == ref
+            ):
+                return request_id
+        if target is not None or not context.get("item_id") or not context.get("version_id"):
+            return None
+        version = tx.get("versions", context["version_id"], required=False)
+        if (
+            not version
+            or version["project_id"] != tx.project_id
+            or version["item_id"] != context["item_id"]
+            or version["kind"] != "sequence"
+        ):
+            return None
+        try:
+            doc = read_authored_json(
+                self.services,
+                str(tx.project_id),
+                version,
+                batch={v["version_id"]: v for v in tx.all("versions")},
+            )
+            validate("SequenceMap", doc)
+        except DomainError:
+            return None
+        if (
+            doc["project_id"] != tx.project_id
+            or doc["sequence_version_id"] != version["version_id"]
+        ):
+            return None
+
+        def matches(contributor: dict[str, Any]) -> bool:
+            return (
+                contributor.get("job_id") == job["job_id"]
+                and contributor.get("version_id") == job_version["version_id"]
+                and contributor.get("shot_id") == job_target.get("shot_id")
+            )
+
+        if any(
+            matches(entry)
+            or (
+                entry["transform"] == "transition"
+                and any(matches(contributor) for contributor in entry["contributors"])
+            )
+            for entry in doc["entries"]
+        ):
+            return request_id
+        return None
 
     def request(self, caller: Caller, request: Any) -> tuple[dict, bool]:
         body = request.model_dump(mode="json") if hasattr(request, "model_dump") else request
