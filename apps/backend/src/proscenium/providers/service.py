@@ -21,6 +21,7 @@ from proscenium.db import Transaction
 from proscenium.db.paths import project_path
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
+from proscenium.providers import klein
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
 from proscenium.providers.targets import admit_target, resolve_target
@@ -307,9 +308,15 @@ class ProviderService:
         if not isinstance(graph, dict):
             raise DomainError("invalid_request")
         references: dict[str, JSON] = {}
-        if len(set(request["input_artifact_ids"])) != len(request["input_artifact_ids"]):
+        reference_ids = request["input_artifact_ids"]
+        if len(set(reference_ids)) != len(reference_ids):
             raise DomainError("invalid_request", message="Duplicate conditioning image")
-        for artifact_id in request["input_artifact_ids"]:
+        if (
+            capability.revision == "comfy-image-1"
+            and len(reference_ids) > klein.MAX_REFERENCE_IMAGES
+        ):
+            raise DomainError("invalid_request", message=klein.REFERENCE_LIMIT_MESSAGE)
+        for artifact_id in reference_ids:
             artifact, clean = self.image_bytes(project_id, artifact_id)
             required_dimensions = getattr(capability, "reference_dimensions", None)
             if required_dimensions and artifact.get("dimensions") != required_dimensions:
@@ -830,7 +837,9 @@ class ProviderService:
         self.execution(job["project_id"], job["job_id"], {"phase": "preparing"})
         references = {}
         derivatives: list[str] = []
-        for identity, expected in inputs["references"].items():
+        # Canonical storage sorts object keys. The request array preserves conditioning order.
+        for identity in inputs["request"]["input_artifact_ids"]:
+            expected = inputs["references"][identity]
             _, data = self.image_bytes(job["project_id"], identity)
             if sha(data) != expected["derived_sha256"]:
                 raise DomainError("hash_mismatch", 422)

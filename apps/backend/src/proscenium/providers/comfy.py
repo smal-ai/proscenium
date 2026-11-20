@@ -128,6 +128,38 @@ def bind_graph(
     for identity, node in graph.items():
         if node["class_type"] == "SaveImage":
             visit(identity)
+
+    def output_zero(link: Any) -> str | None:
+        if (
+            isinstance(link, list)
+            and len(link) == 2
+            and isinstance(link[0], str)
+            and type(link[1]) is int
+            and link[1] == 0
+        ):
+            return link[0]
+        return None
+
+    # Each ReferenceLatent appends to the conditioning inherited from its predecessor.
+    active_positive: set[str] = set()
+    for identity in reachable:
+        guider = graph[identity]
+        if guider["class_type"] != "CFGGuider":
+            continue
+        link = guider["inputs"].get("positive")
+        chain: set[str] = set()
+        while (source := output_zero(link)) is not None:
+            node = graph.get(source)
+            if not node or node["class_type"] != "ReferenceLatent":
+                break
+            if source in chain:
+                raise DomainError("invalid_request", message="Invalid graph link")
+            if source in active_positive:
+                break
+            chain.add(source)
+            link = node["inputs"].get("conditioning")
+        active_positive.update(chain)
+
     for identity, node in graph.items():
         for key, value in node["inputs"].items():
             if key in {"seed", "noise_seed"}:
@@ -151,6 +183,8 @@ def bind_graph(
                     or artifact_id not in references
                 ):
                     raise DomainError("invalid_request", message="Unbound conditioning image")
+                if artifact_id in used:
+                    raise DomainError("invalid_request", message="Duplicate conditioning image")
                 node["inputs"][key] = references[artifact_id]
                 # Retain admitted unscaled graphs alongside scaled/tiled reference paths.
                 pixels = {identity} | {
@@ -165,17 +199,9 @@ def bind_graph(
                     if n["class_type"] in {"VAEEncode", "VAEEncodeTiled"}
                     and any(n["inputs"].get("pixels") == [source, 0] for source in pixels)
                 }
-                refs = {
-                    k
-                    for k, n in graph.items()
-                    if n["class_type"] == "ReferenceLatent"
-                    and n["inputs"].get("latent", [None])[0] in encodes
-                }
                 if not any(
-                    k in reachable
-                    and n["class_type"] == "CFGGuider"
-                    and n["inputs"].get("positive", [None])[0] in refs
-                    for k, n in graph.items()
+                    output_zero(graph[k]["inputs"].get("latent")) in encodes
+                    for k in active_positive
                 ):
                     raise DomainError("invalid_request", message="Reference is not conditioning")
                 used.add(artifact_id)

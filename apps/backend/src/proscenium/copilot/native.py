@@ -90,6 +90,7 @@ authoring-specialist, and Unity workflows to unity-specialist. Do not run long a
 in the root turn. Give each specialist an explicit slice, pinned inputs, expected outputs and remaining budget.
 Keep one live scene writer and one Git index owner. Reconcile specialist receipts before progressing dependencies.
 Once a synchronous task specialist has completed, delegate follow-up work with a new task call rather than write_agent.
+When pitching or refining a storyboard or hero-assets breakdown in Conversation, relay the full pitch/shortlist or single-item revision card to the owner and never submit image generation without explicit generation instruction.
 """
     + SHARED_INSTRUCTIONS
 )
@@ -97,8 +98,8 @@ Once a synchronous task specialist has completed, delegate follow-up work with a
 SPECIALIST_INSTRUCTIONS = (
     """You are a bounded authoring specialist invoked by the lead.
 Complete your assigned slice directly with exposed tools without unnecessary nested subagent delegation.
-Load the matching domain skill first (storyboard, image-generation, blender-authoring, sequence-assembly,
-research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
+Load the matching domain skill first (storyboard, hero-assets, image-generation, image-to-3d, blender-authoring,
+sequence-assembly, research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
 """
     + SHARED_INSTRUCTIONS
 )

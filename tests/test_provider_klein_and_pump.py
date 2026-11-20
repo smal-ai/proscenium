@@ -1,6 +1,7 @@
 """Offline Klein preparation, retained raster validation and resource-hold regressions."""
 
 import copy
+import hashlib
 import io
 import json
 import math
@@ -12,6 +13,7 @@ import test_worker_capabilities_and_publication as shared
 from PIL import Image
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
+from proscenium.contracts import canonical
 from proscenium.jobs.resources import Resources
 from proscenium.providers import klein, sd_turbo, sd_turbo_fp16
 from proscenium.providers.comfy import bind_graph
@@ -28,6 +30,8 @@ from test_worker_capabilities_and_publication import (
 DIMENSIONS = "Image width and height must be multiples of 16 between 64 and 4096"
 PIXELS = "Requested image dimensions exceed the configured provider pixel limit"
 CORRUPT = "Provider returned a corrupted scanline or noise image"
+ORDERED_REFS = ("z-form", "a-colour", "m-detail", "b-context")
+SD_TURBO_REFERENCE = "Selected image profile requires one exact 512x512 reference"
 
 
 @pytest.fixture(autouse=True)
@@ -136,6 +140,126 @@ def test_historical_unscaled_and_tiled_graphs_bind_and_replay():
     assert replayed_tiled["decode"]["class_type"] == "VAEDecodeTiled"
     assert replayed_tiled["reference_encode"]["class_type"] == "VAEEncodeTiled"
     assert replayed_tiled["decode"]["inputs"]["vae"] == ["vae", 0]
+
+
+def test_klein_zero_and_one_reference_graphs_keep_legacy_bytes():
+    # Ordered JSON digests from the original single-reference implementation.
+    for refs, digest in (
+        ([], "5f82ceee055e17a92fa26dcbfebb8c74ad9c5d40904e0d17a932c438a9ba4855"),
+        (["reference"], "6e0eb29216a8f9086b8b1b996c9e2c077a6ece3d87566f296a683ed4397cfdce"),
+    ):
+        legacy = graph(reference_artifact_id=refs[0] if refs else None)
+        ordered = graph(reference_artifact_ids=refs)
+        assert json.dumps(legacy) == json.dumps(ordered)
+        assert hashlib.sha256(json.dumps(ordered).encode()).hexdigest() == digest
+    assert graph(reference_artifact_id="reference", reference_artifact_ids=("reference",)) == graph(
+        reference_artifact_id="reference"
+    )
+
+
+@pytest.mark.parametrize(
+    "kwargs,message",
+    [
+        ({"reference_artifact_id": "one", "reference_artifact_ids": []}, "invalid request"),
+        ({"reference_artifact_id": "one", "reference_artifact_ids": ["two"]}, "invalid request"),
+        (
+            {"reference_artifact_id": "one", "reference_artifact_ids": ["one", "two"]},
+            "invalid request",
+        ),
+        ({"reference_artifact_id": ""}, "invalid request"),
+        ({"reference_artifact_ids": [""]}, "invalid request"),
+        ({"reference_artifact_ids": [None]}, "invalid request"),
+        ({"reference_artifact_ids": ["../escape"]}, "invalid request"),
+        ({"reference_artifact_ids": ["path\\image"]}, "invalid request"),
+        ({"reference_artifact_ids": ["nul\0id"]}, "invalid request"),
+        ({"reference_artifact_ids": ["one", "one"]}, "Duplicate conditioning image"),
+        (
+            {"reference_artifact_ids": [*ORDERED_REFS, "extra"]},
+            "Image preparation accepts at most four references",
+        ),
+    ],
+)
+def test_klein_rejects_invalid_reference_ids(kwargs, message):
+    with pytest.raises(DomainError, match=message) as error:
+        graph(**kwargs)
+    assert error.value.code == "invalid_request"
+
+
+def ref_node(index):
+    return "reference" if index == 0 else f"reference_{index + 1}"
+
+
+def assert_reference_branches(built, images, *, tiled=False, bf16=False):
+    positive, negative = ["text", 0], ["zero", 0]
+    for i, image in enumerate(images):
+        ref = ref_node(i)
+        assert built[ref] == {"class_type": "LoadImage", "inputs": {"image": image}}
+        assert built[f"{ref}_scale"] == {
+            "class_type": "ImageScaleToTotalPixels",
+            "inputs": {
+                "image": [ref, 0],
+                "upscale_method": "lanczos",
+                "megapixels": 1.0,
+                "resolution_steps": 16,
+            },
+        }
+        tiles = {"tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
+        assert built[f"{ref}_encode"] == {
+            "class_type": "VAEEncodeTiled" if tiled else "VAEEncode",
+            "inputs": {
+                "pixels": [f"{ref}_scale", 0],
+                "vae": ["vae_dtype" if bf16 else "vae", 0],
+                **(tiles if tiled else {}),
+            },
+        }
+        for polarity, previous in (("positive", positive), ("negative", negative)):
+            assert built[f"{ref}_{polarity}"] == {
+                "class_type": "ReferenceLatent",
+                "inputs": {"conditioning": previous, "latent": [f"{ref}_encode", 0]},
+            }
+        positive, negative = [f"{ref}_positive", 0], [f"{ref}_negative", 0]
+    assert built["guider"]["inputs"]["positive"] == positive
+    assert built["guider"]["inputs"]["negative"] == negative
+
+
+@pytest.mark.parametrize("count", [2, 3, 4])
+def test_klein_workflow_and_bind_graph_chain_references_in_caller_order(count):
+    ids = ORDERED_REFS[:count]
+    built = workflow(RECIPE, ids)
+    assert built == graph(reference_artifact_ids=ids)
+    assert_reference_branches(built, [f"artifact:{identity}" for identity in ids])
+    uploads = {identity: f"comfy/{identity}.png" for identity in reversed(ids)}
+    bound = bind_graph(built, "Concept", "42", uploads)
+    assert_reference_branches(bound, [uploads[identity] for identity in ids])
+
+
+@pytest.mark.parametrize("bypassed", [0, 1, 2], ids=["first", "middle", "last"])
+def test_bind_graph_rejects_each_bypassed_positive_reference(bypassed):
+    ids = ORDERED_REFS[:3]
+    built = graph(reference_artifact_ids=ids)
+    bypassed_node = built[f"{ref_node(bypassed)}_positive"]
+    previous = bypassed_node["inputs"]["conditioning"]
+    if bypassed == len(ids) - 1:
+        built["guider"]["inputs"]["positive"] = previous
+    else:
+        built[f"{ref_node(bypassed + 1)}_positive"]["inputs"]["conditioning"] = previous
+    # The bypassed image still contributes to the negative branch.
+    with pytest.raises(DomainError, match="Reference is not conditioning"):
+        bind_graph(built, "Concept", "42", {identity: f"{identity}.png" for identity in ids})
+
+
+def test_bind_graph_rejects_duplicate_artifact_bindings():
+    built = graph(reference_artifact_ids=("one", "two"))
+    built["reference_2"]["inputs"]["image"] = "artifact:one"
+    with pytest.raises(DomainError, match="Duplicate conditioning image"):
+        bind_graph(built, "Concept", "42", {"one": "one.png"})
+
+
+def test_bind_graph_rejects_positive_reference_cycles():
+    built = graph(reference_artifact_ids=("one", "two"))
+    built["reference_positive"]["inputs"]["conditioning"] = ["reference_2_positive", 0]
+    with pytest.raises(DomainError, match="Invalid graph link"):
+        bind_graph(built, "Concept", "42", {"one": "one.png", "two": "two.png"})
 
 
 def test_klein_vae_dtype_validation():
@@ -398,6 +522,50 @@ def test_preparation_enforces_configured_pixel_limit(runtime):
     assert kind == "failure" and result["message"] == PIXELS
 
 
+def test_direct_klein_submit_rejects_over_limit_before_budget_admission(runtime):
+    artifacts = runtime.services.extension("artifacts")
+    with runtime.store.transaction() as tx:
+        for identity, data, media_type in (
+            ("workflow-direct", canonical(graph()), "application/json"),
+            ("prompt-direct", b"Concept", "text/plain"),
+        ):
+            artifacts.put(
+                tx,
+                artifacts.promote(
+                    PROJECT,
+                    identity,
+                    data,
+                    kind="document",
+                    purpose="metadata",
+                    media_type=media_type,
+                ),
+            )
+    result, kind = invoke(
+        runtime,
+        "submit_generation",
+        {
+            "schema_version": "1.0",
+            "job_id": "generation-direct",
+            "project_id": PROJECT,
+            "generation_task_id": TASK,
+            "target_id": TASK,
+            "provider_id": "comfy",
+            "capability": "image",
+            "workflow_artifact_id": "workflow-direct",
+            "prompt_artifact_id": "prompt-direct",
+            "input_artifact_ids": [*ORDERED_REFS, "extra"],
+            "seed": "42",
+            "model_ids": [RECIPE[k] for k in ("unet", "clip", "vae")],
+            "settings": {},
+        },
+    )
+    assert kind == "failure" and result["error"] == "invalid_request"
+    assert result["message"] == "Image preparation accepts at most four references"
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.all("jobs") and not tx.all("providers.tasks")
+        assert tx.connection.execute("SELECT COUNT(*) FROM budget_reservations").fetchone()[0] == 0
+
+
 def test_preparation_explicit_task_mismatch_is_scope_denied(runtime):
     result, kind = prepare(runtime, prepare_body(generation_task_id="wrong-task"))
     assert kind == "failure" and result["error"] == "scope_denied"
@@ -441,6 +609,27 @@ def test_sd_turbo_preparation_omitted_authority_replays_while_fenced(runtime, pr
     replayed, kind = prepare(runtime, body)
     assert kind != "failure" and replayed == {**prepared, "replayed": True}
     assert len(runtime.calls) == calls
+
+
+@pytest.mark.parametrize("profile", [sd_turbo, sd_turbo_fp16])
+@pytest.mark.parametrize(
+    "ids,code", [([], "capability_unavailable"), (["one", "two"], "invalid_request")]
+)
+def test_sd_turbo_workflow_and_preparation_require_one_reference(runtime, profile, ids, code):
+    runtime.provider.options["image_profiles"] = {"comfy": profile.REVISION}
+    with pytest.raises(DomainError, match=SD_TURBO_REFERENCE) as error:
+        workflow({"profile_revision": profile.REVISION}, ids)
+    assert error.value.code == code
+    if not ids:
+        assert error.value.status == 501
+    result, kind = invoke(
+        runtime, "prepare_image_generation", prepare_body(reference_artifact_ids=ids)
+    )
+    assert kind == "failure"
+    assert result["message"] == SD_TURBO_REFERENCE and result["error"] == code
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.all("jobs") and not tx.all("artifacts")
+        assert tx.connection.execute("SELECT COUNT(*) FROM budget_reservations").fetchone()[0] == 0
 
 
 def raster(kind, size=(128, 128)):
@@ -530,9 +719,10 @@ def test_raster_format_and_pixel_guards_remain():
     assert error.value.code == "unsupported_media_type"
 
 
-def admitted_job(runtime, output_kind="solid"):
-    prepared, kind = prepare(runtime, prepare_body())
-    assert kind != "failure", prepared
+def admitted_job(runtime, output_kind="solid", *, prepared=None):
+    if prepared is None:
+        prepared, kind = prepare(runtime, prepare_body())
+        assert kind != "failure", prepared
     job, kind = invoke(runtime, "submit_generation", prepared["submit_request"], "submit-one")
     assert kind != "failure", job
     runtime.services.resources = Resources(runtime.store)
@@ -547,6 +737,7 @@ def admitted_job(runtime, output_kind="solid"):
             kind=request["kind"],
             purpose=request["purpose"],
             media_type=request["media_type"],
+            derived_from=request.get("derived_from"),
         )
         with runtime.store.transaction() as tx:
             artifacts.put(tx, artifact)
@@ -571,6 +762,10 @@ def admitted_job(runtime, output_kind="solid"):
             )
         if path == "/system_stats":
             return httpx.Response(200, json={"devices": [{"vram_free": 2**30}]})
+        if path == "/upload/image":
+            assert request.method == "POST"
+            number = sum(call.url.path == path for call in calls)
+            return httpx.Response(200, json={"subfolder": "inputs", "name": f"{number}.png"})
         if path == "/prompt":
             assert request.method == "POST"
             return httpx.Response(200, json={"prompt_id": "prompt-one"})
@@ -591,6 +786,94 @@ def admitted_job(runtime, output_kind="solid"):
     runtime.provider.client.close()
     runtime.provider.client = httpx.Client(transport=httpx.MockTransport(transport))
     return job, response, calls
+
+
+@pytest.mark.parametrize("count", [2, 3, 4])
+def test_prepare_replay_and_pump_preserve_ordered_reference_provenance(runtime, count):
+    ids = list(ORDERED_REFS[:count])
+    artifacts = runtime.services.extension("artifacts")
+    for i, identity in enumerate(ids):
+        data = raster("gradient", (64 + i * 16, 64))
+        artifact = artifacts.promote(
+            PROJECT, identity, data, kind="image", purpose="reference", media_type="image/png"
+        )
+        with runtime.store.transaction() as tx:
+            artifacts.put(tx, artifact)
+    recipe = {**RECIPE, "width": 1920, "height": 1088, "max_pixels": 2_088_960}
+    runtime.provider.options["image_recipes"] = {"comfy": recipe}
+    add_tiled_nodes(runtime.catalog)
+    add_vae_dtype_node(runtime.catalog)
+    body = prepare_body(reference_artifact_ids=ids)
+    prepared, kind = prepare(runtime, body)
+    assert kind == "success", prepared
+    assert prepared["input_artifact_ids"] == prepared["submit_request"]["input_artifact_ids"] == ids
+    saved = json.loads(artifacts.ready_path(PROJECT, prepared["workflow_artifact_id"]).read_bytes())
+    assert saved == workflow(recipe, ids, catalog=runtime.catalog)
+    assert saved["decode"]["class_type"] == "VAEDecodeTiled"
+    assert saved["decode"]["inputs"]["vae"] == ["vae_dtype", 0]
+    assert saved["vae_dtype"]["inputs"]["dtype"] == "bf16"
+    assert_reference_branches(
+        saved, [f"artifact:{identity}" for identity in ids], tiled=True, bf16=True
+    )
+    runtime.state.control = lambda tx: {"fenced": True}
+    runtime.services.gate.close(PROJECT)
+    calls = len(runtime.calls)
+    replayed, kind = prepare(runtime, body)
+    assert kind == "success" and replayed == {**prepared, "replayed": True}
+    conflict, _ = prepare(runtime, {**body, "reference_artifact_ids": ids[::-1]})
+    assert conflict["error"] == "idempotency_conflict" and len(runtime.calls) == calls
+    runtime.state.control = lambda tx: {"fenced": False}
+    runtime.services.gate.resume(PROJECT, reconciliation_evidence="Offline fixture")
+
+    job, _, requests = admitted_job(runtime, prepared=prepared)
+    completed = runtime.provider.pump(PROJECT, job["job_id"])[0]
+    assert completed["state"] == "succeeded", completed
+    assert [r.url.path for r in requests] == [
+        "/object_info",
+        "/queue",
+        "/system_stats",
+        *(["/upload/image"] * count),
+        "/prompt",
+        "/history/prompt-one",
+        "/view",
+    ]
+    submitted_graph = json.loads(requests[3 + count].content)["prompt"]
+    assert_reference_branches(
+        submitted_graph, [f"inputs/{i + 1}.png" for i in range(count)], tiled=True, bf16=True
+    )
+    output_id, provenance_id = completed["artifact_ids"]
+    provenance = json.loads(artifacts.ready_path(PROJECT, provenance_id).read_bytes())
+    derived_ids = [f"{job['job_id']}-artifact-input-{i}" for i in range(count)]
+    for upload, derived_id, original_id in zip(
+        requests[3 : 3 + count], derived_ids, ids, strict=True
+    ):
+        derivative = artifacts.get(PROJECT, derived_id)
+        assert derivative["derived_from"] == [
+            {
+                "kind": "encode",
+                "input_artifact_ids": [original_id],
+                "parameters": {"encoding": "RGB PNG", "exif_transposed": True},
+            }
+        ]
+        assert (
+            derivative["sha256"]
+            == provenance["inputs"]["references"][original_id]["derived_sha256"]
+        )
+        assert f'filename="{derivative["sha256"]}.png"'.encode() in upload.content
+        assert artifacts.ready_path(PROJECT, derived_id).read_bytes() in upload.content
+    assert provenance["derived_images"] == derived_ids
+    assert provenance["inputs"]["request"]["input_artifact_ids"] == ids
+    assert provenance["prompt_id"] == "prompt-one"
+    assert provenance["graph"] == submitted_graph
+    assert provenance["graph_sha256"] == hashlib.sha256(canonical(submitted_graph)).hexdigest()
+    assert provenance["output_artifact_ids"] == [output_id]
+    assert provenance["output_inspections"] == [
+        {
+            "artifact_id": output_id,
+            "sha256": artifacts.get(PROJECT, output_id)["sha256"],
+            "inspection": {"sha256_verified_during_registration": True},
+        }
+    ]
 
 
 @pytest.mark.parametrize(

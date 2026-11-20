@@ -258,6 +258,8 @@ SAFE_REASONS = frozenset(
         "Selected image profile requires one exact 512x512 reference",
         "SD-Turbo image recipes require 512x512 and four steps",
         "Image preparation accepts at most one reference",
+        "Image preparation accepts at most four references",
+        "Duplicate conditioning image",
         "Graph node is not installed",
         "Model/choice is unavailable",
         "An exact JSON-safe decimal seed is required",

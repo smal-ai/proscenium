@@ -1,14 +1,17 @@
-"""Explicit FLUX.2 Klein API graph, optionally conditioned on one project image.
+"""Explicit FLUX.2 Klein API graph, optionally conditioned on ordered project images.
 
 Adapted from the pinned reference template. Treatment, model filenames and size are supplied
 by the current task, not inherited from the reference project. Live preflight is mandatory.
 """
 
+from collections.abc import Sequence
 from typing import Any
 
 from proscenium.api.errors import DomainError
 
 VALID_VAE_DTYPES = {"default", "fp32", "fp16", "bf16"}
+MAX_REFERENCE_IMAGES = 4
+REFERENCE_LIMIT_MESSAGE = "Image preparation accepts at most four references"
 
 
 def graph(
@@ -19,6 +22,7 @@ def graph(
     width: int,
     height: int,
     reference_artifact_id: str | None = None,
+    reference_artifact_ids: Sequence[str] | None = None,
     steps: int = 4,
     tiled_vae: bool = False,
     vae_dtype: str | None = None,
@@ -35,6 +39,17 @@ def graph(
         or (vae_dtype is not None and vae_dtype not in VALID_VAE_DTYPES)
     ):
         raise DomainError("invalid_request")
+    refs = list(reference_artifact_ids) if reference_artifact_ids is not None else []
+    if reference_artifact_id is not None:
+        if reference_artifact_ids is not None and refs != [reference_artifact_id]:
+            raise DomainError("invalid_request")
+        refs = [reference_artifact_id]
+    if any(not isinstance(ref, str) or not ref or any(c in ref for c in "/\\\0") for ref in refs):
+        raise DomainError("invalid_request")
+    if len(set(refs)) != len(refs):
+        raise DomainError("invalid_request", message="Duplicate conditioning image")
+    if len(refs) > MAX_REFERENCE_IMAGES:
+        raise DomainError("invalid_request", message=REFERENCE_LIMIT_MESSAGE)
     tiles = {"tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
     vae_source = ["vae_dtype", 0] if vae_dtype else ["vae", 0]
     result: dict[str, Any] = {
@@ -95,41 +110,45 @@ def graph(
             "class_type": "VAEComputeDtype",
             "inputs": {"vae": ["vae", 0], "dtype": vae_dtype},
         }
-    if reference_artifact_id:
+    positive = ["text", 0]
+    negative = ["zero", 0]
+    for i, artifact_id in enumerate(refs):
+        ref = "reference" if i == 0 else f"reference_{i + 1}"
+        scale, encode = f"{ref}_scale", f"{ref}_encode"
+        pos, neg = f"{ref}_positive", f"{ref}_negative"
         result.update(
             {
-                "reference": {
+                ref: {
                     "class_type": "LoadImage",
-                    "inputs": {"image": "artifact:" + reference_artifact_id},
+                    "inputs": {"image": "artifact:" + artifact_id},
                 },
-                "reference_scale": {
+                scale: {
                     "class_type": "ImageScaleToTotalPixels",
                     "inputs": {
-                        "image": ["reference", 0],
+                        "image": [ref, 0],
                         "upscale_method": "lanczos",
                         "megapixels": reference_megapixels,
                         "resolution_steps": 16,
                     },
                 },
-                "reference_encode": {
+                encode: {
                     "class_type": "VAEEncodeTiled" if tiled_vae else "VAEEncode",
                     "inputs": {
-                        "pixels": ["reference_scale", 0],
+                        "pixels": [scale, 0],
                         "vae": vae_source,
                         **(tiles if tiled_vae else {}),
                     },
                 },
-                "reference_positive": {
+                pos: {
                     "class_type": "ReferenceLatent",
-                    "inputs": {"conditioning": ["text", 0], "latent": ["reference_encode", 0]},
+                    "inputs": {"conditioning": positive, "latent": [encode, 0]},
                 },
-                "reference_negative": {
+                neg: {
                     "class_type": "ReferenceLatent",
-                    "inputs": {"conditioning": ["zero", 0], "latent": ["reference_encode", 0]},
+                    "inputs": {"conditioning": negative, "latent": [encode, 0]},
                 },
             }
         )
-        result["guider"]["inputs"].update(
-            positive=["reference_positive", 0], negative=["reference_negative", 0]
-        )
+        positive, negative = [pos, 0], [neg, 0]
+    result["guider"]["inputs"].update(positive=positive, negative=negative)
     return result

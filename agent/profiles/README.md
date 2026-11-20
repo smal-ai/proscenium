@@ -8,6 +8,10 @@ The host builds `authoring-specialist` and `unity-specialist` using the pinned P
   generation waves and Blender builds to `authoring-specialist`, or Unity workflows
   to `unity-specialist`. Bounded specialists complete their slice directly and load
   the matching domain `skill` first when exposed.
+- For [storyboard](../skills/storyboard/SKILL.md) and [hero-asset](../skills/hero-assets/SKILL.md)
+  discussions, the lead relays the complete pitch or shortlist, then only the current
+  shot or asset card during refinement. A written decision is not an instruction to
+  generate images.
 - Private `runtime.worker_model` is required. Set an explicitly available economical
   model for ordinary use. An unavailable required model must fail, never silently
   fall back. The bounded proof explicitly chose `gpt-6.1-sol` for both roles.
