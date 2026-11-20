@@ -31,6 +31,157 @@ from tools.unity.jobs import _SUPERVISORS, attempt_directory
 from tools.unity.worker import __file__ as worker_script
 
 
+def test_terminal_validation_reconciliation_preserves_the_next_build_claim(tmp_path):
+    root = tmp_path / "project"
+    root.mkdir()
+    git(root, "init", "-b", "main")
+    project = "unity/walk"
+    scene = write(root, f"{project}/Assets/Main.unity", b"scene")
+    editor_version = "6000.3.27f1"
+    settings = write(
+        root,
+        f"{project}/ProjectSettings/ProjectVersion.txt",
+        f"m_EditorVersion: {editor_version}\n".encode(),
+    )
+    adapter = write(
+        root,
+        f"{project}/proscenium-unity.json",
+        dict(
+            validate_method="Walk.Editor.Validate",
+            build_method="Walk.Editor.Build",
+            build_output="Builds/Player.x86_64",
+        ),
+    )
+    gate = root / project / "release-fake-build"
+    editor = tmp_path / "Unity-fake"
+    editor.write_text(
+        f"#!{sys.executable}\n"
+        + """
+import sys, time
+from pathlib import Path
+if sys.argv[sys.argv.index("-executeMethod") + 1] == "Walk.Editor.Build":
+    deadline = time.monotonic() + 20
+    while not Path("release-fake-build").is_file():
+        if time.monotonic() >= deadline:
+            raise SystemExit(2)
+        time.sleep(0.01)
+    output = Path("Builds/Player.x86_64")
+    output.parent.mkdir(exist_ok=True)
+    output.write_bytes(b"new player")
+"""
+    )
+    editor.chmod(0o700)
+    services = Services.create(
+        Settings(
+            data_directory=tmp_path / "registry",
+            free_space_reserve_bytes=0,
+            runtime=dict(unity_editor=str(editor)),
+            execution_profiles=frozenset({"unity-local"}),
+        )
+    )
+    catalogue_install(services)
+    workflows = workflows_install(services)
+
+    def claims():
+        with services.resources.store.transaction(write=False) as tx:
+            return [
+                tuple(row)
+                for row in tx.connection.execute(
+                    "SELECT resource, project_id, job_id, attempt_id FROM resource_claims"
+                )
+            ]
+
+    async def exercise():
+        import_project(
+            services,
+            OWNER,
+            root,
+            dict(
+                schema_version="1.0",
+                import_id="claim-demo",
+                project=IDENTITY,
+                items=[
+                    item(
+                        "walk",
+                        "unity_result",
+                        source(scene, settings, adapter, app="unity", version=editor_version),
+                        unity=dict(
+                            editor_version=editor_version,
+                            pipeline="urp",
+                            scene_path=scene["path"],
+                            validation=dict(status="not_run"),
+                        ),
+                    )
+                ],
+            ),
+        )
+        services.activate_project(P)
+        caller = admitted_tool(services)
+
+        async def launch(action):
+            return await workflows.unity(
+                caller,
+                arguments(
+                    "run_unity_workflow",
+                    dict(
+                        project=project,
+                        operation_id=f"op-{action}",
+                        job_id=f"job-{action}",
+                        execution_profile_id="unity-local",
+                        version=pin("walk"),
+                        camera="perspective",
+                        spawn=[0, 0, 0],
+                        pipeline="urp",
+                        action=action,
+                    ),
+                ),
+            )
+
+        validate_job = await launch("validate")
+        resource, _, _, _ = claims()[0]
+        await asyncio.to_thread(_SUPERVISORS[validate_job["attempt_id"]].wait, 10)
+        assert [(job["job_id"], job["state"]) for job in await workflows.reconcile(P)] == [
+            ("job-validate", "succeeded")
+        ]
+        assert claims() == []
+
+        # A terminal attempt may still need to release its own claim after a restart.
+        assert services.resources.acquire(
+            resource, P, validate_job["job_id"], validate_job["attempt_id"]
+        )
+        await workflows.reconcile(P)
+        assert claims() == []
+
+        build = await launch("build")
+        process = _SUPERVISORS[build["attempt_id"]]
+        try:
+            assert build["state"] == "running"
+            expected_claim = [(resource, P, build["job_id"], build["attempt_id"])]
+            assert claims() == expected_claim
+            worker = attempt_directory(root, build["attempt_id"]) / "worker.json"
+
+            async def wait_for_running_worker():
+                while not worker.exists() or json.loads(worker.read_bytes())["state"] != "running":
+                    await asyncio.sleep(0.01)
+
+            await asyncio.wait_for(wait_for_running_worker(), timeout=10)
+            observed = {job["job_id"]: job["state"] for job in await workflows.reconcile(P)}
+            assert observed == {"job-validate": "succeeded", "job-build": "running"}
+            assert claims() == expected_claim
+        finally:
+            gate.touch()
+            await asyncio.to_thread(process.wait, 10)
+        observed = {job["job_id"]: job["state"] for job in await workflows.reconcile(P)}
+        assert observed == {"job-validate": "succeeded", "job-build": "succeeded"}
+        assert claims() == []
+        assert (root / project / "Builds/Player.x86_64").read_bytes() == b"new player"
+
+    try:
+        asyncio.run(exercise())
+    finally:
+        services.close()
+
+
 def test_authored_unity_validate_build_and_publish(tmp_path):
     root = tmp_path / "project"
     root.mkdir()

@@ -45,6 +45,27 @@ class Resources:
                 raise DomainError("scope_denied", 403)
             tx.connection.execute("DELETE FROM resource_claims WHERE resource=?", (resource,))
 
+    def release_if_owned(
+        self,
+        resource: str,
+        project_id: str,
+        job_id: str,
+        attempt_id: str,
+        *,
+        terminal_evidence: str,
+    ) -> None:
+        """Reconcile a terminal receipt without releasing a newer attempt's claim."""
+        if not terminal_evidence:
+            raise DomainError("invalid_request")
+        with self.store.transaction() as tx:
+            # Match and delete atomically: a separate read before release would race
+            # another reconciliation followed by acquisition by the next job.
+            tx.connection.execute(
+                "DELETE FROM resource_claims "
+                "WHERE resource=? AND project_id=? AND job_id=? AND attempt_id=?",
+                (resource, project_id, job_id, attempt_id),
+            )
+
 
 def check_storage(
     root: Path, reserve_bytes: int, estimated_remaining_bytes: int | None = None

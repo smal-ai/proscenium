@@ -46,6 +46,12 @@ def reap_unity_supervisors() -> None:
             _SUPERVISORS.pop(attempt_id, None)
 
 
+def release_owned(services: Services, resource: str, job: dict[str, Any], evidence: str) -> None:
+    services.resources.release_if_owned(
+        resource, job["project_id"], job["job_id"], job["attempt_id"], terminal_evidence=evidence
+    )
+
+
 def check_attempt_caller(caller: Caller, job: dict[str, Any]) -> None:
     if caller.channel == "worker":
         if (
@@ -300,13 +306,7 @@ def reconcile_unity_job(services: Services, caller: Caller, job_id: str) -> dict
                 receipt[key] == job[key] == request[key]
                 for key in ("job_id", "attempt_id", "input_digest")
             ):
-                services.resources.release(
-                    request["resource"],
-                    project_id,
-                    job_id,
-                    job["attempt_id"],
-                    terminal_evidence=sha256(receipt_path),
-                )
+                release_owned(services, request["resource"], job, sha256(receipt_path))
         result = attempt / "unity-result.json"
         return dict(
             job=job,
@@ -435,9 +435,7 @@ def reconcile_unity_job(services: Services, caller: Caller, job_id: str) -> dict
         external_job_id=external,
         native_exit_code=receipt["native_exit_code"],
     )
-    services.resources.release(
-        request["resource"], project_id, job_id, job["attempt_id"], terminal_evidence=proof
-    )
+    release_owned(services, request["resource"], job, proof)
     return dict(job=job, unity=unity_result, evidence=str(attempt), worker=receipt)
 
 
