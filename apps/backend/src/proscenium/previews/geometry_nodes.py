@@ -20,6 +20,21 @@ def modifier_kind(modifier) -> str:
     """Classify native modifiers without confusing Geometry Nodes with physics."""
     if modifier.type == "NODES":
         return "geometry_nodes"
+    if modifier.type == "PARTICLE_SYSTEM":
+        system = getattr(modifier, "particle_system", None)
+        settings = getattr(system, "settings", None)
+        cache = getattr(system, "point_cache", None)
+        # A static groom stores its hair keys in the blend, not in a simulation cache.
+        if (
+            system is not None
+            and settings is not None
+            and cache is not None
+            and getattr(settings, "type", None) == "HAIR"
+            and getattr(system, "use_hair_dynamics", None) is False
+            and getattr(cache, "use_external", None) is False
+            and getattr(cache, "use_disk_cache", None) is False
+        ):
+            return "ordinary"
     if modifier.type in SIMULATION_MODIFIERS:
         return "unsupported_simulation_cache"
     return "ordinary"
