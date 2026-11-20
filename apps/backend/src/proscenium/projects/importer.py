@@ -22,7 +22,7 @@ from proscenium.db.ownership import Ownership
 from proscenium.db.store import now
 from proscenium.previews.assembly import expand, technical
 from proscenium.previews.config import Rendering
-from proscenium.previews.media import encode, verify_video
+from proscenium.previews.media import encode, inspect_video, verify_video
 from proscenium.previews.service import PreviewService
 from proscenium.reviews.references import References
 from proscenium.services import Services
@@ -58,6 +58,10 @@ def identity(prefix: str, *parts: Any) -> str:
 
 def ref(row: dict) -> dict:
     return {key: row[key] for key in ("item_id", "version_id")}
+
+
+def reject_non_json(value: str) -> None:
+    raise ValueError(f"Not a JSON value: {value}")
 
 
 @dataclass
@@ -99,6 +103,10 @@ class Import:
         if not path.is_file():
             raise DomainError("source_unavailable", 422)
         data = path.read_bytes()
+        if data.startswith(b"version https://git-lfs.github.com/spec/v1"):
+            raise DomainError(
+                "source_unavailable", 422, "Unhydrated Git LFS pointer", path=entry["path"]
+            )
         if sha(data) != entry["sha256"]:
             raise DomainError("hash_mismatch", 422, path=entry["path"])
         return data
@@ -178,7 +186,10 @@ class Import:
                         raise DomainError("hash_mismatch", 422, path=path)
             if source["entry_path"] not in names:
                 raise DomainError("dependency_missing", 422, "Source entry must be listed in files")
-        if checkpoint_files:
+        if (
+            checkpoint_files
+            or not git(self.root, "rev-parse", "--verify", "HEAD", required=False).strip()
+        ):
             for name in ("project.json", ".gitignore", ".gitattributes"):
                 digest = sha(relative(self.root, name, exists=True).read_bytes())
                 if checkpoint_files.setdefault(name, digest) != digest:
@@ -213,6 +224,8 @@ class Import:
                         validate(
                             "AuthoredShotPlan" if kind == "storyboard" else "SequenceMap", document
                         )
+                        if kind == "sequence":
+                            self.validate_sequence_bounds(document)
                         self.documents[item["version_id"]] = document
                 files.append(dict(destination=path, origin=origin))
             closure = dict(
@@ -257,11 +270,18 @@ class Import:
         return result
 
     def item_artifact(self, entry: dict, row: dict | None) -> str:
-        fields(entry, "artifact_id path sha256 media_type kind purpose", "external_id provenance")
+        fields(
+            entry,
+            "artifact_id path sha256 media_type kind purpose",
+            "external_id provenance dimensions fps frame_count",
+        )
+        kind, media_type = entry["kind"], entry["media_type"]
         if row:
             allowed = {"asset": {"reference", "concept"}, "storyboard": {"keyframe"}}
             if entry["kind"] != "image" or entry["purpose"] not in allowed.get(row["kind"], set()):
                 raise DomainError("invalid_request", 422, "Invalid catalogue image purpose")
+        elif kind not in {"image", "video", "document"}:
+            raise DomainError("invalid_request", 422, "Unsupported retained artefact kind")
         if "provenance" in entry:
             validate("Provenance", entry["provenance"])
         if "external_id" in entry and (
@@ -270,13 +290,43 @@ class Import:
             raise DomainError(
                 "invalid_request", 422, "External evidence ID must be a non-empty string"
             )
+        data = self.read_verified(entry)
+        metadata = {"source_version_id": row["version_id"]} if row else {}
+        expected = {}
+        for key, schema in (("dimensions", "Dimensions"), ("fps", "Fps")):
+            if key in entry:
+                expected[key] = validate(schema, entry[key])
+        if "frame_count" in entry:
+            if type(entry["frame_count"]) is not int or entry["frame_count"] <= 0:
+                raise DomainError("invalid_request", 422, "Expected a positive frame count")
+            expected["frame_count"] = entry["frame_count"]
+        if kind == "video":
+            if media_type != "video/mp4":
+                raise DomainError(
+                    "unsupported_media_type", 422, "Retained videos must declare video/mp4"
+                )
+            with tempfile.TemporaryDirectory(
+                prefix="import-retained-video-", dir=self.store.path.parent
+            ) as tmp:
+                path = Path(tmp) / "retained.mp4"
+                atomic_bytes(path, data)
+                metadata.update(inspect_video(path, self.config, expected=expected))
+        elif expected:
+            raise DomainError("invalid_request", 422, "Declared video metadata requires a video")
+        elif kind == "document" and media_type == "application/json":
+            try:
+                json.loads(data.decode("utf-8"), parse_constant=reject_non_json)
+            except ValueError as exc:
+                raise DomainError(
+                    "source_unavailable", 422, "Retained JSON is not valid UTF-8 JSON"
+                ) from exc
         self.promote(
             entry["artifact_id"],
-            self.read_verified(entry),
-            kind=entry["kind"],
+            data,
+            kind=kind,
             purpose=entry["purpose"],
-            media_type=entry["media_type"],
-            metadata={"source_version_id": row["version_id"]} if row else None,
+            media_type=media_type,
+            metadata=metadata,
         )
         if not row:
             self.historical[entry["artifact_id"]] = {
@@ -467,6 +517,44 @@ class Import:
         self.jobs[job_id] = PreparedJob(job, inputs, receipts, segment)
         row["preview_requests"].append(spec)
 
+    def validate_sequence_bounds(self, sequence: dict) -> None:
+        count = sequence["frame_count"]
+        ceiling = self.config["max_frames"]
+        if not 1 <= count <= ceiling:
+            raise DomainError("invalid_frame_mapping", 422, "Sequence exceeds the host frame limit")
+        cursor = 1
+        for entry in sequence["entries"]:
+            source_count = validation.interval(entry["source_frames"])
+            dest = entry["sequence_frames"]
+            dest_count = validation.interval(dest)
+            if (
+                source_count > ceiling
+                or dest["start"] != cursor
+                or dest["end"] > count
+                or (entry["transform"] in {"identity", "trim"} and source_count != dest_count)
+            ):
+                raise DomainError(
+                    "invalid_frame_mapping",
+                    422,
+                    "Sequence ranges do not partition its bounded frame count",
+                )
+            if any(
+                validation.interval(source["source_frames"]) > ceiling
+                for source in entry.get("contributors", [])
+            ):
+                raise DomainError(
+                    "invalid_frame_mapping",
+                    422,
+                    "Sequence contributor exceeds the host frame limit",
+                )
+            cursor = dest["end"] + 1
+        if cursor != count + 1:
+            raise DomainError(
+                "invalid_frame_mapping",
+                422,
+                "Sequence ranges do not cover the declared frame count",
+            )
+
     def frame_map(self, sequence: dict) -> dict:
         for entry in sequence["entries"]:
             key = entry["mapping_artifact_id"]
@@ -479,7 +567,17 @@ class Import:
             data = self.artifacts.path(self.project_id, artifact["sha256"]).read_bytes()
             if sha(data) != artifact["sha256"]:
                 raise DomainError("hash_mismatch", 422)
-            self.maps[key] = validate("FrameMap", json.loads(data))
+            mapping = validate("FrameMap", json.loads(data))
+            if (
+                mapping["frame_count"] != sequence["frame_count"]
+                or len(mapping["frames"]) != sequence["frame_count"]
+            ):
+                raise DomainError(
+                    "invalid_frame_mapping",
+                    422,
+                    "Explicit map does not match the bounded frame count",
+                )
+            self.maps[key] = mapping
         maps = [
             self.maps[e["mapping_artifact_id"]]
             for e in sequence["entries"]
@@ -814,11 +912,21 @@ class Import:
             return {**previous, "replayed": True}
         items = array(self.manifest.get("items", []))
         historical = array(self.manifest.get("retained_artifacts", []))
-        if not (items or historical or self.manifest.get("selections")):
+        frame_maps = array(self.manifest.get("frame_maps", []))
+        if not (items or historical or frame_maps or self.manifest.get("selections")):
             raise DomainError("invalid_request", 422, "Import has no records")
         self.sources_for_items(items)
         for artifact in historical:
             self.item_artifact(artifact, None)
+        for mapping in frame_maps:
+            fields(mapping, "artifact_id path sha256")
+            self.promote(
+                mapping["artifact_id"],
+                self.read_verified(mapping),
+                kind="frame_map",
+                purpose="metadata",
+                media_type="application/json",
+            )
         for row, item in zip(self.rows, items, strict=True):
             row["artifact_ids"] = [
                 self.item_artifact(artifact, row) for artifact in array(item.get("artifacts", []))
@@ -859,7 +967,11 @@ def _owned(path: Path) -> Iterator[None]:
 def import_project(services: Services, caller: Caller, project_root: Path, manifest: dict) -> dict:
     """Import exclusively into one owner project without changing active project or starting work."""
     owner_only(caller)
-    fields(manifest, "schema_version import_id", "project items retained_artifacts selections")
+    fields(
+        manifest,
+        "schema_version import_id",
+        "project items retained_artifacts frame_maps selections",
+    )
     if manifest["schema_version"] != "1.0":
         raise DomainError("invalid_request", 422, "Expected import format 1.0")
     validate("Id", manifest["import_id"])

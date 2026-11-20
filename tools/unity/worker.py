@@ -6,6 +6,7 @@ import fcntl
 import json
 import os
 import signal
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -92,14 +93,34 @@ def stop(process: subprocess.Popen[Any]) -> None:
         process.wait()
 
 
-def build_output_state(project: Path, relative: str) -> tuple[int, int, int, int] | None:
+def check_project_tree(project: Path) -> None:
+    """Unity opens the whole tree, not just the published scene."""
+    if not project.is_dir() or project.resolve(strict=True) != project:
+        raise RuntimeError("Unity project directory is missing or redirected")
+
+    def unreadable(error: OSError) -> None:
+        raise error
+
+    for folder, directories, files in os.walk(project, followlinks=False, onerror=unreadable):
+        for name in (*directories, *files):
+            path = Path(folder) / name
+            if path.is_symlink() and not path.resolve(strict=True).is_relative_to(project):
+                raise RuntimeError(
+                    f"Unity project contains an external symlink: {path.relative_to(project)}"
+                )
+
+
+def build_output(project: Path, relative: str) -> tuple[Path, os.stat_result | None]:
     output = project / relative
     if output.resolve() != output or not output.is_relative_to(project):
         raise RuntimeError("Unity build output is outside its declared project path")
-    if not output.is_file():
-        return None
-    stat = output.stat()
-    return stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+    try:
+        observed = output.lstat()
+    except FileNotFoundError:
+        return output, None
+    if not stat.S_ISREG(observed.st_mode):
+        raise RuntimeError("Unity build output must be a regular non-symlink file")
+    return output, observed
 
 
 def main(request_path: Path) -> None:
@@ -113,6 +134,11 @@ def main(request_path: Path) -> None:
     )
     destination = request_path.parent / "worker.json"
     authored = request.get("authored")
+    build_relative = (
+        authored.get("build_output") if authored and request["action"] == "build" else None
+    )
+    if build_relative:
+        receipt["build_output_verified"] = False
     atomic(destination, receipt)
     process: subprocess.Popen[Any] | None = None
 
@@ -129,10 +155,19 @@ def main(request_path: Path) -> None:
                 raise RuntimeError(
                     "This project's Editor/lock is active. Save and close it explicitly."
                 )
-            build_output = authored.get("build_output") if authored else None
-            previous = build_output_state(project, build_output) if build_output else None
             with (request_path.parent / "console.log").open("w") as output:
                 env = {**os.environ, "DOTNET_PROCESSOR_COUNT": "4"}
+                if authored:
+                    check_project_tree(project)
+                previous = None
+                if build_relative:
+                    path, previous = build_output(project, build_relative)
+                    if previous is not None:
+                        staged = request_path.parent / "previous-build-output"
+                        if staged.exists() or staged.is_symlink():
+                            raise RuntimeError("Prior Unity build output was already staged")
+                        path.rename(staged)
+                        receipt["previous_build_output"] = staged.name
                 process = subprocess.Popen(
                     request["command"],
                     cwd=project,
@@ -148,10 +183,16 @@ def main(request_path: Path) -> None:
                 try:
                     code = process.wait(timeout=request["timeout"])
                     receipt.update(state="complete", native_exit_code=code)
-                    if build_output and code == 0:
-                        current = build_output_state(project, build_output)
+                    if build_relative and code == 0:
+                        _, current = build_output(project, build_relative)
                         receipt["build_output_verified"] = (
-                            current is not None and current != previous
+                            current is not None
+                            and current.st_size > 0
+                            and (
+                                previous is None
+                                or (current.st_dev, current.st_ino)
+                                != (previous.st_dev, previous.st_ino)
+                            )
                         )
                 except subprocess.TimeoutExpired:
                     stop(process)

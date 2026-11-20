@@ -364,8 +364,15 @@ def reconcile_unity_job(services: Services, caller: Caller, job_id: str) -> dict
                 else "Unity batch compilation only. See attempt log."
             ),
         )
-        if output and receipt.get("build_output_verified") is False:
-            unity_result["validation"]["notes"] = "Unity did not write the declared build output."
+        if (
+            output
+            and receipt.get("build_output_verified") is False
+            and receipt["native_exit_code"] == 0
+            and not receipt.get("error")
+        ):
+            unity_result["validation"]["notes"] = (
+                "Unity did not write a fresh, non-empty build output."
+            )
     elif request["action"] == "playtest":
         xml = attempt / "playmode.xml"
         passed = False

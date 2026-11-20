@@ -727,3 +727,169 @@ def test_failed_render_verification_does_not_publish(tmp_path, corruption):
             assert tx.watermark() == 0
     finally:
         services.close()
+
+
+@pytest.mark.parametrize(
+    ("kind", "media_type", "content", "code"),
+    [
+        ("video", "video/mp4", b"not an mp4", "media_unavailable"),
+        (
+            "video",
+            "video/mp4",
+            b"version https://git-lfs.github.com/spec/v1\noid sha256:"
+            + b"0" * 64
+            + b"\nsize 100\n",
+            "source_unavailable",
+        ),
+        ("document", "application/json", b'{"bad":NaN}', "source_unavailable"),
+        ("document", "application/json", b'"\xff"', "source_unavailable"),
+        ("log", "text/plain", b"unsupported kind", "invalid_request"),
+    ],
+)
+def test_invalid_retained_artefacts_are_rejected(tmp_path, kind, media_type, content, code):
+    root = tmp_path / "project"
+    root.mkdir()
+    git(root, "init", "-b", "main")
+    entry = dict(
+        **write(root, "media/unknown", content),
+        artifact_id="bad",
+        kind=kind,
+        purpose="metadata",
+        media_type=media_type,
+    )
+    manifest = dict(
+        schema_version="1.0", import_id="invalid", project=IDENTITY, retained_artifacts=[entry]
+    )
+    services = Services.create(Settings(data_directory=tmp_path / "registry"))
+    try:
+        with pytest.raises(DomainError) as error:
+            import_project(services, OWNER, root, manifest)
+        assert (error.value.code, error.value.status) == (code, 422)
+        with services.registry.project_store(P, active=False).transaction(write=False) as tx:
+            assert not tx.all("artifacts") and tx.watermark() == 0
+    finally:
+        services.close()
+
+
+def test_retained_only_video_extracts_metadata_and_can_be_replayed_and_backed_up(
+    tmp_path, monkeypatch
+):
+    root = tmp_path / "project"
+    root.mkdir()
+    # This fixture starts without Git, even when the suite's TMPDIR is within a checkout.
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    config = dict(
+        ffmpeg="ffmpeg",
+        ffprobe="ffprobe",
+        encode_timeout=60,
+        claim_path=str(tmp_path / "encode.lock"),
+    )
+    for frame in (1, 2):
+        write(root, f"media/frames/{frame:08d}.png", png((frame * 64, 128, 192)))
+    path = root / "media/retained.mp4"
+    encode(root / "media", 1, 2, FPS, config, path)
+    evidence = dict(
+        artifact_id="retained-mp4",
+        path="media/retained.mp4",
+        sha256=sha(path.read_bytes()),
+        kind="video",
+        purpose="final",
+        media_type="video/mp4",
+    )
+    manifest = dict(
+        schema_version="1.0",
+        import_id="retained-only",
+        project=IDENTITY,
+        retained_artifacts=[evidence],
+    )
+    settings = Settings(data_directory=tmp_path / "registry")
+    services = Services.create(settings)
+    try:
+        result = import_project(services, OWNER, root, manifest)
+        assert result["versions"] == [] and result["artifact_ids"] == ["retained-mp4"]
+        head = git(root, "rev-parse", "HEAD").decode().strip()
+        assert git(root, "ls-tree", "--name-only", "HEAD").decode().splitlines() == [
+            ".gitattributes",
+            ".gitignore",
+            "project.json",
+        ]
+        snapshot = watermark(services)
+        assert import_project(services, OWNER, root, manifest) == {**result, "replayed": True}
+        assert watermark(services) == snapshot
+        for field, value in (
+            ("dimensions", {"width": 32, "height": 16}),
+            ("fps", {"numerator": 25, "denominator": 1}),
+            ("frame_count", 3),
+        ):
+            bad = {
+                **manifest,
+                "import_id": "unexpected-" + field,
+                "retained_artifacts": [{**evidence, field: value}],
+            }
+            with pytest.raises(DomainError) as error:
+                import_project(services, OWNER, root, bad)
+            assert (error.value.code, error.value.status) == ("media_unavailable", 422)
+        with services.registry.project_store(P, active=False).transaction(write=False) as tx:
+            artifact = tx.require("artifacts", "retained-mp4")
+            assert artifact["dimensions"] == DIMENSIONS
+            assert artifact["fps"] == FPS and artifact["frame_count"] == 2
+    finally:
+        services.close()
+    backup = tmp_path / "backup"
+    recovery.backup(settings, P, backup)
+    assert recovery.verify(backup)["source"]["head"] == head
+
+
+@pytest.mark.parametrize(
+    "count,start,end,source_end",
+    [
+        (1_000_000_000, 1, 1_000_000_000, 1_000_000_000),
+        (2, 1, 1_000_000_000, 1_000_000_000),
+        (2, 2, 2, 1),
+        (2, 1, 2, 1_000_000_000),
+        (2, 1, 1, 1),
+    ],
+)
+def test_sequence_bounds_are_checked_before_expansion(
+    tmp_path, monkeypatch, count, start, end, source_end
+):
+    from proscenium.projects import importer
+
+    monkeypatch.setattr(importer, "expand", lambda *_: pytest.fail("Unsafe sequence expansion"))
+    root = tmp_path / "project"
+    root.mkdir()
+    git(root, "init", "-b", "main")
+    sequence = dict(
+        schema_version="1.0",
+        sequence_version_id="cut-v1",
+        project_id=P,
+        fps=FPS,
+        frame_count=count,
+        entries=[
+            dict(
+                entry_id="entry",
+                shot_id="shot",
+                version_id="scene-v1",
+                job_id="job",
+                source_frames=dict(start=1, end=source_end),
+                sequence_frames=dict(start=start, end=end),
+                transform="identity",
+                mapping_artifact_id=None,
+            )
+        ],
+        silent=True,
+    )
+    document = write(root, "sequences/cut.json", sequence)
+    manifest = dict(
+        schema_version="1.0",
+        import_id="unsafe-sequence",
+        project=IDENTITY,
+        items=[item("cut", "sequence", source(document))],
+    )
+    services = Services.create(Settings(data_directory=tmp_path / "registry"))
+    try:
+        with pytest.raises(DomainError) as error:
+            import_project(services, OWNER, root, manifest)
+        assert (error.value.code, error.value.status) == ("invalid_frame_mapping", 422)
+    finally:
+        services.close()

@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import subprocess
 import sys
 
 import pytest
@@ -27,6 +28,7 @@ from test_project_importer import (
 )
 
 from tools.unity.jobs import _SUPERVISORS, attempt_directory
+from tools.unity.worker import __file__ as worker_script
 
 
 def test_authored_unity_validate_build_and_publish(tmp_path):
@@ -52,12 +54,20 @@ assert a[a.index("-job-worker-count") + 1] == "2"
 project = Path(a[a.index("-projectPath") + 1])
 assert Path.cwd() == project
 Path(a[a.index("-logFile") + 1]).write_text(json.dumps(a))
+with (project / "editor-invocations").open("a") as marker:
+    marker.write("launched\\n")
 method = a[a.index("-executeMethod") + 1] if "-executeMethod" in a else None
-assert method in {None, "Walk.Editor.Check", "Walk.Editor.BuildLinux", "Walk.Editor.NoOutput"}
+assert method in {None, "Walk.Editor.Check", "Walk.Editor.BuildLinux", "Walk.Editor.NoOutput",
+                  "Walk.Editor.ChmodOnly", "Walk.Editor.Empty"}
+output = project / "Builds/Linux/Walk.x86_64"
 if method == "Walk.Editor.BuildLinux":
-    output = project / "Builds/Linux/Walk.x86_64"
+    assert not output.exists()
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("fake player")
+if method == "Walk.Editor.ChmodOnly" and output.exists():
+    output.chmod(0o700)
+if method == "Walk.Editor.Empty":
+    output.touch()
 """
     )
     editor.chmod(0o700)
@@ -132,7 +142,7 @@ if method == "Walk.Editor.BuildLinux":
                 ),
             )
 
-        async def run(action, suffix, scene=scene_path, state="succeeded"):
+        async def run(action, suffix, scene=scene_path, state="succeeded", prior=None):
             request = body(action, suffix, scene)
             job = await workflows.unity(caller, request)
             assert job["state"] == "running"
@@ -147,7 +157,13 @@ if method == "Walk.Editor.BuildLinux":
                 json.loads((attempt / "process.json").read_bytes())["attempt_id"]
                 == job["attempt_id"]
             )
-            assert json.loads((attempt / "terminal.json").read_bytes())["state"] == "complete"
+            terminal = json.loads((attempt / "terminal.json").read_bytes())
+            assert terminal["state"] == "complete"
+            if action == "build":
+                assert terminal["native_exit_code"] == 0
+                assert terminal["build_output_verified"] is (state == "succeeded")
+            if prior is not None:
+                assert (attempt / "previous-build-output").read_bytes() == prior
             assert (
                 result["scene_path"] == workspace_scene and result["player_script"] == player_path
             )
@@ -156,9 +172,12 @@ if method == "Walk.Editor.BuildLinux":
 
         assert (await run("validate", "validate"))["validation"]["status"] == "passed"
         update = write(root, workspace_scene, b"changed authored scene")
-        result = await run("build", "build", workspace_scene)
+        write(root, f"{project}/Library/incremental-cache", b"keep")
+        write(root, f"{project}/{output}", b"older player")
+        result = await run("build", "build", workspace_scene, prior=b"older player")
         assert result["validation"]["status"] == "passed"
         assert (root / project / output).read_text() == "fake player"
+        assert (root / project / "Library/incremental-cache").read_bytes() == b"keep"
         assert not (root / project / "Assets/Proscenium").exists()
         assert not (root / "unity/exports").exists()
         for entry in (meta, player, player_meta, configuration, adapter_file):
@@ -177,9 +196,15 @@ if method == "Walk.Editor.BuildLinux":
         assert publication["versions"] == [pin("walk", "walk-v2")]
         assert catalogue.version(P, "walk-v2")["unity"] == result
 
-        write(root, adapter_path, {**adapter, "build_method": "Walk.Editor.NoOutput"})
-        # An old executable cannot prove this attempt succeeded.
-        assert (await run("build", "stale", state="failed"))["validation"]["status"] == "failed"
+        for suffix, method in (("stale", "NoOutput"), ("chmod", "ChmodOnly"), ("empty", "Empty")):
+            write(root, f"{project}/{output}", b"stale player")
+            write(root, adapter_path, {**adapter, "build_method": f"Walk.Editor.{method}"})
+            attempt = await run("build", suffix, state="failed", prior=b"stale player")
+            assert attempt["validation"]["status"] == "failed"
+            if method == "Empty":
+                assert (root / project / output).stat().st_size == 0
+            else:
+                assert not (root / project / output).exists()
         (root / adapter_path).unlink()
         assert "compilation only" in (await run("validate", "compile"))["validation"]["notes"]
         with pytest.raises(DomainError, match="needs a method and output"):
@@ -188,6 +213,17 @@ if method == "Walk.Editor.BuildLinux":
             await workflows.unity(
                 caller, body("validate", "wrong-project", "unity/other/Assets/Main.unity")
             )
+        external = tmp_path / "other-project"
+        external.mkdir()
+        unrelated = root / project / "Assets/Unrelated"
+        unrelated.symlink_to(external, target_is_directory=True)
+        calls = root / project / "editor-invocations"
+        before = calls.read_bytes()
+        with pytest.raises(DomainError, match="external symlink") as refused:
+            await workflows.unity(caller, body("validate", "external-link"))
+        assert refused.value.code == "scope_denied" and refused.value.status == 403
+        assert calls.read_bytes() == before
+        unrelated.unlink()
         lock = root / project / "Temp/UnityLockfile"
         lock.parent.mkdir(exist_ok=True)
         lock.touch()
@@ -202,3 +238,35 @@ if method == "Walk.Editor.BuildLinux":
         asyncio.run(exercise())
     finally:
         services.close()
+
+
+def test_supervisor_rechecks_unity_project_tree_before_launch(tmp_path):
+    project = tmp_path / "project"
+    assets = project / "Packages"
+    assets.mkdir(parents=True)
+    external = tmp_path / "external.txt"
+    external.write_text("not in project")
+    (assets / "Redirected.txt").symlink_to(external)
+    marker = tmp_path / "editor-launched"
+    attempt = tmp_path / "attempt"
+    request = dict(
+        job_id="job",
+        attempt_id="attempt",
+        input_digest="inputs",
+        request_digest="request",
+        source_digest="source",
+        project=str(project),
+        project_lock=str(tmp_path / "project.lock"),
+        action="validate",
+        authored={},
+        timeout=10,
+        command=[sys.executable, "-c", f"from pathlib import Path; Path({str(marker)!r}).touch()"],
+    )
+    request["authored"] = dict(build_output=None)
+    write(attempt, "request.json", request)
+    subprocess.run(
+        [sys.executable, worker_script, str(attempt / "request.json")], check=True, timeout=10
+    )
+    receipt = json.loads((attempt / "terminal.json").read_bytes())
+    assert "external symlink: Packages/Redirected.txt" in receipt["error"]
+    assert receipt["native_exit_code"] is None and not marker.exists()

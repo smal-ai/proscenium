@@ -16,6 +16,8 @@ from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
 from proscenium.db.paths import project_path
 
+from .worker import check_project_tree
+
 HERE = Path(__file__).resolve().parent
 EDITOR_VERSION = "6000.3.27f1"
 PACKAGE_VERSIONS = {
@@ -134,6 +136,12 @@ def existing_recipe(root: Path, body: dict[str, Any], version: dict[str, Any]) -
     project = unity_path(root, body["project"])
     if project != root / body["project"]:
         raise DomainError("scope_denied", 403, "Authored Unity project cannot be a symlink")
+    try:
+        check_project_tree(project)
+    except (OSError, RuntimeError) as error:
+        raise DomainError(
+            "scope_denied", 403, f"Cannot inspect authored Unity project: {error}"
+        ) from error
 
     def scene_path(value: str) -> str:
         candidate = value.removeprefix(body["project"] + "/")
