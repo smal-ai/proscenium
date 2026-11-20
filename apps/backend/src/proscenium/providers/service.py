@@ -21,7 +21,7 @@ from proscenium.db import Transaction
 from proscenium.db.paths import project_path
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
-from proscenium.providers import klein
+from proscenium.providers import klein, sd_turbo, sd_turbo_fp16
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
 from proscenium.providers.targets import admit_target, resolve_target
@@ -316,6 +316,14 @@ class ProviderService:
             and len(reference_ids) > klein.MAX_REFERENCE_IMAGES
         ):
             raise DomainError("invalid_request", message=klein.REFERENCE_LIMIT_MESSAGE)
+        if (
+            capability.revision in {sd_turbo.REVISION, sd_turbo_fp16.REVISION}
+            and len(reference_ids) != 1
+        ):
+            raise DomainError(
+                "invalid_request",
+                message="Selected image profile requires one exact 512x512 reference",
+            )
         for artifact_id in reference_ids:
             artifact, clean = self.image_bytes(project_id, artifact_id)
             required_dimensions = getattr(capability, "reference_dimensions", None)

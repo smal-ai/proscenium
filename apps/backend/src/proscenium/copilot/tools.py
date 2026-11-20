@@ -260,6 +260,8 @@ SAFE_REASONS = frozenset(
         "Image preparation accepts at most one reference",
         "Image preparation accepts at most four references",
         "Duplicate conditioning image",
+        "Unbound conditioning image",
+        "Reference is not conditioning",
         "Graph node is not installed",
         "Model/choice is unavailable",
         "An exact JSON-safe decimal seed is required",

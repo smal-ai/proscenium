@@ -228,7 +228,7 @@ def test_klein_workflow_and_bind_graph_chain_references_in_caller_order(count):
     built = workflow(RECIPE, ids)
     assert built == graph(reference_artifact_ids=ids)
     assert_reference_branches(built, [f"artifact:{identity}" for identity in ids])
-    uploads = {identity: f"comfy/{identity}.png" for identity in reversed(ids)}
+    uploads = {identity: f"comfy/{identity}.png" for identity in ids}
     bound = bind_graph(built, "Concept", "42", uploads)
     assert_reference_branches(bound, [uploads[identity] for identity in ids])
 
@@ -255,11 +255,79 @@ def test_bind_graph_rejects_duplicate_artifact_bindings():
         bind_graph(built, "Concept", "42", {"one": "one.png"})
 
 
-def test_bind_graph_rejects_positive_reference_cycles():
+@pytest.mark.parametrize("cycle", ["positive", "negative", "vae_encode"])
+def test_bind_graph_rejects_reachable_cycles(cycle):
     built = graph(reference_artifact_ids=("one", "two"))
-    built["reference_positive"]["inputs"]["conditioning"] = ["reference_2_positive", 0]
+    if cycle == "vae_encode":
+        built["reference_encode"]["inputs"]["pixels"] = ["reference_encode", 0]
+    else:
+        built[f"reference_{cycle}"]["inputs"]["conditioning"] = [f"reference_2_{cycle}", 0]
     with pytest.raises(DomainError, match="Invalid graph link"):
         bind_graph(built, "Concept", "42", {"one": "one.png", "two": "two.png"})
+
+
+def test_bind_graph_rejects_reference_order_different_from_request():
+    built = graph(reference_artifact_ids=("b", "a"))
+    with pytest.raises(DomainError, match="Reference is not conditioning"):
+        bind_graph(built, "Concept", "42", {"a": "a.png", "b": "b.png"})
+
+
+@pytest.mark.parametrize("negative", ["omitted", "swapped", "wrong_base"])
+def test_bind_graph_rejects_invalid_negative_reference_chain(negative):
+    built = graph(reference_artifact_ids=("a", "b"))
+    if negative == "omitted":
+        built["guider"]["inputs"]["negative"] = ["zero", 0]
+    elif negative == "swapped":
+        built["reference_negative"]["inputs"]["latent"] = ["reference_2_encode", 0]
+        built["reference_2_negative"]["inputs"]["latent"] = ["reference_encode", 0]
+    else:
+        built["other_text"] = copy.deepcopy(built["text"])
+        built["zero"]["inputs"]["conditioning"] = ["other_text", 0]
+    with pytest.raises(DomainError, match="Reference is not conditioning"):
+        bind_graph(built, "Concept", "42", {"a": "a.png", "b": "b.png"})
+
+
+@pytest.mark.parametrize("guiders", ["none_reachable", "second_reachable_omits_refs"])
+def test_bind_graph_validates_every_reachable_guider(guiders):
+    built = graph(reference_artifact_id="reference")
+    if guiders == "none_reachable":
+        built["save"]["inputs"]["images"] = ["reference", 0]
+    else:
+        for identity in ("guider", "sample", "decode", "save"):
+            built[f"second_{identity}"] = copy.deepcopy(built[identity])
+        built["second_guider"]["inputs"]["positive"] = ["text", 0]
+        built["second_sample"]["inputs"]["guider"] = ["second_guider", 0]
+        built["second_decode"]["inputs"]["samples"] = ["second_sample", 0]
+        built["second_save"]["inputs"]["images"] = ["second_decode", 0]
+    with pytest.raises(DomainError, match="Reference is not conditioning"):
+        bind_graph(built, "Concept", "42", {"reference": "uploaded.png"})
+
+
+def test_bind_graph_rejects_reachable_reference_latent_without_requested_references():
+    built = graph()
+    built["hidden_ref"] = {
+        "class_type": "ReferenceLatent",
+        "inputs": {"conditioning": ["text", 0], "latent": ["latent", 0]},
+    }
+    built["zero"]["inputs"]["conditioning"] = ["hidden_ref", 0]
+    with pytest.raises(DomainError, match="Reference is not conditioning"):
+        bind_graph(built, "Concept", "42", {})
+
+
+@pytest.mark.parametrize("image", [None, "", "extra.png", ["latent", 0], "artifact:other"])
+def test_bind_graph_requires_a_declared_token_in_every_load_image(image):
+    built = graph()
+    built["extra"] = {"class_type": "LoadImage", "inputs": {"image": image}}
+    with pytest.raises(DomainError, match="Unbound conditioning image"):
+        bind_graph(built, "Concept", "42", {})
+
+
+@pytest.mark.parametrize("node,key", [("reference", "other"), ("save", "filename_prefix")])
+def test_bind_graph_disallows_artifact_tokens_outside_load_image_input(node, key):
+    built = graph(reference_artifact_id="reference")
+    built[node]["inputs"][key] = "artifact:reference"
+    with pytest.raises(DomainError, match="Unbound conditioning image"):
+        bind_graph(built, "Concept", "42", {"reference": "uploaded.png"})
 
 
 def test_klein_vae_dtype_validation():
@@ -522,11 +590,11 @@ def test_preparation_enforces_configured_pixel_limit(runtime):
     assert kind == "failure" and result["message"] == PIXELS
 
 
-def test_direct_klein_submit_rejects_over_limit_before_budget_admission(runtime):
+def direct_generation_request(runtime, built, reference_ids, *, models=None):
     artifacts = runtime.services.extension("artifacts")
     with runtime.store.transaction() as tx:
         for identity, data, media_type in (
-            ("workflow-direct", canonical(graph()), "application/json"),
+            ("workflow-direct", canonical(built), "application/json"),
             ("prompt-direct", b"Concept", "text/plain"),
         ):
             artifacts.put(
@@ -540,30 +608,72 @@ def test_direct_klein_submit_rejects_over_limit_before_budget_admission(runtime)
                     media_type=media_type,
                 ),
             )
-    result, kind = invoke(
-        runtime,
-        "submit_generation",
-        {
-            "schema_version": "1.0",
-            "job_id": "generation-direct",
-            "project_id": PROJECT,
-            "generation_task_id": TASK,
-            "target_id": TASK,
-            "provider_id": "comfy",
-            "capability": "image",
-            "workflow_artifact_id": "workflow-direct",
-            "prompt_artifact_id": "prompt-direct",
-            "input_artifact_ids": [*ORDERED_REFS, "extra"],
-            "seed": "42",
-            "model_ids": [RECIPE[k] for k in ("unet", "clip", "vae")],
-            "settings": {},
-        },
-    )
-    assert kind == "failure" and result["error"] == "invalid_request"
-    assert result["message"] == "Image preparation accepts at most four references"
+    return {
+        "schema_version": "1.0",
+        "job_id": "generation-direct",
+        "project_id": PROJECT,
+        "generation_task_id": TASK,
+        "target_id": TASK,
+        "provider_id": "comfy",
+        "capability": "image",
+        "workflow_artifact_id": "workflow-direct",
+        "prompt_artifact_id": "prompt-direct",
+        "input_artifact_ids": reference_ids,
+        "seed": "42",
+        "model_ids": models if models is not None else [RECIPE[k] for k in ("unet", "clip", "vae")],
+        "settings": {},
+    }
+
+
+def assert_direct_submit_rejected(runtime, request, message):
+    result, kind = invoke(runtime, "submit_generation", request)
+    assert kind == "failure" and result["error"] == "invalid_request", result
+    assert result["message"] == message
+    assert not runtime.calls
     with runtime.store.transaction(write=False) as tx:
         assert not tx.all("jobs") and not tx.all("providers.tasks")
         assert tx.connection.execute("SELECT COUNT(*) FROM budget_reservations").fetchone()[0] == 0
+
+
+def test_direct_klein_submit_rejects_over_limit_before_budget_admission(runtime):
+    request = direct_generation_request(runtime, graph(), [*ORDERED_REFS, "extra"])
+    assert_direct_submit_rejected(
+        runtime, request, "Image preparation accepts at most four references"
+    )
+
+
+@pytest.mark.parametrize("profile", [sd_turbo, sd_turbo_fp16])
+@pytest.mark.parametrize("reference_ids", [[], ["one", "two"]], ids=["missing", "too_many"])
+def test_direct_sd_turbo_submit_requires_one_reference_before_image_reads(
+    runtime, profile, reference_ids
+):
+    runtime.provider.options["image_profiles"] = {"comfy": profile.REVISION}
+    request = direct_generation_request(
+        runtime, profile.graph("one"), reference_ids, models=[profile.FILENAME]
+    )
+    assert_direct_submit_rejected(runtime, request, SD_TURBO_REFERENCE)
+
+
+@pytest.mark.parametrize("connected", [False, True], ids=["disconnected", "conditioning"])
+def test_direct_klein_submit_rejects_extra_literal_load_image(runtime, connected):
+    promote_reference(runtime)
+    literal = {"class_type": "LoadImage", "inputs": {"image": "sneaky.png"}}
+    if connected:
+        built = graph(reference_artifact_ids=("reference", "sneaky"))
+        built["reference_2"] = literal
+    else:
+        built = graph(reference_artifact_id="reference")
+        built["extra"] = literal
+    request = direct_generation_request(runtime, built, ["reference"])
+    assert_direct_submit_rejected(runtime, request, "Unbound conditioning image")
+
+
+def test_direct_klein_submit_rejects_missing_negative_reference(runtime):
+    promote_reference(runtime)
+    built = graph(reference_artifact_id="reference")
+    built["guider"]["inputs"]["negative"] = ["zero", 0]
+    request = direct_generation_request(runtime, built, ["reference"])
+    assert_direct_submit_rejected(runtime, request, "Reference is not conditioning")
 
 
 def test_preparation_explicit_task_mismatch_is_scope_denied(runtime):
