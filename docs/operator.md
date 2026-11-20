@@ -34,7 +34,7 @@ Edit the private configuration to match this workstation:
 - `runtime.mcp_servers.blender` configures the existing stdio integration with `uvx --python 3.11 mcp-for-blender==2.3.0 --host 127.0.0.1 --port 9876` and `DISABLE_TELEMETRY=1`. The [Blender bridge guide](../tools/blender/README.md) shows the installed add-on and socket setup. Do not reinstall or overwrite the add-on.
 - `runtime.mcp_servers.blendswap` configures hosted HTTP MCP with `type: "http"`, `url: "https://blendswap.com/api/mcp"` and `bearer_token_env: "BLENDSWAP_KEY"`. The backend reads the key privately from the process environment, `${CONFIG_DIR}/.env`, then `${APP_ROOT}/.env`, taking the first non-empty value. Dotenv files must be regular, non-symlink files no larger than 64 KiB. Values are never exported into the process environment or exposed in configuration views. Missing credentials omit this optional server without preventing a session. Never put inline tokens in `config.json` or combine this setting with an inline `Authorization` header.
 - Include the matching model-facing `blender-*` and `blendswap-*` tool names in `runtime.worker_tools` so `authoring-specialist` can use delegated Blender builds and asset research. `config.example.json` lists the supported tools. Ordinary Blender authoring and free acquisition are automatic. Chargeable cloud generation tools require an explicit owner `approve_once` or `decline` decision under [owner policy, Section 2](owner-policy.md#2-automatic-operations-and-confirmations).
-- `rendering.blender`, `ffmpeg` and `ffprobe` select installed executables. The default preview profile is four-thread Cycles CPU with a 300-second worker limit.
+- `rendering.blender`, `ffmpeg` and `ffprobe` select installed executables. The default profile is four-thread Cycles CPU with a 300-second worker limit and a 60-second encode limit. Operators can set `threads` (1–32), `timeout` (1–3,600 seconds) and `encode_timeout` (1–600 seconds).
 - `services` selects provider IDs, endpoints, capabilities and loaded model IDs.
 - `provider_options.image_profiles` selects a versioned image profile for each Comfy provider, and optional `provider_options.image_recipes` pins exact model filenames when multiple compatible checkpoints exist on the ComfyUI server.
 
@@ -153,6 +153,9 @@ Browser/tunnel disconnection leaves admitted work running.
 - **Stop** controls Copilot, including post-restart cold RPC inactivity reconciliation when prior tool invocations have settled. External jobs have separate cancellation support. A missing native result stays unknown.
 
 ## Backup and restore
+
+To register an existing Git/LFS project and verified external media, stop the relevant
+backend and use the [owner import CLI](project-import.md) before reopening Studio.
 
 First settle/stop the relevant work through its normal controls, then stop that
 Proscenium backend. Preserve unrelated native sessions. Backup requires quiescent

@@ -91,6 +91,7 @@ def verify_video(path: Path, fps: dict, count: int, dimensions: dict, config: di
                 "-count_frames",
                 "-show_streams",
                 "-show_frames",
+                "-show_format",
                 "-of",
                 "json",
                 str(path),
@@ -100,6 +101,11 @@ def verify_video(path: Path, fps: dict, count: int, dimensions: dict, config: di
     )
     streams = probe["streams"]
     expected = Fraction(fps["numerator"], fps["denominator"])
+    container = probe.get("format", {})
+    if "mp4" not in container.get("format_name", "").split(",") or container.get("tags", {}).get(
+        "major_brand"
+    ) in {None, "qt  "}:
+        raise DomainError("media_unavailable", 422, "Expected an MP4 container")
     if len(streams) != 1:
         raise DomainError("media_unavailable", 422, "Video must be silent")
     stream = streams[0]

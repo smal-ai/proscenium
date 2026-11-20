@@ -20,6 +20,7 @@ from proscenium.services import Services
 from .worker import alive, editor_running, observe_attempt, process_identity
 from .workflow import (
     HERE,
+    existing_recipe,
     input_digest,
     scoped,
     sha256,
@@ -122,7 +123,7 @@ def run_unity_job(
         raise DomainError("scope_denied", 403)
     root = Path(services.registry.get(project_id)["path"])
     destination = unity_path(root, project)
-    export = scoped(root, recipe["export_path"])
+    authored = recipe.get("existing") is True
     identity = {"project": project, "recipe": recipe, "action": action}
     if admission["input_digest"] != input_digest(identity):
         raise DomainError(
@@ -142,20 +143,36 @@ def run_unity_job(
         or version["source"] != recipe["source"]
     ):
         raise DomainError("source_conflict", 409, "Recipe differs from the pinned published source")
-    # Consume only the accepted service seam. Its resolver, not this tool, authenticates the closure.
-    materialised = services.extension("sources").materialise(project_id, version_id)
-    try:
-        materialised.resolve(strict=True).relative_to(root.resolve(strict=True))
-    except (OSError, ValueError) as error:
-        raise DomainError(
-            "scope_denied", 403, "Materialisation is outside the active project"
-        ) from error
-    verify_materialisation(materialised, recipe["source"])
-    if sha256(export) != recipe["export_sha256"]:
-        raise DomainError("source_conflict", 409, "Export bytes changed")
-    exported = json.loads(export.read_text())
-    if exported["closure_digest"] != recipe["source"]["digest"]:
-        raise DomainError("source_conflict", 409, "Export source identity differs")
+    # Legacy Blender jobs execute pinned exports. Authored projects deliberately validate
+    # the live Unity working tree so edits can be checked before publishing a new version.
+    export = None
+    if authored:
+        if version["kind"] != "unity_result" or recipe != existing_recipe(
+            root,
+            dict(
+                project=project,
+                action=action,
+                version=recipe["source_version"],
+                pipeline=recipe["unity"]["pipeline"],
+            ),
+            version,
+        ):
+            raise DomainError("source_conflict", 409, "Authored Unity recipe changed")
+    else:
+        export = scoped(root, recipe["export_path"])
+        materialised = services.extension("sources").materialise(project_id, version_id)
+        try:
+            materialised.resolve(strict=True).relative_to(root.resolve(strict=True))
+        except (OSError, ValueError) as error:
+            raise DomainError(
+                "scope_denied", 403, "Materialisation is outside the active project"
+            ) from error
+        verify_materialisation(materialised, recipe["source"])
+        if sha256(export) != recipe["export_sha256"]:
+            raise DomainError("source_conflict", 409, "Export bytes changed")
+        exported = json.loads(export.read_text())
+        if exported["closure_digest"] != recipe["source"]["digest"]:
+            raise DomainError("source_conflict", 409, "Export source identity differs")
     services.gate.require(project_id)
     if not editor.is_file() or editor_running(destination):
         return dict(job=job, blocked="Editor missing or this project is already open/locked")
@@ -183,14 +200,21 @@ def run_unity_job(
             str(attempt / "editor.log"),
             "--proscenium-attempt",
             job["attempt_id"],
-            "--proscenium-recipe",
-            str(attempt / "recipe.json"),
-            "--proscenium-export",
-            str(export),
-            "--proscenium-result",
-            str(result),
         ]
-        if action == "playtest":
+        if not authored:
+            command += [
+                "--proscenium-recipe",
+                str(attempt / "recipe.json"),
+                "--proscenium-export",
+                str(export),
+                "--proscenium-result",
+                str(result),
+            ]
+        if authored:
+            command += ["-quit"]
+            if recipe["method"]:
+                command += ["-executeMethod", recipe["method"]]
+        elif action == "playtest":
             command += [
                 "-runTests",
                 "-testPlatform",
@@ -218,6 +242,10 @@ def run_unity_job(
             timeout=timeout,
             resource=resource,
         )
+        if authored:
+            request["authored"] = dict(
+                unity=recipe["unity"], method=recipe["method"], build_output=recipe["build_output"]
+            )
         request["request_digest"] = input_digest(request)
         write_json(attempt / "request.json", request)
         # Intent is durable before supervisor creation. Its first instruction records PID/start ticks.
@@ -322,7 +350,23 @@ def reconcile_unity_job(services: Services, caller: Caller, job_id: str) -> dict
     success = receipt["native_exit_code"] == 0 and not receipt.get("error")
     unity_result: dict[str, Any] | None = None
     result_path = attempt / "unity-result.json"
-    if request["action"] == "playtest":
+    if authored := request.get("authored"):
+        unity_result = dict(authored["unity"])
+        output = authored["build_output"]
+        if output:
+            success = success and receipt.get("build_output_verified") is True
+        success = success and scoped(root, unity_result["scene_path"]).is_file()
+        unity_result["validation"] = dict(
+            status="passed" if success else "failed",
+            notes=(
+                f"Authored Unity {request['action']} batch method. See attempt log."
+                if authored["method"]
+                else "Unity batch compilation only. See attempt log."
+            ),
+        )
+        if output and receipt.get("build_output_verified") is False:
+            unity_result["validation"]["notes"] = "Unity did not write the declared build output."
+    elif request["action"] == "playtest":
         xml = attempt / "playmode.xml"
         passed = False
         if xml.is_file():

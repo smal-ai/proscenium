@@ -28,9 +28,9 @@ class Rendering:
 
     def __post_init__(self) -> None:
         if not (
-            1 <= self.threads <= 4
-            and 1 <= self.timeout <= 300
-            and 1 <= self.encode_timeout <= 60
+            1 <= self.threads <= 32
+            and 1 <= self.timeout <= 3600
+            and 1 <= self.encode_timeout <= 600
             and self.build_hash
         ):
             raise ValueError("Rendering requires a bounded, pinned host allocation")

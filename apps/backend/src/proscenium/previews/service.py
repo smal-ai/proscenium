@@ -432,7 +432,8 @@ class PreviewService:
             tx.put("preview_runtime", job["job_id"], config)
         return config
 
-    def records(self, tx: Transaction, job: dict, family: str) -> list[dict]:
+    @staticmethod
+    def records(tx: Transaction, job: dict, family: str) -> list[dict]:
         # Old verified frames remain reusable across same-input attempts. Segments carry their
         # own commissioning attempt and are not rewritten to pretend they belong to the retry.
         rows = [

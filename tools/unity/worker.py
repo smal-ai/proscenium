@@ -92,6 +92,16 @@ def stop(process: subprocess.Popen[Any]) -> None:
         process.wait()
 
 
+def build_output_state(project: Path, relative: str) -> tuple[int, int, int, int] | None:
+    output = project / relative
+    if output.resolve() != output or not output.is_relative_to(project):
+        raise RuntimeError("Unity build output is outside its declared project path")
+    if not output.is_file():
+        return None
+    stat = output.stat()
+    return stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+
+
 def main(request_path: Path) -> None:
     request = json.loads(request_path.read_text())
     receipt = {
@@ -102,6 +112,7 @@ def main(request_path: Path) -> None:
         state="starting", supervisor=process_identity(os.getpid()), native_exit_code=None
     )
     destination = request_path.parent / "worker.json"
+    authored = request.get("authored")
     atomic(destination, receipt)
     process: subprocess.Popen[Any] | None = None
 
@@ -118,6 +129,8 @@ def main(request_path: Path) -> None:
                 raise RuntimeError(
                     "This project's Editor/lock is active. Save and close it explicitly."
                 )
+            build_output = authored.get("build_output") if authored else None
+            previous = build_output_state(project, build_output) if build_output else None
             with (request_path.parent / "console.log").open("w") as output:
                 env = {**os.environ, "DOTNET_PROCESSOR_COUNT": "4"}
                 process = subprocess.Popen(
@@ -129,10 +142,17 @@ def main(request_path: Path) -> None:
                     start_new_session=True,
                 )
                 receipt.update(state="running", process=process_identity(process.pid))
+                if authored:
+                    atomic(request_path.parent / "process.json", receipt)
                 atomic(destination, receipt)
                 try:
                     code = process.wait(timeout=request["timeout"])
                     receipt.update(state="complete", native_exit_code=code)
+                    if build_output and code == 0:
+                        current = build_output_state(project, build_output)
+                        receipt["build_output_verified"] = (
+                            current is not None and current != previous
+                        )
                 except subprocess.TimeoutExpired:
                     stop(process)
                     receipt.update(
@@ -152,6 +172,8 @@ def main(request_path: Path) -> None:
     finally:
         if process is not None and process.poll() is None:
             stop(process)
+        if authored:
+            atomic(request_path.parent / "terminal.json", receipt)
         atomic(destination, receipt)
 
 
