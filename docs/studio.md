@@ -33,6 +33,7 @@ status does not start services or consume generation attempts.
 - **Hidden Review safety:** Entering Chat focus preserves the selected version, camera, frame and unsaved annotation drafts while pausing playback, disabling hidden Review shortcuts and suspending 3D render loops until restored.
 - **Review controls:** A unified command toolbar groups the mode switcher, annotation/details drawers and contextual actions above the viewport. The compact transport toolbar keeps frame stepping, pass selection and media metadata below it. An open annotation draft replaces both bars with drawing tools and a feedback dock. Outside text fields and annotation drafts, use `1`–`3` for **3D Inspection**, **Keyframes** and **Animation**, `Space` for progressive animation playback, and `←` / `→` to step frames (`Shift` to step passes).
 - **New projects:** Once project hydration completes, a newly created or empty project opens in **Chat focus** with Navigator collapsed so the Composer has room. Existing projects restore their saved layout or Split view.
+- **First open of an existing storyboard project:** In a browser without a saved layout or viewed version, Studio opens in **Split view** with **Shots** selected and the first ready panel in **Keyframes**. It uses the owner's selected storyboard version when available, otherwise the current version. Any interaction during loading takes precedence.
 
 ## Starting work: assets, scenes or storyboards
 
