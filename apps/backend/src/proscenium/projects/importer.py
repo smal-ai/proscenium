@@ -32,6 +32,11 @@ from proscenium.sources.common import atomic_bytes, fingerprint, git, managed, r
 from .service import Projects, owner_only
 
 SCOPE = "projects.import"
+ITEM_MEDIA_TYPES = {
+    "image": frozenset({"image/png", "image/jpeg", "image/webp"}),
+    "video": frozenset({"video/mp4"}),
+    "document": frozenset({"application/json", "text/plain", "text/markdown"}),
+}
 
 
 def fields(value: Any, required: str, optional: str = "") -> None:
@@ -280,8 +285,10 @@ class Import:
             allowed = {"asset": {"reference", "concept"}, "storyboard": {"keyframe"}}
             if entry["kind"] != "image" or entry["purpose"] not in allowed.get(row["kind"], set()):
                 raise DomainError("invalid_request", 422, "Invalid catalogue image purpose")
-        elif kind not in {"image", "video", "document"}:
+        elif not isinstance(kind, str) or kind not in ITEM_MEDIA_TYPES:
             raise DomainError("invalid_request", 422, "Unsupported retained artefact kind")
+        if not isinstance(media_type, str) or media_type not in ITEM_MEDIA_TYPES[kind]:
+            raise DomainError("unsupported_media_type", 422, f"Unsupported media type for {kind}")
         if "provenance" in entry:
             validate("Provenance", entry["provenance"])
         if "external_id" in entry and (
@@ -301,10 +308,6 @@ class Import:
                 raise DomainError("invalid_request", 422, "Expected a positive frame count")
             expected["frame_count"] = entry["frame_count"]
         if kind == "video":
-            if media_type != "video/mp4":
-                raise DomainError(
-                    "unsupported_media_type", 422, "Retained videos must declare video/mp4"
-                )
             with tempfile.TemporaryDirectory(
                 prefix="import-retained-video-", dir=self.store.path.parent
             ) as tmp:
@@ -313,12 +316,21 @@ class Import:
                 metadata.update(inspect_video(path, self.config, expected=expected))
         elif expected:
             raise DomainError("invalid_request", 422, "Declared video metadata requires a video")
-        elif kind == "document" and media_type == "application/json":
+        elif kind == "document":
             try:
-                json.loads(data.decode("utf-8"), parse_constant=reject_non_json)
+                text = data.decode("utf-8", errors="strict")
+                if media_type == "application/json":
+                    json.loads(text, parse_constant=reject_non_json)
+                elif b"\x00" in data:
+                    raise ValueError("NUL in text document")
             except ValueError as exc:
+                description = (
+                    "UTF-8 JSON"
+                    if media_type == "application/json"
+                    else "UTF-8 text without NUL bytes"
+                )
                 raise DomainError(
-                    "source_unavailable", 422, "Retained JSON is not valid UTF-8 JSON"
+                    "source_unavailable", 422, f"Retained document must be valid {description}"
                 ) from exc
         self.promote(
             entry["artifact_id"],

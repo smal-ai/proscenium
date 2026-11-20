@@ -16,7 +16,7 @@ from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
 from proscenium.db.paths import project_path
 
-from .worker import check_project_tree
+from .worker import BUILD_OUTPUT_SCOPE, check_project_tree, valid_build_output_path
 
 HERE = Path(__file__).resolve().parent
 EDITOR_VERSION = "6000.3.27f1"
@@ -201,6 +201,8 @@ def existing_recipe(root: Path, body: dict[str, Any], version: dict[str, Any]) -
     output = adapter.get("build_output") if body["action"] == "build" else None
     if body["action"] == "build" and (not method or not output):
         raise DomainError("capability_unavailable", 501, "Build needs a method and output path")
+    if output and not valid_build_output_path(output):
+        raise DomainError("scope_denied", 403, BUILD_OUTPUT_SCOPE)
     if output and scoped(project, output) != project / output:
         raise DomainError("scope_denied", 403, "Unity build output cannot be a symlink")
     if pinned.get("player_script"):

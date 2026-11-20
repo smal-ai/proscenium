@@ -9,7 +9,7 @@ import signal
 import stat
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -110,7 +110,23 @@ def check_project_tree(project: Path) -> None:
                 )
 
 
+BUILD_OUTPUT_SCOPE = "Unity build_output must be beneath Builds/"
+
+
+def valid_build_output_path(relative: str) -> bool:
+    parts = PurePosixPath(relative).parts
+    return (
+        len(parts) >= 2
+        and parts[0] == "Builds"
+        and not relative.lower().endswith(".meta")
+        and not any(part in {"", ".", ".."} for part in relative.split("/"))
+        and not any(character in relative for character in ("\\", ":", "\x00"))
+    )
+
+
 def build_output(project: Path, relative: str) -> tuple[Path, os.stat_result | None]:
+    if not valid_build_output_path(relative):
+        raise RuntimeError(BUILD_OUTPUT_SCOPE)
     output = project / relative
     if output.resolve() != output or not output.is_relative_to(project):
         raise RuntimeError("Unity build output is outside its declared project path")

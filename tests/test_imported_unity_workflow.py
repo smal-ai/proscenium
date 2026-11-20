@@ -205,6 +205,21 @@ if method == "Walk.Editor.Empty":
                 assert (root / project / output).stat().st_size == 0
             else:
                 assert not (root / project / output).exists()
+        calls = root / project / "editor-invocations"
+        before = calls.read_bytes()
+        for suffix, invalid_path in (("scene", scene_path), ("meta", "Builds/Linux/Player.MeTa")):
+            target_file = root / project / invalid_path
+            if suffix == "meta":
+                target_file.write_bytes(b"guid: preserve")
+            original = target_file.read_bytes()
+            write(root, adapter_path, {**adapter, "build_output": invalid_path})
+            with pytest.raises(
+                DomainError, match="Unity build_output must be beneath Builds/"
+            ) as refused:
+                await workflows.unity(caller, body("build", f"protected-{suffix}"))
+            assert (refused.value.code, refused.value.status) == ("scope_denied", 403)
+            assert target_file.read_bytes() == original
+            assert calls.read_bytes() == before
         (root / adapter_path).unlink()
         assert "compilation only" in (await run("validate", "compile"))["validation"]["notes"]
         with pytest.raises(DomainError, match="needs a method and output"):
@@ -270,3 +285,38 @@ def test_supervisor_rechecks_unity_project_tree_before_launch(tmp_path):
     receipt = json.loads((attempt / "terminal.json").read_bytes())
     assert "external symlink: Packages/Redirected.txt" in receipt["error"]
     assert receipt["native_exit_code"] is None and not marker.exists()
+
+
+@pytest.mark.parametrize(
+    "output",
+    ["Assets/Game/Scenes/Main.unity", "Builds/Linux/Player.META", "Builds/../Assets/Player.cs"],
+)
+def test_supervisor_cannot_stage_a_protected_build_path(tmp_path, output):
+    project = tmp_path / "project"
+    (project / "Builds").mkdir(parents=True)
+    original = b"authored bytes"
+    write(project, output, original)
+    marker = tmp_path / "editor-launched"
+    attempt = tmp_path / "attempt"
+    request = dict(
+        job_id="job",
+        attempt_id="attempt",
+        input_digest="inputs",
+        request_digest="request",
+        source_digest="source",
+        project=str(project),
+        project_lock=str(tmp_path / "project.lock"),
+        action="build",
+        authored=dict(build_output=output),
+        timeout=10,
+        command=[sys.executable, "-c", f"from pathlib import Path; Path({str(marker)!r}).touch()"],
+    )
+    write(attempt, "request.json", request)
+    subprocess.run(
+        [sys.executable, worker_script, str(attempt / "request.json")], check=True, timeout=10
+    )
+    receipt = json.loads((attempt / "terminal.json").read_bytes())
+    assert receipt["error"] == "Unity build_output must be beneath Builds/"
+    assert receipt["build_output_verified"] is False and receipt["native_exit_code"] is None
+    assert (project / output).read_bytes() == original
+    assert not (attempt / "previous-build-output").exists() and not marker.exists()
