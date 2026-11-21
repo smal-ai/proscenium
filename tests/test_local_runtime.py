@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 from copy import deepcopy
@@ -33,7 +34,9 @@ from proscenium.copilot.native import (
     resolve_mcp_servers,
     unity_agent,
 )
+from proscenium.db.ownership import Ownership
 from proscenium.db.store import Transaction
+from proscenium.projects import service as project_service
 from proscenium.projects.service import Projects
 from proscenium.services import Services
 from proscenium.sources.common import fingerprint, git
@@ -940,6 +943,142 @@ def test_bootstrap_standalone_remains_idempotent(tmp_path):
     assert Projects.config(workspace) == config
     assert (workspace / ".gitignore").read_text().startswith("existing-cache/\n")
     assert (workspace / ".gitattributes").read_text().endswith("*.blend text\n")
+
+
+@pytest.mark.parametrize("anchored", [False, True])
+def test_owner_lock_rejects_symlink_without_touching_target(tmp_path, anchored):
+    target = tmp_path / "unrelated"
+    target.write_text("leave this file alone\n")
+    target.chmod(0o644)
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    lock = runtime / "owner.lock"
+    owner = Ownership(lock)
+    owner.close()
+    lock.unlink()
+    lock.symlink_to(target)
+    runtime_fd = os.open(runtime, os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    try:
+        with pytest.raises(DomainError) as error:
+            Ownership(lock, dir_fd=runtime_fd if anchored else None)
+        assert (error.value.status, error.value.code) == (403, "scope_denied")
+    finally:
+        os.close(runtime_fd)
+    assert lock.is_symlink()
+    assert target.read_text() == "leave this file alone\n"
+    assert stat.S_IMODE(target.stat().st_mode) == 0o644
+
+
+@pytest.mark.parametrize("entry", ["directory", "fifo"])
+def test_owner_lock_rejects_nonregular_entry(tmp_path, entry):
+    lock = tmp_path / "owner.lock"
+    if entry == "directory":
+        lock.mkdir()
+    else:
+        os.mkfifo(lock)
+    with pytest.raises(DomainError) as error:
+        Ownership(lock)
+    assert (error.value.status, error.value.code) == (403, "scope_denied")
+
+
+def test_project_open_keeps_git_config_portable_and_writes_identity_without_reopening(
+    tmp_path, monkeypatch
+):
+    settings = Settings(data_directory=tmp_path / "machine")
+    workspace = tmp_path / "open"
+    with TestClient(create_app(settings), base_url=settings.origin) as browser:
+        pair(browser)
+        registry = browser.app.state.services.registry
+        with monkeypatch.context() as patch:
+
+            def unanchored_store(*args, **kwargs):
+                pytest.fail("Project open must use the already-anchored store")
+
+            patch.setattr(registry, "project_store", unanchored_store)
+            project = command(browser, "/api/v1/projects", {"path": str(workspace), "create": True})
+        with registry.project_store(project["project_id"], active=False).transaction(
+            write=False
+        ) as tx:
+            assert tx.require("project_identity", "identity") == {
+                "project_id": project["project_id"],
+                "repository_id": project["repository_id"],
+            }
+
+    assert "/proc/" not in (workspace / ".git/config").read_text()
+    assert not git(workspace, "config", "--local", "--get", "core.worktree", required=False)
+    assert git(workspace, "rev-parse", "--show-toplevel").decode().strip() == str(workspace)
+    assert git(workspace, "status", "--porcelain")
+    assert (workspace / ".git/hooks/pre-push").is_file()
+
+
+@pytest.mark.parametrize("phase", ["init", "lfs"])
+def test_project_bootstrap_does_not_redirect_git_when_metadata_path_is_swapped(
+    tmp_path, monkeypatch, phase
+):
+    settings = Settings(data_directory=tmp_path / "machine")
+    workspace = tmp_path / "open"
+    outside = tmp_path / "other"
+    outside.mkdir()
+    git(outside, "init", "-b", "main", "--object-format=sha1")
+    outside_config = (outside / ".git/config").read_bytes()
+    calls = []
+
+    def swap_before_git(root, *args, **kwargs):
+        if phase in args:
+            (workspace / ".git").rename(workspace / "moved-metadata")
+            (workspace / ".git").symlink_to(outside / ".git", target_is_directory=True)
+            calls.append(args)
+        return git(root, *args, **kwargs)
+
+    monkeypatch.setattr(project_service, "git", swap_before_git)
+    with TestClient(create_app(settings), base_url=settings.origin) as browser:
+        pair(browser)
+        operation_id = str(uuid4())
+        response = browser.post(
+            "/api/v1/projects",
+            json=dict(
+                schema_version="1.0", operation_id=operation_id, path=str(workspace), create=True
+            ),
+            headers={"Idempotency-Key": operation_id},
+        )
+        assert len(calls) == 1
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "scope_denied"
+    assert (outside / ".git/config").read_bytes() == outside_config
+    assert not (outside / ".git/hooks/pre-push").exists()
+    assert (workspace / "moved-metadata/config").is_file()
+
+
+def test_project_open_rejects_path_substituted_before_registry_register(tmp_path, monkeypatch):
+    settings = Settings(data_directory=tmp_path / "machine")
+    workspace = tmp_path / "open"
+    moved = tmp_path / "moved"
+    other = tmp_path / "other"
+    other.mkdir()
+    with TestClient(create_app(settings), base_url=settings.origin) as browser:
+        pair(browser)
+        registry = browser.app.state.services.registry
+        register = registry.register
+
+        def swap_before_register(record, *, expected_root=None):
+            workspace.rename(moved)
+            workspace.symlink_to(other, target_is_directory=True)
+            return register(record, expected_root=expected_root)
+
+        monkeypatch.setattr(registry, "register", swap_before_register)
+        operation_id = str(uuid4())
+        response = browser.post(
+            "/api/v1/projects",
+            json=dict(
+                schema_version="1.0", operation_id=operation_id, path=str(workspace), create=True
+            ),
+            headers={"Idempotency-Key": operation_id},
+        )
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "scope_denied"
+        with registry.store.transaction(write=False) as tx:
+            assert list(tx.all("projects")) == []
+    assert list(other.iterdir()) == []
 
 
 @pytest.mark.parametrize(

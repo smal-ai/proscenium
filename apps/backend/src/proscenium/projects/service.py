@@ -2,6 +2,7 @@
 
 import json
 import os
+import stat
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from proscenium.projects.workspace_fs import (
     create_root,
     fd_path,
     mkdir_child,
+    open_child_directory,
     open_regular,
     publish_config,
     read_regular,
@@ -131,19 +133,41 @@ class Projects:
         validate("ProjectConfig", config)
         for value in config["paths"].values():
             project_path(root, value, directory=True)
-        if root_fd is not None:
-            verify_directory(root_fd, root)
-            check_entry(root_fd, ".git")
-        git_root = root if root_fd is None else fd_path(root_fd)
-        if (
-            git(git_root, "rev-parse", "--show-toplevel", required=False).decode().strip()
-            != str(root)
-            or git(git_root, "rev-parse", "--show-object-format", required=False).decode().strip()
-            != "sha1"
-        ):
-            raise DomainError(
-                "unsupported_repository", 415, "Workspace must be the Git working-tree root"
+        with ExitStack() as handles:
+            git_root = root
+            git_env = None
+            if root_fd is not None:
+                verify_directory(root_fd, root)
+                git_root = fd_path(root_fd)
+                entry = check_entry(root_fd, ".git")
+                if entry is None or not (
+                    stat.S_ISDIR(entry.st_mode) or stat.S_ISREG(entry.st_mode)
+                ):
+                    raise DomainError(
+                        "unsupported_repository", 415, "Workspace must be the Git working-tree root"
+                    )
+                if stat.S_ISDIR(entry.st_mode):
+                    git_fd = open_child_directory(root_fd, ".git")
+                    handles.callback(os.close, git_fd)
+                    verify_directory(git_fd, root / ".git")
+                    git_env = {"GIT_DIR": str(fd_path(git_fd))}
+            info = (
+                git(
+                    git_root,
+                    "rev-parse",
+                    "--show-toplevel",
+                    "--show-object-format",
+                    "--is-bare-repository",
+                    env=git_env,
+                    required=False,
+                )
+                .decode()
+                .splitlines()
             )
+            if info != [str(root), "sha1", "false"]:
+                raise DomainError(
+                    "unsupported_repository", 415, "Workspace must be the Git working-tree root"
+                )
         return dict(config)
 
     @staticmethod
@@ -171,21 +195,58 @@ class Projects:
     ) -> None:
         # Never initialise a nested project in somebody else's repository.
         verify_directory(root_fd, root)
-        has_git = check_entry(root_fd, ".git") is not None
         anchored = fd_path(root_fd)
-        existing = git(anchored, "rev-parse", "--show-toplevel", required=False).decode().strip()
-        if existing and existing != str(root):
-            raise DomainError("unsupported_repository", 415)
-        for directory in (*DIRECTORIES, ".proscenium"):
+        git_entry = check_entry(root_fd, ".git")
+        with ExitStack() as handles:
+            git_env = None
+            if git_entry is not None:
+                if not stat.S_ISDIR(git_entry.st_mode):
+                    raise DomainError(
+                        "unsupported_repository",
+                        415,
+                        "Workspace bootstrap requires a local .git directory",
+                    )
+                git_fd = open_child_directory(root_fd, ".git")
+                handles.callback(os.close, git_fd)
+                verify_directory(git_fd, root / ".git")
+                git_env = {"GIT_DIR": str(fd_path(git_fd))}
+            existing = (
+                git(anchored, "rev-parse", "--show-toplevel", env=git_env, required=False)
+                .decode()
+                .strip()
+            )
+            if existing != str(root) and (existing or git_entry is not None):
+                raise DomainError("unsupported_repository", 415)
+            for directory in (*DIRECTORIES, ".proscenium"):
+                verify_directory(root_fd, root)
+                os.close(mkdir_child(root_fd, directory))
             verify_directory(root_fd, root)
-            os.close(mkdir_child(root_fd, directory))
-        verify_directory(root_fd, root)
-        if not has_git:
-            check_entry(root_fd, ".git")
-            git(anchored, "init", "-b", "main", "--object-format=sha1")
-        verify_directory(root_fd, root)
-        check_entry(root_fd, ".git")
-        git(anchored, "lfs", "install", "--local", *([] if install_lfs_hooks else ["--skip-repo"]))
+            if git_env is None:
+                git_fd = mkdir_child(root_fd, ".git")
+                handles.callback(os.close, git_fd)
+                verify_directory(git_fd, root / ".git")
+                git_env = {"GIT_DIR": str(fd_path(git_fd))}
+                git(
+                    anchored,
+                    f"--work-tree={anchored}",
+                    "init",
+                    "-b",
+                    "main",
+                    "--object-format=sha1",
+                    env=git_env,
+                )
+            verify_directory(git_fd, root / ".git")
+            # Passing GIT_DIR through the environment also binds the git-lfs
+            # subprocess, while preserving the Git wrapper's LFS hook handling.
+            git(
+                anchored,
+                "lfs",
+                "install",
+                "--local",
+                *([] if install_lfs_hooks else ["--skip-repo"]),
+                env=git_env,
+            )
+            verify_directory(git_fd, root / ".git")
         for filename, lines in (
             (".gitignore", list(IGNORE)),
             (
@@ -326,7 +387,11 @@ class Projects:
             runtime_fd = handles.enter_context(runtime_directory(root_fd, root, create=True))
             assert runtime_fd is not None
             verify_directory(runtime_fd, root / ".proscenium")
-            project_store = Store(fd_path(runtime_fd) / "state.sqlite3", record["project_id"])
+            project_store = Store(
+                fd_path(runtime_fd) / "state.sqlite3",
+                record["project_id"],
+                write_barrier=registry.store.write_barrier,
+            )
             with project_store.transaction(write=False) as tx:
                 identity = tx.get("project_identity", "identity", required=False)
                 if identity and identity != {
@@ -334,8 +399,7 @@ class Projects:
                     "repository_id": record["repository_id"],
                 }:
                     raise DomainError("source_conflict", 409)
-            verify_directory(root_fd, root)
-            registry.register(record)
+            registry.register(record, expected_root=verify_directory(root_fd, root))
             # Private defaults are machine-owned, not project.json preferences.
             with registry.store.transaction() as tx:
                 key = "settings:" + record["project_id"]
@@ -351,7 +415,7 @@ class Projects:
                         schema="ProjectSettingsRecord",
                     )
             verify_directory(runtime_fd, root / ".proscenium")
-            with registry.project_store(record["project_id"], active=False).transaction() as tx:
+            with project_store.transaction() as tx:
                 identity = {
                     "project_id": record["project_id"],
                     "repository_id": record["repository_id"],
@@ -711,7 +775,9 @@ class Projects:
                     target_stat.st_dev,
                     target_stat.st_ino,
                 )
-            new_lock = None if same_lock else Ownership(fd_path(runtime_fd) / "owner.lock")
+            new_lock = (
+                None if same_lock else Ownership(root / ".proscenium/owner.lock", dir_fd=runtime_fd)
+            )
             try:
                 verify_directory(runtime_fd, root / ".proscenium")
                 with registry.store.transaction() as tx:

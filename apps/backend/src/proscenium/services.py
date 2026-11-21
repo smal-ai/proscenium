@@ -3,6 +3,7 @@
 import secrets
 from copy import deepcopy
 from dataclasses import dataclass, field
+from pathlib import Path
 from threading import RLock
 from typing import Any, Protocol
 
@@ -19,6 +20,13 @@ from proscenium.db.registry import Registry
 from proscenium.jobs import JobService
 from proscenium.jobs.gate import ExecutionGate
 from proscenium.jobs.resources import Resources
+
+
+def _project_lock(runtime: Path) -> Ownership:
+    from proscenium.projects.workspace_fs import workspace_ancestor, workspace_errors
+
+    with workspace_errors(runtime), workspace_ancestor(runtime) as (runtime_fd, _, _):
+        return Ownership(runtime / "owner.lock", dir_fd=runtime_fd)
 
 
 class RuntimeAdapter(Protocol):
@@ -98,7 +106,7 @@ class Services:
     def acquire_project(self, project_id: str) -> None:
         if project_id not in self.project_ownership:
             store = self.registry.project_store(project_id)
-            self.project_ownership[project_id] = Ownership(store.path.parent / "owner.lock")
+            self.project_ownership[project_id] = _project_lock(store.path.parent)
         # Activation never opens execution. W01 resumes after reconciliation explicitly.
         self.gate.close(project_id)
 
@@ -230,7 +238,7 @@ class Services:
                 self.gate.close(old)
                 self.registry.assert_settled(old)
             target = self.registry.project_store(project_id, active=False)
-            owner = Ownership(target.path.parent / "owner.lock")
+            owner = _project_lock(target.path.parent)
             try:
                 self.registry.activate(project_id)
             except Exception:

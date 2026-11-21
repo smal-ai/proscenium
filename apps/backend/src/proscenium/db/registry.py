@@ -36,10 +36,15 @@ class Registry:
 
         store.before_commit = rebind_guard
 
-    def register(self, record: dict[str, Any]) -> None:
+    def register(self, record: dict[str, Any], *, expected_root: Path | None = None) -> None:
         validate("ProjectRecord", record)
-        record = {**record, "path": str(Path(record["path"]).resolve(strict=True))}
         with self.store.transaction() as tx:
+            resolved = Path(record["path"]).resolve(strict=True)
+            if expected_root is not None and resolved != expected_root:
+                raise DomainError(
+                    "scope_denied", 403, f"Workspace directory changed: {expected_root}"
+                )
+            record = {**record, "path": str(resolved)}
             existing = tx.get("projects", record["project_id"], required=False)
             if existing:
                 if existing["path"] != record["path"]:
