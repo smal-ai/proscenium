@@ -14,9 +14,9 @@ from proscenium.sources.blender_inspect import inspect
 
 def particle_system(*, kind="HAIR", dynamics=False, external=False, disk=False):
     return SimpleNamespace(
-        settings=SimpleNamespace(type=kind),
+        settings=SimpleNamespace(type=kind, render_type="PATH"),
         use_hair_dynamics=dynamics,
-        point_cache=SimpleNamespace(use_external=external, use_disk_cache=disk),
+        point_cache=SimpleNamespace(use_external=external, use_disk_cache=disk, is_baked=False),
     )
 
 

@@ -1,9 +1,66 @@
 ---
 name: storyboard
-description: Author or revise a stable-ID shot plan and review existing storyboard frames without implicitly generating images or constructing scenes.
+description: Pitch a complete timed storyboard from a creative brief, then refine it with the director one shot at a time. Also author or revise stable-ID shot plans and review existing frames without generating media implicitly.
 ---
 
-# Canonical storyboard planning
+# Storyboard direction
+
+## Pitch the whole board first
+
+When developing a new storyboard with the owner, give them **one complete first
+pass in Conversation**, from opening image to final frame. Do not stop at a logline,
+offer a menu of treatments or ask them to design each shot before they can see the
+whole. Use the brief and pinned references. Make a choice where the brief leaves
+room and label material assumptions. If the request already targets a shot on an
+existing board, go straight to that shot instead.
+
+- Open with the working title, narrative hook and visual direction. Say what the
+  audience should discover, and how light, colour, composition or sound will reveal
+  it. Honour constraints such as silence: a clue must be readable without hearing it.
+- Give **every shot** a stable `shot_id`, a short title and a proposed in/out time.
+  Choose the shot count and holds for this story. Check that the ranges cover the
+  proposed running time without gaps or double-counting titles and transitions.
+- In each card, name the discovery and its visible evidence. Describe the opening
+  composition, the action and the image or movement that motivates the cut.
+  Specify framing, camera position and movement (or a deliberate hold). Give exact
+  intertitle or UI wording and its placement when relevant. Include a production
+  note only if it explains how to achieve a particular image or respect a constraint.
+- Connect the shots: name where a clue is planted, where it pays off and which
+  sightlines, props or light sources must agree. For a cinematic-to-game handoff,
+  match the last cinematic frame to the first playable view: camera pose, a shared
+  landmark, light, the instant control changes and the player's first available
+  action. If input starts before a planned camera move, say who makes that move.
+  Establish aspect ratio and horizontal or vertical field of view before claiming
+  a lens match. A percentage is not an angle. If the reference is missing, pitch
+  the framing and mark the match unverified.
+- End the pitch by inviting the owner to pick a shot, or suggest the one with the
+  most consequential choice. Stop there. If delegated, return the **whole pitch**
+  and that invitation to the lead for the owner, not just a completion summary.
+
+## Refine one shot at a time
+
+Start with the opening shot unless the owner chooses another. Resolve a title,
+number or “next” to its stable shot ID on the current board. Show **only that
+shot's revised card**, making clear what changes on screen or when. If there is
+a real choice, explain what the audience would learn from each option and
+recommend one. Stay on that shot
+until the owner accepts it, skips it or chooses another. Do not treat silence or
+moving on as agreement.
+
+Keep agreed decisions by shot ID. If an edit affects another shot's timing, clue,
+geography or playable starting pose, flag the affected IDs and the consequence.
+Do not silently rewrite those shots. When the owner finishes the review, present
+the complete revised board, including untouched shots. Recheck the total and the
+continuity and mark decisions still open.
+See the [worked example](templates.md#worked-example-pitch-and-revision).
+
+A discussion-only pitch or revision stays in Conversation. It is not a request to
+write files, publish a version, generate panels, render or build a scene. An agreed
+creative direction is not an owner media selection. When the request includes
+authoring or publication, use the workflow below within that scope. Do not impose
+this conversational review loop on an explicit autonomous production request.
+
+## Author or publish a canonical plan
 
 1. Read the active-project brief, selected treatment, current request, pinned
    references and owner selections. Resolve conflicting inputs explicitly. Never
@@ -25,9 +82,11 @@ description: Author or revise a stable-ID shot plan and review existing storyboa
    images. List unresolved assets, decisions, references and bindings explicitly.
 5. Pin asset dependencies by item/version. Bind actual authored Blender scenes
    using `scene_version`, inclusive `source_range` and rational `fps` only when
-   known. Otherwise use null and explain the gap in `unresolved`. Review-card
-   pacing is UI-only, never an authored duration. Camera/marker/timeline authoring
-   belongs to Copilot/native tools, not to the storyboard browser.
+   known. Otherwise use null and explain the gap in `unresolved`. Preserve proposed
+   editorial holds, cuts and title cues as prose in `motion_beats`, not invented
+   frame ranges, frame rates or new JSON fields. Review-card pacing is UI-only.
+   Camera/marker/timeline authoring belongs to Copilot/native tools, not to the
+   storyboard browser.
 6. Call `get_project_capabilities` first to check exposed skills, tools and providers.
    Validate with `validate_authored_document`, `document_kind: authored_shot_plan`
    and the active-project-relative `path`. Set `compare_to_path` to the previous plan
@@ -35,7 +94,7 @@ description: Author or revise a stable-ID shot plan and review existing storyboa
    The host reports changed/removed IDs, affected
    downstream scene versions and dependent artefacts. It never rewrites sources,
    regenerates images or resolves dependencies by filesystem modification time.
-7. Checkpoint the exact owned brief/plan sources through
+7. For publication, checkpoint the exact owned brief/plan sources through
    `checkpoint_sources(entry_path=...)`, with dependencies/`required_runtime` when
    needed. Omit `retained_files` (registered frame/concept image artefacts belong in
    `plan.json` frames and `PublishedItem.artifact_ids`, never in `retained_files`).

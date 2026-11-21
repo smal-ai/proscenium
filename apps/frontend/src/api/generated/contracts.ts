@@ -286,6 +286,7 @@ export type RenderSpec = {
   engine: string;
   device: string;
   samples: number | null;
+  denoise?: boolean;
   colour_management: {
     view_transform: string;
     look: string;
@@ -324,7 +325,8 @@ export type PublishedItem = {
   version_id: Id;
   expected_current_version_id: NullableId;
   source_commit: Commit;
-  source: SourceClosure;
+  source?: SourceClosure;
+  checkpoint_operation_id?: Id;
   artifact_ids: Id[];
   preview_requests: RenderSpec[];
   derived_from?: VersionRef[];
@@ -821,6 +823,8 @@ export interface CheckpointRequest {
   dependencies?: VersionRef[];
   required_runtime?: RuntimeRequirement;
   retained_files?: RetainedClosureFile[];
+  base_version?: VersionRef;
+  exclude_paths?: RelativePath[];
 }
 export interface RetainedClosureFile {
   destination: RelativePath;

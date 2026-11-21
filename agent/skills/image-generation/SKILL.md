@@ -14,12 +14,14 @@ description: Generate or correct project concept images with the configured, bud
   to resolve the creation intent or original generation-task target. Do not invent a fake source item or a new target ID
   for every correction. Other empty-settings targets must be existing real item IDs or
   explicitly pre-bound targets.
-- For multiple concepts/frames, publish the storyboard first and use
+- For multiple storyboard frames, publish the storyboard first and use
   `settings.target_slot` with the normative SelectionSlot: `storyboard_frame` names its
   exact storyboard VersionRef, shot and frame IDs. An `assembly_shot` names its exact
   sequence VersionRef and entry ID. An `item` slot names a real project item.
   With a slot, `target_id` is only a caller alias. The host resolves the actual budget key.
   Renaming aliases or publishing a later version does not reset that frame/entry's budget.
+  For multiple standalone hero assets, publish each asset first and use its own
+  `item` slot. See [hero assets](../hero-assets/SKILL.md).
 - Discover relevant project references and identify composition, style and identity roles.
   Inspect the actual bytes. Do not copy a previous project's treatment or ask for approval
   of routine creative progression. Missing essential input is reported explicitly.
@@ -31,11 +33,14 @@ description: Generate or correct project concept images with the configured, bud
   It registers exact prompt/workflow artefacts locally without consuming an attempt.
   Replay the same input/ID after acknowledgement loss. It returns the exact `submit_request`.
 - Use the **host-selected, frozen image family**. The default `comfy-image-1` remains the
-  FLUX.2 Klein path: `artifact:<id>` in LoadImage feeds VAEEncode, ReferenceLatent and the
-  positive CFGGuider. The host preparation tool constructs that graph.
-- For an explicitly configured `comfy-sd-turbo-img2img-1` provider, use the exact
-  host preparation tool's pinned SD-Turbo profile instead. It requires one
-  actual 512×512 reference, no implicit resize, the pinned `sd_turbo.safetensors`, four
+  FLUX.2 Klein path. When conditioning, pass 1–4 distinct `reference_artifact_ids`
+  in deliberate order. The host chains `ReferenceLatent` in exact list order on
+  both positive and negative conditioning. `reference_artifact_ids[0]` is `image 1`,
+  `reference_artifact_ids[1]` is `image 2`, and so on. Name each image's role in the prompt.
+- For an explicitly configured `comfy-sd-turbo-img2img-1` or
+  `comfy-sd-turbo-img2img-fp16-1` provider, use the exact host preparation tool's pinned
+  SD-Turbo profile instead. Both require one actual 512×512 reference, no implicit
+  resize, the pinned checkpoint for that profile, four
   SDTurboScheduler steps at denoise 0.5 and cfg 1. LoadImage feeds VAEEncode and the sampler's
   `latent_image` while CLIPTextEncode supplies prompt conditioning. This is **img2img**,
   not FLUX ReferenceLatent. Include the actual image in `input_artifact_ids`.

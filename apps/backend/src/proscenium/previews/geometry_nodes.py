@@ -21,19 +21,19 @@ def modifier_kind(modifier) -> str:
     if modifier.type == "NODES":
         return "geometry_nodes"
     if modifier.type == "PARTICLE_SYSTEM":
-        system = getattr(modifier, "particle_system", None)
-        settings = getattr(system, "settings", None)
-        cache = getattr(system, "point_cache", None)
-        # A static groom stores its hair keys in the blend, not in a simulation cache.
+        particle = getattr(modifier, "particle_system", None)
+        settings = getattr(particle, "settings", None)
+        cache = getattr(particle, "point_cache", None)
         if (
-            system is not None
-            and settings is not None
-            and cache is not None
-            and getattr(settings, "type", None) == "HAIR"
-            and getattr(system, "use_hair_dynamics", None) is False
-            and getattr(cache, "use_external", None) is False
-            and getattr(cache, "use_disk_cache", None) is False
+            getattr(settings, "type", None) == "HAIR"
+            and getattr(settings, "render_type", None) == "PATH"
+            and getattr(particle, "use_hair_dynamics", True) is False
+            and getattr(cache, "use_external", True) is False
+            and getattr(cache, "use_disk_cache", True) is False
+            and getattr(cache, "is_baked", True) is False
         ):
+            # Static path hair uses strands stored with the emitter, not a simulation
+            # cache or instanced objects. Proxy export still checks emitted instances.
             return "ordinary"
     if modifier.type in SIMULATION_MODIFIERS:
         return "unsupported_simulation_cache"

@@ -36,10 +36,17 @@ description: Author and inspect Blender content inside the active Proscenium pro
 6. Call `checkpoint_sources(entry_path=...)` with the explicitly owned file set,
    dependencies and `required_runtime` when needed. For `.blend` source checkpoints,
    supply `required_runtime` with `"application": "blender"` and the exact
-   `bpy.app.version_string` as `version` (for example `"4.5.16 LTS"`). Pass the receipt's
-   `source_closure` directly into `publish_outputs`, never script closure sorting
-   or SHA-256 digests. Checkpoint before
+   `bpy.app.version_string` as `version` (for example `"4.5.16 LTS"`). For a revision,
+   pin the prior published `base_version` so unchanged scene files carry forward.
+   List the changed `.blend` and other owned paths, and use `exclude_paths` only for
+   inherited destinations to omit. For a large closure, pass the completed receipt's
+   `operation_id` as `checkpoint_operation_id` and its exact `source_commit` to
+   `validate_authored_document` (`publication_submit`) and `publish_outputs`, omitting
+   `source`. For a small closure, pass the receipt's `source_closure` directly as
+   `source`. Never script closure sorting or SHA-256 digests. Checkpoint before
    `publish_outputs`. Preserve unrelated changes and staging. Never `git add .`.
+   Cycles CPU uses OpenImageDenoise by default (`denoise: true`). Use 32–64 samples
+   for keyframes and inspection stills, or 8–16 for `draft_motion` scrub passes.
    Missing accepted services are a limitation, not permission to invent a receipt.
    Keep the active `project_id` and host work/invocation authority. Assign stable
    item/version IDs, pin the returned commit and exact source-closure digest, and

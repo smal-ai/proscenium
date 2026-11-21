@@ -95,13 +95,14 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   }
 
   useEffect(() => {
-    let active = true;
-    Promise.all(items.map(item => allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: item.item_id}, query: {cursor, limit: 100}}))))
-      .then(pages => {if (active) setVersions(pages.flat());}).catch(e => {if (active) setError(String(e));});
-    Promise.all([readPendingSelection(projectId), allPages(cursor => api.call("listSelections", {path: {project_id: projectId}, query: {cursor, limit: 100}}))])
-      .then(([command, choices]) => {if (active) {setPending(command); setSelections(choices); setReady(true);}})
-      .catch(e => {if (active) {setReady(false); setError(String(e));}});
-    return () => {active = false;};
+    const controller = new AbortController();
+    const {signal} = controller;
+    Promise.all(items.map(item => allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: item.item_id}, query: {cursor, limit: 100}, signal}))))
+      .then(pages => {if (!signal.aborted) setVersions(pages.flat());}).catch(e => {if (!signal.aborted) setError(String(e));});
+    Promise.all([readPendingSelection(projectId), allPages(cursor => api.call("listSelections", {path: {project_id: projectId}, query: {cursor, limit: 100}, signal}))])
+      .then(([command, choices]) => {if (!signal.aborted) {setPending(command); setSelections(choices); setReady(true);}})
+      .catch(e => {if (!signal.aborted) {setReady(false); setError(String(e));}});
+    return () => controller.abort();
   }, [api, projectId, items, refreshRevision]);
 
   async function select(version: VersionRecord, withdraw = false) {

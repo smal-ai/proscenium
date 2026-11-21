@@ -19,6 +19,17 @@ def validate(name: str, value: Any) -> Any:
         Draft202012Validator(schema, format_checker=FormatChecker()).validate(value)
         rfc8785.dumps(value)  # Reject non-finite/out-of-range JSON values as well.
     except (ValidationError, ValueError, rfc8785.CanonicalizationError) as exc:
+        if (
+            name == "CheckpointRequest"
+            and isinstance(exc, ValidationError)
+            and exc.validator == "dependentRequired"
+        ):
+            message = (
+                "entry_path is required when building a source closure"
+                if "entry_path" not in value
+                else "exclude_paths requires base_version"
+            )
+            raise DomainError("invalid_request", message=message) from exc
         raise DomainError("invalid_request", message=f"Invalid {name}") from exc
     return value
 

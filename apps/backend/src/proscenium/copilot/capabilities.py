@@ -8,6 +8,7 @@ import httpx
 
 from proscenium.api.errors import DomainError
 from proscenium.catalogue import validation
+from proscenium.catalogue.service import CHECKPOINT_SOURCE_CONFLICT
 from proscenium.contracts import canonical, validate
 from proscenium.db.store import now
 from proscenium.providers import budget3d, hunyuan
@@ -419,12 +420,13 @@ def validate_authored_document(
             if kind == "publication_submit":
                 if document["project_id"] != project_id:
                     raise DomainError("scope_denied", 403)
+                documents, maps = {}, {}
+                with store.transaction(write=False) as tx:
+                    document = catalogue.resolve_checkpoint_sources(tx, document)
+                    catalogue.validate_batch(tx, document)
                 batch = {
                     r["version_id"]: {**r, "project_id": project_id} for r in document["items"]
                 }
-                documents, maps = {}, {}
-                with store.transaction(write=False) as tx:
-                    catalogue.validate_batch(tx, document)
                 for row in batch.values():
                     git(root, "cat-file", "-e", row["source_commit"] + "^{commit}")
                     files = read_closure_files(services, project_id, row["source"], batch=batch)
@@ -493,7 +495,10 @@ def validate_authored_document(
                         phase="semantic",
                         code=code,
                         path="$",
-                        message="Authored document relationships or pinned sources failed validation",
+                        message=CHECKPOINT_SOURCE_CONFLICT
+                        if isinstance(exc, DomainError)
+                        and exc.message == CHECKPOINT_SOURCE_CONFLICT
+                        else "Authored document relationships or pinned sources failed validation",
                     )
                 ]
     return validate("AuthoredDocumentValidationResult", result)
