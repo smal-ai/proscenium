@@ -2,6 +2,7 @@
 
 import json
 import os
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -12,10 +13,22 @@ from proscenium.contracts import canonical, validate
 from proscenium.db import Store
 from proscenium.db.ownership import Ownership
 from proscenium.db.paths import DENIED_PARTS, project_path
+from proscenium.projects.workspace_fs import (
+    check_entry,
+    create_root,
+    fd_path,
+    mkdir_child,
+    open_regular,
+    publish_config,
+    read_regular,
+    runtime_directory,
+    verify_directory,
+    workspace_ancestor,
+    workspace_errors,
+)
 from proscenium.services import Services
 from proscenium.sources.common import (
     SECRET_NAMES,
-    atomic_bytes,
     fingerprint,
     git,
     managed,
@@ -61,7 +74,7 @@ def receipt(body: dict[str, Any], resource: str, state: str, revision: int) -> d
     )
 
 
-def _resolve_workspace_input(raw_path: str) -> tuple[Path, Path]:
+def _resolve_workspace_input(raw_path: str, *, strict: bool) -> tuple[Path, Path]:
     if not raw_path.strip() or "\x00" in raw_path:
         raise DomainError("invalid_request", 400, "Workspace path is required")
     try:
@@ -70,8 +83,16 @@ def _resolve_workspace_input(raw_path: str) -> tuple[Path, Path]:
             raise DomainError(
                 "invalid_request", 400, "Workspace path must be an absolute path or start with ~/"
             )
-        root = expanded.resolve()
-    except (OSError, RuntimeError, ValueError) as exc:
+        if any(len(os.fsencode(part)) > 255 for part in expanded.parts):
+            raise DomainError("invalid_request", 400, f"Invalid workspace path: {raw_path}")
+        root = expanded.resolve(strict=strict)
+    except RuntimeError as exc:
+        if "Symlink loop" in str(exc):  # Python 3.12 raises RuntimeError rather than ELOOP.
+            raise DomainError(
+                "scope_denied", 403, f"Symlink loop in workspace: {raw_path}"
+            ) from exc
+        raise DomainError("invalid_request", 400, f"Invalid workspace path: {raw_path}") from exc
+    except ValueError as exc:
         raise DomainError("invalid_request", 400, f"Invalid workspace path: {raw_path}") from exc
     return expanded, root
 
@@ -89,20 +110,35 @@ class Projects:
             raise DomainError("scope_denied", 403)
 
     @staticmethod
-    def config(root: Path) -> dict[str, Any]:
+    def config(root: Path, *, root_fd: int | None = None) -> dict[str, Any]:
         try:
-            path = project_path(root, "project.json")
-            if (root / "project.json").is_symlink():
-                raise DomainError("scope_denied", 403)
-            config = json.loads(path.read_bytes())
+            if root_fd is None:
+                path = project_path(root, "project.json")
+                if (root / "project.json").is_symlink():
+                    raise DomainError("scope_denied", 403)
+                data = path.read_bytes()
+            else:
+                data = read_regular(root_fd, "project.json")
+            config = json.loads(data)
         except (OSError, ValueError) as exc:
+            if (
+                root_fd is not None
+                and isinstance(exc, OSError)
+                and not isinstance(exc, FileNotFoundError)
+            ):
+                raise
             raise DomainError("invalid_request", message="Missing or invalid project.json") from exc
         validate("ProjectConfig", config)
         for value in config["paths"].values():
             project_path(root, value, directory=True)
+        if root_fd is not None:
+            verify_directory(root_fd, root)
+            check_entry(root_fd, ".git")
+        git_root = root if root_fd is None else fd_path(root_fd)
         if (
-            git(root, "rev-parse", "--show-toplevel", required=False).decode().strip() != str(root)
-            or git(root, "rev-parse", "--show-object-format", required=False).decode().strip()
+            git(git_root, "rev-parse", "--show-toplevel", required=False).decode().strip()
+            != str(root)
+            or git(git_root, "rev-parse", "--show-object-format", required=False).decode().strip()
             != "sha1"
         ):
             raise DomainError(
@@ -118,18 +154,38 @@ class Projects:
         identity: dict[str, str] | None = None,
         install_lfs_hooks: bool = True,
     ) -> None:
+        root = Path(os.path.abspath(root))
+        with workspace_errors(root), workspace_ancestor(root) as (root_fd, _, _):
+            Projects._bootstrap_fd(
+                root_fd, root, name, identity=identity, install_lfs_hooks=install_lfs_hooks
+            )
+
+    @staticmethod
+    def _bootstrap_fd(
+        root_fd: int,
+        root: Path,
+        name: str,
+        *,
+        identity: dict[str, str] | None,
+        install_lfs_hooks: bool,
+    ) -> None:
         # Never initialise a nested project in somebody else's repository.
-        existing = git(root, "rev-parse", "--show-toplevel", required=False).decode().strip()
+        verify_directory(root_fd, root)
+        has_git = check_entry(root_fd, ".git") is not None
+        anchored = fd_path(root_fd)
+        existing = git(anchored, "rev-parse", "--show-toplevel", required=False).decode().strip()
         if existing and existing != str(root):
             raise DomainError("unsupported_repository", 415)
         for directory in (*DIRECTORIES, ".proscenium"):
-            candidate = root / directory
-            if candidate.is_symlink():
-                raise DomainError("scope_denied", 403)
-            candidate.mkdir(exist_ok=True, mode=0o700)
-        if not (root / ".git").exists():
-            git(root, "init", "-b", "main", "--object-format=sha1")
-        git(root, "lfs", "install", "--local", *([] if install_lfs_hooks else ["--skip-repo"]))
+            verify_directory(root_fd, root)
+            os.close(mkdir_child(root_fd, directory))
+        verify_directory(root_fd, root)
+        if not has_git:
+            check_entry(root_fd, ".git")
+            git(anchored, "init", "-b", "main", "--object-format=sha1")
+        verify_directory(root_fd, root)
+        check_entry(root_fd, ".git")
+        git(anchored, "lfs", "install", "--local", *([] if install_lfs_hooks else ["--skip-repo"]))
         for filename, lines in (
             (".gitignore", list(IGNORE)),
             (
@@ -137,16 +193,25 @@ class Projects:
                 [f"*.{extension} filter=lfs diff=lfs merge=lfs -text" for extension in FORMATS],
             ),
         ):
-            path = root / filename
-            if path.is_symlink():
-                raise DomainError("scope_denied", 403)
-            previous = path.read_text() if path.exists() else ""
+            try:
+                previous = (
+                    read_regular(root_fd, filename)
+                    .decode()
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                )
+            except FileNotFoundError:
+                previous = ""
             missing = [line for line in lines if line not in previous.splitlines()]
             if missing:
                 # Git attributes are last-match-wins. Existing authoring rules take
                 # precedence over the generic defaults, not the other way round.
                 attributes = filename == ".gitattributes"
-                with path.open("w" if attributes else "a") as stream:
+                verify_directory(root_fd, root)
+                flags = os.O_WRONLY | os.O_CREAT | (os.O_TRUNC if attributes else os.O_APPEND)
+                with os.fdopen(
+                    open_regular(root_fd, filename, flags), "w" if attributes else "a"
+                ) as stream:
                     additions = "\n".join(missing) + "\n"
                     stream.write(
                         additions + previous
@@ -157,7 +222,7 @@ class Projects:
                     )
                     stream.flush()
                     os.fsync(stream.fileno())
-        if not (root / "project.json").exists():
+        if check_entry(root_fd, "project.json") is None:
             config = dict(
                 schema_version="1.0",
                 **(
@@ -171,8 +236,8 @@ class Projects:
                 paths={directory: directory for directory in DIRECTORIES},
             )
             validate("ProjectConfig", config)
-            atomic_bytes(root / "project.json", canonical(config))
-            (root / "project.json").chmod(0o600)
+            verify_directory(root_fd, root)
+            publish_config(root_fd, canonical(config))
 
     def open(
         self,
@@ -185,7 +250,7 @@ class Projects:
         owner_only(caller)
         validate("ProjectOpen", body)
         registry = self.services.registry
-        with self.services.activation_lock:
+        with self.services.activation_lock, workspace_errors(body["path"]), ExitStack() as handles:
             with registry.store.transaction(write=False) as tx:
                 previous = replay(tx, "projects.open", body["operation_id"], body)
                 intent = tx.get("project_open_intents", body["operation_id"], required=False)
@@ -193,59 +258,34 @@ class Projects:
                     raise DomainError("idempotency_conflict", 409)
             if previous:
                 return previous, True
-            expanded, root = _resolve_workspace_input(body["path"])
+            create = body["create"]
+            expanded, root = _resolve_workspace_input(body["path"], strict=not create)
             self.workspace_boundary(root)
-            if body["create"]:
-                try:
-                    if expanded.is_symlink() and not expanded.exists():
+            if create:
+                # Non-strict resolution is necessary for missing segments, but must
+                # not turn a dangling symlink in the submitted path into a new folder.
+                entry = expanded
+                while not entry.exists() and entry != entry.parent:
+                    if entry.is_symlink():
                         raise DomainError(
-                            "scope_denied", 403, f"Broken symlink at workspace path: {expanded}"
+                            "scope_denied", 403, f"Broken symlink in workspace path: {entry}"
                         )
-                    ancestor = expanded
-                    while not ancestor.exists() and ancestor != ancestor.parent:
-                        if ancestor.is_symlink():
-                            raise DomainError(
-                                "scope_denied", 403, f"Broken symlink in workspace path: {ancestor}"
-                            )
-                        ancestor = ancestor.parent
-                except PermissionError as exc:
-                    raise DomainError(
-                        "scope_denied", 403, f"Permission denied accessing workspace '{expanded}'"
-                    ) from exc
-                if not ancestor.is_dir():
-                    raise DomainError(
-                        "invalid_request", 400, f"Parent path is not a directory: {ancestor}"
-                    )
-                if not os.access(ancestor, os.W_OK | os.X_OK):
-                    raise DomainError(
-                        "scope_denied",
-                        403,
-                        f"Cannot create workspace '{root}': '{ancestor}' is not writable",
-                    )
-                if (root / ".proscenium").is_symlink():
-                    raise DomainError("scope_denied", 403)
-            else:
-                try:
-                    root = expanded.resolve(strict=True)
-                except PermissionError as exc:
-                    raise DomainError(
-                        "scope_denied", 403, f"Permission denied accessing workspace '{expanded}'"
-                    ) from exc
-                except OSError as exc:
-                    raise DomainError(
-                        "not_found", 404, f"Workspace folder not found: {expanded}"
-                    ) from exc
-                self.workspace_boundary(root)
-                if not root.is_dir():
-                    raise DomainError(
-                        "invalid_request", 400, f"Workspace path is not a directory: {root}"
-                    )
-                if (root / ".proscenium").is_symlink():
-                    raise DomainError("scope_denied", 403)
-                if not os.access(root, os.W_OK | os.X_OK):
-                    raise DomainError(
-                        "scope_denied", 403, f"Workspace directory is not writable: {root}"
-                    )
+                    entry = entry.parent
+            ancestor_fd, ancestor, remaining = handles.enter_context(
+                workspace_ancestor(root, allow_missing=create)
+            )
+            self.workspace_boundary(ancestor.joinpath(*remaining))
+            if not os.access(".", os.W_OK | os.X_OK, dir_fd=ancestor_fd):
+                message = (
+                    f"Cannot create workspace '{root}': '{ancestor}' is not writable"
+                    if create
+                    else f"Workspace directory is not writable: {root}"
+                )
+                raise DomainError("scope_denied", 403, message)
+            if not remaining:
+                # Reject inaccessible runtime data before recording a fresh intent.
+                with runtime_directory(ancestor_fd, root):
+                    pass
             if not intent:
                 with registry.store.transaction() as tx:
                     tx.put(
@@ -253,27 +293,25 @@ class Projects:
                         body["operation_id"],
                         {"fingerprint": fingerprint(body), "state": "prepared"},
                     )
-            try:
-                if body["create"]:
-                    root.mkdir(parents=True, exist_ok=True, mode=0o700)
-                if body["create"] or not (root / "project.json").exists():
-                    self.bootstrap(
-                        root,
-                        body.get("name", root.name),
-                        identity=identity,
-                        install_lfs_hooks=install_lfs_hooks,
-                    )
-            except PermissionError as exc:
+            root_fd = (
+                handles.enter_context(create_root(ancestor_fd, ancestor, remaining))
+                if remaining
+                else ancestor_fd
+            )
+            self.workspace_boundary(verify_directory(root_fd, root))
+            if not os.access(".", os.W_OK | os.X_OK, dir_fd=root_fd):
                 raise DomainError(
-                    "scope_denied", 403, f"Cannot create workspace '{root}': permission denied"
-                ) from exc
-            except (FileExistsError, NotADirectoryError) as exc:
-                raise DomainError(
-                    "invalid_request",
-                    400,
-                    f"Cannot create workspace '{root}': {exc.strerror or exc}",
-                ) from exc
-            config = self.config(root)
+                    "scope_denied", 403, f"Workspace directory is not writable: {root}"
+                )
+            if create or check_entry(root_fd, "project.json") is None:
+                self._bootstrap_fd(
+                    root_fd,
+                    root,
+                    body.get("name", root.name),
+                    identity=identity,
+                    install_lfs_hooks=install_lfs_hooks,
+                )
+            config = self.config(root, root_fd=root_fd)
             record = dict(
                 schema_version="1.0",
                 project_id=config["project_id"],
@@ -284,12 +322,11 @@ class Projects:
                 state="inactive",
                 state_revision=0,
             )
-            runtime = root / ".proscenium"
-            if runtime.is_symlink() or any(
-                (runtime / name).is_symlink() for name in ("state.sqlite3", "owner.lock")
-            ):
-                raise DomainError("scope_denied", 403)
-            project_store = Store(runtime / "state.sqlite3", record["project_id"])
+            verify_directory(root_fd, root)
+            runtime_fd = handles.enter_context(runtime_directory(root_fd, root, create=True))
+            assert runtime_fd is not None
+            verify_directory(runtime_fd, root / ".proscenium")
+            project_store = Store(fd_path(runtime_fd) / "state.sqlite3", record["project_id"])
             with project_store.transaction(write=False) as tx:
                 identity = tx.get("project_identity", "identity", required=False)
                 if identity and identity != {
@@ -297,6 +334,7 @@ class Projects:
                     "repository_id": record["repository_id"],
                 }:
                     raise DomainError("source_conflict", 409)
+            verify_directory(root_fd, root)
             registry.register(record)
             # Private defaults are machine-owned, not project.json preferences.
             with registry.store.transaction() as tx:
@@ -312,6 +350,7 @@ class Projects:
                         ),
                         schema="ProjectSettingsRecord",
                     )
+            verify_directory(runtime_fd, root / ".proscenium")
             with registry.project_store(record["project_id"], active=False).transaction() as tx:
                 identity = {
                     "project_id": record["project_id"],
@@ -552,50 +591,51 @@ class Projects:
         validate("ProjectRebind", body)
         registry = self.services.registry
         project_id = body["project_id"]
-        with self.services.activation_lock:
-            if Path(registry.get(project_id)["path"]).exists():
-                self.services.reconcile_project_projection(project_id)
+        with (
+            self.services.activation_lock,
+            workspace_errors(body["new_path"]),
+            ExitStack() as handles,
+        ):
             with registry.store.transaction(write=False) as tx:
                 previous = replay(tx, "projects.rebind", body["operation_id"], body)
             if previous:
                 return {**previous, "replayed": True}, True
             record = registry.get(project_id)
+            _, root = _resolve_workspace_input(body["new_path"], strict=True)
+            self.workspace_boundary(root)
+            root_fd, actual, _ = handles.enter_context(workspace_ancestor(root))
+            self.workspace_boundary(actual)
+            if not os.access(".", os.W_OK | os.X_OK, dir_fd=root_fd):
+                raise DomainError(
+                    "scope_denied", 403, f"Workspace directory is not writable: {root}"
+                )
+            runtime_fd = handles.enter_context(runtime_directory(root_fd, root))
+            if runtime_fd is None or check_entry(runtime_fd, "state.sqlite3") is None:
+                raise DomainError("source_unavailable", 422, "Relocated project database missing")
+            old_root = Path(record["path"])
+            if old_root.exists():
+                if old_root != root:
+                    with (
+                        workspace_ancestor(old_root) as (old_fd, _, _),
+                        runtime_directory(old_fd, old_root),
+                    ):
+                        self.services.reconcile_project_projection(project_id)
+                else:
+                    self.services.reconcile_project_projection(project_id)
+            record = registry.get(project_id)
             if record["state_revision"] != body["expected_revision"]:
                 raise DomainError(
                     "revision_conflict", 409, current_revision=record["state_revision"]
                 )
-            expanded, _ = _resolve_workspace_input(body["new_path"])
-            try:
-                root = expanded.resolve(strict=True)
-            except PermissionError as exc:
-                raise DomainError(
-                    "scope_denied",
-                    403,
-                    f"Permission denied accessing workspace '{body['new_path']}'",
-                ) from exc
-            except OSError as exc:
-                raise DomainError(
-                    "not_found", 404, f"Workspace folder not found: {body['new_path']}"
-                ) from exc
-            if not root.is_dir():
-                raise DomainError(
-                    "invalid_request", 400, f"Workspace path is not a directory: {root}"
-                )
-            self.workspace_boundary(root)
-            config = self.config(root)
+            config = self.config(root, root_fd=root_fd)
             if (config["project_id"], config["repository_id"]) != (
                 project_id,
                 record["repository_id"],
             ):
                 raise DomainError("source_conflict", 409)
-            if (root / ".proscenium").is_symlink() or (
-                root / ".proscenium/state.sqlite3"
-            ).is_symlink():
-                raise DomainError("scope_denied", 403)
-            if not (root / ".proscenium/state.sqlite3").is_file():
-                raise DomainError("source_unavailable", 422, "Relocated project database missing")
-            target = Store(root / ".proscenium/state.sqlite3", project_id)
-            if Path(record["path"]).exists() and Path(record["path"]) != root:
+            verify_directory(runtime_fd, root / ".proscenium")
+            target = Store(fd_path(runtime_fd) / "state.sqlite3", project_id)
+            if old_root != root and old_root.exists():
                 registry.assert_settled(project_id)
                 original = registry.project_store(project_id, active=False)
                 if self.store_digest(original) != self.store_digest(target):
@@ -644,7 +684,9 @@ class Projects:
                     if sha(path.read_bytes()) != retained["sha256"]:
                         raise DomainError("retained_source_missing", 422)
                 for version in tx.all("versions"):
-                    git(root, "cat-file", "-e", version["source_commit"] + "^{commit}")
+                    verify_directory(root_fd, root)
+                    check_entry(root_fd, ".git")
+                    git(fd_path(root_fd), "cat-file", "-e", version["source_commit"] + "^{commit}")
                     from proscenium.sources.resolver import Resolver
 
                     for row in version["source"]["files"]:
@@ -660,18 +702,18 @@ class Projects:
                     )
                 verifier(project_id, root, record["native_session_id"])
             held = self.services.project_ownership.get(project_id)
-            if (root / ".proscenium/owner.lock").is_symlink():
-                raise DomainError("scope_denied", 403)
-            target_lock = root / ".proscenium/owner.lock"
+            verify_directory(runtime_fd, root / ".proscenium")
+            target_stat = check_entry(runtime_fd, "owner.lock")
             same_lock = False
-            if held and target_lock.exists():
-                previous_stat, target_stat = os.fstat(held.file.fileno()), target_lock.stat()
+            if held and target_stat is not None:
+                previous_stat = os.fstat(held.file.fileno())
                 same_lock = (previous_stat.st_dev, previous_stat.st_ino) == (
                     target_stat.st_dev,
                     target_stat.st_ino,
                 )
-            new_lock = None if same_lock else Ownership(root / ".proscenium/owner.lock")
+            new_lock = None if same_lock else Ownership(fd_path(runtime_fd) / "owner.lock")
             try:
+                verify_directory(runtime_fd, root / ".proscenium")
                 with registry.store.transaction() as tx:
 
                     def effect() -> dict[str, Any]:

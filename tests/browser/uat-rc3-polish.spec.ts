@@ -128,6 +128,9 @@ test("Projects reconciles a retained create before registering a corrected folde
       const body = sent.postDataJSON() as ProjectOpen;
       commands.push({ body, idempotencyKey: sent.headers()["idempotency-key"] });
       if (body.operation_id === retained.operation_id) {
+        if (commands.length === 1) {
+          return route.fulfill({ status: 500, json: { schema_version: "1.0", error: { code: "internal_error", message: "Temporary server failure", operation_id: null, retryable: false, details: {} } } });
+        }
         return route.fulfill({ status: 403, json: { schema_version: "1.0", error: { code: "scope_denied", message, operation_id: null, retryable: false, details: {} } } });
       }
       const created: ProjectRecord = { ...project, project_id: "project-intro", repository_id: "repository-intro", name: body.name ?? "Untitled project", path: body.path, state: "inactive" };
@@ -149,11 +152,18 @@ test("Projects reconciles a retained create before registering a corrected folde
   await expect(name).toHaveValue(retained.name!);
   await expect(create).toBeDisabled();
 
-  await card.getByRole("button", { name: "Reconcile Create project" }).click();
+  const reconcile = card.getByRole("button", { name: "Reconcile Create project" });
+  await reconcile.click();
+  await expect(popover.getByRole("alert")).toHaveText("Temporary server failure Unconfirmed commands retain their original identity. Reconcile the retained command before changing inputs.");
+  expect(JSON.parse((await page.evaluate(key => localStorage.getItem(key), key))!)).toEqual(retained);
+  await expect(create).toBeDisabled();
+
+  await reconcile.click();
   await expect(popover.getByRole("alert")).toHaveText(message);
   await expect(card).toHaveCount(0);
   expect(await page.evaluate(key => localStorage.getItem(key), key)).toBeNull();
-  expect(commands).toEqual([{ body: retained, idempotencyKey: retained.operation_id }]);
+  const original = { body: retained, idempotencyKey: retained.operation_id };
+  expect(commands).toEqual([original, original]);
 
   await path.fill(` ${corrected} `);
   const created = page.waitForResponse(response => response.url().endsWith("/api/v1/projects") && response.request().method() === "POST");
@@ -161,9 +171,9 @@ test("Projects reconciles a retained create before registering a corrected folde
   expect((await created).status()).toBe(201);
   await expect(popover.getByRole("combobox", { name: "Saved project" })).toHaveValue("project-intro");
   await expect(popover.getByRole("alert")).toHaveCount(0);
-  const freshId = commands[1].body.operation_id;
+  const freshId = commands[2].body.operation_id;
   expect(freshId).not.toBe(retained.operation_id);
-  expect(commands[1]).toEqual({ body: { ...retained, operation_id: freshId, path: corrected, name: "Intro" }, idempotencyKey: freshId });
+  expect(commands[2]).toEqual({ body: { ...retained, operation_id: freshId, path: corrected, name: "Intro" }, idempotencyKey: freshId });
   studio.assertHermetic();
 });
 
