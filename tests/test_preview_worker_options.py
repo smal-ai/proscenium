@@ -74,11 +74,13 @@ def test_render_spec_accepts_optional_boolean_denoise():
             validate("RenderSpec", {**spec, "denoise": value})
 
 
-@pytest.mark.parametrize("change", [None, "object", "dynamics", "disk_cache", "baked", "emitter"])
+@pytest.mark.parametrize(
+    "change", [None, "object", "dynamics", "disk_cache", "external", "baked", "emitter"]
+)
 def test_only_static_cache_free_path_hair_bypasses_simulation_cache_guard(change):
     particle = SimpleNamespace(
         settings=SimpleNamespace(type="HAIR", render_type="PATH"),
-        point_cache=SimpleNamespace(use_disk_cache=False, is_baked=False),
+        point_cache=SimpleNamespace(use_disk_cache=False, use_external=False, is_baked=False),
         use_hair_dynamics=False,
     )
     if change == "object":
@@ -87,6 +89,8 @@ def test_only_static_cache_free_path_hair_bypasses_simulation_cache_guard(change
         particle.use_hair_dynamics = True
     elif change == "disk_cache":
         particle.point_cache.use_disk_cache = True
+    elif change == "external":
+        particle.point_cache.use_external = True
     elif change == "baked":
         particle.point_cache.is_baked = True
     elif change == "emitter":

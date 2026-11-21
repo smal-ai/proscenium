@@ -28,6 +28,7 @@ def modifier_kind(modifier) -> str:
             getattr(settings, "type", None) == "HAIR"
             and getattr(settings, "render_type", None) == "PATH"
             and getattr(particle, "use_hair_dynamics", True) is False
+            and getattr(cache, "use_external", True) is False
             and getattr(cache, "use_disk_cache", True) is False
             and getattr(cache, "is_baked", True) is False
         ):
