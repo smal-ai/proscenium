@@ -270,6 +270,7 @@ SAFE_REASONS = frozenset(
         "generation_task_id does not match the active work; omit generation_task_id to use the active task",
         "entry_path is required when building a source closure",
         "exclude_paths requires base_version",
+        "Inherited entry_path does not match HEAD; include entry_path in paths",
         "Checkpoint receipt is unavailable or does not match source_commit",
         "Provider returned a corrupted scanline or noise image",
         "Image artefact is not ready for inline inspection",

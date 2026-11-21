@@ -2,10 +2,14 @@
 
 import fcntl
 import os
+import select
 import shutil
 import stat
 import subprocess
 import tempfile
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -21,12 +25,67 @@ from proscenium.sources.common import (
     binding,
     fingerprint,
     git,
+    git_environment,
     managed,
     relative,
     replay,
     sha,
 )
 from proscenium.sources.resolver import Resolver, closure_digest
+
+INHERITED_ENTRY_CONFLICT = "Inherited entry_path does not match HEAD; include entry_path in paths"
+
+
+@contextmanager
+def prepared_branch(root: Path, branch: str, commit: str) -> Iterator[bool]:
+    """Hold Git's ref lock without committing the verify-only transaction."""
+    with subprocess.Popen(
+        ["git", "-c", "core.hooksPath=/dev/null", "-C", str(root), "update-ref", "--stdin"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        env=git_environment(),
+        bufsize=0,
+    ) as process:
+        assert process.stdin is not None and process.stdout is not None
+        stdout_fd = process.stdout.fileno()
+        deadline = time.monotonic() + 5
+
+        def acknowledge(expected: bytes) -> bool:
+            remaining = expected
+            while remaining:
+                timeout = max(0, deadline - time.monotonic())
+                if not select.select([stdout_fd], [], [], timeout)[0]:
+                    return False
+                data = os.read(stdout_fd, len(remaining))
+                if not data or not remaining.startswith(data):
+                    return False
+                remaining = remaining[len(data) :]
+            return True
+
+        prepared = False
+        try:
+            try:
+                process.stdin.write(f"start\nverify {branch} {commit}\nprepare\n".encode())
+                prepared = acknowledge(b"start: ok\n") and acknowledge(b"prepare: ok\n")
+            except BrokenPipeError:
+                pass  # The ref moved or another Git writer holds its lock.
+            yield prepared
+        finally:
+            # Also abort an unacknowledged transaction. EOF is the fallback if Git exited.
+            try:
+                process.stdin.write(b"abort\n")
+            except BrokenPipeError:
+                pass
+            try:
+                process.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.terminate()
+                try:
+                    process.communicate(timeout=2)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.communicate()
 
 
 class Checkpoints:
@@ -46,7 +105,6 @@ class Checkpoints:
             os.open(lockpath, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600), "a+b"
         ) as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            self.validate_closure_inputs(project_id, root, request)
             with store.transaction() as tx:
                 try:
                     previous = replay(tx, "sources.checkpoint", identity, immutable)
@@ -75,8 +133,6 @@ class Checkpoints:
                     raise DomainError("idempotency_conflict", 409)
                 if not intent:
                     admitted(self.services, tx, caller)
-                    if len(set(paths)) != len(paths):
-                        raise DomainError("invalid_request")
                     branch = git(root, "symbolic-ref", "-q", "HEAD").decode().strip()
                     head = (
                         git(root, "rev-parse", "--verify", "HEAD", required=False).decode().strip()
@@ -84,6 +140,9 @@ class Checkpoints:
                     )
                     if head != request["expected_head"] or not branch.startswith("refs/heads/"):
                         raise DomainError("source_conflict", 409)
+                    self.validate_closure_inputs(project_id, root, request, head)
+                    if len(set(paths)) != len(paths):
+                        raise DomainError("invalid_request")
                     files = [
                         {"path": p, "sha256": sha(relative(root, p, exists=True).read_bytes())}
                         for p in sorted(paths)
@@ -92,6 +151,7 @@ class Checkpoints:
                     author = git(root, "var", "GIT_AUTHOR_IDENT").decode().strip()
                     intent = dict(
                         fingerprint=fingerprint(immutable),
+                        modern_binding=True,
                         branch=branch,
                         files=files,
                         parent=head,
@@ -206,7 +266,7 @@ class Checkpoints:
             raise DomainError("scope_denied", 403)
 
     def validate_closure_inputs(
-        self, project_id: str, root: Path, request: dict[str, Any]
+        self, project_id: str, root: Path, request: dict[str, Any], parent: str | None
     ) -> dict[str, dict[str, Any]]:
         if "entry_path" not in request:
             if any(
@@ -252,7 +312,14 @@ class Checkpoints:
                 }
             for ref in request.get("dependencies", []):
                 self.version(tx, project_id, ref)
-            for row in retained_files:
+            for row in [
+                *retained_files,
+                *(
+                    row
+                    for name, row in inherited.items()
+                    if name not in seen and row["origin"]["kind"] == "retained"
+                ),
+            ]:
                 origin = row["origin"]
                 retained = tx.get("retained_sources", origin["artifact_id"], required=False)
                 path = managed(root, f".proscenium/retained/{origin['sha256']}/content")
@@ -279,7 +346,37 @@ class Checkpoints:
                 raise DomainError("dependency_collision", 409, destination=name)
         if request["entry_path"] not in destinations:
             raise DomainError("dependency_missing", 422, path=request["entry_path"])
+        entry = self.inherited_git_entry(request, inherited)
+        if entry is not None:
+            self.pin_entry(project_id, entry, parent)
         return inherited
+
+    @staticmethod
+    def inherited_git_entry(
+        request: dict[str, Any], inherited: dict[str, dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        name = request.get("entry_path")
+        entry = inherited.get(name) if name is not None else None
+        if (
+            entry is not None
+            and entry["origin"]["kind"] == "git"
+            and name not in request["paths"]
+            and all(r["destination"] != name for r in request.get("retained_files", []))
+        ):
+            return entry
+        return None
+
+    def pin_entry(
+        self, project_id: str, entry: dict[str, Any], commit: str | None
+    ) -> dict[str, Any]:
+        if commit is None:
+            raise DomainError("source_conflict", 409, INHERITED_ENTRY_CONFLICT)
+        origin = {**entry["origin"], "commit": commit}
+        try:
+            self.resolver.git_bytes(project_id, origin)
+        except DomainError as exc:
+            raise DomainError("source_conflict", 409, INHERITED_ENTRY_CONFLICT) from exc
+        return {**entry, "origin": origin}
 
     def source_closure(
         self,
@@ -289,9 +386,12 @@ class Checkpoints:
         intent: dict[str, Any],
         commit: str,
     ) -> dict[str, Any] | None:
-        files = self.validate_closure_inputs(project_id, root, request)
+        files = self.validate_closure_inputs(project_id, root, request, intent["parent"])
         if "entry_path" not in request:
             return None
+        entry = self.inherited_git_entry(request, files)
+        if entry is not None:
+            files[request["entry_path"]] = self.pin_entry(project_id, entry, commit)
         repository_id = self.services.registry.get(project_id)["repository_id"]
         files.update(
             (
@@ -436,14 +536,15 @@ class Checkpoints:
                 )
                 if entries(git(root, "ls-files", "-s", "-z", env=env)) != original | updates:
                     raise DomainError("source_conflict", 409)
-                if not still_current():
-                    return
-                with temporary.open("rb") as source:
-                    shutil.copyfileobj(source, stream)
-                stream.flush()
-                os.fsync(stream.fileno())
-                lock.replace(index)
-                installed = True
+                with prepared_branch(root, intent["branch"], commit) as prepared:
+                    if not prepared or not still_current():
+                        return
+                    with temporary.open("rb") as source:
+                        shutil.copyfileobj(source, stream)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                    lock.replace(index)
+                    installed = True
         finally:
             if not installed:  # Do not unlink a new writer's lock after replace.
                 lock.unlink()
@@ -553,6 +654,7 @@ class Checkpoints:
         if (
             not saved
             or saved.get("state") != "completed"
+            or saved.get("modern_binding") is True
             or any(k in request for k in ("base_version", "exclude_paths"))
         ):
             return None
@@ -579,7 +681,10 @@ class Checkpoints:
         self, project_id: str, request: dict[str, Any], intent: dict[str, Any], commit: str
     ) -> None:
         root = Path(self.services.registry.get(project_id)["path"])
-        self.validate_closure_inputs(project_id, root, request)
+        inherited = self.validate_closure_inputs(project_id, root, request, intent["parent"])
+        entry = self.inherited_git_entry(request, inherited)
+        if entry is not None:
+            self.pin_entry(project_id, entry, commit)
         parents = git(root, "rev-list", "--parents", "-n", "1", commit).decode().split()[1:]
         expected = [intent["parent"]] if intent["parent"] else []
         message = git(root, "show", "-s", "--format=%B", commit).decode()

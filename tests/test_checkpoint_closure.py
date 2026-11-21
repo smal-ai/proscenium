@@ -21,6 +21,7 @@ from proscenium.copilot.tools import Tools, result_text
 from proscenium.db import Store
 from proscenium.jobs.gate import ExecutionGate
 from proscenium.sources import Sources, closure_digest
+from proscenium.sources.checkpoint import prepared_branch
 from proscenium.sources.common import git, sha
 
 PROJECT = "project-one"
@@ -516,6 +517,10 @@ def test_checkpoint_replays_across_resumed_invocation_and_reordered_paths(runtim
             "UPDATE operations SET fingerprint='legacy' WHERE scope='sources.checkpoint' AND id=?",
             (body["operation_id"],),
         )
+        tx.connection.execute(
+            "UPDATE records SET body=json_remove(body,'$.modern_binding') WHERE namespace='checkpoint_intents' AND id=?",
+            (body["operation_id"],),
+        )
     assert runtime.sources.checkpoint(resumed_caller, reordered) == {**receipt, "replayed": True}
     with pytest.raises(DomainError) as conflict:
         runtime.sources.checkpoint(resumed_caller, {**reordered, "message": "Different message"})
@@ -894,3 +899,133 @@ def test_large_checkpoint_response_with_max_length_identifiers(runtime):
     ):
         assert value.encode() in text.encode()[:512]
     assert validate("CheckpointReceipt", json.loads(text)) == receipt
+
+
+def checkpoint_scene_v1(runtime, *, retained=False):
+    root = runtime.root
+    lfs_entry(runtime, b"Boardroom v1")
+    git(root, "lfs", "track", "*.png")
+    git(root, "add", ".gitattributes")
+    git(root, "commit", "-m", "Track LFS files")
+    (root / "texture.png").write_bytes(b"Texture v1 fixture")
+    base_request = request(
+        runtime, operation_id="checkpoint-v1", entry_path=ENTRY, paths=[ENTRY, "texture.png"]
+    )
+    if retained:
+        base_request["retained_files"] = [
+            dict(destination="remote-texture.dat", origin=retain(runtime))
+        ]
+    receipt = runtime.sources.checkpoint(runtime.caller, base_request)
+    runtime.catalogue.publish(runtime.caller, publication(runtime, receipt))
+    return receipt
+
+
+def test_external_only_revision_repins_unchanged_lfs_entry_and_publishes(runtime):
+    v1 = checkpoint_scene_v1(runtime)
+    (runtime.root / "texture.png").write_bytes(b"Texture v2 fixture")
+    body = request(runtime, entry_path=ENTRY, paths=["texture.png"], base_version=BASE_VERSION)
+    v2 = runtime.sources.checkpoint(runtime.caller, body)
+    source = v2["source_closure"]
+    v1_entry = next(row for row in v1["source_closure"]["files"] if row["destination"] == ENTRY)
+    v2_entry = next(row for row in source["files"] if row["destination"] == ENTRY)
+    assert v2_entry == {**v1_entry, "origin": {**v1_entry["origin"], "commit": v2["source_commit"]}}
+    assert v1["source_commit"] != v2["source_commit"]
+    assert source["digest"] == closure_digest(source)
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**v2, "replayed": True}
+    ref = {**BASE_VERSION, "version_id": "boardroom-v2"}
+    submit = publication(runtime, v2, ref=ref, previous=BASE_VERSION["version_id"])
+    assert authoring_validation(runtime, submit)["valid"]
+    receipt, replayed = runtime.catalogue.publish(runtime.caller, submit)
+    assert not replayed and receipt["versions"] == [ref]
+    snapshot = runtime.sources.resolve(PROJECT, source)
+    assert (snapshot / ENTRY).read_bytes() == b"Boardroom v1"
+    assert (snapshot / "texture.png").read_bytes() == b"Texture v2 fixture"
+
+
+def test_changed_inherited_entry_rejected_before_intent_or_git_objects(runtime):
+    checkpoint_scene_v1(runtime)
+    root = runtime.root
+    (root / ENTRY).write_bytes(b"Different boardroom")
+    git(root, "add", ENTRY)
+    git(root, "commit", "-m", "Update scene separately")
+    (root / "texture.png").write_bytes(b"Texture v2 fixture")
+    body = request(runtime, entry_path=ENTRY, paths=["texture.png"], base_version=BASE_VERSION)
+    refs = git(root, "show-ref")
+    objects = git(root, "count-objects", "-v")
+    with pytest.raises(
+        DomainError, match="Inherited entry_path does not match HEAD; include entry_path in paths"
+    ) as error:
+        runtime.sources.checkpoint(runtime.caller, body)
+    assert error.value.code == "source_conflict" and error.value.status == 409
+    assert git(root, "show-ref") == refs
+    assert git(root, "count-objects", "-v") == objects
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.get("checkpoint_intents", body["operation_id"], required=False) is None
+
+
+@pytest.mark.parametrize("damage", ["missing_record", "missing_bytes", "corrupt_bytes"])
+def test_inherited_retained_source_is_verified_before_checkpoint(runtime, damage):
+    v1 = checkpoint_scene_v1(runtime, retained=True)
+    origin = next(
+        row["origin"]
+        for row in v1["source_closure"]["files"]
+        if row["origin"]["kind"] == "retained"
+    )
+    blob = runtime.root / f".proscenium/retained/{origin['sha256']}/content"
+    if damage == "missing_record":
+        with runtime.store.transaction() as tx:
+            tx.connection.execute(
+                "DELETE FROM records WHERE namespace='retained_sources' AND id=?",
+                (origin["artifact_id"],),
+            )
+    elif damage == "missing_bytes":
+        blob.unlink()
+    else:
+        blob.write_bytes(b"Corrupt content")
+    body = request(runtime, entry_path=ENTRY, paths=["texture.png"], base_version=BASE_VERSION)
+    with pytest.raises(DomainError) as error:
+        runtime.sources.checkpoint(runtime.caller, body)
+    assert error.value.code == "retained_source_missing"
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.get("checkpoint_intents", body["operation_id"], required=False) is None
+    assert git(runtime.root, "rev-parse", "HEAD").decode().strip() == body["expected_head"]
+
+
+@pytest.mark.parametrize("change", ["removed_base", "different_work"])
+def test_modern_checkpoint_cannot_fall_back_to_legacy_replay(runtime, change):
+    checkpoint_scene_v1(runtime)
+    body = request(
+        runtime, entry_path=ENTRY, paths=[ENTRY, "texture.png"], base_version=BASE_VERSION
+    )
+    runtime.sources.checkpoint(runtime.caller, body)
+    caller = runtime.caller
+    if change == "removed_base":
+        del body["base_version"]
+    else:
+        caller = dataclasses.replace(caller, work_id="different-work")
+    with pytest.raises(DomainError) as error:
+        runtime.sources.checkpoint(caller, body)
+    assert error.value.code == "idempotency_conflict"
+
+
+def test_index_sync_defers_to_prepared_ref_writer_and_cleans_its_locks(runtime):
+    write_plan(runtime)
+    root = runtime.root
+    index = root / ".git/index"
+    index_lock = index.with_suffix(".lock")
+    index_lock.touch()
+    before = index.read_bytes()
+    body = request(runtime, entry_path="plan.json")
+    receipt = runtime.sources.checkpoint(runtime.caller, body)
+    index_lock.unlink()
+    branch_lock = root / ".git/refs/heads/main.lock"
+    with prepared_branch(root, "refs/heads/main", receipt["source_commit"]) as held:
+        assert held and branch_lock.exists()
+        assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+        assert index.read_bytes() == before
+        assert not index_lock.exists() and branch_lock.exists()
+        assert not list(index.parent.glob("proscenium-index-*"))
+    assert not branch_lock.exists()
+    runtime.sources.checkpoint(runtime.caller, body)
+    assert not index_lock.exists() and not branch_lock.exists()
+    assert git(root, "status", "--porcelain") == b""
