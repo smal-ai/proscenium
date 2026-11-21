@@ -6,6 +6,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from copy import deepcopy
@@ -32,6 +33,8 @@ from proscenium.copilot.native import (
     resolve_mcp_servers,
     unity_agent,
 )
+from proscenium.db.store import Transaction
+from proscenium.projects.service import Projects
 from proscenium.services import Services
 from proscenium.sources.common import fingerprint, git
 
@@ -804,6 +807,9 @@ def test_create_project_under_read_only_parent_rejects_new_and_prepared_commands
         ("broken/project", True, 403, "scope_denied"),
         ("missing", False, 404, "not_found"),
         ("file", False, 400, "invalid_request"),
+        ("file/project", False, 400, "invalid_request"),
+        ("x" * 300, True, 400, "invalid_request"),
+        ("x" * 300, False, 400, "invalid_request"),
     ],
 )
 def test_project_open_preflight_rejects_invalid_workspace(tmp_path, path, create, status, code):
@@ -828,31 +834,175 @@ def test_project_open_preflight_rejects_invalid_workspace(tmp_path, path, create
         assert not (tmp_path / "missing").exists()
 
 
-def test_project_rebind_rejects_missing_workspace(tmp_path):
+@pytest.mark.parametrize(
+    ("entry", "permissions", "required_access"),
+    [
+        (".", 0, os.X_OK),
+        (".", 0o400, os.X_OK),
+        (".proscenium", 0, os.X_OK),
+        (".proscenium/state.sqlite3", 0, os.R_OK),
+    ],
+)
+def test_open_rejects_unsearchable_workspace_or_unreadable_runtime(
+    tmp_path, entry, permissions, required_access
+):
+    settings = Settings(data_directory=tmp_path / "machine")
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    runtime = workspace / ".proscenium"
+    runtime.mkdir()
+    (runtime / "state.sqlite3").touch()
+    inaccessible = workspace / entry
+    mode = inaccessible.stat().st_mode & 0o777
+    inaccessible.chmod(permissions)
+    try:
+        if os.access(inaccessible, required_access):
+            pytest.skip("This user can bypass the restricted entry's permissions")
+        with TestClient(create_app(settings), base_url=settings.origin) as browser:
+            pair(browser)
+            operation_id = str(uuid4())
+            response = browser.post(
+                "/api/v1/projects",
+                json=dict(
+                    schema_version="1.0",
+                    operation_id=operation_id,
+                    path=str(workspace),
+                    create=False,
+                ),
+                headers={"Idempotency-Key": operation_id},
+            )
+            assert response.status_code == 403
+            assert response.json()["error"]["code"] == "scope_denied"
+            with browser.app.state.services.registry.store.transaction(write=False) as tx:
+                assert list(tx.all("project_open_intents")) == []
+    finally:
+        inaccessible.chmod(mode)
+
+
+@pytest.mark.parametrize("entry", ["final", "intermediate", "ancestor"])
+def test_create_project_rejects_symlink_swap_after_preflight(tmp_path, monkeypatch, entry):
+    settings = Settings(data_directory=tmp_path / "machine")
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    intermediate = parent / "intermediate"
+    workspace = intermediate / "project"
+    if entry == "final":
+        intermediate.mkdir()
+    replacement = {"final": workspace, "intermediate": intermediate, "ancestor": parent}[entry]
+    outside = tmp_path / "secrets"
+    outside.mkdir()
+    operation_id = str(uuid4())
+    put = Transaction.put
+    swaps = []
+
+    def swap_after_preflight(tx, namespace, identity, body, **kwargs):
+        result = put(tx, namespace, identity, body, **kwargs)
+        if (namespace, identity, body.get("state")) == (
+            "project_open_intents",
+            operation_id,
+            "prepared",
+        ):
+            if entry == "ancestor":
+                replacement.rename(tmp_path / "moved-parent")
+            replacement.symlink_to(outside, target_is_directory=True)
+            swaps.append(replacement)
+        return result
+
+    monkeypatch.setattr(Transaction, "put", swap_after_preflight)
+    with TestClient(create_app(settings), base_url=settings.origin) as browser:
+        pair(browser)
+        response = browser.post(
+            "/api/v1/projects",
+            json=dict(
+                schema_version="1.0", operation_id=operation_id, path=str(workspace), create=True
+            ),
+            headers={"Idempotency-Key": operation_id},
+        )
+        assert swaps == [replacement]
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "scope_denied"
+        with browser.app.state.services.registry.store.transaction(write=False) as tx:
+            assert list(tx.all("projects")) == []
+    assert list(outside.iterdir()) == []
+    if entry == "ancestor":
+        assert list((tmp_path / "moved-parent").iterdir()) == []
+
+
+def test_bootstrap_standalone_remains_idempotent(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / ".gitignore").write_text("existing-cache/")
+    (workspace / ".gitattributes").write_text("*.blend text\n")
+    Projects.bootstrap(workspace, "First name", install_lfs_hooks=False)
+    config = Projects.config(workspace)
+    assert config["name"] == "First name"
+    Projects.bootstrap(workspace, "Second name", install_lfs_hooks=False)
+    assert Projects.config(workspace) == config
+    assert (workspace / ".gitignore").read_text().startswith("existing-cache/\n")
+    assert (workspace / ".gitattributes").read_text().endswith("*.blend text\n")
+
+
+@pytest.mark.parametrize(
+    ("target", "status", "code"),
+    [
+        ("missing", 404, "not_found"),
+        ("overlong", 400, "invalid_request"),
+        ("file-parent", 400, "invalid_request"),
+        ("runtime", 403, "scope_denied"),
+        ("database", 403, "scope_denied"),
+    ],
+)
+def test_project_rebind_rejects_invalid_workspace(tmp_path, target, status, code):
     settings = Settings(data_directory=tmp_path / "machine")
     workspace = tmp_path / "original"
-    missing = tmp_path / "missing"
     with TestClient(create_app(settings), base_url=settings.origin) as browser:
         pair(browser)
         project = command(browser, "/api/v1/projects", {"path": str(workspace), "create": True})
         project_id = project["project_id"]
+        destination = tmp_path / "missing"
+        inaccessible = None
+        if target == "overlong":
+            destination = tmp_path / ("x" * 300)
+        elif target == "file-parent":
+            blocker = tmp_path / "file"
+            blocker.touch()
+            destination = blocker / "child"
+        elif target in {"runtime", "database"}:
+            destination = tmp_path / "relocated"
+            shutil.copytree(workspace, destination)
+            inaccessible = destination / (
+                ".proscenium" if target == "runtime" else ".proscenium/state.sqlite3"
+            )
         payload = dict(
             schema_version="1.0",
             operation_id=str(uuid4()),
             project_id=project_id,
-            new_path=str(missing),
+            new_path=str(destination),
             expected_revision=project["state_revision"],
         )
-        response = browser.post(
-            f"/api/v1/projects/{project_id}/rebind",
-            json=payload,
-            headers={"Idempotency-Key": payload["operation_id"]},
-        )
-        assert response.status_code == 404
-        assert response.json()["error"]["code"] == "not_found"
-        assert response.json()["error"]["message"] == f"Workspace folder not found: {missing}"
+        mode = None
+        try:
+            if inaccessible is not None:
+                mode = inaccessible.stat().st_mode & 0o777
+                inaccessible.chmod(0)
+                if os.access(inaccessible, os.R_OK):
+                    pytest.skip("This user can read a mode-0000 entry")
+            response = browser.post(
+                f"/api/v1/projects/{project_id}/rebind",
+                json=payload,
+                headers={"Idempotency-Key": payload["operation_id"]},
+            )
+            assert response.status_code == status
+            assert response.json()["error"]["code"] == code
+        finally:
+            if inaccessible is not None and mode is not None:
+                inaccessible.chmod(mode)
+        if target == "missing":
+            assert (
+                response.json()["error"]["message"] == f"Workspace folder not found: {destination}"
+            )
+            assert not destination.exists()
         assert browser.app.state.services.registry.get(project_id) == project
-        assert not missing.exists()
 
 
 def test_project_and_image_survive_quiet_restart(tmp_path):
