@@ -1,11 +1,11 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
-import type { Camera, JobRecord } from "../../apps/frontend/src/api";
+import type { Camera, JobRecord, ProjectOpen, ProjectRecord } from "../../apps/frontend/src/api";
 import { projectBlenderPoint } from "../../apps/frontend/src/features/review/media";
 import type { Draft } from "../../apps/frontend/src/features/review/outbox";
 import { boardName, kitId, kitName, kitV, makePolishStudio, restoredRenderCamera } from "./rc3-polish-fixture";
-import { base, deferred, job, projectId, request, StudioFixture } from "./studio-fixture";
+import { base, deferred, job, pageOf, project, projectId, request, StudioFixture } from "./studio-fixture";
 
 const screenshotDir = process.env.PROSCENIUM_UAT_SCREENSHOT_DIR;
 const reviewPanel = (page: Page) => page.locator("main.review-panel");
@@ -110,6 +110,62 @@ async function browserDrafts(page: Page, advanceKey?: string): Promise<Draft[]> 
     };
   }), advanceKey);
 }
+
+test("Projects reconciles a retained create before registering a corrected folder", async ({ page, baseURL }) => {
+  const key = "proscenium.owner.command.project.create";
+  const invalid = "/home/quntin/play/proscenium-intro";
+  const corrected = "/home/quintin/play/proscenium-intro";
+  const retained: ProjectOpen = { schema_version: "1.0", operation_id: "stuck-create", path: ` ${invalid} `, create: true, name: " Intro " };
+  const message = `Cannot create workspace '${invalid}': '/home' is not writable`;
+  const projects: ProjectRecord[] = [project];
+  const commands: { body: ProjectOpen; idempotencyKey?: string }[] = [];
+  const studio = new StudioFixture(page, baseURL!);
+  await page.addInitScript(({ key, retained }) => localStorage.setItem(key, JSON.stringify(retained)), { key, retained });
+  await studio.install({ routes: [
+    { path: "/api/v1/projects", method: "GET", handler: route => route.fulfill({ json: pageOf(projects) }) },
+    { path: "/api/v1/projects", method: "POST", handler: route => {
+      const sent = route.request();
+      const body = sent.postDataJSON() as ProjectOpen;
+      commands.push({ body, idempotencyKey: sent.headers()["idempotency-key"] });
+      if (body.operation_id === retained.operation_id) {
+        return route.fulfill({ status: 403, json: { schema_version: "1.0", error: { code: "scope_denied", message, operation_id: null, retryable: false, details: {} } } });
+      }
+      const created: ProjectRecord = { ...project, project_id: "project-intro", repository_id: "repository-intro", name: body.name ?? "Untitled project", path: body.path, state: "inactive" };
+      projects.push(created);
+      return route.fulfill({ status: 201, json: created });
+    } },
+  ] });
+  await studio.open();
+  await studio.ready();
+  await page.getByRole("button", { name: project.name, exact: true }).click();
+  const popover = page.getByRole("region", { name: "Projects", exact: true });
+  const card = popover.locator(".retry-card");
+  const path = popover.getByRole("textbox", { name: "Workstation folder path" });
+  const name = popover.getByRole("textbox", { name: "New project name" });
+  const create = popover.getByRole("button", { name: "Create project", exact: true });
+  await expect(card).toContainText("Create project awaiting confirmation");
+  await expect(card.locator("code")).toHaveText(`${invalid} · Intro`);
+  await expect(path).toHaveValue(retained.path);
+  await expect(name).toHaveValue(retained.name!);
+  await expect(create).toBeDisabled();
+
+  await card.getByRole("button", { name: "Reconcile Create project" }).click();
+  await expect(popover.getByRole("alert")).toHaveText(message);
+  await expect(card).toHaveCount(0);
+  expect(await page.evaluate(key => localStorage.getItem(key), key)).toBeNull();
+  expect(commands).toEqual([{ body: retained, idempotencyKey: retained.operation_id }]);
+
+  await path.fill(` ${corrected} `);
+  const created = page.waitForResponse(response => response.url().endsWith("/api/v1/projects") && response.request().method() === "POST");
+  await create.click();
+  expect((await created).status()).toBe(201);
+  await expect(popover.getByRole("combobox", { name: "Saved project" })).toHaveValue("project-intro");
+  await expect(popover.getByRole("alert")).toHaveCount(0);
+  const freshId = commands[1].body.operation_id;
+  expect(freshId).not.toBe(retained.operation_id);
+  expect(commands[1]).toEqual({ body: { ...retained, operation_id: freshId, path: corrected, name: "Intro" }, idempotencyKey: freshId });
+  studio.assertHermetic();
+});
 
 test("Assets distinguishes viewing from owner selection and scopes recovery to the item", async ({ page, baseURL }, testInfo) => {
   const { studio, commands } = await makePolishStudio(page, baseURL!);

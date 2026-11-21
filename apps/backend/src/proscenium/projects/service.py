@@ -61,6 +61,21 @@ def receipt(body: dict[str, Any], resource: str, state: str, revision: int) -> d
     )
 
 
+def _resolve_workspace_input(raw_path: str) -> tuple[Path, Path]:
+    if not raw_path.strip() or "\x00" in raw_path:
+        raise DomainError("invalid_request", 400, "Workspace path is required")
+    try:
+        expanded = Path(raw_path.strip()).expanduser()
+        if not expanded.is_absolute():
+            raise DomainError(
+                "invalid_request", 400, "Workspace path must be an absolute path or start with ~/"
+            )
+        root = expanded.resolve()
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise DomainError("invalid_request", 400, f"Invalid workspace path: {raw_path}") from exc
+    return expanded, root
+
+
 class Projects:
     def __init__(self, services: Services):
         self.services = services
@@ -171,36 +186,93 @@ class Projects:
         validate("ProjectOpen", body)
         registry = self.services.registry
         with self.services.activation_lock:
-            with registry.store.transaction() as tx:
+            with registry.store.transaction(write=False) as tx:
                 previous = replay(tx, "projects.open", body["operation_id"], body)
                 intent = tx.get("project_open_intents", body["operation_id"], required=False)
                 if intent and intent["fingerprint"] != fingerprint(body):
                     raise DomainError("idempotency_conflict", 409)
-                if not intent:
+            if previous:
+                return previous, True
+            expanded, root = _resolve_workspace_input(body["path"])
+            self.workspace_boundary(root)
+            if body["create"]:
+                try:
+                    if expanded.is_symlink() and not expanded.exists():
+                        raise DomainError(
+                            "scope_denied", 403, f"Broken symlink at workspace path: {expanded}"
+                        )
+                    ancestor = expanded
+                    while not ancestor.exists() and ancestor != ancestor.parent:
+                        if ancestor.is_symlink():
+                            raise DomainError(
+                                "scope_denied", 403, f"Broken symlink in workspace path: {ancestor}"
+                            )
+                        ancestor = ancestor.parent
+                except PermissionError as exc:
+                    raise DomainError(
+                        "scope_denied", 403, f"Permission denied accessing workspace '{expanded}'"
+                    ) from exc
+                if not ancestor.is_dir():
+                    raise DomainError(
+                        "invalid_request", 400, f"Parent path is not a directory: {ancestor}"
+                    )
+                if not os.access(ancestor, os.W_OK | os.X_OK):
+                    raise DomainError(
+                        "scope_denied",
+                        403,
+                        f"Cannot create workspace '{root}': '{ancestor}' is not writable",
+                    )
+                if (root / ".proscenium").is_symlink():
+                    raise DomainError("scope_denied", 403)
+            else:
+                try:
+                    root = expanded.resolve(strict=True)
+                except PermissionError as exc:
+                    raise DomainError(
+                        "scope_denied", 403, f"Permission denied accessing workspace '{expanded}'"
+                    ) from exc
+                except OSError as exc:
+                    raise DomainError(
+                        "not_found", 404, f"Workspace folder not found: {expanded}"
+                    ) from exc
+                self.workspace_boundary(root)
+                if not root.is_dir():
+                    raise DomainError(
+                        "invalid_request", 400, f"Workspace path is not a directory: {root}"
+                    )
+                if (root / ".proscenium").is_symlink():
+                    raise DomainError("scope_denied", 403)
+                if not os.access(root, os.W_OK | os.X_OK):
+                    raise DomainError(
+                        "scope_denied", 403, f"Workspace directory is not writable: {root}"
+                    )
+            if not intent:
+                with registry.store.transaction() as tx:
                     tx.put(
                         "project_open_intents",
                         body["operation_id"],
                         {"fingerprint": fingerprint(body), "state": "prepared"},
                     )
-            if previous:
-                return previous, True
-            root = Path(body["path"]).expanduser().resolve()
-            self.workspace_boundary(root)
-            if body["create"]:
-                root.mkdir(parents=True, exist_ok=True, mode=0o700)
             try:
-                root = root.resolve(strict=True)
-            except OSError as exc:
-                raise DomainError("not_found", 404) from exc
-            if not root.is_dir() or (root / ".proscenium").is_symlink():
-                raise DomainError("scope_denied", 403)
-            if body["create"] or not (root / "project.json").exists():
-                self.bootstrap(
-                    root,
-                    body.get("name", root.name),
-                    identity=identity,
-                    install_lfs_hooks=install_lfs_hooks,
-                )
+                if body["create"]:
+                    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+                if body["create"] or not (root / "project.json").exists():
+                    self.bootstrap(
+                        root,
+                        body.get("name", root.name),
+                        identity=identity,
+                        install_lfs_hooks=install_lfs_hooks,
+                    )
+            except PermissionError as exc:
+                raise DomainError(
+                    "scope_denied", 403, f"Cannot create workspace '{root}': permission denied"
+                ) from exc
+            except (FileExistsError, NotADirectoryError) as exc:
+                raise DomainError(
+                    "invalid_request",
+                    400,
+                    f"Cannot create workspace '{root}': {exc.strerror or exc}",
+                ) from exc
             config = self.config(root)
             record = dict(
                 schema_version="1.0",
@@ -492,7 +564,23 @@ class Projects:
                 raise DomainError(
                     "revision_conflict", 409, current_revision=record["state_revision"]
                 )
-            root = Path(body["new_path"]).expanduser().resolve(strict=True)
+            expanded, _ = _resolve_workspace_input(body["new_path"])
+            try:
+                root = expanded.resolve(strict=True)
+            except PermissionError as exc:
+                raise DomainError(
+                    "scope_denied",
+                    403,
+                    f"Permission denied accessing workspace '{body['new_path']}'",
+                ) from exc
+            except OSError as exc:
+                raise DomainError(
+                    "not_found", 404, f"Workspace folder not found: {body['new_path']}"
+                ) from exc
+            if not root.is_dir():
+                raise DomainError(
+                    "invalid_request", 400, f"Workspace path is not a directory: {root}"
+                )
             self.workspace_boundary(root)
             config = self.config(root)
             if (config["project_id"], config["repository_id"]) != (
