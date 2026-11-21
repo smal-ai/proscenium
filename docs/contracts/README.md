@@ -76,6 +76,15 @@ same-ID capture receipts. Consumers must accept historical records without them.
   reusable `RuntimeRequirement` and `RetainedClosureFile` definitions, and a verified
   digest. Omitted runtime requirements default to Proscenium `1.0` with no features.
   Legacy receipts omit the closure. Uncertain receipts never claim a completed closure.
+- `CheckpointRequest.base_version` optionally pins a published version in the active
+  project and inherits its closure files. The request's `paths` and `retained_files`
+  replace inherited files at the same destination. `exclude_paths` omits exact inherited
+  destinations and cannot overlap the supplied files. Both fields require `entry_path`.
+  Dependencies and runtime requirements still come from the new request, not the base.
+- `PublishedItem` accepts exactly one of an inline `source` or `checkpoint_operation_id`.
+  The latter resolves a completed checkpoint with a closure and matching `source_commit`
+  in the same project. Use it in `publication_submit` validation and `publish_outputs`
+  to avoid resending large closures. Stored `VersionRecord.source` remains mandatory.
 
 JSON HTTP bodies and successful JSON responses reference named normative definitions.
 Query parameters use explicit string/integer schemas, with string enums preserved in

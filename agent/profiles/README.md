@@ -64,9 +64,13 @@ The host builds `authoring-specialist` and `unity-specialist` using the pinned P
   originating `generation_task_id`. The native runtime renders child context JSON inside
   `<system_reminder>`.
 - Source checkpoints use `checkpoint_sources(entry_path=...)` with dependencies
-  and `required_runtime` when needed. Pass its receipt's `source_closure` directly
-  to `publish_outputs`. Never script closure sorting or SHA-256 digests. Preserve
-  unrelated staging.
+  and `required_runtime` when needed. When revising a multi-file scene or asset,
+  use its exact `base_version` to inherit unchanged files, list changed paths and
+  set `exclude_paths` only for inherited destinations to omit. For large closures,
+  use the completed receipt's `operation_id` as `checkpoint_operation_id` with its
+  `source_commit` in both `validate_authored_document` (`publication_submit`) and
+  `publish_outputs`. Supply that ID or inline `source_closure` as `source`, never both.
+  Never script closure sorting or SHA-256 digests. Preserve unrelated staging.
 - Read metadata through native tools, never private SQLite. Inspect registered
   images with `get_artifact(artifact_id=..., include_image=true)`, which verifies
   ready bytes inline without writing files. Never copy managed artefact content

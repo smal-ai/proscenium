@@ -269,6 +269,8 @@ SAFE_REASONS = frozenset(
         "Requested image dimensions exceed the configured provider pixel limit",
         "generation_task_id does not match the active work; omit generation_task_id to use the active task",
         "entry_path is required when building a source closure",
+        "exclude_paths requires base_version",
+        "Checkpoint receipt is unavailable or does not match source_commit",
         "Provider returned a corrupted scanline or noise image",
         "Image artefact is not ready for inline inspection",
         "Inline image inspection supports ready PNG, JPEG or WebP artefacts only",
@@ -392,6 +394,43 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
         ).decode(),
         result_type="failure",
     )
+
+
+def result_text(name: str, result: dict[str, Any]) -> str:
+    encoded = canonical(result)
+    if name != "checkpoint_sources" or len(encoded) <= 16_384:
+        return encoded.decode()
+
+    # Keep the operation identity and closure digest ahead of either potentially huge array.
+    keys = (
+        "schema_version",
+        "operation_id",
+        "source_commit",
+        "project_id",
+        "state",
+        "parent_commit",
+        "replayed",
+    )
+    header = {key: result[key] for key in keys}
+    closure = result.get("source_closure")
+    if isinstance(closure, dict):
+        ordered_closure = {
+            key: closure[key]
+            for key in ("digest", "entry_path", "dependencies", "required_runtime", "files")
+        }
+        if len(canonical({**header, "source_closure": {"digest": closure["digest"]}})) > 512:
+            # Maximum-length IDs and SHA-256 commits cannot all fit before the digest.
+            header = {
+                **{key: result[key] for key in keys[:3]},
+                "source_closure": ordered_closure,
+                **{key: result[key] for key in keys[3:]},
+            }
+        else:
+            header["source_closure"] = ordered_closure
+    elif "source_closure" in result:
+        header["source_closure"] = closure
+    header["files"] = result["files"]
+    return json.dumps(header, ensure_ascii=False, separators=(",", ":"))
 
 
 def tool_schema(name: str) -> dict[str, Any]:
@@ -703,7 +742,7 @@ class Tools:
                 )
             if outcome:
                 self._outcome(invocation, name, status="succeeded", **outcome)
-            return ToolResult(text_result_for_llm=canonical(result).decode())
+            return ToolResult(text_result_for_llm=result_text(name, result))
         except DomainError as exc:
             failure = tool_failure(exc, name)
             diagnostic = json.loads(failure.text_result_for_llm)
