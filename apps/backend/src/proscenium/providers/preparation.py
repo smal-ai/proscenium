@@ -3,6 +3,7 @@
 import itertools
 import math
 import time
+from collections.abc import Sequence
 from typing import Any
 
 import httpx
@@ -20,6 +21,7 @@ AMBIGUOUS = "Multiple compatible image model tuples exist; configure provider_op
 UNAVAILABLE = "Image recipe nodes or models are unavailable"
 MAX_CATALOG_BYTES = 16 * 1024**2
 TILE_THRESHOLD_PIXELS = 1_048_576
+SD_TURBO_REFERENCE = "Selected image profile requires one exact 512x512 reference"
 
 
 def supports_bf16_vae(catalog: dict[str, Any] | None) -> bool:
@@ -149,17 +151,19 @@ def bounded_get(provider: Any, service: dict[str, Any], path: str) -> dict[str, 
 
 
 def workflow(
-    recipe: dict[str, Any], reference: str | None = None, *, catalog: dict[str, Any] | None = None
+    recipe: dict[str, Any],
+    reference: str | Sequence[str] | None = None,
+    *,
+    catalog: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     revision = recipe["profile_revision"]
+    refs = [reference] if isinstance(reference, str) else list(reference or ())
     if revision != "comfy-image-1":
-        if reference is None:
-            raise DomainError(
-                "capability_unavailable",
-                501,
-                "Selected image profile requires one exact 512x512 reference",
-            )
-        return (sd_turbo if revision == sd_turbo.REVISION else sd_turbo_fp16).graph(reference)
+        if not refs:
+            raise DomainError("capability_unavailable", 501, SD_TURBO_REFERENCE)
+        if len(refs) > 1:
+            raise DomainError("invalid_request", message=SD_TURBO_REFERENCE)
+        return (sd_turbo if revision == sd_turbo.REVISION else sd_turbo_fp16).graph(refs[0])
     width = recipe.get("width", 512)
     height = recipe.get("height", 512)
     return klein.graph(
@@ -169,7 +173,7 @@ def workflow(
         width=width,
         height=height,
         steps=recipe.get("steps", 4),
-        reference_artifact_id=reference,
+        reference_artifact_ids=refs,
         tiled_vae=bool(
             width * height > TILE_THRESHOLD_PIXELS
             and catalog
@@ -352,11 +356,13 @@ class Preparation:
             raise DomainError(
                 "invalid_request", message="SD-Turbo image recipes require 512x512 and four steps"
             )
-        references = body.get("reference_artifact_ids", [])
-        if len(references) > 1:
-            raise DomainError(
-                "invalid_request", message="Image preparation accepts at most one reference"
-            )
+        references = list(body.get("reference_artifact_ids", []))
+        if len(set(references)) != len(references):
+            raise DomainError("invalid_request", message="Duplicate conditioning image")
+        if revision != "comfy-image-1" and len(references) > 1:
+            raise DomainError("invalid_request", message=SD_TURBO_REFERENCE)
+        if revision == "comfy-image-1" and len(references) > klein.MAX_REFERENCE_IMAGES:
+            raise DomainError("invalid_request", message=klein.REFERENCE_LIMIT_MESSAGE)
         capability = plugin("image", revision)
         for identity in references:
             artifact, _ = self.provider.image_bytes(body["project_id"], identity)
@@ -364,11 +370,8 @@ class Preparation:
                 "width": 512,
                 "height": 512,
             }:
-                raise DomainError(
-                    "invalid_request",
-                    message="Selected image profile requires one exact 512x512 reference",
-                )
-        graph = workflow(recipe, references[0] if references else None, catalog=catalog)
+                raise DomainError("invalid_request", message=SD_TURBO_REFERENCE)
+        graph = workflow(recipe, references, catalog=catalog)
         model_ids = models(recipe)
         bound = capability.bind_graph(
             graph, body["prompt"], body["seed"], {k: "artifact:" + k for k in references}, model_ids

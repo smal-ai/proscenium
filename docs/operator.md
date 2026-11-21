@@ -104,8 +104,9 @@ For example, select explicit FLUX.2 Klein 4B and Budget3D-Idol-Turbo recipes on 
 ```
 
 The required checkpoint hashes and graphs are defined in
-`apps/backend/src/proscenium/providers/`. FLUX.2 Klein reference conditioning scales
-input images through `ImageScaleToTotalPixels` (`resolution_steps: 16`, capped at 1 MP),
+`apps/backend/src/proscenium/providers/`. FLUX.2 Klein accepts up to four distinct,
+ordered `reference_artifact_ids` and scales each through `ImageScaleToTotalPixels`
+(`resolution_steps: 16`, capped at 1 MP per reference). The workflow
 inserts `VAEComputeDtype` (`bf16`) when advertised in ComfyUI `/object_info`, and uses
 tiled VAE encode/decode only above 1 MP (`1,048,576` pixels); corrupted scanline, noise,
 all-zero or multi-quadrant zeroed rasters are rejected as `corrupt_provider_output`. Add `image_to_3d`

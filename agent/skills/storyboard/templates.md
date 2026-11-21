@@ -13,6 +13,32 @@ Stage scope: <planning-only or admitted production stages>
 Unresolved: <missing decisions/assets/images with impact and fallback>
 ```
 
+## Worked example: pitch and revision
+
+Illustrative only. Use the active brief, not these shots or timings.
+
+**Last Train** · 12 seconds, silent. Let the audience see the train leave before
+they realise someone meant to catch it. Use the tail lamp to connect the two views.
+
+- **`carriage` · 00:00–00:05 · Departure.** Hold tight on a platform clock reflected
+  in a carriage window. As the train pulls away, the red tail lamp wipes across the
+  clock face. Cut on red.
+- **`bench` · 00:05–00:12 · Too late.** Open wide on the same lamp receding beyond
+  a bench. Rack focus to an unused ticket under a steaming cup in the foreground.
+  Hold the ticket as the lamp disappears. No title: the ticket tells us enough.
+
+“Which shot shall we refine? I'd start with `bench`: should we see the ticket before
+the train has gone, or discover it a beat too late?”
+
+**Owner:** “Discover it too late. Keep the train sharp until it's gone.”
+
+**Reply:** **`bench` · 00:05–00:12 · Too late.** Stay wide and focused down the line
+until the tail lamp vanishes. Only then pull focus to the ticket. Hold it for the
+last two seconds. The red cut from `carriage` still works. “Keep this timing, or
+give the empty track a longer hold before the reveal?”
+
+## Canonical plan
+
 Minimal **synthetic** authored shape, not a production default. Replace identities
 and intent, add only fields admitted by `AuthoredShotPlan`. Null bindings are honest
 until a scene is authored. The shared validator is authoritative.

@@ -400,6 +400,7 @@ def test_capabilities_skills_override_ready_ambiguous_unavailable(runtime):
     result, _ = invoke(runtime, "get_project_capabilities", {})
     assert result["exposed_tools"] == ["view"] and not result["skill_loader_exposed"]
     assert "skill" in result["missing_worker_tools"] and "storyboard" in result["available_skills"]
+    assert "hero-assets" in result["available_skills"]
     assert runtime.services.settings.runtime["worker_tools"] == ["view"]
     assert result["providers"][0]["status"] == "ready"
     assert result["providers"][1]["reason_code"] == "configured_unavailable"
@@ -968,7 +969,16 @@ def test_retained_owner_route_pagination_and_filters(runtime, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "case", ["ambiguous", "unavailable", "references", "dimension", "seed", "wrong_task"]
+    "case",
+    [
+        "ambiguous",
+        "unavailable",
+        "references",
+        "duplicate_references",
+        "dimension",
+        "seed",
+        "wrong_task",
+    ],
 )
 def test_preparation_rejects_before_budget_admission(runtime, case):
     body = dict(
@@ -986,7 +996,9 @@ def test_preparation_rejects_before_budget_admission(runtime, case):
     elif case == "unavailable":
         del runtime.catalog["VAELoader"]
     elif case == "references":
-        body["reference_artifact_ids"] = ["one", "two"]
+        body["reference_artifact_ids"] = ["one", "two", "three", "four", "five"]
+    elif case == "duplicate_references":
+        body["reference_artifact_ids"] = ["one", "one"]
     elif case == "dimension":
         body["width"] = 513
     elif case == "seed":
@@ -997,6 +1009,15 @@ def test_preparation_rejects_before_budget_admission(runtime, case):
     assert kind == "failure", result
     if case == "ambiguous":
         assert "configure provider_options.image_recipes" in result["message"]
+    elif case in {"references", "duplicate_references"}:
+        assert result["error"] == "invalid_request"
+        assert (
+            result["message"]
+            == {
+                "references": "Image preparation accepts at most four references",
+                "duplicate_references": "Duplicate conditioning image",
+            }[case]
+        )
     with runtime.store.transaction(write=False) as tx:
         assert not tx.all("jobs") and not tx.all("artifacts")
         assert tx.connection.execute("SELECT COUNT(*) FROM budget_reservations").fetchone()[0] == 0
@@ -1465,7 +1486,12 @@ def test_native_lead_specialist_prompt_wiring(runtime, monkeypatch):
     )
     assert "via the task tool" in LEAD_INSTRUCTIONS
     assert "Do not run long authoring or generation loops inline" in LEAD_INSTRUCTIONS
+    assert "relay the full pitch/shortlist or single-item revision card" in LEAD_INSTRUCTIONS
+    assert (
+        "never submit image generation without explicit generation instruction" in LEAD_INSTRUCTIONS
+    )
     assert "without unnecessary nested subagent delegation" in SPECIALIST_INSTRUCTIONS
+    assert "storyboard, hero-assets, image-generation, image-to-3d" in SPECIALIST_INSTRUCTIONS
     assert "Nested delegation is optional" not in LEAD_INSTRUCTIONS + SPECIALIST_INSTRUCTIONS
     for rule in (
         "include_image=true",

@@ -52,14 +52,7 @@ RUNTIME_NAMES = {
 }
 
 
-def git(
-    root: Path,
-    *args: str,
-    data: bytes | None = None,
-    env: dict[str, str] | None = None,
-    required: bool = True,
-) -> bytes:
-    options = [] if args[:2] == ("lfs", "install") else ["-c", "core.hooksPath=/dev/null"]
+def git_environment(env: dict[str, str] | None = None) -> dict[str, str]:
     environment = {
         key: value
         for key, value in os.environ.items()
@@ -75,19 +68,30 @@ def git(
         }
         and not key.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))
     }
+    return {
+        **environment,
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_LFS_SKIP_SMUDGE": "1",
+        "GIT_NO_REPLACE_OBJECTS": "1",
+        "GIT_GRAFT_FILE": "/dev/null",
+        **(env or {}),
+    }
+
+
+def git(
+    root: Path,
+    *args: str,
+    data: bytes | None = None,
+    env: dict[str, str] | None = None,
+    required: bool = True,
+) -> bytes:
+    options = [] if args[:2] == ("lfs", "install") else ["-c", "core.hooksPath=/dev/null"]
     process = subprocess.run(
         ["git", *options, "-C", str(root), *args],
         input=data,
         capture_output=True,
         timeout=60,
-        env={
-            **environment,
-            "GIT_TERMINAL_PROMPT": "0",
-            "GIT_LFS_SKIP_SMUDGE": "1",
-            "GIT_NO_REPLACE_OBJECTS": "1",
-            "GIT_GRAFT_FILE": "/dev/null",
-            **(env or {}),
-        },
+        env=git_environment(env),
     )
     if process.returncode and required:
         raise DomainError("source_unavailable", 422, "Local Git operation failed")

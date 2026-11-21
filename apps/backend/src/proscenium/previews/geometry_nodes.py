@@ -20,6 +20,21 @@ def modifier_kind(modifier) -> str:
     """Classify native modifiers without confusing Geometry Nodes with physics."""
     if modifier.type == "NODES":
         return "geometry_nodes"
+    if modifier.type == "PARTICLE_SYSTEM":
+        particle = getattr(modifier, "particle_system", None)
+        settings = getattr(particle, "settings", None)
+        cache = getattr(particle, "point_cache", None)
+        if (
+            getattr(settings, "type", None) == "HAIR"
+            and getattr(settings, "render_type", None) == "PATH"
+            and getattr(particle, "use_hair_dynamics", True) is False
+            and getattr(cache, "use_external", True) is False
+            and getattr(cache, "use_disk_cache", True) is False
+            and getattr(cache, "is_baked", True) is False
+        ):
+            # Static path hair uses strands stored with the emitter, not a simulation
+            # cache or instanced objects. Proxy export still checks emitted instances.
+            return "ordinary"
     if modifier.type in SIMULATION_MODIFIERS:
         return "unsupported_simulation_cache"
     return "ordinary"
