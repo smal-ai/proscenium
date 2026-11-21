@@ -48,6 +48,7 @@ export interface ReviewSurfaceProps {
   version: VersionRecord | null;
   jobs: JobRecord[];
   refreshRevision: number;
+  annotationRevision?: number;
   selection?: TurnSelection;
   onContextChange: (selection: TurnSelection) => void;
   onContextPreparer?: (prepare: ContextPreparer | null) => void;

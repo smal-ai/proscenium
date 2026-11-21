@@ -51,6 +51,16 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
   const shot = plan?.shots.find(value => value.shot_id === active?.shotId);
   const frame = shot?.frames.find(value => value.frame_id === active?.frameId);
   const record = currentVersion && shot && frame ? selectionFor(records, currentVersion, shot.shot_id, frame.frame_id) : undefined;
+  // Resolve receipt context only for artefacts already referenced by this board.
+  // A new unrelated render tick must not replay all project frame pages.
+  const storyboardArtifacts = new Set([
+    ...(plan?.shots.flatMap(shot => shot.frames.flatMap(frame => frame.artifact_id ? [frame.artifact_id] : [])) ?? []),
+    ...Object.keys(artifacts),
+    ...(candidate ? [candidate.artifact_id] : []),
+  ]);
+  const receiptJobsKey = JSON.stringify(jobs.filter(job => job.project_id === projectId && job.kind === "render" &&
+    (job.target.version?.version_id === versionId || job.artifact_ids.some(id => storyboardArtifacts.has(id))))
+    .map(job => [job.job_id, job.artifact_ids.filter(id => storyboardArtifacts.has(id))]));
 
   useEffect(() => {
     if (version?.kind === "storyboard") setVersionId(version.version_id);
@@ -82,12 +92,13 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
     const controller = new AbortController();
     setReceiptError("");
     setReceipts([]);
-    void Promise.all(jobs.filter(job => job.project_id === projectId && job.kind === "render").map(job =>
-      pages(cursor => api.call("listFrameReceipts", { path: { project_id: projectId, job_id: job.job_id }, query: { cursor, limit: 100 }, signal: controller.signal }))
+    const receiptJobs = JSON.parse(receiptJobsKey) as [jobId: string, matchedArtifacts: string[]][];
+    void Promise.all(receiptJobs.map(([job_id]) =>
+      pages(cursor => api.call("listFrameReceipts", { path: { project_id: projectId, job_id }, query: { cursor, limit: 100 }, signal: controller.signal }))
     )).then(result => { if (!controller.signal.aborted) setReceipts(result.flat()); })
       .catch(cause => { if (!controller.signal.aborted) setReceiptError(message(cause)); });
     return () => controller.abort();
-  }, [api, projectId, jobs, refreshRevision]);
+  }, [api, projectId, receiptJobsKey, refreshRevision]);
 
   useEffect(() => {
     const controller = new AbortController();

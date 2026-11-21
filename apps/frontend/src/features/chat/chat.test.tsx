@@ -3,10 +3,11 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
-import { mergeReviews } from "../../app/useProjectData";
+import { mergeReviews, revisionScope, versionRefreshBuffer } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
 import { CriticPanel, criticRequestTarget, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
 import { annotationContext } from "../review/context";
+import { proxyJobsFingerprint, reviewJobsFingerprint } from "../review/refreshKeys";
 import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, viewedSelectionLabel, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
@@ -36,6 +37,71 @@ const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
 const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
 const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => false, stop: async () => {}, retry: async () => false };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
+
+test("render-tick flood only bumps its own version once per refresh window", t => {
+  t.mock.timers.enable({apis: ["setTimeout"]});
+  const batches: string[][] = [];
+  const receiptArtifacts = new Set<string>();
+  const buffer = versionRefreshBuffer(ids => batches.push(ids));
+  const target = {target_id: "background", version: {item_id: "background", version_id: "background-v1"}, shot_id: null};
+  let previous = {...job("running"), kind: "render" as const, target, completed_frames: 0};
+  const structuralKey = reviewJobsFingerprint([previous]);
+  const proxyKey = proxyJobsFingerprint([previous], "foreground-v1");
+  for (let i = 1; i <= 60; i++) {
+    const artifactId = `render-frame-${i}`;
+    const next = {...previous, artifact_ids: [...previous.artifact_ids, artifactId], completed_frames: i, state_revision: i + 1};
+    receiptArtifacts.add(artifactId);
+    for (const [type, payload] of [["frame.available", {version_id: "background-v1", artifact_id: artifactId}], ["job.state_changed", next]] as const) {
+      const scope = revisionScope(event(i, type, payload), previous, receiptArtifacts);
+      assert.equal(scope.catalogue, false);
+      assert.equal(scope.base, false);
+      assert.equal(scope.immediate, false);
+      assert.equal(scope.versionId, "background-v1");
+      buffer.bump(scope.versionId!, scope.immediate!);
+    }
+    assert.equal(reviewJobsFingerprint([next]), structuralKey);
+    assert.equal(proxyJobsFingerprint([next], "foreground-v1"), proxyKey);
+    previous = next;
+  }
+  t.mock.timers.tick(199);
+  assert.deepEqual(batches, []);
+  t.mock.timers.tick(1);
+  assert.deepEqual(batches, [["background-v1"]]);
+  buffer.bump("background-v1", false);
+  buffer.bump("other-v1", false);
+  const terminal = revisionScope(event(61, "job.state_changed", {...previous, state: "succeeded", state_revision: 62}), previous);
+  assert.equal(terminal.catalogue, true);
+  assert.equal(terminal.base, false);
+  buffer.bump(terminal.versionId!, terminal.immediate!);
+  assert.deepEqual(batches, [["background-v1"], ["background-v1"]]);
+  t.mock.timers.tick(200);
+  assert.deepEqual(batches, [["background-v1"], ["background-v1"], ["other-v1"]]);
+  buffer.bump("cancelled-buffer", false);
+  buffer.cancel();
+  t.mock.timers.tick(200);
+  assert.equal(batches.length, 3);
+});
+
+test("annotation and review events are base-only while segment and pass updates are scoped", () => {
+  for (const type of ["annotation.saved", "review.changed", "review.ready"] as const) {
+    const scope = revisionScope(event(1, type, {version_id: "v"}));
+    assert.equal(scope.base, true);
+    assert.equal(scope.catalogue, false);
+    assert.equal(scope.versionId, undefined);
+  }
+  for (const type of ["segment.available", "preview.order_changed"] as const) {
+    const scope = revisionScope(event(1, type, {version_id: "v"}));
+    assert.equal(scope.versionId, "v");
+    assert.equal(scope.immediate, true);
+    assert.equal(scope.base, false);
+    assert.equal(scope.catalogue, type === "preview.order_changed");
+  }
+  const prior = job("running");
+  const failed = revisionScope(event(1, "job.state_changed", {...prior, error_code: "provider_error"}), prior);
+  assert.equal(failed.catalogue, true);
+  assert.equal(failed.base, true);
+  assert.equal(failed.versionId, undefined);
+});
 
 test("queue hold excludes ordinary running and awaiting-user eligibility reasons", () => {
   assert.equal(shouldShowQueueHold(null, "queue"), false);

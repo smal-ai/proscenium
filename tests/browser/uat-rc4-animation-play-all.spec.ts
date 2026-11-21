@@ -190,6 +190,34 @@ test("indexed scene playback follows real presented frames and updates after a l
   studio.assertHermetic();
 });
 
+test("background raster receipt floods do not refetch catalogue or the viewed version", async ({page, baseURL}) => {
+  const background = version("background", "background-v1", "Background render", "scene");
+  let raster = {...job("background-job", "running"), kind: "render" as const,
+    target: {target_id: "background", version: {item_id: background.item_id, version_id: background.version_id}, shot_id: null},
+    completed_frames: 0, expected_frames: 200, availability: "partial" as const};
+  const {studio} = await openScene(page, baseURL!, (fixture, routes) => {
+    fixture.versionRecords.push(background);
+    fixture.snapshot.items.push({schema_version: "1.0", project_id: projectId, kind: "scene", name: background.name,
+      item_id: background.item_id, current_version_id: background.version_id, selected_version_id: null, state_revision: 1});
+    return [renderScene(fixture, routes, 0), raster];
+  });
+  await expect(page.locator("main.review-panel .review-image img")).toBeVisible();
+  const reads = () => studio.guard!.calls.filter(({method, url}) => method === "GET" &&
+    /\/items\/[^/]+\/versions$|\/jobs\/[^/]+\/(frames|segments|availability)$|\/annotations$/.test(new URL(url).pathname)).length;
+  const before = reads();
+  for (let i = 1; i <= 20; i++) {
+    const artifact_id = `background-${i}`;
+    studio.emit("frame.available", {artifact_id, version_id: background.version_id, job_id: raster.job_id, source_frame: i});
+    raster = {...raster, completed_frames: i, state_revision: i + 1, artifact_ids: [...raster.artifact_ids, artifact_id]};
+    studio.emit("job.state_changed", raster);
+  }
+  // Wait for the actual event cursor, then let the coalescing timer drain.
+  const sequence = studio.events.at(-1)!.sequence;
+  await expect.poll(() => page.evaluate(id => Number(localStorage.getItem(`proscenium.owner.cursor.${id}`)), projectId)).toBe(sequence);
+  await page.waitForTimeout(240);
+  expect(reads()).toBe(before);
+});
+
 for (const reportAvailability of [true, false]) {
   test(`Play all stops inside a partial pass ${reportAvailability ? "with failed ranges" : "before availability is reported"}`, async ({page, baseURL}) => {
     const {studio} = await openScene(page, baseURL!, (fixture, routes) => [

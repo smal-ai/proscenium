@@ -23,6 +23,7 @@ import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
 import { useReviewSelection } from "./state";
 import { RetainedReview, ReviewEmpty, ReviewModeSwitcher } from "./ReviewChrome";
+import { proxyJobsFingerprint, reviewJobsFingerprint } from "./refreshKeys";
 import "./review.css";
 
 type Mode = "3d_inspection" | "keyframes" | "animation";
@@ -54,10 +55,11 @@ class MediaBoundary extends Component<{children: ReactNode; onError?: (message: 
 
 export function ReviewWorkspace(props: ReviewSurfaceProps) {
   // A new explicit version selection resets the surface. Receipt refreshes do not.
-  return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props}/>;
+  const readyArtifacts = useRef(new Map<string, Artifact>());
+  return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props} readyArtifacts={readyArtifacts.current}/>;
 }
 
-function Workspace({visible: surfaceVisible = true, api, projectId, version: suppliedVersion, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, jobs, refreshRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue}: ReviewSurfaceProps) {
+function Workspace({visible: surfaceVisible = true, api, projectId, version: suppliedVersion, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, jobs, refreshRevision, annotationRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue, readyArtifacts}: ReviewSurfaceProps & {readyArtifacts: Map<string, Artifact>}) {
   const visible = surfaceVisible && !inspectedArtifact;
   const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
   const [itemVersions, setItemVersions] = useState<VersionRecord[]>([]);
@@ -146,7 +148,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const passLabels = useMemo(() => formatPassOptionLabels(passJobs), [passJobs]);
   const animationPasses = useMemo(() => selectablePassJobs(orderedVersionJobs, "animation", artifacts).filter(job =>
     job.kind === "render" && (job.render_spec?.purpose === "draft_motion" || job.render_spec?.purpose === "final" || (job.expected_frames ?? 0) > 1)), [orderedVersionJobs, artifacts]);
-  const jobsKey = versionJobs.map(j => `${j.job_id}:${j.state_revision}:${j.artifact_ids.join(",")}`).join("|");
+  const jobsKey = reviewJobsFingerprint(versionJobs);
+  const proxyJobsKey = proxyJobsFingerprint(jobs, versionId);
+  const annotationTrigger = annotationRevision ?? refreshRevision;
   const draft = drafts.find(d => d.key === draftId);
   const isSpatialDraft = Boolean(draft && draft.annotation.spatial_hits.length > 0);
   const show2DEditor = Boolean(draft && (!isSpatialDraft || editing2D));
@@ -217,19 +221,21 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       setPinnedMapping(matchingCurrentMap);
       return;
     }
-    let active = true;
+    const controller = new AbortController();
+    const {signal} = controller;
     api.call("getVersionProxyMapping", {
       path: {project_id: projectId, version_id: pinnedHit.version_id},
       query: {mapping_artifact_id: pinnedHit.mapping_artifact_id},
+      signal,
     }).then(result => {
-      if (!active) return;
+      if (signal.aborted) return;
       const mismatch = verifySpatialMapping(result, pinnedHit, version.source.digest);
       if (mismatch) setPinnedMappingError(mismatch);
       else setPinnedMapping(result);
     }).catch(e => {
-      if (active) setPinnedMappingError(e instanceof Error ? e.message : String(e));
+      if (!signal.aborted) setPinnedMappingError(e instanceof Error ? e.message : String(e));
     });
-    return () => { active = false; };
+    return () => controller.abort();
   }, [
     api,
     matchingCurrentMap,
@@ -364,55 +370,68 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   useEffect(() => {
     if (!version) return;
-    let active = true;
+    const controller = new AbortController();
+    const {signal} = controller;
     const errors: string[] = [];
-    const captureError = (error: unknown) => { errors.push(error instanceof Error ? error.message : String(error)); };
+    const captureError = (error: unknown) => { if (!signal.aborted) errors.push(error instanceof Error ? error.message : String(error)); };
     async function read() {
       const receipts: FrameReceipt[] = []; const clips: PreviewSegment[] = [];
       const media: Artifact[] = [];
       let storyboardPanels: StoryboardPanel[] = [];
       let pinned = version!;
       try {
-        const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version!.item_id}, query: {cursor, limit: 100}}));
-        if (active) setItemVersions(versions.filter(v => v.project_id === projectId && v.item_id === version!.item_id).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.version_id.localeCompare(a.version_id, undefined, {numeric: true})));
+        const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version!.item_id}, query: {cursor, limit: 100}, signal}));
+        if (signal.aborted) return;
+        setItemVersions(versions.filter(v => v.project_id === projectId && v.item_id === version!.item_id).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.version_id.localeCompare(a.version_id, undefined, {numeric: true})));
         const current = versions.find(v => v.version_id === version!.version_id);
         if (current) {
           if (current.project_id !== projectId || current.item_id !== version!.item_id || current.source.digest !== version!.source.digest || current.source_commit !== version!.source_commit) throw new Error("Pinned source version identity changed");
           pinned = current;
-          if (active) setRefreshedVersion(current);
+          setRefreshedVersion(current);
         }
       } catch (e) {captureError(e);}
+      if (signal.aborted) return;
       await Promise.all(versionJobs.filter(job => job.render_spec !== null).map(async job => {
         await Promise.all([
-          allPages(cursor => api.call("listFrameReceipts", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}})).then(page => receipts.push(...page)).catch(captureError),
-          allPages(cursor => api.call("listPreviewSegments", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}})).then(page => clips.push(...page)).catch(captureError),
-          api.call("getFrameAvailability", {path: {project_id: projectId, job_id: job.job_id}}).then(value => {if (active) setAvailabilityByJob(previous=>({...previous,[job.job_id]:value}));}).catch(captureError),
+          allPages(cursor => api.call("listFrameReceipts", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}, signal})).then(page => receipts.push(...page)).catch(captureError),
+          allPages(cursor => api.call("listPreviewSegments", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}, signal})).then(page => clips.push(...page)).catch(captureError),
+          api.call("getFrameAvailability", {path: {project_id: projectId, job_id: job.job_id}, signal}).then(value => {if (!signal.aborted) setAvailabilityByJob(previous=>({...previous,[job.job_id]:value}));}).catch(captureError),
         ]);
       }));
+      if (signal.aborted) return;
       if (pinned.kind === "storyboard") {
         try {
-          const plan = await api.call("getVersionShotPlan", {path: {project_id: projectId, version_id: pinned.version_id}});
+          const plan = await api.call("getVersionShotPlan", {path: {project_id: projectId, version_id: pinned.version_id}, signal});
           if (plan.project_id !== projectId) throw new Error("Shot plan does not match active project");
           storyboardPanels = plan.shots.flatMap(shot => shot.frames.flatMap(frame => frame.artifact_id ? [{shot_id: shot.shot_id, frame_id: frame.frame_id, role: frame.role, composition: frame.composition, artifact_id: frame.artifact_id}] : []));
         } catch (e) {captureError(e);}
       }
+      if (signal.aborted) return;
       const artifactIds = [...new Set([...pinned.artifact_ids, ...storyboardPanels.map(panel => panel.artifact_id), ...versionJobs.flatMap(job => job.artifact_ids)])];
       await Promise.all(artifactIds.map(async artifact_id => {
-        try { media.push(await api.call("getArtifact", {path: {project_id: projectId, artifact_id}})); } catch (e) {captureError(e);}
+        const key = `${projectId}:${artifact_id}`;
+        try {
+          const artifact = readyArtifacts.get(key) ?? await api.call("getArtifact", {path: {project_id: projectId, artifact_id}, signal});
+          if (signal.aborted) return;
+          if (artifact.project_id !== projectId || artifact.artifact_id !== artifact_id) throw new Error("Artefact does not match requested identity");
+          if (artifact.state === "ready") readyArtifacts.set(key, artifact);
+          media.push(artifact);
+        } catch (e) {captureError(e);}
       }));
+      if (signal.aborted) return;
       const completeVideo = media.find(a => a.kind === "video" && a.purpose === "final" && a.state === "ready");
       const encodedParameters = completeVideo?.derived_from.find(t => t.kind === "encode")?.parameters;
       const encodedMapHash = encodedParameters && "frame_map_sha256" in encodedParameters && typeof encodedParameters.frame_map_sha256 === "string" ? encodedParameters.frame_map_sha256 : null;
       const mapArtifact = media.find(a => a.kind === "frame_map" && a.state === "ready" && (!encodedMapHash || a.sha256 === encodedMapHash));
       if (mapArtifact) {
         try {
-          const bytes = await api.call("getArtifactContent", {path: {project_id: projectId, artifact_id: mapArtifact.artifact_id}});
+          const bytes = await api.call("getArtifactContent", {path: {project_id: projectId, artifact_id: mapArtifact.artifact_id}, signal});
           const map = JSON.parse(new TextDecoder().decode(bytes)) as FrameMap;
           if (map.project_id !== projectId || map.sequence_version_id !== version!.version_id || map.frames.length !== map.frame_count) throw new Error("Frame map target mismatch");
-          if (active) setFrameMap({id: mapArtifact.artifact_id, map});
+          if (!signal.aborted) setFrameMap({id: mapArtifact.artifact_id, map});
         } catch (e) {captureError(e);}
       }
-      if (active) {
+      if (!signal.aborted) {
         // Keep admission order, not asynchronous HTTP completion order, for initial display.
         const orderedMedia = artifactIds.flatMap(id => media.filter(a => a.artifact_id === id));
         const panels: StoryboardTarget[] = storyboardPanels.flatMap(panel => {
@@ -463,27 +482,37 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       }
     }
     void read();
-    return () => {active = false;};
+    return () => controller.abort();
     // The fingerprint represents pinned version jobs, not array object identity.
   }, [api, projectId, suppliedVersion?.version_id, suppliedVersion?.artifact_ids.join("|"), jobsKey, refreshRevision]);
 
   useEffect(() => {
-    if (!version) return;
-    let active = true;
-    api.call("getVersionProxyMapping", {path: {project_id: projectId, version_id: version.version_id}}).then(result => {
-      if (result.version_id !== version.version_id || result.project_id !== projectId || result.source_closure_digest !== version.source.digest) throw new Error("Proxy mapping does not match pinned source");
+    const digest = version?.source.digest;
+    if (!versionId || !digest) return;
+    const controller = new AbortController();
+    const {signal} = controller;
+    api.call("getVersionProxyMapping", {path: {project_id: projectId, version_id: versionId}, signal}).then(result => {
+      if (result.version_id !== versionId || result.project_id !== projectId || result.source_closure_digest !== digest) throw new Error("Proxy mapping does not match pinned source");
       // The visible static proxy/sample is pinned too. A refresh must not replace
       // its GLB, reset orbit, or erase a working view because a read went offline.
-      if (active) setMapping(previous => previous ?? result);
+      if (!signal.aborted) setMapping(previous => previous ?? result);
     }).catch(() => { /* Keep an already validated mapping available offline. */ });
-    allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100}})).then(result => {
-      if (active) setSaved(previous => {
-        const scoped = result.filter(({target}) => target.item_id === version.item_id || (target.item_id === null && target.version_id === version.version_id));
+    return () => controller.abort();
+  }, [api, projectId, versionId, version?.source.digest, proxyJobsKey]);
+
+  useEffect(() => {
+    const itemId = version?.item_id;
+    if (!versionId || !itemId) return;
+    const controller = new AbortController();
+    const {signal} = controller;
+    allPages(cursor => api.call("listAnnotations", {path: {project_id: projectId}, query: {cursor, limit: 100}, signal})).then(result => {
+      if (!signal.aborted) setSaved(previous => {
+        const scoped = result.filter(({target}) => target.item_id === itemId || (target.item_id === null && target.version_id === versionId));
         return mergeSavedSnapshots(previous, scoped);
       });
-    }).catch(e => {if (active) setError(String(e));});
-    return () => {active = false;};
-  }, [api, projectId, version, refreshRevision]);
+    }).catch(e => {if (!signal.aborted) setError(String(e));});
+    return () => controller.abort();
+  }, [api, projectId, versionId, version?.item_id, annotationTrigger]);
 
   const present = useCallback((next: FrameTarget) => {
     if (draftId) return;
