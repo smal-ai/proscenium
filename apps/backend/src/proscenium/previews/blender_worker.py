@@ -186,6 +186,19 @@ def _is_tessellated_primitive_instance(instance) -> bool:
     }
 
 
+def _is_unmapped_collection_instance(instance) -> bool:
+    parent = getattr(instance, "parent", None)
+    if parent is None:
+        return False
+    parent_orig = getattr(parent, "original", parent)
+    return (
+        getattr(parent_orig, "type", None) == "EMPTY"
+        and getattr(parent_orig, "instance_type", None) == "COLLECTION"
+        and not parent_orig.get("proscenium_object_id")
+        and not parent_orig.get("proscenium_instance_id")
+    )
+
+
 def _has_surface_mesh(obj, depsgraph) -> bool:
     if obj.type == "MESH":
         return True
@@ -204,16 +217,18 @@ def proxy(bpy, scene, root, task):
 
     scene.frame_set(task["spec"]["frames"]["start"])
     depsgraph = bpy.context.evaluated_depsgraph_get()
+    meshes = [
+        obj for obj in scene.objects if not obj.hide_render and _has_surface_mesh(obj, depsgraph)
+    ]
     if any(
-        instance.is_instance and not _is_tessellated_primitive_instance(instance)
+        instance.is_instance
+        and not _is_tessellated_primitive_instance(instance)
+        and not (meshes and _is_unmapped_collection_instance(instance))
         for instance in depsgraph.object_instances
     ):
         raise ValueError(
             "Unresolved geometry/collection/particle instances require an explicit authored instance mapping"
         )
-    meshes = [
-        obj for obj in scene.objects if not obj.hide_render and _has_surface_mesh(obj, depsgraph)
-    ]
     pairs = [(obj.get("proscenium_object_id"), obj.get("proscenium_instance_id")) for obj in meshes]
     if (
         not meshes
@@ -228,9 +243,26 @@ def proxy(bpy, scene, root, task):
             raise ValueError("Proxy renderable object is excluded from the active view layer")
         if getattr(obj, "hide_viewport", False):
             obj.hide_viewport = False
+        if obj.hide_get():
+            obj.hide_set(False)  # Per-view-layer hide is not a render exclusion.
         if getattr(obj, "hide_select", False):
             obj.hide_select = False
+        for mod in obj.modifiers:
+            if (
+                getattr(mod, "type", None) in {"SUBSURF", "MULTIRES"}
+                and hasattr(mod, "levels")
+                and mod.levels > 1
+            ):
+                mod.levels = 1
         obj.select_set(True)
+    for image in bpy.data.images:
+        try:
+            w, h = image.size
+            if w and h and max(w, h) > 1024:
+                scale = 1024 / max(w, h)
+                image.scale(max(1, round(w * scale)), max(1, round(h * scale)))
+        except RuntimeError:
+            continue  # Unloaded images and sequence frames need not expose a pixel buffer.
     path = root / "proxy.glb"
     bpy.ops.export_scene.gltf(
         filepath=str(path),
@@ -243,6 +275,8 @@ def proxy(bpy, scene, root, task):
         export_apply=True,
         export_cameras=False,
         export_lights=False,
+        export_image_format="JPEG",
+        export_image_quality=75,
     )
     data = path.read_bytes()
     size, kind = struct.unpack_from("<II", data, 12)
@@ -340,6 +374,17 @@ def evaluated_procedural_meshes(bpy, scene):
     return result
 
 
+def configure_denoise(cycles, spec):
+    denoise = spec.get("denoise", True)
+    cycles.use_denoising = bool(denoise)
+    if cycles.use_denoising:
+        cycles.denoiser = "OPENIMAGEDENOISE"
+        cycles.denoising_input_passes = "RGB_ALBEDO_NORMAL"
+        cycles.denoising_prefilter = "ACCURATE"
+        if hasattr(cycles, "denoising_use_gpu"):
+            cycles.denoising_use_gpu = False
+
+
 def main():
     import bpy  # type: ignore[import-not-found]
 
@@ -376,7 +421,7 @@ def main():
     scene.render.engine = spec["engine"]
     scene.cycles.device = spec["device"]
     scene.cycles.samples = spec["samples"]
-    scene.cycles.use_denoising = False
+    configure_denoise(scene.cycles, spec)
     scene.cycles.seed = 0
     scene.render.threads_mode = "FIXED"
     scene.render.threads = task["config"]["threads"]
@@ -407,6 +452,7 @@ def main():
             "review_encoding": "view_transformed_srgb PNG RGB8",
             "threads": scene.render.threads,
             "samples": scene.cycles.samples,
+            "denoise": bool(scene.cycles.use_denoising),
             "device": scene.cycles.device,
             "procedural_meshes": evaluated_procedural_meshes(bpy, scene),
         },

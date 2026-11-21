@@ -266,7 +266,7 @@
       "type": "object", "additionalProperties": false, "required": ["intent_id", "shot_id", "purpose", "source_closure_digest", "scene_name", "camera", "frames", "fps", "dimensions", "engine", "device", "samples", "colour_management", "renderer_revision"],
       "properties": {
         "intent_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "purpose": {"enum": ["proxy", "keyframe", "draft_motion", "final"]}, "source_closure_digest": {"$ref": "#/$defs/Sha256"}, "scene_name": {"type": "string", "minLength": 1}, "camera": {"anyOf": [{"$ref": "#/$defs/Camera"}, {"type": "null"}]},
-        "frames": {"$ref": "#/$defs/FrameRange"}, "fps": {"$ref": "#/$defs/Fps"}, "dimensions": {"$ref": "#/$defs/Dimensions"}, "engine": {"type": "string", "minLength": 1}, "device": {"type": "string", "minLength": 1}, "samples": {"type": ["integer", "null"], "minimum": 1},
+        "frames": {"$ref": "#/$defs/FrameRange"}, "fps": {"$ref": "#/$defs/Fps"}, "dimensions": {"$ref": "#/$defs/Dimensions"}, "engine": {"type": "string", "minLength": 1}, "device": {"type": "string", "minLength": 1}, "samples": {"type": ["integer", "null"], "minimum": 1}, "denoise": {"type": "boolean"},
         "colour_management": {"type": "object", "additionalProperties": false, "required": ["view_transform", "look", "exposure", "gamma"], "properties": {"view_transform": {"type": "string"}, "look": {"type": "string"}, "exposure": {"type": "number"}, "gamma": {"type": "number", "exclusiveMinimum": 0}}}, "renderer_revision": {"type": "string", "minLength": 1},
         "review_output": {"$ref": "#/$defs/ReviewOutput"}, "extra_outputs": {"type": "array", "items": {"type": "string", "minLength": 1}}
       },

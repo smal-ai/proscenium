@@ -286,6 +286,7 @@ export type RenderSpec = {
   engine: string;
   device: string;
   samples: number | null;
+  denoise?: boolean;
   colour_management: {
     view_transform: string;
     look: string;

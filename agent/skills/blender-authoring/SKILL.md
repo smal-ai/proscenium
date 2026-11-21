@@ -45,6 +45,8 @@ description: Author and inspect Blender content inside the active Proscenium pro
    `source`. For a small closure, pass the receipt's `source_closure` directly as
    `source`. Never script closure sorting or SHA-256 digests. Checkpoint before
    `publish_outputs`. Preserve unrelated changes and staging. Never `git add .`.
+   Cycles CPU uses OpenImageDenoise by default (`denoise: true`). Use 32–64 samples
+   for keyframes and inspection stills, or 8–16 for `draft_motion` scrub passes.
    Missing accepted services are a limitation, not permission to invent a receipt.
    Keep the active `project_id` and host work/invocation authority. Assign stable
    item/version IDs, pin the returned commit and exact source-closure digest, and
