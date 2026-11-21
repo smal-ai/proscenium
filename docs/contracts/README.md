@@ -9,6 +9,10 @@ the backend/frontend bindings. Wire `schema_version` remains `1.0`.
 
 ## Compatible UAT extensions
 
+- `setPreviewOrder` (`set_preview_order`) accepts an idempotent `PreviewOrderUpdate`
+  for a published version in the active request scope. Listed render jobs move to
+  the front; omitted jobs keep their relative order. No frames are rendered again.
+  The response and `preview.order_changed` payload are the updated `VersionRecord`.
 - Owner `GET /api/v1/configuration/status` returns bounded read-only provider and
   workstation bridge observations (`ConfigurationStatus`), without starting services
   or reserving generation budgets. Configuration remains independently readable.
@@ -65,6 +69,9 @@ same-ID capture receipts. Consumers must accept historical records without them.
   accepts an optional `mapping_artifact_id` query parameter so spatial annotations can
   retain and reopen an exact proxy map even when a version links multiple proxy passes,
   while existing stored `proxy-map.json` payloads remain valid without migration.
+- `RenderSpec` optionally specifies `denoise`. The Cycles CPU worker uses
+  OpenImageDenoise by default and records the effective flag in its native profile.
+  Set `denoise: false` to disable it. Historical records need no migration.
 - `CheckpointRequest` optionally declares `entry_path`, `dependencies`,
   `required_runtime` and `retained_files`. Closure inputs require an entry path and
   are validated before checkpoint intent or Git ref changes. Completed receipts
@@ -72,6 +79,15 @@ same-ID capture receipts. Consumers must accept historical records without them.
   reusable `RuntimeRequirement` and `RetainedClosureFile` definitions, and a verified
   digest. Omitted runtime requirements default to Proscenium `1.0` with no features.
   Legacy receipts omit the closure. Uncertain receipts never claim a completed closure.
+- `CheckpointRequest.base_version` optionally pins a published version in the active
+  project and inherits its closure files. The request's `paths` and `retained_files`
+  replace inherited files at the same destination. `exclude_paths` omits exact inherited
+  destinations and cannot overlap the supplied files. Both fields require `entry_path`.
+  Dependencies and runtime requirements still come from the new request, not the base.
+- `PublishedItem` accepts exactly one of an inline `source` or `checkpoint_operation_id`.
+  The latter resolves a completed checkpoint with a closure and matching `source_commit`
+  in the same project. Use it in `publication_submit` validation and `publish_outputs`
+  to avoid resending large closures. Stored `VersionRecord.source` remains mandatory.
 
 JSON HTTP bodies and successful JSON responses reference named normative definitions.
 Query parameters use explicit string/integer schemas, with string enums preserved in

@@ -1,16 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ActivityEventData, ApiClient, Artifact, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
+import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
-import { mergeReviews } from "../../app/useProjectData";
+import { mergeReviews, revisionScope, versionRefreshBuffer } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
-import { CriticPanel, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
-import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, type DraftTarget } from "./target";
+import { CriticPanel, criticRequestTarget, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
+import { annotationContext } from "../review/context";
+import { proxyJobsFingerprint, reviewJobsFingerprint } from "../review/refreshKeys";
+import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, viewedSelectionLabel, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation } from "./Conversation";
+import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
 import { awaitResume, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
@@ -34,6 +37,71 @@ const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
 const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
 const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => false, stop: async () => {}, retry: async () => false };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
+
+test("render-tick flood only bumps its own version once per refresh window", t => {
+  t.mock.timers.enable({apis: ["setTimeout"]});
+  const batches: string[][] = [];
+  const receiptArtifacts = new Set<string>();
+  const buffer = versionRefreshBuffer(ids => batches.push(ids));
+  const target = {target_id: "background", version: {item_id: "background", version_id: "background-v1"}, shot_id: null};
+  let previous = {...job("running"), kind: "render" as const, target, completed_frames: 0};
+  const structuralKey = reviewJobsFingerprint([previous]);
+  const proxyKey = proxyJobsFingerprint([previous], "foreground-v1");
+  for (let i = 1; i <= 60; i++) {
+    const artifactId = `render-frame-${i}`;
+    const next = {...previous, artifact_ids: [...previous.artifact_ids, artifactId], completed_frames: i, state_revision: i + 1};
+    receiptArtifacts.add(artifactId);
+    for (const [type, payload] of [["frame.available", {version_id: "background-v1", artifact_id: artifactId}], ["job.state_changed", next]] as const) {
+      const scope = revisionScope(event(i, type, payload), previous, receiptArtifacts);
+      assert.equal(scope.catalogue, false);
+      assert.equal(scope.base, false);
+      assert.equal(scope.immediate, false);
+      assert.equal(scope.versionId, "background-v1");
+      buffer.bump(scope.versionId!, scope.immediate!);
+    }
+    assert.equal(reviewJobsFingerprint([next]), structuralKey);
+    assert.equal(proxyJobsFingerprint([next], "foreground-v1"), proxyKey);
+    previous = next;
+  }
+  t.mock.timers.tick(199);
+  assert.deepEqual(batches, []);
+  t.mock.timers.tick(1);
+  assert.deepEqual(batches, [["background-v1"]]);
+  buffer.bump("background-v1", false);
+  buffer.bump("other-v1", false);
+  const terminal = revisionScope(event(61, "job.state_changed", {...previous, state: "succeeded", state_revision: 62}), previous);
+  assert.equal(terminal.catalogue, true);
+  assert.equal(terminal.base, false);
+  buffer.bump(terminal.versionId!, terminal.immediate!);
+  assert.deepEqual(batches, [["background-v1"], ["background-v1"]]);
+  t.mock.timers.tick(200);
+  assert.deepEqual(batches, [["background-v1"], ["background-v1"], ["other-v1"]]);
+  buffer.bump("cancelled-buffer", false);
+  buffer.cancel();
+  t.mock.timers.tick(200);
+  assert.equal(batches.length, 3);
+});
+
+test("annotation and review events are base-only while segment and pass updates are scoped", () => {
+  for (const type of ["annotation.saved", "review.changed", "review.ready"] as const) {
+    const scope = revisionScope(event(1, type, {version_id: "v"}));
+    assert.equal(scope.base, true);
+    assert.equal(scope.catalogue, false);
+    assert.equal(scope.versionId, undefined);
+  }
+  for (const type of ["segment.available", "preview.order_changed"] as const) {
+    const scope = revisionScope(event(1, type, {version_id: "v"}));
+    assert.equal(scope.versionId, "v");
+    assert.equal(scope.immediate, true);
+    assert.equal(scope.base, false);
+    assert.equal(scope.catalogue, type === "preview.order_changed");
+  }
+  const prior = job("running");
+  const failed = revisionScope(event(1, "job.state_changed", {...prior, error_code: "provider_error"}), prior);
+  assert.equal(failed.catalogue, true);
+  assert.equal(failed.base, true);
+  assert.equal(failed.versionId, undefined);
+});
 
 test("queue hold excludes ordinary running and awaiting-user eligibility reasons", () => {
   assert.equal(shouldShowQueueHold(null, "queue"), false);
@@ -222,7 +290,94 @@ test("explicit target context strips Review media and retains the older version 
   assert.deepEqual(context, cleanTargetContext({ kind: "item", version: ref }, [ref], [{ artifact_id: "chosen", role: "reference" }]));
   assert.deepEqual(context.selected_objects, []);
   assert.equal(context.version_id, "version-old");
-  assert.equal(resolveTarget("current_view", emptySelection()).kind, "project");
+  assert.deepEqual(resolveTarget("current_view", emptySelection()), { kind: "project" });
+  assert.deepEqual(cleanTargetContext(null, [], []).request_target, { kind: "project" });
+});
+
+const shotId = "sl-01-dormant-macro";
+const reviewVersion = (kind: ItemRecord["kind"]) => ({ item_id: `${kind}-signal-lost`, version_id: `${kind}-v1` });
+const reviewItem = (kind: ItemRecord["kind"]): ItemRecord => ({ ...asset, kind, item_id: reviewVersion(kind).item_id, name: "Signal Lost", current_version_id: reviewVersion(kind).version_id });
+const reviewFrame = (kind: ItemRecord["kind"], origin: FrameTarget["origin"] = "blender_render"): FrameTarget => ({
+  ...reviewVersion(kind), origin, artifact_id: "attempt-1-f1", displayed_sha256: "a".repeat(64), dimensions: { width: 1280, height: 720 },
+  shot_id: shotId, render_job_id: "draft-motion-1", source_frame: 1, media_artifact_id: null,
+});
+
+test("Current view targets only storyboard shots, even when scene receipts carry a shot ID", () => {
+  const scene = { ...emptySelection(), ...reviewVersion("scene"), target: reviewFrame("scene") };
+  const board = { ...emptySelection(), ...reviewVersion("storyboard"), target: reviewFrame("storyboard") };
+  const staleSceneShot = { kind: "shot", storyboard_version: reviewVersion("scene"), shot_id: shotId } as const;
+  const expectedScene = { kind: "item", version: reviewVersion("scene") };
+  assert.deepEqual(resolveTarget("current_view", scene, [reviewItem("scene")]), expectedScene);
+  assert.deepEqual(resolveTarget("current_view", { ...scene, request_target: staleSceneShot }, [reviewItem("scene")]), expectedScene);
+  assert.deepEqual(resolveTarget("current_view", scene), expectedScene);
+  assert.deepEqual(resolveTarget("current_view", board, [reviewItem("storyboard")]), { kind: "shot", storyboard_version: reviewVersion("storyboard"), shot_id: shotId });
+});
+
+test("Current view keeps sequences and Unity results as viewed versions without a request target", async () => {
+  const pendingSequence = { ...emptySelection(), ...reviewVersion("sequence"), request_target: null };
+  const assembledSequence = { ...pendingSequence, target: reviewFrame("sequence", "sequence_render") };
+  const unity = { ...emptySelection(), ...reviewVersion("unity_result"), request_target: null };
+  for (const [selection, kind] of [[pendingSequence, "sequence"], [assembledSequence, "sequence"], [unity, "unity_result"]] as const) {
+    const items = [reviewItem(kind)];
+    const version = reviewVersion(kind);
+    assert.equal(resolveTarget("current_view", selection), null);
+    assert.equal(resolveTarget("current_view", { ...selection, request_target: undefined }, items), null);
+    assert.equal(resolveTarget("current_view", { ...selection, request_target: { kind: "item", version } }, items), null);
+    assert.equal(resolveTarget("current_view", { ...selection, request_target: { kind: "shot", storyboard_version: version, shot_id: shotId } }, items), null);
+    assert.deepEqual(await prepareSubmissionContext({ target: "current_view", selection, references: [], attachments: [], items }), { ...selection, reference_versions: [] });
+  }
+  assert.equal(resolveTarget("current_view", { ...assembledSequence, request_target: undefined }), null);
+  assert.equal(contextCount(pendingSequence), 1);
+  assert.equal(viewedSelectionLabel(pendingSequence, [reviewItem("sequence")]), "Sequence · Signal Lost");
+  assert.equal(viewedSelectionLabel(unity, [reviewItem("unity_result")]), "Unity result · Signal Lost");
+  assert.equal(viewedSelectionLabel(unity), "Version · unity_result-v1");
+});
+
+test("Current view rejects intra-shot drift in the presented artefact, source frame or sequence frame", async () => {
+  const target = { ...reviewFrame("scene"), sequence_frame: 1 };
+  const selection = { ...emptySelection(), ...reviewVersion("scene"), target };
+  for (const changed of [{ source_frame: 2 }, { artifact_id: "attempt-2-f1" }, { sequence_frame: 2 }]) {
+    let finish!: () => void;
+    const preparing = prepareSubmissionContext({ target: "current_view", selection, references: [], attachments: [] }, async () => {
+      await new Promise<void>(resolve => { finish = resolve; });
+      return { ...selection, target: { ...target, ...changed } };
+    });
+    finish();
+    await assert.rejects(preparing, /Review changed during context capture/);
+  }
+});
+
+test("Current view accepts fresh 3D proxy pixels when no frame was presented at submit", async () => {
+  const selection = { ...emptySelection(), ...reviewVersion("asset"), view_mode: "3d_inspection" as const };
+  const target = { ...reviewFrame("asset", "proxy_capture"), render_job_id: null };
+  const captured = await prepareSubmissionContext({ target: "current_view", selection, references: [], attachments: [] }, async () => ({ ...selection, target }));
+  assert.deepEqual(captured.target, target);
+  assert.deepEqual(captured.request_target, { kind: "item", version: reviewVersion("asset") });
+});
+
+test("annotation and Critic submissions resolve matching target kinds without losing frame evidence", () => {
+  for (const [target, items, expected] of [
+    [reviewFrame("sequence", "sequence_render"), [], null],
+    [reviewFrame("unity_result"), [reviewItem("unity_result")], null],
+    [reviewFrame("scene"), [reviewItem("scene")], { kind: "item", version: reviewVersion("scene") }],
+    [reviewFrame("storyboard"), [reviewItem("storyboard")], { kind: "shot", storyboard_version: reviewVersion("storyboard"), shot_id: shotId }],
+  ] as const) {
+    const note: AnnotationSnapshot = { annotation_id: "note", saved_revision: 1, target, range: null, camera: null, markups: [], text: "Review the opening frame.", spatial_hits: [], spatial_status: "unavailable" };
+    const context = annotationContext(note, items[0]?.kind);
+    assert.deepEqual(context.request_target, expected);
+    assert.deepEqual(context.target, target);
+    assert.deepEqual(criticRequestTarget([target], [...items]), expected);
+  }
+  assert.deepEqual(criticRequestTarget([reviewFrame("storyboard"), reviewFrame("scene")], [reviewItem("storyboard"), reviewItem("scene")]), { kind: "project" });
+});
+
+test("Critic findings target a storyboard shot only when all findings share it", () => {
+  const first = { ...reviewFrame("storyboard"), shot_id: "shot-1" };
+  const second = { ...first, artifact_id: "attempt-1-f2", source_frame: 2 };
+  const items = [reviewItem("storyboard")];
+  const version = reviewVersion("storyboard");
+  assert.deepEqual(criticRequestTarget([first, second], items), { kind: "shot", storyboard_version: version, shot_id: "shot-1" });
+  assert.deepEqual(criticRequestTarget([first, { ...second, shot_id: "shot-2" }], items), { kind: "item", version });
 });
 
 test("current-view capture freezes target and attachments before asynchronous preparation", async () => {
@@ -343,6 +498,34 @@ test("Conversation renders retained media once across duplicate tool and special
   const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={events} retainedArtifacts={retainedArtifacts} onRefresh={async () => {}} onError={() => {}} />);
   assert.equal((markup.match(/<img/g) ?? []).length, 1);
   assert.match(markup, /Finished · publication blocked/); assert.match(markup, /Storyboard document validation failed/);
+});
+
+test("Chat and standalone activity warn only when publication is blocked", () => {
+  const current = snapshot();
+  const artifact = { artifact_id: "image", project_id: "project", state: "ready", kind: "image", purpose: "concept", media_type: "image/png" } as Artifact;
+  const retainedArtifacts = [{ artifact, attribution_status: "verified", invocation_id: "invocation", request_id: "request", work_id: "work" }] as RetainedArtifactSummary[];
+  const toolEvent = (output_status: ActivityEventData["output_status"]) => event(1, "tool.completed", { ...activity, state: "completed", artifact_ids: ["image"], output_status });
+  const renderActivity = (output_status: ActivityEventData["output_status"]) => renderToStaticMarkup(
+    <ActivityEntry api={api} projectId="project" event={toolEvent(output_status)} retainedArtifacts={retainedArtifacts} />,
+  );
+  const retained = { work_id: "work", request_id: "request", status: "retained_unpublished" as const, artifact_ids: ["image"], published_versions: [], reason_code: null, summary: null };
+  current.execution!.work_outputs = [retained];
+  const snapshotOnly = chatMarkup([], { snapshot: current, retainedArtifacts });
+  const withToolEvent = chatMarkup([], { snapshot: current, events: [toolEvent("retained_unpublished")], retainedArtifacts });
+  for (const markup of [snapshotOnly, withToolEvent, renderActivity("retained_unpublished")]) {
+    assert.doesNotMatch(markup, /Outputs retained · not published|class="publication-status"/);
+    assert.equal((markup.match(/class="retained-output-card"/g) ?? []).length, 1);
+    assert.match(markup, /<img[^>]+\/artifacts\/image\/content/);
+  }
+  assert.match(snapshotOnly, /class="retained-turn-outputs"/);
+  assert.doesNotMatch(withToolEvent, /class="retained-turn-outputs"/);
+
+  current.execution!.work_outputs = [{ ...retained, status: "publication_blocked", summary: "Storyboard document validation failed" }];
+  for (const markup of [chatMarkup([], { snapshot: current, retainedArtifacts }), renderActivity("publication_blocked")]) {
+    assert.equal((markup.match(/class="publication-status" role="status"/g) ?? []).length, 1);
+    assert.match(markup, /Finished · publication blocked/);
+    assert.doesNotMatch(markup, /Outputs retained · not published/);
+  }
 });
 
 test("retained images use authenticated routes, deduplicate and never preview SVG or HTML", () => {

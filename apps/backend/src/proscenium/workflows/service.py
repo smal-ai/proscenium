@@ -27,6 +27,8 @@ from tools.unity.jobs import (
 from tools.unity.worker import alive, editor_running, process_identity
 from tools.unity.workflow import (
     bootstrap_project,
+    existing_recipe,
+    input_digest,
     make_recipe,
     prepare,
     scoped,
@@ -269,20 +271,10 @@ class Workflows:
             or not Path(configured_editor).is_file()
         ):
             raise DomainError("capability_unavailable", 501)
-        configured_blender = self.services.settings.rendering.get("blender")
-        blender = shutil.which(configured_blender) if isinstance(configured_blender, str) else None
-        if (
-            not blender
-            or body["execution_profile_id"] not in self.services.settings.execution_profiles
-        ):
+        if body["execution_profile_id"] not in self.services.settings.execution_profiles:
             raise DomainError("capability_unavailable", 501)
         if body["project"].startswith("unity/exports"):
             raise DomainError("scope_denied", 403)
-        claim_path = self.services.settings.rendering.get("claim_path")
-        if claim_path is not None and (
-            not isinstance(claim_path, str) or not Path(claim_path).is_absolute()
-        ):
-            raise DomainError("capability_unavailable", 501)
         project = unity_path(root, body["project"])
         if editor_running(project):
             raise DomainError("project_busy", 409)
@@ -292,11 +284,27 @@ class Workflows:
         validate("VersionRecord", version)
         if version["project_id"] != row["project_id"]:
             raise DomainError("scope_denied", 403)
-        if version["item_id"] != body["version"]["item_id"] or version["kind"] not in {
+        if version["item_id"] != body["version"]["item_id"]:
+            raise DomainError("source_conflict", 409)
+        if version["kind"] == "unity_result":
+            row["editor"] = str(Path(configured_editor).resolve(strict=True))
+            row = self._unity_admission(row, existing_recipe(root, body, version))
+            self.save(row["project_id"], identity, row)
+            return row
+        if version["kind"] not in {
             "scene",
             "asset",
         }:
             raise DomainError("source_conflict", 409)
+        configured_blender = self.services.settings.rendering.get("blender")
+        blender = shutil.which(configured_blender) if isinstance(configured_blender, str) else None
+        if not blender:
+            raise DomainError("capability_unavailable", 501)
+        claim_path = self.services.settings.rendering.get("claim_path")
+        if claim_path is not None and (
+            not isinstance(claim_path, str) or not Path(claim_path).is_absolute()
+        ):
+            raise DomainError("capability_unavailable", 501)
         if version["source"]["required_runtime"]["application"].casefold() != "blender":
             raise DomainError("capability_unavailable", 501)
         if body["action"] != "import":
@@ -409,8 +417,11 @@ class Workflows:
             and row.get("import_export_sha256") != recipe["export_sha256"]
         ):
             raise DomainError("source_conflict", 409)
-        from tools.unity.workflow import input_digest
+        return self._unity_admission(row, recipe)
 
+    @staticmethod
+    def _unity_admission(row: dict, recipe: dict) -> dict:
+        body = row["binding"]["body"]
         admission = dict(
             schema_version="1.0",
             operation_id=body["operation_id"],
@@ -501,7 +512,8 @@ class Workflows:
                         row.update(phase="failed", error_code=error.code)
                         await self.io(self.save, row["project_id"], identity, row)
                     raise
-                await self._export(caller, identity, row)
+                if row["phase"] == "exporting":
+                    await self._export(caller, identity, row)
             if row["phase"] == "exporting":
                 row = await self.io(self._finish_export, row)
                 await self.io(self.save, row["project_id"], identity, row)

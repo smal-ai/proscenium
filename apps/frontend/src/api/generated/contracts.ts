@@ -190,6 +190,7 @@ export type Event = {
     | "job.state_changed"
     | "frame.available"
     | "segment.available"
+    | "preview.order_changed"
     | "annotation.saved"
     | "selection.changed"
     | "decision.requested"
@@ -285,6 +286,7 @@ export type RenderSpec = {
   engine: string;
   device: string;
   samples: number | null;
+  denoise?: boolean;
   colour_management: {
     view_transform: string;
     look: string;
@@ -323,7 +325,8 @@ export type PublishedItem = {
   version_id: Id;
   expected_current_version_id: NullableId;
   source_commit: Commit;
-  source: SourceClosure;
+  source?: SourceClosure;
+  checkpoint_operation_id?: Id;
   artifact_ids: Id[];
   preview_requests: RenderSpec[];
   derived_from?: VersionRef[];
@@ -497,6 +500,7 @@ export interface ContractDefinitions {
   OwnerBootstrap: OwnerBootstrap;
   OwnerSession: OwnerSession;
   Point2: Point2;
+  PreviewOrderUpdate: PreviewOrderUpdate;
   PreviewRequest: PreviewRequest;
   PreviewSegment: PreviewSegment;
   ProjectCapabilities: ProjectCapabilities;
@@ -819,6 +823,8 @@ export interface CheckpointRequest {
   dependencies?: VersionRef[];
   required_runtime?: RuntimeRequirement;
   retained_files?: RetainedClosureFile[];
+  base_version?: VersionRef;
+  exclude_paths?: RelativePath[];
 }
 export interface RetainedClosureFile {
   destination: RelativePath;
@@ -1229,6 +1235,16 @@ export interface OwnerSession {
   owner_session_id: Id;
   csrf_token: string;
   expires_at: Timestamp;
+}
+export interface PreviewOrderUpdate {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  version: VersionRef;
+  /**
+   * @minItems 1
+   */
+  job_ids: [Id, ...Id[]];
 }
 export interface PreviewRequest {
   schema_version: "1.0";

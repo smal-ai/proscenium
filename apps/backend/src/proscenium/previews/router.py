@@ -108,6 +108,13 @@ async def preview(request: Request, caller: Tool) -> JSONResponse:
     return JSONResponse(result, status_code=200 if replayed else 202)
 
 
+@router.post("/internal/v1/previews/order", operation_id="setPreviewOrder")
+async def order(request: Request, caller: Tool) -> JSONResponse:
+    service: PreviewService = get_services(request).extension("previews")
+    result, _ = service.set_order(caller, await command(request, "PreviewOrderUpdate"))
+    return JSONResponse(result, status_code=200)
+
+
 @router.post("/internal/v1/frame-receipts", operation_id="registerFrameReceipt")
 async def frame(request: Request, caller: Worker) -> JSONResponse:
     service: PreviewService = get_services(request).extension("previews")

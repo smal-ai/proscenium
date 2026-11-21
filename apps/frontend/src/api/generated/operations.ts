@@ -53,6 +53,7 @@ export interface Operations {
   registerToolArtifact: { body: C.ArtifactRegister; response: C.Artifact; path: Record<string, never>; query: Record<string, never> };
   publishOutputs: { body: C.PublicationSubmit; response: C.PublicationReceipt; path: Record<string, never>; query: Record<string, never> };
   requestPreview: { body: C.PreviewRequest; response: C.JobRecord; path: Record<string, never>; query: Record<string, never> };
+  setPreviewOrder: { body: C.PreviewOrderUpdate; response: C.VersionRecord; path: Record<string, never>; query: Record<string, never> };
   submitGenerationJob: { body: C.GenerationSubmit; response: C.JobRecord; path: Record<string, never>; query: Record<string, never> };
   admitToolJob: { body: C.JobAdmission; response: C.JobRecord; path: Record<string, never>; query: Record<string, never> };
   retryToolJob: { body: C.JobRetry; response: C.JobRecord; path: { job_id: string }; query: Record<string, never> };
@@ -116,6 +117,7 @@ export const routes = {
   registerToolArtifact: { method: "POST", path: "/internal/v1/artifacts", binary: false },
   publishOutputs: { method: "POST", path: "/internal/v1/publications", binary: false },
   requestPreview: { method: "POST", path: "/internal/v1/previews", binary: false },
+  setPreviewOrder: { method: "POST", path: "/internal/v1/previews/order", binary: false },
   submitGenerationJob: { method: "POST", path: "/internal/v1/generation-jobs", binary: false },
   admitToolJob: { method: "POST", path: "/internal/v1/jobs", binary: false },
   retryToolJob: { method: "POST", path: "/internal/v1/jobs/{job_id}/retry", binary: false },

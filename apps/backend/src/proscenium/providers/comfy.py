@@ -103,11 +103,27 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
 def bind_graph(
     graph: dict[str, Any], prompt: str, seed: str | None, references: dict[str, str]
 ) -> dict[str, Any]:
-    """Explicit tokens only. References must feed a real reference-latent conditioning path."""
+    """Bind declared artefacts only, in the exact order used by both conditioning chains."""
     graph = copy.deepcopy(graph)
     if seed is None or not 0 <= int(seed) <= 2**53 - 1:
         raise DomainError("invalid_request", message="An exact JSON-safe decimal seed is required")
+    load_ids: dict[str, str] = {}
     used: set[str] = set()
+    for identity, node in graph.items():
+        if node.get("class_type") != "LoadImage":
+            continue
+        inputs = node.get("inputs")
+        image = inputs.get("image") if isinstance(inputs, dict) else None
+        if not isinstance(image, str) or not image.startswith("artifact:"):
+            raise DomainError("invalid_request", message="Unbound conditioning image")
+        artifact_id = image.removeprefix("artifact:")
+        if artifact_id not in references:
+            raise DomainError("invalid_request", message="Unbound conditioning image")
+        if artifact_id in used:
+            raise DomainError("invalid_request", message="Duplicate conditioning image")
+        used.add(artifact_id)
+        load_ids[identity] = artifact_id
+
     has_prompt = any(
         n.get("class_type") == "CLIPTextEncode" and n.get("inputs", {}).get("text") == prompt
         for n in graph.values()
@@ -116,18 +132,83 @@ def bind_graph(
     has_seed = False
     # Follow the graph used by an actual saved output, not an unused conditioning branch.
     reachable: set[str] = set()
+    visiting: set[str] = set()
 
     def visit(identity: str) -> None:
+        if identity in visiting:
+            raise DomainError("invalid_request", message="Invalid graph link")
         if identity in reachable:
             return
-        reachable.add(identity)
+        visiting.add(identity)
         for value in graph[identity]["inputs"].values():
-            if isinstance(value, list) and len(value) == 2 and value[0] in graph:
+            if (
+                isinstance(value, list)
+                and len(value) == 2
+                and isinstance(value[0], str)
+                and value[0] in graph
+            ):
                 visit(value[0])
+        visiting.remove(identity)
+        reachable.add(identity)
 
     for identity, node in graph.items():
         if node["class_type"] == "SaveImage":
             visit(identity)
+
+    def output_zero(link: Any) -> str | None:
+        if (
+            isinstance(link, list)
+            and len(link) == 2
+            and isinstance(link[0], str)
+            and type(link[1]) is int
+            and link[1] == 0
+        ):
+            return link[0]
+        return None
+
+    def conditioning_chain(link: Any) -> tuple[str | None, list[str]]:
+        chain: list[str] = []
+        while (source := output_zero(link)) is not None:
+            node = graph.get(source, {})
+            if node.get("class_type") != "ReferenceLatent":
+                break
+            chain.append(source)
+            link = node["inputs"].get("conditioning")
+        # ReferenceLatent appends to its predecessor's conditioning.
+        return source, chain[::-1]
+
+    def conditioning_artifact(identity: str) -> str | None:
+        encode_id = output_zero(graph[identity]["inputs"].get("latent"))
+        encode = graph.get(encode_id, {}) if encode_id is not None else {}
+        if encode.get("class_type") not in {"VAEEncode", "VAEEncodeTiled"}:
+            return None
+        pixels_id = output_zero(encode["inputs"].get("pixels"))
+        pixels = graph.get(pixels_id, {}) if pixels_id is not None else {}
+        if pixels.get("class_type") == "ImageScaleToTotalPixels":
+            pixels_id = output_zero(pixels["inputs"].get("image"))
+        # Historical graphs link LoadImage directly without scaling.
+        return load_ids.get(pixels_id) if pixels_id is not None else None
+
+    expected_order = list(references)
+    guiders = [graph[k] for k in reachable if graph[k]["class_type"] == "CFGGuider"]
+    if (expected_order and not guiders) or (
+        not expected_order and any(graph[k]["class_type"] == "ReferenceLatent" for k in reachable)
+    ):
+        raise DomainError("invalid_request", message="Reference is not conditioning")
+    for guider in guiders:
+        pos_base, positive = conditioning_chain(guider["inputs"].get("positive"))
+        neg_base, negative = conditioning_chain(guider["inputs"].get("negative"))
+        neg_node = graph.get(neg_base, {}) if neg_base is not None else {}
+        if (
+            pos_base is None
+            or graph.get(pos_base, {}).get("class_type") != "CLIPTextEncode"
+            or neg_node.get("class_type") != "ConditioningZeroOut"
+            or output_zero(neg_node["inputs"].get("conditioning")) != pos_base
+            or [conditioning_artifact(k) for k in positive] != expected_order
+            or [conditioning_artifact(k) for k in negative] != expected_order
+        ):
+            raise DomainError("invalid_request", message="Reference is not conditioning")
+
     for identity, node in graph.items():
         for key, value in node["inputs"].items():
             if key in {"seed", "noise_seed"}:
@@ -144,41 +225,9 @@ def bind_graph(
                     raise DomainError("invalid_request")
                 node["inputs"][key] = int(seed)
             elif isinstance(value, str) and value.startswith("artifact:"):
-                artifact_id = value.removeprefix("artifact:")
-                if (
-                    node["class_type"] != "LoadImage"
-                    or key != "image"
-                    or artifact_id not in references
-                ):
+                if key != "image" or identity not in load_ids:
                     raise DomainError("invalid_request", message="Unbound conditioning image")
-                node["inputs"][key] = references[artifact_id]
-                # Retain admitted unscaled graphs alongside scaled/tiled reference paths.
-                pixels = {identity} | {
-                    k
-                    for k, n in graph.items()
-                    if n["class_type"] == "ImageScaleToTotalPixels"
-                    and n["inputs"].get("image") == [identity, 0]
-                }
-                encodes = {
-                    k
-                    for k, n in graph.items()
-                    if n["class_type"] in {"VAEEncode", "VAEEncodeTiled"}
-                    and any(n["inputs"].get("pixels") == [source, 0] for source in pixels)
-                }
-                refs = {
-                    k
-                    for k, n in graph.items()
-                    if n["class_type"] == "ReferenceLatent"
-                    and n["inputs"].get("latent", [None])[0] in encodes
-                }
-                if not any(
-                    k in reachable
-                    and n["class_type"] == "CFGGuider"
-                    and n["inputs"].get("positive", [None])[0] in refs
-                    for k, n in graph.items()
-                ):
-                    raise DomainError("invalid_request", message="Reference is not conditioning")
-                used.add(artifact_id)
+                node["inputs"][key] = references[load_ids[identity]]
     if used != set(references) or not has_prompt or not has_seed:
         raise DomainError("invalid_request", message="Unused input image or missing prompt binding")
     if references and not any(

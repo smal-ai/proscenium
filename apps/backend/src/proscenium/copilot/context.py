@@ -66,16 +66,21 @@ class Contexts:
                 or job["target"]["version"]["version_id"] != target["version_id"]
             ):
                 raise DomainError("frame_conflict", 422)
-            matches = [
+            slot_receipts = [
                 f
                 for f in tx.all("frames")
-                if f["artifact_id"] == target["artifact_id"]
-                and f["job_id"] == target["render_job_id"]
-                and f["version_id"] == target["version_id"]
+                if f["job_id"] == target["render_job_id"]
                 and f["source_frame"] == target["source_frame"]
-                and f["sha256"] == target["displayed_sha256"]
             ]
-            if len(matches) != 1:
+            if not slot_receipts or any(
+                any(
+                    f[key] != target[key]
+                    for key in ("artifact_id", "version_id", "shot_id", "dimensions")
+                )
+                or f["sha256"] != target["displayed_sha256"]
+                or f["input_digest"] != job["input_digest"]
+                for f in slot_receipts
+            ):
                 raise DomainError("frame_conflict", 422)
         for key in ("media_artifact_id", "frame_map_artifact_id"):
             if target.get(key):
@@ -182,7 +187,11 @@ class Contexts:
             if item["project_id"] != tx.project_id or version["project_id"] != tx.project_id:
                 raise DomainError("scope_denied", 403)
             if version["item_id"] != ref["item_id"]:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    f"Version {ref['version_id']} belongs to item {version['item_id']}, not {ref['item_id']}.",
+                )
             return version
 
         for ref in context.get("reference_versions", []):
@@ -192,18 +201,38 @@ class Contexts:
             return
         if target["kind"] in {"project", "new_item"}:
             if context["item_id"] is not None or context["version_id"] is not None:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    f"Request target '{target['kind']}' cannot be combined with pinned selection "
+                    f"{context['version_id'] or context['item_id']}.",
+                )
             return
         ref = target["version"] if target["kind"] == "item" else target["storyboard_version"]
         version = pinned(ref)
-        if version["kind"] not in {"asset", "scene", "storyboard"} or (
-            target["kind"] == "shot" and version["kind"] != "storyboard"
-        ):
-            raise DomainError("source_conflict", 409)
+        if version["kind"] not in {"asset", "scene", "storyboard"}:
+            raise DomainError(
+                "source_conflict",
+                409,
+                f"Version {version['version_id']} has kind '{version['kind']}', "
+                f"which cannot be used as an '{target['kind']}' request target.",
+            )
+        if target["kind"] == "shot" and version["kind"] != "storyboard":
+            raise DomainError(
+                "source_conflict",
+                409,
+                f"Shot target '{target['shot_id']}' requires a storyboard version, "
+                f"but {version['version_id']} has kind '{version['kind']}'.",
+            )
         if context["version_id"] is not None and (
             context["item_id"] != ref["item_id"] or context["version_id"] != ref["version_id"]
         ):
-            raise DomainError("source_conflict", 409)
+            raise DomainError(
+                "source_conflict",
+                409,
+                f"Request target {ref['item_id']} ({ref['version_id']}) conflicts with viewed selection "
+                f"{context['item_id']} ({context['version_id']}).",
+            )
         if target["kind"] == "shot":
             # Read immutable objects only. The exact version and dependencies come from
             # this transaction, including records not yet visible to another reader.
@@ -215,7 +244,12 @@ class Contexts:
             if not any(shot["shot_id"] == target["shot_id"] for shot in plan["shots"]):
                 raise DomainError("not_found", 404)
             if tx.require("versions", ref["version_id"]) != version:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    f"Storyboard version {ref['version_id']} changed while validating shot target "
+                    f"'{target['shot_id']}'.",
+                )
 
     @staticmethod
     def camera(camera: dict[str, Any] | None, *, dimensions: dict[str, int] | None = None) -> None:

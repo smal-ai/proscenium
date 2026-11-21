@@ -14,7 +14,7 @@ export default defineConfig({
     ["list"],
     ["json", { outputFile: process.env.PROSCENIUM_BROWSER_REPORT ?? "/tmp/opencode/proscenium-browser-report.json" }],
   ],
-  outputDir: "/tmp/opencode/proscenium-browser-results",
+  outputDir: process.env.PROSCENIUM_BROWSER_RESULTS ?? "/tmp/opencode/proscenium-browser-results",
   use: {
     baseURL,
     viewport: { width: 1920, height: 1080 },
@@ -30,7 +30,7 @@ export default defineConfig({
     },
     {
       name: "chromium-dpr2",
-      testMatch: ["*dpr2*.spec.ts", "uat-rc3-polish.spec.ts"],
+      testMatch: ["*dpr2*.spec.ts", "uat-rc3-polish.spec.ts", "uat-rc4-current-view.spec.ts", "uat-rc4-animation-play-all.spec.ts"],
       use: { browserName: "chromium", deviceScaleFactor: 2, launchOptions: { args: softwareWebGL } },
     },
   ],

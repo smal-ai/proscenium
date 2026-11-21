@@ -6,9 +6,10 @@ import fcntl
 import json
 import os
 import signal
+import stat
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -92,6 +93,52 @@ def stop(process: subprocess.Popen[Any]) -> None:
         process.wait()
 
 
+def check_project_tree(project: Path) -> None:
+    """Unity opens the whole tree, not just the published scene."""
+    if not project.is_dir() or project.resolve(strict=True) != project:
+        raise RuntimeError("Unity project directory is missing or redirected")
+
+    def unreadable(error: OSError) -> None:
+        raise error
+
+    for folder, directories, files in os.walk(project, followlinks=False, onerror=unreadable):
+        for name in (*directories, *files):
+            path = Path(folder) / name
+            if path.is_symlink() and not path.resolve(strict=True).is_relative_to(project):
+                raise RuntimeError(
+                    f"Unity project contains an external symlink: {path.relative_to(project)}"
+                )
+
+
+BUILD_OUTPUT_SCOPE = "Unity build_output must be beneath Builds/"
+
+
+def valid_build_output_path(relative: str) -> bool:
+    parts = PurePosixPath(relative).parts
+    return (
+        len(parts) >= 2
+        and parts[0] == "Builds"
+        and not relative.lower().endswith(".meta")
+        and not any(part in {"", ".", ".."} for part in relative.split("/"))
+        and not any(character in relative for character in ("\\", ":", "\x00"))
+    )
+
+
+def build_output(project: Path, relative: str) -> tuple[Path, os.stat_result | None]:
+    if not valid_build_output_path(relative):
+        raise RuntimeError(BUILD_OUTPUT_SCOPE)
+    output = project / relative
+    if output.resolve() != output or not output.is_relative_to(project):
+        raise RuntimeError("Unity build output is outside its declared project path")
+    try:
+        observed = output.lstat()
+    except FileNotFoundError:
+        return output, None
+    if not stat.S_ISREG(observed.st_mode):
+        raise RuntimeError("Unity build output must be a regular non-symlink file")
+    return output, observed
+
+
 def main(request_path: Path) -> None:
     request = json.loads(request_path.read_text())
     receipt = {
@@ -102,6 +149,12 @@ def main(request_path: Path) -> None:
         state="starting", supervisor=process_identity(os.getpid()), native_exit_code=None
     )
     destination = request_path.parent / "worker.json"
+    authored = request.get("authored")
+    build_relative = (
+        authored.get("build_output") if authored and request["action"] == "build" else None
+    )
+    if build_relative:
+        receipt["build_output_verified"] = False
     atomic(destination, receipt)
     process: subprocess.Popen[Any] | None = None
 
@@ -120,6 +173,17 @@ def main(request_path: Path) -> None:
                 )
             with (request_path.parent / "console.log").open("w") as output:
                 env = {**os.environ, "DOTNET_PROCESSOR_COUNT": "4"}
+                if authored:
+                    check_project_tree(project)
+                previous = None
+                if build_relative:
+                    path, previous = build_output(project, build_relative)
+                    if previous is not None:
+                        staged = request_path.parent / "previous-build-output"
+                        if staged.exists() or staged.is_symlink():
+                            raise RuntimeError("Prior Unity build output was already staged")
+                        path.rename(staged)
+                        receipt["previous_build_output"] = staged.name
                 process = subprocess.Popen(
                     request["command"],
                     cwd=project,
@@ -129,10 +193,23 @@ def main(request_path: Path) -> None:
                     start_new_session=True,
                 )
                 receipt.update(state="running", process=process_identity(process.pid))
+                if authored:
+                    atomic(request_path.parent / "process.json", receipt)
                 atomic(destination, receipt)
                 try:
                     code = process.wait(timeout=request["timeout"])
                     receipt.update(state="complete", native_exit_code=code)
+                    if build_relative and code == 0:
+                        _, current = build_output(project, build_relative)
+                        receipt["build_output_verified"] = (
+                            current is not None
+                            and current.st_size > 0
+                            and (
+                                previous is None
+                                or (current.st_dev, current.st_ino)
+                                != (previous.st_dev, previous.st_ino)
+                            )
+                        )
                 except subprocess.TimeoutExpired:
                     stop(process)
                     receipt.update(
@@ -152,6 +229,8 @@ def main(request_path: Path) -> None:
     finally:
         if process is not None and process.poll() is None:
             stop(process)
+        if authored:
+            atomic(request_path.parent / "terminal.json", receipt)
         atomic(destination, receipt)
 
 

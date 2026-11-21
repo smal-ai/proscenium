@@ -1,17 +1,24 @@
 import { useEffect, useState } from "react";
-import type { ApiClient, ContextSnapshot } from "../../api";
+import type { ApiClient, ContextSnapshot, ItemRecord } from "../../api";
 import type { TurnSelection } from "../../api/studio";
 import { routes } from "../../api/generated/operations";
 import { describeError, readPrivate } from "../../app/storage";
-import { targetLabel } from "./target";
+import { targetLabel, viewedSelectionLabel } from "./target";
 
 export function artifactUrl(projectId: string, artifactId: string): string {
   return routes.getArtifactContent.path.replace("{project_id}", encodeURIComponent(projectId)).replace("{artifact_id}", encodeURIComponent(artifactId));
 }
 
-export function ContextPreview({ selection, projectId }: { selection: TurnSelection; projectId: string }) {
+function ContextTargetBadge({ selection, items }: { selection: TurnSelection; items: ItemRecord[] }) {
+  if (selection.request_target) return <span className="target-badge" title={JSON.stringify(selection.request_target)}>Target: {targetLabel(selection.request_target, items)}</span>;
+  if (selection.request_target === null && selection.version_id) return <span className="target-badge">Viewed: {viewedSelectionLabel(selection, items) ?? selection.version_id}</span>;
+  return null;
+}
+
+export function ContextPreview({ selection, projectId, items = [] }: { selection: TurnSelection; projectId: string; items?: ItemRecord[] }) {
   return <div className="context-preview">
-    {selection.request_target && <><span className="target-badge">Target: {targetLabel(selection.request_target)}</span><code>{JSON.stringify(selection.request_target)}</code></>}
+    <ContextTargetBadge selection={selection} items={items} />
+    {selection.request_target && <code>{JSON.stringify(selection.request_target)}</code>}
     {!!selection.reference_versions?.length && <div><strong>Reference versions</strong>{selection.reference_versions.map(ref => <code key={`${ref.item_id}:${ref.version_id}`}>{ref.item_id} · {ref.version_id}</code>)}</div>}
     {selection.execution_scope && <span>Execution scope: {selection.execution_scope === "planning_only" ? "Planning only · no generation or scene execution" : "Default"}</span>}
     <span>{selection.version_id ? `Version ${selection.version_id}` : "Project context"} · {selection.view_mode.replaceAll("_", " ")}</span>
@@ -25,7 +32,7 @@ export function ContextPreview({ selection, projectId }: { selection: TurnSelect
   </div>;
 }
 
-export function StoredContext({ api, projectId, contextId, items = [] }: { api: ApiClient; projectId: string; contextId: string; items?: import("../../api").ItemRecord[] }) {
+export function StoredContext({ api, projectId, contextId, items = [] }: { api: ApiClient; projectId: string; contextId: string; items?: ItemRecord[] }) {
   const [open, setOpen] = useState(false);
   const [context, setContext] = useState<ContextSnapshot | null>(() => readPrivate(`context.${projectId}.${contextId}`));
   const [error, setError] = useState("");
@@ -34,5 +41,5 @@ export function StoredContext({ api, projectId, contextId, items = [] }: { api: 
     if (!context) void api.call("getContext", { path: { project_id: projectId, context_id: contextId } }).then(c => { if (!disposed) setContext(c); }).catch(e => { if (!disposed) setError(describeError(e)); });
     return () => { disposed = true; };
   }, [api, projectId, contextId, context, open]);
-  return <div className="stored-context-row">{context?.request_target && <span className="target-badge" title={JSON.stringify(context.request_target)}>Target: {targetLabel(context.request_target, items)}</span>}<details className="stored-context" onToggle={e => setOpen(e.currentTarget.open)}><summary>Original captured context</summary>{context ? <ContextPreview projectId={projectId} selection={context} /> : <small>{error || "Loading original context…"}</small>}</details></div>;
+  return <div className="stored-context-row">{context && <ContextTargetBadge selection={context} items={items} />}<details className="stored-context" onToggle={e => setOpen(e.currentTarget.open)}><summary>Original captured context</summary>{context ? <ContextPreview projectId={projectId} selection={context} items={items} /> : <small>{error || "Loading original context…"}</small>}</details></div>;
 }

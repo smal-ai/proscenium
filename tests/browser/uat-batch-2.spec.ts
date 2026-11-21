@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { base, job, projectId, request, StudioFixture, work } from "./studio-fixture";
-import type { Decision, DecisionAnswer, ShotPlan } from "../../apps/frontend/src/api";
+import { base, deferred, job, projectId, request, StudioFixture, work } from "./studio-fixture";
+import type { Decision, DecisionAnswer, JobRecord, ShotPlan } from "../../apps/frontend/src/api";
 
 test("pending shell Decision stays above Composer with a long bottom-scrolled Conversation", async ({ page, baseURL }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -436,6 +436,78 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   expect(reads().slice(before)).toEqual([]);
   await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1 queued");
+  studio.assertHermetic();
+});
+
+test("draft motion frames cause no retained artefact reads until settlement and overlapping refreshes coalesce", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const draft = {
+    ...job("draft-motion", "running"), kind: "render", completed_frames: 0, expected_frames: 5,
+    render_spec: {
+      intent_id: "draft-motion", shot_id: null, purpose: "draft_motion", source_closure_digest: "a".repeat(64),
+      scene_name: "Relay", camera: null, frames: { start: 1, end: 5 }, fps: { numerator: 24, denominator: 1 },
+      dimensions: { width: 640, height: 360 }, engine: "Cycles", device: "CPU", samples: 32,
+      colour_management: { view_transform: "AgX", look: "None", exposure: 0, gamma: 1 }, renderer_revision: "synthetic",
+    },
+  } satisfies JobRecord;
+  studio.snapshot.jobs = [draft];
+  await studio.install({ savedLayout: true });
+  const activeCrawl = deferred();
+  const cursors: (string | null)[] = [];
+  let startupReads = 0;
+  let measuring = false;
+  await page.route(url => url.pathname === `${base}/artifacts`, async route => {
+    expect(route.request().method()).toBe("GET");
+    if (!measuring) {
+      await route.fulfill({ json: { items: [], next_cursor: null } });
+      startupReads++;
+      return;
+    }
+    const cursor = new URL(route.request().url()).searchParams.get("cursor");
+    cursors.push(cursor);
+    if (cursor === "page-2" && cursors.length === 2) await activeCrawl.promise;
+    await route.fulfill({ json: { items: [], next_cursor: cursor === null ? "page-2" : null } });
+  });
+  const through = async (sequence: number) => {
+    await expect.poll(() => page.evaluate(project => JSON.parse(localStorage.getItem(`proscenium.owner.cursor.${project}`)!), projectId)).toBe(sequence);
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  };
+  await studio.open(); await studio.ready();
+  await expect.poll(() => startupReads).toBe(2); // Initial load and socket catch-up.
+  measuring = true;
+
+  const frameIds = Array.from({ length: 5 }, (_, i) => `draft-frame-${i + 1}`);
+  for (let i = 1; i <= 5; i++) {
+    studio.emit("job.state_changed", { ...draft, state_revision: i + 1, completed_frames: i, availability: "partial", artifact_ids: frameIds.slice(0, i) });
+  }
+  await through(5);
+  expect(cursors).toEqual([]);
+
+  // Settlement can follow the last frame without adding a new artefact ID.
+  studio.emit("job.state_changed", { ...draft, state: "succeeded", state_revision: 7, completed_frames: 5, availability: "complete", artifact_ids: frameIds });
+  try {
+    await expect.poll(() => [...cursors]).toEqual([null, "page-2"]);
+    for (let i = 1; i <= 3; i++) {
+      studio.emit("job.state_changed", { ...job(`concept-${i}`, "succeeded"), availability: "complete", artifact_ids: [`concept-image-${i}`] });
+    }
+    await through(9);
+    expect(cursors).toEqual([null, "page-2"]);
+  } finally {
+    activeCrawl.release();
+  }
+  await expect.poll(() => [...cursors]).toEqual([null, "page-2", null, "page-2"]);
+  await through(9);
+  expect(cursors).toEqual([null, "page-2", null, "page-2"]);
+
+  const noFramesId = "cancelled-before-first-frame";
+  const noFrames = { ...draft, job_id: noFramesId, attempt_id: `attempt-${noFramesId}`, render_spec: { ...draft.render_spec, intent_id: noFramesId }, artifact_ids: [] };
+  studio.emit("job.state_changed", noFrames);
+  await through(10);
+  expect(cursors).toHaveLength(4);
+  studio.emit("job.state_changed", { ...noFrames, state: "cancelled", state_revision: 2 });
+  await expect.poll(() => cursors.slice(4)).toEqual([null, "page-2"]);
+  await through(11);
+  expect(cursors).toHaveLength(6);
   studio.assertHermetic();
 });
 

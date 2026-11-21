@@ -5,6 +5,58 @@ import { routes } from "../api/generated/operations";
 import { describeError, writePrivate } from "./storage";
 
 const TERMINAL_WORK = new Set(["completed", "failed", "stopped"]);
+const TERMINAL_JOB = new Set<JobRecord["state"]>(["succeeded", "failed", "cancelled"]);
+const REFRESH_EVENTS = new Set<Event["event_type"]>(["publication.created", "preview.order_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
+const BASE_REFRESH_EVENTS = new Set<Event["event_type"]>(["publication.created", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
+
+export function revisionScope(event: Event, prevJob?: JobRecord, receiptArtifacts?: ReadonlySet<string>) {
+  const type = event.event_type;
+  const payload = event.payload as {version_id?: string | null};
+  if (type === "job.state_changed") {
+    const job = event.payload as unknown as JobRecord;
+    if (prevJob && job.state_revision < prevJob.state_revision) return {};
+    const terminal = TERMINAL_JOB.has(job.state);
+    // The backend emits the receipt before attaching it to the job. These
+    // immutable media ticks are not changes to the catalogue's item structure.
+    const nextArtifacts = job.artifact_ids.filter(id => !receiptArtifacts?.has(id)).join("\0");
+    const prevArtifacts = prevJob?.artifact_ids.filter(id => !receiptArtifacts?.has(id)).join("\0");
+    const catalogue = !prevJob || nextArtifacts !== prevArtifacts || (terminal && !TERMINAL_JOB.has(prevJob.state)) || job.error_code !== prevJob.error_code;
+    const structural = catalogue || job.state !== prevJob.state || job.availability !== prevJob.availability;
+    const material = structural || job.completed_frames !== prevJob.completed_frames;
+    const versionId = job.target.version?.version_id;
+    return {catalogue, base: material && !versionId, versionId: material ? versionId : undefined, immediate: terminal || structural, legacy: material};
+  }
+  return {
+    catalogue: type === "publication.created" || type === "preview.order_changed" || type === "selection.changed",
+    base: BASE_REFRESH_EVENTS.has(type),
+    versionId: type === "frame.available" || type === "segment.available" || type === "preview.order_changed" ? payload.version_id ?? undefined : undefined,
+    immediate: type !== "frame.available",
+    legacy: REFRESH_EVENTS.has(type),
+  };
+}
+
+export function versionRefreshBuffer(flush: (versions: string[]) => void, delay = 200) {
+  const pending = new Set<string>();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cancel = () => { clearTimeout(timer); timer = undefined; pending.clear(); };
+  return {
+    cancel,
+    bump(versionId: string, immediate: boolean) {
+      if (immediate) {
+        pending.delete(versionId);
+        if (!pending.size) cancel();
+        flush([versionId]);
+        return;
+      }
+      pending.add(versionId);
+      timer ??= setTimeout(() => {
+        const versions = [...pending];
+        cancel();
+        flush(versions);
+      }, delay);
+    },
+  };
+}
 
 export async function allPages<T>(load: (cursor?: string) => Promise<{ items: T[]; next_cursor: string | null }>): Promise<T[]> {
   const items: T[] = [];
@@ -144,10 +196,14 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const [connection, setConnection] = useState("Disconnected");
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [catalogueRevision, setCatalogueRevision] = useState(0);
+  const [baseRevision, setBaseRevision] = useState(0);
+  const [versionRevisions, setVersionRevisions] = useState<Record<string, number>>({});
   const refreshRef = useRef<() => Promise<void>>(async () => {});
   const refresh = useCallback(() => refreshRef.current(), []);
   useEffect(() => {
     setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]); setEvents([]); setHydrated(false); setError("");
+    setVersionRevisions({});
     if (!projectId) { setConnection("No active project"); return; }
     let disposed = false;
     let socket: WebSocket | undefined;
@@ -156,11 +212,17 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     let hydrateEpoch = 0;
     let appliedHydrateEpoch = 0;
     let replaying: Promise<void> | null = null;
+    let retainedLoading = false;
+    let retainedQueued = false;
     const path = { project_id: projectId };
     const seenNative = new Set<string>();
     const journal = new Map<number, Event>();
     const knownWork = new Map<string, WorkRecord>();
     const knownJobs = new Map<string, JobRecord>();
+    const receiptArtifacts = new Set<string>();
+    const versionRefresh = versionRefreshBuffer(ids => {
+      if (!disposed) setVersionRevisions(previous => ({...previous, ...Object.fromEntries(ids.map(id => [id, (Object.hasOwn(previous, id) ? previous[id] : 0) + 1]))}));
+    });
     const recordJobs = (records: JobRecord[]) => {
       for (const record of records) {
         const prev = knownJobs.get(record.job_id);
@@ -173,11 +235,24 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       if (e instanceof ApiError && e.status === 401) onUnauthorised();
     };
     async function loadRetainedArtifacts(): Promise<void> {
+      if (disposed) return;
+      if (retainedLoading) {
+        retainedQueued = true;
+        return;
+      }
+      retainedLoading = true;
       try {
-        const summaries = await allPages(c => api.call("listRetainedArtifacts", { path, query: { cursor: c, limit: 100 } }));
-        if (!disposed) setRetainedArtifacts(summaries);
-      } catch (e) {
-        if (e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
+        do {
+          retainedQueued = false;
+          try {
+            const summaries = await allPages(c => api.call("listRetainedArtifacts", { path, query: { cursor: c, limit: 100 } }));
+            if (!disposed) setRetainedArtifacts(summaries);
+          } catch (e) {
+            if (e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
+          }
+        } while (retainedQueued && !disposed);
+      } finally {
+        retainedLoading = false;
       }
     }
     async function hydrate() {
@@ -214,6 +289,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       }
       for (const result of results) if (result.status === "rejected") report(result.reason);
       setRevision(n => n + 1);
+      setCatalogueRevision(n => n + 1);
+      setBaseRevision(n => n + 1);
     }
     refreshRef.current = hydrate;
     function apply(event: Event) {
@@ -263,21 +340,23 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
           };
         });
       }
-      let jobMaterialChange = false;
+      if (event.event_type === "frame.available" || event.event_type === "segment.available") {
+        const {artifact_id} = event.payload as {artifact_id: string};
+        receiptArtifacts.add(artifact_id);
+      }
+      const scope = revisionScope(event, event.event_type === "job.state_changed" ? knownJobs.get((event.payload as unknown as JobRecord).job_id) : undefined, receiptArtifacts);
       if (event.event_type === "job.state_changed") {
         const job = event.payload as unknown as JobRecord;
         const prevJob = knownJobs.get(job.job_id);
         const prevArtifacts = prevJob ? prevJob.artifact_ids.join("\0") : "";
         const nextArtifacts = job.artifact_ids.join("\0");
-        jobMaterialChange = !prevJob
-          || job.state !== prevJob.state
-          || job.availability !== prevJob.availability
-          || nextArtifacts !== prevArtifacts
-          || job.completed_frames !== prevJob.completed_frames
-          || job.error_code !== prevJob.error_code;
         recordJobs([job]);
         setJobs(old => mergeJobs(old, [job]));
-        if (job.artifact_ids.length > 0 && nextArtifacts !== prevArtifacts) void loadRetainedArtifacts();
+        const draftMotion = job.kind === "render" && job.render_spec?.purpose === "draft_motion";
+        const terminal = TERMINAL_JOB.has(job.state);
+        // Review reads frame receipts directly. Refresh at settlement even if the artefact IDs have not changed.
+        const renderSettled = job.kind === "render" && terminal && (!prevJob || !TERMINAL_JOB.has(prevJob.state));
+        if (renderSettled || (scope.catalogue && (!draftMotion || terminal) && job.artifact_ids.length > 0 && nextArtifacts !== prevArtifacts)) void loadRetainedArtifacts();
       }
       if (event.event_type === "subagent.started" || event.event_type === "tool.completed" || event.event_type === "subagent.completed") {
         const activity = event.payload as unknown as ActivityEventData;
@@ -296,7 +375,10 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         const ticket = event.payload as unknown as ReviewTicket;
         setReviews(prev => mergeReviews(prev, [ticket]));
       }
-      if (["publication.created", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"].includes(event.event_type) || (event.event_type === "job.state_changed" && jobMaterialChange)) setRevision(n => n + 1);
+      if (scope.legacy) setRevision(n => n + 1);
+      if (scope.catalogue) setCatalogueRevision(n => n + 1);
+      if (scope.base) setBaseRevision(n => n + 1);
+      if (scope.versionId) versionRefresh.bump(scope.versionId, scope.immediate);
     }
     async function replay() {
       if (replaying) return replaying;
@@ -315,7 +397,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       return replaying;
     }
     async function resync() {
-      cursor = 0; journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); setEvents([]);
+      versionRefresh.cancel();
+      cursor = 0; journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); receiptArtifacts.clear(); setEvents([]);
       await hydrate(); await replay();
     }
     function connect() {
@@ -354,7 +437,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       if (e instanceof ApiError && e.status === 410) await resync().catch(report);
       else report(e);
     }).finally(connect);
-    return () => { disposed = true; clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
+    return () => { disposed = true; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
   }, [api, projectId, onUnauthorised]);
-  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error, revision, refresh };
+  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error, revision, catalogueRevision, baseRevision, versionRevisions, refresh };
 }

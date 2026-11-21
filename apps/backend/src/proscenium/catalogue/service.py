@@ -18,6 +18,24 @@ from . import validation
 from .artifacts import Artifacts
 
 METADATA = ("description", "tags", "provenance")
+CHECKPOINT_SOURCE_CONFLICT = "Checkpoint receipt is unavailable or does not match source_commit"
+
+
+def natural_render_job_key(job: dict[str, Any]) -> tuple[int, int, int, tuple, str]:
+    spec = job.get("render_spec") or {}
+    frames = spec.get("frames") or {}
+    label = str(job.get("target", {}).get("shot_id") or spec.get("scene_name") or "")
+    tokens = tuple(
+        (0, int(token)) if token.isdecimal() else (1, token)
+        for token in re.split(r"(\d+)", label.casefold())
+    )
+    return (
+        int(spec.get("purpose") == "proxy"),
+        int(frames.get("start", 0)),
+        int(frames.get("end", 0)),
+        tokens,
+        job["job_id"],
+    )
 
 
 class Catalogue:
@@ -57,11 +75,21 @@ class Catalogue:
             for job in tx.all("jobs")
             if job["target"]["version"] == reference and job["kind"] == "render"
         ]
+        jobs.sort(key=natural_render_job_key)
+        valid_ids = {job["job_id"] for job in jobs}
+        inline_ids = row["preview_job_ids"]
+        ordered_override = links.get("ordered_preview_job_ids")
+        base_ids = (
+            ordered_override
+            if isinstance(ordered_override, list)
+            else inline_ids + links.get("added_preview_job_ids", [])
+        )
+        base_ids = [
+            identity for identity in base_ids if identity in valid_ids or identity in inline_ids
+        ]
         return {
             **row,
-            "preview_job_ids": list(
-                dict.fromkeys(row["preview_job_ids"] + [job["job_id"] for job in jobs])
-            ),
+            "preview_job_ids": list(dict.fromkeys(base_ids + [job["job_id"] for job in jobs])),
             "artifact_ids": list(
                 dict.fromkeys(
                     row["artifact_ids"]
@@ -70,6 +98,32 @@ class Catalogue:
                 )
             ),
         }
+
+    @staticmethod
+    def resolve_checkpoint_sources(tx: Transaction, body: dict[str, Any]) -> dict[str, Any]:
+        items = []
+        for row in body["items"]:
+            operation_id = row.get("checkpoint_operation_id")
+            if operation_id is None:
+                items.append(row)
+                continue
+            intent = tx.get("checkpoint_intents", operation_id, required=False)
+            receipt = (
+                intent.get("receipt") if intent and intent.get("state") == "completed" else None
+            )
+            if (
+                not isinstance(receipt, dict)
+                or not isinstance(receipt.get("source_closure"), dict)
+                or row["source_commit"] != receipt.get("source_commit")
+            ):
+                raise DomainError("source_conflict", 409, CHECKPOINT_SOURCE_CONFLICT)
+            items.append(
+                {
+                    **{k: v for k, v in row.items() if k != "checkpoint_operation_id"},
+                    "source": receipt["source_closure"],
+                }
+            )
+        return {**body, "items": items}
 
     def validate_batch(self, tx: Transaction, body: dict[str, Any]) -> None:
         items = body["items"]
@@ -212,11 +266,13 @@ class Catalogue:
         active(self.services, caller, "publishOutputs", project_id)
         store = self.services.registry.project_store(project_id)
         immutable = binding(caller, body)
+        submission = body
         with store.transaction(write=False) as tx:
             previous = replay(tx, "catalogue.publish", body["publication_id"], immutable)
             if previous:
                 return {**previous, "replayed": True}, True
             admitted(self.services, tx, caller)
+            body = self.resolve_checkpoint_sources(tx, submission)
             self.validate_batch(tx, body)
         # All filesystem/object work is before the database-only commit boundary.
         documents: dict[str, dict[str, Any]] = {}
@@ -281,6 +337,8 @@ class Catalogue:
 
             def effect() -> dict[str, Any]:
                 work = admitted(self.services, tx, caller)
+                if self.resolve_checkpoint_sources(tx, submission) != body:
+                    raise DomainError("source_conflict", 409, CHECKPOINT_SOURCE_CONFLICT)
                 self.validate_batch(tx, body)
                 self.validate_documents(tx, body, documents, maps)
                 job_ids = []
@@ -370,7 +428,7 @@ class Catalogue:
                     "publications",
                     body["publication_id"],
                     {
-                        "submission": body,
+                        "submission": submission,
                         "receipt": receipt,
                         "invocation_id": caller.invocation_id,
                         "work_id": caller.work_id,

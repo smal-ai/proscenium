@@ -1,5 +1,6 @@
 """Offline checkpoint closures, publication interoperability and compatible wire records."""
 
+import asyncio
 import copy
 import dataclasses
 import json
@@ -8,15 +9,19 @@ from types import SimpleNamespace
 import httpx
 import pytest
 from copilot import CopilotClient
+from copilot.tools import ToolInvocation
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.artifacts import Artifacts
 from proscenium.catalogue.service import Catalogue
 from proscenium.configuration import Settings
 from proscenium.contracts import canonical, validate
+from proscenium.copilot.capabilities import validate_authored_document
+from proscenium.copilot.tools import Tools, result_text
 from proscenium.db import Store
 from proscenium.jobs.gate import ExecutionGate
 from proscenium.sources import Sources, closure_digest
+from proscenium.sources.checkpoint import prepared_branch
 from proscenium.sources.common import git, sha
 
 PROJECT = "project-one"
@@ -42,6 +47,8 @@ def runtime(tmp_path):
     git(root, "init", "-b", "main")
     git(root, "config", "user.name", "Offline fixture")
     git(root, "config", "user.email", "fixture@proscenium.invalid")
+    (root / ".gitignore").write_text("/.proscenium/\n")
+    git(root, "add", ".gitignore")
     git(root, "commit", "--allow-empty", "-m", "Initial fixture")
     store = Store(root / ".proscenium/state.sqlite3", PROJECT)
     gate = ExecutionGate()
@@ -82,21 +89,30 @@ def runtime(tmp_path):
             dict(work_id="work-one", owner_epoch="epoch", state="running"),
         )
     sources = Sources(services)
+    catalogue = Catalogue(services, sources, Artifacts(services))
+    services.extension = {"sources": sources, "catalogue": catalogue}.__getitem__
     return SimpleNamespace(
-        root=root, store=store, services=services, caller=caller, sources=sources
+        root=root,
+        store=store,
+        services=services,
+        caller=caller,
+        sources=sources,
+        catalogue=catalogue,
     )
 
 
 def request(runtime, **changes):
-    return dict(
-        schema_version="1.0",
-        operation_id="checkpoint-one",
-        project_id=PROJECT,
-        paths=["plan.json"],
-        message="Checkpoint offline fixture",
-        expected_head=git(runtime.root, "rev-parse", "HEAD").decode().strip(),
+    return {
+        **dict(
+            schema_version="1.0",
+            operation_id="checkpoint-one",
+            project_id=PROJECT,
+            paths=["plan.json"],
+            message="Checkpoint offline fixture",
+            expected_head=git(runtime.root, "rev-parse", "HEAD").decode().strip(),
+        ),
         **changes,
-    )
+    }
 
 
 def write_plan(runtime):
@@ -501,7 +517,515 @@ def test_checkpoint_replays_across_resumed_invocation_and_reordered_paths(runtim
             "UPDATE operations SET fingerprint='legacy' WHERE scope='sources.checkpoint' AND id=?",
             (body["operation_id"],),
         )
+        tx.connection.execute(
+            "UPDATE records SET body=json_remove(body,'$.modern_binding') WHERE namespace='checkpoint_intents' AND id=?",
+            (body["operation_id"],),
+        )
     assert runtime.sources.checkpoint(resumed_caller, reordered) == {**receipt, "replayed": True}
     with pytest.raises(DomainError) as conflict:
         runtime.sources.checkpoint(resumed_caller, {**reordered, "message": "Different message"})
     assert conflict.value.code == "idempotency_conflict"
+
+
+ENTRY = "scenes/boardroom.blend"
+BASE_VERSION = {"item_id": "boardroom", "version_id": "boardroom-v1"}
+BAD_RECEIPT = "Checkpoint receipt is unavailable or does not match source_commit"
+
+
+def lfs_entry(runtime, data):
+    root = runtime.root
+    git(root, "lfs", "install", "--local", "--skip-repo")
+    git(root, "lfs", "track", "*.blend")
+    (root / ENTRY).parent.mkdir(exist_ok=True)
+    (root / ENTRY).write_bytes(data)
+
+
+def test_checkpoint_syncs_lfs_pointer_new_files_and_literal_paths(runtime):
+    root = runtime.root
+    lfs_entry(runtime, b"Original Blender fixture")
+    git(root, "add", ".gitattributes", ENTRY)
+    git(root, "commit", "-m", "Original Blender source")
+    lfs_entry(runtime, b"Updated Blender fixture")
+    for path in ("plan.json", "a[1].txt", "a1.txt"):
+        (root / path).write_text(path)
+    git(root, "add", "a1.txt")
+    unaffected = git(root, "ls-files", "-s", "--", "a1.txt")
+    body = request(runtime, entry_path=ENTRY, paths=[ENTRY, "plan.json", "a[1].txt"])
+    receipt = runtime.sources.checkpoint(runtime.caller, body)
+    assert git(root, "status", "--porcelain") == b"A  a1.txt\n"
+    assert git(root, "ls-files", "-s", "--", "a1.txt") == unaffected
+    pointer = git(root, "show", f":{ENTRY}")
+    assert pointer == git(root, "show", f"HEAD:{ENTRY}")
+    assert b"oid sha256:" + sha(b"Updated Blender fixture").encode() in pointer
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+    git(root, "commit", "-m", "Unrelated staging")
+    assert git(root, "status", "--porcelain") == b""
+
+
+@pytest.mark.parametrize("staged", ["blob", "mode", "deletion", "unmerged", "addition"])
+def test_checkpoint_preserves_stage_entries_different_from_parent(runtime, staged):
+    root = runtime.root
+    path = root / "plan.json"
+    path.write_text("Parent")
+    if staged != "addition":
+        git(root, "add", "plan.json")
+        git(root, "commit", "-m", "Parent plan")
+    if staged in {"blob", "addition"}:
+        path.write_text("User staged")
+        git(root, "add", "plan.json")
+    elif staged == "mode":
+        git(root, "update-index", "--chmod=+x", "plan.json")
+    elif staged == "deletion":
+        git(root, "rm", "--cached", "plan.json")
+    else:
+        oid = git(root, "rev-parse", "HEAD:plan.json").strip()
+        git(
+            root,
+            "update-index",
+            "--index-info",
+            data=(
+                b"0 "
+                + b"0" * 40
+                + b"\tplan.json\n"
+                + b"".join(
+                    b"100644 " + oid + b" " + str(i).encode() + b"\tplan.json\n" for i in (1, 2, 3)
+                )
+            ),
+        )
+    (root / "other.txt").write_text("Other staged change")
+    git(root, "add", "other.txt")
+    before = git(root, "ls-files", "-s", "-z")
+    path.write_text("Checkpointed working content")
+    runtime.sources.checkpoint(runtime.caller, request(runtime, entry_path="plan.json"))
+    assert git(root, "ls-files", "-s", "-z") == before
+    assert git(root, "show", "HEAD:plan.json") == b"Checkpointed working content"
+
+
+def test_checkpoint_replays_index_repair_without_stealing_git_lock(runtime):
+    write_plan(runtime)
+    root = runtime.root
+    lock = root / ".git/index.lock"
+    lock.write_bytes(b"owned by another Git writer")
+    body = request(runtime, entry_path="plan.json")
+    receipt = runtime.sources.checkpoint(runtime.caller, body)
+    assert lock.read_bytes() == b"owned by another Git writer"
+    assert not git(root, "ls-files", "-s", "--", "plan.json")
+    lock.unlink()
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+    assert git(root, "status", "--porcelain") == b""
+
+
+def test_checkpoint_old_branch_replay_does_not_stage_on_current_branch(runtime):
+    write_plan(runtime)
+    root = runtime.root
+    body = request(runtime, entry_path="plan.json")
+    receipt = runtime.sources.checkpoint(runtime.caller, body)
+    git(root, "switch", "-c", "different", body["expected_head"])
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+    assert not git(root, "status", "--porcelain")
+    assert not git(root, "ls-files", "-s", "--", "plan.json")
+
+
+def publication(runtime, receipt, *, ref=BASE_VERSION, previous=None):
+    return dict(
+        schema_version="1.0",
+        publication_id=f"publish-{ref['version_id']}",
+        project_id=PROJECT,
+        items=[
+            dict(
+                **ref,
+                kind="scene",
+                name="Boardroom",
+                expected_current_version_id=previous,
+                source_commit=receipt["source_commit"],
+                checkpoint_operation_id=receipt["operation_id"],
+                artifact_ids=[],
+                preview_requests=[],
+            )
+        ],
+    )
+
+
+def authoring_validation(runtime, body):
+    return validate_authored_document(
+        runtime.services,
+        PROJECT,
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            document_kind="publication_submit",
+            document=body,
+        ),
+    )
+
+
+def base_scene(runtime, extra=0):
+    root = runtime.root
+    lfs_entry(runtime, b"Boardroom v1")
+    paths = [ENTRY, "scenes/old-display.txt"] + [
+        f"scenes/externals/file-{i:03}.txt" for i in range(extra)
+    ]
+    for name in paths[1:]:
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(name)
+    git(root, "add", ".gitattributes", *paths)
+    git(root, "commit", "-m", "Base scene and its externals")
+    commit = git(root, "rev-parse", "HEAD").decode().strip()
+    closure = dict(
+        entry_path=ENTRY,
+        dependencies=[],
+        required_runtime=dict(application="blender", version="4.5", features=[]),
+        files=[
+            dict(
+                destination=name,
+                origin=dict(
+                    kind="git",
+                    repository_id="repository-one",
+                    commit=commit,
+                    path=name,
+                    sha256=sha((root / name).read_bytes()),
+                ),
+            )
+            for name in sorted(paths)
+        ],
+    )
+    closure["digest"] = closure_digest(closure)
+    body = publication(runtime, dict(source_commit=commit, operation_id="unused"))
+    del body["items"][0]["checkpoint_operation_id"]
+    body["items"][0]["source"] = closure
+    runtime.catalogue.publish(runtime.caller, body)
+    return closure
+
+
+def test_large_scene_closure_inheritance_and_checkpoint_publication(runtime):
+    base = base_scene(runtime, extra=443)
+    (runtime.root / ENTRY).write_bytes(b"Boardroom v2")
+    row = dict(
+        destination="scenes/externals/file-000.txt",
+        origin=retain(runtime, data=b"Replacement external"),
+    )
+    body = request(
+        runtime,
+        entry_path=ENTRY,
+        paths=[ENTRY],
+        base_version=BASE_VERSION,
+        exclude_paths=["scenes/old-display.txt"],
+        retained_files=[row],
+        required_runtime=base["required_runtime"],
+    )
+    tool = Tools(runtime.services, SimpleNamespace(), PROJECT)
+    tool.caller = lambda *args, **kwargs: runtime.caller
+    text = asyncio.run(
+        tool.invoke(
+            "checkpoint_sources",
+            ToolInvocation(
+                session_id="session-one",
+                tool_call_id="checkpoint-one",
+                tool_name="checkpoint_sources",
+                arguments=body,
+                agent_id=None,
+            ),
+        )
+    ).text_result_for_llm
+    receipt = validate("CheckpointReceipt", json.loads(text))
+    closure = receipt["source_closure"]
+    assert len(text.encode()) > 16_384
+    for value in (receipt["operation_id"], receipt["source_commit"], closure["digest"]):
+        assert value.encode() in text.encode()[:512]
+    assert list(json.loads(text)["source_closure"]) == [
+        "digest",
+        "entry_path",
+        "dependencies",
+        "required_runtime",
+        "files",
+    ]
+    assert text.index('"replayed"') < text.index('"files"')
+    assert closure["digest"] == closure_digest(closure)
+    by_path = {r["destination"]: r for r in closure["files"]}
+    assert len(by_path) == 444 and "scenes/old-display.txt" not in by_path
+    assert by_path[ENTRY]["origin"]["commit"] == receipt["source_commit"]
+    assert by_path[ENTRY]["origin"]["sha256"] == sha(b"Boardroom v2")
+    assert by_path[row["destination"]] == row
+    assert (
+        next(r for r in base["files"] if r["destination"].endswith("-001.txt"))
+        == by_path["scenes/externals/file-001.txt"]
+    )
+    assert git(runtime.root, "status", "--porcelain") == b""
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+    ref = {**BASE_VERSION, "version_id": "boardroom-v2"}
+    submission = publication(runtime, receipt, ref=ref, previous=BASE_VERSION["version_id"])
+    assert authoring_validation(runtime, submission)["valid"]
+    published, replayed = runtime.catalogue.publish(runtime.caller, submission)
+    assert not replayed and published["versions"] == [ref]
+    assert runtime.catalogue.publish(runtime.caller, submission) == (
+        {**published, "replayed": True},
+        True,
+    )
+    with runtime.store.transaction(write=False) as tx:
+        version = tx.require("versions", ref["version_id"])
+        assert validate("VersionRecord", version)["source"] == closure
+        assert "checkpoint_operation_id" not in version
+        assert tx.require("publications", submission["publication_id"])["submission"] == submission
+
+
+@pytest.mark.parametrize(
+    "case,code",
+    [
+        ("base_without_entry", "invalid_request"),
+        ("exclude_without_entry", "invalid_request"),
+        ("exclude_without_base", "invalid_request"),
+        ("missing_base", "dependency_missing"),
+        ("wrong_item", "scope_denied"),
+        ("wrong_project", "scope_denied"),
+        ("receipt_exclusion", "scope_denied"),
+        ("secret_exclusion", "scope_denied"),
+        ("duplicate_exclusion", "invalid_request"),
+        ("excluded_path", "dependency_collision"),
+        ("excluded_retained", "dependency_collision"),
+        ("prefix_collision", "dependency_collision"),
+        ("excluded_entry", "dependency_missing"),
+    ],
+)
+def test_invalid_base_or_exclusions_fail_before_intent(runtime, case, code):
+    base_scene(runtime)
+    (runtime.root / "new.txt").write_text("Owned source")
+    body = request(runtime, entry_path=ENTRY, paths=["new.txt"], base_version=BASE_VERSION)
+    excluded = "scenes/old-display.txt"
+    if case.endswith("without_entry"):
+        del body["entry_path"]
+        if case == "exclude_without_entry":
+            body["exclude_paths"] = []
+    elif case == "exclude_without_base":
+        del body["base_version"]
+        body["exclude_paths"] = []
+    elif case in {"missing_base", "wrong_item"}:
+        body["base_version"] = {
+            **BASE_VERSION,
+            ("item_id" if case == "wrong_item" else "version_id"): "wrong",
+        }
+    elif case == "wrong_project":
+        with runtime.store.transaction() as tx:
+            tx.connection.execute(
+                "UPDATE records SET body=json_set(body,'$.project_id','wrong') WHERE namespace='versions'"
+            )
+    elif case == "duplicate_exclusion":
+        body["exclude_paths"] = [excluded, excluded]
+    elif case in {"receipt_exclusion", "secret_exclusion", "excluded_path", "excluded_entry"}:
+        body["exclude_paths"] = [
+            {
+                "receipt_exclusion": ".receipt.json/child",
+                "secret_exclusion": ".env",
+                "excluded_path": "new.txt",
+                "excluded_entry": ENTRY,
+            }[case]
+        ]
+    else:
+        body["retained_files"] = [
+            dict(
+                destination=excluded + ("/child" if case == "prefix_collision" else ""),
+                origin=retain(runtime),
+            )
+        ]
+        if case == "excluded_retained":
+            body["exclude_paths"] = [excluded]
+    with pytest.raises(DomainError) as error:
+        runtime.sources.checkpoint(runtime.caller, body)
+    assert error.value.code == code
+    if case.endswith("without_entry"):
+        assert str(error.value) == "entry_path is required when building a source closure"
+    assert git(runtime.root, "rev-parse", "HEAD").decode().strip() == body["expected_head"]
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.all("checkpoint_intents")
+
+
+@pytest.mark.parametrize("case", ["absent", "uncertain", "no_closure", "wrong_commit"])
+def test_publication_rejects_an_unusable_checkpoint_receipt(runtime, case):
+    write_plan(runtime)
+    body = request(runtime, **({} if case == "no_closure" else {"entry_path": "plan.json"}))
+    receipt = runtime.sources.checkpoint(runtime.caller, body)
+    submission = publication(runtime, receipt)
+    if case == "absent":
+        submission["items"][0]["checkpoint_operation_id"] = "missing"
+    elif case == "uncertain":
+        with runtime.store.transaction() as tx:
+            row = tx.require("checkpoint_intents", receipt["operation_id"])
+            tx.put(
+                "checkpoint_intents",
+                receipt["operation_id"],
+                {**row, "state": "outcome_uncertain"},
+                expected_revision=tx.revision("checkpoint_intents", receipt["operation_id"]),
+            )
+    elif case == "wrong_commit":
+        submission["items"][0]["source_commit"] = body["expected_head"]
+    result = authoring_validation(runtime, submission)
+    assert result["schema_valid"] and not result["semantic_valid"]
+    assert result["issues"][0]["code"] == "source_conflict"
+    assert result["issues"][0]["message"] == BAD_RECEIPT
+    with pytest.raises(DomainError, match=BAD_RECEIPT) as error:
+        runtime.catalogue.publish(runtime.caller, submission)
+    assert error.value.code == "source_conflict" and error.value.status == 409
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.all("publications") and not tx.all("versions")
+
+
+def test_published_item_source_options_are_mutually_exclusive(runtime):
+    write_plan(runtime)
+    receipt = runtime.sources.checkpoint(runtime.caller, request(runtime, entry_path="plan.json"))
+    row = publication(runtime, receipt)["items"][0]
+    validate("PublishedItem", row)
+    assert result_text("checkpoint_sources", receipt) == canonical(receipt).decode()
+    with pytest.raises(DomainError):
+        validate("PublishedItem", {**row, "source": receipt["source_closure"]})
+    del row["checkpoint_operation_id"]
+    with pytest.raises(DomainError):
+        validate("PublishedItem", row)
+    validate("PublishedItem", {**row, "source": receipt["source_closure"]})
+
+
+def test_large_checkpoint_response_with_max_length_identifiers(runtime):
+    write_plan(runtime)
+    receipt = runtime.sources.checkpoint(runtime.caller, request(runtime, entry_path="plan.json"))
+    receipt.update(
+        operation_id="o" * 128, project_id="p" * 128, source_commit="c" * 64, parent_commit="a" * 64
+    )
+    receipt["source_closure"]["files"] *= 300
+    receipt["source_closure"]["digest"] = closure_digest(receipt["source_closure"])
+    text = result_text("checkpoint_sources", receipt)
+    for value in (
+        receipt["operation_id"],
+        receipt["source_commit"],
+        receipt["source_closure"]["digest"],
+    ):
+        assert value.encode() in text.encode()[:512]
+    assert validate("CheckpointReceipt", json.loads(text)) == receipt
+
+
+def checkpoint_scene_v1(runtime, *, retained=False):
+    root = runtime.root
+    lfs_entry(runtime, b"Boardroom v1")
+    git(root, "lfs", "track", "*.png")
+    git(root, "add", ".gitattributes")
+    git(root, "commit", "-m", "Track LFS files")
+    (root / "texture.png").write_bytes(b"Texture v1 fixture")
+    base_request = request(
+        runtime, operation_id="checkpoint-v1", entry_path=ENTRY, paths=[ENTRY, "texture.png"]
+    )
+    if retained:
+        base_request["retained_files"] = [
+            dict(destination="remote-texture.dat", origin=retain(runtime))
+        ]
+    receipt = runtime.sources.checkpoint(runtime.caller, base_request)
+    runtime.catalogue.publish(runtime.caller, publication(runtime, receipt))
+    return receipt
+
+
+def test_external_only_revision_repins_unchanged_lfs_entry_and_publishes(runtime):
+    v1 = checkpoint_scene_v1(runtime)
+    (runtime.root / "texture.png").write_bytes(b"Texture v2 fixture")
+    body = request(runtime, entry_path=ENTRY, paths=["texture.png"], base_version=BASE_VERSION)
+    v2 = runtime.sources.checkpoint(runtime.caller, body)
+    source = v2["source_closure"]
+    v1_entry = next(row for row in v1["source_closure"]["files"] if row["destination"] == ENTRY)
+    v2_entry = next(row for row in source["files"] if row["destination"] == ENTRY)
+    assert v2_entry == {**v1_entry, "origin": {**v1_entry["origin"], "commit": v2["source_commit"]}}
+    assert v1["source_commit"] != v2["source_commit"]
+    assert source["digest"] == closure_digest(source)
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**v2, "replayed": True}
+    ref = {**BASE_VERSION, "version_id": "boardroom-v2"}
+    submit = publication(runtime, v2, ref=ref, previous=BASE_VERSION["version_id"])
+    assert authoring_validation(runtime, submit)["valid"]
+    receipt, replayed = runtime.catalogue.publish(runtime.caller, submit)
+    assert not replayed and receipt["versions"] == [ref]
+    snapshot = runtime.sources.resolve(PROJECT, source)
+    assert (snapshot / ENTRY).read_bytes() == b"Boardroom v1"
+    assert (snapshot / "texture.png").read_bytes() == b"Texture v2 fixture"
+
+
+def test_changed_inherited_entry_rejected_before_intent_or_git_objects(runtime):
+    checkpoint_scene_v1(runtime)
+    root = runtime.root
+    (root / ENTRY).write_bytes(b"Different boardroom")
+    git(root, "add", ENTRY)
+    git(root, "commit", "-m", "Update scene separately")
+    (root / "texture.png").write_bytes(b"Texture v2 fixture")
+    body = request(runtime, entry_path=ENTRY, paths=["texture.png"], base_version=BASE_VERSION)
+    refs = git(root, "show-ref")
+    objects = git(root, "count-objects", "-v")
+    with pytest.raises(
+        DomainError, match="Inherited entry_path does not match HEAD; include entry_path in paths"
+    ) as error:
+        runtime.sources.checkpoint(runtime.caller, body)
+    assert error.value.code == "source_conflict" and error.value.status == 409
+    assert git(root, "show-ref") == refs
+    assert git(root, "count-objects", "-v") == objects
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.get("checkpoint_intents", body["operation_id"], required=False) is None
+
+
+@pytest.mark.parametrize("damage", ["missing_record", "missing_bytes", "corrupt_bytes"])
+def test_inherited_retained_source_is_verified_before_checkpoint(runtime, damage):
+    v1 = checkpoint_scene_v1(runtime, retained=True)
+    origin = next(
+        row["origin"]
+        for row in v1["source_closure"]["files"]
+        if row["origin"]["kind"] == "retained"
+    )
+    blob = runtime.root / f".proscenium/retained/{origin['sha256']}/content"
+    if damage == "missing_record":
+        with runtime.store.transaction() as tx:
+            tx.connection.execute(
+                "DELETE FROM records WHERE namespace='retained_sources' AND id=?",
+                (origin["artifact_id"],),
+            )
+    elif damage == "missing_bytes":
+        blob.unlink()
+    else:
+        blob.write_bytes(b"Corrupt content")
+    body = request(runtime, entry_path=ENTRY, paths=["texture.png"], base_version=BASE_VERSION)
+    with pytest.raises(DomainError) as error:
+        runtime.sources.checkpoint(runtime.caller, body)
+    assert error.value.code == "retained_source_missing"
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.get("checkpoint_intents", body["operation_id"], required=False) is None
+    assert git(runtime.root, "rev-parse", "HEAD").decode().strip() == body["expected_head"]
+
+
+@pytest.mark.parametrize("change", ["removed_base", "different_work"])
+def test_modern_checkpoint_cannot_fall_back_to_legacy_replay(runtime, change):
+    checkpoint_scene_v1(runtime)
+    body = request(
+        runtime, entry_path=ENTRY, paths=[ENTRY, "texture.png"], base_version=BASE_VERSION
+    )
+    runtime.sources.checkpoint(runtime.caller, body)
+    caller = runtime.caller
+    if change == "removed_base":
+        del body["base_version"]
+    else:
+        caller = dataclasses.replace(caller, work_id="different-work")
+    with pytest.raises(DomainError) as error:
+        runtime.sources.checkpoint(caller, body)
+    assert error.value.code == "idempotency_conflict"
+
+
+def test_index_sync_defers_to_prepared_ref_writer_and_cleans_its_locks(runtime):
+    write_plan(runtime)
+    root = runtime.root
+    index = root / ".git/index"
+    index_lock = index.with_suffix(".lock")
+    index_lock.touch()
+    before = index.read_bytes()
+    body = request(runtime, entry_path="plan.json")
+    receipt = runtime.sources.checkpoint(runtime.caller, body)
+    index_lock.unlink()
+    branch_lock = root / ".git/refs/heads/main.lock"
+    with prepared_branch(root, "refs/heads/main", receipt["source_commit"]) as held:
+        assert held and branch_lock.exists()
+        assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+        assert index.read_bytes() == before
+        assert not index_lock.exists() and branch_lock.exists()
+        assert not list(index.parent.glob("proscenium-index-*"))
+    assert not branch_lock.exists()
+    runtime.sources.checkpoint(runtime.caller, body)
+    assert not index_lock.exists() and not branch_lock.exists()
+    assert git(root, "status", "--porcelain") == b""

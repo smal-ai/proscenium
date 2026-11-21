@@ -73,6 +73,19 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const [latestError, setLatestError] = useState("");
   const [loadingLatest, setLoadingLatest] = useState(false);
   const latestRequest = useRef<AbortController | null>(null);
+  const firstOpenRef = useRef<boolean | null>(null);
+  const firstOpenRequest = useRef<AbortController | null>(null);
+  // Capture before the layout hook persists its defaults. ProjectStudio is keyed by project.
+  if (firstOpenRef.current === null) {
+    firstOpenRef.current = projectId !== null
+      && readPrivate(`layout.v1.${projectId}`) === null
+      && readPrivate(`view.version.${projectId}`) === null
+      && readPrivate(`created.${projectId}`) !== true;
+  }
+  const cancelFirstOpen = () => {
+    firstOpenRef.current = false;
+    firstOpenRequest.current?.abort();
+  };
   useEffect(() => () => latestRequest.current?.abort(), []);
   const currentItem = version ? data.items.find(item => item.item_id === version.item_id) : undefined;
   const latestId = currentItem?.current_version_id ?? version?.version_id;
@@ -99,6 +112,36 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     setSelection(captured);
     if (projectId) writePrivate(`view.context.${projectId}`, captured);
   }, [projectId]);
+  const board = data.items.find(item => item.kind === "storyboard" && (item.selected_version_id || item.current_version_id));
+  const boardId = board?.item_id;
+  const boardVersionId = board?.selected_version_id ?? board?.current_version_id;
+  useEffect(() => {
+    if (!projectId || !data.hydrated || !firstOpenRef.current) return;
+    if (!boardId || !boardVersionId) { firstOpenRef.current = false; return; }
+    const controller = new AbortController();
+    firstOpenRequest.current = controller;
+    void allPages(cursor => api.call("listItemVersions", {
+      path: { project_id: projectId, item_id: boardId }, query: { cursor, limit: 100 }, signal: controller.signal,
+    })).then(versions => {
+      if (controller.signal.aborted || !firstOpenRef.current) return;
+      firstOpenRef.current = false;
+      const target = versions.find(record => record.version_id === boardVersionId && record.item_id === boardId
+        && record.project_id === projectId && record.kind === "storyboard");
+      if (!target) return;
+      setLeftTab("Shots");
+      setVersion(target);
+      writePrivate(`view.version.${projectId}`, target);
+      onContextChange({ ...emptySelection(), item_id: target.item_id, version_id: target.version_id, view_mode: "keyframes" });
+    }).catch(error => {
+      if (controller.signal.aborted) return;
+      firstOpenRef.current = false;
+      if (error instanceof ApiError && error.status === 401) onUnauthorised();
+      else setLatestError(`Could not open the published storyboard: ${describeError(error)}`);
+    }).finally(() => {
+      if (firstOpenRequest.current === controller) firstOpenRequest.current = null;
+    });
+    return () => controller.abort();
+  }, [api, projectId, data.hydrated, boardId, boardVersionId, onContextChange, onUnauthorised]);
   function resetPublicationStatus() {
     latestRequest.current?.abort();
     latestRequest.current = null;
@@ -107,6 +150,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     setLoadingLatest(false);
   }
   function onSelect(next: VersionRecord) {
+    cancelFirstOpen();
     resetPublicationStatus();
     setInspectedArtifact(null);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
@@ -149,6 +193,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     }
   }
   function onNavigate(next: VersionRecord, context: TurnSelection) {
+    cancelFirstOpen();
     resetPublicationStatus();
     setInspectedArtifact(null);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
@@ -157,6 +202,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     onContextChange(context);
   }
   function onInspectArtifact(artifact: Artifact) {
+    cancelFirstOpen();
     resetPublicationStatus();
     setInspectedArtifact(artifact);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
@@ -177,7 +223,8 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       throw new Error("Steer is not confirmed. Inspect the retained request in Copilot before retrying.");
     }
   }
-  const reviewProps: ReviewSurfaceProps = { visible: !chatFocus, api, projectId: projectId ?? "", version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, selection, jobs: data.jobs, refreshRevision: data.revision, onContextChange, onContextPreparer, onNavigate, onQueue };
+  const activeVersionRevision = data.baseRevision + (version && Object.hasOwn(data.versionRevisions, version.version_id) ? data.versionRevisions[version.version_id] : 0);
+  const reviewProps: ReviewSurfaceProps = { visible: !chatFocus, api, projectId: projectId ?? "", version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, selection, jobs: data.jobs, refreshRevision: activeVersionRevision, annotationRevision: data.baseRevision, onContextChange, onContextPreparer, onNavigate, onQueue };
   const Review = components.review;
   const Outliner = components.outliner;
   const Catalogue = components.catalogue ?? CatalogueFallback;
@@ -190,7 +237,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const stopping = composer.stopping || unsettledStop || activeWork?.state === "stop_requested" || data.requests.some(request => request.receipt.state === "stop_requested");
   const fallbackStatus = !data.hydrated ? "Loading" : uncertain ? "Needs recovery" : stopping ? "Stopping" : composer.busy ? "Sending" : data.snapshot?.execution?.fenced || data.snapshot?.project.state === "awaiting_resume" ? `Paused${data.snapshot?.execution?.hold_reason ? `: ${data.snapshot.execution.hold_reason}` : ""}` : data.snapshot?.pending_decisions.length || activeWork?.state === "awaiting_user" ? "Needs your input" : activeWork?.state === "running" ? "Working" : "Ready";
   const renderAssistantStatus = (compact: boolean) => AssistantStatus ? <AssistantStatus jobs={data.jobs} snapshot={data.snapshot} requests={data.requests} events={data.events} connection={data.connection} hydrated={data.hydrated} submitting={composer.busy} stopping={composer.stopping} compact={compact} /> : <span className="assistant-status" role="status">{fallbackStatus}{data.hydrated && data.connection !== "Connected" ? " · Last known" : ""}</span>;
-  return <div className="studio-shell">
+  return <div className="studio-shell" onPointerDownCapture={cancelFirstOpen} onClickCapture={cancelFirstOpen}>
     <header className="studio-header"><div className="brand"><span className="brand-mark">P</span><strong>PROSCENIUM</strong></div><div className="header-divider" /><ProjectMenu api={api} projects={projects} activeId={projectId} onRefresh={onRefreshProjects} />
       <code className="workspace-path" title={data.snapshot?.project.path}>{data.snapshot?.project.path ?? "No active workstation folder"}</code>
       <div className="header-spacer" /><span className={data.connection === "Connected" ? "connection connected" : "connection"}><span />{data.connection}</span><button aria-label="Refresh project metadata" title="Refresh metadata without sending a prompt" onClick={() => { void onRefreshProjects(); void data.refresh(); }}><RefreshCw size={14} /></button><ConfigurationMenu api={api} configuration={configuration} snapshot={data.snapshot} onRefresh={data.refresh} onConfigurationChange={onConfigurationChange} />
@@ -199,7 +246,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       <aside className={`left-panel${layout.navigatorCollapsed ? " collapsed" : ""}`} aria-label="Navigator">
         {layout.navigatorCollapsed && <div className="panel-rail"><button aria-label="Expand Navigator" title="Expand Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: false }))}><PanelLeft size={17} /></button>{(["Shots", "Outliner", "Assets"] as const).map(tab => { const Icon = tab === "Shots" ? Film : tab === "Outliner" ? Layers : Box; return <button key={tab} aria-label={tab} title={tab} onClick={() => { setLeftTab(tab); setLayout(previous => ({ ...previous, navigatorCollapsed: false })); }}><Icon size={17} /></button>; })}</div>}
         <div className="panel-expanded" hidden={layout.navigatorCollapsed}><nav className="panel-tabs" aria-label="Navigator tabs">{(["Shots", "Outliner", "Assets"] as const).map(tab => <button key={tab} aria-selected={leftTab === tab} onClick={() => setLeftTab(tab)}>{tab}</button>)}<button className="panel-control" aria-label="Collapse Navigator" title="Collapse Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: true }))}><PanelLeft size={15} /></button></nav>
-        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} {...catalogueIdentity} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.revision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={() => seedNewItem("asset")} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
+        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} {...catalogueIdentity} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.catalogueRevision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={() => seedNewItem("asset")} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} refreshRevision={data.catalogueRevision} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>
@@ -221,7 +268,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
         {layout.assistantCollapsed && <div className="panel-rail"><button aria-label="Expand Assistant" title="Expand Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: false }))}><PanelRight size={17} /></button><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={17} /> : <Maximise2 size={17} />}</button><div className="panel-rail-status">{renderAssistantStatus(true)}</div></div>}
         <div className="panel-expanded" hidden={layout.assistantCollapsed}><header className="assistant-heading"><nav className="panel-tabs" aria-label="Assistant tabs"><button aria-selected={rightTab === "Copilot"} onClick={() => setRightTab("Copilot")}><Sparkles size={13} />Copilot{data.snapshot?.pending_decisions.length ? <span className="tab-count">{data.snapshot.pending_decisions.length}</span> : null}</button><button aria-selected={rightTab === "Critic"} data-pending-reviews={pendingReviewCount} title={pendingReviewCount ? `${pendingReviewCount} pending ${pendingReviewCount === 1 ? "review" : "reviews"}` : undefined} onClick={() => setRightTab("Critic")}>Critic{pendingReviewCount > 0 ? <span className="tab-count" aria-hidden="true">{pendingReviewCount}</span> : null}</button></nav><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={15} /> : <Maximise2 size={15} />}</button><button aria-label="Collapse Assistant" title="Collapse Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: true }))}><PanelRight size={15} /></button></header>
         <div data-seed-nonce={seedIntent?.nonce} className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} onRefresh={data.refresh} items={data.items} retainedArtifacts={data.retainedArtifacts} onInspectArtifact={onInspectArtifact} seedIntent={seedIntent} hydrated={data.hydrated} connection={data.connection} showHeaderStatus={false} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
-        <div className={rightTab === "Critic" ? "critic-content" : "critic-content hidden"}>{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.revision} reviews={data.reviews} items={data.items} retainedArtifacts={data.retainedArtifacts} pendingDecisions={data.snapshot?.pending_decisions} onInspectArtifact={onInspectArtifact} onRefresh={data.refresh} onQueue={onQueue} onSteer={canSteer ? onSteer : undefined} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>
+        <div className={rightTab === "Critic" ? "critic-content" : "critic-content hidden"}>{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.baseRevision} reviews={data.reviews} items={data.items} retainedArtifacts={data.retainedArtifacts} pendingDecisions={data.snapshot?.pending_decisions} onInspectArtifact={onInspectArtifact} onRefresh={data.refresh} onQueue={onQueue} onSteer={canSteer ? onSteer : undefined} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>
         {(rightTab === "Critic" || !projectId) && <footer className="assistant-footer">{renderAssistantStatus(false)}</footer>}
         </div>
       </aside>

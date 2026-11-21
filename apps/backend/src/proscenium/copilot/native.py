@@ -49,11 +49,13 @@ Reconcile original job/operation receipts after acknowledgement loss before retr
 Missing apply_patch is not an authoring blocker when bash is available:
 use bash (with python3, never bare python) for ordinary scoped project file creation and edits, then the host validation/checkpoint/publication tools.
 Use checkpoint_sources(entry_path=...) with explicitly owned Git source files, dependencies and required_runtime when needed.
+For multi-file scene/asset revisions, set base_version to the exact prior VersionRef, checkpoint only changed source files, and use exclude_paths to omit specific inherited destinations.
 Omit retained_files on checkpoint_sources: registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NEVER in CheckpointRequest.retained_files or SourceClosure.files.
-Pass the returned receipt["source_closure"] directly into publish_outputs. Never write shell/Python scripts to sort
+For large closures, use the completed receipt's operation_id as checkpoint_operation_id with its source_commit in both validate_authored_document (publication_submit) and publish_outputs; omit source. Otherwise pass the returned receipt["source_closure"] directly as source. Never write shell/Python scripts to sort
 SourceClosure files or compute SHA-256 closure digests. Never git add . or include unrelated staging.
 Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.
 Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.
+For multi-scene or multi-shot previews, read get_version(version_id) and use set_preview_order on the published version to set pass order without re-rendering.
 Use list_items to discover catalogue names, descriptions, tags and known provenance without private SQLite.
 Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
 Use assemble_sequence for an exact already-published sequence. The host resolves frame receipts and computes admission hashes.
@@ -89,6 +91,7 @@ authoring-specialist, and Unity workflows to unity-specialist. Do not run long a
 in the root turn. Give each specialist an explicit slice, pinned inputs, expected outputs and remaining budget.
 Keep one live scene writer and one Git index owner. Reconcile specialist receipts before progressing dependencies.
 Once a synchronous task specialist has completed, delegate follow-up work with a new task call rather than write_agent.
+When pitching or refining a storyboard or hero-assets breakdown in Conversation, relay the full pitch/shortlist or single-item revision card to the owner and never submit image generation without explicit generation instruction.
 """
     + SHARED_INSTRUCTIONS
 )
@@ -96,8 +99,8 @@ Once a synchronous task specialist has completed, delegate follow-up work with a
 SPECIALIST_INSTRUCTIONS = (
     """You are a bounded authoring specialist invoked by the lead.
 Complete your assigned slice directly with exposed tools without unnecessary nested subagent delegation.
-Load the matching domain skill first (storyboard, image-generation, blender-authoring, sequence-assembly,
-research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
+Load the matching domain skill first (storyboard, hero-assets, image-generation, image-to-3d, blender-authoring,
+sequence-assembly, research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
 """
     + SHARED_INSTRUCTIONS
 )
@@ -176,6 +179,7 @@ class Configuration:
                 "checkpoint_sources",
                 "publish_outputs",
                 "request_preview",
+                "set_preview_order",
                 "register_artifact",
                 "submit_generation",
                 "request_vlm_review",

@@ -16,6 +16,37 @@ from proscenium.jobs.resources import check_storage
 
 TRANSITIONS = json.loads(files("proscenium.contracts").joinpath("transitions.json").read_text())
 TERMINAL = {"succeeded", "failed", "cancelled"}
+EARLIER_RENDER_RETRY_DENIED = "This job belongs to an earlier request. No render was started."
+
+
+def retry_context(
+    tx: Transaction,
+    caller: Caller,
+    work: dict[str, Any],
+    *,
+    owner_epoch: str,
+    require_invocation: bool,
+) -> tuple[str, dict[str, Any] | None]:
+    """Use the invocation's captured Queue or Steer context, never the latest workspace view."""
+    if caller.invocation_id is None and not require_invocation:
+        request_id = work["originating_request_id"]
+    else:
+        invocation = (
+            tx.get("invocations", str(caller.invocation_id), required=False)
+            if caller.invocation_id is not None
+            else None
+        )
+        if (
+            not invocation
+            or invocation.get("work_id") != work["work_id"]
+            or invocation.get("owner_epoch") != owner_epoch
+            or invocation.get("state") not in {"admitted", "running"}
+        ):
+            raise DomainError("scope_denied", 403, EARLIER_RENDER_RETRY_DENIED)
+        request_id = invocation.get("context_request_id") or invocation["request_id"]
+    request = tx.get("requests", request_id, required=False)
+    context_id = request["submission"].get("context_id") if request else None
+    return request_id, tx.require("contexts", context_id) if context_id else None
 
 
 def transition(
@@ -53,6 +84,10 @@ class JobService:
         self.cancellation_eligibility: dict[
             str,
             tuple[Callable[[dict[str, Any]], None], Callable[[Transaction, dict[str, Any]], bool]],
+        ] = {}
+        # Host-only probes return the authorising request for cross-work recovery.
+        self.retry_eligibility: dict[
+            str, Callable[[Transaction, Caller, dict[str, Any]], str | None]
         ] = {}
 
     def check_caller(
@@ -292,16 +327,57 @@ class JobService:
     def retry(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         validate("JobRetry", body)
         self.check_caller(caller, "retryToolJob", body["project_id"])
-        if caller.channel != "tool":
+        if caller.channel != "tool" or not caller.work_id:
             raise DomainError("scope_denied", 403)
         with self.registry.project_store(body["project_id"]).transaction() as tx:
 
             def effect() -> dict[str, Any]:
                 self.gate.require(body["project_id"])
+                active_work = tx.require("work", str(caller.work_id))
+                if active_work["project_id"] != body["project_id"] or active_work["state"] not in {
+                    "running",
+                    "awaiting_user",
+                }:
+                    raise DomainError("no_active_work", 409)
                 job = tx.require("jobs", body["job_id"])
-                self.cas(job, body)
-                if job["work_id"] != caller.work_id:
+                if job["project_id"] != body["project_id"]:
                     raise DomainError("scope_denied", 403)
+                cross_work = job["work_id"] != caller.work_id
+                _, context = retry_context(
+                    tx,
+                    caller,
+                    active_work,
+                    owner_epoch=self.owner_epoch,
+                    require_invocation=cross_work,
+                )
+                if context and context.get("execution_scope") == "planning_only":
+                    raise DomainError(
+                        "scope_denied",
+                        403,
+                        "Retry is unavailable while execution_scope is planning_only. No render was started.",
+                    )
+                authorising_request_id = None
+                if cross_work:
+                    if job["kind"] != "render":
+                        raise DomainError(
+                            "scope_denied",
+                            403,
+                            "This job belongs to an earlier request. No job was started.",
+                        )
+                    denied = EARLIER_RENDER_RETRY_DENIED
+                    origin = (
+                        tx.get("work", job["work_id"], required=False) if job["work_id"] else None
+                    )
+                    if (
+                        not origin
+                        or origin.get("project_id") != body["project_id"]
+                        or origin.get("state") not in {"completed", "failed", "stopped"}
+                    ):
+                        raise DomainError("scope_denied", 403, denied)
+                    probe = self.retry_eligibility.get("render")
+                    if probe is None or (authorising_request_id := probe(tx, caller, job)) is None:
+                        raise DomainError("scope_denied", 403, denied)
+                self.cas(job, body)
                 if job["kind"] not in {"render", "encode", "unity"} or job["state"] not in {
                     "failed",
                     "cancelled",
@@ -330,6 +406,23 @@ class JobService:
                     schema="JobRecord",
                 )
                 self.save_attempt(tx, job, body["operation_id"])
+                if authorising_request_id is not None:
+                    tx.put(
+                        "job_retry_authorisations",
+                        job["attempt_id"],
+                        {
+                            "schema_version": "1.0",
+                            "project_id": body["project_id"],
+                            "job_id": job["job_id"],
+                            "attempt_id": job["attempt_id"],
+                            "attempt_number": job["attempt_number"],
+                            "originating_work_id": job["work_id"],
+                            "authorising_work_id": caller.work_id,
+                            "authorising_request_id": authorising_request_id,
+                            "invocation_id": caller.invocation_id,
+                            "operation_id": body["operation_id"],
+                        },
+                    )
                 self.emit(tx, job, caller)
                 return job
 

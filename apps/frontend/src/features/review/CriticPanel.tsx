@@ -7,6 +7,7 @@ import type {
   CommandReceipt,
   DecisionAnswer,
   FrameTarget,
+  ItemRecord,
   RequestTarget,
   ReviewDetail,
   ReviewFinding,
@@ -16,9 +17,21 @@ import type {
 } from "../../api/generated/contracts";
 import { describeError, durableCommand, id, readPrivate, writePrivate } from "../../app/storage";
 import { emptySelection, type CriticSurfaceProps } from "../../api/studio";
+import { versionRequestTarget } from "../chat/target";
 import { cleanTargetRole } from "./context";
 import { mediaUrl } from "./media";
 import { allPages } from "./records";
+
+export function criticRequestTarget(targets: FrameTarget[], items: ItemRecord[]): RequestTarget | null {
+  const first = targets[0];
+  if (!first?.item_id || !first.version_id || targets.some(target => target.item_id !== first.item_id || target.version_id !== first.version_id)) {
+    return { kind: "project" };
+  }
+  const effectiveKind = items.find(item => item.item_id === first.item_id)?.kind
+    ?? (first.origin === "sequence_render" ? "sequence" : undefined);
+  const shotId = targets.every(target => target.shot_id === first.shot_id) ? first.shot_id : null;
+  return versionRequestTarget({ item_id: first.item_id, version_id: first.version_id }, effectiveKind, shotId);
+}
 
 interface StagedFinding {
   text: string;
@@ -395,28 +408,9 @@ export function CriticPanel({
       }
     }
     const first = selectedFindings[0].target;
-    const singleVersion =
-      Boolean(first.item_id && first.version_id) &&
-      selectedFindings.every(
-        f => f.target.item_id === first.item_id && f.target.version_id === first.version_id,
-      );
-    const itemKind = singleVersion
-      ? items.find(it => it.item_id === first.item_id)?.kind
-      : undefined;
-    const singleShot =
-      singleVersion &&
-      itemKind === "storyboard" &&
-      Boolean(first.shot_id) &&
-      selectedFindings.every(f => f.target.shot_id === first.shot_id);
-    const requestTarget: RequestTarget = singleShot
-      ? {
-          kind: "shot",
-          storyboard_version: { item_id: first.item_id!, version_id: first.version_id! },
-          shot_id: first.shot_id!,
-        }
-      : singleVersion
-        ? { kind: "item", version: { item_id: first.item_id!, version_id: first.version_id! } }
-        : { kind: "project" };
+    const requestTarget = criticRequestTarget(selectedFindings.map(f => f.target), items);
+    // Null still identifies a single viewed sequence or Unity result.
+    const singleVersion = requestTarget?.kind !== "project";
 
     setBusy(true);
     setError("");
