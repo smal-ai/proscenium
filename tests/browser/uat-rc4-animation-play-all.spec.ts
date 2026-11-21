@@ -203,7 +203,7 @@ test("background raster receipt floods do not refetch catalogue or the viewed ve
   });
   await expect(page.locator("main.review-panel .review-image img")).toBeVisible();
   const reads = () => studio.guard!.calls.filter(({method, url}) => method === "GET" &&
-    /\/items\/[^/]+\/versions$|\/jobs\/[^/]+\/(frames|segments|availability)$|\/annotations$/.test(new URL(url).pathname)).length;
+    /\/items\/[^/]+\/versions$|\/jobs\/[^/]+\/(frames|segments|availability)$|\/annotations$/.test(new URL(url, baseURL!).pathname)).length;
   const before = reads();
   for (let i = 1; i <= 20; i++) {
     const artifact_id = `background-${i}`;
