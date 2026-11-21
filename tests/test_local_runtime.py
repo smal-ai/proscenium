@@ -33,7 +33,7 @@ from proscenium.copilot.native import (
     unity_agent,
 )
 from proscenium.services import Services
-from proscenium.sources.common import git
+from proscenium.sources.common import fingerprint, git
 
 from tools.operations import recovery
 
@@ -755,6 +755,104 @@ def test_compiled_ui_and_owner_boundary(tmp_path):
         assert services.extension("copilot").native is None
         assert services.extension("lifecycle").errors == {}
     assert services.ownership.file.closed
+
+
+def test_create_project_under_read_only_parent_rejects_new_and_prepared_commands(tmp_path):
+    settings = Settings(data_directory=tmp_path / "machine")
+    parent = tmp_path / "read-only"
+    parent.mkdir(mode=0o500)
+    try:
+        if os.access(parent, os.W_OK | os.X_OK):
+            pytest.skip("This user can write to a mode-0500 directory")
+        workspace = parent / "new" / "project"
+        payload = dict(
+            schema_version="1.0", operation_id=str(uuid4()), path=str(workspace), create=True
+        )
+        headers = {"Idempotency-Key": payload["operation_id"]}
+        with TestClient(create_app(settings), base_url=settings.origin) as browser:
+            pair(browser)
+            store = browser.app.state.services.registry.store
+            response = browser.post("/api/v1/projects", json=payload, headers=headers)
+            assert response.status_code == 403
+            assert response.json()["error"]["code"] == "scope_denied"
+            assert response.json()["error"]["message"] == (
+                f"Cannot create workspace '{workspace}': '{parent}' is not writable"
+            )
+            intent = dict(fingerprint=fingerprint(payload), state="prepared")
+            with store.transaction() as tx:
+                assert list(tx.all("project_open_intents")) == []
+                tx.put("project_open_intents", payload["operation_id"], intent)
+
+            repeated = browser.post("/api/v1/projects", json=payload, headers=headers)
+            assert repeated.status_code == 403
+            assert repeated.json() == response.json()
+            with store.transaction(write=False) as tx:
+                assert list(tx.all("project_open_intents")) == [intent]
+            assert list(parent.iterdir()) == []
+    finally:
+        parent.chmod(0o700)
+
+
+@pytest.mark.parametrize(
+    ("path", "create", "status", "code"),
+    [
+        ("file/project", True, 400, "invalid_request"),
+        ("relative/path", True, 400, "invalid_request"),
+        ("  ", True, 400, "invalid_request"),
+        ("\x00", True, 400, "invalid_request"),
+        ("broken", True, 403, "scope_denied"),
+        ("broken/project", True, 403, "scope_denied"),
+        ("missing", False, 404, "not_found"),
+        ("file", False, 400, "invalid_request"),
+    ],
+)
+def test_project_open_preflight_rejects_invalid_workspace(tmp_path, path, create, status, code):
+    settings = Settings(data_directory=tmp_path / "machine")
+    (tmp_path / "file").touch()
+    (tmp_path / "broken").symlink_to(tmp_path / "missing")
+    payload = dict(
+        schema_version="1.0",
+        operation_id=str(uuid4()),
+        path=path if path in {"relative/path", "  ", "\x00"} else str(tmp_path / path),
+        create=create,
+    )
+    with TestClient(create_app(settings), base_url=settings.origin) as browser:
+        pair(browser)
+        response = browser.post(
+            "/api/v1/projects", json=payload, headers={"Idempotency-Key": payload["operation_id"]}
+        )
+        assert response.status_code == status
+        assert response.json()["error"]["code"] == code
+        with browser.app.state.services.registry.store.transaction(write=False) as tx:
+            assert list(tx.all("project_open_intents")) == []
+        assert not (tmp_path / "missing").exists()
+
+
+def test_project_rebind_rejects_missing_workspace(tmp_path):
+    settings = Settings(data_directory=tmp_path / "machine")
+    workspace = tmp_path / "original"
+    missing = tmp_path / "missing"
+    with TestClient(create_app(settings), base_url=settings.origin) as browser:
+        pair(browser)
+        project = command(browser, "/api/v1/projects", {"path": str(workspace), "create": True})
+        project_id = project["project_id"]
+        payload = dict(
+            schema_version="1.0",
+            operation_id=str(uuid4()),
+            project_id=project_id,
+            new_path=str(missing),
+            expected_revision=project["state_revision"],
+        )
+        response = browser.post(
+            f"/api/v1/projects/{project_id}/rebind",
+            json=payload,
+            headers={"Idempotency-Key": payload["operation_id"]},
+        )
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "not_found"
+        assert response.json()["error"]["message"] == f"Workspace folder not found: {missing}"
+        assert browser.app.state.services.registry.get(project_id) == project
+        assert not missing.exists()
 
 
 def test_project_and_image_survive_quiet_restart(tmp_path):
