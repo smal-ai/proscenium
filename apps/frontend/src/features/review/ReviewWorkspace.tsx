@@ -149,6 +149,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const animationPasses = useMemo(() => selectablePassJobs(orderedVersionJobs, "animation", artifacts).filter(job =>
     job.kind === "render" && (job.render_spec?.purpose === "draft_motion" || job.render_spec?.purpose === "final" || (job.expected_frames ?? 0) > 1)), [orderedVersionJobs, artifacts]);
   const jobsKey = reviewJobsFingerprint(versionJobs);
+  const latestInputsRef = useRef({version, versionJobs, jobs});
+  latestInputsRef.current = {version, versionJobs, jobs};
+  const refreshRead = useRef<(() => void) | null>(null);
   const proxyJobsKey = proxyJobsFingerprint(jobs, versionId);
   const annotationTrigger = annotationRevision ?? refreshRevision;
   const draft = drafts.find(d => d.key === draftId);
@@ -369,12 +372,14 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   },[api,projectId,changeDraft]);
 
   useEffect(() => {
-    if (!version) return;
+    if (!suppliedVersion?.version_id) return;
     const controller = new AbortController();
     const {signal} = controller;
-    const errors: string[] = [];
-    const captureError = (error: unknown) => { if (!signal.aborted) errors.push(error instanceof Error ? error.message : String(error)); };
     async function read() {
+      const {version, versionJobs, jobs} = latestInputsRef.current;
+      if (!version) return;
+      const errors: string[] = [];
+      const captureError = (error: unknown) => { if (!signal.aborted) errors.push(error instanceof Error ? error.message : String(error)); };
       const receipts: FrameReceipt[] = []; const clips: PreviewSegment[] = [];
       const media: Artifact[] = [];
       let storyboardPanels: StoryboardPanel[] = [];
@@ -440,7 +445,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           return [{...panel, target: {origin: artifact.purpose === "reference" ? "reference" as const : "concept" as const, artifact_id: artifact.artifact_id, displayed_sha256: artifact.sha256, dimensions: artifact.dimensions, item_id: pinned.item_id, version_id: pinned.version_id, shot_id: panel.shot_id, render_job_id: null, source_frame: null, media_artifact_id: null}}];
         });
         setStoryboardTargets(panels);
-        const ordered = pinned === version ? orderedVersionJobs : orderVersionJobs(versionJobs, pinned.preview_job_ids);
+        const ordered = orderVersionJobs(versionJobs, pinned.preview_job_ids);
         const rank = new Map(ordered.map((job, index) => [job.job_id, index]));
         receipts.sort((a,b) => (rank.get(a.job_id) ?? Infinity) - (rank.get(b.job_id) ?? Infinity) || a.source_frame - b.source_frame);
         setFrames(receipts); setSegments(clips); setArtifacts(orderedMedia);
@@ -481,9 +486,31 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         if (errors.length) setError(`Some review data is unavailable: ${[...new Set(errors)].join(". ")}`);
       }
     }
-    void read();
-    return () => controller.abort();
-    // The fingerprint represents pinned version jobs, not array object identity.
+    let running = false;
+    let queued = false;
+    refreshRead.current = () => {
+      if (signal.aborted) return;
+      queued = true;
+      if (running) return;
+      running = true;
+      void (async () => {
+        try {
+          while (queued && !signal.aborted) {
+            queued = false;
+            try { await read(); }
+            catch (error) { if (!signal.aborted) setError(String(error)); }
+          }
+        } finally {
+          running = false;
+        }
+      })();
+    };
+    return () => { controller.abort(); refreshRead.current = null; };
+  }, [api, projectId, suppliedVersion?.version_id, suppliedVersion?.artifact_ids.join("|")]);
+
+  // Schedule one catch-up read instead of aborting slow reads on progress ticks.
+  useEffect(() => {
+    refreshRead.current?.();
   }, [api, projectId, suppliedVersion?.version_id, suppliedVersion?.artifact_ids.join("|"), jobsKey, refreshRevision]);
 
   useEffect(() => {

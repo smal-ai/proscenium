@@ -74,6 +74,18 @@ def test_render_spec_accepts_optional_boolean_denoise():
             validate("RenderSpec", {**spec, "denoise": value})
 
 
+@pytest.mark.parametrize("key", ["proscenium_object_id", "proscenium_instance_id"])
+@pytest.mark.parametrize("value", ["", 0, False, None])
+def test_collection_instance_rejects_present_falsy_identity_keys(key, value):
+    properties = {key: value}
+    original = SimpleNamespace(type="EMPTY", instance_type="COLLECTION", get=properties.get)
+    assert not _is_unmapped_collection_instance(SimpleNamespace(parent=original))
+    original.keys = properties.keys
+    # A native property getter may report its default even when the key exists.
+    original.get = lambda _key, default: default
+    assert not _is_unmapped_collection_instance(SimpleNamespace(parent=original))
+
+
 @pytest.mark.parametrize(
     "change", [None, "object", "dynamics", "disk_cache", "external", "baked", "emitter"]
 )

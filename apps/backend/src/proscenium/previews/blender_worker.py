@@ -186,17 +186,24 @@ def _is_tessellated_primitive_instance(instance) -> bool:
     }
 
 
+_MISSING = object()
+_IDENTITY_KEYS = ("proscenium_object_id", "proscenium_instance_id")
+
+
 def _is_unmapped_collection_instance(instance) -> bool:
     parent = getattr(instance, "parent", None)
     if parent is None:
         return False
     parent_orig = getattr(parent, "original", parent)
-    return (
-        getattr(parent_orig, "type", None) == "EMPTY"
-        and getattr(parent_orig, "instance_type", None) == "COLLECTION"
-        and not parent_orig.get("proscenium_object_id")
-        and not parent_orig.get("proscenium_instance_id")
-    )
+    if (
+        getattr(parent_orig, "type", None) != "EMPTY"
+        or getattr(parent_orig, "instance_type", None) != "COLLECTION"
+    ):
+        return False
+    keys = getattr(parent_orig, "keys", None)
+    if callable(keys) and any(key in keys() for key in _IDENTITY_KEYS):
+        return False
+    return all(parent_orig.get(key, _MISSING) is _MISSING for key in _IDENTITY_KEYS)
 
 
 def _has_surface_mesh(obj, depsgraph) -> bool:

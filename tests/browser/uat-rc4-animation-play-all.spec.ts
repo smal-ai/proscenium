@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { expect, test, type Page } from "@playwright/test";
 import type { Artifact, FrameAvailability, FrameReceipt, JobRecord, PreviewSegment } from "../../apps/frontend/src/api";
 import type { MockRoute } from "./fixtures";
@@ -216,6 +217,73 @@ test("background raster receipt floods do not refetch catalogue or the viewed ve
   await expect.poll(() => page.evaluate(id => Number(localStorage.getItem(`proscenium.owner.cursor.${id}`)), projectId)).toBe(sequence);
   await page.waitForTimeout(240);
   expect(reads()).toBe(before);
+});
+
+test("slow review reads commit during foreground render ticks without reloading Shots, and abort on navigation", async ({page, baseURL}) => {
+  const board = version("board-b", "b-v1", "Storyboard B", "storyboard");
+  let pendingReads = 0;
+  let peakReads = 0;
+  let raster = job(scenes[0].id, "running");
+  let progressiveFrames: FrameReceipt[] = [];
+  const {studio, routes} = await openScene(page, baseURL!, (fixture, routes) => {
+    fixture.versionRecords.push(board);
+    fixture.snapshot.items.push({schema_version: "1.0", project_id: projectId, kind: "storyboard", name: board.name,
+      item_id: board.item_id, current_version_id: board.version_id, selected_version_id: null, state_revision: 1});
+    raster = {...renderScene(fixture, routes, 0, {ready: false}), state: "running", availability: "partial", expected_frames: 100};
+    const framesRoute = routes.find(r => r.path === `${base}/jobs/${raster.job_id}/frames`)!;
+    framesRoute.handler = async route => {
+      const snapshot = progressiveFrames;
+      pendingReads++;
+      peakReads = Math.max(peakReads, pendingReads);
+      try {
+        await delay(500);
+        await route.fulfill({json: pageOf(snapshot)});
+      } catch (error) {
+        if (!route.request().failure()) throw error;
+      } finally { pendingReads--; }
+    };
+    return [raster];
+  });
+  const review = page.locator("main.review-panel");
+  await expect(review.getByText("Frame 1 pending. No ready review image yet.", {exact: true})).toBeVisible();
+  await page.getByRole("button", {name: "Shots", exact: true}).click();
+  await expect(page.getByRole("heading", {name: "Plan plan"})).toBeVisible();
+  const shotReads = () => studio.guard!.calls.filter(({method, url}) => method === "GET" &&
+    /\/(items|selections|versions\/b-v1\/shot-plan|items\/board-b\/versions)$/.test(new URL(url, baseURL!).pathname)).length;
+  const before = shotReads();
+  const readyRoutes: MockRoute[] = [];
+  renderScene(studio, readyRoutes, 0);
+  progressiveFrames = (readyRoutes.find(r => r.path === `${base}/jobs/${raster!.job_id}/frames`)!.body as ReturnType<typeof pageOf<FrameReceipt>>).items;
+  const availability = routes.find(r => r.path === `${base}/jobs/${raster!.job_id}/availability`)!;
+  availability.body = {...availability.body as FrameAvailability, available_ranges: [{start: 1, end: 2}], pending_ranges: []};
+  let streaming = true;
+  const ticks = (async () => {
+    while (streaming) {
+      const source_frame = raster.completed_frames! + 1;
+      const artifact_id = progressiveFrames[0].artifact_id;
+      studio.emit("frame.available", {version_id: sceneVersion.version_id, job_id: raster.job_id, source_frame, artifact_id});
+      raster = {...raster, state_revision: raster.state_revision + 1, completed_frames: source_frame, artifact_ids: [artifact_id]};
+      studio.emit("job.state_changed", raster);
+      await delay(100);
+    }
+  })();
+  try {
+    await expect(review.locator(".review-image img")).toBeVisible();
+    expect(raster!.state).toBe("running");
+    expect(peakReads).toBe(1);
+    expect(shotReads()).toBe(before);
+    await page.getByRole("button", {name: "Assets", exact: true}).click();
+    const boardHeader = page.locator(".catalogue-item-header").filter({hasText: "Storyboard B"});
+    await expect(boardHeader).toBeVisible();
+    await expect.poll(() => pendingReads, {intervals: [20]}).toBe(1);
+    const cancelled = page.waitForEvent("requestfailed", {predicate: request => new URL(request.url()).pathname === `${base}/jobs/${raster.job_id}/frames`});
+    await boardHeader.click();
+    expect((await cancelled).failure()?.errorText).toContain("ERR_ABORTED");
+  } finally {
+    streaming = false;
+    await ticks;
+  }
+  studio.assertHermetic();
 });
 
 for (const reportAvailability of [true, false]) {
