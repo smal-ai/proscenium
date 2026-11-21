@@ -18,7 +18,7 @@ WORKFLOW_TOOLS = {
     "run_unity_workflow": (
         "unity",
         "JobRecord",
-        "Prepare pinned Blender source and admit a scoped Unity import/validate/build. Uses configured executables only. Returns a tracked job; read get_unity_result after settlement.",
+        "Import pinned Blender source or validate/build a published Unity result in its existing project. Uses configured executables only. Returns a tracked job; read get_unity_result after settlement.",
     ),
     "get_unity_result": (
         "unity_result",

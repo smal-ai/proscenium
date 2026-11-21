@@ -9,7 +9,6 @@ from uuid import uuid4
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
-from proscenium.copilot.eligibility import execution_status
 from proscenium.db import Store
 from proscenium.db.ownership import Ownership
 from proscenium.db.paths import DENIED_PARTS, project_path
@@ -97,7 +96,13 @@ class Projects:
         return dict(config)
 
     @staticmethod
-    def bootstrap(root: Path, name: str) -> None:
+    def bootstrap(
+        root: Path,
+        name: str,
+        *,
+        identity: dict[str, str] | None = None,
+        install_lfs_hooks: bool = True,
+    ) -> None:
         # Never initialise a nested project in somebody else's repository.
         existing = git(root, "rev-parse", "--show-toplevel", required=False).decode().strip()
         if existing and existing != str(root):
@@ -109,7 +114,7 @@ class Projects:
             candidate.mkdir(exist_ok=True, mode=0o700)
         if not (root / ".git").exists():
             git(root, "init", "-b", "main", "--object-format=sha1")
-        git(root, "lfs", "install", "--local")
+        git(root, "lfs", "install", "--local", *([] if install_lfs_hooks else ["--skip-repo"]))
         for filename, lines in (
             (".gitignore", list(IGNORE)),
             (
@@ -123,26 +128,45 @@ class Projects:
             previous = path.read_text() if path.exists() else ""
             missing = [line for line in lines if line not in previous.splitlines()]
             if missing:
-                with path.open("a") as stream:
+                # Git attributes are last-match-wins. Existing authoring rules take
+                # precedence over the generic defaults, not the other way round.
+                attributes = filename == ".gitattributes"
+                with path.open("w" if attributes else "a") as stream:
+                    additions = "\n".join(missing) + "\n"
                     stream.write(
-                        ("\n" if previous and not previous.endswith("\n") else "")
-                        + "\n".join(missing)
-                        + "\n"
+                        additions + previous
+                        if attributes
+                        else (
+                            ("\n" if previous and not previous.endswith("\n") else "") + additions
+                        )
                     )
                     stream.flush()
                     os.fsync(stream.fileno())
         if not (root / "project.json").exists():
             config = dict(
                 schema_version="1.0",
-                project_id="project-" + str(uuid4()),
-                repository_id="repository-" + str(uuid4()),
+                **(
+                    identity
+                    or dict(
+                        project_id="project-" + str(uuid4()),
+                        repository_id="repository-" + str(uuid4()),
+                    )
+                ),
                 name=name,
                 paths={directory: directory for directory in DIRECTORIES},
             )
+            validate("ProjectConfig", config)
             atomic_bytes(root / "project.json", canonical(config))
             (root / "project.json").chmod(0o600)
 
-    def open(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    def open(
+        self,
+        caller: Caller,
+        body: dict[str, Any],
+        *,
+        identity: dict[str, str] | None = None,
+        install_lfs_hooks: bool = True,
+    ) -> tuple[dict[str, Any], bool]:
         owner_only(caller)
         validate("ProjectOpen", body)
         registry = self.services.registry
@@ -171,7 +195,12 @@ class Projects:
             if not root.is_dir() or (root / ".proscenium").is_symlink():
                 raise DomainError("scope_denied", 403)
             if body["create"] or not (root / "project.json").exists():
-                self.bootstrap(root, body.get("name", root.name))
+                self.bootstrap(
+                    root,
+                    body.get("name", root.name),
+                    identity=identity,
+                    install_lfs_hooks=install_lfs_hooks,
+                )
             config = self.config(root)
             record = dict(
                 schema_version="1.0",
@@ -402,6 +431,8 @@ class Projects:
             tx.operation("projects.event", body["operation_id"], body, effect)
 
     def snapshot(self, project_id: str) -> dict[str, Any]:
+        from proscenium.copilot.eligibility import execution_status
+
         with self.services.activation_lock:
             self.services.reconcile_project_projection(project_id)
             record = self.services.registry.get(project_id)

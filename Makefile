@@ -1,4 +1,4 @@
-.PHONY: bootstrap run build generate check-generated lint typecheck test test-browser check
+.PHONY: bootstrap run build build-frontend generate check-generated lint typecheck test test-browser check
 
 CONFIG ?= config.example.json
 PYTHON_CHECK_PATHS = apps/backend/src scripts tests tools agent/skills
@@ -10,7 +10,9 @@ bootstrap:
 run: build
 	uv run python -m proscenium --config "$(CONFIG)" $(ARGS)
 
-build:
+build: build-frontend
+
+build-frontend:
 	npm run build
 
 generate:

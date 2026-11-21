@@ -16,6 +16,8 @@ from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
 from proscenium.db.paths import project_path
 
+from .worker import BUILD_OUTPUT_SCOPE, check_project_tree, valid_build_output_path
+
 HERE = Path(__file__).resolve().parent
 EDITOR_VERSION = "6000.3.27f1"
 PACKAGE_VERSIONS = {
@@ -127,6 +129,94 @@ def bootstrap_project(root: Path, project: str, *, tests: bool = False) -> Path:
 def source_key(source_id: str) -> str:
     # Opaque source IDs never become paths or C# object selectors directly.
     return hashlib.sha256(source_id.encode()).hexdigest()[:24]
+
+
+def existing_recipe(root: Path, body: dict[str, Any], version: dict[str, Any]) -> dict[str, Any]:
+    """Freeze an authored project's batch entry point without installing tooling."""
+    project = unity_path(root, body["project"])
+    if project != root / body["project"]:
+        raise DomainError("scope_denied", 403, "Authored Unity project cannot be a symlink")
+    try:
+        check_project_tree(project)
+    except (OSError, RuntimeError) as error:
+        raise DomainError(
+            "scope_denied", 403, f"Cannot inspect authored Unity project: {error}"
+        ) from error
+
+    def scene_path(value: str) -> str:
+        candidate = value.removeprefix(body["project"] + "/")
+        if not candidate.startswith("Assets/") or not candidate.endswith(".unity"):
+            raise DomainError("scope_denied", 403, "Scene must be inside this project's Assets")
+        scene = scoped(project, candidate)
+        if scene != project / candidate or not scene.is_file():
+            raise DomainError("source_unavailable", 422, "Unity scene is missing")
+        return scene.relative_to(root).as_posix()
+
+    if body["action"] not in {"validate", "build"}:
+        raise DomainError("invalid_request", 422, "Authored Unity projects support validate/build")
+    settings = scoped(project, "ProjectSettings/ProjectVersion.txt")
+    if settings != project / "ProjectSettings/ProjectVersion.txt" or not settings.is_file():
+        raise DomainError("source_unavailable", 422, "ProjectVersion.txt is missing")
+    version_match = re.search(r"^m_EditorVersion:\s*(\S+)", settings.read_text(), re.MULTILINE)
+    if not version_match:
+        raise DomainError("invalid_request", 422, "ProjectVersion.txt has no editor version")
+    editor_version = version_match[1]
+    adapter_path = scoped(project, "proscenium-unity.json")
+    if adapter_path != project / "proscenium-unity.json":
+        raise DomainError("scope_denied", 403, "Unity adapter cannot be a symlink")
+    adapter: dict[str, Any] = {}
+    if adapter_path.exists():
+        try:
+            adapter = json.loads(adapter_path.read_text())
+        except (ValueError, OSError) as exc:
+            raise DomainError("invalid_request", 422, "Invalid Unity adapter JSON") from exc
+        if (
+            not isinstance(adapter, dict)
+            or set(adapter)
+            - {
+                "editor_version",
+                "pipeline",
+                "scene_path",
+                "validate_method",
+                "build_method",
+                "build_output",
+            }
+            or any(not isinstance(value, str) or not value.strip() for value in adapter.values())
+        ):
+            raise DomainError("invalid_request", 422, "Invalid Unity adapter fields")
+    pinned = version["unity"]
+    scene = scene_path(body.get("scene_path", pinned["scene_path"]))
+    if (
+        scene != pinned["scene_path"]
+        or scene_path(adapter.get("scene_path", scene)) != scene
+        or adapter.get("editor_version", editor_version) != editor_version
+        or pinned["editor_version"] != editor_version
+        or adapter.get("pipeline", pinned["pipeline"]) != pinned["pipeline"]
+        or body["pipeline"] != pinned["pipeline"]
+    ):
+        raise DomainError("source_conflict", 409, "Unity adapter differs from the pinned project")
+    method = adapter.get(body["action"] + "_method")
+    if method and not re.fullmatch(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+", method, re.ASCII):
+        raise DomainError("invalid_request", 422, "Invalid Unity batch method")
+    output = adapter.get("build_output") if body["action"] == "build" else None
+    if body["action"] == "build" and (not method or not output):
+        raise DomainError("capability_unavailable", 501, "Build needs a method and output path")
+    if output and not valid_build_output_path(output):
+        raise DomainError("scope_denied", 403, BUILD_OUTPUT_SCOPE)
+    if output and scoped(project, output) != project / output:
+        raise DomainError("scope_denied", 403, "Unity build output cannot be a symlink")
+    if pinned.get("player_script"):
+        script = scoped(root, pinned["player_script"])
+        if not script.is_relative_to(project) or not script.is_file():
+            raise DomainError("source_unavailable", 422, "Unity player script is missing")
+    return dict(
+        existing=True,
+        source_version=body["version"],
+        source=version["source"],
+        unity=pinned,
+        method=method,
+        build_output=output,
+    )
 
 
 def make_recipe(

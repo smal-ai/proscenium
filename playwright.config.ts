@@ -14,7 +14,7 @@ export default defineConfig({
     ["list"],
     ["json", { outputFile: process.env.PROSCENIUM_BROWSER_REPORT ?? "/tmp/opencode/proscenium-browser-report.json" }],
   ],
-  outputDir: "/tmp/opencode/proscenium-browser-results",
+  outputDir: process.env.PROSCENIUM_BROWSER_RESULTS ?? "/tmp/opencode/proscenium-browser-results",
   use: {
     baseURL,
     viewport: { width: 1920, height: 1080 },

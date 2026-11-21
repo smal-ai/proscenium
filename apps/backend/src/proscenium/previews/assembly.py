@@ -192,21 +192,26 @@ def prepare(
         if admission["target"]["version"] != reference:
             raise DomainError("scope_denied", 403)
         sequence_map(tx, local, sequence["sequence_version_id"], {"complete-map": full})
+        # A long imported cut can reuse thousands of frames. Read each job's
+        # receipts once rather than decoding the entire project ledger per frame.
+        receipts = {}
+        for job_id in {c["job_id"] for row in full["frames"] for c in row["contributors"]}:
+            source_job = tx.require("jobs", job_id)
+            for receipt in service.records(tx, source_job, "frames"):
+                key = (job_id, receipt["version_id"], receipt["shot_id"], receipt["source_frame"])
+                if key in receipts:
+                    raise DomainError("frame_conflict", 409)
+                receipts[key] = receipt
         for row in full["frames"]:
             for contributor in row["contributors"]:
-                source_job = tx.require("jobs", contributor["job_id"])
-                matches = [
-                    r
-                    for r in service.records(tx, source_job, "frames")
-                    if r["source_frame"] == contributor["source_frame"]
-                    and r["version_id"] == contributor["version_id"]
-                    and r["shot_id"] == contributor["shot_id"]
-                ]
-                if len(matches) != 1:
+                key = tuple(
+                    contributor[k] for k in ("job_id", "version_id", "shot_id", "source_frame")
+                )
+                receipt = receipts.get(key)
+                if receipt is None:
                     raise DomainError(
                         "media_unavailable", 422, "A pinned contributor frame is unavailable"
                     )
-                receipt = matches[0]
                 inputs[receipt["artifact_id"]] = receipt
     ordered = [inputs[key] for key in sorted(inputs)]
     if sorted(admission["input_artifact_ids"]) != sorted(inputs):

@@ -79,7 +79,8 @@ def inspect() -> None:
         ],
         allocation_id=arguments[1],
     )
-    print("PROSCENIUM_SOURCE_INSPECTION=" + json.dumps(result, sort_keys=True))
+    sys.stdout.write("\nPROSCENIUM_SOURCE_INSPECTION=" + json.dumps(result, sort_keys=True) + "\n")
+    sys.stdout.flush()
     if missing:
         raise SystemExit(2)
 
