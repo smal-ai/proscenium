@@ -113,52 +113,37 @@ class Projects:
 
     @staticmethod
     def config(root: Path, *, root_fd: int | None = None) -> dict[str, Any]:
-        try:
+        with workspace_errors(root), ExitStack() as handles:
             if root_fd is None:
-                path = project_path(root, "project.json")
-                if (root / "project.json").is_symlink():
-                    raise DomainError("scope_denied", 403)
-                data = path.read_bytes()
-            else:
-                data = read_regular(root_fd, "project.json")
-            config = json.loads(data)
-        except (OSError, ValueError) as exc:
-            if (
-                root_fd is not None
-                and isinstance(exc, OSError)
-                and not isinstance(exc, FileNotFoundError)
-            ):
-                raise
-            raise DomainError("invalid_request", message="Missing or invalid project.json") from exc
-        validate("ProjectConfig", config)
-        for value in config["paths"].values():
-            project_path(root, value, directory=True)
-        with ExitStack() as handles:
-            git_root = root
-            git_env = None
-            if root_fd is not None:
-                verify_directory(root_fd, root)
-                git_root = fd_path(root_fd)
-                entry = check_entry(root_fd, ".git")
-                if entry is None or not (
-                    stat.S_ISDIR(entry.st_mode) or stat.S_ISREG(entry.st_mode)
-                ):
-                    raise DomainError(
-                        "unsupported_repository", 415, "Workspace must be the Git working-tree root"
-                    )
-                if stat.S_ISDIR(entry.st_mode):
-                    git_fd = open_child_directory(root_fd, ".git")
-                    handles.callback(os.close, git_fd)
-                    verify_directory(git_fd, root / ".git")
-                    git_env = {"GIT_DIR": str(fd_path(git_fd))}
+                root_fd, _, _ = handles.enter_context(workspace_ancestor(root))
+            verify_directory(root_fd, root)
+            anchored = fd_path(root_fd)
+            try:
+                config = json.loads(read_regular(root_fd, "project.json"))
+            except (FileNotFoundError, ValueError) as exc:
+                raise DomainError(
+                    "invalid_request", message="Missing or invalid project.json"
+                ) from exc
+            validate("ProjectConfig", config)
+            for value in config["paths"].values():
+                project_path(anchored, value, directory=True)
+            verify_directory(root_fd, root)
+            entry = check_entry(root_fd, ".git")
+            if entry is None or not stat.S_ISDIR(entry.st_mode):
+                raise DomainError(
+                    "unsupported_repository", 415, "Workspace must be the Git working-tree root"
+                )
+            git_fd = open_child_directory(root_fd, ".git")
+            handles.callback(os.close, git_fd)
+            verify_directory(git_fd, root / ".git")
             info = (
                 git(
-                    git_root,
+                    anchored,
                     "rev-parse",
                     "--show-toplevel",
                     "--show-object-format",
                     "--is-bare-repository",
-                    env=git_env,
+                    env={"GIT_DIR": str(fd_path(git_fd))},
                     required=False,
                 )
                 .decode()
@@ -168,7 +153,7 @@ class Projects:
                 raise DomainError(
                     "unsupported_repository", 415, "Workspace must be the Git working-tree root"
                 )
-        return dict(config)
+            return dict(config)
 
     @staticmethod
     def bootstrap(

@@ -945,6 +945,40 @@ def test_bootstrap_standalone_remains_idempotent(tmp_path):
     assert (workspace / ".gitattributes").read_text().endswith("*.blend text\n")
 
 
+def test_config_and_open_reject_gitfile_that_points_outside_workspace(tmp_path, monkeypatch):
+    settings = Settings(data_directory=tmp_path / "machine")
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    Projects.bootstrap(workspace, "Linked metadata", install_lfs_hooks=False)
+    metadata = tmp_path / "external-git"
+    (workspace / ".git").rename(metadata)
+    (workspace / ".git").write_text(f"gitdir: {metadata}\n")
+    assert git(workspace, "rev-parse", "--show-toplevel").decode().strip() == str(workspace)
+
+    def unexpected_git(*args, **kwargs):
+        pytest.fail("Config must reject a Git file without calling Git")
+
+    monkeypatch.setattr(project_service, "git", unexpected_git)
+    with pytest.raises(DomainError) as error:
+        Projects.config(workspace)
+    assert (error.value.status, error.value.code) == (415, "unsupported_repository")
+
+    with TestClient(create_app(settings), base_url=settings.origin) as browser:
+        pair(browser)
+        operation_id = str(uuid4())
+        response = browser.post(
+            "/api/v1/projects",
+            json=dict(
+                schema_version="1.0", operation_id=operation_id, path=str(workspace), create=False
+            ),
+            headers={"Idempotency-Key": operation_id},
+        )
+        assert response.status_code == 415
+        assert response.json()["error"]["code"] == "unsupported_repository"
+        with browser.app.state.services.registry.store.transaction(write=False) as tx:
+            assert list(tx.all("projects")) == []
+
+
 @pytest.mark.parametrize("anchored", [False, True])
 def test_owner_lock_rejects_symlink_without_touching_target(tmp_path, anchored):
     target = tmp_path / "unrelated"
