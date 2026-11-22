@@ -10,6 +10,10 @@ from proscenium.auth import Caller
 from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.db.store import now
+from proscenium.previews.journal import (
+    UNSUPPORTED_BLENDER_FEATURE_REASON,
+    unsupported_blender_features,
+)
 from proscenium.services import Services
 from proscenium.sources import Sources
 from proscenium.sources.common import active, admitted, binding, fingerprint, git, replay
@@ -170,6 +174,13 @@ class Catalogue:
             for identity in row["artifact_ids"]:
                 if tx.require("artifacts", identity)["state"] != "ready":
                     raise DomainError("media_unavailable", 422)
+            runtime = row["source"]["required_runtime"]
+            if (
+                row["preview_requests"]
+                and runtime["application"].strip().lower() == "blender"
+                and unsupported_blender_features(runtime["features"])
+            ):
+                raise DomainError("capability_unavailable", 501, UNSUPPORTED_BLENDER_FEATURE_REASON)
             for spec in row["preview_requests"]:
                 if spec["intent_id"] in intents or tx.get(
                     "preview_intents", spec["intent_id"], required=False

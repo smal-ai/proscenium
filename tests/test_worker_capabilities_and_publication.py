@@ -45,6 +45,8 @@ from proscenium.db.pagination import Cursors
 from proscenium.db.registry import Registry
 from proscenium.jobs import JobService
 from proscenium.jobs.gate import ExecutionGate
+from proscenium.previews.config import REVISION
+from proscenium.previews.journal import UNSUPPORTED_BLENDER_FEATURE_REASON
 from proscenium.providers import klein, sd_turbo, sd_turbo_fp16
 from proscenium.providers.preparation import Preparation
 from proscenium.providers.service import ProviderService
@@ -710,6 +712,51 @@ def test_publication_failure_trusted_outcomes(runtime, data, message):
                 issue["message"] == "Missing required field plan_id" for issue in outcome["issues"]
             )
         assert not tx.all("versions") and not tx.all("jobs")
+
+
+def test_publish_outputs_rejects_inline_preview_for_unsupported_blender_features(runtime):
+    body = publication(runtime, b"synthetic scene")
+    item = body["items"][0]
+    item.update(kind="scene", item_id="scene-one", name="Synthetic scene")
+    source = item["source"]
+    source["required_runtime"] = dict(
+        application=" Blender ", version="4.5.16 LTS", features=["optix"]
+    )
+    source["digest"] = closure_digest(source)
+    item["preview_requests"] = [
+        dict(
+            intent_id="proxy-one",
+            shot_id=None,
+            purpose="proxy",
+            source_closure_digest=source["digest"],
+            scene_name="Scene",
+            camera=None,
+            frames={"start": 1, "end": 1},
+            fps={"numerator": 24, "denominator": 1},
+            dimensions={"height": 512, "width": 512},
+            engine="CYCLES",
+            device="CPU",
+            samples=8,
+            colour_management={"view_transform": "AgX", "look": "None", "exposure": 0, "gamma": 1},
+            renderer_revision=REVISION,
+        )
+    ]
+    call = invocation(runtime, "publish_outputs", body)
+    catalogue = runtime.services.extension("catalogue")
+    with pytest.raises(DomainError) as error:
+        catalogue.publish(runtime.tools.caller(call), body)
+    assert (error.value.code, error.value.status, error.value.message) == (
+        "capability_unavailable",
+        501,
+        UNSUPPORTED_BLENDER_FEATURE_REASON,
+    )
+    result, kind = invoke(runtime, "publish_outputs", body)
+    assert kind == "failure"
+    assert result["error"] == "capability_unavailable"
+    assert result["message"] == UNSUPPORTED_BLENDER_FEATURE_REASON
+    with runtime.store.transaction(write=False) as tx:
+        for namespace in ("publications", "items", "versions", "jobs", "preview_intents"):
+            assert not tx.all(namespace), namespace
 
 
 def test_publication_guidance_keeps_schema_keys_without_echoing_private_input(runtime):
