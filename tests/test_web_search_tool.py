@@ -12,9 +12,10 @@ import httpx
 import pytest
 from copilot import CopilotClient
 from copilot.tools import ToolInvocation
+from jsonschema import Draft202012Validator
 from proscenium.api.errors import DomainError
 from proscenium.configuration import Settings
-from proscenium.contracts import canonical, validate
+from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.copilot import web_search
 from proscenium.copilot.outcomes import get_tool_outcome
 from proscenium.copilot.service import Copilot
@@ -233,17 +234,14 @@ def test_rejects_c1_controls_and_unpaired_surrogates_in_every_url_component(temp
             )
 
 
-def test_web_search_hit_contract_rejects_backslashes():
-    with pytest.raises(DomainError, match="Invalid WebSearchHit"):
-        validate(
-            "WebSearchHit",
-            {
-                "title": "Example",
-                "url": "https://example.com\\path",
-                "snippets": [],
-                "published_at": None,
-            },
-        )
+@pytest.mark.parametrize(
+    "character", ["\x80", "\\", "\udfff"], ids=["C1", "backslash", "surrogate"]
+)
+def test_standalone_web_search_hit_schema_rejects_unsafe_urls(character):
+    validator = Draft202012Validator(SCHEMA["$defs"]["WebSearchHit"])
+    hit = {"title": "Example", "url": SOURCE, "snippets": [], "published_at": None}
+    assert validator.is_valid(hit)
+    assert not validator.is_valid({**hit, "url": SOURCE + character})
 
 
 @pytest.mark.parametrize("url", ["http://8.8.8.8/", "https://[2606:4700:4700::1111]/", SOURCE])
@@ -251,8 +249,30 @@ def test_accepts_public_urls(url):
     assert web_search._clean_public_url(url) == url
 
 
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        (
+            "HTTPS://MÜNCHEN.example:0443/pé%2f;q?first=Ω&raw=%20#東京",
+            "https://xn--mnchen-3ya.example:0443/p%C3%A9%2f;q?first=%CE%A9&raw=%20#%E6%9D%B1%E4%BA%AC",
+        ),
+        ("https://[2606:4700:4700::1111]:443/é?#", "https://[2606:4700:4700::1111]:443/%C3%A9?#"),
+    ],
+)
+def test_normalises_public_urls_to_ascii_without_rewriting_escaped_or_ascii_suffix(url, expected):
+    assert web_search._clean_public_url(url) == expected
+    transport, _ = mock_transport(structured({"url": url}))
+    assert search(transport, **QUERY)["results"][0]["url"] == expected
+
+
+def test_normalised_url_length_is_bounded_after_percent_encoding():
+    prefix = "https://example.com/" + "a" * (2048 - len("https://example.com/") - 6)
+    assert web_search._clean_public_url(prefix + "é") == prefix + "%C3%A9"
+    assert web_search._clean_public_url(prefix + "éa") is None
+
+
 def test_structured_results_bound_deduplicate_and_keep_exact_source():
-    url = "https://EXAMPLE.com:443/a?rank=1#citation"
+    url = "https://example.com:443/a?rank=1#citation"
     transport, _ = mock_transport(
         {"type": "image", "text": f"[Not text]({SOURCE})"},
         structured(

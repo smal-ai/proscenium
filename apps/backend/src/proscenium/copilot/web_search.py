@@ -10,7 +10,7 @@ import shutil
 import socket
 from collections.abc import Iterator
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 import httpx
 
@@ -153,13 +153,14 @@ def _clean_public_url(raw: Any) -> str | None:
         raw.encode("utf-8")
         parsed = urlsplit(raw)
         # Reading port also rejects malformed/out-of-range ports.
-        _ = parsed.port
+        port = parsed.port
         host = (parsed.hostname or "").encode("idna").decode("ascii").lower().rstrip(".")
     except (ValueError, UnicodeError):
         return None
     if (
         parsed.scheme not in {"http", "https"}
         or not host
+        or _UNSAFE_URL.search(host)
         or parsed.username is not None
         or parsed.password is not None
         or "%" in host
@@ -177,8 +178,16 @@ def _clean_public_url(raw: Any) -> str | None:
             ip = None
     if ip is not None and (not ip.is_global or ip.is_multicast):
         return None
-    # Match the wire contract's lower-case scheme but preserve the source path and query.
-    return parsed.scheme + raw[raw.index(":") :]
+    ipv6 = isinstance(ip, ipaddress.IPv6Address)
+    if parsed.netloc.startswith("[") and not ipv6:
+        return None
+    authority = f"[{host}]" if ipv6 else host
+    if port is not None:
+        authority += ":" + parsed.netloc.rsplit(":", 1)[1]
+    suffix = raw[len(parsed.scheme) + 3 + len(parsed.netloc) :]
+    suffix = re.sub(r"[^\x00-\x7e]", lambda match: quote(match[0], safe=""), suffix)
+    result = f"{parsed.scheme}://{authority}{suffix}"
+    return result if len(result) <= 2048 else None
 
 
 def _clean_text(value: Any, limit: int) -> str:
