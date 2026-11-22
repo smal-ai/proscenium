@@ -30,6 +30,8 @@ RECOMMENDED_TOOLS = frozenset(
         "bash",
         "skill",
         "get_project_capabilities",
+        "search_web",
+        "web_fetch",
         "validate_authored_document",
         "prepare_image_generation",
         "checkpoint_sources",

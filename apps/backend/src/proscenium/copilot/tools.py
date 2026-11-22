@@ -22,6 +22,13 @@ from proscenium.services import Services
 
 from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
+from .web_search import (
+    AUTH_UNAVAILABLE,
+    INVALID_QUERY,
+    SERVICE_UNAVAILABLE,
+    clean_search_query,
+    search_web,
+)
 from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 from .workflows import parameters as workflow_parameters
@@ -120,6 +127,11 @@ READ_TOOLS = {
     ),
 }
 DISCOVERY_READS = {
+    "search_web": (
+        "",
+        "WebSearchResult",
+        "Discover public web sources with read-only search. Use a public research query, not private project content. Return exact source URLs; do not treat hits as acquired files.",
+    ),
     "get_project_capabilities": (
         "",
         "ProjectCapabilities",
@@ -134,6 +146,16 @@ DISCOVERY_READS = {
 
 
 def read_parameters(name: str) -> dict[str, Any]:
+    if name == "search_web":
+        return dict(
+            type="object",
+            properties=dict(
+                query={"type": "string", "minLength": 1, "maxLength": 512},
+                limit={"type": "integer", "minimum": 1, "maximum": 15, "default": 8},
+            ),
+            required=["query"],
+            additionalProperties=False,
+        )
     if name == "get_project_capabilities":
         return dict(
             type="object",
@@ -171,6 +193,14 @@ def read_parameters(name: str) -> dict[str, Any]:
 
 
 def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
+    if name == "search_web":
+        if not isinstance(arguments, dict) or set(arguments) - {"query", "limit"}:
+            raise DomainError("invalid_request")
+        query = clean_search_query(arguments.get("query"))
+        limit = arguments.get("limit", 8)
+        if type(limit) is not int or not 1 <= limit <= 15:
+            raise DomainError("invalid_request")
+        return {"query": query, "limit": limit}
     if name == "get_project_capabilities":
         if not isinstance(arguments, dict) or set(arguments) - {"project_id"}:
             raise DomainError("invalid_request")
@@ -220,6 +250,9 @@ def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
 # can otherwise contain paths, provider bodies or an upstream exception repr.
 SAFE_REASONS = frozenset(
     {
+        AUTH_UNAVAILABLE,
+        SERVICE_UNAVAILABLE,
+        INVALID_QUERY,
         "This installed profile is Cycles CPU. No GPU fallback is permitted",
         "Render exceeds configured profile bounds",
         "Rendering profile is not enabled",
@@ -611,11 +644,16 @@ class Tools:
                     "prepare_image_generation",
                     "validate_authored_document",
                     *READ_TOOLS,
-                    *DISCOVERY_READS,
+                    *(set(DISCOVERY_READS) - {"search_web"}),
                     *WORKFLOW_TOOLS,
                 },
             )
-            if name in READ_TOOLS or name in DISCOVERY_READS:
+            if name == "search_web":
+                result = await search_web(
+                    self.services, self.project_id, **read_arguments(name, invocation.arguments)
+                )
+                result_schema = DISCOVERY_READS[name][1]
+            elif name in READ_TOOLS or name in DISCOVERY_READS:
                 result, result_schema = self._read(name, invocation, caller)
                 if (
                     name in {"get_job", "get_vlm_review"}

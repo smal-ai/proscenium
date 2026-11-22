@@ -604,6 +604,14 @@
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "observed_at", "exposed_tools", "missing_worker_tools", "available_skills", "skill_loader_exposed", "providers", "rendering_ready", "blender_mcp_configured", "unity_configured"],
       "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "observed_at": {"$ref": "#/$defs/Timestamp"}, "exposed_tools": {"type": "array", "items": {"type": "string"}}, "missing_worker_tools": {"type": "array", "items": {"type": "string"}}, "available_skills": {"type": "array", "items": {"type": "string"}}, "skill_loader_exposed": {"type": "boolean"}, "providers": {"type": "array", "items": {"$ref": "#/$defs/ProviderCapabilitySummary"}}, "rendering_ready": {"type": "boolean"}, "blender_mcp_configured": {"type": "boolean"}, "unity_configured": {"type": "boolean"}}
     },
+    "WebSearchHit": {
+      "type": "object", "additionalProperties": false, "required": ["title", "url", "snippets", "published_at"],
+      "properties": {"title": {"type": "string", "minLength": 1, "maxLength": 512}, "url": {"type": "string", "minLength": 8, "maxLength": 2048, "pattern": "^https?://[\\u0021-\\u005b\\u005d-\\u007e]+$"}, "snippets": {"type": "array", "maxItems": 4, "items": {"type": "string", "maxLength": 1200}}, "published_at": {"type": ["string", "null"], "maxLength": 64}}
+    },
+    "WebSearchResult": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "query", "results"],
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "query": {"type": "string", "minLength": 1, "maxLength": 512}, "results": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/WebSearchHit"}}}
+    },
     "ValidationIssue": {
       "type": "object", "additionalProperties": false, "required": ["phase", "code", "path", "message"],
       "properties": {"phase": {"enum": ["source", "json", "schema", "semantic", "preflight"]}, "code": {"type": "string"}, "path": {"type": "string"}, "message": {"type": "string"}}
