@@ -36,8 +36,18 @@ description: Author and inspect Blender content inside the active Proscenium pro
 6. Call `checkpoint_sources(entry_path=...)` with the explicitly owned file set,
    dependencies and `required_runtime` when needed. For `.blend` source checkpoints,
    supply `required_runtime` with `"application": "blender"` and the exact
-   `bpy.app.version_string` as `version` (for example `"4.5.16 LTS"`). For a revision,
-   pin the prior published `base_version` so unchanged scene files carry forward.
+   `bpy.app.version_string` as `version` (for example `"4.5.16 LTS"`), and pass
+   `"features": []` by default. When needed, use only these supported Cycles CPU
+   feature tags, not ad-hoc strings: `cycles`, `cycles-cpu`, `cpu`, `denoise`,
+   `openimagedenoise`, `oidn`, `agx`, `mesh`, `meshes`, `native-mesh`, `curve`,
+   `curves`, `font`, `text`, `surface`, `metaball`, `materials`, `modifiers`,
+   `subsurf`, `subdivision`, `bevel`, `solidify`, `boolean`, `array`, `mirror`,
+   `gltf`, `glb`, `proxy`, `animation`, `keyframes`, `linked-libraries`,
+   `linked-textures`, `external-textures`, `packed-textures`, `geometry-nodes`,
+   `static-hair`, `python`. Tags describe requirements and do not enable GPU
+   rendering, Python auto-execution or unsupported scene features.
+   For a revision, pin the prior published `base_version` so unchanged scene
+   files carry forward.
    List the changed `.blend` and other owned paths, and use `exclude_paths` only for
    inherited destinations to omit. For a large closure, pass the completed receipt's
    `operation_id` as `checkpoint_operation_id` and its exact `source_commit` to

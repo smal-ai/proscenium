@@ -11,7 +11,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from geometry_nodes import modifier_kind, reachable_geometry_groups  # type: ignore[import-not-found] # noqa: E402
-from journal import atomic, identity, output, read, sha  # type: ignore[import-not-found] # noqa: E402
+from journal import (  # type: ignore[import-not-found] # noqa: E402
+    atomic,
+    identity,
+    output,
+    read,
+    sha,
+    unsupported_blender_features,
+)
 
 
 def runtime_blend_paths(bpy) -> list[str]:
@@ -404,20 +411,9 @@ def main():
         or bpy.app.build_hash.decode() != task["config"]["build_hash"]
     ):
         raise ValueError("Required Blender build is not installed")
-    if closure["required_runtime"]["application"].lower() != "blender":
+    if closure["required_runtime"]["application"].strip().lower() != "blender":
         raise ValueError("Source runtime is not Blender")
-    supported = {
-        "cycles",
-        "CYCLES",
-        "linked_libraries",
-        "linked_textures",
-        "gltf",
-        "animation",
-        "linked-libraries",
-        "external-textures",
-        "geometry-nodes",
-    }
-    if set(closure["required_runtime"]["features"]) - supported:
+    if unsupported_blender_features(closure["required_runtime"]["features"]):
         raise ValueError("Required native feature is not supported by this renderer")
     bpy.ops.wm.open_mainfile(filepath=str(source / closure["entry_path"]), load_ui=False)
     scene = bpy.data.scenes[spec["scene_name"]]

@@ -18,6 +18,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.validation import safe_schema_guidance
 from proscenium.contracts import SCHEMA, canonical, validate
+from proscenium.previews.journal import UNSUPPORTED_BLENDER_FEATURE_REASON
 from proscenium.services import Services
 
 from .outcomes import get_tool_outcome, record_tool_outcome
@@ -253,6 +254,7 @@ SAFE_REASONS = frozenset(
         AUTH_UNAVAILABLE,
         SERVICE_UNAVAILABLE,
         INVALID_QUERY,
+        UNSUPPORTED_BLENDER_FEATURE_REASON,
         "This installed profile is Cycles CPU. No GPU fallback is permitted",
         "Render exceeds configured profile bounds",
         "Rendering profile is not enabled",

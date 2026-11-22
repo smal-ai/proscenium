@@ -7,6 +7,68 @@ import tempfile
 from pathlib import Path
 
 RENDERER_FILES = ("blender_worker.py", "geometry_nodes.py", "journal.py")
+UNSUPPORTED_BLENDER_FEATURE_REASON = (
+    "Required Blender runtime feature is not supported by proscenium-blender-1; "
+    "use features=[] or supported Cycles CPU features"
+)
+SUPPORTED_BLENDER_FEATURES = frozenset(
+    {
+        "cycles",
+        "cycles-cpu",
+        "cpu",
+        "denoise",
+        "openimagedenoise",
+        "oidn",
+        "agx",
+        "mesh",
+        "meshes",
+        "native-mesh",
+        "curve",
+        "curves",
+        "font",
+        "text",
+        "surface",
+        "metaball",
+        "materials",
+        "modifiers",
+        "subsurf",
+        "subdivision",
+        "bevel",
+        "solidify",
+        "boolean",
+        "array",
+        "mirror",
+        "gltf",
+        "glb",
+        "proxy",
+        "animation",
+        "keyframes",
+        "linked-libraries",
+        "linked-textures",
+        "external-textures",
+        "packed-textures",
+        "geometry-nodes",
+        "static-hair",
+        "python",
+    }
+)
+
+
+def normalise_blender_feature(value: str) -> str:
+    return value.strip().lower().replace("_", "-")
+
+
+def unsupported_blender_features(features: list[str] | tuple[str, ...] | set[str]) -> list[str]:
+    # Keep original strings for diagnostics. Malformed native task values may
+    # not be hashable or sortable, so report their string representations.
+    return sorted(
+        {
+            item if isinstance(item, str) else repr(item)
+            for item in features
+            if not isinstance(item, str)
+            or normalise_blender_feature(item) not in SUPPORTED_BLENDER_FEATURES
+        }
+    )
 
 
 def sha(data: bytes) -> str:

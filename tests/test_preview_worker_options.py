@@ -5,6 +5,48 @@ from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
 from proscenium.previews.blender_worker import _is_unmapped_collection_instance, configure_denoise
 from proscenium.previews.geometry_nodes import modifier_kind
+from proscenium.previews.journal import unsupported_blender_features
+
+
+@pytest.mark.parametrize(
+    "features",
+    [
+        [],
+        ["native-mesh", "cycles-cpu"],
+        ("CYCLES", "python"),
+        {" geometry_nodes ", "linked_libraries"},
+    ],
+)
+def test_supported_blender_features(features):
+    assert unsupported_blender_features(features) == []
+
+
+@pytest.mark.parametrize(
+    "feature",
+    [
+        "eevee",
+        "workbench",
+        "cuda",
+        "optix",
+        "hip",
+        "metal",
+        "gpu",
+        "cloth",
+        "fluid",
+        "smoke",
+        "alembic",
+        "usd",
+        "secret-custom-tag",
+        "",
+        "  ",
+    ],
+)
+def test_unsupported_blender_features(feature):
+    assert unsupported_blender_features(["cpu", feature, feature]) == [feature]
+
+
+def test_malformed_native_features_still_report_unsupported():
+    assert unsupported_blender_features(["optix", None, {}]) == ["None", "optix", "{}"]
 
 
 @pytest.mark.parametrize(
