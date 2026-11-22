@@ -819,8 +819,13 @@ def test_publication_preflight_reads_git_without_snapshots(runtime):
 
 
 @pytest.mark.parametrize("checkpoint", [False, True])
-@pytest.mark.parametrize("features", [["optix"], ["native-mesh", "cycles-cpu"]])
-def test_publication_preflight_checks_resolved_blender_features(runtime, checkpoint, features):
+@pytest.mark.parametrize(
+    "features,supported",
+    [(["optix", "secret-custom-tag"], False), (["native-mesh", "cycles-cpu"], True)],
+)
+def test_publication_preflight_checks_resolved_blender_features(
+    runtime, checkpoint, features, supported
+):
     body = publication(runtime, canonical(plan()))
     item = body["items"][0]
     closure = item["source"]
@@ -853,7 +858,6 @@ def test_publication_preflight_checks_resolved_blender_features(runtime, checkpo
     )
     assert kind == "success", result
     validate("AuthoredDocumentValidationResult", result)
-    supported = features != ["optix"]
     assert (
         result["schema_valid"]
         and result["semantic_valid"] is supported
@@ -867,13 +871,47 @@ def test_publication_preflight_checks_resolved_blender_features(runtime, checkpo
                 phase="preflight",
                 code="capability_unavailable",
                 path="items[0].source.required_runtime.features",
-                message="Unsupported Blender features ['optix']; use features=[] or supported Cycles CPU features",
+                message=UNSUPPORTED_BLENDER_FEATURE_REASON,
             )
         ]
     )
+    assert "secret-custom-tag" not in json.dumps(result)
     assert not (runtime.root / ".proscenium/snapshots").exists()
     with runtime.store.transaction(write=False) as tx:
         assert not tx.all("versions") and not tx.all("jobs")
+
+
+def test_publication_preflight_caps_blender_feature_issues(runtime):
+    body = publication(runtime, canonical(plan()))
+    item = body["items"][0]
+    closure = item["source"]
+    closure["required_runtime"] = dict(
+        application="blender", version="4.5.16 LTS", features=["secret-custom-tag"]
+    )
+    closure["digest"] = closure_digest(closure)
+    body["items"] = [dict(item, item_id=f"item-{i}", version_id=f"version-{i}") for i in range(26)]
+    result, kind = invoke(
+        runtime,
+        "validate_authored_document",
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            document_kind="publication_submit",
+            document=body,
+        ),
+    )
+    assert kind == "success" and result["schema_valid"] and not result["valid"]
+    validate("AuthoredDocumentValidationResult", result)
+    assert result["issues"] == [
+        dict(
+            phase="preflight",
+            code="capability_unavailable",
+            path=f"items[{index}].source.required_runtime.features",
+            message=UNSUPPORTED_BLENDER_FEATURE_REASON,
+        )
+        for index in range(25)
+    ]
+    assert "secret-custom-tag" not in json.dumps(result)
 
 
 def test_sequence_validation_and_invalid_schema_bounds(runtime):

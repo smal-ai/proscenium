@@ -36,6 +36,7 @@ def test_supported_blender_features(features):
         "smoke",
         "alembic",
         "usd",
+        "secret-custom-tag",
         "",
         "  ",
     ],
