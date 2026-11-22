@@ -57,6 +57,9 @@ Register artefacts only from .proscenium/tool-output/staging/... through registe
 Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.
 For multi-scene or multi-shot previews, read get_version(version_id) and use set_preview_order on the published version to set pass order without re-rendering.
 Use list_items to discover catalogue names, descriptions, tags and known provenance without private SQLite.
+Lead and authoring-specialist: use search_web for open-ended public web discovery and web_fetch to inspect selected public URLs.
+Keep queries free of private project content and credentials. Include the exact source URL (url) with findings.
+Mark URL leads as Discovered, not Acquired. Only verified local bytes are Acquired. Record the exact Provenance.source_url when acquiring or publishing references.
 Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
 Use assemble_sequence for an exact already-published sequence. The host resolves frame receipts and computes admission hashes.
 Never query private SQLite to recover tool results or guess filesystem-latest.
@@ -174,6 +177,8 @@ class Configuration:
                 "bash",
                 "skill",
                 "get_project_capabilities",
+                "search_web",
+                "web_fetch",
                 "validate_authored_document",
                 "prepare_image_generation",
                 "checkpoint_sources",

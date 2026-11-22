@@ -54,6 +54,11 @@ same-ID capture receipts. Consumers must accept historical records without them.
   return structured issues rather than rejecting those fields at transport admission.
   Schema, semantic and preflight results are distinct. Preparation does not submit
   inference or consume an attempt.
+- Native `search_web` accepts a non-blank `query` (up to 512 characters) and an
+  optional result `limit` (1–15, default 8). It returns a project-bound
+  `WebSearchResult` with ranked `WebSearchHit` records: `title`, exact source
+  `url`, bounded `snippets` and nullable `published_at`. This read requires active,
+  unfenced work. Hits are discovery leads, not acquired local bytes.
 - `ProviderCapabilitySummary` optionally reports nullable `default_dimensions`,
   `default_steps` and `max_pixels`. `ImageGenerationPrepare` permits omitted
   `project_id` and `generation_task_id`, while preserving supplied historical identities.

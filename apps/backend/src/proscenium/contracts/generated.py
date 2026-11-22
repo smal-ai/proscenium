@@ -447,6 +447,12 @@ class VersionRecord(ContractModel):
 class VersionRef(ContractModel):
     definition = "VersionRef"
 
+class WebSearchHit(ContractModel):
+    definition = "WebSearchHit"
+
+class WebSearchResult(ContractModel):
+    definition = "WebSearchResult"
+
 class Weight(ContractModel):
     definition = "Weight"
 

@@ -147,6 +147,7 @@ test("live tool calls provide readable working steps and reconnecting status", (
     escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",
     assemble_sequence: "Assembling sequence", run_unity_workflow: "Running Unity workflow", bash: "Running command",
     skill: "Loading skill", view: "Reading project file", get_project_capabilities: "Checking capabilities", custom_tool: "custom tool",
+    search_web: "Searching the web", web_fetch: "Fetching web page",
   };
   for (const [name, detail] of Object.entries(labels)) {
     const props = { snapshot: snapshot(), requests: [], events: [event(1, "tool.started", { ...activity, name })], jobs: [], connection: "Connected" };

@@ -12,6 +12,7 @@ const toolLabels: Record<string, string> = {
   publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", get_vlm_review: "Waiting on VLM critique", escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",
   assemble_sequence: "Assembling sequence", run_unity_workflow: "Running Unity workflow", bash: "Running command",
   skill: "Loading skill", view: "Reading project file", get_project_capabilities: "Checking capabilities",
+  search_web: "Searching the web", web_fetch: "Fetching web page",
 };
 export function assistantState({ snapshot, requests, events, jobs, submitting, stopping }: AssistantStatusProps): { state: string; label: string; detail?: string; reason?: string } {
   const work = snapshot?.active_work;

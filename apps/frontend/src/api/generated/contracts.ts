@@ -575,6 +575,8 @@ export interface ContractDefinitions {
   VersionPage: VersionPage;
   VersionRecord: VersionRecord;
   VersionRef: VersionRef;
+  WebSearchHit: WebSearchHit;
+  WebSearchResult: WebSearchResult;
   Weight: Weight;
   WorkOutputSummary: WorkOutputSummary;
   WorkRecord: WorkRecord;
@@ -1628,4 +1630,229 @@ export interface UsageEventData {
   output_tokens: number | null;
   reported_cost: number | null;
   cost_unit: string | null;
+}
+export interface WebSearchHit {
+  title: string;
+  url: string;
+  /**
+   * @maxItems 4
+   */
+  snippets: [] | [string] | [string, string] | [string, string, string] | [string, string, string, string];
+  published_at: string | null;
+}
+export interface WebSearchResult {
+  schema_version: "1.0";
+  project_id: Id;
+  query: string;
+  /**
+   * @maxItems 20
+   */
+  results:
+    | []
+    | [WebSearchHit]
+    | [WebSearchHit, WebSearchHit]
+    | [WebSearchHit, WebSearchHit, WebSearchHit]
+    | [WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit]
+    | [WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit]
+    | [WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit]
+    | [WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit]
+    | [WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit, WebSearchHit]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ]
+    | [
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit,
+        WebSearchHit
+      ];
 }
