@@ -13,11 +13,13 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Auth
 from proscenium.contracts import canonical, validate
 from proscenium.copilot.outcomes import get_tool_outcome
+from proscenium.copilot.tools import tool_failure
 from proscenium.db import Store
 from proscenium.previews import install, media, router, runner
 from proscenium.previews.config import REVISION
-from proscenium.previews.journal import atomic, sha
+from proscenium.previews.journal import UNSUPPORTED_BLENDER_FEATURE_REASON, atomic, sha
 from proscenium.sources.common import fingerprint
+from proscenium.sources.resolver import closure_digest
 from test_rc4_retry_and_context import (
     DIMENSIONS,
     DRAFT,
@@ -165,6 +167,38 @@ def request_preview(studio, shot, *, operation=None, ref=SCENE):
     )
     call = invocation(studio, "request_preview", body, work=WORK)
     return studio.previews.request(studio.tools.caller(call), body)
+
+
+def test_request_preview_rejects_unsupported_blender_features_before_job_admission(studio):
+    request_context(studio, request_target=PINNED)
+    version_id = SCENE["version_id"]
+    with studio.store.transaction() as tx:
+        version = tx.require("versions", version_id)
+        source = version["source"]
+        source["required_runtime"] = dict(
+            application=" Blender ", version="4.5.16 LTS", features=["optix"]
+        )
+        source["digest"] = closure_digest(source)
+        tx.put(
+            "versions",
+            version_id,
+            version,
+            schema="VersionRecord",
+            expected_revision=tx.revision("versions", version_id),
+        )
+    with pytest.raises(DomainError) as error:
+        request_preview(studio, "shot-test")
+    assert (error.value.code, error.value.status, error.value.message) == (
+        "capability_unavailable",
+        501,
+        UNSUPPORTED_BLENDER_FEATURE_REASON,
+    )
+    assert (
+        UNSUPPORTED_BLENDER_FEATURE_REASON
+        in tool_failure(error.value, "request_preview").text_result_for_llm
+    )
+    with studio.store.transaction(write=False) as tx:
+        assert not tx.all("jobs") and not tx.all("preview_intents")
 
 
 def order_events(studio):

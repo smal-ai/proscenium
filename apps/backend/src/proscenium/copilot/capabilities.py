@@ -11,6 +11,7 @@ from proscenium.catalogue import validation
 from proscenium.catalogue.service import CHECKPOINT_SOURCE_CONFLICT
 from proscenium.contracts import canonical, validate
 from proscenium.db.store import now
+from proscenium.previews.journal import unsupported_blender_features
 from proscenium.providers import budget3d, hunyuan
 from proscenium.providers.plugins import plugin
 from proscenium.providers.preparation import AMBIGUOUS, bounded_get, compatible_recipes, models
@@ -425,6 +426,21 @@ def validate_authored_document(
                 documents, maps = {}, {}
                 with store.transaction(write=False) as tx:
                     document = catalogue.resolve_checkpoint_sources(tx, document)
+                    for index, item in enumerate(document["items"]):
+                        runtime = item["source"]["required_runtime"]
+                        if runtime["application"].strip().lower() == "blender" and (
+                            bad := unsupported_blender_features(runtime["features"])
+                        ):
+                            result["issues"].append(
+                                dict(
+                                    phase="preflight",
+                                    code="capability_unavailable",
+                                    path=f"items[{index}].source.required_runtime.features",
+                                    message=f"Unsupported Blender features {bad}; use features=[] or supported Cycles CPU features",
+                                )
+                            )
+                    if result["issues"]:
+                        return validate("AuthoredDocumentValidationResult", result)
                     catalogue.validate_batch(tx, document)
                 batch = {
                     r["version_id"]: {**r, "project_id": project_id} for r in document["items"]

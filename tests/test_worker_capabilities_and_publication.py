@@ -29,7 +29,7 @@ from proscenium.api.errors import DomainError
 from proscenium.catalogue.artifacts import Artifacts
 from proscenium.catalogue.service import Catalogue
 from proscenium.configuration import Settings
-from proscenium.contracts import canonical
+from proscenium.contracts import canonical, validate
 from proscenium.copilot.capabilities import (
     compare,
     get_configuration_status,
@@ -769,6 +769,64 @@ def test_publication_preflight_reads_git_without_snapshots(runtime):
             document=body,
         ),
     )["valid"]
+
+
+@pytest.mark.parametrize("checkpoint", [False, True])
+@pytest.mark.parametrize("features", [["optix"], ["native-mesh", "cycles-cpu"]])
+def test_publication_preflight_checks_resolved_blender_features(runtime, checkpoint, features):
+    body = publication(runtime, canonical(plan()))
+    item = body["items"][0]
+    closure = item["source"]
+    closure["required_runtime"] = dict(
+        application=" Blender ", version="4.5.16 LTS", features=features
+    )
+    closure["digest"] = closure_digest(closure)
+    if checkpoint:
+        item["checkpoint_operation_id"] = "checkpoint-one"
+        del item["source"]
+        with runtime.store.transaction() as tx:
+            tx.put(
+                "checkpoint_intents",
+                item["checkpoint_operation_id"],
+                dict(
+                    state="completed",
+                    receipt=dict(source_commit=item["source_commit"], source_closure=closure),
+                ),
+            )
+
+    result, kind = invoke(
+        runtime,
+        "validate_authored_document",
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            document_kind="publication_submit",
+            document=body,
+        ),
+    )
+    assert kind == "success", result
+    validate("AuthoredDocumentValidationResult", result)
+    supported = features != ["optix"]
+    assert (
+        result["schema_valid"]
+        and result["semantic_valid"] is supported
+        and result["valid"] is supported
+    )
+    assert result["issues"] == (
+        []
+        if supported
+        else [
+            dict(
+                phase="preflight",
+                code="capability_unavailable",
+                path="items[0].source.required_runtime.features",
+                message="Unsupported Blender features ['optix']; use features=[] or supported Cycles CPU features",
+            )
+        ]
+    )
+    assert not (runtime.root / ".proscenium/snapshots").exists()
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.all("versions") and not tx.all("jobs")
 
 
 def test_sequence_validation_and_invalid_schema_bounds(runtime):

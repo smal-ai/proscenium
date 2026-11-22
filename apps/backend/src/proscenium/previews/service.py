@@ -21,7 +21,13 @@ from proscenium.sources.common import active, admitted, binding, fingerprint, ma
 from proscenium.sources.read_only import read_authored_json
 
 from .config import Rendering
-from .journal import output, read, sha
+from .journal import (
+    UNSUPPORTED_BLENDER_FEATURE_REASON,
+    output,
+    read,
+    sha,
+    unsupported_blender_features,
+)
 from .media import verify_video
 
 
@@ -214,6 +220,11 @@ class PreviewService:
             self.config.validate(body["spec"])
             if body["spec"]["source_closure_digest"] != version["source"]["digest"]:
                 raise DomainError("hash_mismatch", 422)
+            runtime = version["source"]["required_runtime"]
+            if runtime["application"].strip().lower() == "blender" and unsupported_blender_features(
+                runtime["features"]
+            ):
+                raise DomainError("capability_unavailable", 501, UNSUPPORTED_BLENDER_FEATURE_REASON)
             if self.config.profile_id not in self.services.settings.execution_profiles:
                 raise DomainError("capability_unavailable", 501, "Rendering profile is not enabled")
             check_storage(store.path.parent, self.services.settings.free_space_reserve_bytes)

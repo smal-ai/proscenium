@@ -49,6 +49,7 @@ Reconcile original job/operation receipts after acknowledgement loss before retr
 Missing apply_patch is not an authoring blocker when bash is available:
 use bash (with python3, never bare python) for ordinary scoped project file creation and edits, then the host validation/checkpoint/publication tools.
 Use checkpoint_sources(entry_path=...) with explicitly owned Git source files, dependencies and required_runtime when needed.
+For .blend checkpoints, set required_runtime "features": [] by default. Only declare supported Cycles CPU feature tags from the blender-authoring skill, never ad-hoc strings.
 For multi-file scene/asset revisions, set base_version to the exact prior VersionRef, checkpoint only changed source files, and use exclude_paths to omit specific inherited destinations.
 Omit retained_files on checkpoint_sources: registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NEVER in CheckpointRequest.retained_files or SourceClosure.files.
 For large closures, use the completed receipt's operation_id as checkpoint_operation_id with its source_commit in both validate_authored_document (publication_submit) and publish_outputs; omit source. Otherwise pass the returned receipt["source_closure"] directly as source. Never write shell/Python scripts to sort
