@@ -23,7 +23,7 @@ MAX_RESPONSE_BYTES = 1_048_576
 AUTH_UNAVAILABLE = "Web search authentication is unavailable"
 SERVICE_UNAVAILABLE = "Web search service is unavailable"
 INVALID_QUERY = "Web search query must be a non-empty string up to 512 characters"
-_UNSAFE_URL = re.compile(r"[\x00-\x1f\x7f\s\\]")
+_UNSAFE_URL = re.compile(r"[\x00-\x1f\x7f-\x9f\ud800-\udfff\s\\]")
 _CONTROLS = re.compile(r"[\x00-\x1f\x7f-\x9f\ud800-\udfff]")
 _CITATION = re.compile(r"\[([^\[\]\r\n]*)\]\((https?://[^\s()]+)\)")
 _BEARER_TOKEN = re.compile(r"[A-Za-z0-9._~+/-]+=*")
@@ -124,8 +124,16 @@ async def _rpc(
             if response.status_code in {401, 403}:
                 raise DomainError("capability_unavailable", 501, AUTH_UNAVAILABLE)
             if response.status_code == 200:
+                encodings = [
+                    value.strip().lower()
+                    for header in response.headers.get_list("content-encoding")
+                    for value in header.split(",")
+                    if value.strip()
+                ]
+                if any(encoding != "identity" for encoding in encodings):
+                    raise DomainError("provider_unavailable", 503, SERVICE_UNAVAILABLE)
                 body = bytearray()
-                async for chunk in response.aiter_bytes():
+                async for chunk in response.aiter_raw():
                     if len(body) + len(chunk) > MAX_RESPONSE_BYTES:
                         raise DomainError("provider_unavailable", 503, SERVICE_UNAVAILABLE)
                     body.extend(chunk)
@@ -142,6 +150,7 @@ def _clean_public_url(raw: Any) -> str | None:
     if not isinstance(raw, str) or not 8 <= len(raw) <= 2048 or _UNSAFE_URL.search(raw):
         return None
     try:
+        raw.encode("utf-8")
         parsed = urlsplit(raw)
         # Reading port also rejects malformed/out-of-range ports.
         _ = parsed.port

@@ -17,9 +17,10 @@ from proscenium.configuration import Settings
 from proscenium.contracts import canonical, validate
 from proscenium.copilot import web_search
 from proscenium.copilot.outcomes import get_tool_outcome
+from proscenium.copilot.service import Copilot
 from proscenium.copilot.state import key, save
 from proscenium.copilot.tools import Tools, read_arguments
-from test_activity_feedback import BINDING, PROJECT, SESSION, TOOL, WORK
+from test_activity_feedback import BINDING, PROJECT, SESSION, TOOL, WORK, event
 from test_activity_feedback import runtime as activity_runtime
 from test_request_targeting import context
 
@@ -50,6 +51,14 @@ def structured(*items):
     return {"type": "text", "text": json.dumps({"search_result_groups": [{"items": items}]})}
 
 
+class RawBody(httpx.AsyncByteStream):
+    def __init__(self, content):
+        self.content = content
+
+    async def __aiter__(self):
+        yield self.content
+
+
 def mock_transport(*content, initialise=None, call=None):
     requests = []
 
@@ -57,9 +66,17 @@ def mock_transport(*content, initialise=None, call=None):
         requests.append(request)
         identity = json.loads(request.content)["id"]
         if identity == 1:
-            return initialise or httpx.Response(200, json=envelope(1, result={}))
-        assert identity == 2
-        return call or httpx.Response(200, json=envelope(2, result={"content": content}))
+            response = initialise or httpx.Response(200, json=envelope(1, result={}))
+        else:
+            assert identity == 2
+            response = call or httpx.Response(200, json=envelope(2, result={"content": content}))
+        # Byte/JSON convenience responses are pre-read by HTTPX's constructor. Rewrap
+        # them as transport responses so the adapter exercises the real raw-stream path.
+        if response.is_stream_consumed:
+            return httpx.Response(
+                response.status_code, headers=response.headers, stream=RawBody(response.content)
+            )
+        return response
 
     return httpx.MockTransport(handler), requests
 
@@ -195,6 +212,40 @@ def test_rejects_unsafe_urls(url):
     assert web_search._clean_public_url(url) is None
 
 
+@pytest.mark.parametrize(
+    "template",
+    [
+        "https://exa{}mple.com/",
+        "https://example.com/p{}ath",
+        "https://example.com/?q={}",
+        "https://example.com/#{}",
+    ],
+    ids=["host", "path", "query", "fragment"],
+)
+def test_rejects_c1_controls_and_unpaired_surrogates_in_every_url_component(template):
+    for char in [*(chr(value) for value in range(0x80, 0xA0)), "\ud800", "\udfff"]:
+        url = template.format(char)
+        assert web_search._clean_public_url(url) is None, f"U+{ord(char):04X}"
+        with pytest.raises(DomainError, match="Invalid WebSearchHit"):
+            validate(
+                "WebSearchHit",
+                {"title": "Example", "url": url, "snippets": [], "published_at": None},
+            )
+
+
+def test_web_search_hit_contract_rejects_backslashes():
+    with pytest.raises(DomainError, match="Invalid WebSearchHit"):
+        validate(
+            "WebSearchHit",
+            {
+                "title": "Example",
+                "url": "https://example.com\\path",
+                "snippets": [],
+                "published_at": None,
+            },
+        )
+
+
 @pytest.mark.parametrize("url", ["http://8.8.8.8/", "https://[2606:4700:4700::1111]/", SOURCE])
 def test_accepts_public_urls(url):
     assert web_search._clean_public_url(url) == url
@@ -271,7 +322,33 @@ def test_network_errors_are_safe(caplog):
 
 
 @pytest.mark.parametrize("step", ["initialise", "call"])
-def test_response_cap_closes_the_stream_without_reading_more(step):
+@pytest.mark.parametrize("encoding", ["gzip", "br", "identity, gzip"])
+def test_non_identity_encoding_is_rejected_before_reading(step, encoding):
+    class Unreadable(httpx.AsyncByteStream):
+        closed = False
+
+        def __aiter__(self):
+            pytest.fail("Adapter read a response with a non-identity encoding")
+
+        async def aclose(self):
+            self.closed = True
+
+    stream = Unreadable()
+    response = httpx.Response(
+        200,
+        headers=[("Content-Encoding", " IDENTITY "), ("Content-Encoding", encoding)],
+        stream=stream,
+    )
+    transport, requests = mock_transport(**{step: response})
+    with pytest.raises(DomainError) as raised:
+        search(transport, **QUERY)
+    assert_safe(raised.value, "provider_unavailable", 503, web_search.SERVICE_UNAVAILABLE)
+    assert stream.closed
+    assert len(requests) == (1 if step == "initialise" else 2)
+
+
+@pytest.mark.parametrize("step", ["initialise", "call"])
+def test_raw_response_cap_closes_the_stream_without_reading_more(step):
     class Oversized(httpx.AsyncByteStream):
         closed = False
 
@@ -284,11 +361,13 @@ def test_response_cap_closes_the_stream_without_reading_more(step):
             self.closed = True
 
     stream = Oversized()
-    transport, _ = mock_transport(**{step: httpx.Response(200, stream=stream)})
+    response = httpx.Response(200, headers={"Content-Encoding": "IDENTITY"}, stream=stream)
+    transport, requests = mock_transport(**{step: response})
     with pytest.raises(DomainError) as raised:
         search(transport, **QUERY)
     assert_safe(raised.value, "provider_unavailable", 503, web_search.SERVICE_UNAVAILABLE)
     assert stream.closed
+    assert len(requests) == (1 if step == "initialise" else 2)
 
 
 def test_environment_token_precedence(monkeypatch):
@@ -502,6 +581,75 @@ def test_capabilities_report_defaults_and_exact_overrides(runtime):
     assert kind == "success"
     assert result["exposed_tools"] == ["view"]
     assert names <= set(result["missing_worker_tools"])
+
+
+def test_authoring_specialist_web_fetch_url_permission_is_correlated_and_auto_approved(runtime):
+    tools, store, _ = runtime
+    state = tools.state
+    child_id, call_id, permission_id = "research-child", "web-fetch-call", "web-fetch-permission"
+    request = {
+        "kind": "url",
+        "toolCallId": call_id,
+        "url": SOURCE,
+        "intention": "Read the public reference",
+    }
+
+    child_start = event("research-start", "subagent.started", agentName="authoring-specialist")
+    state.reduce(PROJECT, SESSION, {**child_start, "agentId": child_id})
+
+    def child_event(identity, kind, **data):
+        state.reduce(
+            PROJECT,
+            SESSION,
+            {**event(identity, kind, **data), "agentId": child_id, "parentId": child_start["id"]},
+        )
+
+    # The native URL permission may arrive before web_fetch's tool start event.
+    child_event(
+        "permission-request",
+        "permission.requested",
+        requestId=permission_id,
+        permissionRequest=request,
+    )
+    copilot = Copilot.__new__(Copilot)
+    copilot.services, copilot.state, copilot.closing = tools.services, state, False
+    decision = asyncio.run(copilot.permission(PROJECT, request, {"session_id": SESSION}))
+    assert decision.kind == "approve-once"
+
+    child_event(
+        "fetch-start",
+        "tool.execution_start",
+        toolCallId=call_id,
+        toolName="web_fetch",
+        arguments={"url": SOURCE},
+    )
+    child_event(
+        "permission-done",
+        "permission.completed",
+        requestId=permission_id,
+        toolCallId=call_id,
+        result={"kind": "approved"},
+    )
+    with store.transaction(write=False) as tx:
+        child = tx.require("invocations", key(SESSION, "agent", child_id))
+        assert (child["name"], child["work_id"], child["state"]) == (
+            "authoring-specialist",
+            WORK,
+            "running",
+        )
+        call = tx.require("invocations", key(SESSION, "tool", call_id))
+        assert (call["agent_id"], call["name"], call["work_id"]) == (child_id, "web_fetch", WORK)
+        stage = tx.require("copilot.permissions", key(SESSION, permission_id))
+        assert stage["invocation_id"] == call["invocation_id"]
+        assert stage["fingerprint"] == hashlib.sha256(canonical(request)).hexdigest()
+        assert (stage["phase"], stage["authority"], stage["reply"]) == (
+            "completed",
+            "automatic_policy",
+            "approve",
+        )
+        assert state.control(tx)["fenced"] is False
+        assert tx.require("work", WORK)["state"] == "running"
+        assert tx.all("decisions") == []
 
 
 def test_safe_tool_failure_and_persisted_diagnostic(runtime):
