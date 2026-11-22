@@ -75,6 +75,12 @@ description: Author and inspect Blender content inside the active Proscenium pro
    is populated alongside `keyframe` / `inspection` still renders). Pass the exact host
    camera for “Render this view”. A preview receipt admits a job, not a finished
    render. Observe its real state and registered outputs.
+   Use `retry_job` on an earlier turn's failed scene or asset preview only when
+   `request_target` pins that exact published version. If the target is
+   `project`, or `retry_job` returns `scope_denied` because the failed preview
+   belongs to an earlier request, call `request_preview` on the existing published
+   `version` with a fresh `operation_id` and fresh `spec.intent_id`, provided
+   rendering is in scope. Do not halt or republish unchanged sources.
    Use `get_version(version_id)` for the pinned publication/source record and
    `list_job_frames(job_id, cursor?, limit?)` for ready frame receipts, following
    `next_cursor` until null. Call `get_artifact(artifact_id)` for each desired

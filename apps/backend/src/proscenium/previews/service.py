@@ -120,7 +120,7 @@ class PreviewService:
                 version
                 and version["project_id"] == tx.project_id
                 and version["item_id"] == ref["item_id"]
-                and version["kind"] == "scene"
+                and version["kind"] in {"scene", "asset"}
                 and job_version == ref
             ):
                 return request_id

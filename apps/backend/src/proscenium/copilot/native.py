@@ -56,6 +56,8 @@ For large closures, use the completed receipt's operation_id as checkpoint_opera
 SourceClosure files or compute SHA-256 closure digests. Never git add . or include unrelated staging.
 Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.
 Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.
+Use retry_job on an earlier turn's failed scene or asset preview only when request_target pins that exact published version.
+If request_target is project, or retry_job returns scope_denied because the failed preview belongs to an earlier request, use request_preview on the existing published version with a fresh operation_id and fresh spec.intent_id, if rendering is in scope. Do not halt or republish unchanged sources.
 For multi-scene or multi-shot previews, read get_version(version_id) and use set_preview_order on the published version to set pass order without re-rendering.
 Use list_items to discover catalogue names, descriptions, tags and known provenance without private SQLite.
 Lead and authoring-specialist: use search_web for open-ended public web discovery and web_fetch to inspect selected public URLs.

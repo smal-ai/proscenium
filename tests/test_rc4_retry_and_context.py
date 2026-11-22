@@ -619,6 +619,46 @@ def test_same_work_retry_remains_available(signal_lost, identity):
 
 
 @pytest.mark.parametrize(
+    ("target", "allowed"),
+    [
+        pytest.param({"kind": "item", "version": ASSET_V1}, True, id="exact-asset-version"),
+        pytest.param({"kind": "item", "version": ASSET_V3}, False, id="other-asset-version"),
+        pytest.param(SCENE_TARGET, False, id="other-item"),
+        pytest.param({"kind": "project"}, False, id="unpinned-project"),
+    ],
+)
+def test_cross_turn_asset_preview_retry_requires_exact_pinned_version(signal_lost, target, allowed):
+    studio = signal_lost
+    new_turn(studio, {"request_target": target})
+    if not allowed:
+        rejection(studio, ASSET_RENDER, "scope_denied", EARLIER_RENDER, status=403)
+        return
+
+    call = retry(studio, ASSET_RENDER)
+    original = studio.jobs[ASSET_RENDER]
+    result_type, job = run_tool(studio, call)
+    assert (result_type, job["state"], job["attempt_number"]) == ("success", "planned", 2)
+    assert job["attempt_id"] != original["attempt_id"]
+    assert job["target"]["version"] == ASSET_V1
+    assert job["job_id"] == ASSET_RENDER and job["work_id"] == WORK
+    assert job["input_digest"] == original["input_digest"]
+    assert records(studio, "job_retry_authorisations") == [
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            job_id=ASSET_RENDER,
+            attempt_id=job["attempt_id"],
+            attempt_number=2,
+            originating_work_id=WORK,
+            authorising_work_id=NEW_WORK,
+            authorising_request_id=NEW_REQUEST,
+            invocation_id=key(SESSION, "tool", call.tool_call_id),
+            operation_id=call.arguments["operation_id"],
+        )
+    ]
+
+
+@pytest.mark.parametrize(
     "selection", [DRAFT_VIEW, {"request_target": SCENE_TARGET}], ids=["draft", "scene"]
 )
 def test_recover_four_pinned_shots_and_never_assemble_missing_frames(
