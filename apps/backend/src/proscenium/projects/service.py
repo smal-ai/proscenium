@@ -12,6 +12,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Store
+from proscenium.db.outbox import has_unsettled_outbox
 from proscenium.db.ownership import Ownership
 from proscenium.db.paths import DENIED_PARTS, project_path
 from proscenium.projects.workspace_fs import (
@@ -713,9 +714,7 @@ class Projects:
                 for namespace, states in terminal.items():
                     if any(row["state"] not in states for row in tx.all(namespace)):
                         raise DomainError("project_busy", 409)
-                if tx.connection.execute(
-                    "SELECT 1 FROM outbox WHERE state IN ('dispatching','outcome_uncertain')"
-                ).fetchone():
+                if has_unsettled_outbox(tx):
                     raise DomainError("project_busy", 409)
                 for artifact in tx.all("artifacts"):
                     if artifact["state"] == "ready":

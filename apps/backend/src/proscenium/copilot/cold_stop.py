@@ -2,7 +2,7 @@
 
 import hashlib
 import time
-from typing import Any
+from typing import Any, TypeGuard
 
 from proscenium.api.errors import DomainError
 from proscenium.contracts import canonical
@@ -22,7 +22,7 @@ METHODS = (
 )
 
 
-def valid_process_identity(process: Any) -> bool:
+def valid_process_identity(process: Any) -> TypeGuard[dict[str, Any]]:
     return (
         isinstance(process, dict)
         and isinstance(process.get("pid"), int)

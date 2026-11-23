@@ -12,6 +12,7 @@ from copilot import CopilotClient
 from copilot.generated.rpc import SessionRpc
 from proscenium.auth import Caller
 from proscenium.copilot import cold_stop
+from proscenium.copilot import service as copilot_service
 from proscenium.copilot.native import Native
 from proscenium.copilot.service import CallbackOwner, Copilot
 from proscenium.copilot.state import save
@@ -325,6 +326,112 @@ def test_settled_stop_reconciles_original_identity_then_releases_empty_queue(run
         assert all(m["method"] in cold_stop.METHODS for m in client.messages)
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("origin_source", ["adapter", "marker", "unknown"])
+def test_uncertain_stop_origin_is_pinned_before_failed_session_open(
+    runtime, monkeypatch, origin_source
+):
+    copilot, store, client = runtime
+    departed = copilot.native.departed_process.copy()
+    original = {"pid": departed["pid"], "start": departed["start"]}
+    recovery = {**departed, "pid": 129, "start": "replacement-start"}
+    marker = copilot.services.settings.data_directory / "copilot-runtime/process.json"
+    marker.parent.mkdir(parents=True)
+    if origin_source != "adapter":
+        copilot.native.departed_process = None
+    if origin_source == "marker":
+        marker.write_text(json.dumps(original))
+        monkeypatch.setattr(copilot_service, "launcher_identity", lambda pid: None)
+    expected = {"unknown": True} if origin_source == "unknown" else original
+    assert cold_stop.send_settled_before_stop({"state": "acknowledged"}, expected)
+    with store.transaction() as tx:
+        copilot.state.request_state(tx, REQUEST, "outcome_uncertain", native_message_id=None)
+        save(
+            tx,
+            "copilot.sends",
+            REQUEST,
+            {
+                "state": "abandoned_on_departure",
+                "session_id": SESSION,
+                "history_matches": 0,
+                "departed_process": departed,
+            },
+        )
+
+    open_session = copilot.session
+    origins_at_open = []
+
+    async def open_with_first_failure(project_id):
+        with store.transaction(write=False) as tx:
+            origins_at_open.append(tx.get("copilot.stop_origins", STOP, required=False))
+        if len(origins_at_open) == 1:
+            # The replacement has started, but resume_session failed before returning it.
+            marker.write_text(json.dumps(recovery))
+            raise RuntimeError("Synthetic replacement session open failed")
+        return await open_session(project_id)
+
+    closed = []
+
+    async def close():
+        copilot.native.departed_process = json.loads(marker.read_text())
+        closed.append(copilot.native.departed_process.copy())
+
+    copilot.session = open_with_first_failure
+    copilot.native.close = close
+
+    async def run():
+        for operation_id, detail in [
+            ("reconcile-first", "provider_unavailable"),
+            ("reconcile-second", "uncertain_stop"),
+        ]:
+            copilot.admit_resume(
+                OWNER,
+                {
+                    "schema_version": "1.0",
+                    "operation_id": operation_id,
+                    "project_id": PROJECT,
+                    "mode": "reconcile_only",
+                    "work_id": None,
+                    "expected_revision": 3,
+                },
+            )
+            await copilot.resume(PROJECT, operation_id)
+            with store.transaction(write=False) as tx:
+                assert tx.require("copilot.stop_origins", STOP) == expected
+                assert tx.require("copilot.stops", STOP)["phase"] == "outcome_uncertain"
+                operation = tx.require("copilot.resumes", operation_id)
+                assert (
+                    operation["state"] == "outcome_uncertain" and operation["detail_code"] == detail
+                )
+                assert copilot.state.control(tx)["fenced"]
+        assert origins_at_open == [expected, expected]
+        assert closed == [recovery, recovery]
+        assert [m["method"] for m in client.messages] == ["session.queue.pendingItems"]
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("state", ["stop_requested", "outcome_uncertain"])
+def test_restore_pins_stop_origin_before_native_recovery(runtime, state):
+    copilot, store, client = runtime
+    if state == "stop_requested":
+        with store.transaction() as tx:
+            copilot.state.request_state(tx, STOP, "stop_requested")
+            save(
+                tx,
+                "copilot.stops",
+                STOP,
+                {**tx.require("copilot.stops", STOP), "phase": "aborting"},
+            )
+    departed = copilot.native.departed_process
+    copilot.restore(PROJECT)
+    with store.transaction(write=False) as tx:
+        assert tx.require("requests", STOP)["receipt"]["state"] == "outcome_uncertain"
+        assert tx.require("copilot.stop_origins", STOP) == {
+            k: departed[k] for k in ("pid", "start")
+        }
+    assert not client.messages
 
 
 @pytest.mark.parametrize("same_process", [False, True])

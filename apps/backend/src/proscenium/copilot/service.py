@@ -27,6 +27,7 @@ from proscenium.services import Services
 from . import cold_stop
 from .context import Contexts
 from .io_policy import file_io
+from .launcher import identity as launcher_identity
 from .native import Native
 from .read_recovery import interrupt as interrupt_read_wait
 from .read_recovery import probe as probe_read_wait
@@ -172,6 +173,9 @@ class Copilot:
         self.last_health_at: float = 0.0
 
     def restore(self, project_id: str) -> None:
+        self._restore(project_id, activation=False)
+
+    def _restore(self, project_id: str, *, activation: bool) -> None:
         if project_id:
             with self.services.registry.project_store(project_id).transaction() as tx:
                 if tx.all("requests") or tx.get("copilot.session", "native", required=False):
@@ -198,6 +202,10 @@ class Copilot:
                                 "outcome_uncertain",
                                 detail_code="awaiting_resume",
                             )
+                            self._pin_stop_origin_before_open(
+                                project_id, tx=tx, stop_id=request["request_id"]
+                            )
+                    self._pin_stop_origin_before_open(project_id, tx=tx)
                     for operation in tx.all("copilot.resumes"):
                         if operation["state"] in {"pending", "dispatching"}:
                             save(
@@ -229,6 +237,18 @@ class Copilot:
                                 key(stage["session_id"], stage["native_id"]),
                                 {**stage, "phase": "outcome_uncertain", "interrupted_at": now()},
                             )
+                for auto in tx.all("copilot.auto_releases"):
+                    # The lazy activation check is not a backend restart. Keep a Queue
+                    # instruction already admitted by this owner after activation.
+                    if auto["state"] == "pending" and (
+                        not activation or auto.get("owner_epoch") != self.services.ownership.epoch
+                    ):
+                        save(
+                            tx,
+                            "copilot.auto_releases",
+                            auto["request_id"],
+                            {**auto, "state": "superseded"},
+                        )
         self.checked_projects.add(project_id)
 
     async def start(self) -> None:
@@ -704,7 +724,7 @@ class Copilot:
             with self.services.registry.project_store(project_id).transaction(write=False) as tx:
                 previous = self.state.control(tx)
             if previous.get("reason") == "awaiting_resume":
-                self.restore(project_id)
+                self._restore(project_id, activation=True)
             self.checked_projects.add(project_id)
         for old_project, old_session in list(self.sessions.items()):
             if old_project != project_id:
@@ -829,7 +849,11 @@ class Copilot:
             auto = tx.require(namespace, request_id)
             if auto["state"] != "pending":
                 return None
-            if not self._auto_release_eligible(tx, request_id, auto["watermark"]):
+            if auto.get(
+                "owner_epoch"
+            ) != self.services.ownership.epoch or not self._auto_release_eligible(
+                tx, request_id, auto["watermark"]
+            ):
                 save(tx, namespace, request_id, {**auto, "state": "superseded"})
                 return None
             return auto
@@ -1307,6 +1331,39 @@ class Copilot:
                     return record
         return None
 
+    def _pin_stop_origin_before_open(
+        self, project_id: str, *, tx: Transaction | None = None, stop_id: str | None = None
+    ) -> None:
+        if tx is None:
+            with self.services.registry.project_store(project_id).transaction() as writer:
+                self._pin_stop_origin_before_open(project_id, tx=writer, stop_id=stop_id)
+            return
+        stop_id = stop_id or self._sole_uncertain_stop(tx)
+        if not stop_id or tx.get("copilot.stop_origins", stop_id, required=False) is not None:
+            return
+        departed = getattr(self.native, "departed_process", None)
+        if departed is None:
+            record = self._native_process_record()
+            if record is not None and cold_stop.valid_process_identity(record):
+                with suppress(OSError):
+                    observed = launcher_identity(record["pid"])
+                    if observed != record["start"]:
+                        departed = {**record, "observed_identity": observed}
+        association = tx.get("copilot.session", "native", required=False)
+        work = tx.require("work", tx.require("copilot.stops", stop_id)["work_id"])
+        session_id = work["native_session_id"]
+        if (
+            cold_stop.valid_process_identity(departed)
+            and "observed_identity" in departed
+            and departed["observed_identity"] != departed["start"]
+            and departed.get("session_id") in (None, session_id)
+            and (not association or association["session_id"] == session_id)
+        ):
+            _record_stop_origin(tx, stop_id, departed)
+        else:
+            # Never mistake a later recovery client's process for the original Stop's process.
+            tx.put("copilot.stop_origins", stop_id, {"unknown": True})
+
     def admit_resume(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         if caller.channel != "owner":
             raise DomainError("owner_session_required", 401)
@@ -1389,6 +1446,8 @@ class Copilot:
     async def reconcile(self, project_id: str) -> dict[str, Any]:
         cached_session = self.sessions.get(project_id)
         cold_resume = cached_session is None
+        if cold_resume:
+            self._pin_stop_origin_before_open(project_id)
         store = self.services.registry.project_store(project_id)
         with store.transaction(write=False) as tx:
             prior_invocations = [
@@ -1398,14 +1457,6 @@ class Copilot:
             ]
         session = await self.session(project_id)
         departed = getattr(self.native, "departed_process", None)
-        if cold_resume and cold_stop.process_departure_proven(departed, session.session_id):
-            # Pin the first proven origin before history/pending RPCs can fail and close this client.
-            with store.transaction() as tx:
-                if stop_id := self._sole_uncertain_stop(tx):
-                    phase = tx.require("copilot.stops", stop_id)
-                    work = tx.require("work", phase["work_id"])
-                    if work["native_session_id"] == session.session_id:
-                        _record_stop_origin(tx, stop_id, departed)
         history: list[dict[str, Any]] = []
         owner = self.callback_owners.get(project_id)
         warm_settled = False

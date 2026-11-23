@@ -5,6 +5,7 @@ from typing import Any
 from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
 from proscenium.db import Transaction
+from proscenium.db.outbox import has_unsettled_outbox
 from proscenium.db.store import Store
 
 
@@ -129,9 +130,7 @@ class Registry:
             for namespace, terminal in blockers.items():
                 if any(record.get("state") not in terminal for record in tx.all(namespace)):
                     raise DomainError("project_busy", 409)
-            if tx.connection.execute(
-                "SELECT 1 FROM outbox WHERE state IN ('dispatching','outcome_uncertain') LIMIT 1"
-            ).fetchone():
+            if has_unsettled_outbox(tx):
                 raise DomainError("project_busy", 409)
 
     @staticmethod

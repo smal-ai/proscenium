@@ -362,7 +362,12 @@ class State:
                     tx.put(
                         "copilot.auto_releases",
                         identity,
-                        {"request_id": identity, "watermark": tx.watermark(), "state": "pending"},
+                        {
+                            "request_id": identity,
+                            "watermark": tx.watermark(),
+                            "owner_epoch": self.services.ownership.epoch,
+                            "state": "pending",
+                        },
                     )
                 return request_receipt
 

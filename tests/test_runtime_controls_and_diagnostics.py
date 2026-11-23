@@ -4,6 +4,7 @@ import asyncio
 import copy
 import hashlib
 import json
+from pathlib import Path
 from threading import RLock
 from types import SimpleNamespace
 
@@ -22,7 +23,9 @@ from proscenium.copilot.outcomes import record_tool_outcome
 from proscenium.copilot.router import router
 from proscenium.copilot.service import CONTINUATION_TEXT, Copilot, is_consequential_shell
 from proscenium.copilot.state import key, save
+from proscenium.db import Store
 from proscenium.db.pagination import Cursors
+from proscenium.db.registry import Registry
 from proscenium.projects.service import Projects
 from test_activity_feedback import BINDING, PROJECT, REQUEST, SESSION, TOOL, WORK, event, start
 from test_activity_feedback import runtime as activity_runtime
@@ -468,7 +471,12 @@ def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
     assert copilot.state.submit(OWNER, submission)[1] is True
     with store.transaction() as tx:
         auto = tx.require("copilot.auto_releases", "new")
-        assert auto == {"request_id": "new", "watermark": tx.watermark(), "state": "pending"}
+        assert auto == {
+            "request_id": "new",
+            "watermark": tx.watermark(),
+            "owner_epoch": "epoch",
+            "state": "pending",
+        }
         assert tx.events()["events"][-1]["event_type"] == "request.accepted"
         tx.emit("project.state_changed", project, actor={"kind": "system", "id": "fixture"})
 
@@ -486,6 +494,29 @@ def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
         assert copilot.state.control(tx)["queue_released"]
         assert tx.require("requests", "new")["receipt"]["state"] == "acknowledged"
     assert sent == [(submission["text"], "new")]
+
+
+@pytest.mark.parametrize("restore", [False, True])
+def test_tick_does_not_release_a_queue_admitted_in_another_owner_epoch(runtime, restore):
+    state, store, gate, _ = runtime
+    copilot = idle_restart(runtime)
+    sent = []
+    copilot.launch_send = lambda *args: sent.append(args)
+    assert copilot.state.submit(OWNER, request_record("new")["submission"])[0]["state"] == "held"
+    state.services.ownership.epoch = "epoch-b"
+    if restore:
+        copilot.restore(PROJECT)
+    else:
+        copilot.checked_projects.add(PROJECT)  # Exercise the epoch guard without a restore.
+    asyncio.run(copilot.tick(PROJECT))
+    with store.transaction(write=False) as tx:
+        auto = tx.require("copilot.auto_releases", "new")
+        assert auto["state"] == "superseded" and auto["owner_epoch"] == "epoch"
+        assert tx.require("requests", "new")["receipt"]["state"] == "held"
+        assert copilot.state.control(tx)["fenced"]
+    with pytest.raises(DomainError):
+        gate.require(PROJECT)
+    assert sent == []
 
 
 @pytest.mark.parametrize(
@@ -1419,6 +1450,56 @@ def test_departed_native_invocations_and_unrecorded_sends_require_inactivity(run
         assert tx.require("copilot.resumes", "continue")["state"] == "completed"
         assert tx.require("requests", REQUEST)["receipt"]["state"] == "running"
         assert tx.require("copilot.sends", REQUEST)["state"] == "abandoned_on_departure"
+
+    session = copilot.sessions[PROJECT]
+    for kind in ("session.task_complete", "session.idle"):
+        state.reduce(
+            PROJECT, SESSION, event(kind, kind, originatingMessageId="continuation-message")
+        )
+    asyncio.run(copilot.settle(PROJECT, session))
+    with store.transaction() as tx:
+        assert tx.require("work", WORK)["state"] == "completed"
+        assert tx.require("requests", REQUEST)["receipt"]["state"] == "completed"
+        tx.put("copilot.resumes", "historical-resume", {"state": "outcome_uncertain"})
+        tx.enqueue("historical-resume", "copilot.resume", {})
+        tx.claim_intent("historical-resume")
+        tx.settle_intent(
+            "historical-resume", "outcome_uncertain", {"detail_code": "attribution_unavailable"}
+        )
+
+    root = Path(project["path"])
+    target = root / ".proscenium/state.sqlite3"
+    target.parent.mkdir()
+    store.backup(target)
+    registry = Registry(Store(root / "registry.sqlite3"))
+    registry.register({**project, "state_revision": 0})
+    registry.assert_settled(PROJECT)
+    target_store = registry.project_store(PROJECT, active=False)
+    for blocking_kind, blocking_state in [
+        ("copilot.send", "outcome_uncertain"),
+        ("copilot.send", "dispatching"),
+        ("copilot.stop", "outcome_uncertain"),
+        ("copilot.resume", "outcome_uncertain"),
+    ]:
+        identity = f"unsettled-{blocking_kind}-{blocking_state}"
+        with target_store.transaction() as tx:
+            tx.enqueue(identity, blocking_kind, {})
+            tx.claim_intent(identity)
+            if blocking_kind == "copilot.send":
+                tx.put("copilot.sends", identity, {"state": "outcome_uncertain"})
+            if blocking_kind == "copilot.resume":
+                tx.put("copilot.resumes", identity, {"state": "outcome_uncertain"})
+                tx.put("copilot.pause_release", identity, {"state": "dispatching"})
+            if blocking_state == "outcome_uncertain":
+                tx.settle_intent(
+                    identity, blocking_state, {"detail_code": "attribution_unavailable"}
+                )
+        with pytest.raises(DomainError) as exc:
+            registry.assert_settled(PROJECT)
+        assert exc.value.code == "project_busy"
+        with target_store.transaction() as tx:
+            tx.settle_intent(identity, "failed", {"fixture_cleanup": True})
+    registry.assert_settled(PROJECT)
 
 
 @pytest.mark.parametrize("inactivity", ["proven", "active", "missing"])
