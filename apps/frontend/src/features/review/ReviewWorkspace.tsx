@@ -79,6 +79,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [editing2D, setEditing2D] = useState(false);
   const [restorePinCamera, setRestorePinCamera] = useState<Camera | null>(null);
   const [restorePinNonce, setRestorePinNonce] = useState(0);
+  const [frameRequest, setFrameRequest] = useState<{nonce: number; proxyId: string; restore: Camera | null; restoreNonce: number} | null>(null);
   const [unmappedCapture, setUnmappedCapture] = useState<UnmappedCapture | null>(null);
   const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap} | null>(null);
   const [availabilityByJob, setAvailabilityByJob] = useState<Record<string,FrameAvailability>>({});
@@ -992,7 +993,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         if (!capture || !mapping) throw new Error("The published inspection proxy is not ready to capture");
         // All source identities, camera, selected pairs and actual pixels freeze
         // before any await. The upload is not a request to render/generate.
-        const frozen = capture({targetDimensions: resolveRenderTargetDimensions(renderPreset)});
+        const frozen = capture({targetDimensions: resolveRenderTargetDimensions(renderPreset), opaqueBackdrop: true});
         const uploadId = crypto.randomUUID();
         const selection = structuredClone({...context, request_target: versionRequestTarget(version, version.kind), target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
         const sampleFrame = mapping.sample_frame;
@@ -1129,6 +1130,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     : target?.version_id === activeMapping?.version_id && target?.source_frame === activeMapping?.sample_frame
       ? targetCamera
       : null;
+  const frameOverride = frameRequest && frameRequest.proxyId === activeMapping?.proxy_artifact_id &&
+    frameRequest.restore === effectiveRestoreCamera && frameRequest.restoreNonce === restorePinNonce;
   // Compatible with the current dock and the placement-aware dock on integration.
   const placementProps = {placementCommitting};
 
@@ -1228,8 +1231,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
             onViewportPixels={setViewportPixels}
             onPlacePin={placement => void handlePlacePin(placement)}
             onPinMiss={handlePinMiss}
-            restoreCamera={effectiveRestoreCamera}
+            restoreCamera={frameOverride ? null : effectiveRestoreCamera}
             restoreCameraNonce={restorePinNonce}
+            frameNonce={frameRequest?.nonce}
             suppressFramingGate={Boolean(draft && isSpatialDraft)}
           />
         </MediaBoundary>
@@ -1250,6 +1254,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       <div className={`review-bar review-transport-bar${mode === "3d_inspection" ? "" : " review-playback-transport"}`} aria-label="Review transport">
         {mode === "3d_inspection" ? <>
           <span className="toolbar-chip">Sample frame {mapping?.sample_frame ?? 1}</span>
+          <button className="toolbar-btn" disabled={!visible || !proxyReady || !activeMapping} onClick={() => {
+            if (activeMapping) setFrameRequest(previous => ({nonce: (previous?.nonce ?? 0) + 1,
+              proxyId: activeMapping.proxy_artifact_id, restore: effectiveRestoreCamera, restoreNonce: restorePinNonce}));
+          }}>Frame model</button>
           {selected.length > 0 && <span className="toolbar-chip">{selected.length} object(s) selected</span>}
           <div className="toolbar-spacer"/>
           <span className="toolbar-meta">

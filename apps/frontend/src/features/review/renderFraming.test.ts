@@ -1,9 +1,81 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Matrix4, OrthographicCamera, PerspectiveCamera, Vector3 } from "three";
+import { Box3, Matrix4, MeshPhysicalMaterial, MeshStandardMaterial, OrthographicCamera, PerspectiveCamera, Texture, Vector3 } from "three";
 import type { Camera } from "../../api/generated/contracts";
+import { cloneInspectionMaterial } from "./inspectionMaterials";
 import { captureCamera, projectBlenderPoint } from "./media";
-import { computeCanvasFramingGate, computeFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions } from "./renderFraming";
+import { computeAutoFramePose, computeCanvasFramingGate, computeFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions } from "./renderFraming";
+
+test("auto-frame centres a half-metre proxy from the original three-quarter view", () => {
+  const box = new Box3(new Vector3(-0.25, -0.21, -0.06), new Vector3(0.25, 0.21, 0.07));
+  const pose = computeAutoFramePose(box, 50)!;
+  const target = new Vector3(...pose.target);
+  const offset = new Vector3(...pose.position).sub(target);
+  assert.ok(target.distanceTo(new Vector3(0, 0, 0.005)) < 1e-12);
+  assert.ok(offset.length() > 1 && offset.length() < 1.1);
+  assert.ok(offset.clone().normalize().distanceTo(new Vector3(5, 4, 5).normalize()) < 1e-12);
+  assert.equal(pose.near, 0.01);
+  assert.equal(pose.far, 1000);
+});
+
+test("auto-frame projects all eight corners inside a portrait viewport", () => {
+  const width = 400, height = 800, fov = 50;
+  const box = new Box3(new Vector3(-0.25, -0.21, -0.06), new Vector3(0.25, 0.21, 0.07));
+  const pose = computeAutoFramePose(box, fov, width / height)!;
+  const camera = new PerspectiveCamera(fov, width / height, pose.near, pose.far);
+  camera.position.set(...pose.position);
+  camera.lookAt(...pose.target);
+  camera.updateMatrixWorld();
+
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        const projected = new Vector3(x, y, z).project(camera);
+        const pixelX = (projected.x + 1) * width / 2;
+        const pixelY = (1 - projected.y) * height / 2;
+        assert.ok(pixelX > 0 && pixelX < width && pixelY > 0 && pixelY < height,
+          `Corner [${x}, ${y}, ${z}] projects outside the viewport at [${pixelX}, ${pixelY}]`);
+      }
+    }
+  }
+});
+
+test("auto-frame rejects empty bounds and keeps point-like and large models inside the clip planes", () => {
+  assert.equal(computeAutoFramePose(new Box3(), 50), null);
+  const point = new Vector3(2, 3, 4);
+  const tiny = computeAutoFramePose(new Box3(point, point), 50)!;
+  const tinyDistance = new Vector3(...tiny.position).distanceTo(point);
+  assert.deepEqual(tiny.target, [2, 3, 4]);
+  assert.ok(Math.abs(tinyDistance - 0.05 * 1.35 / Math.sin(25 * Math.PI / 180)) < 1e-12);
+  assert.ok(tiny.near >= 0.001 && tiny.near < tinyDistance);
+  const large = computeAutoFramePose(new Box3(new Vector3(-100, -100, -100), new Vector3(100, 100, 100)), 50)!;
+  assert.ok(large.far > 1000 && large.far > new Vector3(...large.position).length() + Math.sqrt(3) * 100);
+});
+
+test("inspection lifts dark graphite without changing its cached tint or texture", () => {
+  const source = new MeshPhysicalMaterial({ map: new Texture(), metalness: 0.8, roughness: 0.1 });
+  source.color.setRGB(0.014, 0.017, 0.020);
+  const clone = cloneInspectionMaterial(source) as MeshPhysicalMaterial;
+  assert.notEqual(clone, source);
+  assert.ok(clone instanceof MeshPhysicalMaterial);
+  assert.equal(clone.map, source.map);
+  const { r, g, b } = clone.color;
+  assert.ok(Math.abs(0.2126 * r + 0.7152 * g + 0.0722 * b - 0.18) < 1e-12);
+  assert.ok(Math.abs(r / b - 0.014 / 0.020) < 1e-12);
+  assert.ok(Math.abs(g / b - 0.017 / 0.020) < 1e-12);
+  assert.deepEqual(source.color.toArray(), [0.014, 0.017, 0.020]);
+  assert.deepEqual([clone.metalness, clone.roughness, source.metalness, source.roughness], [0.35, 0.28, 0.8, 0.1]);
+});
+
+test("inspection lifts black neutrally and leaves bright material values alone", () => {
+  const black = cloneInspectionMaterial(new MeshStandardMaterial({color: 0, roughness: 1})) as MeshStandardMaterial;
+  assert.deepEqual(black.color.toArray(), [0.18, 0.18, 0.18]);
+  assert.equal(black.roughness, 0.75);
+  const bright = new MeshStandardMaterial({metalness: 1, roughness: 0.1});
+  const clone = cloneInspectionMaterial(bright) as MeshStandardMaterial;
+  assert.notEqual(clone, bright);
+  assert.deepEqual([clone.color.toArray(), clone.metalness, clone.roughness], [bright.color.toArray(), 1, 0.1]);
+});
 
 test("render presets label measured pixels separately from the native capture default", () => {
   const measured = { width: 1256, height: 912 };

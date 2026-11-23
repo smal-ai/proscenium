@@ -1,14 +1,16 @@
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
 import { Canvas, useFrame, useThree, type RootState, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
-import { Matrix4, OrthographicCamera, PerspectiveCamera, Raycaster, Vector2, Vector3, type Camera as ThreeCamera, type Object3D, type Scene, type WebGLRenderer } from "three";
+import { Box3, Matrix4, Mesh, OrthographicCamera, PerspectiveCamera, Raycaster, Vector2, Vector3, type Camera as ThreeCamera, type Material, type Object3D, type Scene, type WebGLRenderer } from "three";
 import type { Camera, ObjectSelection, ProxyMapping } from "../../api/generated/contracts";
+import { cloneInspectionMaterial } from "./inspectionMaterials";
 import { captureCamera, projectBlenderPoint } from "./media";
-import { computeCanvasFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
+import { computeAutoFramePose, computeCanvasFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
 import { indexProxyScene, projectBlenderPointVisible, proxyPointToBlender, proxySurfaceNormalToBlender, resolveProxyNode, type ProxyNode } from "./spatial";
 import "./renderFraming.css";
 
 const DRAG_THRESHOLD_PX = 4;
+const PROXY_FOV = 50;
 
 export interface FrozenProxyCapture {
   camera: Camera;
@@ -17,6 +19,7 @@ export interface FrozenProxyCapture {
 }
 export interface ProxyCaptureOptions {
   targetDimensions?: {width: number; height: number} | null;
+  opaqueBackdrop?: boolean;
 }
 export type ProxyCapture = (options?: ProxyCaptureOptions) => FrozenProxyCapture;
 
@@ -39,6 +42,16 @@ function toBlobPromise(copy: HTMLCanvasElement): Promise<Blob> {
   return new Promise<Blob>((resolve, reject) => {
     copy.toBlob(blob => blob ? resolve(blob) : reject(new Error("Inspection PNG capture failed")), "image/png");
   });
+}
+
+function copyViewport(context: CanvasRenderingContext2D, source: HTMLCanvasElement, opaqueBackdrop?: boolean) {
+  // The CSS vignette is not part of the WebGL buffer. Give render references a
+  // slate matte without changing the renderer or the clean pin captures.
+  if (opaqueBackdrop) {
+    context.fillStyle = "#23242d";
+    context.fillRect(0, 0, source.width, source.height);
+  }
+  context.drawImage(source, 0, 0);
 }
 
 function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCamera, options?: ProxyCaptureOptions): FrozenProxyCapture {
@@ -76,7 +89,7 @@ function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCame
       if (webgl.drawingBufferWidth !== targetW || webgl.drawingBufferHeight !== targetH) {
         throw new Error(`Inspection framebuffer clamped to ${webgl.drawingBufferWidth}×${webgl.drawingBufferHeight}; requested ${targetW}×${targetH}`);
       }
-      context.drawImage(gl.domElement, 0, 0);
+      copyViewport(context, gl.domElement, options.opaqueBackdrop);
     } finally {
       gl.setPixelRatio(prevPixelRatio);
       gl.setSize(prevCssSize.x, prevCssSize.y, false);
@@ -108,7 +121,7 @@ function captureCleanViewport(gl: WebGLRenderer, scene: Scene, camera: ThreeCame
   const copy = document.createElement("canvas"); copy.width = width; copy.height = height;
   const context = copy.getContext("2d");
   if (!context) throw new Error("PNG capture is unavailable");
-  context.drawImage(gl.domElement, 0, 0);
+  copyViewport(context, gl.domElement, options?.opaqueBackdrop);
   return {
     camera: frozenCamera,
     dimensions: {width, height},
@@ -141,7 +154,24 @@ function Model({
   onSceneReady: (value: {scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null) => void;
 }) {
   const gltf = useGLTF(url);
-  const scene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+  const {scene, materials} = useMemo(() => {
+    const scene = gltf.scene.clone(true);
+    const materials = new Map<Material, Material>();
+    const clone = (source: Material) => {
+      const existing = materials.get(source);
+      if (existing) return existing;
+      const material = cloneInspectionMaterial(source);
+      materials.set(source, material);
+      return material;
+    };
+    scene.traverse(object => {
+      if (object instanceof Mesh) {
+        object.material = Array.isArray(object.material) ? object.material.map(clone) : clone(object.material);
+      }
+    });
+    return {scene, materials};
+  }, [gltf.scene]);
+  useEffect(() => () => materials.forEach(material => material.dispose()), [materials]);
   const nodes = useMemo(() => indexProxyScene(scene, mapping), [mapping, scene]);
   useLayoutEffect(() => {
     onSceneReady({scene, nodes});
@@ -281,6 +311,48 @@ function RestoreCamera({record, nonce = 0, controls}: {record: Camera | null; no
   return null;
 }
 
+function AutoFrameCamera({model, frameKey, restoreCamera, controls, onCamera, onFramed}: {
+  model: Object3D | null;
+  frameKey: string;
+  restoreCamera: Camera | null;
+  controls: RefObject<ComponentRef<typeof OrbitControls> | null>;
+  onCamera: (camera: Camera) => void;
+  onFramed: (frameKey: string | null) => void;
+}) {
+  const {camera, set, size} = useThree();
+  const framedKey = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    if (restoreCamera || !model) {
+      framedKey.current = null;
+      onFramed(null);
+      return;
+    }
+    if (framedKey.current === frameKey || size.width <= 0 || size.height <= 0) return;
+    const aspect = size.width / size.height;
+    if (!(camera instanceof PerspectiveCamera) || ("manual" in camera && camera.manual)) {
+      // Frame model exits a saved camera's fixed projection and letterbox.
+      set({camera: new PerspectiveCamera(PROXY_FOV, aspect)});
+      return;
+    }
+    const orbit = controls.current;
+    if (orbit?.object !== camera) return;
+    const pose = computeAutoFramePose(new Box3().setFromObject(model), camera.fov, aspect);
+    if (!pose) return;
+    camera.position.set(...pose.position);
+    camera.near = pose.near;
+    camera.far = pose.far;
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
+    orbit.target.set(...pose.target);
+    orbit.update();
+    camera.updateMatrixWorld();
+    framedKey.current = frameKey;
+    onCamera(captureCamera(camera));
+    onFramed(frameKey);
+  }, [camera, controls, frameKey, model, onCamera, onFramed, restoreCamera, set, size.width, size.height]);
+  return null;
+}
+
 type ViewportPixels = {width: number; height: number};
 
 function CaptureBinding({ready, bind, onViewportPixels}: {
@@ -328,6 +400,7 @@ export function ProxyView({
   onPinMiss,
   restoreCamera = null,
   restoreCameraNonce = 0,
+  frameNonce = 0,
 }: {
   visible?: boolean;
   url: string;
@@ -344,9 +417,13 @@ export function ProxyView({
   onPinMiss?: (reason: "empty" | "unmapped", fallback?: FrozenProxyCapture & {clickUv: [number, number]}) => void;
   restoreCamera?: Camera | null;
   restoreCameraNonce?: number;
+  frameNonce?: number;
 }) {
   const [modelState, setModelState] = useState<{scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null>(null);
   const ready = modelState !== null;
+  const frameKey = `${url}:${frameNonce}`;
+  const [framedKey, setFramedKey] = useState<string | null>(null);
+  const autoFramed = framedKey === frameKey;
   const [liveCamera, setLiveCamera] = useState<Camera | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
@@ -381,8 +458,8 @@ export function ProxyView({
     // Canvas skips configure/render when its own measured rectangle is zero.
     // Drive the existing root too, otherwise a hidden Canvas can retain its old loop.
     renderer.current?.setFrameloop(visible ? "always" : "never");
-    onCaptureReady(visible && size.width > 0 && size.height > 0 && capture.current ? captureVisible : null);
-  }, [visible, size.width, size.height, onCaptureReady, captureVisible]);
+    onCaptureReady(visible && ready && (restoreCamera || autoFramed) && size.width > 0 && size.height > 0 && capture.current ? captureVisible : null);
+  }, [visible, ready, restoreCamera, autoFramed, size.width, size.height, onCaptureReady, captureVisible]);
   const width = restoreCamera && size.width ? Math.min(size.width, size.height * restoreCamera.aspect) : size.width;
   const height = restoreCamera && width ? width / restoreCamera.aspect : size.height;
   const canvasRect = {left: (size.width - width) / 2, top: (size.height - height) / 2, width, height};
@@ -392,13 +469,17 @@ export function ProxyView({
     ? computeCanvasFramingGate(canvasRect, resolveRenderTargetDimensions(renderPreset))
     : null;
   return <div ref={host} className={`review-proxy${pinMode ? " pin-mode" : ""}`} aria-label={`Static proxy, source frame ${mapping.sample_frame}`}>
-    <Canvas frameloop={visible ? "always" : "never"} onCreated={state => { renderer.current = state; state.setFrameloop(visibleRef.current ? "always" : "never"); }} style={canvasBoxStyle} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: 50}}>
-      <ambientLight intensity={0.8}/><directionalLight position={[4,8,4]} intensity={1.5}/>
+    <Canvas frameloop={visible ? "always" : "never"} onCreated={state => { renderer.current = state; state.setFrameloop(visibleRef.current ? "always" : "never"); }} style={canvasBoxStyle} camera={{position: [5,4,5], near: 0.01, far: 10000, fov: PROXY_FOV}}>
+      <hemisphereLight args={["#f4f4ff", "#3a3a48", 1.25]}/>
+      <directionalLight position={[5,8,6]} intensity={2}/>
+      <directionalLight position={[-6,4,-5]} intensity={1.1} color="#c7d2fe"/>
+      <directionalLight position={[0,1.5,7]} intensity={0.75}/>
       <Suspense fallback={null}><Model url={url} mapping={mapping} pinMode={pinMode} onSelect={onSelect} onSceneReady={setModelState}/></Suspense>
       <OrbitControls ref={controls} makeDefault enableDamping={false}/>
       <RestoreCamera record={restoreCamera} nonce={restoreCameraNonce} controls={controls}/><CameraObserver onCamera={handleCamera}/>
-      <CaptureBinding ready={visible && ready && size.width > 0 && size.height > 0} bind={bindCapture} onViewportPixels={onViewportPixels}/>
-      <SurfacePinController enabled={visible && ready && pinMode} model={modelState} onSelect={onSelect} onPlacePin={onPlacePin} onPinMiss={onPinMiss}/>
+      <AutoFrameCamera model={modelState?.scene ?? null} frameKey={frameKey} restoreCamera={restoreCamera} controls={controls} onCamera={handleCamera} onFramed={setFramedKey}/>
+      <CaptureBinding ready={visible && ready && (Boolean(restoreCamera) || autoFramed) && size.width > 0 && size.height > 0} bind={bindCapture} onViewportPixels={onViewportPixels}/>
+      <SurfacePinController enabled={visible && ready && (Boolean(restoreCamera) || autoFramed) && pinMode} model={modelState} onSelect={onSelect} onPlacePin={onPlacePin} onPinMiss={onPinMiss}/>
     </Canvas>
     {gate?.active && gate.width > 0 && gate.height > 0 && (
       <div className="proxy-frame-gate" data-testid="proxy-frame-gate" data-preset={renderPreset} aria-hidden="true"

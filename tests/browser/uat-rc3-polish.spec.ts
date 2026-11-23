@@ -564,6 +564,59 @@ test("Discard edits restores the saved spatial pin, markup and camera without lo
   studio.assertHermetic();
 });
 
+test("3D Inspection frames and lights a half-metre graphite proxy before enabling capture", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.installProxyFixture("a-v2", { smallDark: true });
+  await studio.install({ catalogue: true, savedLayout: true });
+  await studio.open(); await studio.ready();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  const review = reviewPanel(page);
+  await expect(review.locator("h1")).toHaveText("Asset A v2");
+  await dockButton(review, "3D Inspection").click();
+  await expect(dockButton(review, "Pin note")).toBeEnabled();
+  const framed = (await liveCamera(page))!;
+  const distance = (camera: Camera) => Math.hypot(...[3, 7, 11].map(i => camera.camera_to_world[i]));
+  expect(framed).not.toBeNull();
+  expect(distance(framed)).toBeLessThan(2);
+
+  const canvas = review.locator(".review-proxy canvas");
+  const samplePng = (bytes: Buffer) => page.evaluate(async encoded => {
+    const bytes = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
+    const bitmap = await createImageBitmap(new Blob([bytes], {type: "image/png"}));
+    const copy = document.createElement("canvas");
+    copy.width = bitmap.width;
+    copy.height = bitmap.height;
+    const ctx = copy.getContext("2d")!;
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    return [[0.44, 0.5], [0.5, 0.5], [0.56, 0.5], [0.02, 0.02]].map(([u, v]) =>
+      Array.from(ctx.getImageData(Math.floor(u * copy.width), Math.floor(v * copy.height), 1, 1).data));
+  }, bytes.toString("base64"));
+  const assertReadable = (pixels: number[][]) => {
+    const luma = ([r, g, b]: number[]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    const backdrop = luma(pixels[3]);
+    for (const centre of pixels.slice(0, 3)) expect(luma(centre)).toBeGreaterThan(Math.max(75, backdrop + 40));
+  };
+  assertReadable(await samplePng(await canvas.screenshot()));
+
+  await canvas.hover();
+  await page.mouse.wheel(0, 120);
+  // OrbitControls uses one fixed dolly step per wheel event.
+  await expect.poll(async () => distance((await liveCamera(page))!)).toBeGreaterThan(distance(framed) * 1.04);
+  await review.getByRole("button", {name: "Frame model", exact: true}).click();
+  await expect.poll(async () => distance((await liveCamera(page))!)).toBeCloseTo(distance(framed), 5);
+
+  const render = dockButton(review, "Render this view");
+  await expect(render).toBeEnabled();
+  await render.click();
+  await expect.poll(() => studio.submissions.length).toBe(1);
+  const artifact = studio.uploads.get(studio.uploadCalls[0])!;
+  const pixels = await samplePng(studio.artifactContent.get(artifact.artifact_id)!.bytes);
+  assertReadable(pixels);
+  expect(pixels[3]).toEqual([35, 36, 45, 255]);
+  studio.assertHermetic();
+});
+
 test("3D render presets restore the next live frame and retry the same frozen capture", async ({ page, baseURL }, testInfo) => {
   const { studio } = await makePolishStudio(page, baseURL!);
   await openLatestKit(page);
