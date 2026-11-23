@@ -26,6 +26,14 @@ description: Author and inspect Blender content inside the active Proscenium pro
    an owner decision rather than overwriting. A pristine untouched factory startup
    scene may be initialised directly for the active project without asking. Do not
    close an independent Blender session.
+   Never call `bpy.ops.wm.read_factory_settings` or disable add-ons in
+   `blender-execute_blender_code`. This applies with or without `use_empty=True`.
+   A factory reset unloads `blender_mcp` and closes the `127.0.0.1:9876` socket
+   bridge. Clear authorised scene data in place via `bpy.data`. Use
+   `bpy.data.objects.remove`, `bpy.data.collections.remove` and
+   `bpy.data.scenes.remove` only on data within the authorised edit scope and not
+   shared with scenes you must preserve. Keep one authorised scene to rename.
+   If needed, remove only unused datablocks from that edit, not all orphans.
 4. Assign one authoring owner per live instance and use the accepted toolchain's
    resource lock and base-state checks. A stale base is `source_conflict`.
    Never interpret parallel tool availability as permission for concurrent writers.

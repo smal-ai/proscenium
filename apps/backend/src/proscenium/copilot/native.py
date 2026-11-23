@@ -77,6 +77,7 @@ or ready vlm provider, call request_vlm_review for read-only visual assessment. 
 Routine in-scope creative stages progress automatically. Request exact owner permission for software/service installation,
 new charges, remote push/sharing or destructive retained-source operations. Do not treat tool permissions as creative selection.
 Do not install, start or stop independent model services. Preserve unsaved Blender/Unity work. One live scene writer and Git index owner.
+Never call bpy.ops.wm.read_factory_settings or disable add-ons in blender-execute_blender_code. A factory reset unloads blender_mcp and closes 127.0.0.1:9876. Clear authorised live scene data in place via bpy.data.
 After compaction re-read the project brief and current plan. Report unavailable capabilities rather than inventing outputs.
 Honour request_target, reference_versions and execution_scope in extension_context and child additionalContext.
 planning_only forbids image generation, preview rendering and scene execution. Use empty publication preview_requests.
