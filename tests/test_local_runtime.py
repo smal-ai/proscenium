@@ -27,6 +27,7 @@ from proscenium.auth import Caller
 from proscenium.configuration import Settings, _read_dotenv
 from proscenium.copilot.native import (
     BINARY_SHA256,
+    SHARED_INSTRUCTIONS,
     Configuration,
     Native,
     is_blender_mcp_configured,
@@ -485,6 +486,20 @@ def command(browser, path, body):
     )
     response.raise_for_status()
     return response.json()
+
+
+def test_live_blender_guidance_forbids_factory_reset_and_addon_unloading():
+    skill = (ROOT / "agent/skills/blender-authoring/SKILL.md").read_text(encoding="utf-8")
+    step_three = skill.split("\n3. ", 1)[1].split("\n4. ", 1)[0]
+    for instructions in (SHARED_INSTRUCTIONS, step_three):
+        text = " ".join(instructions.replace("`", "").split())
+        assert (
+            "Never call bpy.ops.wm.read_factory_settings or disable add-ons in "
+            "blender-execute_blender_code" in text
+        )
+        assert "unloads blender_mcp" in text and "127.0.0.1:9876" in text
+        assert "in place via bpy.data" in text
+    assert "with or without `use_empty=True`" in step_three
 
 
 def test_configuration_resolves_bundled_native_assets():
