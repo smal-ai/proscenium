@@ -20,7 +20,7 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
     writePrivate(`${stop ? "stop" : "request"}.${projectId}`, value);
     (stop ? setPendingStop : setPending)(value);
   }
-  async function send(command: PendingRequest, retry: boolean): Promise<boolean> {
+  async function send(command: PendingRequest, retry: boolean): Promise<RequestRecord | null> {
     const stop = command.submission.type === "stop";
     (stop ? setStopping : setBusy)(true); setError("");
     persist(command, stop);
@@ -29,7 +29,7 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       if (retry || command.acknowledged) {
         try {
           const record = await api.call("getRequest", { path });
-          onAccepted(record); persist(null, stop); return true;
+          onAccepted(record); persist(null, stop); return record;
         } catch (e) {
           if (!(e instanceof ApiError) || e.status !== 404 || command.acknowledged) throw e;
         }
@@ -41,7 +41,7 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       await api.call("submitRequest", { path: { project_id: projectId }, body: command.submission, idempotencyKey: command.submission.request_id });
       command = { ...command, acknowledged: true }; persist(command, stop);
       const record = await api.call("getRequest", { path });
-      onAccepted(record); persist(null, stop); return true;
+      onAccepted(record); persist(null, stop); return record;
     } catch (e) {
       const rejected = !command.acknowledged && e instanceof ApiError &&
         e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429 &&
@@ -52,12 +52,12 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       } else {
         setError(`${describeError(e)} The original request and captured context are retained. Reconcile before retrying. No prompt is replayed automatically.`);
       }
-      return false;
+      return null;
     } finally { (stop ? setStopping : setBusy)(false); }
   }
-  async function submit(text: string, selection: TurnSelection, mode: "queue" | "steer", workId: string | null, profileId: string | null): Promise<boolean> {
-    if (pending || busy || !text.trim()) return false;
-    if (mode === "steer" && !workId) { setError("Steer requires an explicit active-work target."); return false; }
+  async function submit(text: string, selection: TurnSelection, mode: "queue" | "steer", workId: string | null, profileId: string | null): Promise<RequestRecord | null> {
+    if (pending || busy || !text.trim()) return null;
+    if (mode === "steer" && !workId) { setError("Steer requires an explicit active-work target."); return null; }
     const context: ContextSnapshot = {
       ...structuredClone(selection), schema_version: "1.0", context_id: id(), project_id: projectId, captured_at: new Date().toISOString(),
     };
@@ -69,5 +69,5 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
     if (pendingStop || stopping) return;
     await send({ submission: { schema_version: "1.0", request_id: id(), project_id: projectId, type: "stop", target_work_id: workId }, context: null, acknowledged: false }, false);
   }
-  return { pending, pendingStop, busy, stopping, error, submit, stop, retry: (stop: boolean) => { const command = stop ? pendingStop : pending; return command ? send(command, true) : Promise.resolve(false); } };
+  return { pending, pendingStop, busy, stopping, error, submit, stop, retry: (stop: boolean) => { const command = stop ? pendingStop : pending; return command ? send(command, true) : Promise.resolve(null); } };
 }

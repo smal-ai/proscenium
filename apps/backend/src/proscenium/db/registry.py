@@ -5,7 +5,17 @@ from typing import Any
 from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
 from proscenium.db import Transaction
+from proscenium.db.outbox import has_unsettled_outbox
 from proscenium.db.store import Store
+
+
+def active_binding_revision(store: Store | None) -> int | None:
+    """Read the generation of the active binding, even when it returns to the same project."""
+    if store is not None:
+        with store.transaction(write=False) as tx:
+            if tx.get("registry", "active", required=False) is not None:
+                return tx.revision("registry", "active")
+    return None
 
 
 class Registry:
@@ -129,9 +139,7 @@ class Registry:
             for namespace, terminal in blockers.items():
                 if any(record.get("state") not in terminal for record in tx.all(namespace)):
                     raise DomainError("project_busy", 409)
-            if tx.connection.execute(
-                "SELECT 1 FROM outbox WHERE state IN ('dispatching','outcome_uncertain') LIMIT 1"
-            ).fetchone():
+            if has_unsettled_outbox(tx):
                 raise DomainError("project_busy", 409)
 
     @staticmethod

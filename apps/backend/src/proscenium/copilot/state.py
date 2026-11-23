@@ -12,6 +12,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
+from proscenium.db.registry import active_binding_revision
 from proscenium.db.store import now
 from proscenium.jobs import transition
 from proscenium.services import Services
@@ -131,6 +132,25 @@ class State:
         )
         return work
 
+    def active_binding_revision(self) -> int | None:
+        return active_binding_revision(getattr(self.services.registry, "store", None))
+
+    def idle_restart_hold(self, tx: Transaction, control: dict[str, Any]) -> bool:
+        raw_gate = tx.get("copilot.control", "gate", required=False) or {}
+        return (
+            control["fenced"] is True
+            and control.get("reason") == "awaiting_resume"
+            and raw_gate.get("queue_released", True) is not False
+            and all(w["state"] == "completed" for w in tx.all("work"))
+            and all(
+                s.get("phase") == "confirmed"
+                and (s.get("pause") == "released" or s.get("hold_released") is True)
+                for s in tx.all("copilot.stops")
+            )
+            and not any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes"))
+            and not any(d["state"] == "pending" for d in tx.all("decisions"))
+        )
+
     def submit(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         if caller.channel != "owner":
             raise DomainError("owner_session_required", 401)
@@ -140,6 +160,12 @@ class State:
 
             def effect() -> dict[str, Any]:
                 control = self.control(tx)
+                auto_release = (
+                    kind == "queue"
+                    and self.idle_restart_hold(tx, control)
+                    and all(r["receipt"]["state"] in TERMINAL for r in tx.all("requests"))
+                    and not any(a["state"] == "pending" for a in tx.all("copilot.auto_releases"))
+                )
                 if kind == "queue":
                     work_id, task_id = "work-" + uuid4().hex, "task-" + uuid4().hex
                     project_policy = (
@@ -340,6 +366,18 @@ class State:
                     request_id=identity,
                     work_id=work_id,
                 )
+                if auto_release:
+                    tx.put(
+                        "copilot.auto_releases",
+                        identity,
+                        {
+                            "request_id": identity,
+                            "watermark": tx.watermark(),
+                            "owner_epoch": self.services.ownership.epoch,
+                            "active_binding_revision": self.active_binding_revision(),
+                            "state": "pending",
+                        },
+                    )
                 return request_receipt
 
             result, replayed = tx.operation("request.submit", identity, body, effect)
@@ -1591,6 +1629,85 @@ class State:
                 actor=SYSTEM,
                 work_id=invocation["work_id"],
                 request_id=invocation["request_id"],
+            )
+            count += 1
+        return count
+
+    def interrupt_departed_invocations(
+        self,
+        tx: Transaction,
+        session_id: str,
+        prior_invocation_ids: list[str],
+        departed: dict[str, Any],
+    ) -> int:
+        """Close prior invocations without inferring their native or workspace outcomes."""
+        if departed.get("session_id") != session_id or departed.get(
+            "observed_identity"
+        ) == departed.get("start"):
+            return 0
+        prior = set(prior_invocation_ids)
+        pending = [d for d in tx.all("decisions") if d["state"] == "pending"]
+        count = 0
+        for invocation in tx.all("invocations"):
+            invocation_id = invocation["invocation_id"]
+            if (
+                invocation.get("session_id") != session_id
+                or invocation_id not in prior
+                or invocation["state"] in TERMINAL
+            ):
+                continue
+            correlation = {
+                "work_id": invocation["work_id"],
+                "request_id": invocation["request_id"],
+            }
+            for decision in pending:
+                if decision.get("invocation_id") != invocation_id:
+                    continue
+                decision_id = decision["decision_id"]
+                revision = tx.revision("decisions", decision_id)
+                decision.update(state="cancelled", state_revision=revision + 1)
+                tx.put(
+                    "decisions",
+                    decision_id,
+                    decision,
+                    expected_revision=revision,
+                    schema="Decision",
+                )
+                tx.emit("decision.resolved", decision, actor=SYSTEM, **correlation)
+            evidence = {
+                "kind": "departed_invocation_interrupted",
+                "session_id": session_id,
+                "departed_process": departed,
+                "native_return_observed": False,
+                "outcome_before_exit_unknown": True,
+                "at": now(),
+            }
+            save(tx, "copilot.recovery_evidence", invocation_id, evidence)
+            save(
+                tx,
+                "invocations",
+                invocation_id,
+                {**invocation, "state": "cancelled", "recovery": evidence},
+            )
+            prefix = "subagent" if invocation.get("kind") == "child" else "tool"
+            tx.emit(
+                f"{prefix}.completed",
+                {
+                    "invocation_id": invocation_id,
+                    "name": invocation["name"],
+                    "state": "cancelled",
+                    "summary": "Native invocation interrupted when previous Copilot runtime exited "
+                    "before recording completion; inspect workspace state before repeating mutating steps.",
+                    "artifact_ids": [],
+                    "model_id": invocation.get("model_id"),
+                    **(
+                        {"display_name": invocation["display_name"]}
+                        if invocation.get("display_name")
+                        else {}
+                    ),
+                },
+                actor=SYSTEM,
+                **correlation,
             )
             count += 1
         return count

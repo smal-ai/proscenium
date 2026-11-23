@@ -35,7 +35,7 @@ const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
   attempt_id: `attempt-${job_id}`, attempt_number: 1, state_revision: 1, availability: "pending", input_digest: "a".repeat(64), external_job_id: null, owner_epoch: "test", artifact_ids: [],
 });
 const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
-const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => false, stop: async () => {}, retry: async () => false };
+const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => null, stop: async () => {}, retry: async () => null };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
 
 test("render-tick flood only bumps its own version once per refresh window", t => {
@@ -590,6 +590,13 @@ test("resumableWork offers stopped work only until newer work runs and ChatPanel
   const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true), requests: [uncertainReq] });
   assert.match(markup, /<option value="continue_work" disabled="">Continue original work<\/option>/);
   assert.match(markup, /<option value="release_held_queue" disabled="">Release held queue<\/option>/);
+});
+
+test("ChatPanel auto-selects single interrupted work without rendering a work selector", () => {
+  const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true) });
+  assert.match(markup, /<option value="continue_work" selected="">Continue original work<\/option>/);
+  assert.match(markup, /<button>Resume<\/button>/);
+  assert.doesNotMatch(markup, /aria-label="Original work to continue"/);
 });
 
 test("default Studio split layout starts Navigator and Assistant at maximum width", () => {

@@ -126,6 +126,24 @@ test("send mode is deliberate, stale Steer stays guarded, held cancellation and 
   studio.assertHermetic();
 });
 
+test("Queue submission on an idle restart hold leaves release to the backend", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: "awaiting_resume" };
+  await studio.install({ savedLayout: true });
+  await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  const queue = page.getByRole("button", { name: "Queue message" });
+  await input.fill("Explicit Queue"); await queue.click();
+  await expect(input).toHaveValue("");
+  await input.fill("Not submitted");
+  await expect(queue).toBeEnabled();
+  expect(studio.submissions).toHaveLength(1);
+  expect(studio.guard!.calls.filter(call => call.method === "POST").map(call => call.url)).toEqual([
+    `${base}/contexts`, `${base}/requests`,
+  ]);
+  studio.assertHermetic();
+});
+
 test("Resume stays visible above the Composer while scrolling a long conversation", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   studio.snapshot.active_work = work("awaiting_resume");

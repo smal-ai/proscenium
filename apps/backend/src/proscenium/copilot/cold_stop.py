@@ -2,10 +2,11 @@
 
 import hashlib
 import time
-from typing import Any
+from typing import Any, TypeGuard
 
 from proscenium.api.errors import DomainError
 from proscenium.contracts import canonical
+from proscenium.db import Transaction
 
 METHODS = (
     "session.queue.pendingItems",
@@ -19,6 +20,76 @@ METHODS = (
     "session.interruptMainTurn",
     "session.queue.pendingItems",
 )
+
+
+def valid_process_identity(process: Any) -> TypeGuard[dict[str, Any]]:
+    return (
+        isinstance(process, dict)
+        and isinstance(process.get("pid"), int)
+        and isinstance(process.get("start"), str)
+        and bool(process["start"])
+    )
+
+
+def process_departure_proven(departed: Any, session_id: Any) -> bool:
+    return (
+        valid_process_identity(departed)
+        and "observed_identity" in departed
+        and departed["observed_identity"] != departed["start"]
+        and isinstance(session_id, str)
+        and departed.get("session_id") == session_id
+    )
+
+
+def proven_departed_abandonment(record: dict[str, Any]) -> bool:
+    return (
+        record.get("state") == "abandoned_on_departure"
+        and record.get("history_matches") == 0
+        and process_departure_proven(record.get("departed_process"), record.get("session_id"))
+    )
+
+
+def settled_send_record(record: dict[str, Any]) -> bool:
+    return record.get("state") == "acknowledged" or proven_departed_abandonment(record)
+
+
+def send_settled_before_stop(record: dict[str, Any], origin: dict[str, Any]) -> bool:
+    if not settled_send_record(record):
+        return False
+    if record.get("state") == "acknowledged":
+        return True
+    if not valid_process_identity(origin):
+        return False
+    # Compare process identity, not incidental fields such as the later PID observation.
+    prior = record["departed_process"]
+    return (prior["pid"], prior["start"]) != (origin["pid"], origin["start"])
+
+
+def steer_requests_settled(tx: Transaction, work: dict[str, Any], departed: dict[str, Any]) -> bool:
+    from .state import TERMINAL
+
+    for request in tx.all("requests"):
+        receipt = request["receipt"]
+        if request["submission"]["type"] != "steer" or receipt["state"] in TERMINAL:
+            continue
+        request_id = request["request_id"]
+        send = tx.get("copilot.sends", request_id, required=False) or {}
+        if receipt["work_id"] == work["work_id"] and request_id in work["directive_request_ids"]:
+            if receipt["state"] == "acknowledged" and send.get("state") == "acknowledged":
+                continue
+        elif receipt["work_id"] and receipt["work_id"] != work["work_id"]:
+            previous = tx.get("work", receipt["work_id"], required=False)
+            if not previous or previous["state"] not in TERMINAL:
+                return False
+        else:
+            return False
+        if not (
+            receipt["state"] == "outcome_uncertain"
+            and proven_departed_abandonment(send)
+            and send_settled_before_stop(send, departed)
+        ):
+            return False
+    return True
 
 
 def require(condition: bool, reason: str) -> None:
@@ -172,11 +243,7 @@ def apply(
         # inferred or rewritten; the fresh RPC barrier proves current inactivity.
         departed = observation.get("departed_process", {})
         require(
-            departed.get("session_id") == observation["session_id"]
-            and isinstance(departed.get("pid"), int)
-            and bool(departed.get("start"))
-            and "observed_identity" in departed
-            and departed.get("observed_identity") != departed["start"]
+            process_departure_proven(departed, observation["session_id"])
             and observation["candidate_records"] == [],
             "missing_departed_session_proof",
         )
@@ -193,24 +260,14 @@ def apply(
         ),
         "foreign_work",
     )
-    require(
-        not any(
-            r["submission"]["type"] == "steer"
-            and r["receipt"]["state"] not in TERMINAL
-            and not (
-                r["receipt"]["work_id"] == work_id
-                and r["request_id"] in work["directive_request_ids"]
-                and r["receipt"]["state"] == "acknowledged"
-                and (tx.get("copilot.sends", r["request_id"], required=False) or {}).get("state")
-                == "acknowledged"
-            )
-            for r in tx.all("requests")
-        ),
-        "unsettled_steer",
+    stop_origin = tx.get("copilot.stop_origins", stop_id, required=False) or observation.get(
+        "departed_process", {}
     )
+    require(stop_origin == observation.get("stop_origin", stop_origin), "changed_stop_origin")
+    require(steer_requests_settled(tx, work, stop_origin), "unsettled_steer")
     require(
         not any(
-            s.get("state") != "acknowledged"
+            not send_settled_before_stop(s, stop_origin)
             for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
         ),
         "unsettled_send",
@@ -264,6 +321,7 @@ def apply(
         {
             **phase,
             "phase": "confirmed",
+            "hold_released": False,
             "barrier_at": now(),
             "pending_empty": True,
             "completion_basis": "cold_inactive_main_loop_rpc",

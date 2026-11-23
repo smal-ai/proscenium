@@ -1,8 +1,12 @@
-from collections.abc import Callable
-from typing import Any
+from __future__ import annotations
 
-from proscenium.db.store import Store
-from proscenium.jobs.gate import ExecutionGate
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
+from proscenium.db.store import Store, Transaction
+
+if TYPE_CHECKING:
+    from proscenium.jobs.gate import ExecutionGate
 
 
 def dispatch_one(
@@ -39,3 +43,39 @@ def dispatch_one(
         raise
     with store.transaction() as tx:
         tx.settle_intent(identity, "acknowledged", evidence)
+
+
+def has_unsettled_outbox(tx: Transaction) -> bool:
+    """Check unresolved effects once the caller has verified terminal work and jobs."""
+    # Resolve Copilot's proof predicates lazily, after the registry and extensions load.
+    from proscenium.copilot.cold_stop import proven_departed_abandonment, settled_send_record
+
+    rows = tx.connection.execute(
+        "SELECT id, kind, state FROM outbox WHERE state IN ('dispatching', 'outcome_uncertain')"
+    )
+    for row_id, kind, state in rows:
+        if state == "dispatching":
+            return True
+        if kind == "copilot.send":
+            send = tx.get("copilot.sends", row_id, required=False) or {}
+            request = tx.get("requests", row_id, required=False) or {}
+            if proven_departed_abandonment(send) and request.get("receipt", {}).get("state") in {
+                "completed",
+                "failed",
+                "stopped",
+                "cancelled",
+                "outcome_uncertain",
+            }:
+                continue
+        elif kind == "copilot.resume":
+            resume = tx.get("copilot.resumes", row_id, required=False) or {}
+            continuation = tx.get("copilot.continuation_sends", row_id, required=False)
+            pause_release = tx.get("copilot.pause_release", row_id, required=False)
+            if (
+                resume.get("state") == "outcome_uncertain"
+                and (continuation is None or settled_send_record(continuation))
+                and (pause_release is None or pause_release.get("state") == "acknowledged")
+            ):
+                continue
+        return True
+    return False
