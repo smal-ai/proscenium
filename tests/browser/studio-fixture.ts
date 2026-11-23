@@ -36,7 +36,7 @@ export function retained(id: string, attribution_status: "verified" | "unrecorde
 
 const IDENTITY_M4: ProxyMapping["nodes"][number]["world_matrix"] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
-export function buildSyntheticProxyGlb(): Buffer {
+export function buildSyntheticProxyGlb(smallDark = false): Buffer {
   const s = 0.8;
   const faces: Array<[[number, number, number], [number, number, number], [number, number, number], [number, number, number]]> = [
     [[-s, -s, s], [s, -s, s], [s, s, s], [-s, s, s]],
@@ -98,7 +98,13 @@ export function buildSyntheticProxyGlb(): Buffer {
     ],
     buffers: [{ byteLength: bin.length }],
   };
-  const json = Buffer.from(JSON.stringify(gltf));
+  const fixture = smallDark ? {
+    ...gltf,
+    nodes: [{name: "Housing", mesh: 0, scale: [0.5 / (2 * s), 0.42 / (2 * s), 0.13 / (2 * s)], extras: gltf.nodes[0].extras}],
+    meshes: [{primitives: [{attributes: {POSITION: 2}, material: 0}]}],
+    materials: [{pbrMetallicRoughness: {baseColorFactor: [0.014, 0.017, 0.020, 1], metallicFactor: 0.8, roughnessFactor: 0.28}}],
+  } : gltf;
+  const json = Buffer.from(JSON.stringify(fixture));
   const padded = (json.length + 3) & ~3;
   const total = 12 + 8 + padded + 8 + bin.length;
   const out = Buffer.alloc(total);
@@ -159,13 +165,13 @@ export class StudioFixture {
   guard: Awaited<ReturnType<typeof installFakeStudioApi>> | null = null;
   constructor(readonly page: Page, readonly origin: string) {}
 
-  installProxyFixture(versionId = "a-v2", options: { proxyId?: string; mapId?: string; sampleFrame?: number } = {}): ProxyMapping {
+  installProxyFixture(versionId = "a-v2", options: { proxyId?: string; mapId?: string; sampleFrame?: number; smallDark?: boolean } = {}): ProxyMapping {
     const targetVersion = this.versionRecords.find(v => v.version_id === versionId);
     if (!targetVersion) throw new Error(`Unknown fixture version ${versionId}`);
     const proxyId = options.proxyId ?? `proxy-${versionId}`;
     const mapId = options.mapId ?? `map-${versionId}`;
     const sampleFrame = options.sampleFrame ?? 1;
-    const glb = buildSyntheticProxyGlb();
+    const glb = buildSyntheticProxyGlb(options.smallDark);
     const glbSha = createHash("sha256").update(glb).digest("hex");
     const mapping: ProxyMapping = {
       schema_version: "1.0",
@@ -178,9 +184,9 @@ export class StudioFixture {
       space: "proxy_world_m",
       nodes: [
         { node_path: [0], object_id: "housing", instance_id: "housing-1", display_name: "Housing", world_matrix: IDENTITY_M4 },
-        { node_path: [0, 0], object_id: "collar", instance_id: "collar-1", display_name: "Collar", world_matrix: IDENTITY_M4 },
       ],
     };
+    if (!options.smallDark) mapping.nodes.push({ node_path: [0, 0], object_id: "collar", instance_id: "collar-1", display_name: "Collar", world_matrix: IDENTITY_M4 });
     const mapBytes = Buffer.from(JSON.stringify(mapping));
     const mapSha = createHash("sha256").update(mapBytes).digest("hex");
     const proxyArtifact: Artifact = { schema_version: "1.0", project_id: projectId, artifact_id: proxyId, kind: "proxy", purpose: "inspection", sha256: glbSha, bytes: glb.length, media_type: "model/gltf-binary", state: "ready", derived_from: [] };

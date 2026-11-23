@@ -1,10 +1,23 @@
-import { PerspectiveCamera, type OrthographicCamera } from "three";
+import { PerspectiveCamera, Sphere, Vector3, type Box3, type OrthographicCamera } from "three";
 import { captureCamera } from "./media";
 
 type Dimensions = { width: number; height: number };
 type CanvasRect = Dimensions & { left: number; top: number };
 
 const PROJECTION_TOLERANCE = 1e-5;
+
+export function computeAutoFramePose(box: Box3, fovDegrees: number) {
+  if (box.isEmpty()) return null;
+  const center = box.getCenter(new Vector3());
+  const radius = Math.max(box.getBoundingSphere(new Sphere()).radius, 0.05);
+  const distance = (radius / Math.sin(fovDegrees * Math.PI / 360)) * 1.35;
+  const position = new Vector3(5, 4, 5).normalize().multiplyScalar(distance).add(center);
+  return {
+    position: position.toArray(), target: center.toArray(),
+    near: Math.max(0.001, Math.min(0.01, distance * 0.01)),
+    far: Math.max(1000, distance + radius * 50),
+  };
+}
 
 export type RenderPresetId = "16:9" | "16:10" | "viewport";
 
