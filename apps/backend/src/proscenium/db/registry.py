@@ -9,6 +9,15 @@ from proscenium.db.outbox import has_unsettled_outbox
 from proscenium.db.store import Store
 
 
+def active_binding_revision(store: Store | None) -> int | None:
+    """Read the generation of the active binding, even when it returns to the same project."""
+    if store is not None:
+        with store.transaction(write=False) as tx:
+            if tx.get("registry", "active", required=False) is not None:
+                return tx.revision("registry", "active")
+    return None
+
+
 class Registry:
     def __init__(self, store: Store):
         self.store = store

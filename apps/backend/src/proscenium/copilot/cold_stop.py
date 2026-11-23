@@ -321,6 +321,7 @@ def apply(
         {
             **phase,
             "phase": "confirmed",
+            "hold_released": False,
             "barrier_at": now(),
             "pending_empty": True,
             "completion_basis": "cold_inactive_main_loop_rpc",

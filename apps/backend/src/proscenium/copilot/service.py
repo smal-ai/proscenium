@@ -825,6 +825,13 @@ class Copilot:
             )
 
     def _auto_release_eligible(self, tx: Transaction, request_id: str, watermark: int) -> bool:
+        def benign_projection(event: dict[str, Any]) -> bool:
+            return (
+                event["event_type"] == "project.state_changed"
+                and event.get("actor", {}).get("kind") == "system"
+                and event.get("payload", {}).get("state") in {"active", "awaiting_resume"}
+            )
+
         return (
             self.state.idle_restart_hold(tx, self.state.control(tx))
             and [
@@ -834,7 +841,7 @@ class Copilot:
             and tx.require("requests", request_id)["receipt"]["state"] == "held"
             and not self._uncertain_stops(tx)
             and all(
-                json.loads(row[0])["event_type"] == "project.state_changed"
+                benign_projection(json.loads(row[0]))
                 for row in tx.connection.execute(
                     "SELECT body FROM events WHERE sequence > ?", (watermark,)
                 )
@@ -849,10 +856,10 @@ class Copilot:
             auto = tx.require(namespace, request_id)
             if auto["state"] != "pending":
                 return None
-            if auto.get(
-                "owner_epoch"
-            ) != self.services.ownership.epoch or not self._auto_release_eligible(
-                tx, request_id, auto["watermark"]
+            if (
+                auto.get("owner_epoch") != self.services.ownership.epoch
+                or self.state.active_binding_revision() != auto.get("active_binding_revision")
+                or not self._auto_release_eligible(tx, request_id, auto["watermark"])
             ):
                 save(tx, namespace, request_id, {**auto, "state": "superseded"})
                 return None
@@ -1291,7 +1298,9 @@ class Copilot:
                     "completed",
                     detail_code="already_idle" if work["state"] == "completed" else None,
                 )
-                phase.update(phase="confirmed", barrier_at=now(), pending_empty=True)
+                phase.update(
+                    phase="confirmed", barrier_at=now(), pending_empty=True, hold_released=False
+                )
                 save(tx, "copilot.stops", operation_id, phase)
                 tx.settle_intent(operation_id, "acknowledged", {"barrier": phase["barrier_at"]})
         except Exception as exc:
@@ -2141,6 +2150,14 @@ class Copilot:
                         project_id,
                         queue_released=body["mode"] == "release_held_queue" or not has_held,
                     )
+                    confirmed_stops = tx.connection.execute(
+                        "SELECT id FROM records WHERE namespace='copilot.stops' "
+                        "AND json_extract(body, '$.phase')='confirmed'"
+                    ).fetchall()
+                    for (stop_id,) in confirmed_stops:
+                        stop = tx.require("copilot.stops", stop_id)
+                        if stop.get("hold_released") is not True:
+                            save(tx, "copilot.stops", stop_id, {**stop, "hold_released": True})
                     work = (
                         tx.require("work", body["work_id"])
                         if body["mode"] == "continue_work"

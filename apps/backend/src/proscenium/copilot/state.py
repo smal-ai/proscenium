@@ -12,6 +12,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
+from proscenium.db.registry import active_binding_revision
 from proscenium.db.store import now
 from proscenium.jobs import transition
 from proscenium.services import Services
@@ -131,6 +132,9 @@ class State:
         )
         return work
 
+    def active_binding_revision(self) -> int | None:
+        return active_binding_revision(getattr(self.services.registry, "store", None))
+
     def idle_restart_hold(self, tx: Transaction, control: dict[str, Any]) -> bool:
         raw_gate = tx.get("copilot.control", "gate", required=False) or {}
         return (
@@ -138,7 +142,11 @@ class State:
             and control.get("reason") == "awaiting_resume"
             and raw_gate.get("queue_released", True) is not False
             and all(w["state"] == "completed" for w in tx.all("work"))
-            and not any(s.get("phase") != "confirmed" for s in tx.all("copilot.stops"))
+            and all(
+                s.get("phase") == "confirmed"
+                and (s.get("pause") == "released" or s.get("hold_released") is True)
+                for s in tx.all("copilot.stops")
+            )
             and not any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes"))
             and not any(d["state"] == "pending" for d in tx.all("decisions"))
         )
@@ -366,6 +374,7 @@ class State:
                             "request_id": identity,
                             "watermark": tx.watermark(),
                             "owner_epoch": self.services.ownership.epoch,
+                            "active_binding_revision": self.active_binding_revision(),
                             "state": "pending",
                         },
                     )

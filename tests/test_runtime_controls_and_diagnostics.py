@@ -25,7 +25,7 @@ from proscenium.copilot.service import CONTINUATION_TEXT, Copilot, is_consequent
 from proscenium.copilot.state import key, save
 from proscenium.db import Store
 from proscenium.db.pagination import Cursors
-from proscenium.db.registry import Registry
+from proscenium.db.registry import Registry, active_binding_revision
 from proscenium.projects.service import Projects
 from test_activity_feedback import BINDING, PROJECT, REQUEST, SESSION, TOOL, WORK, event, start
 from test_activity_feedback import runtime as activity_runtime
@@ -475,6 +475,7 @@ def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
             "request_id": "new",
             "watermark": tx.watermark(),
             "owner_epoch": "epoch",
+            "active_binding_revision": None,
             "state": "pending",
         }
         assert tx.events()["events"][-1]["event_type"] == "request.accepted"
@@ -517,6 +518,192 @@ def test_tick_does_not_release_a_queue_admitted_in_another_owner_epoch(runtime, 
     with pytest.raises(DomainError):
         gate.require(PROJECT)
     assert sent == []
+
+
+@pytest.mark.parametrize("switch", ["user_reactivation", "system_deactivation", "registry"])
+def test_tick_supersedes_an_automatic_release_after_project_switch(runtime, switch):
+    state, store, gate, project = runtime
+    copilot = idle_restart(runtime)
+    sent = []
+    copilot.launch_send = lambda *args: sent.append(args)
+    if switch == "registry":
+        root = Path(project["path"])
+        target = root / ".proscenium/state.sqlite3"
+        target.parent.mkdir()
+        store.backup(target)
+        registry = Registry(
+            Store(root / "registry.sqlite3", write_barrier=state.services.activation_lock)
+        )
+        other = root / "other-project"
+        other.mkdir()
+        registry.register({**project, "state_revision": 0})
+        registry.register(
+            {
+                **project,
+                "project_id": "other",
+                "repository_id": "other-repo",
+                "path": str(other),
+                "state_revision": 0,
+                "native_session_id": None,
+            }
+        )
+        registry.activate(PROJECT)
+        state.services.registry = registry
+        store = registry.project_store(PROJECT)
+
+    assert copilot.state.submit(OWNER, request_record("new")["submission"])[0]["state"] == "held"
+    with store.transaction(write=False) as tx:
+        admitted = tx.require("copilot.auto_releases", "new")
+        assert admitted["state"] == "pending"
+    if switch == "registry":
+        assert admitted["active_binding_revision"] == 0
+        registry.activate("other")
+        registry.activate(PROJECT)
+        assert active_binding_revision(registry.store) == 2
+        with store.transaction(write=False) as tx:
+            assert (
+                tx.watermark() == admitted["watermark"]
+            )  # Raw binding changes emit no project events.
+    else:
+        with store.transaction() as tx:
+            tx.emit(
+                "project.state_changed",
+                {
+                    **project,
+                    "state": "awaiting_resume" if switch == "user_reactivation" else "inactive",
+                },
+                actor={
+                    "kind": "user" if switch == "user_reactivation" else "system",
+                    "id": "fixture",
+                },
+            )
+
+    asyncio.run(copilot.tick(PROJECT))
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.auto_releases", "new")["state"] == "superseded"
+        assert tx.require("requests", "new")["receipt"]["state"] == "held"
+        assert copilot.state.control(tx)["fenced"]
+    with pytest.raises(DomainError):
+        gate.require(PROJECT)
+    assert sent == []
+
+
+def test_already_idle_stop_holds_queue_across_restart_until_explicit_resume(runtime):
+    state, store, gate, project = runtime
+    copilot = idle_restart(runtime)
+    sent, pauses = [], []
+
+    async def send(prompt, *, client_turn_id, **kwargs):
+        sent.append(client_turn_id)
+        return f"message-{client_turn_id}"
+
+    async def pause(session, paused):
+        pauses.append(paused)
+
+    sdk = SimpleNamespace(session_id=SESSION, send=send, abort=lambda: asyncio.sleep(0))
+    copilot.native = SimpleNamespace(
+        pause=pause,
+        pending=lambda session: asyncio.sleep(
+            0, result={"items": [], "steeringMessages": [], "inFlightSteeringCount": 0}
+        ),
+    )
+
+    async def session(project_id, **kwargs):
+        assert project_id == PROJECT
+        if project_id not in copilot.sessions:
+            with store.transaction() as tx:
+                save(
+                    tx,
+                    "copilot.session",
+                    "native",
+                    {"session_id": SESSION, "owner_epoch": state.services.ownership.epoch},
+                )
+            copilot.sessions[project_id] = sdk
+        return sdk
+
+    copilot.session = session
+    copilot.contexts.payload = lambda tx, record: {"attached_files": []}
+
+    def restart(epoch):
+        state.services.ownership.epoch = epoch
+        copilot.sessions.clear()
+        copilot.pause_owner.clear()
+        copilot.restore(PROJECT)
+
+    async def drive():
+        copilot.state.submit(
+            OWNER,
+            {
+                "schema_version": "1.0",
+                "project_id": PROJECT,
+                "request_id": "idle-stop",
+                "type": "stop",
+                "target_work_id": WORK,
+            },
+        )
+        await copilot.tick(PROJECT)
+        with store.transaction(write=False) as tx:
+            assert tx.require("requests", "idle-stop")["receipt"]["detail_code"] == "already_idle"
+            stop = tx.require("copilot.stops", "idle-stop")
+            assert stop["phase"] == "confirmed" and stop["pause"] == "acknowledged"
+            assert not stop.get("hold_released")
+
+        restart("epoch-b")
+        assert (
+            copilot.state.submit(OWNER, request_record("held")["submission"])[0]["state"] == "held"
+        )
+        await copilot.tick(PROJECT)
+        with store.transaction(write=False) as tx:
+            assert tx.all("copilot.auto_releases") == []
+            assert copilot.state.control(tx)["fenced"]
+            assert tx.require("requests", "held")["receipt"]["state"] == "held"
+        with pytest.raises(DomainError):
+            gate.require(PROJECT)
+        assert sent == []
+
+        body = {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "work_id": None,
+            "expected_revision": project["state_revision"],
+        }
+        copilot.admit_resume(OWNER, {**body, "operation_id": "reconcile", "mode": "reconcile_only"})
+        await copilot.tick(PROJECT)
+        with store.transaction(write=False) as tx:
+            assert tx.require("copilot.resumes", "reconcile")["state"] == "completed"
+            assert not tx.require("copilot.stops", "idle-stop").get("hold_released")
+            assert copilot.state.control(tx)["fenced"]
+        copilot.admit_resume(
+            OWNER, {**body, "operation_id": "release", "mode": "release_held_queue"}
+        )
+        await copilot.tick(PROJECT)
+        with store.transaction(write=False) as tx:
+            assert tx.require("copilot.resumes", "release")["state"] == "completed"
+            assert tx.require("copilot.stops", "idle-stop")["hold_released"] is True
+        assert pauses == [True]  # No pause ownership survived the restart.
+        await copilot.tick(PROJECT)
+        await copilot.sends["held"]
+        for kind in ("session.task_complete", "session.idle"):
+            copilot.state.reduce(
+                PROJECT, SESSION, event(kind, kind, originatingMessageId="message-held")
+            )
+        await copilot.settle(PROJECT, sdk)
+        with store.transaction(write=False) as tx:
+            assert tx.require("requests", "held")["receipt"]["state"] == "completed"
+
+        restart("epoch-c")
+        assert (
+            copilot.state.submit(OWNER, request_record("new")["submission"])[0]["state"] == "held"
+        )
+        await copilot.tick(PROJECT)
+        with store.transaction(write=False) as tx:
+            assert tx.require("copilot.auto_releases", "new")["state"] == "completed"
+            assert not copilot.state.control(tx)["fenced"]
+        await copilot.tick(PROJECT)
+        await copilot.sends["new"]
+        assert sent == ["held", "new"]
+
+    asyncio.run(drive())
 
 
 @pytest.mark.parametrize(
