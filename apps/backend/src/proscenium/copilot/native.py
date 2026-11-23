@@ -11,6 +11,7 @@ import signal
 import sys
 import time
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from importlib.metadata import version
@@ -349,14 +350,7 @@ class Native:
             return
         record = json.loads(record_path.read_text())
         pid = record["pid"]
-        if identity(pid) != record["start"]:
-            self.departed_process = {
-                "pid": pid,
-                "start": record["start"],
-                "observed_identity": identity(pid),
-                "parent_pid": record["parent_pid"],
-                "parent_start": record["parent_start"],
-            }
+        if self.observe_departure(record):
             return
         # Refuse to attach over an original live backend. OS ownership should also prevent this.
         if identity(record["parent_pid"]) == record["parent_start"]:
@@ -372,6 +366,19 @@ class Native:
             os.close(fd)
         if identity(pid) is not None:
             raise DomainError("owner_conflict", 409, "Original runtime exit not yet observed")
+
+    def observe_departure(self, record: dict[str, Any]) -> bool:
+        observed = identity(record["pid"])
+        if observed == record["start"]:
+            return False
+        self.departed_process = {
+            "pid": record["pid"],
+            "start": record["start"],
+            "observed_identity": observed,
+            "parent_pid": record["parent_pid"],
+            "parent_start": record["parent_start"],
+        }
+        return True
 
     async def open(
         self,
@@ -722,6 +729,12 @@ class Native:
         return record["pid"] == process.pid and identity(record["pid"]) == record["start"]
 
     async def close(self) -> None:
+        record_path = self.services.settings.data_directory / "copilot-runtime/process.json"
+        record = None
+        # A launcher interrupted during startup may not have finished writing the marker.
+        with suppress(FileNotFoundError, json.JSONDecodeError):
+            record = json.loads(record_path.read_text())
+            self.observe_departure(record)
         if self.client is not None:
             try:
                 await asyncio.wait_for(self.client.stop(), 20)
@@ -730,3 +743,8 @@ class Native:
             finally:
                 self.client = None
                 self.non_continuing_session_id = None
+                if record is not None:
+                    self.observe_departure(record)
+                else:
+                    with suppress(FileNotFoundError, json.JSONDecodeError):
+                        self.observe_departure(json.loads(record_path.read_text()))

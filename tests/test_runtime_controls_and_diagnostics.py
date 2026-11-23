@@ -16,10 +16,11 @@ from fastapi.testclient import TestClient
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
+from proscenium.copilot import native
 from proscenium.copilot.eligibility import execution_status
 from proscenium.copilot.outcomes import record_tool_outcome
 from proscenium.copilot.router import router
-from proscenium.copilot.service import Copilot, is_consequential_shell
+from proscenium.copilot.service import CONTINUATION_TEXT, Copilot, is_consequential_shell
 from proscenium.copilot.state import key, save
 from proscenium.db.pagination import Cursors
 from proscenium.projects.service import Projects
@@ -1013,6 +1014,256 @@ def test_continue_resume_attaches_latest_acknowledged_steer_without_resetting_ta
         assert tx.require("work", WORK)["generation_task_id"] == "task-one"
         assert tx.require("copilot.effective", REQUEST)["generation_attempt_limit"] == 3
         assert tx.require("copilot.resumes", "resume-one")["state"] == "completed"
+
+
+def recovery_copilot(runtime, *, history=(), departed=None, active=False):
+    state, _, _, _ = runtime
+    copilot = Copilot(state.services)
+    copilot.contexts.validate_references = lambda tx, snapshot: validate(
+        "ContextSnapshot", snapshot
+    )
+    sent, checks = [], []
+
+    async def send(prompt, **kwargs):
+        sent.append((prompt, kwargs))
+        return "continuation-message"
+
+    async def open_session(project_id):
+        copilot.sessions[project_id] = session
+        return session
+
+    async def inactive(session):
+        checks.append(session.session_id)
+        return not active
+
+    session = SimpleNamespace(
+        session_id=SESSION, send=send, get_events=lambda: asyncio.sleep(0, result=history)
+    )
+    copilot.session = open_session
+    copilot.native = SimpleNamespace(
+        departed_process=departed,
+        pending=lambda s: asyncio.sleep(
+            0, result={"items": [], "steeringMessages": [], "inFlightSteeringCount": 0}
+        ),
+        inactive=inactive,
+        close=lambda: asyncio.sleep(0),
+    )
+    return copilot, sent, checks
+
+
+def admit_recovery(copilot, store, operation_id, mode):
+    with store.transaction(write=False) as tx:
+        revision = tx.require("work", WORK)["state_revision"]
+    copilot.admit_resume(
+        OWNER,
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            operation_id=operation_id,
+            mode=mode,
+            work_id=WORK,
+            expected_revision=revision,
+        ),
+    )
+
+
+def test_pre_turn_failure_preserves_ack_and_recovers_legacy_ack_with_original_context(runtime):
+    state, store, _, project = runtime
+    copilot, sent, checks = recovery_copilot(runtime)
+    payload = dict(context_id="context-one", attached_files=[{"path": "view.png"}])
+    with store.transaction() as tx:
+        tx.put("copilot.payloads", REQUEST, payload)
+        tx.put(
+            "copilot.sends",
+            REQUEST,
+            dict(state="acknowledged", session_id=SESSION, message_id="native-message-one"),
+        )
+        tx.enqueue(REQUEST, "copilot.send", {})
+        tx.claim_intent(REQUEST)
+        tx.put("requests", "dispatching", request_record("dispatching"), schema="RequestRecord")
+        state.request_state(tx, "dispatching", "dispatching")
+    copilot.persist_failure(PROJECT, "provider_unavailable")
+    with store.transaction() as tx:
+        initial = tx.require("requests", REQUEST)
+        assert initial["receipt"]["state"] == "acknowledged"
+        assert initial["receipt"]["detail_code"] == "provider_unavailable"
+        assert tx.require("requests", "dispatching")["receipt"]["state"] == "outcome_uncertain"
+        assert tx.require("work", WORK)["state"] == "awaiting_resume"
+        # A separate unresolved send blocks continuation without replacing the failure cause.
+    admit_recovery(copilot, store, "blocked", "continue_work")
+    asyncio.run(copilot.resume(PROJECT, "blocked"))
+    with store.transaction() as tx:
+        assert tx.require("copilot.resumes", "blocked")["detail_code"] == "attribution_unavailable"
+        assert tx.require("requests", REQUEST)["receipt"]["detail_code"] == "provider_unavailable"
+        state.request_state(tx, "dispatching", "cancelled")
+        # Emulate receipts written by the old runtime, with intact ACK and no native user.message.
+        state.request_state(tx, REQUEST, "outcome_uncertain")
+        tx.settle_intent(REQUEST, "outcome_uncertain", {"detail": "fixture"})
+    admit_recovery(copilot, store, "reconcile", "reconcile_only")
+    asyncio.run(copilot.resume(PROJECT, "reconcile"))
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.resumes", "reconcile")["state"] == "completed"
+        assert tx.require("requests", REQUEST)["receipt"]["state"] == "acknowledged"
+        assert (
+            tx.require("requests", REQUEST)["receipt"]["native_message_id"] == "native-message-one"
+        )
+        assert (
+            tx.connection.execute("SELECT state FROM outbox WHERE id=?", (REQUEST,)).fetchone()[0]
+            == "acknowledged"
+        )
+        assert tx.get("copilot.admitted_messages", REQUEST, required=False) is None
+    assert sent == checks == []
+    admit_recovery(copilot, store, "continue", "continue_work")
+    asyncio.run(copilot.resume(PROJECT, "continue"))
+    [(prompt, kwargs)] = sent
+    assert prompt == f"{CONTINUATION_TEXT}\n\nOriginal request:\n{initial['submission']['text']}"
+    assert kwargs["attachments"][0]["type"] == "extension_context"
+    assert kwargs["attachments"][0]["payload"] == payload
+    assert kwargs["attachments"][1:] == [{"type": "file", "path": f"{project['path']}/view.png"}]
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.resumes", "continue")["state"] == "completed"
+        assert tx.require("copilot.continuation_sends", "continue")["prompt"] == prompt
+
+
+@pytest.mark.parametrize("active", [True, False])
+def test_departed_native_invocations_and_unrecorded_sends_require_inactivity(runtime, active):
+    state, store, _, _ = runtime
+    departed = dict(
+        pid=19, start="start-19", observed_identity=None, parent_pid=9, parent_start="start-9"
+    )
+    copilot, sent, checks = recovery_copilot(runtime, departed=departed, active=active)
+    set_work(store, "awaiting_resume")
+    with store.transaction() as tx:
+        state.fence(tx, "awaiting_resume")
+        tx.put("copilot.payloads", REQUEST, dict(context_id="context-one"))
+        state.request_state(tx, REQUEST, "outcome_uncertain", native_message_id=None)
+        tx.put("copilot.sends", REQUEST, dict(state="outcome_uncertain", session_id=SESSION))
+        tx.put(
+            "copilot.continuation_sends",
+            "older",
+            dict(operation_id="older", state="outcome_uncertain", session_id=SESSION),
+        )
+        for kind, name in [
+            ("child", "authoring-specialist"),
+            ("tool", "blender-execute_blender_code"),
+        ]:
+            tx.put(
+                "invocations",
+                kind,
+                dict(
+                    **BINDING,
+                    invocation_id=kind,
+                    kind=kind,
+                    name=name,
+                    state="running",
+                    native_id=kind,
+                    session_id=SESSION,
+                    model_id="fixture-model",
+                    display_name="Author" if kind == "child" else None,
+                ),
+            )
+        tx.put(
+            "decisions",
+            "permission",
+            dict(
+                schema_version="1.0",
+                decision_id="permission",
+                project_id=PROJECT,
+                work_id=WORK,
+                invocation_id="tool",
+                kind="permission",
+                state="pending",
+                state_revision=0,
+                prompt="Fixture tool permission",
+                options=["approve_once", "decline"],
+                fingerprint="a" * 64,
+            ),
+            schema="Decision",
+        )
+    evidence = asyncio.run(copilot.reconcile(PROJECT))
+    assert checks == [SESSION]
+    with store.transaction(write=False) as tx:
+        if active:
+            assert evidence["live_invocations"] == 2
+            assert evidence["uncertain_continuations"] == 1
+            assert evidence["uncertain_request_ids"] == [REQUEST]
+            assert tx.require("decisions", "permission")["state"] == "pending"
+            return
+        assert evidence["live_invocations"] == evidence["uncertain_continuations"] == 0
+        assert evidence["uncertain_request_ids"] == []
+        assert (
+            tx.require("copilot.continuation_sends", "older")["state"] == "abandoned_on_departure"
+        )
+        assert tx.require("copilot.sends", REQUEST)["state"] == "acknowledged"
+        assert tx.require("requests", REQUEST)["receipt"]["state"] == "acknowledged"
+        assert tx.require("decisions", "permission")["state"] == "cancelled"
+        for identity in ("tool", "child"):
+            inv = tx.require("invocations", identity)
+            assert inv["state"] == "cancelled"
+            assert inv["recovery"] == tx.require("copilot.recovery_evidence", identity)
+            assert inv["recovery"]["kind"] == "departed_invocation_interrupted"
+            assert inv["recovery"]["departed_process"] == {**departed, "session_id": SESSION}
+            assert not inv["recovery"]["native_return_observed"]
+            assert inv["recovery"]["outcome_before_exit_unknown"]
+        emitted = {e["event_type"]: e for e in tx.events()["events"]}
+        assert emitted["subagent.completed"]["payload"]["display_name"] == "Author"
+        assert emitted["tool.completed"]["payload"]["state"] == "cancelled"
+        assert emitted["decision.resolved"]["request_id"] == REQUEST
+    admit_recovery(copilot, store, "continue", "continue_work")
+    asyncio.run(copilot.resume(PROJECT, "continue"))
+    assert len(sent) == 1 and checks == [SESSION]
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.resumes", "continue")["state"] == "completed"
+
+
+def test_continue_reconciles_completed_awaiting_resume_turn_without_sending(runtime):
+    state, store, gate, _ = runtime
+    copilot, sent, checks = recovery_copilot(
+        runtime,
+        history=[
+            event("complete", "session.task_complete"),
+            event("idle", "session.idle"),
+        ],
+    )
+    set_work(store, "awaiting_resume")
+    with store.transaction() as tx:
+        state.fence(tx, "awaiting_resume")
+        tx.put("copilot.sends", REQUEST, dict(state="acknowledged", session_id=SESSION))
+    admit_recovery(copilot, store, "continue", "continue_work")
+    asyncio.run(copilot.resume(PROJECT, "continue"))
+    assert sent == [] and checks == [SESSION]
+    with store.transaction(write=False) as tx:
+        assert tx.require("work", WORK)["state"] == "completed"
+        assert tx.require("requests", REQUEST)["receipt"]["state"] == "completed"
+        assert tx.require("copilot.resumes", "continue")["state"] == "completed"
+        assert tx.get("copilot.continuation_sends", "continue", required=False) is None
+        assert not state.control(tx)["fenced"] and state.control(tx)["queue_released"]
+    gate.require(PROJECT)
+
+
+@pytest.mark.parametrize("exited_before_stop", [True, False])
+def test_native_close_retains_departure_when_process_record_is_removed(
+    runtime, monkeypatch, exited_before_stop
+):
+    state, _, _, _ = runtime
+    state.services.settings.runtime = {"worker_model": "fixture-model"}
+    adapter = native.Native(state.services)
+    record_path = state.services.settings.data_directory / "copilot-runtime/process.json"
+    record_path.parent.mkdir(parents=True)
+    record = dict(pid=19, start="start-19", parent_pid=9, parent_start="start-9")
+    record_path.write_text(json.dumps(record))
+    observed = None if exited_before_stop else record["start"]
+    monkeypatch.setattr(native, "identity", lambda pid: observed)
+
+    async def stop():
+        nonlocal observed
+        observed = None
+        record_path.unlink()
+
+    adapter.client = SimpleNamespace(stop=stop)
+    asyncio.run(adapter.close())
+    assert adapter.client is None
+    assert adapter.departed_process == {**record, "observed_identity": None}
 
 
 def test_uncertain_stop_settles_outbox_to_same_unknown_outcome(runtime):

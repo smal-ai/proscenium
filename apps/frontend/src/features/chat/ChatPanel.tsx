@@ -32,6 +32,25 @@ export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "que
     || (!execution?.hold_reason_code && Boolean(execution?.hold_reason) && !["running", "awaiting_user"].includes(snapshot.active_work?.state ?? ""));
 }
 
+export function shouldAutoReleaseIdleFence(snapshot: ProjectSnapshot | null, mode: "queue" | "steer", uncertainStop: boolean, resumableCount: number, requests: RequestRecord[]): boolean {
+  const work = snapshot?.active_work;
+  return mode === "queue" && !uncertainStop && (!work || work.state === "completed") && resumableCount === 0
+    && !requests.some(r => r.receipt.state === "held") && Boolean(snapshot?.execution?.fenced)
+    && (snapshot?.execution?.hold_reason_code ?? "awaiting_resume") === "awaiting_resume";
+}
+
+export async function releaseIdleQueue(api: ApiClient, projectId: string, resume: (body: ResumeCommand) => Promise<void>) {
+  const latest = await api.call("getProjectSnapshot", { path: { project_id: projectId } });
+  if (latest.execution?.fenced && !latest.active_work) await resume(resumeCommand(latest, [], "release_held_queue", "", id()));
+}
+
+export function submitResume(api: ApiClient, projectId: string, body: ResumeCommand) {
+  return durableCommand(`resume.${projectId}`, () => body, async command => {
+    await api.call("resumeProjectWork", { path: { project_id: projectId }, body: command, idempotencyKey: command.operation_id });
+    return awaitResume(api, projectId, command.operation_id);
+  });
+}
+
 interface Upload { uploadId: string; name: string; file: File; artifact: Artifact | null; busy: boolean; error: string }
 export interface ChatPanelProps {
   api: ApiClient; projectId: string; snapshot: ProjectSnapshot | null; requests: RequestRecord[]; events: Event[]; jobs: JobRecord[]; selection: TurnSelection;
@@ -50,7 +69,6 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [references, setReferences] = useState<VersionRef[]>(() => readPrivate<VersionRef[]>(`ref_versions.${projectId}`) ?? []);
   const [includeCurrentViewAsReference, setIncludeCurrentViewAsReference] = useState(() => readPrivate<boolean>(`include_current_view_ref.${projectId}`) ?? false);
   const [targetWork, setTargetWork] = useState("");
-  const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>("reconcile_only");
   const [resumeWorkId, setResumeWorkId] = useState("");
   const [pendingResume, setPendingResume] = useState<ResumeCommand | null>(() => readPrivate(`command.resume.${projectId}`));
   const [error, setError] = useState("");
@@ -90,10 +108,9 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     if (!isRenderPassStreamArtifact(summary) && (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && summary.published_versions.length === 0 && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id))))) renderedOutputIds.add(summary.artifact.artifact_id);
   }
   const resumable = resumableWork(snapshot, events);
-  const chosenResumeWork = resumeWorkId
-    ? resumable.find(record => record.work_id === resumeWorkId)
-    : resumable.find(record => record.work_id === work?.work_id) ?? (resumable.length === 1 ? resumable[0] : undefined);
+  const chosenResumeWork = resumable.length === 1 ? resumable[0] : resumable.find(record => record.work_id === (resumeWorkId || work?.work_id));
   const canReleaseQueue = !uncertainStop && (!work || ["completed", "failed", "stopped"].includes(work.state));
+  const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>(() => uncertainStop ? "reconcile_only" : work?.state === "awaiting_resume" && chosenResumeWork ? "continue_work" : canReleaseQueue ? "release_held_queue" : "reconcile_only");
   const recoveryStateKey = `${projectId}:${uncertainStop}:${work?.work_id ?? ""}:${work?.state ?? ""}:${Boolean(snapshot?.execution?.fenced)}:${snapshot?.execution?.hold_reason_code ?? ""}`;
   useEffect(() => {
     if (uncertainStop) setResumeMode("reconcile_only");
@@ -181,6 +198,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     preparingLatch.current = true; setPreparing(true); setError("");
     const text = draft;
     const submittedMode = mode;
+    const autoReleaseIdleFence = shouldAutoReleaseIdleFence(snapshot, submittedMode, uncertainStop, resumable.length, requests);
     const submittedWorkId = targetWork;
     const submittedTargetMode = draftTarget;
     const capturedSelection = structuredClone(selection);
@@ -195,6 +213,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       if (ok) {
         if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
         setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
+        if (autoReleaseIdleFence) await releaseIdleQueue(api, projectId, resume);
       }
     } catch (e) { setError(describeError(e)); }
     finally { preparingLatch.current = false; setPreparing(false); }
@@ -205,12 +224,11 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     try {
       const body = original ?? resumeCommand(snapshot, events, resumeMode, chosenResumeWork?.work_id ?? "", id());
       setPendingResume(body);
-      await durableCommand<ResumeCommand, unknown>(`resume.${projectId}`, () => body, async command => {
-        await api.call("resumeProjectWork", { path: { project_id: projectId }, body: command, idempotencyKey: command.operation_id });
-        const result = await awaitResume(api, projectId, command.operation_id);
-        if (result?.state === "outcome_uncertain") setError(`Resume needs recovery${result.detail_code ? ` · ${result.detail_code}` : ""}. Use Reconcile only before continuing original work.`);
-        return result;
-      });
+      const result = await submitResume(api, projectId, body);
+      if (result?.state === "outcome_uncertain") {
+        const detail = result.detail_code ? ` · ${result.detail_code}` : "";
+        setError(body.mode === "reconcile_only" ? `Reconciliation could not clear recovery hold${detail}.` : `Resume needs recovery${detail}. Use Reconcile only before continuing original work.`);
+      }
       setPendingResume(null);
       await onRefresh();
     } catch (e) { setError(describeError(e)); await onRefresh(); }
@@ -237,7 +255,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
         <h3>Resume Copilot</h3>
         <p>Choose how to continue. Reconcile only checks known outcomes without sending a prompt.</p>
         <div className="resume-controls"><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work" disabled={!resumable.length || uncertainStop}>Continue original work</option><option value="release_held_queue" disabled={!canReleaseQueue}>Release held queue</option></select><button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork) || (resumeMode === "release_held_queue" && !canReleaseQueue)} onClick={() => void resume()}>Resume</button></div>
-        {resumeMode === "continue_work" && <label>Original work<select aria-label="Original work to continue" value={chosenResumeWork?.work_id ?? ""} disabled={resuming || !!pendingResume} onChange={event => setResumeWorkId(event.target.value)}><option value="">Select original work</option>{resumable.map(record => <option key={record.work_id} value={record.work_id}>{record.work_id} · {record.state}</option>)}</select></label>}
+        {resumeMode === "continue_work" && resumable.length > 1 && <label>Original work<select aria-label="Original work to continue" value={chosenResumeWork?.work_id ?? ""} disabled={resuming || !!pendingResume} onChange={event => setResumeWorkId(event.target.value)}><option value="">Select original work</option>{resumable.map(record => <option key={record.work_id} value={record.work_id}>{record.work_id} · {record.state}</option>)}</select></label>}
       </section>}
       {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}
     </div>

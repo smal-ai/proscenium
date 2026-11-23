@@ -19,6 +19,7 @@ from copilot.generated.rpc import PermissionDecisionApproveOnce, PermissionDecis
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
+from proscenium.db import Transaction
 from proscenium.db.store import now
 from proscenium.services import Services
 
@@ -35,6 +36,7 @@ from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 
 CHARGEABLE_MCP_TOOLS = frozenset({"create_generation", "generate_3d", "generate_gaussian_world"})
+UNSETTLED_SEND = {"dispatching", "outcome_uncertain"}
 
 CONTINUATION_TEXT = "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
 
@@ -337,14 +339,18 @@ class Copilot:
         with self.services.registry.project_store(project_id).transaction() as tx:
             self.state.fence(tx, code)
             for record in tx.all("requests"):
-                if record["receipt"]["state"] in {
+                status = record["receipt"]["state"]
+                if status in {
                     "dispatching",
                     "acknowledged",
                     "running",
                     "deferred",
                 }:
                     self.state.request_state(
-                        tx, record["request_id"], "outcome_uncertain", detail_code=code
+                        tx,
+                        record["request_id"],
+                        "outcome_uncertain" if status == "dispatching" else status,
+                        detail_code=code,
                     )
             for work in tx.all("work"):
                 if work["state"] in {"running", "awaiting_user"}:
@@ -902,96 +908,104 @@ class Copilot:
             self.notify()
 
     async def settle(self, project_id: str, session: Any) -> None:
-        with self.services.registry.project_store(project_id).transaction() as tx:
+        store = self.services.registry.project_store(project_id)
+        with store.transaction() as tx:
             if any(
                 not e["resolved"] and e["session_id"] == session.session_id
                 for e in tx.all("copilot.pending_events")
             ):
                 self.state.fence(tx, "attribution_unavailable")
                 return
-        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
-            idle = tx.get("copilot.idle", session.session_id, required=False)
-            if not idle or not idle.get("idle") or not idle.get("work_id"):
-                return
-            work = tx.require("work", idle["work_id"])
-            last_delivery = tx.get("copilot.last_delivery", work["work_id"], required=False)
-            requests = [
-                tx.require("requests", r)
-                for r in [work["originating_request_id"], *work["directive_request_ids"]]
-            ]
-            if work["state"] not in {"running", "awaiting_user"}:
-                return
-            continuation = (
-                tx.get("copilot.continuations", last_delivery["delivery_id"], required=False)
-                if last_delivery
-                else None
-            )
-            if continuation is not None:
-                if (
-                    continuation.get("work_id") != work["work_id"]
-                    or idle.get("delivery_id") != continuation["delivery_id"]
-                    or not (
-                        completion := tx.get(
-                            "copilot.completion", continuation["request_id"], required=False
-                        )
-                    )
-                    or not completion.get("candidate")
-                    or completion.get("delivery_id") != continuation["delivery_id"]
-                ):
-                    return
-            else:
-                non_terminal = [r for r in requests if r["receipt"]["state"] not in TERMINAL]
-                non_terminal_ids = {r["request_id"] for r in non_terminal}
-                if (
-                    not non_terminal_ids
-                    or idle.get("delivery_id") not in non_terminal_ids
-                    or (last_delivery and last_delivery.get("delivery_id") not in non_terminal_ids)
-                    or any(
-                        r["receipt"]["state"] != "acknowledged"
-                        or (tx.get("copilot.sends", r["request_id"], required=False) or {}).get(
-                            "state"
-                        )
-                        != "acknowledged"
-                        for r in non_terminal
-                    )
-                    or any(
-                        r["submission"]["type"] == "steer"
-                        and tx.get("copilot.admitted_messages", r["request_id"], required=False)
-                        is None
-                        for r in non_terminal
-                    )
-                ):
-                    return
-                idle_delivery = str(idle["delivery_id"])
-                completion = tx.get("copilot.completion", idle_delivery, required=False)
-                if (
-                    not completion
-                    or not completion.get("candidate")
-                    or completion.get("delivery_id") != idle_delivery
-                ):
-                    return
-            if any(
-                i["work_id"] == work["work_id"] and i["state"] not in TERMINAL
-                for i in tx.all("invocations")
-            ):
-                return
-            if any(
-                d["work_id"] == work["work_id"] and d["state"] == "pending"
-                for d in tx.all("decisions")
-            ):
+        states = {"running", "awaiting_user"}
+        with store.transaction(write=False) as tx:
+            if self.completion_candidate(tx, session.session_id, states) is None:
                 return
         if not empty(await self.native.pending(session)):
             return
-        with self.services.registry.project_store(project_id).transaction() as tx:
+        with store.transaction() as tx:
             if self.state.control(tx)["fenced"]:
                 return
-            for record in requests:
-                if record["receipt"]["state"] not in TERMINAL:
-                    self.state.request_state(tx, record["request_id"], "completed")
-            if work["state"] == "awaiting_user":
-                self.state.work_state(tx, work["work_id"], "running")
-            self.state.work_state(tx, work["work_id"], "completed")
+            if candidate := self.completion_candidate(tx, session.session_id, states):
+                self.complete_turn(tx, *candidate)
         self.notify()
+
+    def completion_candidate(
+        self, tx: Transaction, session_id: str, states: set[str]
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
+        if any(
+            not e["resolved"] and e["session_id"] == session_id
+            for e in tx.all("copilot.pending_events")
+        ):
+            return None
+        idle = tx.get("copilot.idle", session_id, required=False)
+        if not idle or not idle.get("idle") or not idle.get("work_id"):
+            return None
+        work = tx.require("work", idle["work_id"])
+        if work["state"] not in states or work["native_session_id"] != session_id:
+            return None
+        requests = [
+            tx.require("requests", r)
+            for r in [work["originating_request_id"], *work["directive_request_ids"]]
+        ]
+        non_terminal = [r for r in requests if r["receipt"]["state"] not in TERMINAL]
+        last_delivery = tx.get("copilot.last_delivery", work["work_id"], required=False)
+        continuation = (
+            tx.get("copilot.continuations", last_delivery["delivery_id"], required=False)
+            if last_delivery
+            else None
+        )
+        delivery_id = idle.get("delivery_id")
+        if continuation is not None:
+            if (
+                continuation.get("work_id") != work["work_id"]
+                or delivery_id != continuation["delivery_id"]
+            ):
+                return None
+            completion_id = continuation["request_id"]
+        else:
+            non_terminal_ids = {r["request_id"] for r in non_terminal}
+            if (
+                delivery_id not in non_terminal_ids
+                or (last_delivery and last_delivery.get("delivery_id") not in non_terminal_ids)
+                or any(
+                    r["receipt"]["state"] != "acknowledged"
+                    or (tx.get("copilot.sends", r["request_id"], required=False) or {}).get("state")
+                    != "acknowledged"
+                    or (
+                        r["submission"]["type"] == "steer"
+                        and tx.get("copilot.admitted_messages", r["request_id"], required=False)
+                        is None
+                    )
+                    for r in non_terminal
+                )
+            ):
+                return None
+            completion_id = str(delivery_id)
+        completion = tx.get("copilot.completion", completion_id, required=False)
+        if (
+            not completion
+            or not completion.get("candidate")
+            or completion.get("delivery_id") != delivery_id
+            or any(
+                i["work_id"] == work["work_id"] and i["state"] not in TERMINAL
+                for i in tx.all("invocations")
+            )
+            or any(
+                d["work_id"] == work["work_id"] and d["state"] == "pending"
+                for d in tx.all("decisions")
+            )
+        ):
+            return None
+        return work, non_terminal
+
+    def complete_turn(
+        self, tx: Transaction, work: dict[str, Any], requests: list[dict[str, Any]]
+    ) -> None:
+        for record in requests:
+            self.state.request_state(tx, record["request_id"], "completed")
+        if work["state"] == "awaiting_user":
+            self.state.work_state(tx, work["work_id"], "running")
+        self.state.work_state(tx, work["work_id"], "completed")
 
     async def stop(self, project_id: str, work_id: str, operation_id: str) -> None:
         store = self.services.registry.project_store(project_id)
@@ -1063,11 +1077,15 @@ class Copilot:
             }
             with store.transaction(write=False) as tx:
                 for continuation in tx.all("copilot.continuation_sends"):
+                    if continuation["state"] == "abandoned_on_departure":
+                        continue
                     binding = tx.require("copilot.continuations", continuation["operation_id"])
                     if binding["work_id"] == work_id:
                         if continuation["state"] != "acknowledged":
                             raise DomainError("attribution_unavailable", 409)
-                        owned[continuation["message_id"]] = CONTINUATION_TEXT
+                        owned[continuation["message_id"]] = continuation.get(
+                            "prompt", CONTINUATION_TEXT
+                        )
             for item in pending.get("items", []):
                 native_id = item.get("messageId")
                 if native_id not in owned:
@@ -1256,7 +1274,8 @@ class Copilot:
 
     async def reconcile(self, project_id: str) -> dict[str, Any]:
         cold_resume = project_id not in self.sessions
-        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+        store = self.services.registry.project_store(project_id)
+        with store.transaction(write=False) as tx:
             prior_invocations = [
                 i["invocation_id"]
                 for i in tx.all("invocations")
@@ -1270,7 +1289,7 @@ class Copilot:
                 self.state.replay_event(project_id, session.session_id, event)
             self.state.drain_pending(project_id, session.session_id)
             # Exactly one persisted native correlation proves admission, not successful execution.
-            with self.services.registry.project_store(project_id).transaction() as tx:
+            with store.transaction() as tx:
                 for record in tx.all("requests"):
                     if (
                         record["receipt"]["state"] not in {"dispatching", "outcome_uncertain"}
@@ -1334,19 +1353,23 @@ class Copilot:
             )
             if uncertain_stop_id:
                 await self.reconcile_cold_stop(project_id, session, uncertain_stop_id)
-        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+        if empty(pending):
+            await self._reconcile_non_stop(
+                project_id, session, history, prior_invocations, departed if cold_resume else None
+            )
+        with store.transaction(write=False) as tx:
             uncertain = [
                 r["request_id"]
                 for r in tx.all("requests")
                 if r["receipt"]["state"] in {"dispatching", "outcome_uncertain"}
             ]
             live = [i for i in tx.all("invocations") if i["state"] not in TERMINAL]
-            stops = [s for s in tx.all("copilot.stops") if s["phase"] == "outcome_uncertain"]
+            stops = self._uncertain_stops(tx)
             continuations = [
-                c for c in tx.all("copilot.continuation_sends") if c["state"] != "acknowledged"
+                c for c in tx.all("copilot.continuation_sends") if c["state"] in UNSETTLED_SEND
             ]
             duplicates = tx.all("copilot.duplicates")
-        # Absence is never proof a send did not happen. Conservative fence until exact history join.
+        # A missing event alone does not establish a send outcome.
         return {
             "pending_empty": empty(pending),
             "uncertain_request_ids": uncertain,
@@ -1355,6 +1378,151 @@ class Copilot:
             "uncertain_continuations": len(continuations),
             "duplicate_correlations": len(duplicates),
         }
+
+    @staticmethod
+    def _uncertain_stops(tx: Transaction) -> set[str]:
+        return {
+            r["request_id"]
+            for r in tx.all("requests")
+            if r["submission"]["type"] == "stop" and r["receipt"]["state"] == "outcome_uncertain"
+        } | {
+            row[0]
+            for row in tx.connection.execute(
+                "SELECT id FROM records WHERE namespace='copilot.stops' "
+                "AND json_extract(body, '$.phase')='outcome_uncertain'"
+            )
+        }
+
+    @staticmethod
+    def _unsettled_requests(tx: Transaction) -> list[dict[str, Any]]:
+        return [
+            r
+            for r in tx.all("requests")
+            if r["submission"]["type"] != "stop" and r["receipt"]["state"] in UNSETTLED_SEND
+        ]
+
+    def _acknowledge_recovered_send(
+        self, tx: Transaction, request_id: str, message_id: str | None, evidence: dict[str, Any]
+    ) -> None:
+        self.state.request_state(tx, request_id, "acknowledged", native_message_id=message_id)
+        intent = tx.connection.execute(
+            "SELECT state FROM outbox WHERE id=?", (request_id,)
+        ).fetchone()
+        if intent and intent[0] in UNSETTLED_SEND:
+            tx.settle_intent(request_id, "acknowledged", evidence)
+
+    def _unrecorded_sends(
+        self, tx: Transaction, session_id: str, recorded_turns: set[str]
+    ) -> tuple[list[tuple[str, dict[str, Any]]], list[dict[str, Any]]]:
+        def unrecorded(identity: str, send: dict[str, Any]) -> bool:
+            return (
+                identity not in recorded_turns
+                and send.get("session_id") == session_id
+                and send.get("state") in UNSETTLED_SEND
+            )
+
+        sends = [
+            (r["request_id"], send)
+            for r in self._unsettled_requests(tx)
+            if (send := tx.get("copilot.sends", r["request_id"], required=False))
+            and unrecorded(r["request_id"], send)
+        ]
+        continuations = [
+            c for c in tx.all("copilot.continuation_sends") if unrecorded(c["operation_id"], c)
+        ]
+        return sends, continuations
+
+    async def _reconcile_non_stop(
+        self,
+        project_id: str,
+        session: Any,
+        history: list[dict[str, Any]],
+        prior_invocations: list[str],
+        departed: dict[str, Any] | None,
+    ) -> None:
+        store = self.services.registry.project_store(project_id)
+        session_id = session.session_id
+        with store.transaction() as tx:
+            if self._uncertain_stops(tx):
+                return
+            for record in self._unsettled_requests(tx):
+                request_id = record["request_id"]
+                send = tx.get("copilot.sends", request_id, required=False)
+                if (
+                    send
+                    and send.get("state") == "acknowledged"
+                    and isinstance(message_id := send.get("message_id"), str)
+                    and message_id
+                    and record["receipt"].get("native_message_id") in (None, message_id)
+                ):
+                    self._acknowledge_recovered_send(
+                        tx, request_id, message_id, {"acknowledged_message_id": message_id}
+                    )
+
+        recover_departed = (
+            departed is not None
+            and departed.get("session_id", session_id) == session_id
+            and departed.get("observed_identity") != departed.get("start")
+        )
+        recover_sends = recover_departed and hasattr(session, "get_events")
+        recorded_turns = {
+            e["data"]["clientTurnId"]
+            for e in history
+            if e["type"] == "user.message"
+            and not e.get("data", {}).get("isAutopilotContinuation")
+            and isinstance(e.get("data", {}).get("clientTurnId"), str)
+        }
+        states = {"awaiting_resume"}
+        prior = set(prior_invocations)
+        with store.transaction(write=False) as tx:
+            needs_inactivity = (
+                recover_departed
+                and any(
+                    i.get("invocation_id") in prior
+                    and i.get("session_id") == session_id
+                    and i["state"] not in TERMINAL
+                    for i in tx.all("invocations")
+                )
+                or recover_sends
+                and any(self._unrecorded_sends(tx, session_id, recorded_turns))
+                or self.completion_candidate(tx, session_id, states) is not None
+            )
+        if not needs_inactivity or (
+            hasattr(self.native, "inactive") and not await self.native.inactive(session)
+        ):
+            return
+        with store.transaction() as tx:
+            if self._uncertain_stops(tx):
+                return
+            if recover_departed and departed is not None:
+                self.state.interrupt_departed_invocations(
+                    tx, session_id, prior_invocations, {**departed, "session_id": session_id}
+                )
+            if recover_sends:
+                sends, continuations = self._unrecorded_sends(tx, session_id, recorded_turns)
+                for continuation in continuations:
+                    save(
+                        tx,
+                        "copilot.continuation_sends",
+                        continuation["operation_id"],
+                        {**continuation, "state": "abandoned_on_departure"},
+                    )
+                for request_id, send in sends:
+                    message_id = send.get("message_id")
+                    save(
+                        tx,
+                        "copilot.sends",
+                        request_id,
+                        {**send, "state": "acknowledged", "message_id": message_id},
+                    )
+                    self._acknowledge_recovered_send(
+                        tx,
+                        request_id,
+                        message_id,
+                        {"departed_process": departed, "history_matches": 0},
+                    )
+            if candidate := self.completion_candidate(tx, session_id, states):
+                self.complete_turn(tx, *candidate)
 
     async def _recover_departed_session(
         self,
@@ -1682,9 +1850,14 @@ class Copilot:
                 or evidence.get("uncertain_continuations")
                 or evidence.get("duplicate_correlations")
             ):
+                if evidence["uncertain_stops"]:
+                    raise DomainError("uncertain_stop", 409)
+                if evidence.get("duplicate_correlations"):
+                    raise DomainError("duplicate_native_correlation", 409)
                 raise DomainError("attribution_unavailable", 409)
             if body["mode"] != "reconcile_only":
                 session = self.sessions.get(project_id)
+                binding = None
                 with store.transaction(write=False) as tx:
                     owned_pauses = [
                         s
@@ -1734,8 +1907,12 @@ class Copilot:
                             or (body["mode"] == "continue_work" and not has_held),
                         },
                     )
-                    if body["mode"] == "continue_work":
-                        work = tx.require("work", body["work_id"])
+                    work = (
+                        tx.require("work", body["work_id"])
+                        if body["mode"] == "continue_work"
+                        else None
+                    )
+                    if work is not None and work["state"] != "completed":
                         request_ids = [
                             work["originating_request_id"],
                             *work["directive_request_ids"],
@@ -1787,14 +1964,41 @@ class Copilot:
                 self.services.gate.resume(
                     project_id, reconciliation_evidence=canonical(evidence).decode()
                 )
-                if body["mode"] == "continue_work":
+                if binding is not None:
                     session = await self.session(project_id)
-                    # This is an explicit continuation, never the original request body or a new task.
+                    # Preserve the task and supply its original context if the native turn was not recorded.
                     with store.transaction() as tx:
-                        work = tx.require("work", body["work_id"])
-                        payload = tx.require("copilot.payloads", binding["context_request_id"])
+                        context_request_id = binding["context_request_id"]
+                        payload = tx.require("copilot.payloads", context_request_id)
                         snapshot = tx.require("contexts", payload["context_id"])
                         self.contexts.validate_references(tx, snapshot)
+                        unrecorded_turn = (
+                            hasattr(session, "get_events")
+                            and tx.get(
+                                "copilot.admitted_messages", context_request_id, required=False
+                            )
+                            is None
+                        )
+                        context_record = tx.require("requests", context_request_id)
+                        continuation_prompt = CONTINUATION_TEXT
+                        attachments = [
+                            {
+                                "type": "extension_context",
+                                "extensionId": "proscenium",
+                                "title": "Turn context",
+                                "capturedAt": snapshot["captured_at"],
+                                "payload": payload,
+                            }
+                        ]
+                        if unrecorded_turn:
+                            continuation_prompt += (
+                                f"\n\nOriginal request:\n{context_record['submission']['text']}"
+                            )
+                            project = Path(self.services.registry.get(project_id)["path"])
+                            attachments.extend(
+                                {"type": "file", "path": str(project / f["path"])}
+                                for f in payload.get("attached_files", [])
+                            )
                         tx.put(
                             "copilot.continuation_sends",
                             operation_id,
@@ -1802,22 +2006,15 @@ class Copilot:
                                 "operation_id": operation_id,
                                 "state": "dispatching",
                                 "session_id": session.session_id,
+                                "prompt": continuation_prompt,
                             },
                         )
                     message_id = await asyncio.wait_for(
                         session.send(
-                            CONTINUATION_TEXT,
+                            continuation_prompt,
                             mode="enqueue",
                             client_turn_id=operation_id,
-                            attachments=[
-                                {
-                                    "type": "extension_context",
-                                    "extensionId": "proscenium",
-                                    "title": "Turn context",
-                                    "capturedAt": snapshot["captured_at"],
-                                    "payload": payload,
-                                }
-                            ],
+                            attachments=attachments,
                         ),
                         30,
                     )
@@ -1832,6 +2029,7 @@ class Copilot:
                                 "state": "acknowledged",
                                 "session_id": session.session_id,
                                 "message_id": message_id,
+                                "prompt": continuation_prompt,
                             },
                         )
             with store.transaction() as tx:
@@ -1851,12 +2049,13 @@ class Copilot:
                 if body["work_id"]:
                     work = tx.require("work", body["work_id"])
                     original = tx.require("requests", work["originating_request_id"])
-                    self.state.request_state(
-                        tx,
-                        original["request_id"],
-                        original["receipt"]["state"],
-                        detail_code=operation["detail_code"],
-                    )
+                    if not original["receipt"].get("detail_code"):
+                        self.state.request_state(
+                            tx,
+                            original["request_id"],
+                            original["receipt"]["state"],
+                            detail_code=operation["detail_code"],
+                        )
                     continuation = tx.get(
                         "copilot.continuation_sends", operation_id, required=False
                     )

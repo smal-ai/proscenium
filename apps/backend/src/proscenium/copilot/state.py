@@ -1595,6 +1595,85 @@ class State:
             count += 1
         return count
 
+    def interrupt_departed_invocations(
+        self,
+        tx: Transaction,
+        session_id: str,
+        prior_invocation_ids: list[str],
+        departed: dict[str, Any],
+    ) -> int:
+        """Close prior invocations without inferring their native or workspace outcomes."""
+        if departed.get("session_id") != session_id or departed.get(
+            "observed_identity"
+        ) == departed.get("start"):
+            return 0
+        prior = set(prior_invocation_ids)
+        pending = [d for d in tx.all("decisions") if d["state"] == "pending"]
+        count = 0
+        for invocation in tx.all("invocations"):
+            invocation_id = invocation["invocation_id"]
+            if (
+                invocation.get("session_id") != session_id
+                or invocation_id not in prior
+                or invocation["state"] in TERMINAL
+            ):
+                continue
+            correlation = {
+                "work_id": invocation["work_id"],
+                "request_id": invocation["request_id"],
+            }
+            for decision in pending:
+                if decision.get("invocation_id") != invocation_id:
+                    continue
+                decision_id = decision["decision_id"]
+                revision = tx.revision("decisions", decision_id)
+                decision.update(state="cancelled", state_revision=revision + 1)
+                tx.put(
+                    "decisions",
+                    decision_id,
+                    decision,
+                    expected_revision=revision,
+                    schema="Decision",
+                )
+                tx.emit("decision.resolved", decision, actor=SYSTEM, **correlation)
+            evidence = {
+                "kind": "departed_invocation_interrupted",
+                "session_id": session_id,
+                "departed_process": departed,
+                "native_return_observed": False,
+                "outcome_before_exit_unknown": True,
+                "at": now(),
+            }
+            save(tx, "copilot.recovery_evidence", invocation_id, evidence)
+            save(
+                tx,
+                "invocations",
+                invocation_id,
+                {**invocation, "state": "cancelled", "recovery": evidence},
+            )
+            prefix = "subagent" if invocation.get("kind") == "child" else "tool"
+            tx.emit(
+                f"{prefix}.completed",
+                {
+                    "invocation_id": invocation_id,
+                    "name": invocation["name"],
+                    "state": "cancelled",
+                    "summary": "Native invocation interrupted when previous Copilot runtime exited "
+                    "before recording completion; inspect workspace state before repeating mutating steps.",
+                    "artifact_ids": [],
+                    "model_id": invocation.get("model_id"),
+                    **(
+                        {"display_name": invocation["display_name"]}
+                        if invocation.get("display_name")
+                        else {}
+                    ),
+                },
+                actor=SYSTEM,
+                **correlation,
+            )
+            count += 1
+        return count
+
     def interrupt_departed_custom_tools(
         self,
         tx: Transaction,

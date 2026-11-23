@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
+import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
 import { mergeReviews, revisionScope, versionRefreshBuffer } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
@@ -18,7 +18,7 @@ import { OutputCards } from "./OutputCards";
 import { awaitResume, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
-import { ChatPanel, shouldShowQueueHold, type ChatPanelProps } from "./ChatPanel";
+import { ChatPanel, releaseIdleQueue, shouldAutoReleaseIdleFence, shouldShowQueueHold, submitResume, type ChatPanelProps } from "./ChatPanel";
 import { JobList, jobsBadgeState } from "./ComposerPanel";
 import { TargetPicker } from "./TargetPicker";
 
@@ -590,6 +590,64 @@ test("resumableWork offers stopped work only until newer work runs and ChatPanel
   const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true), requests: [uncertainReq] });
   assert.match(markup, /<option value="continue_work" disabled="">Continue original work<\/option>/);
   assert.match(markup, /<option value="release_held_queue" disabled="">Release held queue<\/option>/);
+});
+
+test("ChatPanel auto-selects single interrupted work without rendering a work selector", () => {
+  const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true) });
+  assert.match(markup, /<option value="continue_work" selected="">Continue original work<\/option>/);
+  assert.match(markup, /<button>Resume<\/button>/);
+  assert.doesNotMatch(markup, /aria-label="Original work to continue"/);
+});
+
+test("new Queue submission releases only idle restart holds and uses the fresh project revision", async t => {
+  const idle = (code: NonNullable<ProjectSnapshot["execution"]>["hold_reason_code"], active_work: ProjectSnapshot["active_work"] = null) => {
+    const current = snapshot("awaiting_resume", true);
+    return { ...current, active_work, execution: { ...current.execution!, hold_reason_code: code } };
+  };
+  const stored = new Map<string, string>();
+  const storage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+    getItem: (key: string) => stored.get(key), setItem: (key: string, value: string) => stored.set(key, value), removeItem: (key: string) => stored.delete(key),
+  } });
+  t.after(() => {
+    if (storage) Object.defineProperty(globalThis, "localStorage", storage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  });
+  const fresh = idle("awaiting_resume");
+  fresh.project.state_revision = 7;
+  const calls: string[] = [];
+  let command: ResumeCommand | undefined;
+  const fakeApi = { call: async (method: string, options: { body?: ResumeCommand; idempotencyKey?: string }) => {
+    calls.push(method);
+    if (method === "getProjectSnapshot") return fresh;
+    if (method === "resumeProjectWork") {
+      command = options.body!;
+      assert.equal(options.idempotencyKey, command.operation_id);
+      return;
+    }
+    assert.equal(method, "getResumeOperation");
+    return { state: "completed" };
+  } } as unknown as ApiClient;
+  const afterSuccessfulQueue = async (before: ProjectSnapshot, resumableCount = 0, requests: RequestRecord[] = []) => {
+    if (shouldAutoReleaseIdleFence(before, "queue", false, resumableCount, requests)) {
+      await releaseIdleQueue(fakeApi, "project", async body => { await submitResume(fakeApi, "project", body); });
+    }
+  };
+  await afterSuccessfulQueue(idle("queue_paused"));
+  await afterSuccessfulQueue(idle("stop"));
+  await afterSuccessfulQueue(idle("awaiting_resume", snapshot("stopped").active_work));
+  await afterSuccessfulQueue(idle("awaiting_resume"), 1);
+  await afterSuccessfulQueue(idle("awaiting_resume"), 0, [{ ...request("held", "2026-11-17T10:00:00Z", "Held prompt"), receipt: { ...receipt, state: "held" } } as RequestRecord]);
+  assert.deepEqual(calls, []);
+  await afterSuccessfulQueue(idle("awaiting_resume"));
+  assert.deepEqual(calls, ["getProjectSnapshot", "resumeProjectWork", "getResumeOperation"]);
+  assert.match(command!.operation_id, /^[0-9a-f-]{36}$/);
+  assert.deepEqual(command, { schema_version: "1.0", operation_id: command!.operation_id, project_id: "project", mode: "release_held_queue", work_id: null, expected_revision: 7 });
+  assert.equal(stored.size, 0);
+  calls.length = 0;
+  fresh.active_work = snapshot("running").active_work;
+  await afterSuccessfulQueue(idle("awaiting_resume"));
+  assert.deepEqual(calls, ["getProjectSnapshot"]);
 });
 
 test("default Studio split layout starts Navigator and Assistant at maximum width", () => {
