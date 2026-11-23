@@ -6,11 +6,15 @@ type CanvasRect = Dimensions & { left: number; top: number };
 
 const PROJECTION_TOLERANCE = 1e-5;
 
-export function computeAutoFramePose(box: Box3, fovDegrees: number) {
+export function computeAutoFramePose(box: Box3, fovDegrees: number, aspect = 1) {
   if (box.isEmpty()) return null;
   const center = box.getCenter(new Vector3());
   const radius = Math.max(box.getBoundingSphere(new Sphere()).radius, 0.05);
-  const distance = (radius / Math.sin(fovDegrees * Math.PI / 360)) * 1.35;
+  const vHalf = (fovDegrees * Math.PI) / 360;
+  const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
+  const hHalf = Math.atan(Math.tan(vHalf) * safeAspect);
+  const halfAngle = Math.min(vHalf, hHalf);
+  const distance = (radius / Math.sin(halfAngle)) * 1.35;
   const position = new Vector3(5, 4, 5).normalize().multiplyScalar(distance).add(center);
   return {
     position: position.toArray(), target: center.toArray(),

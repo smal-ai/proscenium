@@ -328,18 +328,20 @@ function AutoFrameCamera({model, frameKey, restoreCamera, controls, onCamera, on
       return;
     }
     if (framedKey.current === frameKey || size.width <= 0 || size.height <= 0) return;
+    const aspect = size.width / size.height;
     if (!(camera instanceof PerspectiveCamera) || ("manual" in camera && camera.manual)) {
       // Frame model exits a saved camera's fixed projection and letterbox.
-      set({camera: new PerspectiveCamera(PROXY_FOV, size.width / size.height)});
+      set({camera: new PerspectiveCamera(PROXY_FOV, aspect)});
       return;
     }
     const orbit = controls.current;
     if (orbit?.object !== camera) return;
-    const pose = computeAutoFramePose(new Box3().setFromObject(model), camera.fov);
+    const pose = computeAutoFramePose(new Box3().setFromObject(model), camera.fov, aspect);
     if (!pose) return;
     camera.position.set(...pose.position);
     camera.near = pose.near;
     camera.far = pose.far;
+    camera.aspect = aspect;
     camera.updateProjectionMatrix();
     orbit.target.set(...pose.target);
     orbit.update();

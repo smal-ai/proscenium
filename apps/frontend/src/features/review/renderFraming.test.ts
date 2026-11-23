@@ -18,6 +18,28 @@ test("auto-frame centres a half-metre proxy from the original three-quarter view
   assert.equal(pose.far, 1000);
 });
 
+test("auto-frame projects all eight corners inside a portrait viewport", () => {
+  const width = 400, height = 800, fov = 50;
+  const box = new Box3(new Vector3(-0.25, -0.21, -0.06), new Vector3(0.25, 0.21, 0.07));
+  const pose = computeAutoFramePose(box, fov, width / height)!;
+  const camera = new PerspectiveCamera(fov, width / height, pose.near, pose.far);
+  camera.position.set(...pose.position);
+  camera.lookAt(...pose.target);
+  camera.updateMatrixWorld();
+
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        const projected = new Vector3(x, y, z).project(camera);
+        const pixelX = (projected.x + 1) * width / 2;
+        const pixelY = (1 - projected.y) * height / 2;
+        assert.ok(pixelX > 0 && pixelX < width && pixelY > 0 && pixelY < height,
+          `Corner [${x}, ${y}, ${z}] projects outside the viewport at [${pixelX}, ${pixelY}]`);
+      }
+    }
+  }
+});
+
 test("auto-frame rejects empty bounds and keeps point-like and large models inside the clip planes", () => {
   assert.equal(computeAutoFramePose(new Box3(), 50), null);
   const point = new Vector3(2, 3, 4);
