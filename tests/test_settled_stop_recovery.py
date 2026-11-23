@@ -357,6 +357,11 @@ def test_cold_stop_accepts_abandoned_sends_only_from_an_earlier_process(runtime,
             )
         first = await copilot.reconcile(PROJECT)
         assert not first["uncertain_request_ids"] and not first["uncertain_continuations"]
+        history_before = client.history_calls.copy()
+        rpc_before = len(client.messages)
+        await copilot.reconcile(PROJECT)
+        assert client.history_calls == history_before
+        assert [m["method"] for m in client.messages[rpc_before:]] == ["session.queue.pendingItems"]
         with store.transaction() as tx:
             for namespace, identity in [
                 ("copilot.sends", REQUEST),
@@ -412,6 +417,41 @@ def test_cold_stop_accepts_abandoned_sends_only_from_an_earlier_process(runtime,
         )
         copilot.sessions.clear()
         count = len(client.messages)
+        if same_process:
+            closed = []
+
+            async def close():
+                closed.append(copilot.native.departed_process)
+                copilot.native.departed_process = {
+                    **original_departure,
+                    "pid": 140 + len(closed),
+                    "start": f"recovery-{len(closed)}",
+                }
+
+            copilot.native.close = close
+            for operation_id in ("reconcile-first", "reconcile-second"):
+                copilot.admit_resume(
+                    OWNER,
+                    {
+                        "schema_version": "1.0",
+                        "operation_id": operation_id,
+                        "project_id": PROJECT,
+                        "mode": "reconcile_only",
+                        "work_id": None,
+                        "expected_revision": 3,
+                    },
+                )
+                await copilot.resume(PROJECT, operation_id)
+                with store.transaction(write=False) as tx:
+                    operation = tx.require("copilot.resumes", operation_id)
+                    assert operation["state"] == "outcome_uncertain"
+                    assert operation["detail_code"] == "uncertain_stop"
+                    assert tx.require("copilot.stops", new_stop)["phase"] == "outcome_uncertain"
+                    assert tx.require("copilot.stop_origins", new_stop) == {
+                        "pid": original_departure["pid"],
+                        "start": original_departure["start"],
+                    }
+            assert len(closed) == 2 and closed[1]["start"] == "recovery-1"
         second = await copilot.reconcile(PROJECT)
         with store.transaction(write=False) as tx:
             assert tx.require("work", WORK)["state"] == "completed"

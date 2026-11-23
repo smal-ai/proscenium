@@ -131,6 +131,18 @@ class State:
         )
         return work
 
+    def idle_restart_hold(self, tx: Transaction, control: dict[str, Any]) -> bool:
+        raw_gate = tx.get("copilot.control", "gate", required=False) or {}
+        return (
+            control["fenced"] is True
+            and control.get("reason") == "awaiting_resume"
+            and raw_gate.get("queue_released", True) is not False
+            and all(w["state"] == "completed" for w in tx.all("work"))
+            and not any(s.get("phase") != "confirmed" for s in tx.all("copilot.stops"))
+            and not any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes"))
+            and not any(d["state"] == "pending" for d in tx.all("decisions"))
+        )
+
     def submit(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         if caller.channel != "owner":
             raise DomainError("owner_session_required", 401)
@@ -140,6 +152,12 @@ class State:
 
             def effect() -> dict[str, Any]:
                 control = self.control(tx)
+                auto_release = (
+                    kind == "queue"
+                    and self.idle_restart_hold(tx, control)
+                    and all(r["receipt"]["state"] in TERMINAL for r in tx.all("requests"))
+                    and not any(a["state"] == "pending" for a in tx.all("copilot.auto_releases"))
+                )
                 if kind == "queue":
                     work_id, task_id = "work-" + uuid4().hex, "task-" + uuid4().hex
                     project_policy = (
@@ -340,6 +358,12 @@ class State:
                     request_id=identity,
                     work_id=work_id,
                 )
+                if auto_release:
+                    tx.put(
+                        "copilot.auto_releases",
+                        identity,
+                        {"request_id": identity, "watermark": tx.watermark(), "state": "pending"},
+                    )
                 return request_receipt
 
             result, replayed = tx.operation("request.submit", identity, body, effect)

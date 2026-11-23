@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import inspect
+import json
 import re
 import time
 from collections.abc import Callable
@@ -116,6 +117,31 @@ def empty(pending: dict[str, Any]) -> bool:
         or pending.get("steeringMessages")
         or pending.get("inFlightSteeringCount")
     )
+
+
+def reconciliation_barrier(evidence: dict[str, Any]) -> str | None:
+    if evidence["uncertain_stops"]:
+        return "uncertain_stop"
+    if evidence.get("duplicate_correlations"):
+        return "duplicate_native_correlation"
+    if (
+        not evidence["pending_empty"]
+        or evidence["uncertain_request_ids"]
+        or evidence["live_invocations"]
+        or evidence.get("uncertain_continuations")
+        or evidence.get("inactivity_unproven")
+    ):
+        return "attribution_unavailable"
+    return None
+
+
+def _record_stop_origin(tx: Transaction, stop_id: str, process: dict[str, Any] | None) -> None:
+    if (
+        cold_stop.valid_process_identity(process)
+        and tx.get("copilot.stop_origins", stop_id, required=False) is None
+    ):
+        assert process is not None
+        tx.put("copilot.stop_origins", stop_id, {"pid": process["pid"], "start": process["start"]})
 
 
 class Copilot:
@@ -734,11 +760,15 @@ class Copilot:
                 if r["submission"]["type"] == "stop" and r["receipt"]["state"] == "stop_requested"
             ]
             resumes = [r for r in tx.all("copilot.resumes") if r["state"] == "pending"]
+            auto_releases = [a for a in tx.all("copilot.auto_releases") if a["state"] == "pending"]
         if stops:
             await self.stop(project_id, stops[0][1]["work_id"], stops[0][0])
             return
         if resumes:
             await self.resume(project_id, resumes[0]["body"]["operation_id"])
+            return
+        if auto_releases:
+            await self.auto_release_idle_queue(project_id, auto_releases[0]["request_id"])
             return
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             if self.state.control(tx)["fenced"]:
@@ -773,6 +803,68 @@ class Copilot:
             self.sends[request_id] = asyncio.create_task(
                 self.send(project_id, request_id), name=f"copilot-send:{request_id}"
             )
+
+    def _auto_release_eligible(self, tx: Transaction, request_id: str, watermark: int) -> bool:
+        return (
+            self.state.idle_restart_hold(tx, self.state.control(tx))
+            and [
+                r["request_id"] for r in tx.all("requests") if r["receipt"]["state"] not in TERMINAL
+            ]
+            == [request_id]
+            and tx.require("requests", request_id)["receipt"]["state"] == "held"
+            and not self._uncertain_stops(tx)
+            and all(
+                json.loads(row[0])["event_type"] == "project.state_changed"
+                for row in tx.connection.execute(
+                    "SELECT body FROM events WHERE sequence > ?", (watermark,)
+                )
+            )
+        )
+
+    async def auto_release_idle_queue(self, project_id: str, request_id: str) -> None:
+        store = self.services.registry.project_store(project_id)
+        namespace = "copilot.auto_releases"
+
+        def pending_and_eligible(tx: Transaction) -> dict[str, Any] | None:
+            auto = tx.require(namespace, request_id)
+            if auto["state"] != "pending":
+                return None
+            if not self._auto_release_eligible(tx, request_id, auto["watermark"]):
+                save(tx, namespace, request_id, {**auto, "state": "superseded"})
+                return None
+            return auto
+
+        with store.transaction() as tx:
+            if pending_and_eligible(tx) is None:
+                return
+        try:
+            evidence = await self._reconcile_for_release(project_id)
+            if barrier := reconciliation_barrier(evidence):
+                raise DomainError(barrier, 409)
+            gate_evidence = canonical(evidence).decode()
+            with store.transaction() as tx:
+                if pending_and_eligible(tx) is None:
+                    return
+            await self._release_owned_pause(project_id, request_id)
+            # Authorise release of this exact admission in the same commit that opens the gate.
+            with store.transaction() as tx:
+                if (auto := pending_and_eligible(tx)) is None:
+                    return
+                self._open_gate(tx, project_id, queue_released=True)
+                save(tx, namespace, request_id, {**auto, "state": "completed"})
+            self.services.gate.resume(project_id, reconciliation_evidence=gate_evidence)
+        except Exception as exc:
+            with store.transaction() as tx:
+                auto = tx.require(namespace, request_id)
+                if auto["state"] == "pending":
+                    code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
+                    self.state.fence(tx, code)
+                    save(
+                        tx, namespace, request_id, {**auto, "state": "blocked", "detail_code": code}
+                    )
+            await self._close_recovery_session()
+        finally:
+            self.notify()
 
     async def send(self, project_id: str, request_id: str) -> None:
         try:
@@ -1028,6 +1120,9 @@ class Copilot:
                 phase.update(phase="pausing", pause="dispatching")
                 save(tx, "copilot.stops", operation_id, phase)
             session = await self.session(project_id)
+            process = self._native_process_record()
+            with store.transaction() as tx:
+                _record_stop_origin(tx, operation_id, process)
             # Exclusive, non-idempotent: NEVER retry a pause whose ACK is uncertain.
             await self.native.pause(session, True)
             self.pause_owner[project_id] = operation_id
@@ -1176,7 +1271,9 @@ class Copilot:
                 save(tx, "copilot.stops", operation_id, phase)
                 tx.settle_intent(operation_id, "acknowledged", {"barrier": phase["barrier_at"]})
         except Exception as exc:
+            process = self._native_process_record()
             with store.transaction() as tx:
+                _record_stop_origin(tx, operation_id, process)
                 phase = tx.require("copilot.stops", operation_id)
                 phase["phase"] = "outcome_uncertain"
                 save(tx, "copilot.stops", operation_id, phase)
@@ -1200,6 +1297,15 @@ class Copilot:
                 self.retire_open_callbacks()
                 await self.native.close()
             self.sessions.clear()
+
+    def _native_process_record(self) -> dict[str, Any] | None:
+        directory = getattr(self.services.settings, "data_directory", None)
+        if directory is not None:
+            with suppress(OSError, ValueError):
+                record = json.loads((directory / "copilot-runtime/process.json").read_text())
+                if isinstance(record, dict):
+                    return record
+        return None
 
     def admit_resume(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         if caller.channel != "owner":
@@ -1291,6 +1397,15 @@ class Copilot:
                 if i["state"] not in TERMINAL and i.get("invocation_id")
             ]
         session = await self.session(project_id)
+        departed = getattr(self.native, "departed_process", None)
+        if cold_resume and cold_stop.process_departure_proven(departed, session.session_id):
+            # Pin the first proven origin before history/pending RPCs can fail and close this client.
+            with store.transaction() as tx:
+                if stop_id := self._sole_uncertain_stop(tx):
+                    phase = tx.require("copilot.stops", stop_id)
+                    work = tx.require("work", phase["work_id"])
+                    if work["native_session_id"] == session.session_id:
+                        _record_stop_origin(tx, stop_id, departed)
         history: list[dict[str, Any]] = []
         owner = self.callback_owners.get(project_id)
         warm_settled = False
@@ -1308,9 +1423,13 @@ class Copilot:
                         not e["resolved"] and e["session_id"] == session.session_id
                         for e in tx.all("copilot.pending_events")
                     )
-                    and not self._unsettled_requests(tx)
                     and not any(
-                        c["state"] in UNSETTLED_SEND for c in tx.all("copilot.continuation_sends")
+                        not self._departed_request_recoverable(tx, r)
+                        for r in self._unsettled_requests(tx)
+                    )
+                    and not any(
+                        not cold_stop.settled_send_record(c)
+                        for c in tx.all("copilot.continuation_sends")
                     )
                     and not self._uncertain_stops(tx)
                 )
@@ -1377,7 +1496,6 @@ class Copilot:
                             },
                         )
         pending = await self.native.pending(session)
-        departed = getattr(self.native, "departed_process", None)
         if cold_resume and departed and empty(pending):
             uncertain_stop_id = await self._recover_departed_session(
                 project_id, session, history, prior_invocations, pending, departed
@@ -1430,6 +1548,17 @@ class Copilot:
             "failed",
             "completed",
         }
+
+    @staticmethod
+    def _sole_uncertain_stop(tx: Transaction) -> str | None:
+        ids = [
+            r["request_id"]
+            for r in tx.all("requests")
+            if r["submission"]["type"] == "stop"
+            and r["receipt"]["state"] == "outcome_uncertain"
+            and tx.require("copilot.stops", r["request_id"])["phase"] == "outcome_uncertain"
+        ]
+        return ids[0] if len(ids) == 1 else None
 
     @staticmethod
     def _uncertain_stops(tx: Transaction) -> set[str]:
@@ -1669,14 +1798,9 @@ class Copilot:
                 s.get("state") in {"dispatching", "outcome_uncertain"}
                 for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
             )
-            uncertain_stop_ids = [
-                r["request_id"]
-                for r in tx.all("requests")
-                if r["submission"]["type"] == "stop"
-                and r["receipt"]["state"] == "outcome_uncertain"
-                and tx.require("copilot.stops", r["request_id"])["phase"] == "outcome_uncertain"
-            ]
-            uncertain_stop_id = uncertain_stop_ids[0] if len(uncertain_stop_ids) == 1 else None
+            uncertain_stop_id = self._sole_uncertain_stop(tx)
+            if uncertain_stop_id:
+                _record_stop_origin(tx, uncertain_stop_id, departed)
             owner = self.callback_owners.get(project_id)
             if owner and not owner.retired:
                 self.read_wait_recovery[project_id] = {
@@ -1766,6 +1890,8 @@ class Copilot:
                 "epoch": epoch,
                 "session_id": session.session_id,
                 "departed_process": recovery["departed_process"],
+                "stop_origin": tx.get("copilot.stop_origins", stop_id, required=False)
+                or recovery["departed_process"],
                 "callback_generation": owner.generation,
                 "activity_sequence": recovery["activity_sequence"],
                 "status": "collecting",
@@ -1818,8 +1944,13 @@ class Copilot:
                 return False
             with store.transaction(write=False) as tx:
                 allowed = {p["invocation_id"] for p in recovery["proofs"]}
+                stop_origin = (
+                    tx.get("copilot.stop_origins", stop_id, required=False)
+                    or observation["departed_process"]
+                )
                 return (
                     self.state.control(tx)["fenced"]
+                    and stop_origin == observation["stop_origin"]
                     and tx.require("copilot.stops", stop_id) == observation["previous_stop_phase"]
                     and tx.require("requests", stop_id)["receipt"]
                     == observation["previous_stop_receipt"]
@@ -1840,10 +1971,10 @@ class Copilot:
                         for w in tx.all("work")
                     )
                     and not any(
-                        not cold_stop.send_settled_before_stop(s, observation["departed_process"])
+                        not cold_stop.send_settled_before_stop(s, stop_origin)
                         for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
                     )
-                    and cold_stop.steer_requests_settled(tx, work, observation["departed_process"])
+                    and cold_stop.steer_requests_settled(tx, work, stop_origin)
                     and not any(d["state"] == "pending" for d in tx.all("decisions"))
                 )
 
@@ -1870,6 +2001,65 @@ class Copilot:
             with store.transaction() as tx:
                 save(tx, "copilot.cold_stop_observations", observation_id, observation)
 
+    async def _reconcile_for_release(
+        self, project_id: str, *, require_session: bool = False
+    ) -> dict[str, Any]:
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            association = tx.get("copilot.session", "native", required=False)
+            attempted = bool(tx.all("copilot.sends"))
+        if association or attempted or require_session:
+            return await self.reconcile(project_id)
+        return {
+            "pending_empty": True,
+            "uncertain_request_ids": [],
+            "live_invocations": 0,
+            "uncertain_stops": 0,
+        }
+
+    async def _release_owned_pause(self, project_id: str, operation_id: str) -> None:
+        session = self.sessions.get(project_id)
+        stop_id = self.pause_owner.get(project_id)
+        if session is None or stop_id is None:
+            return
+        store = self.services.registry.project_store(project_id)
+        with store.transaction() as tx:
+            stop = tx.get("copilot.stops", stop_id, required=False)
+            if not stop or stop["pause"] != "acknowledged" or stop["phase"] != "confirmed":
+                return
+            save(tx, "copilot.pause_release", operation_id, {"state": "dispatching"})
+        await self.native.pause(session, False)
+        self.pause_owner.pop(project_id, None)
+        with store.transaction() as tx:
+            save(tx, "copilot.pause_release", operation_id, {"state": "acknowledged"})
+            stop = tx.require("copilot.stops", stop_id)
+            save(tx, "copilot.stops", stop_id, {**stop, "pause": "released"})
+
+    def _open_gate(self, tx: Transaction, project_id: str, *, queue_released: bool) -> None:
+        control = self.state.control(tx)
+        save(
+            tx,
+            "copilot.control",
+            "gate",
+            {
+                **control,
+                "fenced": False,
+                "epoch": self.services.ownership.epoch,
+                "reconciled_epoch": self.services.ownership.epoch,
+                "activation_revision": self.services.registry.get(project_id)["state_revision"],
+                "revision": control["revision"] + 1,
+                "queue_released": queue_released,
+            },
+        )
+
+    async def _close_recovery_session(self) -> None:
+        try:
+            if self.native:
+                self.retire_open_callbacks()
+                await self.native.close()
+        finally:
+            self.sessions.clear()
+            self.pause_owner.clear()
+
     async def resume(self, project_id: str, operation_id: str) -> None:
         store = self.services.registry.project_store(project_id)
         with store.transaction() as tx:
@@ -1881,83 +2071,24 @@ class Copilot:
             save(tx, "copilot.resumes", operation_id, operation)
             tx.claim_intent(operation_id)
         try:
-            with store.transaction(write=False) as tx:
-                association = tx.get("copilot.session", "native", required=False)
-                attempted = bool(tx.all("copilot.sends"))
-            if not association and not attempted and body["mode"] != "continue_work":
-                evidence = {
-                    "pending_empty": True,
-                    "uncertain_request_ids": [],
-                    "live_invocations": 0,
-                    "uncertain_stops": 0,
-                }
-            else:
-                evidence = await self.reconcile(project_id)
-            if (
-                not evidence["pending_empty"]
-                or evidence["uncertain_request_ids"]
-                or evidence["live_invocations"]
-                or evidence["uncertain_stops"]
-                or evidence.get("uncertain_continuations")
-                or evidence.get("duplicate_correlations")
-                or evidence.get("inactivity_unproven")
-            ):
-                if evidence["uncertain_stops"]:
-                    raise DomainError("uncertain_stop", 409)
-                if evidence.get("duplicate_correlations"):
-                    raise DomainError("duplicate_native_correlation", 409)
-                raise DomainError("attribution_unavailable", 409)
+            evidence = await self._reconcile_for_release(
+                project_id, require_session=body["mode"] == "continue_work"
+            )
+            if barrier := reconciliation_barrier(evidence):
+                raise DomainError(barrier, 409)
             if body["mode"] != "reconcile_only":
-                session = self.sessions.get(project_id)
                 binding = None
-                with store.transaction(write=False) as tx:
-                    owned_pauses = [
-                        s
-                        for s in tx.all("copilot.stops")
-                        if s["pause"] == "acknowledged" and s["phase"] == "confirmed"
-                    ]
-                if session and owned_pauses and project_id in self.pause_owner:
-                    # Release only this adapter's proven pause and persist release intent first.
-                    with store.transaction() as tx:
-                        save(tx, "copilot.pause_release", operation_id, {"state": "dispatching"})
-                    await self.native.pause(session, False)
-                    self.pause_owner.pop(project_id, None)
-                    with store.transaction() as tx:
-                        save(tx, "copilot.pause_release", operation_id, {"state": "acknowledged"})
-                        for stop_id_record in tx.all("requests"):
-                            if stop_id_record["submission"]["type"] == "stop":
-                                stop_id = stop_id_record["request_id"]
-                                stop_record = tx.require("copilot.stops", stop_id)
-                                if stop_record["pause"] == "acknowledged":
-                                    save(
-                                        tx,
-                                        "copilot.stops",
-                                        stop_id,
-                                        {**stop_record, "pause": "released"},
-                                    )
+                await self._release_owned_pause(project_id, operation_id)
                 with store.transaction() as tx:
                     if body["mode"] == "release_held_queue" and any(
                         w["state"] not in TERMINAL | {"pending"} for w in tx.all("work")
                     ):
                         raise DomainError("project_busy", 409)
                     has_held = any(r["receipt"]["state"] == "held" for r in tx.all("requests"))
-                    control = self.state.control(tx)
-                    save(
+                    self._open_gate(
                         tx,
-                        "copilot.control",
-                        "gate",
-                        {
-                            **control,
-                            "fenced": False,
-                            "epoch": self.services.ownership.epoch,
-                            "reconciled_epoch": self.services.ownership.epoch,
-                            "activation_revision": self.services.registry.get(project_id)[
-                                "state_revision"
-                            ],
-                            "revision": control["revision"] + 1,
-                            "queue_released": body["mode"] == "release_held_queue"
-                            or (body["mode"] == "continue_work" and not has_held),
-                        },
+                        project_id,
+                        queue_released=body["mode"] == "release_held_queue" or not has_held,
                     )
                     work = (
                         tx.require("work", body["work_id"])
@@ -2123,11 +2254,7 @@ class Copilot:
                 tx.settle_intent(
                     operation_id, "outcome_uncertain", {"detail_code": operation["detail_code"]}
                 )
-            if self.native:
-                self.retire_open_callbacks()
-                await self.native.close()
-            self.sessions.clear()
-            self.pause_owner.clear()
+            await self._close_recovery_session()
         self.notify()
 
     def save_decision(self, tx: Any, decision: dict[str, Any]) -> None:

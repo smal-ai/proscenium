@@ -22,12 +22,18 @@ METHODS = (
 )
 
 
+def valid_process_identity(process: Any) -> bool:
+    return (
+        isinstance(process, dict)
+        and isinstance(process.get("pid"), int)
+        and isinstance(process.get("start"), str)
+        and bool(process["start"])
+    )
+
+
 def process_departure_proven(departed: Any, session_id: Any) -> bool:
     return (
-        isinstance(departed, dict)
-        and isinstance(departed.get("pid"), int)
-        and isinstance(departed.get("start"), str)
-        and bool(departed["start"])
+        valid_process_identity(departed)
         and "observed_identity" in departed
         and departed["observed_identity"] != departed["start"]
         and isinstance(session_id, str)
@@ -47,14 +53,16 @@ def settled_send_record(record: dict[str, Any]) -> bool:
     return record.get("state") == "acknowledged" or proven_departed_abandonment(record)
 
 
-def send_settled_before_stop(record: dict[str, Any], departed: dict[str, Any]) -> bool:
+def send_settled_before_stop(record: dict[str, Any], origin: dict[str, Any]) -> bool:
     if not settled_send_record(record):
         return False
     if record.get("state") == "acknowledged":
         return True
+    if not valid_process_identity(origin):
+        return False
     # Compare process identity, not incidental fields such as the later PID observation.
     prior = record["departed_process"]
-    return (prior["pid"], prior["start"]) != (departed.get("pid"), departed.get("start"))
+    return (prior["pid"], prior["start"]) != (origin["pid"], origin["start"])
 
 
 def steer_requests_settled(tx: Transaction, work: dict[str, Any], departed: dict[str, Any]) -> bool:
@@ -252,10 +260,14 @@ def apply(
         ),
         "foreign_work",
     )
-    require(steer_requests_settled(tx, work, observation["departed_process"]), "unsettled_steer")
+    stop_origin = tx.get("copilot.stop_origins", stop_id, required=False) or observation.get(
+        "departed_process", {}
+    )
+    require(stop_origin == observation.get("stop_origin", stop_origin), "changed_stop_origin")
+    require(steer_requests_settled(tx, work, stop_origin), "unsettled_steer")
     require(
         not any(
-            not send_settled_before_stop(s, observation["departed_process"])
+            not send_settled_before_stop(s, stop_origin)
             for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
         ),
         "unsettled_send",

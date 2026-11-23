@@ -421,6 +421,185 @@ def test_idle_queue_paused_and_default_release_are_distinct(runtime):
     assert state.submit(OWNER, request_record("held-new")["submission"])[0]["state"] == "held"
 
 
+def idle_restart(runtime, work_state="completed", *, queue_released=True, association=False):
+    state, store, _, _ = runtime
+    set_work(store, work_state)
+    with store.transaction() as tx:
+        state.request_state(tx, REQUEST, "completed")
+        save(
+            tx,
+            "copilot.control",
+            "gate",
+            {
+                "fenced": True,
+                "reason": "awaiting_resume",
+                "epoch": "epoch",
+                "queue_released": queue_released,
+                "revision": 1,
+            },
+        )
+        state.services.gate.close(PROJECT)
+        if association:
+            tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
+    copilot = Copilot(state.services)
+    copilot.contexts.validate_references = lambda tx, snapshot: validate(
+        "ContextSnapshot", snapshot
+    )
+    return copilot
+
+
+def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
+    _, store, gate, project = runtime
+    copilot = idle_restart(runtime)
+    sent = []
+
+    async def send(prompt, **kwargs):
+        sent.append((prompt, kwargs["client_turn_id"]))
+        return "fixture-message"
+
+    async def session(project_id, *, allow_create=False):
+        assert project_id == PROJECT and allow_create
+        return SimpleNamespace(session_id=SESSION, send=send)
+
+    copilot.session = session
+    copilot.contexts.payload = lambda tx, record: {"attached_files": []}
+    submission = request_record("new")["submission"]
+    assert copilot.state.submit(OWNER, submission)[0]["state"] == "held"
+    assert copilot.state.submit(OWNER, submission)[1] is True
+    with store.transaction() as tx:
+        auto = tx.require("copilot.auto_releases", "new")
+        assert auto == {"request_id": "new", "watermark": tx.watermark(), "state": "pending"}
+        assert tx.events()["events"][-1]["event_type"] == "request.accepted"
+        tx.emit("project.state_changed", project, actor={"kind": "system", "id": "fixture"})
+
+    async def drive():
+        await copilot.tick(PROJECT)
+        assert sent == []
+        gate.require(PROJECT)
+        await copilot.tick(PROJECT)
+        await copilot.sends["new"]
+
+    asyncio.run(drive())
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.auto_releases", "new") == {**auto, "state": "completed"}
+        assert not copilot.state.control(tx)["fenced"]
+        assert copilot.state.control(tx)["queue_released"]
+        assert tx.require("requests", "new")["receipt"]["state"] == "acknowledged"
+    assert sent == [(submission["text"], "new")]
+
+
+@pytest.mark.parametrize(
+    "hold", ["queue_paused", "stopped", "awaiting_resume", "pre_existing_held"]
+)
+def test_tick_leaves_explicit_and_unsettled_queue_holds_in_place(runtime, hold):
+    _, store, gate, _ = runtime
+    copilot = idle_restart(
+        runtime,
+        hold if hold in {"stopped", "awaiting_resume"} else "completed",
+        queue_released=hold != "queue_paused",
+    )
+    sent = []
+    copilot.launch_send = lambda *args: sent.append(args)
+    if hold == "pre_existing_held":
+        with store.transaction() as tx:
+            tx.put("requests", "held", request_record("held"), schema="RequestRecord")
+            copilot.state.request_state(tx, "held", "held")
+    assert copilot.state.submit(OWNER, request_record("new")["submission"])[0]["state"] == "held"
+    asyncio.run(copilot.tick(PROJECT))
+    with store.transaction(write=False) as tx:
+        assert tx.all("copilot.auto_releases") == []
+        assert copilot.state.control(tx)["fenced"]
+    with pytest.raises(DomainError):
+        gate.require(PROJECT)
+    assert sent == []
+
+
+@pytest.mark.parametrize("mutation", ["replace_admission", "queue_and_cancel_intervening"])
+def test_tick_rejects_queue_mutations_during_auto_release_reconciliation(runtime, mutation):
+    _, store, gate, _ = runtime
+    copilot = idle_restart(runtime, association=True)
+    sent, reconciled = [], []
+    copilot.launch_send = lambda *args: sent.append(args)
+    copilot.state.submit(OWNER, request_record("new")["submission"])
+
+    def cancel(request_id):
+        copilot.state.cancel(
+            OWNER,
+            request_id,
+            {
+                "schema_version": "1.0",
+                "operation_id": f"cancel-{request_id}",
+                "project_id": PROJECT,
+                "expected_revision": 0,
+            },
+        )
+
+    async def reconcile(project_id):
+        reconciled.append(project_id)
+        if mutation == "replace_admission":
+            cancel("new")
+        copilot.state.submit(OWNER, request_record("other-tab")["submission"])
+        if mutation == "queue_and_cancel_intervening":
+            cancel("other-tab")
+        return {
+            "pending_empty": True,
+            "uncertain_request_ids": [],
+            "live_invocations": 0,
+            "uncertain_stops": 0,
+        }
+
+    copilot.reconcile = reconcile
+
+    async def drive():
+        await copilot.tick(PROJECT)
+        await copilot.tick(PROJECT)
+
+    asyncio.run(drive())
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.auto_releases", "new")["state"] == "superseded"
+        assert len(tx.all("copilot.auto_releases")) == 1
+        assert copilot.state.control(tx)["fenced"]
+        held = [r["request_id"] for r in tx.all("requests") if r["receipt"]["state"] == "held"]
+        assert held == (["other-tab"] if mutation == "replace_admission" else ["new"])
+    with pytest.raises(DomainError):
+        gate.require(PROJECT)
+    assert sent == [] and reconciled == [PROJECT]
+
+
+def test_tick_blocks_auto_release_without_native_inactivity_proof(runtime):
+    _, store, gate, _ = runtime
+    copilot = idle_restart(runtime, association=True)
+    sent, closed = [], []
+    copilot.launch_send = lambda *args: sent.append(args)
+    copilot.state.submit(OWNER, request_record("new")["submission"])
+
+    async def reconcile(project_id):
+        return {
+            "pending_empty": True,
+            "uncertain_request_ids": [],
+            "live_invocations": 0,
+            "uncertain_stops": 0,
+            "inactivity_unproven": True,
+        }
+
+    async def close():
+        closed.append(True)
+
+    copilot.reconcile = reconcile
+    copilot.native = SimpleNamespace(close=close)
+    copilot.sessions[PROJECT] = SimpleNamespace(session_id=SESSION)
+    copilot.pause_owner[PROJECT] = "saved-pause"
+    asyncio.run(copilot.tick(PROJECT))
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.auto_releases", "new")["state"] == "blocked"
+        assert tx.require("requests", "new")["receipt"]["state"] == "held"
+        assert copilot.state.control(tx)["fenced"]
+        assert copilot.state.control(tx)["reason"] == "attribution_unavailable"
+    with pytest.raises(DomainError):
+        gate.require(PROJECT)
+    assert closed == [True] and not copilot.sessions and not copilot.pause_owner and not sent
+
+
 def test_historical_uncertain_resume_does_not_override_an_explicitly_released_gate(runtime):
     _, store, _, _ = runtime
     set_work(store, "completed")
@@ -1309,6 +1488,9 @@ def test_native_close_retains_departure_when_process_record_is_removed(
 def test_uncertain_stop_settles_outbox_to_same_unknown_outcome(runtime):
     state, store, _, _ = runtime
     copilot = Copilot(state.services)
+    marker = state.services.settings.data_directory / "copilot-runtime/process.json"
+    marker.parent.mkdir(parents=True)
+    marker.write_text(json.dumps({"pid": 47, "start": "original-runtime", "parent_pid": 23}))
     body = dict(
         schema_version="1.0",
         project_id=PROJECT,
@@ -1326,6 +1508,10 @@ def test_uncertain_stop_settles_outbox_to_same_unknown_outcome(runtime):
     with store.transaction(write=False) as tx:
         assert tx.require("requests", "stop-one")["receipt"]["state"] == "outcome_uncertain"
         assert tx.require("copilot.stops", "stop-one")["phase"] == "outcome_uncertain"
+        assert tx.require("copilot.stop_origins", "stop-one") == {
+            "pid": 47,
+            "start": "original-runtime",
+        }
         row = tx.connection.execute(
             "SELECT state,evidence FROM outbox WHERE id='stop-one'"
         ).fetchone()
