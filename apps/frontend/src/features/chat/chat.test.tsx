@@ -35,7 +35,7 @@ const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
   attempt_id: `attempt-${job_id}`, attempt_number: 1, state_revision: 1, availability: "pending", input_digest: "a".repeat(64), external_job_id: null, owner_epoch: "test", artifact_ids: [],
 });
 const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
-const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => false, stop: async () => {}, retry: async () => false };
+const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => null, stop: async () => {}, retry: async () => null };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
 
 test("render-tick flood only bumps its own version once per refresh window", t => {
@@ -600,9 +600,9 @@ test("ChatPanel auto-selects single interrupted work without rendering a work se
 });
 
 test("new Queue submission releases only idle restart holds and uses the fresh project revision", async t => {
-  const idle = (code: NonNullable<ProjectSnapshot["execution"]>["hold_reason_code"], active_work: ProjectSnapshot["active_work"] = null) => {
+  const idle = (code: NonNullable<ProjectSnapshot["execution"]>["hold_reason_code"], active_work: ProjectSnapshot["active_work"] = null): ProjectSnapshot => {
     const current = snapshot("awaiting_resume", true);
-    return { ...current, active_work, execution: { ...current.execution!, hold_reason_code: code } };
+    return { ...current, event_sequence: 0, held_requests: [], active_work, execution: { ...current.execution!, hold_reason_code: code } };
   };
   const stored = new Map<string, string>();
   const storage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
@@ -615,11 +615,22 @@ test("new Queue submission releases only idle restart holds and uses the fresh p
   });
   const fresh = idle("awaiting_resume");
   fresh.project.state_revision = 7;
+  const held = (id: string) => ({ ...request(id, "2026-11-17T10:00:00Z", "Held prompt"), receipt: { ...receipt, state: "held" } }) as RequestRecord;
+  const submitted = held("submitted");
+  fresh.held_requests = [submitted];
+  const admitted = event(1, "request.accepted", submitted);
+  let delta = [admitted];
+  fresh.event_sequence = 1;
   const calls: string[] = [];
   let command: ResumeCommand | undefined;
-  const fakeApi = { call: async (method: string, options: { body?: ResumeCommand; idempotencyKey?: string }) => {
+  const fakeApi = { call: async (method: string, options: { body?: ResumeCommand; idempotencyKey?: string; query?: { after: number } }) => {
     calls.push(method);
     if (method === "getProjectSnapshot") return fresh;
+    if (method === "replayProjectEvents") {
+      const after = options.query!.after;
+      const events = delta.filter(e => e.sequence > after).slice(0, 1);
+      return { events, next_after: events.at(-1)?.sequence ?? after, last_available: delta.at(-1)?.sequence ?? 0 };
+    }
     if (method === "resumeProjectWork") {
       command = options.body!;
       assert.equal(options.idempotencyKey, command.operation_id);
@@ -628,26 +639,55 @@ test("new Queue submission releases only idle restart holds and uses the fresh p
     assert.equal(method, "getResumeOperation");
     return { state: "completed" };
   } } as unknown as ApiClient;
-  const afterSuccessfulQueue = async (before: ProjectSnapshot, resumableCount = 0, requests: RequestRecord[] = []) => {
-    if (shouldAutoReleaseIdleFence(before, "queue", false, resumableCount, requests)) {
-      await releaseIdleQueue(fakeApi, "project", async body => { await submitResume(fakeApi, "project", body); });
+  const afterSuccessfulQueue = async (before: ProjectSnapshot, resumableCount = 0, requests: RequestRecord[] = [], pendingResume: ResumeCommand | null = null) => {
+    if (shouldAutoReleaseIdleFence(before, "queue", false, resumableCount, requests, pendingResume)) {
+      await releaseIdleQueue(fakeApi, "project", submitted.request_id, before.event_sequence, [], async body => { await submitResume(fakeApi, "project", body); });
     }
   };
   await afterSuccessfulQueue(idle("queue_paused"));
   await afterSuccessfulQueue(idle("stop"));
   await afterSuccessfulQueue(idle("awaiting_resume", snapshot("stopped").active_work));
   await afterSuccessfulQueue(idle("awaiting_resume"), 1);
-  await afterSuccessfulQueue(idle("awaiting_resume"), 0, [{ ...request("held", "2026-11-17T10:00:00Z", "Held prompt"), receipt: { ...receipt, state: "held" } } as RequestRecord]);
+  await afterSuccessfulQueue(idle("awaiting_resume"), 0, [held("held")]);
+  await afterSuccessfulQueue({ ...idle("awaiting_resume"), held_requests: [held("held")] });
+  await afterSuccessfulQueue(idle(null));
   assert.deepEqual(calls, []);
   await afterSuccessfulQueue(idle("awaiting_resume"));
-  assert.deepEqual(calls, ["getProjectSnapshot", "resumeProjectWork", "getResumeOperation"]);
+  assert.deepEqual(calls, ["getProjectSnapshot", "replayProjectEvents", "resumeProjectWork", "getResumeOperation"]);
   assert.match(command!.operation_id, /^[0-9a-f-]{36}$/);
   assert.deepEqual(command, { schema_version: "1.0", operation_id: command!.operation_id, project_id: "project", mode: "release_held_queue", work_id: null, expected_revision: 7 });
   assert.equal(stored.size, 0);
   calls.length = 0;
+  await afterSuccessfulQueue(idle("awaiting_resume"), 0, [], command!);
+  assert.deepEqual(calls, []);
   fresh.active_work = snapshot("running").active_work;
   await afterSuccessfulQueue(idle("awaiting_resume"));
   assert.deepEqual(calls, ["getProjectSnapshot"]);
+  fresh.active_work = null;
+
+  for (const otherQueue of [[held("other-tab"), submitted], [held("other-tab")]]) {
+    calls.length = 0;
+    fresh.held_requests = otherQueue;
+    await afterSuccessfulQueue(idle("awaiting_resume"));
+    assert.deepEqual(calls, ["getProjectSnapshot"]);
+  }
+  fresh.held_requests = [submitted];
+
+  for (const stopEvent of [
+    event(2, "work.state_changed", { work_id: "old-work", project_id: "project", state: "stopped", state_revision: 4 }),
+    event(2, "request.accepted", request("stop-1", "2026-11-17T10:00:00Z", "", "stop")),
+    event(2, "request.state_changed", request("stop-1", "2026-11-17T10:00:00Z", "", "stop")),
+  ]) {
+    calls.length = 0;
+    delta = [admitted, stopEvent];
+    fresh.event_sequence = 2;
+    await afterSuccessfulQueue(idle("awaiting_resume"));
+    assert.deepEqual(calls, ["getProjectSnapshot", "replayProjectEvents", "replayProjectEvents"]);
+  }
+  calls.length = 0;
+  delta = [admitted]; // Incomplete replay must not imply that there was no intervening Stop.
+  await afterSuccessfulQueue(idle("awaiting_resume"));
+  assert.deepEqual(calls, ["getProjectSnapshot", "replayProjectEvents", "replayProjectEvents"]);
 });
 
 test("default Studio split layout starts Navigator and Assistant at maximum width", () => {

@@ -26,6 +26,7 @@ class RpcClient:
     def __init__(self, case, mutate):
         self.case, self.mutate = case, mutate
         self.messages = []
+        self.history_calls = []
 
     async def _send_message(self, message, *args, **kwargs):
         self.messages.append(copy.deepcopy(message))
@@ -124,13 +125,18 @@ def runtime(tmp_path, monkeypatch):
     client = RpcClient(None, mutate)
 
     async def events():
+        client.history_calls.append("get_events")
+        return []
+
+    async def raw_events():
+        client.history_calls.append("get_raw_events")
         return []
 
     session = SimpleNamespace(
         session_id=SESSION,
         rpc=SessionRpc(client, SESSION),
         get_events=events,
-        get_raw_events=events,
+        get_raw_events=raw_events,
         send=blocked,
     )
 
@@ -283,8 +289,11 @@ def test_settled_stop_reconciles_original_identity_then_releases_empty_queue(run
             assert copilot.state.control(tx)["fenced"]
             assert cold_stop.apply(copilot.state, tx, STOP, [], observation) is False
         count = len(client.messages)
+        history_before = client.history_calls.copy()
+        assert history_before == ["get_events", "get_raw_events"]
         await copilot.reconcile(PROJECT)
         assert all(m["method"] == "session.queue.pendingItems" for m in client.messages[count:])
+        assert client.history_calls == history_before
         copilot.state.cancel(
             OWNER,
             "held",
@@ -314,6 +323,114 @@ def test_settled_stop_reconciles_original_identity_then_releases_empty_queue(run
         copilot.services.gate.require(PROJECT)
         assert any(m["params"].get("paused") is False for m in client.messages)
         assert all(m["method"] in cold_stop.METHODS for m in client.messages)
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("same_process", [False, True])
+def test_cold_stop_accepts_abandoned_sends_only_from_an_earlier_process(runtime, same_process):
+    copilot, store, client = runtime
+    new_work, new_request, new_stop = "next-work", "next-request", "next-stop"
+    original_departure = copilot.native.departed_process.copy()
+
+    async def run():
+        with store.transaction() as tx:
+            copilot.state.request_state(tx, STOP, "completed")
+            save(
+                tx,
+                "copilot.stops",
+                STOP,
+                {**tx.require("copilot.stops", STOP), "phase": "confirmed"},
+            )
+            copilot.state.request_state(tx, REQUEST, "outcome_uncertain", native_message_id=None)
+            save(
+                tx, "copilot.sends", REQUEST, {"state": "outcome_uncertain", "session_id": SESSION}
+            )
+            tx.put(
+                "copilot.continuation_sends",
+                "older-continue",
+                {
+                    "operation_id": "older-continue",
+                    "state": "dispatching",
+                    "session_id": SESSION,
+                },
+            )
+        first = await copilot.reconcile(PROJECT)
+        assert not first["uncertain_request_ids"] and not first["uncertain_continuations"]
+        with store.transaction() as tx:
+            for namespace, identity in [
+                ("copilot.sends", REQUEST),
+                ("copilot.continuation_sends", "older-continue"),
+            ]:
+                abandoned = tx.require(namespace, identity)
+                assert cold_stop.proven_departed_abandonment(abandoned)
+                assert abandoned["departed_process"] == original_departure
+            assert tx.require("requests", REQUEST)["receipt"]["state"] == "outcome_uncertain"
+            previous = copilot.state.work_state(tx, WORK, "completed")
+            tx.put(
+                "work",
+                new_work,
+                {
+                    **previous,
+                    "work_id": new_work,
+                    "originating_request_id": new_request,
+                    "state": "awaiting_resume",
+                    "state_revision": 0,
+                },
+                schema="WorkRecord",
+            )
+            for source_id, target_id, status in [
+                (REQUEST, new_request, "acknowledged"),
+                (STOP, new_stop, "outcome_uncertain"),
+            ]:
+                record = tx.require("requests", source_id)
+                record["request_id"] = record["submission"]["request_id"] = record["receipt"][
+                    "request_id"
+                ] = target_id
+                record["receipt"].update(work_id=new_work, state=status, state_revision=0)
+                if source_id == STOP:
+                    record["submission"]["target_work_id"] = new_work
+                tx.put("requests", target_id, record, schema="RequestRecord")
+            tx.put("copilot.sends", new_request, {"state": "acknowledged", "session_id": SESSION})
+            tx.put(
+                "copilot.stops",
+                new_stop,
+                {
+                    "phase": "outcome_uncertain",
+                    "pause": "acknowledged",
+                    "abort": "acknowledged",
+                    "work_id": new_work,
+                },
+            )
+            tx.enqueue(new_stop, "copilot.stop", {"project_id": PROJECT, "request_id": new_stop})
+            tx.claim_intent(new_stop)
+
+        copilot.native.departed_process = (
+            {**original_departure, "observed_identity": "pid-was-reused"}
+            if same_process
+            else {**original_departure, "pid": 129, "start": "next-start"}
+        )
+        copilot.sessions.clear()
+        count = len(client.messages)
+        second = await copilot.reconcile(PROJECT)
+        with store.transaction(write=False) as tx:
+            assert tx.require("work", WORK)["state"] == "completed"
+            assert tx.require("requests", REQUEST)["receipt"]["state"] == "outcome_uncertain"
+            if same_process:
+                assert second["uncertain_stops"] == 1
+                assert tx.require("copilot.stops", new_stop)["phase"] == "outcome_uncertain"
+                assert tx.require("work", new_work)["state"] == "awaiting_resume"
+                assert all(
+                    m["method"] == "session.queue.pendingItems" for m in client.messages[count:]
+                )
+            else:
+                assert second["uncertain_stops"] == 0
+                assert tx.require("copilot.stops", new_stop)["phase"] == "confirmed"
+                assert tx.require("work", new_work)["state"] == "stopped"
+                assert (
+                    tx.require("requests", new_stop)["receipt"]["detail_code"]
+                    == "cold_settled_stop_confirmed"
+                )
 
     asyncio.run(run())
 

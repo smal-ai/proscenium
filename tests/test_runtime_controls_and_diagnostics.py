@@ -1127,7 +1127,7 @@ def test_pre_turn_failure_preserves_ack_and_recovers_legacy_ack_with_original_co
 
 @pytest.mark.parametrize("active", [True, False])
 def test_departed_native_invocations_and_unrecorded_sends_require_inactivity(runtime, active):
-    state, store, _, _ = runtime
+    state, store, _, project = runtime
     departed = dict(
         pid=19, start="start-19", observed_identity=None, parent_pid=9, parent_start="start-9"
     )
@@ -1135,9 +1135,15 @@ def test_departed_native_invocations_and_unrecorded_sends_require_inactivity(run
     set_work(store, "awaiting_resume")
     with store.transaction() as tx:
         state.fence(tx, "awaiting_resume")
-        tx.put("copilot.payloads", REQUEST, dict(context_id="context-one"))
-        state.request_state(tx, REQUEST, "outcome_uncertain", native_message_id=None)
+        tx.put(
+            "copilot.payloads",
+            REQUEST,
+            dict(context_id="context-one", attached_files=[{"path": "original.png"}]),
+        )
+        state.request_state(tx, REQUEST, "dispatching", native_message_id=None)
         tx.put("copilot.sends", REQUEST, dict(state="outcome_uncertain", session_id=SESSION))
+        tx.enqueue(REQUEST, "copilot.send", {})
+        tx.claim_intent(REQUEST)
         tx.put(
             "copilot.continuation_sends",
             "older",
@@ -1182,6 +1188,7 @@ def test_departed_native_invocations_and_unrecorded_sends_require_inactivity(run
         )
     evidence = asyncio.run(copilot.reconcile(PROJECT))
     assert checks == [SESSION]
+    assert evidence["inactivity_unproven"] is active
     with store.transaction(write=False) as tx:
         if active:
             assert evidence["live_invocations"] == 2
@@ -1191,11 +1198,22 @@ def test_departed_native_invocations_and_unrecorded_sends_require_inactivity(run
             return
         assert evidence["live_invocations"] == evidence["uncertain_continuations"] == 0
         assert evidence["uncertain_request_ids"] == []
+        for namespace, identity in [
+            ("copilot.sends", REQUEST),
+            ("copilot.continuation_sends", "older"),
+        ]:
+            abandoned = tx.require(namespace, identity)
+            assert abandoned["state"] == "abandoned_on_departure"
+            assert abandoned["departed_process"] == {**departed, "session_id": SESSION}
+            assert abandoned["history_matches"] == 0 and abandoned["at"]
+        original = tx.require("requests", REQUEST)
+        assert original["receipt"]["state"] == "outcome_uncertain"
+        assert original["receipt"]["detail_code"] == "awaiting_resume"
+        assert original["receipt"]["native_message_id"] is None
         assert (
-            tx.require("copilot.continuation_sends", "older")["state"] == "abandoned_on_departure"
+            tx.connection.execute("SELECT state FROM outbox WHERE id=?", (REQUEST,)).fetchone()[0]
+            == "outcome_uncertain"
         )
-        assert tx.require("copilot.sends", REQUEST)["state"] == "acknowledged"
-        assert tx.require("requests", REQUEST)["receipt"]["state"] == "acknowledged"
         assert tx.require("decisions", "permission")["state"] == "cancelled"
         for identity in ("tool", "child"):
             inv = tx.require("invocations", identity)
@@ -1212,11 +1230,20 @@ def test_departed_native_invocations_and_unrecorded_sends_require_inactivity(run
     admit_recovery(copilot, store, "continue", "continue_work")
     asyncio.run(copilot.resume(PROJECT, "continue"))
     assert len(sent) == 1 and checks == [SESSION]
+    [(prompt, kwargs)] = sent
+    assert prompt == f"{CONTINUATION_TEXT}\n\nOriginal request:\n{original['submission']['text']}"
+    assert kwargs["attachments"][0]["type"] == "extension_context"
+    assert kwargs["attachments"][1:] == [
+        {"type": "file", "path": f"{project['path']}/original.png"}
+    ]
     with store.transaction(write=False) as tx:
         assert tx.require("copilot.resumes", "continue")["state"] == "completed"
+        assert tx.require("requests", REQUEST)["receipt"]["state"] == "running"
+        assert tx.require("copilot.sends", REQUEST)["state"] == "abandoned_on_departure"
 
 
-def test_continue_reconciles_completed_awaiting_resume_turn_without_sending(runtime):
+@pytest.mark.parametrize("inactivity", ["proven", "active", "missing"])
+def test_continue_reconciles_completed_awaiting_resume_turn_without_sending(runtime, inactivity):
     state, store, gate, _ = runtime
     copilot, sent, checks = recovery_copilot(
         runtime,
@@ -1224,19 +1251,32 @@ def test_continue_reconciles_completed_awaiting_resume_turn_without_sending(runt
             event("complete", "session.task_complete"),
             event("idle", "session.idle"),
         ],
+        active=inactivity == "active",
     )
+    if inactivity == "missing":
+        del copilot.native.inactive
     set_work(store, "awaiting_resume")
     with store.transaction() as tx:
         state.fence(tx, "awaiting_resume")
         tx.put("copilot.sends", REQUEST, dict(state="acknowledged", session_id=SESSION))
     admit_recovery(copilot, store, "continue", "continue_work")
     asyncio.run(copilot.resume(PROJECT, "continue"))
-    assert sent == [] and checks == [SESSION]
+    assert sent == [] and checks == ([] if inactivity == "missing" else [SESSION])
     with store.transaction(write=False) as tx:
+        assert tx.get("copilot.continuation_sends", "continue", required=False) is None
+        if inactivity != "proven":
+            assert tx.require("work", WORK)["state"] == "awaiting_resume"
+            assert tx.require("requests", REQUEST)["receipt"]["state"] == "acknowledged"
+            operation = tx.require("copilot.resumes", "continue")
+            assert operation["state"] == "outcome_uncertain"
+            assert operation["detail_code"] == "attribution_unavailable"
+            assert state.control(tx)["fenced"]
+            with pytest.raises(DomainError):
+                gate.require(PROJECT)
+            return
         assert tx.require("work", WORK)["state"] == "completed"
         assert tx.require("requests", REQUEST)["receipt"]["state"] == "completed"
         assert tx.require("copilot.resumes", "continue")["state"] == "completed"
-        assert tx.get("copilot.continuation_sends", "continue", required=False) is None
         assert not state.control(tx)["fenced"] and state.control(tx)["queue_released"]
     gate.require(PROJECT)
 

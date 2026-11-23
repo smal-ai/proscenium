@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { verifyLayout } from "./layout-journey";
 import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
+import type { MessageSubmit, ResumeCommand } from "../../apps/frontend/src/api";
 
 test("hydration gates onboarding and starter intents never send or overwrite drafts", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
@@ -125,6 +126,59 @@ test("send mode is deliberate, stale Steer stays guarded, held cancellation and 
   expect(studio.resumePolls).toBeGreaterThan(1);
   studio.assertHermetic();
 });
+
+for (const intervening of ["none", "another Queue", "confirmed Stop"] as const) {
+  test(`idle restart Queue auto-release with ${intervening}`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: "awaiting_resume", queue_released: false };
+    studio.snapshot.project = { ...studio.snapshot.project, state_revision: 3 };
+    studio.resumeComplete = true;
+    const resumes: ResumeCommand[] = [];
+    let replayedAfterSubmission = false;
+    await studio.install({ savedLayout: true, routes: [
+      { method: "POST", path: `${base}/requests`, handler: route => {
+        const submission = route.request().postDataJSON() as MessageSubmit;
+        studio.submissions.push(submission);
+        const submitted = request(submission.request_id, "Explicit Queue", "held");
+        submitted.submission = submission;
+        const other = request("other-tab", "An earlier Queue", "held");
+        studio.snapshot.held_requests = intervening === "another Queue" ? [other, submitted] : [submitted];
+        studio.requests = [...studio.snapshot.held_requests];
+        studio.snapshot.project.state_revision = 7;
+        if (intervening === "confirmed Stop") studio.emit("work.state_changed", work("stopped"));
+        studio.emit("request.accepted", submitted);
+        return route.fulfill({ status: 202, json: submitted.receipt });
+      } },
+      { path: `${base}/events`, handler: route => {
+        const query = new URL(route.request().url()).searchParams;
+        const after = Number(query.get("after") ?? 0);
+        if (studio.submissions.length) replayedAfterSubmission = true;
+        const events = studio.events.filter(event => event.sequence > after).slice(0, Number(query.get("limit") ?? 100));
+        return route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: studio.events.length } });
+      } },
+      { method: "POST", path: `${base}/resume`, handler: route => {
+        resumes.push(route.request().postDataJSON() as ResumeCommand);
+        return route.fulfill({ status: 202, json: { state: "accepted" } });
+      } },
+    ] });
+    await studio.open(); await studio.ready();
+    const input = page.getByRole("textbox", { name: "Message Copilot" });
+    const queue = page.getByRole("button", { name: "Queue message" });
+    await input.fill("Explicit Queue"); await queue.click();
+    await expect(input).toHaveValue("");
+    await input.fill("Not submitted");
+    await expect(queue).toBeEnabled(); // The first submission and its automatic recovery check finished.
+    expect(studio.submissions).toHaveLength(1);
+    if (intervening === "none") {
+      expect(resumes).toHaveLength(1);
+      expect(resumes[0]).toMatchObject({ mode: "release_held_queue", work_id: null, expected_revision: 7 });
+    } else {
+      expect(resumes).toEqual([]);
+    }
+    if (intervening !== "another Queue") expect(replayedAfterSubmission).toBe(true);
+    studio.assertHermetic();
+  });
+}
 
 test("Resume stays visible above the Composer while scrolling a long conversation", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);

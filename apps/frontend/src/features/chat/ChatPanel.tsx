@@ -32,16 +32,37 @@ export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "que
     || (!execution?.hold_reason_code && Boolean(execution?.hold_reason) && !["running", "awaiting_user"].includes(snapshot.active_work?.state ?? ""));
 }
 
-export function shouldAutoReleaseIdleFence(snapshot: ProjectSnapshot | null, mode: "queue" | "steer", uncertainStop: boolean, resumableCount: number, requests: RequestRecord[]): boolean {
+export function shouldAutoReleaseIdleFence(snapshot: ProjectSnapshot | null, mode: "queue" | "steer", uncertainStop: boolean, resumableCount: number, requests: RequestRecord[], pendingResume: ResumeCommand | null): boolean {
   const work = snapshot?.active_work;
   return mode === "queue" && !uncertainStop && (!work || work.state === "completed") && resumableCount === 0
-    && !requests.some(r => r.receipt.state === "held") && Boolean(snapshot?.execution?.fenced)
-    && (snapshot?.execution?.hold_reason_code ?? "awaiting_resume") === "awaiting_resume";
+    && !pendingResume && !snapshot?.held_requests?.length && !requests.some(r => r.receipt.state === "held")
+    && snapshot?.execution?.fenced === true && snapshot.execution.hold_reason_code === "awaiting_resume";
 }
 
-export async function releaseIdleQueue(api: ApiClient, projectId: string, resume: (body: ResumeCommand) => Promise<void>) {
-  const latest = await api.call("getProjectSnapshot", { path: { project_id: projectId } });
-  if (latest.execution?.fenced && !latest.active_work) await resume(resumeCommand(latest, [], "release_held_queue", "", id()));
+export async function releaseIdleQueue(api: ApiClient, projectId: string, requestId: string, beforeSequence: number, events: Event[], resume: (body: ResumeCommand) => Promise<void>) {
+  const path = { project_id: projectId };
+  const latest = await api.call("getProjectSnapshot", { path });
+  if (latest.execution?.fenced !== true || latest.execution.hold_reason_code !== "awaiting_resume" || latest.active_work !== null
+    || latest.held_requests.length !== 1 || latest.held_requests[0].request_id !== requestId || latest.held_requests[0].receipt.state !== "held") return;
+
+  const deltaEvents: Event[] = [];
+  let cursor = beforeSequence;
+  while (cursor < latest.event_sequence) {
+    const page = await api.call("replayProjectEvents", { path, query: { after: cursor, limit: 100 } });
+    // A gap or a newer journal watermark invalidates the snapshot used to release the queue.
+    if (page.next_after <= cursor || page.last_available > latest.event_sequence) return;
+    for (const event of page.events) {
+      if (event.sequence !== cursor + 1 || event.sequence > latest.event_sequence) return;
+      deltaEvents.push(event);
+      cursor = event.sequence;
+    }
+    if (page.next_after !== cursor) return;
+  }
+  if (cursor !== latest.event_sequence || resumableWork(latest, [...events, ...deltaEvents]).length
+    || deltaEvents.some(event => (event.event_type === "request.accepted" || event.event_type === "request.state_changed")
+      && (event.payload as unknown as RequestRecord)?.submission?.type === "stop")
+    || readPrivate<ResumeCommand>(`command.resume.${projectId}`)) return;
+  await resume(resumeCommand(latest, [], "release_held_queue", "", id()));
 }
 
 export function submitResume(api: ApiClient, projectId: string, body: ResumeCommand) {
@@ -198,7 +219,8 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     preparingLatch.current = true; setPreparing(true); setError("");
     const text = draft;
     const submittedMode = mode;
-    const autoReleaseIdleFence = shouldAutoReleaseIdleFence(snapshot, submittedMode, uncertainStop, resumable.length, requests);
+    const autoReleaseIdleFence = shouldAutoReleaseIdleFence(snapshot, submittedMode, uncertainStop, resumable.length, requests, pendingResume);
+    const beforeSequence = snapshot?.event_sequence ?? 0;
     const submittedWorkId = targetWork;
     const submittedTargetMode = draftTarget;
     const capturedSelection = structuredClone(selection);
@@ -209,11 +231,11 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     try {
       const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments, items: catalogue }, prepareContext);
       if (submittedMode === "steer" && steerWorkId(snapshotRef.current) !== submittedWorkId) throw new Error("Work is no longer steerable. Your Steer mode and draft are retained. Switch to Queue deliberately.");
-      const ok = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId);
-      if (ok) {
+      const submitted = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId);
+      if (submitted) {
         if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
         setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
-        if (autoReleaseIdleFence) await releaseIdleQueue(api, projectId, resume);
+        if (autoReleaseIdleFence) await releaseIdleQueue(api, projectId, submitted.request_id, beforeSequence, events, resume);
       }
     } catch (e) { setError(describeError(e)); }
     finally { preparingLatch.current = false; setPreparing(false); }
