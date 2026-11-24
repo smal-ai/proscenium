@@ -17,7 +17,7 @@ import { canNavigateHistory, promptHistory, stepHistory, type HistoryCursor } fr
 import { busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
 import { SendControl } from "./SendControl";
 import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
-import { steerWorkId, stopWorkId } from "./controls";
+import { isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import "./chat.css";
 
 export { AssistantStatus } from "./AssistantStatus";
@@ -300,7 +300,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
         if (e.nativeEvent.isComposing) return;
         if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || ((e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) && ["ArrowUp", "ArrowDown"].includes(e.key))) historyCursor.current = null;
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); void send(); return; }
+        if (isSubmitEnter(e)) { e.preventDefault(); void send(); return; }
         if (canNavigateHistory({ key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, shiftKey: e.shiftKey, isComposing: e.nativeEvent.isComposing }, draft, e.currentTarget.selectionStart, e.currentTarget.selectionEnd, historyCursor.current)) {
           const next = stepHistory(history, historyCursor.current, draft, e.key === "ArrowUp" ? "older" : "newer");
           if (next.text !== draft || next.cursor) { e.preventDefault(); historyCursor.current = next.cursor; changeDraft(next.text); caret.current = { start: next.text.length, end: next.text.length }; focusMessage(); }
@@ -322,7 +322,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       <div className="composer-actions"><label className="attach-button" title="Attach PNG, JPEG or WebP"><Paperclip size={15} /><span className="sr-only">Attach images</span><input aria-label="Attach images" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e => { const next = [...(e.target.files ?? [])].map(file => ({ uploadId: id(), name: file.name, file, artifact: null, busy: true, error: "" })); setUploads(old => [...old, ...next]); next.forEach(u => void upload(u)); e.target.value = ""; }} /></label>
         <button className="stop" disabled={!canStopWorkId || uncertainStop || composer.stopping || !!composer.pendingStop || work?.state === "stop_requested"} onClick={() => { if (canStopWorkId && stopWorkId(snapshotRef.current) === canStopWorkId) void composer.stop(canStopWorkId); }}><Square size={11} fill="currentColor" />{composer.stopping || work?.state === "stop_requested" ? "Stop requested" : "Stop"}</button>
         <SendControl mode={mode} onMode={setMode} disabled={composerPanel !== "message" || !draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || pendingExisting || (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId))} onSend={() => void send()} />
-      </div><div className="composer-footer"><small className="composer-hint">Ctrl+Enter to {mode} · Context is captured on submit</small><AssistantStatus {...statusProps} /></div>
+      </div><div className="composer-footer"><small className="composer-hint">Enter to {mode} · Shift+Enter for newline · Context is captured on submit</small><AssistantStatus {...statusProps} /></div>
     </div>
   </div>;
 }

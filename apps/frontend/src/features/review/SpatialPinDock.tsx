@@ -4,6 +4,7 @@ import type { AnnotationSave, AnnotationSnapshot, VersionRecord } from "../../ap
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
 import { shortVersionLabel } from "../catalogue/catalogueHelpers";
+import { isSubmitEnter } from "../chat/controls";
 import { annotationContext } from "./context";
 import { mediaUrl, stableJson } from "./media";
 import { classifyDraftDiscard, discardDraftAtomically, flushDraft, formatDraftStateBadge, saveDraft, saveDraftEdit, waitForDraftEdits, VECTOR_MASK, type DiscardMode, type Draft } from "./outbox";
@@ -657,6 +658,13 @@ export function SpatialPinDock({
             disabled={busy}
             value={annotation.text}
             onChange={e => controller.editText(e.target.value)}
+            onKeyDown={e => {
+              if (!isSubmitEnter(e)) return;
+              e.preventDefault();
+              if (busyClose) return;
+              if (canQueueNormal || canQueueFallback) void controller.queue();
+              else if (!proxyUnavailableReason && draft.state !== "saving" && draft.state !== "conflict") void controller.save();
+            }}
           />
         </div>
         <div className="review-bar review-transport-bar">

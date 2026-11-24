@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { Event, MessageSubmit } from "../../apps/frontend/src/api";
+import type { Decision, DecisionAnswer, Event, MessageSubmit, ReviewRequest } from "../../apps/frontend/src/api";
 import { verifyLayout } from "./layout-journey";
 import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
 
@@ -97,6 +97,98 @@ test("Navigator asset-first creation and retained verified versus legacy PNGs", 
   await expect(page.getByRole("button", { name: "Choose request target and references" })).toContainText("New asset");
   expect(studio.submissions).toEqual([]); studio.assertHermetic();
 });
+
+test("Composer Enter submits Queue and Steer but respects empty and unselected targets", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work();
+  studio.snapshot.execution!.can_steer_work_id = "work";
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  await input.press("Enter");
+  await expect(input).toHaveValue("");
+  expect(studio.submissions).toEqual([]);
+  await input.fill("First line");
+  await input.press("End"); await input.press("Shift+Enter");
+  await expect(input).toHaveValue("First line\n");
+  expect(studio.submissions).toEqual([]);
+  await input.pressSequentially("Second line"); await input.press("Enter");
+  await expect(input).toHaveValue("");
+  expect(studio.submissions).toMatchObject([{ type: "queue", text: "First line\nSecond line" }]);
+  await page.getByRole("button", { name: "Select send mode" }).click();
+  await page.getByRole("menuitemradio", { name: /Steer/ }).click();
+  await input.fill("Steer the active turn"); await input.press("Enter");
+  await expect(input).toHaveValue("Steer the active turn");
+  expect(studio.submissions).toHaveLength(1);
+  await page.getByLabel("Steer active work target").selectOption("work");
+  await input.press("Enter");
+  await expect(input).toHaveValue("");
+  expect(studio.submissions[1]).toMatchObject({ type: "steer", text: "Steer the active turn", target_work_id: "work" });
+  studio.assertHermetic();
+});
+
+function questionDecision(): Decision {
+  return { schema_version: "1.0", project_id: projectId, decision_id: "question", work_id: "work", kind: "user_input", state: "pending", state_revision: 1, fingerprint: "b".repeat(64), prompt: "Which lighting direction?", options: [] };
+}
+
+for (const critic of [false, true]) {
+  test(`Enter answers a ${critic ? "Critic-linked" : "Copilot"} question with multiline text`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.active_work = work("awaiting_user");
+    studio.snapshot.pending_decisions = [questionDecision()];
+    if (critic) studio.reviews.push({
+      schema_version: "1.0", project_id: projectId,
+      ticket: { schema_version: "1.0", review_id: "linked-review", job_id: "job-linked", status: "ready", title: "Lighting review", created_at: "2026-11-24T08:00:00Z", revision: 1, human_review_state: "pending", awaiting_human: true, finding_count: 1, unreviewed_count: 1, question: "Which lighting direction?" },
+      criteria: "Assess lighting", targets: [], telemetry_artifact_ids: [], findings: [], diagnostics: null,
+    });
+    const answers: DecisionAnswer[] = [];
+    await studio.install({ savedLayout: true, routes: [{ method: "POST", path: `${base}/decisions/question/answer`, handler: async route => {
+      const answer = route.request().postDataJSON() as DecisionAnswer;
+      answers.push(answer);
+      studio.snapshot.pending_decisions = [];
+      await route.fulfill({ json: { schema_version: "1.0", operation_id: answer.operation_id, resource_id: "question", state: "updated", state_revision: 2, replayed: false } });
+    } }] });
+    await studio.open(); await studio.ready();
+    if (critic) {
+      await page.getByRole("button", { name: "Critic", exact: true }).click();
+      await page.getByRole("listitem").filter({ hasText: "Lighting review" }).click();
+    }
+    const input = page.getByRole("textbox", { name: critic ? "Reply to Copilot question" : "Decision answer" });
+    await input.press("Enter");
+    await expect(input).toHaveValue("");
+    await input.fill("Keep the rim light");
+    await input.press("End"); await input.press("Shift+Enter");
+    await expect(input).toHaveValue("Keep the rim light\n");
+    expect(answers).toEqual([]);
+    await input.pressSequentially("Dim the fill"); await input.press("Enter");
+    await expect.poll(() => answers).toMatchObject([{ action: "answer", answer: "Keep the rim light\nDim the fill" }]);
+    studio.assertHermetic();
+  });
+}
+
+for (const submitFrom of ["Review criteria", "Review name"]) {
+  test(`Enter in ${submitFrom} submits a Critic review with multiline criteria`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
+    await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+    await page.getByRole("button", { name: "Critic", exact: true }).click();
+    const criteria = page.getByRole("textbox", { name: "Review criteria" });
+    const name = page.getByRole("textbox", { name: "Review name" });
+    const submit = page.getByRole("button", { name: "Request visual review" });
+    await name.fill("Surface review"); await name.press("Enter");
+    expect(studio.reviews).toEqual([]);
+    await criteria.fill("Assess the texture");
+    await criteria.press("End"); await criteria.press("Shift+Enter");
+    await expect(criteria).toHaveValue("Assess the texture\n");
+    expect(studio.reviews).toEqual([]);
+    await criteria.pressSequentially("Check the rim lighting");
+    await expect(submit).toBeEnabled();
+    const submitted = page.waitForRequest(request => request.method() === "POST" && new URL(request.url()).pathname === `${base}/reviews`);
+    await page.getByRole("textbox", { name: submitFrom }).press("Enter");
+    expect((await submitted).postDataJSON() as ReviewRequest).toMatchObject({ title: "Surface review", criteria: "Assess the texture\nCheck the rim lighting" });
+    await expect.poll(() => studio.reviews.length).toBe(1);
+    studio.assertHermetic();
+  });
+}
 
 test("send mode is deliberate, stale Steer stays guarded, held cancellation and Resume polling", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!); studio.snapshot.active_work = work(); studio.snapshot.execution!.can_steer_work_id = "work";
