@@ -108,6 +108,15 @@ test("Composer Enter submits Queue and Steer but respects empty and unselected t
   await expect(input).toHaveValue("");
   expect(studio.submissions).toEqual([]);
   await input.fill("First line");
+  const imePrevented = await input.evaluate(el => {
+    const key = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+    Object.defineProperty(key, "keyCode", { value: 229 });
+    el.dispatchEvent(key);
+    return key.defaultPrevented;
+  });
+  expect(imePrevented).toBe(false);
+  await expect(input).toHaveValue("First line");
+  expect(studio.submissions).toEqual([]);
   await input.press("End"); await input.press("Shift+Enter");
   await expect(input).toHaveValue("First line\n");
   expect(studio.submissions).toEqual([]);
@@ -144,6 +153,10 @@ for (const critic of [false, true]) {
     await studio.install({ savedLayout: true, routes: [{ method: "POST", path: `${base}/decisions/question/answer`, handler: async route => {
       const answer = route.request().postDataJSON() as DecisionAnswer;
       answers.push(answer);
+      if (!critic && answers.length === 1) {
+        await route.fulfill({ status: 500, json: { schema_version: "1.0", error: { code: "fixture_error", message: "Temporary answer failure" } } });
+        return;
+      }
       studio.snapshot.pending_decisions = [];
       await route.fulfill({ json: { schema_version: "1.0", operation_id: answer.operation_id, resource_id: "question", state: "updated", state_revision: 2, replayed: false } });
     } }] });
@@ -161,6 +174,23 @@ for (const critic of [false, true]) {
     expect(answers).toEqual([]);
     await input.pressSequentially("Dim the fill"); await input.press("Enter");
     await expect.poll(() => answers).toMatchObject([{ action: "answer", answer: "Keep the rim light\nDim the fill" }]);
+    if (!critic) {
+      const card = page.locator(".decision-card");
+      await expect(card.getByRole("alert")).toContainText("Temporary answer failure");
+      await expect(card.getByRole("button", { name: "Send answer" })).toBeEnabled();
+      const repeatPrevented = await input.evaluate(el => {
+        const key = new KeyboardEvent("keydown", { key: "Enter", repeat: true, bubbles: true, cancelable: true });
+        el.dispatchEvent(key);
+        return key.defaultPrevented;
+      });
+      expect(repeatPrevented).toBe(true);
+      await expect(input).toHaveValue("Keep the rim light\nDim the fill");
+      await expect(card.getByRole("button", { name: "Send answer" })).toBeEnabled();
+      expect(answers).toHaveLength(1);
+      await input.press("Enter");
+      await expect.poll(() => answers.length).toBe(2);
+      expect(answers[1]).toEqual(answers[0]);
+    }
     studio.assertHermetic();
   });
 }

@@ -18,7 +18,7 @@ import type {
 import { describeError, durableCommand, id, readPrivate, writePrivate } from "../../app/storage";
 import { emptySelection, type CriticSurfaceProps } from "../../api/studio";
 import { versionRequestTarget } from "../chat/target";
-import { isSubmitEnter } from "../chat/controls";
+import { handleSubmitEnter } from "../chat/controls";
 import { cleanTargetRole } from "./context";
 import { mediaUrl } from "./media";
 import { allPages } from "./records";
@@ -247,10 +247,9 @@ export function CriticPanel({
   }
 
   function submitReviewOnEnter(e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    if (isSubmitEnter(e)) {
-      e.preventDefault();
+    handleSubmitEnter(e, () => {
       if (!busy && (pendingRequest || (selection.target && criteria.trim()))) void requestReview();
-    }
+    });
   }
 
   async function requestReview() {
@@ -630,12 +629,9 @@ export function CriticPanel({
                     value={decisionAnswer}
                     onChange={e => setDecisionAnswer(e.target.value)}
                     placeholder="Answer Copilot directly…"
-                    onKeyDown={e => {
-                      if (isSubmitEnter(e)) {
-                        e.preventDefault();
-                        if (!busy && decisionAnswer.trim()) void answerLinkedDecision();
-                      }
-                    }}
+                    onKeyDown={e => handleSubmitEnter(e, () => {
+                      if (!busy && decisionAnswer.trim()) void answerLinkedDecision();
+                    })}
                   />
                 </label>
                 <div className="button-row">

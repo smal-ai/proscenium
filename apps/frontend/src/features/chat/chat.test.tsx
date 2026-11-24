@@ -16,7 +16,7 @@ import { compareConversationEntries, Conversation } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
 import { awaitResume, isIdleAutoReleaseReady, resumableWork } from "./resume";
-import { isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
+import { handleSubmitEnter, isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
 import { JobList, jobsBadgeState } from "./ComposerPanel";
@@ -44,8 +44,22 @@ test("submit Enter accepts plain and legacy shortcuts but leaves multiline editi
     assert.equal(isSubmitEnter({ ...enter, ...overrides }), true);
   }
   for (const overrides of [{ shiftKey: true }, { altKey: true }, { ctrlKey: true, shiftKey: true },
-    { key: "Space" }, { isComposing: true }, { nativeEvent: { isComposing: true }, isComposing: false }]) {
+    { key: "Space" }, { isComposing: true }, { nativeEvent: { isComposing: true }, isComposing: false },
+    { nativeEvent: { isComposing: false, keyCode: 229 } }, { keyCode: 229 }]) {
     assert.equal(isSubmitEnter({ ...enter, ...overrides }), false);
+  }
+});
+
+test("submit key handling consumes repeats without dispatch and preserves IME confirmation", () => {
+  const enter = { key: "Enter", shiftKey: false, altKey: false, ctrlKey: false, metaKey: false };
+  for (const [overrides, handled, expected] of [
+    [{ repeat: true }, true, ["preventDefault"]],
+    [{ keyCode: 229 }, false, []],
+    [{ repeat: false }, true, ["preventDefault", "action"]],
+  ] as const) {
+    const calls: string[] = [];
+    assert.equal(handleSubmitEnter({ ...enter, ...overrides, preventDefault: () => calls.push("preventDefault") }, () => calls.push("action")), handled);
+    assert.deepEqual(calls, expected);
   }
 });
 

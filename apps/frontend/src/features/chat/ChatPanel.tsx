@@ -17,7 +17,7 @@ import { canNavigateHistory, promptHistory, stepHistory, type HistoryCursor } fr
 import { busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
 import { SendControl } from "./SendControl";
 import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
-import { isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
+import { handleSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import "./chat.css";
 
 export { AssistantStatus } from "./AssistantStatus";
@@ -298,9 +298,9 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
-        if (e.nativeEvent.isComposing) return;
+        if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
         if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || ((e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) && ["ArrowUp", "ArrowDown"].includes(e.key))) historyCursor.current = null;
-        if (isSubmitEnter(e)) { e.preventDefault(); void send(); return; }
+        if (handleSubmitEnter(e, () => { void send(); })) return;
         if (canNavigateHistory({ key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, shiftKey: e.shiftKey, isComposing: e.nativeEvent.isComposing }, draft, e.currentTarget.selectionStart, e.currentTarget.selectionEnd, historyCursor.current)) {
           const next = stepHistory(history, historyCursor.current, draft, e.key === "ArrowUp" ? "older" : "newer");
           if (next.text !== draft || next.cursor) { e.preventDefault(); historyCursor.current = next.cursor; changeDraft(next.text); caret.current = { start: next.text.length, end: next.text.length }; focusMessage(); }
