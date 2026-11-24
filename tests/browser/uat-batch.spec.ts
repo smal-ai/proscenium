@@ -284,6 +284,39 @@ test("middle backfill above the hydration watermark delivers request and publica
   } finally { older.release(); }
 });
 
+test("middle-wave work still becomes active when a later project event advances the cursor", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const project = { ...studio.snapshot.project, state_revision: 10 };
+  studio.events = longHistory(750).map(event => {
+    if (event.sequence === 220) return { ...event, event_type: "work.state_changed", payload: work("running", 1) } as Event;
+    if (event.sequence === 600) return { ...event, event_type: "project.state_changed", payload: project } as Event;
+    if (event.event_type === "work.state_changed") return { ...event, event_type: "assistant.completed", payload: { message_id: `reply-${event.sequence}`, text: `Assistant reply ${event.sequence}`, native_agent_id: null } } as Event;
+    return event;
+  });
+  let snapshots = 0;
+  const older = deferred();
+  await studio.install({ savedLayout: true, routes: [
+    { path: `${base}/snapshot`, handler: route => ++snapshots === 1 ? route.fulfill({ json: studio.snapshot })
+      : route.fulfill({ status: 500, json: { error: { code: "fixture_error", message: "Snapshot unavailable" } } }) },
+    { path: `${base}/events`, handler: async route => {
+      const query = new URL(route.request().url()).searchParams;
+      const after = Number(query.get("after")), limit = Number(query.get("limit"));
+      if (after >= 100 && after < 350) await older.promise;
+      const events = studio.events.slice(after, after + limit);
+      await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: 750 } });
+    } },
+  ] });
+  try {
+    await studio.open(); await studio.ready();
+    await expect(page.getByText("Assistant reply 750", { exact: true })).toBeVisible();
+    await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+    await expect.poll(() => snapshots).toBeGreaterThanOrEqual(3);
+    older.release();
+    await expect(page.locator(".copilot-identity small")).toHaveText("running");
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
+
 for (const persistent of [false, true]) {
   test(`replacement watermark expiry ${persistent ? "fails visibly after a bounded retry" : "retries with fresh projections"}`, async ({ page, baseURL }) => {
     const studio = new StudioFixture(page, baseURL!);
@@ -385,15 +418,17 @@ test("journal resync replaces older projections with a lower watermark", async (
   studio.assertHermetic();
 });
 
-for (const status of [500, 410]) {
-  test(`older backfill recovers after HTTP ${status}`, async ({ page, baseURL }) => {
+for (const [status, refreshFails] of [[500, false], [500, true], [410, false]] as const) {
+  test(`older backfill recovers after HTTP ${status}${refreshFails ? " without clearing an identical snapshot error" : ""}`, async ({ page, baseURL }) => {
     const studio = new StudioFixture(page, baseURL!);
     studio.snapshot.event_sequence = 750;
     studio.events = longHistory(750);
     let failed = false;
     let oldestReads = 0;
     const older = deferred();
-    await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+    const failure = { schema_version: "1.0", error: { code: status === 410 ? "cursor_expired" : "fixture_error", message: "Temporary server failure" } };
+    await studio.install({ savedLayout: true, routes: [{ path: `${base}/snapshot`, handler: route => refreshFails && failed
+      ? route.fulfill({ status: 500, json: failure }) : route.fulfill({ json: studio.snapshot }) }, { path: `${base}/events`, handler: async route => {
       const query = new URL(route.request().url()).searchParams;
       const after = Number(query.get("after"));
       const limit = Number(query.get("limit"));
@@ -402,7 +437,7 @@ for (const status of [500, 410]) {
         if (!failed) {
           await older.promise;
           failed = true;
-          return route.fulfill({ status, json: { schema_version: "1.0", error: { code: status === 410 ? "cursor_expired" : "fixture_error", message: "Older history unavailable" } } });
+          return route.fulfill({ status, json: failure });
         }
       }
       const events = studio.events.slice(after, after + limit);
@@ -413,11 +448,15 @@ for (const status of [500, 410]) {
       await expect(page.getByText("Assistant reply 750", { exact: true })).toBeVisible();
       older.release();
       if (status === 500) {
-        await expect(page.getByRole("alert")).toContainText("Older history unavailable");
+        await expect(page.getByRole("alert")).toContainText("Temporary server failure");
         await page.getByRole("button", { name: "Refresh project metadata" }).click();
       }
       await expect(page.getByText("Assistant reply 2", { exact: true })).toBeAttached();
-      await expect(page.getByRole("alert").filter({ hasText: "Older history unavailable" })).toHaveCount(0);
+      await expect(page.getByText("Assistant reply 750", { exact: true })).toBeAttached();
+      await expect(page.locator(".assistant-message")).toHaveCount(740); // 750 events, including 10 work transitions.
+      const alert = page.getByRole("alert").filter({ hasText: "Temporary server failure" });
+      if (refreshFails) await expect(alert).toBeVisible();
+      else await expect(alert).toHaveCount(0);
       expect(oldestReads).toBe(2);
       expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(2);
       studio.assertHermetic();

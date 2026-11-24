@@ -212,6 +212,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const [hydrated, setHydrated] = useState(false);
   const [connection, setConnection] = useState("Disconnected");
   const [error, setError] = useState("");
+  const [backfillError, setBackfillError] = useState("");
   const [revision, setRevision] = useState(0);
   const [catalogueRevision, setCatalogueRevision] = useState(0);
   const [baseRevision, setBaseRevision] = useState(0);
@@ -221,6 +222,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   useEffect(() => {
     setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]); setEvents([]); setHydrated(false); setError("");
     setVersionRevisions({});
+    setBackfillError("");
     if (!projectId) { setConnection("No active project"); return; }
     let disposed = false;
     let socket: WebSocket | undefined;
@@ -228,11 +230,12 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     let cursor = 0;
     let loadEpoch = 0;
     let hydratedWatermark = 0;
+    let latestWorkSequence = 0;
+    let authoritativeSnapshotSequence = 0;
     let hydrateEpoch = 0;
     let appliedHydrateEpoch = 0;
     let replaying: { epoch: number; promise: Promise<void> } | null = null;
     let pendingBackfill: { end: number; floor: number; liveAbove: number } | null = null;
-    let backfillErrorText: string | null = null;
     let backfilling: { epoch: number; promise: Promise<void> } | null = null;
     let failedBackfillEpoch: number | null = null;
     let resyncing: Promise<void> | null = null;
@@ -301,6 +304,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       const [s, r, i, j] = results;
       if (s.status === "fulfilled") {
         hydratedWatermark = s.value.event_sequence;
+        authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, s.value.event_sequence);
         if (s.value.active_work) {
           const prev = knownWork.get(s.value.active_work.work_id);
           if (!prev || s.value.active_work.state_revision >= prev.state_revision) knownWork.set(s.value.active_work.work_id, s.value.active_work);
@@ -367,7 +371,10 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     function refreshSnapshot() {
       const myEpoch = loadEpoch;
       void api.call("getProjectSnapshot", { path }).then(fresh => {
-        if (currentLoad(myEpoch)) setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
+        if (currentLoad(myEpoch)) {
+          authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, fresh.event_sequence);
+          setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
+        }
       }).catch(() => { /* Event state remains authoritative offline. */ });
     }
     function apply(event: Event) {
@@ -385,15 +392,18 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         const work = event.payload as unknown as WorkRecord;
         const prevWork = knownWork.get(work.work_id);
         if (!prevWork || work.state_revision >= prevWork.state_revision) knownWork.set(work.work_id, work);
-        setSnapshot(s => {
-          if (!s || (backfilled && s.event_sequence > event.sequence)) return s;
-          if (s.active_work && s.active_work.work_id === work.work_id && work.state_revision < s.active_work.state_revision) return s;
-          return {
-            ...s,
-            event_sequence: Math.max(s.event_sequence, event.sequence),
-            active_work: TERMINAL_WORK.has(work.state) ? (s.active_work?.work_id === work.work_id ? null : s.active_work) : work,
-          };
-        });
+        if (event.sequence >= latestWorkSequence && (!backfilled || event.sequence > authoritativeSnapshotSequence)) {
+          latestWorkSequence = event.sequence;
+          setSnapshot(s => {
+            if (!s) return s;
+            if (s.active_work && s.active_work.work_id === work.work_id && work.state_revision < s.active_work.state_revision) return s;
+            return {
+              ...s,
+              event_sequence: Math.max(s.event_sequence, event.sequence),
+              active_work: TERMINAL_WORK.has(work.state) ? (s.active_work?.work_id === work.work_id ? null : s.active_work) : work,
+            };
+          });
+        }
         refreshSnapshot();
       }
       if (event.event_type === "project.state_changed") {
@@ -502,17 +512,16 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
           recordWave(wave.incoming, liveAbove, true);
           publishEvents();
           pendingBackfill = wave.next > floor ? { end: wave.next, floor, liveAbove } : null;
-          if (pendingBackfill === null && backfillErrorText !== null) {
-            const cleared = backfillErrorText;
-            backfillErrorText = null;
-            setError(prev => prev === cleared ? "" : prev);
-          }
+          if (pendingBackfill === null) setBackfillError("");
         }
       })().catch(async e => {
         if (!currentLoad(myEpoch)) return;
         failedBackfillEpoch = myEpoch;
         if (expired(e) && recoverExpiry) await resync().catch(report);
-        else { backfillErrorText = describeError(e); report(e); }
+        else {
+          setBackfillError(describeError(e));
+          if (e instanceof ApiError && e.status === 401) onUnauthorised();
+        }
       }).finally(() => {
         if (backfilling?.promise === promise) backfilling = null;
       });
@@ -554,7 +563,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         ++loadEpoch;
         versionRefresh.cancel();
         hydratedWatermark = 0;
-        pendingBackfill = null; backfilling = null; backfillErrorText = null;
+        latestWorkSequence = 0; authoritativeSnapshotSequence = 0;
+        pendingBackfill = null; backfilling = null; setBackfillError("");
         rememberCursor(0); journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); decisionSequences.clear(); receiptArtifacts.clear(); setEvents([]);
         setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]);
         setHydrated(false); setError(""); setVersionRevisions({});
@@ -633,7 +643,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     }
     const firstEpoch = loadEpoch;
     void hydrate().then(() => initialLoad(firstEpoch)).catch(handleReplayError).finally(connect);
-    return () => { disposed = true; loadEpoch++; pendingBackfill = null; backfilling = null; backfillErrorText = null; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
+    return () => { disposed = true; loadEpoch++; pendingBackfill = null; backfilling = null; latestWorkSequence = 0; authoritativeSnapshotSequence = 0; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
   }, [api, projectId, onUnauthorised]);
-  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error, revision, catalogueRevision, baseRevision, versionRevisions, refresh };
+  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error: error || backfillError, revision, catalogueRevision, baseRevision, versionRevisions, refresh };
 }
