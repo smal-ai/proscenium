@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import type { MessageSubmit } from "../../apps/frontend/src/api";
 import { verifyLayout } from "./layout-journey";
 import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
 
@@ -108,6 +109,7 @@ test("send mode is deliberate, stale Steer stays guarded, held cancellation and 
   await page.getByLabel("Steer active work target").selectOption("work");
   await expect(page.getByRole("button", { name: "Steer active work", exact: true })).toBeEnabled();
   await studio.setWork("awaiting_resume", true);
+  await expect(page.getByRole("region", { name: "Resume Copilot" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Steer active work", exact: true })).toBeDisabled();
   await expect(input).toHaveValue("Retain this steer draft");
   await page.getByRole("button", { name: "Switch to Queue" }).click();
@@ -126,23 +128,84 @@ test("send mode is deliberate, stale Steer stays guarded, held cancellation and 
   studio.assertHermetic();
 });
 
-test("Queue submission on an idle restart hold leaves release to the backend", async ({ page, baseURL }) => {
+for (const stalled of [false, true]) {
+test(stalled ? "Resume appears after the auto-release deadline while Queue admission is stalled" : "Queue submission on an idle restart hold leaves release to the backend", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
-  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: "awaiting_resume" };
-  await studio.install({ savedLayout: true });
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: null };
+  const ack = deferred();
+  await studio.install({ savedLayout: true, routes: [
+    { method: "POST", path: `${base}/requests`, handler: async route => {
+      const body = route.request().postDataJSON() as MessageSubmit;
+      studio.submissions.push(body);
+      const held = request(body.request_id, "Explicit Queue", "held");
+      held.submission = body;
+      studio.requests.push(held);
+      studio.snapshot.held_requests = [held];
+      studio.emit("request.accepted", held);
+      await ack.promise;
+      await route.fulfill({ status: 202, json: held.receipt });
+    } },
+  ] });
+  if (stalled) await page.clock.install();
   await studio.open(); await studio.ready();
   const input = page.getByRole("textbox", { name: "Message Copilot" });
   const queue = page.getByRole("button", { name: "Queue message" });
+  const resume = page.getByRole("region", { name: "Resume Copilot" });
+  await expect(resume).toHaveCount(0);
   await input.fill("Explicit Queue"); await queue.click();
+  try {
+    await expect(page.getByRole("button", { name: "Cancel held request" })).toBeVisible();
+    await expect(resume).toHaveCount(0);
+    if (stalled) {
+      await page.clock.fastForward(5_001);
+      await expect(resume).toBeVisible();
+      await expect(input).toHaveValue("Explicit Queue");
+    }
+  } finally {
+    ack.release();
+  }
   await expect(input).toHaveValue("");
+  await expect(resume).toHaveCount(stalled ? 1 : 0);
   await input.fill("Not submitted");
   await expect(queue).toBeEnabled();
   expect(studio.submissions).toHaveLength(1);
   expect(studio.guard!.calls.filter(call => call.method === "POST").map(call => call.url)).toEqual([
     `${base}/contexts`, `${base}/requests`,
   ]);
+  const second = request("other-tab", "Another held request", "held");
+  studio.requests.push(second);
+  studio.snapshot.held_requests.push(second);
+  studio.emit("request.accepted", second);
+  await expect(resume).toBeVisible();
   studio.assertHermetic();
 });
+}
+
+for (const active of ["running", "awaiting_user"] as const) {
+  test(`Queue behind ${active} work is cancellable without showing Resume`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.active_work = work(active);
+    studio.snapshot.execution!.hold_reason_code = active === "running" ? "active_work_running" : "awaiting_user";
+    await studio.install({ savedLayout: true, routes: [
+      { method: "POST", path: `${base}/requests`, handler: async route => {
+        const body = route.request().postDataJSON() as MessageSubmit;
+        studio.submissions.push(body);
+        const held = request(body.request_id, "Follow-up", "held");
+        held.submission = body;
+        studio.requests.push(held);
+        studio.snapshot.held_requests = [held];
+        studio.emit("request.accepted", held);
+        await route.fulfill({ status: 202, json: held.receipt });
+      } },
+    ] });
+    await studio.open(); await studio.ready();
+    await page.getByRole("textbox", { name: "Message Copilot" }).fill("Follow-up");
+    await page.getByRole("button", { name: "Queue message" }).click();
+    await expect(page.getByRole("button", { name: "Cancel held request" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Resume Copilot" })).toHaveCount(0);
+    studio.assertHermetic();
+  });
+}
 
 test("Resume stays visible above the Composer while scrolling a long conversation", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);

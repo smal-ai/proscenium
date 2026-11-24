@@ -23,6 +23,7 @@ import "./chat.css";
 export { AssistantStatus } from "./AssistantStatus";
 
 const pendingExistingError = "Choose a published item for Existing… or switch target mode before sending.";
+export const AUTO_RELEASE_VISIBILITY_TIMEOUT_MS = 5_000;
 
 export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "queue" | "steer"): boolean {
   if (mode !== "queue" || !snapshot) return false;
@@ -30,6 +31,29 @@ export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "que
   return Boolean(execution?.fenced) || snapshot.project.state === "awaiting_resume"
     || ["fenced", "awaiting_resume", "queue_paused", "uncertain_stop", "stop_requested"].includes(execution?.hold_reason_code ?? "")
     || (!execution?.hold_reason_code && Boolean(execution?.hold_reason) && !["running", "awaiting_user"].includes(snapshot.active_work?.state ?? ""));
+}
+
+function heldRequestIds(snapshot: ProjectSnapshot | null, requests: RequestRecord[]): Set<string> {
+  return new Set([
+    ...(snapshot?.held_requests ?? []).map(request => request.request_id),
+    ...requests.filter(request => request.receipt.state === "held").map(request => request.request_id),
+  ]);
+}
+
+export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests: RequestRecord[], resumableCount: number, uncertainStop: boolean, autoReleasingRequestId: string | null = null): boolean {
+  if (!snapshot) return false;
+  const work = snapshot.active_work;
+  const execution = snapshot.execution;
+  const reason = execution?.hold_reason_code;
+  if (uncertainStop || resumableCount > 0 || (work && ["stopped", "awaiting_resume", "outcome_uncertain", "failed"].includes(work.state))) return true;
+  if (reason === "queue_paused" || (execution?.queue_released === false && !execution.fenced)) return true;
+  if (execution?.fenced) {
+    if (work && ["running", "awaiting_user"].includes(work.state)) return true;
+    if (reason && !["awaiting_resume", "stop_requested", "active_work_running", "awaiting_user"].includes(reason)) return true;
+  }
+  return Boolean((execution ? Boolean(execution.fenced) : snapshot.project.state === "awaiting_resume")
+    && work?.state !== "stop_requested"
+    && [...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId));
 }
 
 interface Upload { uploadId: string; name: string; file: File; artifact: Artifact | null; busy: boolean; error: string }
@@ -52,6 +76,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [targetWork, setTargetWork] = useState("");
   const [resumeWorkId, setResumeWorkId] = useState("");
   const [pendingResume, setPendingResume] = useState<ResumeCommand | null>(() => readPrivate(`command.resume.${projectId}`));
+  const [autoRelease, setAutoRelease] = useState<{ phase: "submitting" } | { phase: "held"; requestId: string } | null>(null);
   const [error, setError] = useState("");
   const [resuming, setResuming] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -89,6 +114,27 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     if (!isRenderPassStreamArtifact(summary) && (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && summary.published_versions.length === 0 && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id))))) renderedOutputIds.add(summary.artifact.artifact_id);
   }
   const resumable = resumableWork(snapshot, events);
+  const suppressingAutoRelease = autoRelease !== null;
+  const autoReleasingRequestId = autoRelease?.phase === "held" ? autoRelease.requestId
+    : autoRelease?.phase === "submitting" ? composer.pending?.submission.request_id ?? null : null;
+  useEffect(() => {
+    if (!suppressingAutoRelease) return;
+    // Absence alone is not settlement: submit() can return before the list refresh arrives.
+    if (snapshot?.project.project_id !== projectId || snapshot.project.state === "inactive" || !snapshot.execution?.fenced
+      || (snapshot.execution.hold_reason_code ?? "awaiting_resume") !== "awaiting_resume"
+      || (autoReleasingRequestId !== null && (
+        [...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId)
+        || requests.some(request => request.request_id === autoReleasingRequestId && request.receipt.state !== "held")
+      ))) {
+      setAutoRelease(null);
+    }
+  }, [suppressingAutoRelease, autoReleasingRequestId, projectId, snapshot, requests]);
+  useEffect(() => {
+    if (!suppressingAutoRelease) return;
+    // The deadline covers both the submission and the held receipt, even if the ACK never arrives.
+    const timeout = window.setTimeout(() => setAutoRelease(null), AUTO_RELEASE_VISIBILITY_TIMEOUT_MS);
+    return () => window.clearTimeout(timeout);
+  }, [suppressingAutoRelease]);
   const chosenResumeWork = resumable.length === 1 ? resumable[0] : resumable.find(record => record.work_id === (resumeWorkId || work?.work_id));
   const canReleaseQueue = !uncertainStop && (!work || ["completed", "failed", "stopped"].includes(work.state));
   const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>(() => uncertainStop ? "reconcile_only" : work?.state === "awaiting_resume" && chosenResumeWork ? "continue_work" : canReleaseQueue ? "release_held_queue" : "reconcile_only");
@@ -179,6 +225,9 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     preparingLatch.current = true; setPreparing(true); setError("");
     const text = draft;
     const submittedMode = mode;
+    const autoReleasing = submittedMode === "queue" && !uncertainStop && (!work || work.state === "completed")
+      && resumable.length === 0 && heldRequestIds(snapshot, requests).size === 0
+      && snapshot?.execution?.fenced === true && (snapshot.execution.hold_reason_code ?? "awaiting_resume") === "awaiting_resume";
     const submittedWorkId = targetWork;
     const submittedTargetMode = draftTarget;
     const capturedSelection = structuredClone(selection);
@@ -189,12 +238,15 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     try {
       const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments, items: catalogue }, prepareContext);
       if (submittedMode === "steer" && steerWorkId(snapshotRef.current) !== submittedWorkId) throw new Error("Work is no longer steerable. Your Steer mode and draft are retained. Switch to Queue deliberately.");
+      if (autoReleasing) setAutoRelease({ phase: "submitting" });
       const submitted = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId);
+      setAutoRelease(current => current?.phase !== "submitting" ? current
+        : submitted?.receipt.state === "held" ? { phase: "held", requestId: submitted.request_id } : null);
       if (submitted) {
         if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
         setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
       }
-    } catch (e) { setError(describeError(e)); }
+    } catch (e) { setAutoRelease(current => current?.phase === "submitting" ? null : current); setError(describeError(e)); }
     finally { preparingLatch.current = false; setPreparing(false); }
   }
   async function resume(original?: ResumeCommand) {
@@ -233,7 +285,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="chat-recovery">
       {snapshot?.pending_decisions.map(decision => <DecisionCard key={`${decision.decision_id}.${decision.state_revision}`} api={api} decision={decision} onRefresh={onRefresh} />)}
-      {(uncertainStop || snapshot?.execution?.fenced || snapshot?.execution?.hold_reason_code === "queue_paused" || snapshot?.project.state === "awaiting_resume" || requests.some(r => r.receipt.state === "held") || (work && ["stopped", "awaiting_resume", "outcome_uncertain"].includes(work.state))) && <section className="resume-card" aria-label="Resume Copilot">
+      {shouldShowResumeCard(snapshot, requests, resumable.length, uncertainStop, autoReleasingRequestId) && <section className="resume-card" aria-label="Resume Copilot">
         <h3>Resume Copilot</h3>
         <p>Choose how to continue. Reconcile only checks known outcomes without sending a prompt.</p>
         <div className="resume-controls"><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work" disabled={!resumable.length || uncertainStop}>Continue original work</option><option value="release_held_queue" disabled={!canReleaseQueue}>Release held queue</option></select><button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork) || (resumeMode === "release_held_queue" && !canReleaseQueue)} onClick={() => void resume()}>Resume</button></div>
