@@ -277,7 +277,23 @@ def test_owner_profiles_revision_replay_restart_and_preview_configuration(tmp_pa
         assert settings.view() == frozen
 
 
-@pytest.mark.parametrize("disconnect_event", [None, "tool.execution_start", "assistant.message"])
+REJECTED_TEARDOWN_EVENTS = [
+    ("pending_messages.modified", {}),
+    ("session.idle", {"aborted": True}),
+    ("session.idle", {"backgroundTasks": [{"id": "task"}]}),
+    ("session.shutdown", {"shutdownType": "error"}),
+    ("hook.end", {"hookType": "sessionEnd", "success": False}),
+    ("hook.end", {"hookType": "sessionEnd", "error": "fixture failure"}),
+    ("session.workspace_file_changed", {}),
+    ("session.info", {}),
+    ("session.usage_record", {}),
+    ("session.model_deselected", {}),
+    ("tool.execution_start", {}),
+    ("assistant.message", {}),
+]
+
+
+@pytest.mark.parametrize("disconnect_event", [None, *REJECTED_TEARDOWN_EVENTS, "concurrent"])
 def test_profiles_project_selection_frozen_models_and_native_session_refresh(
     tmp_path, disconnect_event
 ):
@@ -375,6 +391,8 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(
             ),
         )
         opens, disconnected = [], []
+        disconnect_started = asyncio.Event()
+        finish_disconnect = asyncio.Event()
 
         async def open_session(project_id, session_id, callbacks, *, models=None):
             opens.append((session_id, models))
@@ -383,12 +401,17 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(
                 disconnected.append(True)
                 events = [
                     ("session.background_tasks_changed", {}),
+                    ("session.idle", {}),
                     ("hook.start", {"hookType": "sessionEnd"}),
-                    ("hook.end", {"hookType": "sessionEnd"}),
-                    ("session.shutdown", {}),
+                    ("hook.end", {"hookType": "sessionEnd", "success": True}),
+                    ("session.shutdown", {"shutdownType": "routine"}),
                 ]
-                if disconnect_event:
-                    events.append((disconnect_event, {}))
+                if disconnect_event == "concurrent":
+                    disconnect_started.set()
+                    await finish_disconnect.wait()
+                    events.append(("assistant.message", {}))
+                elif disconnect_event:
+                    events.append(disconnect_event)
                 for index, (kind, data) in enumerate(events):
                     callbacks["on_event"]({"id": f"disconnect-{index}", "type": kind, "data": data})
 
@@ -434,6 +457,33 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(
             runtime.sends["preparing"] = asyncio.current_task()
             runtime.send_projects["preparing"] = project_id
             try:
+                if disconnect_event == "concurrent":
+                    # Neither caller is the tracked send in this scenario.
+                    runtime.sends.clear()
+                    observed_failures = []
+
+                    async def attempt_session():
+                        try:
+                            return await runtime.session(project_id)
+                        except DomainError:
+                            observed_failures.append(previous.failure)
+                            raise
+
+                    first_call = asyncio.create_task(attempt_session())
+                    await asyncio.wait_for(disconnect_started.wait(), 1)
+                    second_call = asyncio.create_task(attempt_session())
+                    await asyncio.sleep(0)
+                    assert not second_call.done() and opens == [(None, models)]
+                    assert runtime.session_locks[project_id].locked()
+                    finish_disconnect.set()
+                    for result in await asyncio.wait_for(
+                        asyncio.gather(first_call, second_call, return_exceptions=True), 1
+                    ):
+                        assert isinstance(result, DomainError)
+                        assert (result.code, result.status) == ("attribution_unavailable", 409)
+                    assert observed_failures == ["attribution_unavailable"] * 2
+                    assert opens == [(None, models)] and disconnected == [True]
+                    return
                 if disconnect_event:
                     with pytest.raises(DomainError) as rejected:
                         await runtime.session(project_id)
@@ -458,6 +508,17 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(
 
 
 def test_retired_housekeeping_does_not_accept_execution_events():
+    for kind, data in REJECTED_TEARDOWN_EVENTS:
+        assert not retired_housekeeping({"type": kind, "data": data})
+    for kind, data in [
+        ("session.background_tasks_changed", {}),
+        ("session.shutdown", None),
+        ("session.shutdown", {"shutdownType": "routine"}),
+        ("session.idle", {}),
+        ("hook.start", {"hookType": "sessionEnd"}),
+        ("hook.end", {"hookType": "sessionEnd", "success": True}),
+    ]:
+        assert retired_housekeeping({"type": kind, "data": data})
     for event_type in (
         "assistant.message",
         "assistant.message_delta",

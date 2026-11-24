@@ -1540,7 +1540,7 @@ def queue_resume(copilot, operation_id, mode):
     return copilot.resume(PROJECT, operation_id)
 
 
-@pytest.mark.parametrize("failure", ["session", "payload"])
+@pytest.mark.parametrize("failure", ["session", "payload", "missing_outbox"])
 def test_send_failure_before_claim_keeps_queue_held_and_releasable(runtime, failure):
     state, store, gate, _ = runtime
     set_work(store, "completed")
@@ -1550,13 +1550,16 @@ def test_send_failure_before_claim_keeps_queue_held_and_releasable(runtime, fail
         state.request_state(tx, REQUEST, "completed")
         tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
     copilot.state.submit(OWNER, request_record("new")["submission"])
+    if failure == "missing_outbox":
+        with store.transaction() as tx:
+            tx.connection.execute("DELETE FROM outbox WHERE id='new'")
 
     def blocked_payload(*args):
         raise DomainError("provider_unavailable", 503)
 
     async def session(project_id, *, allow_create=False):
         assert allow_create
-        if failure == "session":
+        if failure != "payload":
             raise DomainError("provider_unavailable", 503)
         return await open_for_recovery(project_id)
 
@@ -1566,14 +1569,17 @@ def test_send_failure_before_claim_keeps_queue_held_and_releasable(runtime, fail
     copilot.session = open_for_recovery
     with store.transaction(write=False) as tx:
         receipt = tx.require("requests", "new")["receipt"]
-        assert receipt["state"] == "held" and receipt["detail_code"] == "provider_unavailable"
+        assert receipt["detail_code"] == "provider_unavailable"
         assert copilot.state.control(tx)["fenced"]
-        assert copilot.state.control(tx)["reason"] == "provider_unavailable"
+        outbox = tx.connection.execute("SELECT state FROM outbox WHERE id='new'").fetchone()
         assert tx.get("copilot.sends", "new", required=False) is None
-        assert (
-            tx.connection.execute("SELECT state FROM outbox WHERE id='new'").fetchone()[0]
-            == "pending"
-        )
+        if failure == "missing_outbox":
+            assert receipt["state"] == "outcome_uncertain" and outbox is None
+            assert copilot.state.control(tx)["reason"] == "outcome_uncertain"
+            assert not sent
+            return
+        assert receipt["state"] == "held" and outbox[0] == "pending"
+        assert copilot.state.control(tx)["reason"] == "provider_unavailable"
     with pytest.raises(DomainError):
         gate.require(PROJECT)
     asyncio.run(queue_resume(copilot, "reconcile-queue", "reconcile_only"))
@@ -1588,11 +1594,22 @@ def test_send_failure_before_claim_keeps_queue_held_and_releasable(runtime, fail
 
 
 @pytest.mark.parametrize(
-    "barrier",
-    [None, "dispatching", "outcome_uncertain", "running", "awaiting_resume", "native_history"],
+    ("session_history", "barrier"),
+    [
+        ("checked", None),
+        ("checked", "dispatching"),
+        ("checked", "outcome_uncertain"),
+        ("checked", "running"),
+        ("checked", "awaiting_resume"),
+        ("checked", "native_history"),
+        ("unavailable", "missing_history"),
+        ("no_session", None),
+        ("no_session", "dispatching"),
+        ("no_session", "missing_outbox"),
+    ],
 )
 def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native_history(
-    runtime, barrier
+    runtime, session_history, barrier
 ):
     state, store, gate, _ = runtime
     set_work(store, "completed")
@@ -1610,10 +1627,27 @@ def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native
         else []
     )
     copilot, sent, checks = recovery_copilot(runtime, history=history)
+    if session_history == "unavailable":
+        open_session = copilot.session
+
+        async def without_history(project_id):
+            session = await open_session(project_id)
+            if hasattr(session, "get_events"):
+                del session.get_events
+            return session
+
+        copilot.session = without_history
+    elif session_history == "no_session":
+
+        async def no_open(*args, **kwargs):
+            pytest.fail("First-session reconciliation must not open a native session")
+
+        copilot.session = no_open
     with store.transaction() as tx:
         state.request_state(tx, REQUEST, "completed")
         state.fence(tx, "attribution_unavailable")
-        tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
+        if session_history != "no_session":
+            tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
     copilot.state.submit(OWNER, request_record("legacy")["submission"])
     with store.transaction() as tx:
         receipt = state.request_state(
@@ -1623,6 +1657,8 @@ def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native
         assert receipt["native_message_id"] is None
         assert tx.get("work", work_id, required=False) is None
         assert tx.get("copilot.sends", "legacy", required=False) is None
+        if barrier == "missing_outbox":
+            tx.connection.execute("DELETE FROM outbox WHERE id='legacy'")
         if barrier in {"dispatching", "outcome_uncertain"}:
             tx.claim_intent("legacy")
             if barrier == "outcome_uncertain":
@@ -1651,10 +1687,11 @@ def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native
             assert operation["detail_code"] == "attribution_unavailable"
         assert tx.get("copilot.sends", "legacy", required=False) is None
         expected_intent = barrier if barrier in {"dispatching", "outcome_uncertain"} else "pending"
-        assert (
-            tx.connection.execute("SELECT state FROM outbox WHERE id='legacy'").fetchone()[0]
-            == expected_intent
-        )
+        outbox = tx.connection.execute("SELECT state FROM outbox WHERE id='legacy'").fetchone()
+        if barrier == "missing_outbox":
+            assert outbox is None
+        else:
+            assert outbox[0] == expected_intent
         if not barrier:
             assert not copilot._unsettled_requests(tx)
     if not barrier:
