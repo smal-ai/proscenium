@@ -1525,6 +1525,206 @@ def admit_recovery(copilot, store, operation_id, mode):
     )
 
 
+def queue_resume(copilot, operation_id, mode):
+    copilot.admit_resume(
+        OWNER,
+        {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "operation_id": operation_id,
+            "mode": mode,
+            "work_id": None,
+            "expected_revision": copilot.services.registry.get(PROJECT)["state_revision"],
+        },
+    )
+    return copilot.resume(PROJECT, operation_id)
+
+
+@pytest.mark.parametrize("failure", ["session", "payload", "missing_outbox"])
+def test_send_failure_before_claim_keeps_queue_held_and_releasable(runtime, failure):
+    state, store, gate, _ = runtime
+    set_work(store, "completed")
+    copilot, sent, _ = recovery_copilot(runtime)
+    open_for_recovery = copilot.session
+    with store.transaction() as tx:
+        state.request_state(tx, REQUEST, "completed")
+        tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
+    copilot.state.submit(OWNER, request_record("new")["submission"])
+    if failure == "missing_outbox":
+        with store.transaction() as tx:
+            tx.connection.execute("DELETE FROM outbox WHERE id='new'")
+
+    def blocked_payload(*args):
+        raise DomainError("provider_unavailable", 503)
+
+    async def session(project_id, *, allow_create=False):
+        assert allow_create
+        if failure != "payload":
+            raise DomainError("provider_unavailable", 503)
+        return await open_for_recovery(project_id)
+
+    copilot.session = session
+    copilot.contexts.payload = blocked_payload
+    asyncio.run(copilot.send(PROJECT, "new"))
+    copilot.session = open_for_recovery
+    with store.transaction(write=False) as tx:
+        receipt = tx.require("requests", "new")["receipt"]
+        assert receipt["detail_code"] == "provider_unavailable"
+        assert copilot.state.control(tx)["fenced"]
+        outbox = tx.connection.execute("SELECT state FROM outbox WHERE id='new'").fetchone()
+        assert tx.get("copilot.sends", "new", required=False) is None
+        if failure == "missing_outbox":
+            assert receipt["state"] == "outcome_uncertain" and outbox is None
+            assert copilot.state.control(tx)["reason"] == "outcome_uncertain"
+            assert not sent
+            return
+        assert receipt["state"] == "held" and outbox[0] == "pending"
+        assert copilot.state.control(tx)["reason"] == "provider_unavailable"
+    with pytest.raises(DomainError):
+        gate.require(PROJECT)
+    asyncio.run(queue_resume(copilot, "reconcile-queue", "reconcile_only"))
+    asyncio.run(queue_resume(copilot, "release-queue", "release_held_queue"))
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.resumes", "reconcile-queue")["state"] == "completed"
+        assert tx.require("copilot.resumes", "release-queue")["state"] == "completed"
+        assert tx.require("requests", "new")["receipt"]["state"] == "held"
+        assert not copilot.state.control(tx)["fenced"]
+    gate.require(PROJECT)
+    assert not sent
+
+
+@pytest.mark.parametrize(
+    ("session_history", "barrier"),
+    [
+        ("checked", None),
+        ("checked", "dispatching"),
+        ("checked", "outcome_uncertain"),
+        ("checked", "running"),
+        ("checked", "awaiting_resume"),
+        ("checked", "native_history"),
+        ("unavailable", "missing_history"),
+        ("no_session", None),
+        ("no_session", "dispatching"),
+        ("no_session", "missing_outbox"),
+        ("no_session", "admitted_message"),
+        ("checked", "admitted_message"),
+        ("checked", "finished_invocation"),
+    ],
+)
+def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native_history(
+    runtime, session_history, barrier
+):
+    state, store, gate, _ = runtime
+    set_work(store, "completed")
+    history = (
+        [
+            event(
+                "recorded",
+                "user.message",
+                clientTurnId="legacy",
+                messageId="native-legacy",
+                content="Synthetic request",
+            )
+        ]
+        if barrier == "native_history"
+        else []
+    )
+    copilot, sent, checks = recovery_copilot(runtime, history=history)
+    if session_history == "unavailable":
+        open_session = copilot.session
+
+        async def without_history(project_id):
+            session = await open_session(project_id)
+            if hasattr(session, "get_events"):
+                del session.get_events
+            return session
+
+        copilot.session = without_history
+    elif session_history == "no_session" and barrier != "admitted_message":
+
+        async def no_open(*args, **kwargs):
+            pytest.fail("First-session reconciliation must not open a native session")
+
+        copilot.session = no_open
+    elif session_history == "no_session":
+
+        async def missing_session(project_id):
+            raise DomainError("native_session_missing", 503)
+
+        copilot.session = missing_session
+    with store.transaction() as tx:
+        state.request_state(tx, REQUEST, "completed")
+        state.fence(tx, "attribution_unavailable")
+        if session_history != "no_session":
+            tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
+    copilot.state.submit(OWNER, request_record("legacy")["submission"])
+    with store.transaction() as tx:
+        receipt = state.request_state(
+            tx, "legacy", "outcome_uncertain", detail_code="attribution_unavailable"
+        )["receipt"]
+        work_id = receipt["work_id"]
+        assert receipt["native_message_id"] is None
+        assert tx.get("work", work_id, required=False) is None
+        assert tx.get("copilot.sends", "legacy", required=False) is None
+        if barrier == "missing_outbox":
+            tx.connection.execute("DELETE FROM outbox WHERE id='legacy'")
+        if barrier == "admitted_message":
+            tx.put(
+                "copilot.admitted_messages",
+                "legacy",
+                {"message_id": "admitted-native-message", "work_id": work_id},
+            )
+        if barrier == "finished_invocation":
+            tx.put("invocations", "legacy-tool", {"request_id": "legacy", "state": "completed"})
+        if barrier in {"dispatching", "outcome_uncertain"}:
+            tx.claim_intent("legacy")
+            if barrier == "outcome_uncertain":
+                tx.settle_intent("legacy", barrier, {"detail": "fixture"})
+        if barrier in {"running", "awaiting_resume"}:
+            old = tx.require("work", WORK)
+            tx.put(
+                "work",
+                work_id,
+                {
+                    **old,
+                    "work_id": work_id,
+                    "originating_request_id": "legacy",
+                    "state": barrier,
+                    "state_revision": 0,
+                },
+                schema="WorkRecord",
+            )
+    asyncio.run(queue_resume(copilot, "reconcile-legacy", "reconcile_only"))
+    with store.transaction(write=False) as tx:
+        receipt = tx.require("requests", "legacy")["receipt"]
+        operation = tx.require("copilot.resumes", "reconcile-legacy")
+        assert receipt["state"] == ("outcome_uncertain" if barrier else "held")
+        assert operation["state"] == ("outcome_uncertain" if barrier else "completed")
+        if barrier:
+            code = (
+                "native_session_missing"
+                if session_history == "no_session" and barrier == "admitted_message"
+                else "attribution_unavailable"
+            )
+            assert operation["detail_code"] == code
+            assert copilot.state.control(tx)["fenced"]
+        assert tx.get("copilot.sends", "legacy", required=False) is None
+        expected_intent = barrier if barrier in {"dispatching", "outcome_uncertain"} else "pending"
+        outbox = tx.connection.execute("SELECT state FROM outbox WHERE id='legacy'").fetchone()
+        if barrier == "missing_outbox":
+            assert outbox is None
+        else:
+            assert outbox[0] == expected_intent
+        if not barrier:
+            assert not copilot._unsettled_requests(tx)
+    if not barrier:
+        asyncio.run(queue_resume(copilot, "release-legacy", "release_held_queue"))
+        with store.transaction(write=False) as tx:
+            assert tx.require("copilot.resumes", "release-legacy")["state"] == "completed"
+        gate.require(PROJECT)
+    assert not sent and not checks
+
+
 def test_pre_turn_failure_preserves_ack_and_recovers_legacy_ack_with_original_context(runtime):
     state, store, _, project = runtime
     copilot, sent, checks = recovery_copilot(runtime)

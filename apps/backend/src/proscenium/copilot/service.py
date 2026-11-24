@@ -91,13 +91,35 @@ class CallbackOwner:
     models: tuple[str, str, str] | None = None
 
 
+RETIRED_BENIGN_METADATA_EVENTS = frozenset(
+    {
+        "session.background_tasks_changed",
+        "session.usage_checkpoint",
+        "session.usage_info",
+        "session.title_changed",
+    }
+)
+
+
 def retired_housekeeping(event: dict[str, Any]) -> bool:
     # Never use a broad session/assistant/tool prefix here. Completion of a model
     # turn is not proof of settlement, and execution/content must not be discarded.
-    return event.get("type") in {"session.shutdown", "session.idle", "assistant.idle"} or (
-        event.get("type") in {"hook.start", "hook.end"}
-        and event.get("data", {}).get("hookType") == "sessionEnd"
-    )
+    kind = event.get("type")
+    data = event.get("data")
+    payload = data if isinstance(data, dict) else {}
+    if kind in RETIRED_BENIGN_METADATA_EVENTS:
+        return True
+    if kind == "session.shutdown":
+        return payload.get("shutdownType") != "error"
+    if kind in {"session.idle", "assistant.idle"}:
+        return payload.get("aborted") is not True and not payload.get("backgroundTasks")
+    if kind in {"hook.start", "hook.end"}:
+        return (
+            payload.get("hookType") == "sessionEnd"
+            and payload.get("success") is not False
+            and not payload.get("error")
+        )
+    return False
 
 
 def wire(value: Any) -> Any:
@@ -159,6 +181,7 @@ class Copilot:
         # Validation and process creation are deferred until explicit execution authority.
         self.native = native
         self.sessions: dict[str, Any] = {}
+        self.session_locks: dict[str, asyncio.Lock] = {}
         self.sends: dict[str, asyncio.Task[None]] = {}
         self.worker: asyncio.Task[None] | None = None
         self.wake = asyncio.Event()
@@ -478,6 +501,13 @@ class Copilot:
             raise
 
     async def session(self, project_id: str, *, allow_create: bool = False) -> Any:
+        async with self.session_locks.setdefault(project_id, asyncio.Lock()):
+            existing_owner = self.callback_owners.get(project_id)
+            if existing_owner is not None and existing_owner.failure:
+                raise DomainError(existing_owner.failure, 409)
+            return await self._open_session_locked(project_id, allow_create=allow_create)
+
+    async def _open_session_locked(self, project_id: str, *, allow_create: bool) -> Any:
         target_models = None
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             live_invocations = any(i["state"] not in TERMINAL for i in tx.all("invocations"))
@@ -552,8 +582,15 @@ class Copilot:
             if hasattr(cached, "disconnect"):
                 try:
                     await cached.disconnect()
-                except Exception:
+                except BaseException as exc:
                     self.callback_failure(previous, "provider_unavailable")
+                    if not isinstance(exc, Exception):
+                        raise
+            if previous.failure:
+                raise DomainError(previous.failure, 409)
+            if previous.failure_handled:
+                # The delivery loop may have consumed the callback failure while disconnect awaited.
+                raise DomainError("attribution_unavailable", 409)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             association = tx.get("copilot.session", "native", required=False)
         if not association and not allow_create:
@@ -740,9 +777,14 @@ class Copilot:
                             self.callback_failure(owner, "provider_unavailable")
         owner = self.callback_owners.get(project_id)
         if owner is not None and owner.failure:
-            code, owner.failure = owner.failure, None
-            await self.failed(project_id, code)
-            return
+            # Do not consume the fault or close the client while a session transition
+            # is still unwinding or another caller is queued behind it.
+            lock = self.session_locks.setdefault(project_id, asyncio.Lock())
+            if lock.locked():
+                return
+            async with lock:
+                await self.failed(project_id, owner.failure)
+                return
         for identity, task in list(self.sends.items()):
             if task.done():
                 # send() persists all uncertainty itself.
@@ -1007,24 +1049,38 @@ class Copilot:
         except BaseException as exc:
             with self.services.registry.project_store(project_id).transaction() as tx:
                 record = tx.require("requests", request_id)
-                if record["receipt"]["state"] not in TERMINAL:
-                    self.state.request_state(
-                        tx,
-                        request_id,
-                        "outcome_uncertain",
-                        detail_code=exc.code
-                        if isinstance(exc, DomainError)
-                        else "provider_unavailable",
-                    )
-                self.state.fence(tx, "outcome_uncertain")
+                code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
                 send = tx.get("copilot.sends", request_id, required=False)
-                if send:
-                    save(tx, "copilot.sends", request_id, {**send, "state": "outcome_uncertain"})
-                    tx.settle_intent(
-                        request_id,
-                        "outcome_uncertain",
-                        {"detail": "send outcome requires reconciliation"},
+                outbox = tx.connection.execute(
+                    "SELECT state FROM outbox WHERE id=?", (request_id,)
+                ).fetchone()
+                unattempted = (
+                    send is None
+                    and record["receipt"]["state"] in {"held", "accepted"}
+                    and record["receipt"].get("native_message_id") is None
+                    and outbox is not None
+                    and outbox[0] == "pending"
+                )
+                if unattempted:
+                    self.state.request_state(
+                        tx, request_id, record["receipt"]["state"], detail_code=code
                     )
+                    self.state.fence(tx, code)
+                else:
+                    if record["receipt"]["state"] not in TERMINAL:
+                        self.state.request_state(
+                            tx, request_id, "outcome_uncertain", detail_code=code
+                        )
+                    self.state.fence(tx, "outcome_uncertain")
+                    if send:
+                        save(
+                            tx, "copilot.sends", request_id, {**send, "state": "outcome_uncertain"}
+                        )
+                        tx.settle_intent(
+                            request_id,
+                            "outcome_uncertain",
+                            {"detail": "send outcome requires reconciliation"},
+                        )
             if isinstance(exc, asyncio.CancelledError):
                 raise
         finally:
@@ -1514,11 +1570,14 @@ class Copilot:
                         and e.get("data", {}).get("clientTurnId") == record["request_id"]
                     ]
                     if len(matches) == 1:
+                        send = tx.get("copilot.sends", record["request_id"], required=False)
+                        if send is None:
+                            # Native admission contradicts the missing host intent. Leave it fenced.
+                            continue
                         native_id = matches[0]["data"]["messageId"]
                         self.state.request_state(
                             tx, record["request_id"], "acknowledged", native_message_id=native_id
                         )
-                        send = tx.require("copilot.sends", record["request_id"])
                         save(
                             tx,
                             "copilot.sends",
@@ -1565,31 +1624,35 @@ class Copilot:
         inactivity_unproven = False
         if empty(pending):
             inactivity_unproven = await self._reconcile_non_stop(
-                project_id, session, history, prior_invocations, departed if cold_resume else None
+                project_id,
+                session,
+                history,
+                prior_invocations,
+                departed if cold_resume else None,
+                history_checked=hasattr(session, "get_events") and not warm_settled,
             )
         with store.transaction(write=False) as tx:
-            uncertain = [
+            return self._reconciliation_evidence(
+                tx, pending_empty=empty(pending), inactivity_unproven=inactivity_unproven
+            )
+
+    def _reconciliation_evidence(
+        self, tx: Transaction, *, pending_empty: bool, inactivity_unproven: bool = False
+    ) -> dict[str, Any]:
+        return {
+            "pending_empty": pending_empty,
+            "uncertain_request_ids": [
                 r["request_id"]
                 for r in tx.all("requests")
                 if r["receipt"]["state"] in {"dispatching", "outcome_uncertain"}
                 and not self._departed_request_recoverable(tx, r)
-            ]
-            live = [i for i in tx.all("invocations") if i["state"] not in TERMINAL]
-            stops = self._uncertain_stops(tx)
-            continuations = [
-                c
-                for c in tx.all("copilot.continuation_sends")
-                if not cold_stop.settled_send_record(c)
-            ]
-            duplicates = tx.all("copilot.duplicates")
-        # A missing event alone does not establish a send outcome.
-        return {
-            "pending_empty": empty(pending),
-            "uncertain_request_ids": uncertain,
-            "live_invocations": len(live),
-            "uncertain_stops": len(stops),
-            "uncertain_continuations": len(continuations),
-            "duplicate_correlations": len(duplicates),
+            ],
+            "live_invocations": sum(i["state"] not in TERMINAL for i in tx.all("invocations")),
+            "uncertain_stops": len(self._uncertain_stops(tx)),
+            "uncertain_continuations": sum(
+                not cold_stop.settled_send_record(c) for c in tx.all("copilot.continuation_sends")
+            ),
+            "duplicate_correlations": len(tx.all("copilot.duplicates")),
             "inactivity_unproven": inactivity_unproven,
         }
 
@@ -1673,6 +1736,33 @@ class Copilot:
         ]
         return sends, continuations
 
+    def _heal_unattempted_requests(self, tx: Transaction, recorded_turns: set[str] | None) -> None:
+        """A pending host intent is retryable only with no contradictory native evidence.
+
+        None denotes a project that never opened a native session, not unavailable history.
+        """
+        invocation_requests = {i.get("request_id") for i in tx.all("invocations")}
+        for record in self._unsettled_requests(tx):
+            request_id = record["request_id"]
+            receipt = record["receipt"]
+            if (
+                receipt["state"] != "outcome_uncertain"
+                or receipt.get("native_message_id") is not None
+                or (recorded_turns is not None and request_id in recorded_turns)
+                or tx.get("copilot.sends", request_id, required=False) is not None
+                or tx.get("copilot.admitted_messages", request_id, required=False) is not None
+                or request_id in invocation_requests
+            ):
+                continue
+            intent = tx.connection.execute(
+                "SELECT state FROM outbox WHERE id=?", (request_id,)
+            ).fetchone()
+            work_id = receipt.get("work_id")
+            work = tx.get("work", work_id, required=False) if work_id else None
+            if intent and intent[0] == "pending" and (work is None or work["state"] == "pending"):
+                target = "held" if record["submission"]["type"] == "queue" else "accepted"
+                self.state.request_state(tx, request_id, target)
+
     async def _reconcile_non_stop(
         self,
         project_id: str,
@@ -1680,10 +1770,19 @@ class Copilot:
         history: list[dict[str, Any]],
         prior_invocations: list[str],
         departed: dict[str, Any] | None,
+        *,
+        history_checked: bool,
     ) -> bool:
         """Return whether required native inactivity remains unproven."""
         store = self.services.registry.project_store(project_id)
         session_id = session.session_id
+        recorded_turns = {
+            e["data"]["clientTurnId"]
+            for e in history
+            if e["type"] == "user.message"
+            and not e.get("data", {}).get("isAutopilotContinuation")
+            and isinstance(e.get("data", {}).get("clientTurnId"), str)
+        }
         with store.transaction() as tx:
             if self._uncertain_stops(tx):
                 return False
@@ -1700,18 +1799,13 @@ class Copilot:
                     self._acknowledge_recovered_send(
                         tx, request_id, message_id, {"acknowledged_message_id": message_id}
                     )
+            if history_checked:
+                self._heal_unattempted_requests(tx, recorded_turns)
 
         if departed is not None and "session_id" not in departed:
             departed = {**departed, "session_id": session_id}
         recover_departed = cold_stop.process_departure_proven(departed, session_id)
-        recover_sends = recover_departed and hasattr(session, "get_events")
-        recorded_turns = {
-            e["data"]["clientTurnId"]
-            for e in history
-            if e["type"] == "user.message"
-            and not e.get("data", {}).get("isAutopilotContinuation")
-            and isinstance(e.get("data", {}).get("clientTurnId"), str)
-        }
+        recover_sends = recover_departed and history_checked
         states = {"awaiting_resume"}
         prior = set(prior_invocations)
         with store.transaction(write=False) as tx:
@@ -2064,17 +2158,23 @@ class Copilot:
     async def _reconcile_for_release(
         self, project_id: str, *, require_session: bool = False
     ) -> dict[str, Any]:
-        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+        with self.services.registry.project_store(project_id).transaction() as tx:
             association = tx.get("copilot.session", "native", required=False)
-            attempted = bool(tx.all("copilot.sends"))
-        if association or attempted or require_session:
-            return await self.reconcile(project_id)
-        return {
-            "pending_empty": True,
-            "uncertain_request_ids": [],
-            "live_invocations": 0,
-            "uncertain_stops": 0,
-        }
+            attempted = any(
+                tx.all(namespace)
+                for namespace in (
+                    "copilot.sends",
+                    "copilot.admitted_messages",
+                    "copilot.native",
+                    "copilot.continuation_sends",
+                    "invocations",
+                )
+            )
+            if not association and not attempted and not require_session:
+                if not self._uncertain_stops(tx):
+                    self._heal_unattempted_requests(tx, recorded_turns=None)
+                return self._reconciliation_evidence(tx, pending_empty=True)
+        return await self.reconcile(project_id)
 
     async def _release_owned_pause(self, project_id: str, operation_id: str) -> None:
         session = self.sessions.get(project_id)
