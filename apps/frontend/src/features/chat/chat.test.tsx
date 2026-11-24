@@ -18,7 +18,7 @@ import { OutputCards } from "./OutputCards";
 import { awaitResume, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
-import { ChatPanel, shouldShowQueueHold, type ChatPanelProps } from "./ChatPanel";
+import { ChatPanel, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
 import { JobList, jobsBadgeState } from "./ComposerPanel";
 import { TargetPicker } from "./TargetPicker";
 
@@ -590,6 +590,58 @@ test("resumableWork offers stopped work only until newer work runs and ChatPanel
   const markup = chatMarkup([], { snapshot: snapshot("awaiting_resume", true), requests: [uncertainReq] });
   assert.match(markup, /<option value="continue_work" disabled="">Continue original work<\/option>/);
   assert.match(markup, /<option value="release_held_queue" disabled="">Release held queue<\/option>/);
+});
+
+const resumeCard = /aria-label="Resume Copilot"/;
+const heldRequest = (id: string) => ({ ...request(id, "2026-11-17T10:00:00Z", "Queued prompt"), receipt: { ...receipt, state: "held" } }) as RequestRecord;
+
+test("ordinary idle and FIFO Queue receipts do not show Resume but remain cancellable", () => {
+  const requests = [heldRequest("follow-up")];
+  for (const state of [null, "running", "awaiting_user"]) {
+    const initial = snapshot(state ?? "completed");
+    const current = { ...initial, active_work: state ? initial.active_work : null,
+      execution: { ...initial.execution!, fenced: false, queue_released: true, hold_reason_code: state ? "active_work_running" : null } };
+    assert.equal(shouldShowResumeCard(current, requests, 0, false), false);
+    const markup = chatMarkup([], { snapshot: current, requests });
+    assert.doesNotMatch(markup, resumeCard);
+    assert.match(markup, /Cancel held request/);
+  }
+});
+
+test("idle restart shows Resume only for a held request that is not auto-releasing or for a recovery fence", () => {
+  const initial = snapshot("completed", true);
+  const idle = { ...initial, active_work: null, held_requests: [], project: { ...initial.project, state: "awaiting_resume" as const },
+    execution: { ...initial.execution!, hold_reason_code: "awaiting_resume" } };
+  const newRequest = heldRequest("new");
+  const held = { ...idle, held_requests: [newRequest] };
+  assert.equal(shouldShowResumeCard(null, [newRequest], 1, true), false);
+  assert.equal(shouldShowResumeCard(idle, [], 0, false), false);
+  assert.doesNotMatch(chatMarkup([], { snapshot: idle }), resumeCard);
+  assert.equal(shouldShowResumeCard(held, [newRequest], 0, false, "new"), false);
+  assert.equal(shouldShowResumeCard(held, [heldRequest("other")], 0, false, "new"), true);
+  assert.equal(shouldShowResumeCard(held, [], 0, false), true);
+  assert.match(chatMarkup([], { snapshot: held }), resumeCard);
+  for (const hold_reason_code of ["attribution_unavailable", "queue_paused"]) {
+    const recovery = { ...held, execution: { ...held.execution, hold_reason_code } };
+    assert.equal(shouldShowResumeCard(recovery, [newRequest], 0, false, "new"), true);
+    assert.match(chatMarkup([], { snapshot: recovery }), resumeCard);
+  }
+});
+
+test("Resume remains visible for interrupted work, uncertain Stops and an explicitly paused queue", () => {
+  for (const state of ["awaiting_resume", "stopped", "failed", "outcome_uncertain", "running", "awaiting_user"]) {
+    const current = snapshot(state, true);
+    assert.equal(shouldShowResumeCard(current, [], 0, false), true);
+    assert.match(chatMarkup([], { snapshot: current }), resumeCard);
+  }
+  const base = snapshot();
+  const idle = { ...base, active_work: null, execution: { ...base.execution!, queue_released: false } };
+  assert.equal(shouldShowResumeCard(idle, [], 0, false), true);
+  assert.equal(shouldShowResumeCard(base, [], 0, true), true);
+  assert.equal(shouldShowResumeCard(base, [], 1, false), true);
+  const stopping = snapshot("stop_requested", true);
+  stopping.execution!.hold_reason_code = "stop_requested";
+  assert.equal(shouldShowResumeCard(stopping, [heldRequest("held")], 0, false), false);
 });
 
 test("ChatPanel auto-selects single interrupted work without rendering a work selector", () => {
