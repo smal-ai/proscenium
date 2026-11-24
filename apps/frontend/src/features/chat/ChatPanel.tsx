@@ -28,7 +28,7 @@ export const AUTO_RELEASE_VISIBILITY_TIMEOUT_MS = 5_000;
 export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "queue" | "steer", requests: RequestRecord[] = [], events: Event[] = [], autoReleasingRequestId: string | null = null): boolean {
   if (mode !== "queue" || !snapshot || isIdleAutoReleaseReady(snapshot, requests, events, autoReleasingRequestId)) return false;
   const execution = snapshot.execution;
-  return Boolean(execution?.fenced) || execution?.queue_released === false || snapshot.project.state === "awaiting_resume"
+  return (execution ? (Boolean(execution.fenced) || execution.queue_released === false) : snapshot.project.state === "awaiting_resume")
     || requests.some(r => r.submission.type === "stop" && r.receipt.state === "outcome_uncertain")
     || ["fenced", "awaiting_resume", "queue_paused", "work_stopped", "resume_pending", "uncertain_stop", "stop_requested"].includes(execution?.hold_reason_code ?? "")
     || (!execution?.hold_reason_code && Boolean(execution?.hold_reason) && !["running", "awaiting_user"].includes(snapshot.active_work?.state ?? ""));

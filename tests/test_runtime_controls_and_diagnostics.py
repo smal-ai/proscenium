@@ -451,6 +451,18 @@ def idle_restart(runtime, work_state="completed", *, queue_released=True, associ
     return copilot
 
 
+@pytest.mark.parametrize("state", ["pending", "dispatching"])
+@pytest.mark.parametrize("fenced", [False, True])
+def test_pending_resume_has_same_hold_code_on_open_and_fenced_gates(runtime, state, fenced):
+    _, store, _, _ = runtime
+    idle_restart(runtime)
+    with store.transaction() as tx:
+        control = tx.require("copilot.control", "gate")
+        save(tx, "copilot.control", "gate", {**control, "fenced": fenced})
+        tx.put("copilot.resumes", "original-resume", {"state": state})
+    assert snapshot(runtime)["hold_reason_code"] == "resume_pending"
+
+
 def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
     _, store, gate, project = runtime
     copilot = idle_restart(runtime)

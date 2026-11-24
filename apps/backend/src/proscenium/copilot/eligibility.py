@@ -228,7 +228,7 @@ def execution_status(tx: Transaction, epoch: str, project: dict[str, Any]) -> di
                     "The original Resume operation awaits reconciliation.",
                 )
     elif any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes")):
-        code, message = "awaiting_resume", "The original Resume operation awaits reconciliation."
+        code, message = "resume_pending", "The original Resume operation awaits reconciliation."
     elif active:
         awaiting = any(w["state"] == "awaiting_user" for w in active) or any(
             d["state"] == "pending" for d in tx.all("decisions")

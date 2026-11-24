@@ -231,8 +231,11 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     let hydrateEpoch = 0;
     let appliedHydrateEpoch = 0;
     let replaying: { epoch: number; promise: Promise<void> } | null = null;
-    let retainedLoading = false;
-    let retainedQueued = false;
+    let pendingBackfill: { end: number; floor: number } | null = null;
+    let backfilling: { epoch: number; promise: Promise<void> } | null = null;
+    let failedBackfillEpoch: number | null = null;
+    let resyncing: Promise<void> | null = null;
+    let retainedLoad: { epoch: number; queued: boolean } | null = null;
     const path = { project_id: projectId };
     const seenNative = new Set<string>();
     const journal = new Map<number, Event>();
@@ -258,28 +261,30 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       setError(describeError(e));
       if (e instanceof ApiError && e.status === 401) onUnauthorised();
     };
-    async function loadRetainedArtifacts(): Promise<void> {
+    async function loadRetainedArtifacts(replace = false): Promise<void> {
       if (disposed) return;
-      if (retainedLoading) {
-        retainedQueued = true;
+      if (retainedLoad?.epoch === loadEpoch) {
+        retainedLoad.queued = true;
         return;
       }
-      retainedLoading = true;
+      const crawl = { epoch: loadEpoch, queued: false };
+      retainedLoad = crawl;
+      if (replace) setRetainedArtifacts([]);
       try {
         do {
-          retainedQueued = false;
+          crawl.queued = false;
           try {
             const summaries = await allPages(c => api.call("listRetainedArtifacts", { path, query: { cursor: c, limit: 100 } }));
-            if (!disposed) setRetainedArtifacts(summaries);
+            if (currentLoad(crawl.epoch)) setRetainedArtifacts(summaries);
           } catch (e) {
-            if (e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
+            if (currentLoad(crawl.epoch) && e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
           }
-        } while (retainedQueued && !disposed);
+        } while (crawl.queued && currentLoad(crawl.epoch));
       } finally {
-        retainedLoading = false;
+        if (retainedLoad === crawl) retainedLoad = null;
       }
     }
-    async function hydrate() {
+    async function hydrate(replace = false) {
       const myEpoch = ++hydrateEpoch;
       const myLoad = loadEpoch;
       const results = await Promise.allSettled([
@@ -289,7 +294,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         allPages(c => api.call("listJobs", { path, query: { cursor: c, limit: 100 } })),
       ]);
       if (!currentLoad(myLoad) || myEpoch < appliedHydrateEpoch) return;
-      void loadRetainedArtifacts();
+      void loadRetainedArtifacts(replace);
       appliedHydrateEpoch = myEpoch;
       const [s, r, i, j] = results;
       if (s.status === "fulfilled") {
@@ -299,16 +304,24 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
           if (!prev || s.value.active_work.state_revision >= prev.state_revision) knownWork.set(s.value.active_work.work_id, s.value.active_work);
         }
         recordJobs(s.value.jobs);
-        setSnapshot(prev => mergeSnapshot(prev, s.value, cursor, knownWork));
-        setItems(prev => mergeItems(prev, s.value.items));
-        setJobs(prev => mergeJobs(prev, s.value.jobs));
-        if (s.value.reviews) setReviews(prev => mergeReviews(prev, s.value.reviews!));
+        if (!replace) {
+          setSnapshot(prev => mergeSnapshot(prev, s.value, cursor, knownWork));
+          setItems(prev => mergeItems(prev, s.value.items));
+          setJobs(prev => mergeJobs(prev, s.value.jobs));
+          if (s.value.reviews) setReviews(prev => mergeReviews(prev, s.value.reviews!));
+        }
       }
-      if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
-      if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
-      if (j.status === "fulfilled") {
-        recordJobs(j.value);
-        setJobs(prev => mergeJobs(prev, j.value));
+      if (j.status === "fulfilled") recordJobs(j.value);
+      if (replace) {
+        setSnapshot(s.status === "fulfilled" ? s.value : null);
+        setRequests(r.status === "fulfilled" ? r.value : []);
+        setItems(i.status === "fulfilled" ? i.value : s.status === "fulfilled" ? s.value.items : []);
+        setJobs(j.status === "fulfilled" ? j.value : s.status === "fulfilled" ? s.value.jobs : []);
+        setReviews(s.status === "fulfilled" ? s.value.reviews ?? [] : []);
+      } else {
+        if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
+        if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
+        if (j.status === "fulfilled") setJobs(prev => mergeJobs(prev, j.value));
       }
       if (s.status === "fulfilled" && r.status === "fulfilled" && i.status === "fulfilled" && j.status === "fulfilled") {
         setHydrated(true);
@@ -318,7 +331,12 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       setCatalogueRevision(n => n + 1);
       setBaseRevision(n => n + 1);
     }
-    refreshRef.current = hydrate;
+    refreshRef.current = async () => {
+      if (resyncing) return resyncing;
+      const myEpoch = loadEpoch;
+      await hydrate();
+      void resumeBackfill(myEpoch);
+    };
     function recordEvent(event: Event): boolean {
       if (event.project_id !== projectId || journal.has(event.sequence)) return false;
       const nativeKey = event.native_session_id && event.native_event_id ? `${event.native_session_id}:${event.native_event_id}` : null;
@@ -417,7 +435,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         }
       }
       if (event.event_type === "publication.created") {
-        void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (!disposed) setItems(prev => mergeItems(prev, value)); }).catch(report);
+        const myEpoch = loadEpoch;
+        void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (currentLoad(myEpoch)) setItems(prev => mergeItems(prev, value)); }).catch(e => { if (currentLoad(myEpoch)) report(e); });
         void loadRetainedArtifacts();
       }
       if (event.event_type === "review.ready" || event.event_type === "review.changed") {
@@ -455,28 +474,41 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       const pages = await Promise.all(windows.map(({ after, limit }) => api.call("replayProjectEvents", { path, query: { after, limit } })));
       if (!currentLoad(myEpoch)) return null;
       const incoming = windows.flatMap(({ after, end }, i) => validateWindowEvents(pages[i].events, after, end));
-      return { incoming, next: windows.at(-1)!.after, last: pages[0].last_available };
+      return { incoming, next: windows.at(-1)!.after };
     }
-    async function backfillOlder(end: number, floor: number, myEpoch: number) {
-      try {
-        while (end > floor && currentLoad(myEpoch)) {
+    async function resumeBackfill(myEpoch: number, recoverExpiry = true) {
+      if (!currentLoad(myEpoch) || !pendingBackfill) return;
+      if (backfilling?.epoch === myEpoch) return backfilling.promise;
+      const promise = (async () => {
+        while (pendingBackfill && currentLoad(myEpoch)) {
+          const { end, floor }: { end: number; floor: number } = pendingBackfill;
           const wave = await fetchWave(end, floor, myEpoch);
           if (!wave || !currentLoad(myEpoch)) return;
           recordHistoricalEvents(wave.incoming);
           publishEvents();
-          end = wave.next;
+          pendingBackfill = wave.next > floor ? { end: wave.next, floor } : null;
         }
-      } catch (e) { if (currentLoad(myEpoch)) report(e); }
+      })().catch(async e => {
+        if (!currentLoad(myEpoch)) return;
+        failedBackfillEpoch = myEpoch;
+        if (expired(e) && recoverExpiry) await resync().catch(report);
+        else report(e);
+      }).finally(() => {
+        if (backfilling?.promise === promise) backfilling = null;
+      });
+      backfilling = { epoch: myEpoch, promise };
+      return promise;
     }
-    async function initialLoad(myEpoch: number) {
+    async function initialLoad(myEpoch: number, allowExpiredWatermark = false) {
       if (!currentLoad(myEpoch)) return;
-      let head = hydratedWatermark;
+      const baseline = hydratedWatermark;
+      let head = baseline;
       let floor = 0;
       let prefix: Event[] = [];
       let wave: Awaited<ReturnType<typeof fetchWave>> = null;
       if (head > 0) {
         try { wave = await fetchWave(head, 0, myEpoch); }
-        catch (e) { if (!expired(e)) throw e; head = 0; }
+        catch (e) { if (!expired(e) || !allowExpiredWatermark) throw e; head = 0; }
         if (!currentLoad(myEpoch)) return;
       }
       if (head === 0) {
@@ -490,19 +522,28 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         if (floor < head) wave = await fetchWave(head, floor, myEpoch);
       }
       if (!currentLoad(myEpoch)) return;
-      if (wave) recordHistoricalEvents(wave.incoming);
-      recordHistoricalEvents(prefix);
+      const incoming = [...prefix, ...(wave?.incoming ?? [])].sort((a, b) => a.sequence - b.sequence);
+      recordHistoricalEvents(incoming.filter(event => event.sequence <= baseline));
+      rememberCursor(Math.min(baseline, head));
+      for (const event of incoming) if (event.sequence > baseline) apply(event);
       rememberCursor(head);
       publishEvents();
-      if (wave && wave.last > cursor) await replayForward(myEpoch);
-      if (wave && wave.next > floor && currentLoad(myEpoch)) void backfillOlder(wave.next, floor, myEpoch);
+      pendingBackfill = wave && wave.next > floor ? { end: wave.next, floor } : null;
+      if (pendingBackfill && head > baseline) void hydrate(); // Refresh projections spanning the gap between prefix and tail.
     }
     async function resync() {
+      if (disposed) return;
+      if (resyncing) return resyncing;
       const myEpoch = ++loadEpoch;
       versionRefresh.cancel();
       hydratedWatermark = 0;
+      pendingBackfill = null; backfilling = null;
       rememberCursor(0); journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); receiptArtifacts.clear(); setEvents([]);
-      await hydrate(); await initialLoad(myEpoch);
+      setHydrated(false); setError(""); setVersionRevisions({});
+      resyncing = (async () => { await hydrate(true); await initialLoad(myEpoch, true); })();
+      try { await resyncing; }
+      finally { resyncing = null; }
+      void resumeBackfill(myEpoch, false);
     }
     function connect() {
       if (disposed) return;
@@ -510,11 +551,16 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       const url = new URL(routes.connectProjectEvents.path, location.href);
       url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
       socket = new WebSocket(url);
-      socket.onopen = () => socket?.send(JSON.stringify({ schema_version: "1.0", type: "subscribe", project_id: projectId, after_sequence: cursor }));
+      socket.onopen = () => {
+        socket?.send(JSON.stringify({ schema_version: "1.0", type: "subscribe", project_id: projectId, after_sequence: cursor }));
+        void resumeBackfill(loadEpoch);
+      };
       let messages = Promise.resolve();
       socket.onmessage = message => {
+        const myEpoch = loadEpoch;
         messages = messages.then(async () => {
-          if (disposed) return;
+          if (resyncing) await resyncing;
+          if (!currentLoad(myEpoch)) return;
           const frame = JSON.parse(String(message.data)) as Event | SocketControl;
           if (frame.project_id !== projectId) return;
           if ("type" in frame) {
@@ -525,6 +571,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
             } else if (control.type === "caught_up") {
               if (control.through_sequence > cursor) await replayForward(loadEpoch);
               setConnection("Connected");
+              if (failedBackfillEpoch !== loadEpoch) void resumeBackfill(loadEpoch);
             } else if (control.type === "resync_required") await resync();
           } else {
             if (frame.sequence > cursor + 1) await replayForward(loadEpoch);
@@ -535,8 +582,16 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       };
       socket.onerror = () => { if (!disposed) setConnection("Connection unavailable"); };
       socket.onclose = () => { if (!disposed) { setConnection("Disconnected · retrying"); timer = setTimeout(() => {
-        const myEpoch = loadEpoch;
-        void hydrate().then(() => cursor === 0 ? initialLoad(myEpoch) : replayForward(myEpoch)).catch(handleReplayError).finally(connect);
+        void (async () => {
+          if (resyncing) await resyncing;
+          const myEpoch = loadEpoch;
+          await hydrate();
+          if (cursor === 0) await initialLoad(myEpoch);
+          else {
+            void resumeBackfill(myEpoch);
+            await replayForward(myEpoch);
+          }
+        })().catch(handleReplayError).finally(connect);
       }, 2000); } };
     }
     async function handleReplayError(e: unknown) {
@@ -546,7 +601,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     }
     const firstEpoch = loadEpoch;
     void hydrate().then(() => initialLoad(firstEpoch)).catch(handleReplayError).finally(connect);
-    return () => { disposed = true; loadEpoch++; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
+    return () => { disposed = true; loadEpoch++; pendingBackfill = null; backfilling = null; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
   }, [api, projectId, onUnauthorised]);
   return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error, revision, catalogueRevision, baseRevision, versionRevisions, refresh };
 }

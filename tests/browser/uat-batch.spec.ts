@@ -190,19 +190,25 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
 });
 }
 
-test("large conversations show the newest wave before older pages without refetching metadata or shifting the reading position", async ({ page, baseURL }) => {
-  const studio = new StudioFixture(page, baseURL!);
-  // Two waves are necessary to hold older pages back while the first four finish.
-  const count = 750;
-  studio.snapshot.event_sequence = count;
-  studio.events = Array.from({ length: count }, (_, i): Event => ({
+const historyTime = (offset: number) => new Date(Date.UTC(2026, 10, 24) + offset * 1000).toISOString();
+function longHistory(count: number): Event[] {
+  return Array.from({ length: count }, (_, i): Event => ({
     schema_version: "1.0", project_id: projectId, sequence: i + 1,
-    occurred_at: new Date(Date.UTC(2026, 10, 24) + i * 1000).toISOString(),
+    occurred_at: historyTime(i),
     event_type: i % 75 === 0 ? "work.state_changed" : "assistant.completed",
     actor: { kind: "lead", id: "lead" }, request_id: null, work_id: null,
     native_session_id: null, native_event_id: null,
     payload: i % 75 === 0 ? work("completed", i + 1) : { message_id: `reply-${i + 1}`, text: `Assistant reply ${i + 1}`, native_agent_id: null },
   } as Event));
+}
+
+test("large conversations show the newest wave before older pages without refetching metadata or shifting the reading position", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  // Two waves are necessary to hold older pages back while the first four finish.
+  const count = 750;
+  studio.snapshot.event_sequence = count;
+  studio.events = longHistory(count);
+  studio.requests = [request("early-request", "Earlier prompt", "completed", historyTime(50.5)), request("anchor", "Keep this prompt in view", "completed", historyTime(175.5))];
   const older = deferred();
   const requested: number[] = [];
   await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
@@ -221,20 +227,100 @@ test("large conversations show the newest wave before older pages without refetc
     await expect(page.getByText("Assistant reply 750", { exact: true })).toBeInViewport();
     await expect(page.getByText("Assistant reply 2", { exact: true })).toHaveCount(0);
     const viewport = page.locator(".chat-scroll");
-    await viewport.hover(); await page.mouse.wheel(0, -400);
+    const anchor = page.locator('[data-entry-key="request.anchor"]');
+    await anchor.evaluate(el => { const viewport = el.closest(".chat-scroll")!; viewport.scrollTop += el.getBoundingClientRect().top - viewport.getBoundingClientRect().top - 1; });
     await expect(page.getByRole("button", { name: "Jump to latest" })).toBeVisible();
-    const anchor = await viewport.evaluate(element => {
-      const top = element.getBoundingClientRect().top;
-      const node = [...element.querySelectorAll(".assistant-message")].find(message => message.getBoundingClientRect().top > top)!;
-      return { text: node.querySelector("p")!.textContent!, top: node.getBoundingClientRect().top };
-    });
+    const anchorY = (await anchor.boundingBox())!.y;
+    studio.emit("assistant.completed", { message_id: "live-reply", text: "Live appended reply", native_agent_id: null }, historyTime(751));
     older.release();
     await expect(page.getByText("Assistant reply 2", { exact: true })).toBeAttached();
-    await expect.poll(async () => Math.abs((await page.getByText(anchor.text, { exact: true }).evaluate(node => node.closest("article")!.getBoundingClientRect().top)) - anchor.top)).toBeLessThan(2);
+    await expect(viewport.getByText("Live appended reply", { exact: true })).toBeAttached();
+    await expect.poll(async () => Math.abs((await anchor.boundingBox())!.y - anchorY)).toBeLessThan(2);
     expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(1);
     studio.assertHermetic();
   } finally { older.release(); }
 });
+
+test("events committed after a zero-watermark snapshot populate the live projection", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const accepted = request("new-request", "Queued just after hydration", "held");
+  const [event] = longHistory(1);
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: route => {
+    studio.events = [{ ...event, event_type: "request.accepted", request_id: accepted.request_id, payload: accepted } as Event];
+    return route.fulfill({ json: { schema_version: "1.0", events: studio.events, next_after: 1, last_available: 1 } });
+  } }] });
+  await studio.open(); await studio.ready();
+  await expect(page.getByText("Queued just after hydration", { exact: true })).toBeVisible();
+  expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(1);
+  studio.assertHermetic();
+});
+
+test("journal resync replaces older projections with a lower watermark", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.events = longHistory(12);
+  studio.snapshot.event_sequence = 12;
+  studio.snapshot.active_work = work("running", 5);
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: "provider_unavailable" };
+  studio.requests = [request("stale", "Stale request")];
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  await expect(page.getByText("Stale request", { exact: true })).toBeVisible();
+  await expect(page.locator(".copilot-identity small")).toHaveText("running");
+  await expect(page.getByRole("region", { name: "Resume Copilot" })).toBeVisible();
+  studio.events = longHistory(3);
+  studio.requests = [request("replacement", "Replacement request")];
+  studio.snapshot.event_sequence = 3;
+  studio.snapshot.active_work = null;
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: false, queue_released: true, hold_reason_code: null };
+  studio.sockets.at(-1)!.send(JSON.stringify({ schema_version: "1.0", type: "resync_required", project_id: projectId, reason: "cursor_expired" }));
+  await expect(page.getByText("Replacement request", { exact: true })).toBeVisible();
+  await expect(page.getByText("Stale request", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Assistant reply 12", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Assistant reply 3", { exact: true })).toBeVisible();
+  await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+  await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", "Ready");
+  await expect(page.getByRole("region", { name: "Resume Copilot" })).toHaveCount(0);
+  await expect.poll(() => page.evaluate(id => localStorage.getItem(`proscenium.owner.cursor.${id}`), projectId)).toBe("3");
+  studio.assertHermetic();
+});
+
+for (const status of [500, 410]) {
+  test(`older backfill recovers after HTTP ${status}`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.event_sequence = 750;
+    studio.events = longHistory(750);
+    let failed = false;
+    let oldestReads = 0;
+    const older = deferred();
+    await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+      const query = new URL(route.request().url()).searchParams;
+      const after = Number(query.get("after"));
+      const limit = Number(query.get("limit"));
+      if (after === 0) {
+        oldestReads++;
+        if (!failed) {
+          await older.promise;
+          failed = true;
+          return route.fulfill({ status, json: { schema_version: "1.0", error: { code: status === 410 ? "cursor_expired" : "fixture_error", message: "Older history unavailable" } } });
+        }
+      }
+      const events = studio.events.slice(after, after + limit);
+      await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: studio.events.length } });
+    } }] });
+    try {
+      await studio.open(); await studio.ready();
+      await expect(page.getByText("Assistant reply 750", { exact: true })).toBeVisible();
+      older.release();
+      if (status === 500) {
+        await expect(page.getByRole("alert")).toContainText("Older history unavailable");
+        await page.getByRole("button", { name: "Refresh project metadata" }).click();
+      }
+      await expect(page.getByText("Assistant reply 2", { exact: true })).toBeAttached();
+      expect(oldestReads).toBe(2);
+      expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(2);
+      studio.assertHermetic();
+    } finally { older.release(); }
+  });
+}
 
 for (const active of ["running", "awaiting_user"] as const) {
   test(`Queue behind ${active} work is cancellable without showing Resume`, async ({ page, baseURL }) => {

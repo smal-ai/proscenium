@@ -117,7 +117,7 @@ test("queue hold excludes ordinary running and awaiting-user eligibility reasons
 });
 
 test("queue hold recognises explicit fences, pause codes and legacy idle holds only in Queue mode", () => {
-  const pausedProject = snapshot(); pausedProject.project.state = "awaiting_resume";
+  const pausedProject = { ...snapshot(), project: { ...snapshot().project, state: "awaiting_resume" as const }, execution: undefined };
   const held = [snapshot("running", true), pausedProject];
   for (const code of ["fenced", "awaiting_resume", "queue_paused", "uncertain_stop", "stop_requested"]) {
     const current = snapshot(); current.execution!.hold_reason_code = code; held.push(current);
@@ -134,8 +134,6 @@ test("queue hold recognises explicit fences, pause codes and legacy idle holds o
   }
   const fenced = snapshot("running", true); fenced.execution!.hold_reason_code = "active_work_running";
   assert.equal(shouldShowQueueHold(fenced, "queue"), true);
-  pausedProject.execution!.hold_reason_code = "awaiting_user";
-  assert.equal(shouldShowQueueHold(pausedProject, "queue"), true);
   assert.equal(shouldShowQueueHold(snapshot("completed"), "queue"), false);
 });
 
@@ -641,9 +639,14 @@ test("ordinary idle and FIFO Queue receipts do not show Resume but remain cancel
     assert.match(markup, /Cancel held request/);
     if (state === null) {
       const staleProject = { ...current, project: { ...current.project, state: "awaiting_resume" as const } };
+      assert.equal(shouldShowQueueHold(staleProject, "queue", requests, []), false);
       assert.equal(shouldShowResumeCard(staleProject, requests, 0, false), false);
+      assert.equal(assistantState({ snapshot: staleProject, requests, events: [], connection: "Connected" }).label, "Ready");
       assert.doesNotMatch(chatMarkup([], { snapshot: staleProject, requests }), resumeCard);
-      assert.equal(shouldShowResumeCard({ ...staleProject, execution: undefined }, requests, 0, false), true);
+      const legacy = { ...staleProject, execution: undefined };
+      assert.equal(shouldShowQueueHold(legacy, "queue", requests, []), true);
+      assert.equal(shouldShowResumeCard(legacy, requests, 0, false), true);
+      assert.equal(assistantState({ snapshot: legacy, requests, events: [], connection: "Connected" }).label, "Paused");
     }
   }
 });
