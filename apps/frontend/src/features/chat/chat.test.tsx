@@ -16,7 +16,7 @@ import { compareConversationEntries, Conversation } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
 import { awaitResume, isIdleAutoReleaseReady, resumableWork } from "./resume";
-import { steerWorkId, stopWorkId } from "./controls";
+import { handleSubmitEnter, isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
 import { JobList, jobsBadgeState } from "./ComposerPanel";
@@ -37,6 +37,31 @@ const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
 const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
 const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => null, stop: async () => {}, retry: async () => null };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
+
+test("submit Enter accepts plain and legacy shortcuts but leaves multiline editing and IME alone", () => {
+  const enter = { key: "Enter", shiftKey: false, altKey: false, ctrlKey: false, metaKey: false };
+  for (const overrides of [{}, { ctrlKey: true }, { metaKey: true }]) {
+    assert.equal(isSubmitEnter({ ...enter, ...overrides }), true);
+  }
+  for (const overrides of [{ shiftKey: true }, { altKey: true }, { ctrlKey: true, shiftKey: true },
+    { key: "Space" }, { isComposing: true }, { nativeEvent: { isComposing: true }, isComposing: false },
+    { nativeEvent: { isComposing: false, keyCode: 229 } }, { keyCode: 229 }]) {
+    assert.equal(isSubmitEnter({ ...enter, ...overrides }), false);
+  }
+});
+
+test("submit key handling consumes repeats without dispatch and preserves IME confirmation", () => {
+  const enter = { key: "Enter", shiftKey: false, altKey: false, ctrlKey: false, metaKey: false };
+  for (const [overrides, handled, expected] of [
+    [{ repeat: true }, true, ["preventDefault"]],
+    [{ keyCode: 229 }, false, []],
+    [{ repeat: false }, true, ["preventDefault", "action"]],
+  ] as const) {
+    const calls: string[] = [];
+    assert.equal(handleSubmitEnter({ ...enter, ...overrides, preventDefault: () => calls.push("preventDefault") }, () => calls.push("action")), handled);
+    assert.deepEqual(calls, expected);
+  }
+});
 
 test("render-tick flood only bumps its own version once per refresh window", t => {
   t.mock.timers.enable({apis: ["setTimeout"]});
@@ -227,7 +252,7 @@ test("Composer renders accented Jobs counts and its status as the final bottom-r
     assert.ok(markup.includes(`class="${tone}-jobs"`));
     assert.ok(markup.includes(`>${text}</span>`));
     assert.equal((markup.match(/class="assistant-status /g) ?? []).length, 1);
-    assert.match(markup, /<div class="composer-footer"><small class="composer-hint">Ctrl\+Enter to queue · Context is captured on submit<\/small><span class="assistant-status [\s\S]*<\/span><\/div><\/div><\/div>$/);
+    assert.match(markup, /<div class="composer-footer"><small class="composer-hint">Enter to queue · Shift\+Enter for newline · Context is captured on submit<\/small><span class="assistant-status [\s\S]*<\/span><\/div><\/div><\/div>$/);
     assert.ok(markup.indexOf('class="composer-footer"') > markup.indexOf('class="composer-actions"'));
     if (["active", "attention"].includes(tone)) assert.match(markup, /class="jobs-indicator" aria-hidden="true"/);
   }

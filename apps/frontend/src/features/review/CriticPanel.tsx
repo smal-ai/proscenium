@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { ArrowLeft, Check, Eye, MessageSquareWarning } from "lucide-react";
 import { ApiError } from "../../api";
 import type {
@@ -18,6 +18,7 @@ import type {
 import { describeError, durableCommand, id, readPrivate, writePrivate } from "../../app/storage";
 import { emptySelection, type CriticSurfaceProps } from "../../api/studio";
 import { versionRequestTarget } from "../chat/target";
+import { handleSubmitEnter } from "../chat/controls";
 import { cleanTargetRole } from "./context";
 import { mediaUrl } from "./media";
 import { allPages } from "./records";
@@ -243,6 +244,12 @@ export function CriticPanel({
     } catch (e) {
       setError(describeError(e));
     }
+  }
+
+  function submitReviewOnEnter(e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    handleSubmitEnter(e, () => {
+      if (!busy && (pendingRequest || (selection.target && criteria.trim()))) void requestReview();
+    });
   }
 
   async function requestReview() {
@@ -622,6 +629,9 @@ export function CriticPanel({
                     value={decisionAnswer}
                     onChange={e => setDecisionAnswer(e.target.value)}
                     placeholder="Answer Copilot directly…"
+                    onKeyDown={e => handleSubmitEnter(e, () => {
+                      if (!busy && decisionAnswer.trim()) void answerLinkedDecision();
+                    })}
                   />
                 </label>
                 <div className="button-row">
@@ -820,6 +830,7 @@ export function CriticPanel({
               value={titleDraft}
               disabled={Boolean(pendingRequest) || busy}
               onChange={e => changeTitle(e.target.value)}
+              onKeyDown={submitReviewOnEnter}
               placeholder="Review name (optional, e.g. Shot 4 hull containment)"
             />
             <label className="sr-only" htmlFor="critic-criteria">
@@ -836,12 +847,7 @@ export function CriticPanel({
                   ? "Describe the visual criteria to verify against the inspected frame…"
                   : "Select a published frame or image in Review first…"
               }
-              onKeyDown={e => {
-                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                  e.preventDefault();
-                  void requestReview();
-                }
-              }}
+              onKeyDown={submitReviewOnEnter}
             />
             <div className="composer-actions">
               <small className="critic-target-hint">

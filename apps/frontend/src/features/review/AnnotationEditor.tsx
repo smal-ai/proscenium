@@ -3,6 +3,7 @@ import { Box, Eraser, Layers, MapPin, MoveUpRight, Pencil, Square } from "lucide
 import type { AnnotationSnapshot, Markup, VersionRecord } from "../../api/generated/contracts";
 import type { ApiClient } from "../../api/client";
 import type { ContextPreparer, TurnSelection } from "../../api/studio";
+import { handleSubmitEnter } from "../chat/controls";
 import { contentRect, imagePoint, mediaUrl, stableJson } from "./media";
 import { flushDraft, formatDraftStateBadge, saveDraft, saveDraftEdit, waitForDraftEdits, VECTOR_MASK, type Draft } from "./outbox";
 import { greyPng } from "./png";
@@ -193,7 +194,11 @@ export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, on
       </svg>
     </div>
     <div className="annotation-dock">
-      <div className="annotation-feedback"><label className="sr-only" htmlFor="annotation-feedback">Feedback</label><textarea id="annotation-feedback" aria-label="Feedback" placeholder="Describe the change for Copilot on this pinned frame…" disabled={busy} value={annotation.text} onChange={e => edit({...annotation, text: e.target.value})}/></div>
+      <div className="annotation-feedback"><label className="sr-only" htmlFor="annotation-feedback">Feedback</label><textarea id="annotation-feedback" aria-label="Feedback" placeholder="Describe the change for Copilot on this pinned frame…" disabled={busy} value={annotation.text} onChange={e => edit({...annotation, text: e.target.value})} onKeyDown={e => handleSubmitEnter(e, () => {
+        if (busyClose) return;
+        if (draft.state === "saved" && queueState === "idle") void queue();
+        else if (draft.state !== "saving" && draft.state !== "conflict") void save();
+      })}/></div>
       <div className="review-bar review-transport-bar">
         <div className="toolbar-group annotation-dock-target">
           <button className="toolbar-btn" disabled={busyClose} onClick={onClose}>{draft.state === "saved" ? "Close" : "Keep draft & close"}</button>

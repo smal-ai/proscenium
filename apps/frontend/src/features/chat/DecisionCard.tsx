@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ShieldQuestion } from "lucide-react";
 import type { ApiClient, Decision, DecisionAnswer } from "../../api";
 import { describeError, durableCommand, id } from "../../app/storage";
+import { handleSubmitEnter } from "./controls";
 
 function permissionSummary(prompt: string): { heading: string; command?: string; detail?: string } | null {
   try {
@@ -36,8 +37,12 @@ export function DecisionCard({ api, decision, onRefresh }: { api: ApiClient; dec
       <small>Exact revision {decision.state_revision} · Work {decision.work_id}</small><code className="fingerprint">{decision.fingerprint}</code>
       {decision.options.length > 0 && <ul>{decision.options.map(option => <li key={option}>{option}</li>)}</ul>}
     </details>
-    {decision.kind === "user_input" && <label>Your answer<textarea aria-label="Decision answer" value={answer} onChange={e => setAnswer(e.target.value)} /></label>}
-    {decision.kind === "generation_budget" && <label>New task attempt limit<input aria-label="New task attempt limit" type="number" min={1} value={limit} onChange={e => setLimit(Number(e.target.value))} /></label>}
+    {decision.kind === "user_input" && <label>Your answer<textarea aria-label="Decision answer" placeholder="Type your answer…" value={answer} onChange={e => setAnswer(e.target.value)} onKeyDown={e => handleSubmitEnter(e, () => {
+      if (!busy && answer.trim()) void respond("answer");
+    })} /><small>Enter to send · Shift+Enter for newline</small></label>}
+    {decision.kind === "generation_budget" && <label>New task attempt limit<input aria-label="New task attempt limit" type="number" min={1} value={limit} onChange={e => setLimit(Number(e.target.value))} onKeyDown={e => handleSubmitEnter(e, () => {
+      if (!busy && Number.isInteger(limit) && limit >= 1) void respond("extend_budget");
+    })} /></label>}
     <div className="button-row">{decision.kind === "permission" ? <button className="primary" disabled={busy} onClick={() => void respond("approve_once")}>Approve once</button> : decision.kind === "user_input" ? <button className="primary" disabled={busy || !answer.trim()} onClick={() => void respond("answer")}>Send answer</button> : <button className="primary" disabled={busy || !Number.isInteger(limit) || limit < 1} onClick={() => void respond("extend_budget")}>Extend task budget</button>}<button disabled={busy} onClick={() => void respond("decline")}>Decline</button></div>
     <small>Approval permits only this operation. It does not replace the original requirement or select creative output.</small>
     {error && <p role="alert">{error}</p>}

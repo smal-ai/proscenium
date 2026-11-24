@@ -69,6 +69,8 @@ Open the separate **References** disclosure to add published versions without ch
 
 ## Composer controls, counters and history
 
+**Enter** submits Queue or Steer prompts and question or review forms. **Shift+Enter** inserts a newline in multiline fields.
+
 - **Split Send button:** Click the main button to submit using the active mode (**Queue** or **Steer**). Use the chevron menu to switch modes without sending.
 - **Guarded Steer:** Steer is enabled only when eligible work is actively running or awaiting input with execution unfenced. If work finishes or pauses, your Steer selection and draft are preserved with an explicit **Switch to Queue** action.
 - **Prompt history:** Press `ArrowUp` in an empty Composer (or with the caret at index `0`) to recall earlier project prompts, and `ArrowDown` to move forward back to your unsent draft. Recalling history restores text only, keeping your current target, mode and attachments intact.

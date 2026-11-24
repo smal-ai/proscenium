@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import type { Artifact, FrameReceipt, ItemRecord, SelectionRecord, SelectionSave, ShotPlan, VersionRecord } from "../../api/generated/contracts";
 import type { ReviewSurfaceProps, TurnSelection } from "../../api/studio";
+import { handleSubmitEnter } from "../chat/controls";
 import { dependencyStatus, frameContext, selectionCommand, selectionFor, type PlanFrame, type PlanShot } from "./model";
 import "./storyboards.css";
 
@@ -290,7 +291,9 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
       {candidate && <p className="sb-meta">Ready {candidate.purpose}: {candidate.artifact_id}</p>}
       <div className="sb-buttons"><button disabled={busy || Boolean(pending) || !canSave} onClick={() => void save(selectionCommand(projectId, currentVersion, shot.shot_id, frame.frame_id, chosenArtifact!.artifact_id, record))}>{record?.state === "selected" ? "Supersede selection" : "Select image"}</button>
         <button disabled={busy || Boolean(pending) || record?.state !== "selected"} onClick={() => void save(selectionCommand(projectId, currentVersion, shot.shot_id, frame.frame_id, null, record))}>Withdraw</button></div>
-      <label className="sb-label">Planning edit instructions<textarea value={planningEdit} disabled={busy || Boolean(pending)} onChange={event => setPlanningEdit(event.target.value)} placeholder="Describe this shot's planning-only change" /></label>
+      <label className="sb-label">Planning edit instructions<textarea value={planningEdit} disabled={busy || Boolean(pending)} onChange={event => setPlanningEdit(event.target.value)} placeholder="Describe this shot's planning-only change" onKeyDown={e => handleSubmitEnter(e, () => {
+        if (!busy && !pending) void queue("planning");
+      })} /></label>
       <div className="sb-buttons"><button disabled={busy || Boolean(pending)} onClick={() => void queue("planning")}>Queue plan edit</button><button disabled={busy || Boolean(pending)} onClick={() => void queue("concepts")}>Queue concept</button><button disabled={busy || Boolean(pending)} onClick={() => void queue("scene")}>Queue scene</button></div>
     </footer>}
   </section>;
