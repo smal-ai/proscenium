@@ -451,6 +451,30 @@ def idle_restart(runtime, work_state="completed", *, queue_released=True, associ
     return copilot
 
 
+@pytest.mark.parametrize("state", ["pending", "dispatching"])
+@pytest.mark.parametrize(
+    ("fenced", "released", "work_state"),
+    [
+        (False, True, "completed"),
+        (True, True, "completed"),
+        (True, False, "completed"),
+        (False, False, "completed"),
+        (True, True, "awaiting_resume"),
+        (False, True, "awaiting_resume"),
+    ],
+)
+def test_pending_resume_has_same_hold_code_on_open_and_fenced_gates(
+    runtime, state, fenced, released, work_state
+):
+    _, store, _, _ = runtime
+    idle_restart(runtime, work_state, queue_released=released)
+    with store.transaction() as tx:
+        control = tx.require("copilot.control", "gate")
+        save(tx, "copilot.control", "gate", {**control, "fenced": fenced})
+        tx.put("copilot.resumes", "original-resume", {"state": state})
+    assert snapshot(runtime)["hold_reason_code"] == "resume_pending"
+
+
 def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
     _, store, gate, project = runtime
     copilot = idle_restart(runtime)
@@ -495,6 +519,42 @@ def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
         assert copilot.state.control(tx)["queue_released"]
         assert tx.require("requests", "new")["receipt"]["state"] == "acknowledged"
     assert sent == [(submission["text"], "new")]
+
+
+@pytest.mark.parametrize("latest", ["completed", "stopped", "failed"])
+def test_idle_restart_uses_latest_work_even_with_older_stopped_work(runtime, latest):
+    _, store, _, _ = runtime
+    copilot = idle_restart(runtime, "stopped")
+    with store.transaction() as tx:
+        old = tx.require("work", WORK)
+        tx.put(
+            "copilot.stops",
+            "old-stop",
+            {"phase": "confirmed", "pause": "acknowledged", "hold_released": True},
+        )
+        latest_work = {**old, "work_id": "latest-work", "state": latest, "state_revision": 0}
+        tx.put("work", "latest-work", latest_work, schema="WorkRecord")
+        for work in [old, latest_work]:
+            tx.emit(
+                "work.state_changed",
+                work,
+                actor={"kind": "system", "id": "fixture"},
+                work_id=work["work_id"],
+            )
+        assert copilot.state.idle_restart_hold(tx, copilot.state.control(tx)) is (
+            latest == "completed"
+        )
+    assert snapshot(runtime)["hold_reason_code"] == (
+        "awaiting_resume" if latest == "completed" else "work_stopped"
+    )
+    copilot.state.submit(OWNER, request_record("new")["submission"])
+    asyncio.run(copilot.tick(PROJECT))
+    with store.transaction(write=False) as tx:
+        if latest == "completed":
+            assert tx.require("copilot.auto_releases", "new")["state"] == "completed"
+        else:
+            assert not tx.all("copilot.auto_releases")
+            assert copilot.state.control(tx)["fenced"]
 
 
 @pytest.mark.parametrize("restore", [False, True])
@@ -649,6 +709,7 @@ def test_already_idle_stop_holds_queue_across_restart_until_explicit_resume(runt
             assert not stop.get("hold_released")
 
         restart("epoch-b")
+        assert snapshot(runtime)["hold_reason_code"] == "queue_paused"
         assert (
             copilot.state.submit(OWNER, request_record("held")["submission"])[0]["state"] == "held"
         )

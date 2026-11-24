@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { MessageSubmit } from "../../apps/frontend/src/api";
+import type { Event, MessageSubmit } from "../../apps/frontend/src/api";
 import { verifyLayout } from "./layout-journey";
 import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
 
@@ -151,14 +151,21 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
   const input = page.getByRole("textbox", { name: "Message Copilot" });
   const queue = page.getByRole("button", { name: "Queue message" });
   const resume = page.getByRole("region", { name: "Resume Copilot" });
+  const banner = page.locator(".queue-hold");
+  const status = page.locator(".composer-footer .assistant-status");
   await expect(resume).toHaveCount(0);
+  await expect(banner).toHaveCount(0);
+  await expect(status).toHaveAttribute("aria-label", "Ready");
   await input.fill("Explicit Queue"); await queue.click();
   try {
     await expect(page.getByRole("button", { name: "Cancel held request" })).toBeVisible();
     await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
     if (stalled) {
       await page.clock.fastForward(5_001);
       await expect(resume).toBeVisible();
+      await expect(banner).toBeVisible();
+      await expect(status).toHaveAttribute("aria-label", "Paused");
       await expect(input).toHaveValue("Explicit Queue");
     }
   } finally {
@@ -177,8 +184,284 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
   studio.snapshot.held_requests.push(second);
   studio.emit("request.accepted", second);
   await expect(resume).toBeVisible();
+  await expect(banner).toBeVisible();
+  await expect(status).toHaveAttribute("aria-label", "Paused");
   studio.assertHermetic();
 });
+}
+
+const historyTime = (offset: number) => new Date(Date.UTC(2026, 10, 24) + offset * 1000).toISOString();
+function longHistory(count: number): Event[] {
+  return Array.from({ length: count }, (_, i): Event => ({
+    schema_version: "1.0", project_id: projectId, sequence: i + 1,
+    occurred_at: historyTime(i),
+    event_type: i % 75 === 0 ? "work.state_changed" : "assistant.completed",
+    actor: { kind: "lead", id: "lead" }, request_id: null, work_id: null,
+    native_session_id: null, native_event_id: null,
+    payload: i % 75 === 0 ? work("completed", i + 1) : { message_id: `reply-${i + 1}`, text: `Assistant reply ${i + 1}`, native_agent_id: null },
+  } as Event));
+}
+
+test("large conversations show the newest wave before older pages without refetching metadata or shifting the reading position", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  // Two waves are necessary to hold older pages back while the first four finish.
+  const count = 750;
+  studio.snapshot.event_sequence = count;
+  studio.events = longHistory(count);
+  studio.requests = [request("early-request", "Earlier prompt", "completed", historyTime(50.5)), request("anchor", "Keep this prompt in view", "completed", historyTime(175.5))];
+  const older = deferred();
+  const requested: number[] = [];
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+    const query = new URL(route.request().url()).searchParams;
+    const after = Number(query.get("after"));
+    const limit = Number(query.get("limit"));
+    requested.push(after);
+    if (after < 350) await older.promise;
+    const events = studio.events.slice(after, after + limit);
+    await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: count } });
+  } }] });
+  try {
+    await studio.open(); await studio.ready();
+    expect(requested[0]).toBe(650);
+    expect(requested.slice(0, 4).sort((a, b) => b - a)).toEqual([650, 550, 450, 350]);
+    await expect(page.getByText("Assistant reply 750", { exact: true })).toBeInViewport();
+    await expect(page.getByText("Assistant reply 2", { exact: true })).toHaveCount(0);
+    const viewport = page.locator(".chat-scroll");
+    const anchor = page.locator('[data-entry-key="request.anchor"]');
+    await anchor.evaluate(el => { const viewport = el.closest(".chat-scroll")!; viewport.scrollTop += el.getBoundingClientRect().top - viewport.getBoundingClientRect().top - 1; });
+    await expect(page.getByRole("button", { name: "Jump to latest" })).toBeVisible();
+    const anchorY = (await anchor.boundingBox())!.y;
+    studio.emit("assistant.completed", { message_id: "live-reply", text: "Live appended reply", native_agent_id: null }, historyTime(751));
+    older.release();
+    await expect(page.getByText("Assistant reply 2", { exact: true })).toBeAttached();
+    await expect(viewport.getByText("Live appended reply", { exact: true })).toBeAttached();
+    await expect.poll(async () => Math.abs((await anchor.boundingBox())!.y - anchorY)).toBeLessThan(2);
+    expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(1);
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
+
+test("events committed after a zero-watermark snapshot populate the live projection", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const accepted = request("new-request", "Queued just after hydration", "held");
+  const [event] = longHistory(1);
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: route => {
+    studio.events = [{ ...event, event_type: "request.accepted", request_id: accepted.request_id, payload: accepted } as Event];
+    return route.fulfill({ json: { schema_version: "1.0", events: studio.events, next_after: 1, last_available: 1 } });
+  } }] });
+  await studio.open(); await studio.ready();
+  await expect(page.getByText("Queued just after hydration", { exact: true })).toBeVisible();
+  expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(1);
+  studio.assertHermetic();
+});
+
+test("middle backfill above the hydration watermark delivers request and publication updates", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.events = longHistory(750).map(event => event.sequence === 220
+    ? { ...event, event_type: "request.accepted", payload: request("middle", "Middle wave request", "held", historyTime(220)) } as Event
+    : event.sequence === 221 ? { ...event, event_type: "publication.created", payload: {} } as Event : event);
+  const older = deferred();
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+    const query = new URL(route.request().url()).searchParams;
+    const after = Number(query.get("after")), limit = Number(query.get("limit"));
+    if (after >= 100 && after < 350) await older.promise;
+    const events = studio.events.slice(after, after + limit);
+    await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: 750 } });
+  } }] });
+  try {
+    await studio.open(); await studio.ready();
+    await expect(page.getByText("Assistant reply 750", { exact: true })).toBeVisible();
+    await expect(page.getByText("Middle wave request", { exact: true })).toHaveCount(0);
+    // Wait for both hydrations before measuring the publication invalidation.
+    await expect.poll(() => studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length).toBeGreaterThanOrEqual(2);
+    const itemReads = () => studio.guard!.calls.filter(c => c.url.startsWith(`${base}/items?`)).length;
+    await expect.poll(itemReads).toBeGreaterThanOrEqual(2);
+    const before = itemReads();
+    older.release();
+    await expect(page.getByText("Middle wave request", { exact: true })).toBeVisible();
+    await expect.poll(itemReads).toBeGreaterThan(before);
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
+
+test("middle-wave work still becomes active when a later project event advances the cursor", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const project = { ...studio.snapshot.project, state_revision: 10 };
+  studio.events = longHistory(750).map(event => {
+    if (event.sequence === 220) return { ...event, event_type: "work.state_changed", payload: work("running", 1) } as Event;
+    if (event.sequence === 600) return { ...event, event_type: "project.state_changed", payload: project } as Event;
+    if (event.event_type === "work.state_changed") return { ...event, event_type: "assistant.completed", payload: { message_id: `reply-${event.sequence}`, text: `Assistant reply ${event.sequence}`, native_agent_id: null } } as Event;
+    return event;
+  });
+  let snapshots = 0;
+  const older = deferred();
+  await studio.install({ savedLayout: true, routes: [
+    { path: `${base}/snapshot`, handler: route => ++snapshots === 1 ? route.fulfill({ json: studio.snapshot })
+      : route.fulfill({ status: 500, json: { error: { code: "fixture_error", message: "Snapshot unavailable" } } }) },
+    { path: `${base}/events`, handler: async route => {
+      const query = new URL(route.request().url()).searchParams;
+      const after = Number(query.get("after")), limit = Number(query.get("limit"));
+      if (after >= 100 && after < 350) await older.promise;
+      const events = studio.events.slice(after, after + limit);
+      await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: 750 } });
+    } },
+  ] });
+  try {
+    await studio.open(); await studio.ready();
+    await expect(page.getByText("Assistant reply 750", { exact: true })).toBeVisible();
+    await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+    await expect.poll(() => snapshots).toBeGreaterThanOrEqual(3);
+    older.release();
+    await expect(page.locator(".copilot-identity small")).toHaveText("running");
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
+
+for (const persistent of [false, true]) {
+  test(`replacement watermark expiry ${persistent ? "fails visibly after a bounded retry" : "retries with fresh projections"}`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.event_sequence = 30;
+    studio.events = longHistory(30);
+    studio.requests = [request("old", "Expired generation prompt")];
+    studio.snapshot.active_work = work("running", 5);
+    studio.snapshot.execution!.fenced = true;
+    let expiredReads = 0;
+    await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: route => {
+      const query = new URL(route.request().url()).searchParams;
+      const after = Number(query.get("after")), limit = Number(query.get("limit"));
+      if (limit === 20 || (persistent && limit === 10)) {
+        expiredReads++;
+        studio.snapshot.event_sequence = 10;
+        studio.events = longHistory(10);
+        studio.requests = [request("replacement", "Current generation prompt")];
+        studio.snapshot.active_work = null;
+        studio.snapshot.execution!.fenced = false;
+        return route.fulfill({ status: 410, json: { schema_version: "1.0", error: { code: "cursor_expired", message: "Replacement cursor expired" } } });
+      }
+      const events = studio.events.slice(after, after + limit);
+      return route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: studio.events.length } });
+    } }] });
+    await studio.open(); await studio.ready();
+    await expect(page.getByText("Expired generation prompt", { exact: true })).toBeVisible();
+    studio.snapshot.event_sequence = 20;
+    studio.events = longHistory(20);
+    studio.sockets.at(-1)!.send(JSON.stringify({ schema_version: "1.0", type: "resync_required", project_id: projectId, reason: "cursor_expired" }));
+    if (persistent) {
+      await expect(page.getByRole("alert")).toContainText("Replacement cursor expired");
+      await expect(page.getByText("Current generation prompt", { exact: true })).toHaveCount(0);
+    } else {
+      await expect(page.getByText("Current generation prompt", { exact: true })).toBeVisible();
+      await expect(page.getByText("Assistant reply 10", { exact: true })).toBeVisible();
+    }
+    expect(expiredReads).toBe(persistent ? 2 : 1);
+    await expect(page.getByText("Expired generation prompt", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+    await expect(page.getByRole("region", { name: "Resume Copilot" })).toHaveCount(0);
+    studio.assertHermetic();
+  });
+}
+
+test("a collapsed tool group remains anchored when older members change its key", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.event_sequence = 750;
+  studio.events = longHistory(750).map(event => event.sequence >= 340 && event.sequence <= 360 ? {
+    ...event, event_type: "tool.completed",
+    payload: { invocation_id: `step-${event.sequence}`, name: "view", state: "completed", summary: "", artifact_ids: [], model_id: null },
+  } as Event : event);
+  const older = deferred();
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+    const query = new URL(route.request().url()).searchParams;
+    const after = Number(query.get("after")), limit = Number(query.get("limit"));
+    if (after < 350) await older.promise;
+    const events = studio.events.slice(after, after + limit);
+    await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: 750 } });
+  } }] });
+  try {
+    await studio.open(); await studio.ready();
+    const group = page.locator(".activity-group");
+    await expect(group).toContainText("10 tool steps completed");
+    await group.evaluate(el => { const viewport = el.closest(".chat-scroll")!; viewport.scrollTop += el.getBoundingClientRect().top - viewport.getBoundingClientRect().top; });
+    await expect(page.getByRole("button", { name: "Jump to latest" })).toBeVisible();
+    const y = (await group.boundingBox())!.y;
+    older.release();
+    await expect(group).toContainText("21 tool steps completed");
+    await expect.poll(async () => Math.abs((await group.boundingBox())!.y - y)).toBeLessThan(2);
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
+
+test("journal resync replaces older projections with a lower watermark", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.events = longHistory(12);
+  studio.snapshot.event_sequence = 12;
+  studio.snapshot.active_work = work("running", 5);
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: "provider_unavailable" };
+  studio.requests = [request("stale", "Stale request")];
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  await expect(page.getByText("Stale request", { exact: true })).toBeVisible();
+  await expect(page.locator(".copilot-identity small")).toHaveText("running");
+  await expect(page.getByRole("region", { name: "Resume Copilot" })).toBeVisible();
+  studio.events = longHistory(3);
+  studio.requests = [request("replacement", "Replacement request")];
+  studio.snapshot.event_sequence = 3;
+  studio.snapshot.active_work = null;
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: false, queue_released: true, hold_reason_code: null };
+  studio.sockets.at(-1)!.send(JSON.stringify({ schema_version: "1.0", type: "resync_required", project_id: projectId, reason: "cursor_expired" }));
+  await expect(page.getByText("Replacement request", { exact: true })).toBeVisible();
+  await expect(page.getByText("Stale request", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Assistant reply 12", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Assistant reply 3", { exact: true })).toBeVisible();
+  await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+  await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", "Ready");
+  await expect(page.getByRole("region", { name: "Resume Copilot" })).toHaveCount(0);
+  await expect.poll(() => page.evaluate(id => localStorage.getItem(`proscenium.owner.cursor.${id}`), projectId)).toBe("3");
+  studio.assertHermetic();
+});
+
+for (const [status, refreshFails] of [[500, false], [500, true], [410, false]] as const) {
+  test(`older backfill recovers after HTTP ${status}${refreshFails ? " without clearing an identical snapshot error" : ""}`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.event_sequence = 750;
+    studio.events = longHistory(750);
+    let failed = false;
+    let oldestReads = 0;
+    const older = deferred();
+    const failure = { schema_version: "1.0", error: { code: status === 410 ? "cursor_expired" : "fixture_error", message: "Temporary server failure" } };
+    await studio.install({ savedLayout: true, routes: [{ path: `${base}/snapshot`, handler: route => refreshFails && failed
+      ? route.fulfill({ status: 500, json: failure }) : route.fulfill({ json: studio.snapshot }) }, { path: `${base}/events`, handler: async route => {
+      const query = new URL(route.request().url()).searchParams;
+      const after = Number(query.get("after"));
+      const limit = Number(query.get("limit"));
+      if (after === 0) {
+        oldestReads++;
+        if (!failed) {
+          await older.promise;
+          failed = true;
+          return route.fulfill({ status, json: failure });
+        }
+      }
+      const events = studio.events.slice(after, after + limit);
+      await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: studio.events.length } });
+    } }] });
+    try {
+      await studio.open(); await studio.ready();
+      await expect(page.getByText("Assistant reply 750", { exact: true })).toBeVisible();
+      older.release();
+      if (status === 500) {
+        await expect(page.getByRole("alert")).toContainText("Temporary server failure");
+        await page.getByRole("button", { name: "Refresh project metadata" }).click();
+      }
+      await expect(page.getByText("Assistant reply 2", { exact: true })).toBeAttached();
+      await expect(page.getByText("Assistant reply 750", { exact: true })).toBeAttached();
+      await expect(page.locator(".assistant-message")).toHaveCount(740); // 750 events, including 10 work transitions.
+      const alert = page.getByRole("alert").filter({ hasText: "Temporary server failure" });
+      if (refreshFails) await expect(alert).toBeVisible();
+      else await expect(alert).toHaveCount(0);
+      expect(oldestReads).toBe(2);
+      expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(2);
+      studio.assertHermetic();
+    } finally { older.release(); }
+  });
 }
 
 for (const active of ["running", "awaiting_user"] as const) {
@@ -341,10 +624,11 @@ test("delayed older snapshot cannot resurrect a completed work event", async ({ 
   const studio = new StudioFixture(page, baseURL!); studio.snapshot.active_work = work();
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   const delayed = deferred(); studio.snapshotGate = delayed.promise;
+  const beforeRefresh = studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length;
   const staleResponse = page.waitForResponse(async response => response.url().endsWith(`${base}/snapshot`) && (await response.json()).active_work?.state === "running");
   await page.getByRole("button", { name: "Refresh project metadata" }).click();
   // The request handler freezes running state before the newer event is delivered.
-  await expect.poll(() => studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length).toBeGreaterThan(2);
+  await expect.poll(() => studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length).toBeGreaterThan(beforeRefresh);
   await studio.setWork(null);
   await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
   delayed.release(); studio.snapshotGate = null;

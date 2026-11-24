@@ -7,7 +7,7 @@ import { DecisionCard } from "./DecisionCard";
 import { ContextPreview } from "./ContextPreview";
 import { Conversation } from "./Conversation";
 import type { useRequestComposer } from "./useRequestComposer";
-import { awaitResume, resumableWork, resumeCommand } from "./resume";
+import { awaitResume, heldRequestIds, isIdleAutoReleaseReady, resumableWork, resumeCommand } from "./resume";
 import { useChatScroll } from "./useChatScroll";
 import { ComposerPanel, JobList, jobsBadgeState } from "./ComposerPanel";
 import { AssistantStatus } from "./AssistantStatus";
@@ -25,19 +25,13 @@ export { AssistantStatus } from "./AssistantStatus";
 const pendingExistingError = "Choose a published item for Existing… or switch target mode before sending.";
 export const AUTO_RELEASE_VISIBILITY_TIMEOUT_MS = 5_000;
 
-export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "queue" | "steer"): boolean {
-  if (mode !== "queue" || !snapshot) return false;
+export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "queue" | "steer", requests: RequestRecord[] = [], events: Event[] = [], autoReleasingRequestId: string | null = null): boolean {
+  if (mode !== "queue" || !snapshot || isIdleAutoReleaseReady(snapshot, requests, events, autoReleasingRequestId)) return false;
   const execution = snapshot.execution;
-  return Boolean(execution?.fenced) || snapshot.project.state === "awaiting_resume"
-    || ["fenced", "awaiting_resume", "queue_paused", "uncertain_stop", "stop_requested"].includes(execution?.hold_reason_code ?? "")
+  return (execution ? (Boolean(execution.fenced) || execution.queue_released === false) : snapshot.project.state === "awaiting_resume")
+    || requests.some(r => r.submission.type === "stop" && r.receipt.state === "outcome_uncertain")
+    || ["fenced", "awaiting_resume", "queue_paused", "work_stopped", "resume_pending", "uncertain_stop", "stop_requested"].includes(execution?.hold_reason_code ?? "")
     || (!execution?.hold_reason_code && Boolean(execution?.hold_reason) && !["running", "awaiting_user"].includes(snapshot.active_work?.state ?? ""));
-}
-
-function heldRequestIds(snapshot: ProjectSnapshot | null, requests: RequestRecord[]): Set<string> {
-  return new Set([
-    ...(snapshot?.held_requests ?? []).map(request => request.request_id),
-    ...requests.filter(request => request.receipt.state === "held").map(request => request.request_id),
-  ]);
 }
 
 export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests: RequestRecord[], resumableCount: number, uncertainStop: boolean, autoReleasingRequestId: string | null = null): boolean {
@@ -45,13 +39,14 @@ export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests:
   const work = snapshot.active_work;
   const execution = snapshot.execution;
   const reason = execution?.hold_reason_code;
+  if (!execution && snapshot.project.state === "awaiting_resume") return true;
   if (uncertainStop || resumableCount > 0 || (work && ["stopped", "awaiting_resume", "outcome_uncertain", "failed"].includes(work.state))) return true;
-  if (reason === "queue_paused" || (execution?.queue_released === false && !execution.fenced)) return true;
+  if (["queue_paused", "work_stopped", "resume_pending"].includes(reason ?? "") || (execution?.queue_released === false && !execution.fenced)) return true;
   if (execution?.fenced) {
     if (work && ["running", "awaiting_user"].includes(work.state)) return true;
     if (reason && !["awaiting_resume", "stop_requested", "active_work_running", "awaiting_user"].includes(reason)) return true;
   }
-  return Boolean((execution ? Boolean(execution.fenced) : snapshot.project.state === "awaiting_resume")
+  return Boolean(execution?.fenced
     && work?.state !== "stop_requested"
     && [...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId));
 }
@@ -117,6 +112,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const suppressingAutoRelease = autoRelease !== null;
   const autoReleasingRequestId = autoRelease?.phase === "held" ? autoRelease.requestId
     : autoRelease?.phase === "submitting" ? composer.pending?.submission.request_id ?? null : null;
+  const statusProps = { snapshot, requests, events, jobs, hydrated, connection, submitting: composer.busy || preparing, stopping: composer.stopping, autoReleasingRequestId };
   useEffect(() => {
     if (!suppressingAutoRelease) return;
     // Absence alone is not settlement: submit() can return before the list refresh arrives.
@@ -225,9 +221,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     preparingLatch.current = true; setPreparing(true); setError("");
     const text = draft;
     const submittedMode = mode;
-    const autoReleasing = submittedMode === "queue" && !uncertainStop && (!work || work.state === "completed")
-      && resumable.length === 0 && heldRequestIds(snapshot, requests).size === 0
-      && snapshot?.execution?.fenced === true && (snapshot.execution.hold_reason_code ?? "awaiting_resume") === "awaiting_resume";
+    const autoReleasing = submittedMode === "queue" && isIdleAutoReleaseReady(snapshot, requests, events);
     const submittedWorkId = targetWork;
     const submittedTargetMode = draftTarget;
     const capturedSelection = structuredClone(selection);
@@ -269,7 +263,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     finally { setPendingResume(readPrivate(`command.resume.${projectId}`)); setResuming(false); }
   }
   return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
-    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus snapshot={snapshot} requests={requests} events={events} jobs={jobs} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} />}</div>
+    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus {...statusProps} />}</div>
     {snapshot?.execution?.work_outputs.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => {
       const unrenderedIds = output.artifact_ids.filter(id => {
         const summary = summaryById.get(id);
@@ -300,7 +294,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       {composer.pending && <div className="retry-card"><strong>Request awaiting confirmation</strong><code>{composer.pending.submission.request_id}</code><p>Its original text and context are frozen. Your draft is retained.</p><button disabled={composer.busy} onClick={() => void composer.retry(false)}>Reconcile original request / retry same ID</button></div>}
       {composer.pendingStop && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
       {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
-      {shouldShowQueueHold(snapshot, mode) && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
+      {shouldShowQueueHold(snapshot, mode, requests, events, autoReleasingRequestId) && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
       <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
@@ -328,7 +322,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       <div className="composer-actions"><label className="attach-button" title="Attach PNG, JPEG or WebP"><Paperclip size={15} /><span className="sr-only">Attach images</span><input aria-label="Attach images" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e => { const next = [...(e.target.files ?? [])].map(file => ({ uploadId: id(), name: file.name, file, artifact: null, busy: true, error: "" })); setUploads(old => [...old, ...next]); next.forEach(u => void upload(u)); e.target.value = ""; }} /></label>
         <button className="stop" disabled={!canStopWorkId || uncertainStop || composer.stopping || !!composer.pendingStop || work?.state === "stop_requested"} onClick={() => { if (canStopWorkId && stopWorkId(snapshotRef.current) === canStopWorkId) void composer.stop(canStopWorkId); }}><Square size={11} fill="currentColor" />{composer.stopping || work?.state === "stop_requested" ? "Stop requested" : "Stop"}</button>
         <SendControl mode={mode} onMode={setMode} disabled={composerPanel !== "message" || !draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || pendingExisting || (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId))} onSend={() => void send()} />
-      </div><div className="composer-footer"><small className="composer-hint">Ctrl+Enter to {mode} · Context is captured on submit</small><AssistantStatus snapshot={snapshot} requests={requests} events={events} jobs={jobs} hydrated={hydrated} connection={connection} submitting={composer.busy || preparing} stopping={composer.stopping} /></div>
+      </div><div className="composer-footer"><small className="composer-hint">Ctrl+Enter to {mode} · Context is captured on submit</small><AssistantStatus {...statusProps} /></div>
     </div>
   </div>;
 }

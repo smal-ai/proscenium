@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
-import { mergeReviews, revisionScope, versionRefreshBuffer } from "../../app/useProjectData";
+import { backfillWindows, mergeReviews, revisionScope, validateWindowEvents, versionRefreshBuffer } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
 import { CriticPanel, criticRequestTarget, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
 import { annotationContext } from "../review/context";
@@ -15,7 +15,7 @@ import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
-import { awaitResume, resumableWork } from "./resume";
+import { awaitResume, isIdleAutoReleaseReady, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
@@ -117,7 +117,7 @@ test("queue hold excludes ordinary running and awaiting-user eligibility reasons
 });
 
 test("queue hold recognises explicit fences, pause codes and legacy idle holds only in Queue mode", () => {
-  const pausedProject = snapshot(); pausedProject.project.state = "awaiting_resume";
+  const pausedProject = { ...snapshot(), project: { ...snapshot().project, state: "awaiting_resume" as const }, execution: undefined };
   const held = [snapshot("running", true), pausedProject];
   for (const code of ["fenced", "awaiting_resume", "queue_paused", "uncertain_stop", "stop_requested"]) {
     const current = snapshot(); current.execution!.hold_reason_code = code; held.push(current);
@@ -134,8 +134,6 @@ test("queue hold recognises explicit fences, pause codes and legacy idle holds o
   }
   const fenced = snapshot("running", true); fenced.execution!.hold_reason_code = "active_work_running";
   assert.equal(shouldShowQueueHold(fenced, "queue"), true);
-  pausedProject.execution!.hold_reason_code = "awaiting_user";
-  assert.equal(shouldShowQueueHold(pausedProject, "queue"), true);
   assert.equal(shouldShowQueueHold(snapshot("completed"), "queue"), false);
 });
 
@@ -595,6 +593,42 @@ test("resumableWork offers stopped work only until newer work runs and ChatPanel
 const resumeCard = /aria-label="Resume Copilot"/;
 const heldRequest = (id: string) => ({ ...request(id, "2026-11-17T10:00:00Z", "Queued prompt"), receipt: { ...receipt, state: "held" } }) as RequestRecord;
 
+test("backfill windows descend to the floor and reject non-contiguous event pages", () => {
+  assert.deepEqual(backfillWindows(350), [
+    { after: 250, end: 350, limit: 100 }, { after: 150, end: 250, limit: 100 },
+    { after: 50, end: 150, limit: 100 }, { after: 0, end: 50, limit: 50 },
+  ]);
+  assert.deepEqual(backfillWindows(520, 450, 50, 1), [{ after: 470, end: 520, limit: 50 }]);
+  assert.deepEqual(backfillWindows(450, 450), []);
+  const page = [1, 2, 3, 4].map(sequence => event(sequence, "assistant.completed", {}));
+  assert.deepEqual(validateWindowEvents(page, 1, 3), page.slice(1, 3));
+  for (const bad of [[page[1]], [page[2], page[1]], [page[1], page[1], page[2]]]) {
+    assert.throws(() => validateWindowEvents(bad, 1, 3), /Event journal has a gap/);
+  }
+});
+
+test("idle restart status, Queue notice and Resume card share the same recovery boundary", () => {
+  const initial = snapshot("completed", true);
+  const idle = { ...initial, active_work: null, held_requests: [], execution: { ...initial.execution!, hold_reason_code: "awaiting_resume" } };
+  const check = (current: ProjectSnapshot, requests: RequestRecord[], paused: boolean, autoId: string | null = null) => {
+    assert.equal(isIdleAutoReleaseReady(current, requests, [], autoId), !paused);
+    assert.equal(shouldShowQueueHold(current, "queue", requests, [], autoId), paused);
+    assert.equal(shouldShowResumeCard(current, requests, 0, false, autoId), paused);
+    const status = assistantState({ snapshot: current, requests, events: [], connection: "Connected", autoReleasingRequestId: autoId });
+    if (paused) assert.ok(["Paused", "Needs recovery"].includes(status.label));
+    else assert.equal(status.label, autoId ? "Starting…" : "Ready");
+  };
+  check(idle, [], false);
+  check(idle, [heldRequest("new")], false, "new");
+  check(idle, [heldRequest("new")], true);
+  for (const hold_reason_code of ["work_stopped", "queue_paused", "resume_pending", "attribution_unavailable", "uncertain_stop"]) {
+    check({ ...idle, execution: { ...idle.execution, hold_reason_code } }, [], true);
+  }
+  check({ ...idle, active_work: snapshot("awaiting_resume").active_work }, [], true);
+  const legacy = { ...idle, execution: undefined, project: { ...idle.project, state: "awaiting_resume" as const } };
+  check(legacy, [], true);
+});
+
 test("ordinary idle and FIFO Queue receipts do not show Resume but remain cancellable", () => {
   const requests = [heldRequest("follow-up")];
   for (const state of [null, "running", "awaiting_user"]) {
@@ -607,9 +641,14 @@ test("ordinary idle and FIFO Queue receipts do not show Resume but remain cancel
     assert.match(markup, /Cancel held request/);
     if (state === null) {
       const staleProject = { ...current, project: { ...current.project, state: "awaiting_resume" as const } };
+      assert.equal(shouldShowQueueHold(staleProject, "queue", requests, []), false);
       assert.equal(shouldShowResumeCard(staleProject, requests, 0, false), false);
+      assert.equal(assistantState({ snapshot: staleProject, requests, events: [], connection: "Connected" }).label, "Ready");
       assert.doesNotMatch(chatMarkup([], { snapshot: staleProject, requests }), resumeCard);
-      assert.equal(shouldShowResumeCard({ ...staleProject, execution: undefined }, requests, 0, false), true);
+      const legacy = { ...staleProject, execution: undefined };
+      assert.equal(shouldShowQueueHold(legacy, "queue", requests, []), true);
+      assert.equal(shouldShowResumeCard(legacy, requests, 0, false), true);
+      assert.equal(assistantState({ snapshot: legacy, requests, events: [], connection: "Connected" }).label, "Paused");
     }
   }
 });

@@ -8,6 +8,23 @@ const TERMINAL_WORK = new Set(["completed", "failed", "stopped"]);
 const TERMINAL_JOB = new Set<JobRecord["state"]>(["succeeded", "failed", "cancelled"]);
 const REFRESH_EVENTS = new Set<Event["event_type"]>(["publication.created", "preview.order_changed", "frame.available", "segment.available", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
 const BASE_REFRESH_EVENTS = new Set<Event["event_type"]>(["publication.created", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
+const JOURNAL_GAP = "Event journal has a gap. Metadata remains available. Reconnect to recover.";
+
+export function backfillWindows(endSequence: number, floorSequence = 0, pageSize = 100, batchSize = 4): Array<{ after: number; end: number; limit: number }> {
+  const windows = [];
+  for (let end = endSequence; end > floorSequence && windows.length < batchSize && pageSize > 0;) {
+    const after = Math.max(floorSequence, end - pageSize);
+    windows.push({ after, end, limit: end - after });
+    end = after;
+  }
+  return windows;
+}
+
+export function validateWindowEvents(pageEvents: Event[], after: number, end: number): Event[] {
+  const events = pageEvents.filter(event => event.sequence > after && event.sequence <= end);
+  if (events.length !== end - after || events.some((event, i) => event.sequence !== after + i + 1)) throw new Error(JOURNAL_GAP);
+  return events;
+}
 
 export function revisionScope(event: Event, prevJob?: JobRecord, receiptArtifacts?: ReadonlySet<string>) {
   const type = event.event_type;
@@ -195,6 +212,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const [hydrated, setHydrated] = useState(false);
   const [connection, setConnection] = useState("Disconnected");
   const [error, setError] = useState("");
+  const [backfillError, setBackfillError] = useState("");
   const [revision, setRevision] = useState(0);
   const [catalogueRevision, setCatalogueRevision] = useState(0);
   const [baseRevision, setBaseRevision] = useState(0);
@@ -204,29 +222,43 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   useEffect(() => {
     setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]); setEvents([]); setHydrated(false); setError("");
     setVersionRevisions({});
+    setBackfillError("");
     if (!projectId) { setConnection("No active project"); return; }
     let disposed = false;
     let socket: WebSocket | undefined;
     let timer: ReturnType<typeof setTimeout>;
     let cursor = 0;
+    let loadEpoch = 0;
+    let hydratedWatermark = 0;
+    let latestWorkSequence = 0;
+    let authoritativeSnapshotSequence = 0;
     let hydrateEpoch = 0;
     let appliedHydrateEpoch = 0;
-    let replaying: Promise<void> | null = null;
-    let retainedLoading = false;
-    let retainedQueued = false;
+    let replaying: { epoch: number; promise: Promise<void> } | null = null;
+    let pendingBackfill: { end: number; floor: number; liveAbove: number } | null = null;
+    let backfilling: { epoch: number; promise: Promise<void> } | null = null;
+    let failedBackfillEpoch: number | null = null;
+    let resyncing: Promise<void> | null = null;
+    let retainedLoad: { epoch: number; queued: boolean } | null = null;
     const path = { project_id: projectId };
     const seenNative = new Set<string>();
     const journal = new Map<number, Event>();
     const knownWork = new Map<string, WorkRecord>();
     const knownJobs = new Map<string, JobRecord>();
+    const decisionSequences = new Map<string, number>();
     const receiptArtifacts = new Set<string>();
+    const currentLoad = (epoch: number) => !disposed && loadEpoch === epoch;
+    const rememberCursor = (sequence: number) => {
+      cursor = sequence;
+      writePrivate(`cursor.${projectId}`, cursor);
+    };
     const versionRefresh = versionRefreshBuffer(ids => {
       if (!disposed) setVersionRevisions(previous => ({...previous, ...Object.fromEntries(ids.map(id => [id, (Object.hasOwn(previous, id) ? previous[id] : 0) + 1]))}));
     });
-    const recordJobs = (records: JobRecord[]) => {
+    const recordJobs = (records: JobRecord[], historical = false) => {
       for (const record of records) {
         const prev = knownJobs.get(record.job_id);
-        if (!prev || record.state_revision >= prev.state_revision) knownJobs.set(record.job_id, record);
+        if (!prev || record.state_revision > prev.state_revision || (!historical && record.state_revision === prev.state_revision)) knownJobs.set(record.job_id, record);
       }
     };
     const report = (e: unknown) => {
@@ -234,55 +266,68 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       setError(describeError(e));
       if (e instanceof ApiError && e.status === 401) onUnauthorised();
     };
-    async function loadRetainedArtifacts(): Promise<void> {
+    async function loadRetainedArtifacts(replace = false): Promise<void> {
       if (disposed) return;
-      if (retainedLoading) {
-        retainedQueued = true;
+      if (retainedLoad?.epoch === loadEpoch) {
+        retainedLoad.queued = true;
         return;
       }
-      retainedLoading = true;
+      const crawl = { epoch: loadEpoch, queued: false };
+      retainedLoad = crawl;
+      if (replace) setRetainedArtifacts([]);
       try {
         do {
-          retainedQueued = false;
+          crawl.queued = false;
           try {
             const summaries = await allPages(c => api.call("listRetainedArtifacts", { path, query: { cursor: c, limit: 100 } }));
-            if (!disposed) setRetainedArtifacts(summaries);
+            if (currentLoad(crawl.epoch)) setRetainedArtifacts(summaries);
           } catch (e) {
-            if (e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
+            if (currentLoad(crawl.epoch) && e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
           }
-        } while (retainedQueued && !disposed);
+        } while (crawl.queued && currentLoad(crawl.epoch));
       } finally {
-        retainedLoading = false;
+        if (retainedLoad === crawl) retainedLoad = null;
       }
     }
-    async function hydrate() {
+    async function hydrate(replace = false) {
       const myEpoch = ++hydrateEpoch;
+      const myLoad = loadEpoch;
       const results = await Promise.allSettled([
         api.call("getProjectSnapshot", { path }),
         allPages(c => api.call("listRequests", { path, query: { cursor: c, limit: 100 } })),
         allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })),
         allPages(c => api.call("listJobs", { path, query: { cursor: c, limit: 100 } })),
       ]);
-      void loadRetainedArtifacts();
-      if (disposed || myEpoch < appliedHydrateEpoch) return;
+      if (!currentLoad(myLoad) || myEpoch < appliedHydrateEpoch) return;
+      void loadRetainedArtifacts(replace);
       appliedHydrateEpoch = myEpoch;
       const [s, r, i, j] = results;
       if (s.status === "fulfilled") {
+        hydratedWatermark = s.value.event_sequence;
+        authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, s.value.event_sequence);
         if (s.value.active_work) {
           const prev = knownWork.get(s.value.active_work.work_id);
           if (!prev || s.value.active_work.state_revision >= prev.state_revision) knownWork.set(s.value.active_work.work_id, s.value.active_work);
         }
         recordJobs(s.value.jobs);
-        setSnapshot(prev => mergeSnapshot(prev, s.value, cursor, knownWork));
-        setItems(prev => mergeItems(prev, s.value.items));
-        setJobs(prev => mergeJobs(prev, s.value.jobs));
-        if (s.value.reviews) setReviews(prev => mergeReviews(prev, s.value.reviews!));
+        if (!replace) {
+          setSnapshot(prev => mergeSnapshot(prev, s.value, cursor, knownWork));
+          setItems(prev => mergeItems(prev, s.value.items));
+          setJobs(prev => mergeJobs(prev, s.value.jobs));
+          if (s.value.reviews) setReviews(prev => mergeReviews(prev, s.value.reviews!));
+        }
       }
-      if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
-      if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
-      if (j.status === "fulfilled") {
-        recordJobs(j.value);
-        setJobs(prev => mergeJobs(prev, j.value));
+      if (j.status === "fulfilled") recordJobs(j.value);
+      if (replace) {
+        setSnapshot(s.status === "fulfilled" ? s.value : null);
+        setRequests(r.status === "fulfilled" ? r.value : []);
+        setItems(i.status === "fulfilled" ? i.value : s.status === "fulfilled" ? s.value.items : []);
+        setJobs(j.status === "fulfilled" ? j.value : s.status === "fulfilled" ? s.value.jobs : []);
+        setReviews(s.status === "fulfilled" ? s.value.reviews ?? [] : []);
+      } else {
+        if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
+        if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
+        if (j.status === "fulfilled") setJobs(prev => mergeJobs(prev, j.value));
       }
       if (s.status === "fulfilled" && r.status === "fulfilled" && i.status === "fulfilled" && j.status === "fulfilled") {
         setHydrated(true);
@@ -292,16 +337,53 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       setCatalogueRevision(n => n + 1);
       setBaseRevision(n => n + 1);
     }
-    refreshRef.current = hydrate;
-    function apply(event: Event) {
-      if (disposed || event.project_id !== projectId || event.sequence <= cursor) return;
-      cursor = event.sequence;
-      writePrivate(`cursor.${projectId}`, cursor);
+    refreshRef.current = async () => {
+      if (resyncing) return resyncing;
+      const myEpoch = loadEpoch;
+      await hydrate();
+      void resumeBackfill(myEpoch);
+    };
+    function recordEvent(event: Event): boolean {
+      if (event.project_id !== projectId || journal.has(event.sequence)) return false;
       const nativeKey = event.native_session_id && event.native_event_id ? `${event.native_session_id}:${event.native_event_id}` : null;
-      if (nativeKey && seenNative.has(nativeKey)) return;
+      if (nativeKey && seenNative.has(nativeKey)) return false;
       if (nativeKey) seenNative.add(nativeKey);
       journal.set(event.sequence, event);
-      setEvents([...journal.values()]);
+      return true;
+    }
+    function recordHistoricalEvents(incoming: Event[]) {
+      for (const event of incoming) {
+        if (!recordEvent(event)) continue;
+        if (event.event_type === "frame.available" || event.event_type === "segment.available") {
+          receiptArtifacts.add((event.payload as { artifact_id: string }).artifact_id);
+        } else if (event.event_type === "work.state_changed") {
+          const work = event.payload as unknown as WorkRecord;
+          const prior = knownWork.get(work.work_id);
+          if (!prior || prior.state_revision < work.state_revision) knownWork.set(work.work_id, work);
+        } else if (event.event_type === "job.state_changed") {
+          recordJobs([event.payload as unknown as JobRecord], true);
+        }
+      }
+    }
+    function publishEvents() {
+      if (!disposed) setEvents([...journal.values()].sort((a, b) => a.sequence - b.sequence));
+    }
+    function refreshSnapshot() {
+      const myEpoch = loadEpoch;
+      void api.call("getProjectSnapshot", { path }).then(fresh => {
+        if (currentLoad(myEpoch)) {
+          authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, fresh.event_sequence);
+          setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
+        }
+      }).catch(() => { /* Event state remains authoritative offline. */ });
+    }
+    function apply(event: Event) {
+      if (disposed || event.project_id !== projectId || event.sequence <= cursor) return;
+      rememberCursor(event.sequence);
+      if (!recordEvent(event)) return;
+      applyLiveProjection(event);
+    }
+    function applyLiveProjection(event: Event, backfilled = false) {
       if (event.event_type.startsWith("request.")) {
         const record = event.payload as unknown as RequestRecord;
         setRequests(records => mergeRequests(records, [record]));
@@ -310,35 +392,41 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         const work = event.payload as unknown as WorkRecord;
         const prevWork = knownWork.get(work.work_id);
         if (!prevWork || work.state_revision >= prevWork.state_revision) knownWork.set(work.work_id, work);
-        setSnapshot(s => {
-          if (!s) return s;
-          if (s.active_work && s.active_work.work_id === work.work_id && work.state_revision < s.active_work.state_revision) return s;
-          return {
-            ...s,
-            event_sequence: Math.max(s.event_sequence, event.sequence),
-            active_work: TERMINAL_WORK.has(work.state) ? (s.active_work?.work_id === work.work_id ? null : s.active_work) : work,
-          };
-        });
-        void api.call("getProjectSnapshot", { path }).then(fresh => {
-          if (!disposed) setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
-        }).catch(() => { /* Event state remains authoritative offline. */ });
+        if (event.sequence >= latestWorkSequence && (!backfilled || event.sequence > authoritativeSnapshotSequence)) {
+          latestWorkSequence = event.sequence;
+          setSnapshot(s => {
+            if (!s) return s;
+            if (s.active_work && s.active_work.work_id === work.work_id && work.state_revision < s.active_work.state_revision) return s;
+            return {
+              ...s,
+              event_sequence: Math.max(s.event_sequence, event.sequence),
+              active_work: TERMINAL_WORK.has(work.state) ? (s.active_work?.work_id === work.work_id ? null : s.active_work) : work,
+            };
+          });
+        }
+        refreshSnapshot();
       }
       if (event.event_type === "project.state_changed") {
         const project = event.payload as unknown as ProjectSnapshot["project"];
         setSnapshot(s => s && project.state_revision >= s.project.state_revision ? { ...s, event_sequence: Math.max(s.event_sequence, event.sequence), project } : s);
+        refreshSnapshot(); // The project projection does not carry the execution gate.
       }
       if (event.event_type === "decision.requested" || event.event_type === "decision.resolved") {
         const decision = event.payload as unknown as ProjectSnapshot["pending_decisions"][number];
-        setSnapshot(s => {
-          if (!s) return s;
-          const existing = s.pending_decisions.find(d => d.decision_id === decision.decision_id);
-          if (existing && decision.state_revision < existing.state_revision) return s;
-          return {
-            ...s,
-            event_sequence: Math.max(s.event_sequence, event.sequence),
-            pending_decisions: [...s.pending_decisions.filter(d => d.decision_id !== decision.decision_id), ...(decision.state === "pending" ? [decision] : [])],
-          };
-        });
+        const latest = decisionSequences.get(decision.decision_id) ?? 0;
+        if (event.sequence > latest) {
+          decisionSequences.set(decision.decision_id, event.sequence);
+          setSnapshot(s => {
+            if (!s) return s;
+            const existing = s.pending_decisions.find(d => d.decision_id === decision.decision_id);
+            if (existing && decision.state_revision < existing.state_revision) return s;
+            return {
+              ...s,
+              event_sequence: Math.max(s.event_sequence, event.sequence),
+              pending_decisions: [...s.pending_decisions.filter(d => d.decision_id !== decision.decision_id), ...(decision.state === "pending" ? [decision] : [])],
+            };
+          });
+        }
       }
       if (event.event_type === "frame.available" || event.event_type === "segment.available") {
         const {artifact_id} = event.payload as {artifact_id: string};
@@ -362,13 +450,12 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         const activity = event.payload as unknown as ActivityEventData;
         if (activity.artifact_ids?.length) void loadRetainedArtifacts();
         if (event.event_type.startsWith("subagent.") || activity.artifact_ids?.length || activity.output_status) {
-          void api.call("getProjectSnapshot", { path }).then(fresh => {
-            if (!disposed) setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
-          }).catch(() => {});
+          refreshSnapshot();
         }
       }
       if (event.event_type === "publication.created") {
-        void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (!disposed) setItems(prev => mergeItems(prev, value)); }).catch(report);
+        const myEpoch = loadEpoch;
+        void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (currentLoad(myEpoch)) setItems(prev => mergeItems(prev, value)); }).catch(e => { if (currentLoad(myEpoch)) report(e); });
         void loadRetainedArtifacts();
       }
       if (event.event_type === "review.ready" || event.event_type === "review.changed") {
@@ -380,26 +467,125 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       if (scope.base) setBaseRevision(n => n + 1);
       if (scope.versionId) versionRefresh.bump(scope.versionId, scope.immediate);
     }
-    async function replay() {
-      if (replaying) return replaying;
-      replaying = (async () => {
-        while (!disposed) {
-          const page = await api.call("replayProjectEvents", { path, query: { after: cursor, limit: 100 } });
+    const expired = (e: unknown) => e instanceof ApiError && e.status === 410;
+    async function replayForward(myEpoch: number) {
+      if (replaying?.epoch === myEpoch) return replaying.promise;
+      const promise = (async () => {
+        while (currentLoad(myEpoch)) {
           const before = cursor;
-          for (const event of page.events) {
-            if (event.sequence > cursor + 1) throw new Error("Event journal has a gap. Metadata remains available. Reconnect to recover.");
-            apply(event);
-          }
-          if (cursor >= page.last_available) break;
-          if (before === cursor) throw new Error("Event replay made no progress.");
+          const page = await api.call("replayProjectEvents", { path, query: { after: before, limit: 100 } });
+          if (!currentLoad(myEpoch)) return;
+          const end = page.events.at(-1)?.sequence ?? before;
+          const incoming = validateWindowEvents(page.events, before, end);
+          if (incoming.length !== page.events.length || (end === before && before < page.last_available)) throw new Error(JOURNAL_GAP);
+          for (const event of incoming) apply(event);
+          if (incoming.length) publishEvents();
+          if (cursor >= page.last_available) return;
+          if (cursor === before) throw new Error(JOURNAL_GAP);
         }
-      })().finally(() => { replaying = null; });
-      return replaying;
+      })();
+      replaying = { epoch: myEpoch, promise };
+      try { await promise; }
+      finally { if (replaying?.promise === promise) replaying = null; }
+    }
+    async function fetchWave(end: number, floor: number, myEpoch: number) {
+      const windows = backfillWindows(end, floor);
+      const pages = await Promise.all(windows.map(({ after, limit }) => api.call("replayProjectEvents", { path, query: { after, limit } })));
+      if (!currentLoad(myEpoch)) return null;
+      const incoming = windows.flatMap(({ after, end }, i) => validateWindowEvents(pages[i].events, after, end));
+      return { incoming, next: windows.at(-1)!.after };
+    }
+    function recordWave(incoming: Event[], liveAbove: number, backfilled = false) {
+      for (const event of incoming.sort((a, b) => a.sequence - b.sequence)) {
+        if (event.sequence <= liveAbove) recordHistoricalEvents([event]);
+        else if (recordEvent(event)) applyLiveProjection(event, backfilled);
+      }
+    }
+    async function resumeBackfill(myEpoch: number, recoverExpiry = true) {
+      if (!currentLoad(myEpoch) || !pendingBackfill) return;
+      if (backfilling?.epoch === myEpoch) return backfilling.promise;
+      const promise = (async () => {
+        while (pendingBackfill && currentLoad(myEpoch)) {
+          const { end, floor, liveAbove }: { end: number; floor: number; liveAbove: number } = pendingBackfill;
+          const wave = await fetchWave(end, floor, myEpoch);
+          if (!wave || !currentLoad(myEpoch)) return;
+          recordWave(wave.incoming, liveAbove, true);
+          publishEvents();
+          pendingBackfill = wave.next > floor ? { end: wave.next, floor, liveAbove } : null;
+          if (pendingBackfill === null) setBackfillError("");
+        }
+      })().catch(async e => {
+        if (!currentLoad(myEpoch)) return;
+        failedBackfillEpoch = myEpoch;
+        if (expired(e) && recoverExpiry) await resync().catch(report);
+        else {
+          setBackfillError(describeError(e));
+          if (e instanceof ApiError && e.status === 401) onUnauthorised();
+        }
+      }).finally(() => {
+        if (backfilling?.promise === promise) backfilling = null;
+      });
+      backfilling = { epoch: myEpoch, promise };
+      return promise;
+    }
+    async function initialLoad(myEpoch: number) {
+      if (!currentLoad(myEpoch)) return;
+      const baseline = hydratedWatermark;
+      let head = baseline;
+      let floor = 0;
+      let prefix: Event[] = [];
+      let wave: Awaited<ReturnType<typeof fetchWave>> = null;
+      if (head > 0) {
+        wave = await fetchWave(head, 0, myEpoch);
+        if (!currentLoad(myEpoch)) return;
+      }
+      if (head === 0) {
+        const page = await api.call("replayProjectEvents", { path, query: { after: 0, limit: 100 } });
+        if (!currentLoad(myEpoch)) return;
+        floor = page.events.at(-1)?.sequence ?? 0;
+        head = Math.max(page.last_available, page.next_after ?? 0, floor);
+        if (head === 0) return;
+        prefix = validateWindowEvents(page.events, 0, floor);
+        if (prefix.length !== page.events.length) throw new Error(JOURNAL_GAP);
+        if (floor < head) wave = await fetchWave(head, floor, myEpoch);
+      }
+      if (!currentLoad(myEpoch)) return;
+      recordWave([...prefix, ...(wave?.incoming ?? [])], baseline);
+      rememberCursor(head);
+      publishEvents();
+      pendingBackfill = wave && wave.next > floor ? { end: wave.next, floor, liveAbove: baseline } : null;
+      if (pendingBackfill && head > baseline) void hydrate(); // Refresh projections spanning the gap between prefix and tail.
     }
     async function resync() {
-      versionRefresh.cancel();
-      cursor = 0; journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); receiptArtifacts.clear(); setEvents([]);
-      await hydrate(); await replay();
+      if (disposed) return;
+      if (resyncing) return resyncing;
+      function resetGeneration() {
+        ++loadEpoch;
+        versionRefresh.cancel();
+        hydratedWatermark = 0;
+        latestWorkSequence = 0; authoritativeSnapshotSequence = 0;
+        pendingBackfill = null; backfilling = null; setBackfillError("");
+        rememberCursor(0); journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); decisionSequences.clear(); receiptArtifacts.clear(); setEvents([]);
+        setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]);
+        setHydrated(false); setError(""); setVersionRevisions({});
+      }
+      resyncing = (async () => {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          resetGeneration();
+          const myEpoch = loadEpoch;
+          await hydrate(true);
+          try { await initialLoad(myEpoch); return; }
+          catch (e) {
+            if (!currentLoad(myEpoch)) return;
+            if (expired(e) && attempt === 0) continue;
+            resetGeneration();
+            throw e;
+          }
+        }
+      })();
+      try { await resyncing; }
+      finally { resyncing = null; }
+      void resumeBackfill(loadEpoch, false);
     }
     function connect() {
       if (disposed) return;
@@ -407,37 +593,57 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       const url = new URL(routes.connectProjectEvents.path, location.href);
       url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
       socket = new WebSocket(url);
-      socket.onopen = () => socket?.send(JSON.stringify({ schema_version: "1.0", type: "subscribe", project_id: projectId, after_sequence: cursor }));
+      socket.onopen = () => {
+        socket?.send(JSON.stringify({ schema_version: "1.0", type: "subscribe", project_id: projectId, after_sequence: cursor }));
+        void resumeBackfill(loadEpoch);
+      };
       let messages = Promise.resolve();
       socket.onmessage = message => {
+        const myEpoch = loadEpoch;
         messages = messages.then(async () => {
-          if (disposed) return;
+          if (resyncing) await resyncing;
+          if (!currentLoad(myEpoch)) return;
           const frame = JSON.parse(String(message.data)) as Event | SocketControl;
           if (frame.project_id !== projectId) return;
           if ("type" in frame) {
             const control = frame as SocketControl;
             if (control.type === "welcome") {
               setConnection("Replaying");
-              if (cursor > control.last_sequence || (cursor > 0 && cursor < control.earliest_sequence - 1)) await resync();
+              if (cursor > control.last_sequence || (cursor > 0 && cursor < control.earliest_sequence - 1)) await resync().catch(report);
             } else if (control.type === "caught_up") {
-              if (control.through_sequence > cursor) await replay();
+              if (control.through_sequence > cursor) await replayForward(loadEpoch);
               setConnection("Connected");
-              await hydrate();
-            } else if (control.type === "resync_required") await resync();
+              if (failedBackfillEpoch !== loadEpoch) void resumeBackfill(loadEpoch);
+            } else if (control.type === "resync_required") await resync().catch(report);
           } else {
-            if (frame.sequence > cursor + 1) await replay();
-            apply(frame);
+            if (frame.sequence > cursor + 1) await replayForward(loadEpoch);
+            if (frame.sequence > cursor + 1) throw new Error(JOURNAL_GAP);
+            if (frame.sequence > cursor) { apply(frame); publishEvents(); }
           }
-        }).catch(report);
+        }).catch(handleReplayError);
       };
       socket.onerror = () => { if (!disposed) setConnection("Connection unavailable"); };
-      socket.onclose = () => { if (!disposed) { setConnection("Disconnected · retrying"); timer = setTimeout(() => { void hydrate().then(replay).catch(report).finally(connect); }, 2000); } };
+      socket.onclose = () => { if (!disposed) { setConnection("Disconnected · retrying"); timer = setTimeout(() => {
+        void (async () => {
+          if (resyncing) await resyncing;
+          const myEpoch = loadEpoch;
+          await hydrate();
+          if (cursor === 0) await initialLoad(myEpoch);
+          else {
+            void resumeBackfill(myEpoch);
+            await replayForward(myEpoch);
+          }
+        })().catch(handleReplayError).finally(connect);
+      }, 2000); } };
     }
-    void hydrate().then(replay).catch(async e => {
-      if (e instanceof ApiError && e.status === 410) await resync().catch(report);
+    async function handleReplayError(e: unknown) {
+      if (disposed) return;
+      if (expired(e)) await resync().catch(report);
       else report(e);
-    }).finally(connect);
-    return () => { disposed = true; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
+    }
+    const firstEpoch = loadEpoch;
+    void hydrate().then(() => initialLoad(firstEpoch)).catch(handleReplayError).finally(connect);
+    return () => { disposed = true; loadEpoch++; pendingBackfill = null; backfilling = null; latestWorkSequence = 0; authoritativeSnapshotSequence = 0; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
   }, [api, projectId, onUnauthorised]);
-  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error, revision, catalogueRevision, baseRevision, versionRevisions, refresh };
+  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error: error || backfillError, revision, catalogueRevision, baseRevision, versionRevisions, refresh };
 }

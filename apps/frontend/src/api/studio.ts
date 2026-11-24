@@ -18,6 +18,7 @@ export interface AssistantStatusProps {
   connection: string;
   hydrated?: boolean;
   submitting?: boolean;
+  autoReleasingRequestId?: string | null;
   stopping?: boolean;
   compact?: boolean;
 }

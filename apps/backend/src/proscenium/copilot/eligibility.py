@@ -124,6 +124,46 @@ def work_outputs(tx: Transaction) -> list[dict[str, Any]]:
     return result
 
 
+def latest_work_completed(tx: Transaction) -> bool:
+    works = tx.all("work")
+    if any(w["state"] not in TERMINAL_WORK for w in works):
+        return False
+    if all(w["state"] == "completed" for w in works):
+        return True
+    row = tx.connection.execute(
+        "SELECT json_extract(body, '$.payload.work_id') FROM events "
+        "WHERE json_extract(body, '$.event_type') = 'work.state_changed' "
+        "ORDER BY sequence DESC LIMIT 1"
+    ).fetchone()
+    work_by_id = {w["work_id"]: w for w in works}
+    return bool(
+        row and isinstance(row[0], str) and work_by_id.get(row[0], {}).get("state") == "completed"
+    )
+
+
+def has_unreleased_stop(tx: Transaction) -> bool:
+    return any(
+        s.get("phase") == "confirmed"
+        and s.get("pause") != "released"
+        and s.get("hold_released") is not True
+        for s in tx.all("copilot.stops")
+    )
+
+
+def idle_restart_hold(tx: Transaction, control: dict[str, Any]) -> bool:
+    raw_gate = tx.get("copilot.control", "gate", required=False) or {}
+    return (
+        control["fenced"] is True
+        and control.get("reason") == "awaiting_resume"
+        and raw_gate.get("queue_released", True) is not False
+        and latest_work_completed(tx)
+        and not any(s.get("phase") != "confirmed" for s in tx.all("copilot.stops"))
+        and not has_unreleased_stop(tx)
+        and not any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes"))
+        and not any(d["state"] == "pending" for d in tx.all("decisions"))
+    )
+
+
 def execution_status(tx: Transaction, epoch: str, project: dict[str, Any]) -> dict[str, Any]:
     control = control_status(tx, epoch, project)
     fenced = bool(control["fenced"])
@@ -160,11 +200,30 @@ def execution_status(tx: Transaction, epoch: str, project: dict[str, Any]) -> di
             else "stop_requested"
         )
         message = "An earlier Stop awaits reconciliation before new work can run."
+    elif any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes")):
+        code, message = "resume_pending", "The original Resume operation awaits reconciliation."
     elif fenced or any(w["state"] in {"awaiting_resume", "outcome_uncertain"} for w in works):
         code = reason or "awaiting_resume"
         message = "Execution is held awaiting explicit Resume or queue release."
-    elif any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes")):
-        code, message = "awaiting_resume", "The original Resume operation awaits reconciliation."
+        if (
+            fenced
+            and code == "awaiting_resume"
+            and not non_terminal
+            and not idle_restart_hold(tx, control)
+        ):
+            if (
+                has_unreleased_stop(tx)
+                or (tx.get("copilot.control", "gate", required=False) or {}).get(
+                    "queue_released", True
+                )
+                is False
+            ):
+                code, message = "queue_paused", "Execution is paused until explicit Resume."
+            elif not latest_work_completed(tx):
+                code, message = (
+                    "work_stopped",
+                    "Previous work did not finish. Use Resume to continue it or release the queue.",
+                )
     elif active:
         awaiting = any(w["state"] == "awaiting_user" for w in active) or any(
             d["state"] == "pending" for d in tx.all("decisions")
