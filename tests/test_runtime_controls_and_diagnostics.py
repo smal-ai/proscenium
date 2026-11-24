@@ -1606,6 +1606,9 @@ def test_send_failure_before_claim_keeps_queue_held_and_releasable(runtime, fail
         ("no_session", None),
         ("no_session", "dispatching"),
         ("no_session", "missing_outbox"),
+        ("no_session", "admitted_message"),
+        ("checked", "admitted_message"),
+        ("checked", "finished_invocation"),
     ],
 )
 def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native_history(
@@ -1637,12 +1640,18 @@ def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native
             return session
 
         copilot.session = without_history
-    elif session_history == "no_session":
+    elif session_history == "no_session" and barrier != "admitted_message":
 
         async def no_open(*args, **kwargs):
             pytest.fail("First-session reconciliation must not open a native session")
 
         copilot.session = no_open
+    elif session_history == "no_session":
+
+        async def missing_session(project_id):
+            raise DomainError("native_session_missing", 503)
+
+        copilot.session = missing_session
     with store.transaction() as tx:
         state.request_state(tx, REQUEST, "completed")
         state.fence(tx, "attribution_unavailable")
@@ -1659,6 +1668,14 @@ def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native
         assert tx.get("copilot.sends", "legacy", required=False) is None
         if barrier == "missing_outbox":
             tx.connection.execute("DELETE FROM outbox WHERE id='legacy'")
+        if barrier == "admitted_message":
+            tx.put(
+                "copilot.admitted_messages",
+                "legacy",
+                {"message_id": "admitted-native-message", "work_id": work_id},
+            )
+        if barrier == "finished_invocation":
+            tx.put("invocations", "legacy-tool", {"request_id": "legacy", "state": "completed"})
         if barrier in {"dispatching", "outcome_uncertain"}:
             tx.claim_intent("legacy")
             if barrier == "outcome_uncertain":
@@ -1684,7 +1701,13 @@ def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native
         assert receipt["state"] == ("outcome_uncertain" if barrier else "held")
         assert operation["state"] == ("outcome_uncertain" if barrier else "completed")
         if barrier:
-            assert operation["detail_code"] == "attribution_unavailable"
+            code = (
+                "native_session_missing"
+                if session_history == "no_session" and barrier == "admitted_message"
+                else "attribution_unavailable"
+            )
+            assert operation["detail_code"] == code
+            assert copilot.state.control(tx)["fenced"]
         assert tx.get("copilot.sends", "legacy", required=False) is None
         expected_intent = barrier if barrier in {"dispatching", "outcome_uncertain"} else "pending"
         outbox = tx.connection.execute("SELECT state FROM outbox WHERE id='legacy'").fetchone()

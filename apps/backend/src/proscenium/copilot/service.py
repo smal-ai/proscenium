@@ -113,9 +113,7 @@ def retired_housekeeping(event: dict[str, Any]) -> bool:
         return payload.get("shutdownType") != "error"
     if kind in {"session.idle", "assistant.idle"}:
         return payload.get("aborted") is not True and not payload.get("backgroundTasks")
-    if kind == "hook.start":
-        return payload.get("hookType") == "sessionEnd"
-    if kind == "hook.end":
+    if kind in {"hook.start", "hook.end"}:
         return (
             payload.get("hookType") == "sessionEnd"
             and payload.get("success") is not False
@@ -584,8 +582,10 @@ class Copilot:
             if hasattr(cached, "disconnect"):
                 try:
                     await cached.disconnect()
-                except Exception:
+                except BaseException as exc:
                     self.callback_failure(previous, "provider_unavailable")
+                    if not isinstance(exc, Exception):
+                        raise
             if previous.failure:
                 raise DomainError(previous.failure, 409)
             if previous.failure_handled:
@@ -1741,6 +1741,7 @@ class Copilot:
 
         None denotes a project that never opened a native session, not unavailable history.
         """
+        invocation_requests = {i.get("request_id") for i in tx.all("invocations")}
         for record in self._unsettled_requests(tx):
             request_id = record["request_id"]
             receipt = record["receipt"]
@@ -1749,6 +1750,8 @@ class Copilot:
                 or receipt.get("native_message_id") is not None
                 or (recorded_turns is not None and request_id in recorded_turns)
                 or tx.get("copilot.sends", request_id, required=False) is not None
+                or tx.get("copilot.admitted_messages", request_id, required=False) is not None
+                or request_id in invocation_requests
             ):
                 continue
             intent = tx.connection.execute(
@@ -2157,7 +2160,16 @@ class Copilot:
     ) -> dict[str, Any]:
         with self.services.registry.project_store(project_id).transaction() as tx:
             association = tx.get("copilot.session", "native", required=False)
-            attempted = bool(tx.all("copilot.sends"))
+            attempted = any(
+                tx.all(namespace)
+                for namespace in (
+                    "copilot.sends",
+                    "copilot.admitted_messages",
+                    "copilot.native",
+                    "copilot.continuation_sends",
+                    "invocations",
+                )
+            )
             if not association and not attempted and not require_session:
                 if not self._uncertain_stops(tx):
                     self._heal_unattempted_requests(tx, recorded_turns=None)

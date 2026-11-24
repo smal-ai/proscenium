@@ -282,6 +282,8 @@ REJECTED_TEARDOWN_EVENTS = [
     ("session.idle", {"aborted": True}),
     ("session.idle", {"backgroundTasks": [{"id": "task"}]}),
     ("session.shutdown", {"shutdownType": "error"}),
+    ("hook.start", {"hookType": "sessionEnd", "success": False}),
+    ("hook.start", {"hookType": "sessionEnd", "error": "failed"}),
     ("hook.end", {"hookType": "sessionEnd", "success": False}),
     ("hook.end", {"hookType": "sessionEnd", "error": "fixture failure"}),
     ("session.workspace_file_changed", {}),
@@ -293,7 +295,9 @@ REJECTED_TEARDOWN_EVENTS = [
 ]
 
 
-@pytest.mark.parametrize("disconnect_event", [None, *REJECTED_TEARDOWN_EVENTS, "concurrent"])
+@pytest.mark.parametrize(
+    "disconnect_event", [None, *REJECTED_TEARDOWN_EVENTS, "concurrent", "cancelled"]
+)
 def test_profiles_project_selection_frozen_models_and_native_session_refresh(
     tmp_path, disconnect_event
 ):
@@ -406,7 +410,7 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(
                     ("hook.end", {"hookType": "sessionEnd", "success": True}),
                     ("session.shutdown", {"shutdownType": "routine"}),
                 ]
-                if disconnect_event == "concurrent":
+                if disconnect_event in ("concurrent", "cancelled"):
                     disconnect_started.set()
                     await finish_disconnect.wait()
                     events.append(("assistant.message", {}))
@@ -457,7 +461,7 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(
             runtime.sends["preparing"] = asyncio.current_task()
             runtime.send_projects["preparing"] = project_id
             try:
-                if disconnect_event == "concurrent":
+                if disconnect_event in ("concurrent", "cancelled"):
                     # Neither caller is the tracked send in this scenario.
                     runtime.sends.clear()
                     observed_failures = []
@@ -475,13 +479,21 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(
                     await asyncio.sleep(0)
                     assert not second_call.done() and opens == [(None, models)]
                     assert runtime.session_locks[project_id].locked()
-                    finish_disconnect.set()
-                    for result in await asyncio.wait_for(
+                    cancelled = disconnect_event == "cancelled"
+                    if cancelled:
+                        first_call.cancel()
+                    else:
+                        finish_disconnect.set()
+                    results = await asyncio.wait_for(
                         asyncio.gather(first_call, second_call, return_exceptions=True), 1
-                    ):
+                    )
+                    code = "provider_unavailable" if cancelled else "attribution_unavailable"
+                    if cancelled:
+                        assert isinstance(results.pop(0), asyncio.CancelledError)
+                    for result in results:
                         assert isinstance(result, DomainError)
-                        assert (result.code, result.status) == ("attribution_unavailable", 409)
-                    assert observed_failures == ["attribution_unavailable"] * 2
+                        assert (result.code, result.status) == (code, 409)
+                    assert observed_failures == [code] * len(results)
                     assert opens == [(None, models)] and disconnected == [True]
                     return
                 if disconnect_event:
