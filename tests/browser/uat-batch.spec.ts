@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { MessageSubmit } from "../../apps/frontend/src/api";
+import type { Event, MessageSubmit } from "../../apps/frontend/src/api";
 import { verifyLayout } from "./layout-journey";
 import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
 
@@ -151,14 +151,21 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
   const input = page.getByRole("textbox", { name: "Message Copilot" });
   const queue = page.getByRole("button", { name: "Queue message" });
   const resume = page.getByRole("region", { name: "Resume Copilot" });
+  const banner = page.locator(".queue-hold");
+  const status = page.locator(".composer-footer .assistant-status");
   await expect(resume).toHaveCount(0);
+  await expect(banner).toHaveCount(0);
+  await expect(status).toHaveAttribute("aria-label", "Ready");
   await input.fill("Explicit Queue"); await queue.click();
   try {
     await expect(page.getByRole("button", { name: "Cancel held request" })).toBeVisible();
     await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
     if (stalled) {
       await page.clock.fastForward(5_001);
       await expect(resume).toBeVisible();
+      await expect(banner).toBeVisible();
+      await expect(status).toHaveAttribute("aria-label", "Paused");
       await expect(input).toHaveValue("Explicit Queue");
     }
   } finally {
@@ -177,9 +184,57 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
   studio.snapshot.held_requests.push(second);
   studio.emit("request.accepted", second);
   await expect(resume).toBeVisible();
+  await expect(banner).toBeVisible();
+  await expect(status).toHaveAttribute("aria-label", "Paused");
   studio.assertHermetic();
 });
 }
+
+test("large conversations show the newest wave before older pages without refetching metadata or shifting the reading position", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  // Two waves are necessary to hold older pages back while the first four finish.
+  const count = 750;
+  studio.snapshot.event_sequence = count;
+  studio.events = Array.from({ length: count }, (_, i): Event => ({
+    schema_version: "1.0", project_id: projectId, sequence: i + 1,
+    occurred_at: new Date(Date.UTC(2026, 10, 24) + i * 1000).toISOString(),
+    event_type: i % 75 === 0 ? "work.state_changed" : "assistant.completed",
+    actor: { kind: "lead", id: "lead" }, request_id: null, work_id: null,
+    native_session_id: null, native_event_id: null,
+    payload: i % 75 === 0 ? work("completed", i + 1) : { message_id: `reply-${i + 1}`, text: `Assistant reply ${i + 1}`, native_agent_id: null },
+  } as Event));
+  const older = deferred();
+  const requested: number[] = [];
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+    const query = new URL(route.request().url()).searchParams;
+    const after = Number(query.get("after"));
+    const limit = Number(query.get("limit"));
+    requested.push(after);
+    if (after < 350) await older.promise;
+    const events = studio.events.slice(after, after + limit);
+    await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: count } });
+  } }] });
+  try {
+    await studio.open(); await studio.ready();
+    expect(requested[0]).toBe(650);
+    expect(requested.slice(0, 4).sort((a, b) => b - a)).toEqual([650, 550, 450, 350]);
+    await expect(page.getByText("Assistant reply 750", { exact: true })).toBeInViewport();
+    await expect(page.getByText("Assistant reply 2", { exact: true })).toHaveCount(0);
+    const viewport = page.locator(".chat-scroll");
+    await viewport.hover(); await page.mouse.wheel(0, -400);
+    await expect(page.getByRole("button", { name: "Jump to latest" })).toBeVisible();
+    const anchor = await viewport.evaluate(element => {
+      const top = element.getBoundingClientRect().top;
+      const node = [...element.querySelectorAll(".assistant-message")].find(message => message.getBoundingClientRect().top > top)!;
+      return { text: node.querySelector("p")!.textContent!, top: node.getBoundingClientRect().top };
+    });
+    older.release();
+    await expect(page.getByText("Assistant reply 2", { exact: true })).toBeAttached();
+    await expect.poll(async () => Math.abs((await page.getByText(anchor.text, { exact: true }).evaluate(node => node.closest("article")!.getBoundingClientRect().top)) - anchor.top)).toBeLessThan(2);
+    expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(1);
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
 
 for (const active of ["running", "awaiting_user"] as const) {
   test(`Queue behind ${active} work is cancellable without showing Resume`, async ({ page, baseURL }) => {
@@ -341,10 +396,11 @@ test("delayed older snapshot cannot resurrect a completed work event", async ({ 
   const studio = new StudioFixture(page, baseURL!); studio.snapshot.active_work = work();
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   const delayed = deferred(); studio.snapshotGate = delayed.promise;
+  const beforeRefresh = studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length;
   const staleResponse = page.waitForResponse(async response => response.url().endsWith(`${base}/snapshot`) && (await response.json()).active_work?.state === "running");
   await page.getByRole("button", { name: "Refresh project metadata" }).click();
   // The request handler freezes running state before the newer event is delivered.
-  await expect.poll(() => studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length).toBeGreaterThan(2);
+  await expect.poll(() => studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length).toBeGreaterThan(beforeRefresh);
   await studio.setWork(null);
   await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
   delayed.release(); studio.snapshotGate = null;

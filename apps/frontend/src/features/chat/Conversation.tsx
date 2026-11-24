@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Event, ItemRecord, RequestRecord, RetainedArtifactSummary, RevisionCommand } from "../../api";
 import { durableCommand, id } from "../../app/storage";
 import { StoredContext } from "./ContextPreview";
@@ -24,26 +24,30 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
   api: ApiClient; projectId: string; requests: RequestRecord[]; events: Event[]; onRefresh: () => Promise<void>; onError: (e: unknown) => void;
   onStarter?: (kind: "asset" | "scene" | "storyboard") => void; items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
 }) {
-  const messages = new Map<string, { event: Event; text: string }>();
-  const activities = new Map<string, { start: Event; latest: Event }>();
-  const agentLabels = new Map<string, string>();
-  const hasSubagents = events.some(event => event.event_type.startsWith("subagent."));
-  for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
-    if (event.event_type.startsWith("assistant.")) {
-      const payload = event.payload as unknown as ConversationEventData;
-      const key = `${event.native_session_id ?? "app"}:${payload.native_agent_id ?? event.actor.id}:${payload.message_id}`;
-      const previous = messages.get(key);
-      messages.set(key, { event: previous?.event ?? event, text: event.event_type === "assistant.completed" ? payload.text : (previous?.text ?? "") + payload.text });
-    } else if (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) {
-      const activity = event.payload as unknown as ActivityEventData;
-      if (event.event_type.startsWith("subagent.")) {
-        agentLabels.set(event.actor.id, activity.display_name || activity.name);
+  const { messages, activities, agentLabels, hasSubagents } = useMemo(() => {
+    const messages = new Map<string, { event: Event; text: string }>();
+    const activities = new Map<string, { start: Event; latest: Event }>();
+    const agentLabels = new Map<string, string>();
+    let hasSubagents = false;
+    for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
+      if (event.event_type.startsWith("assistant.")) {
+        const payload = event.payload as unknown as ConversationEventData;
+        const key = `${event.native_session_id ?? "app"}:${payload.native_agent_id ?? event.actor.id}:${payload.message_id}`;
+        const previous = messages.get(key);
+        messages.set(key, { event: previous?.event ?? event, text: event.event_type === "assistant.completed" ? payload.text : (previous?.text ?? "") + payload.text });
+      } else if (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) {
+        const activity = event.payload as unknown as ActivityEventData;
+        if (event.event_type.startsWith("subagent.")) {
+          hasSubagents = true;
+          agentLabels.set(event.actor.id, activity.display_name || activity.name);
+        }
+        const actKey = `${event.native_session_id ?? "app"}:${activity.invocation_id}`;
+        const previous = activities.get(actKey);
+        activities.set(actKey, { start: previous?.start ?? event, latest: event });
       }
-      const actKey = `${event.native_session_id ?? "app"}:${activity.invocation_id}`;
-      const previous = activities.get(actKey);
-      activities.set(actKey, { start: previous?.start ?? event, latest: event });
     }
-  }
+    return { messages, activities, agentLabels, hasSubagents };
+  }, [events]);
   const assigned = new Set<string>();
   const summaryById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary]));
   const activityOutputs = new Map<string, string[]>();

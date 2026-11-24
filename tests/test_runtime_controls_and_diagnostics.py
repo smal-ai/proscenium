@@ -497,6 +497,42 @@ def test_tick_releases_only_the_idle_restart_queue_admission(runtime):
     assert sent == [(submission["text"], "new")]
 
 
+@pytest.mark.parametrize("latest", ["completed", "stopped", "failed"])
+def test_idle_restart_uses_latest_work_even_with_older_stopped_work(runtime, latest):
+    _, store, _, _ = runtime
+    copilot = idle_restart(runtime, "stopped")
+    with store.transaction() as tx:
+        old = tx.require("work", WORK)
+        tx.put(
+            "copilot.stops",
+            "old-stop",
+            {"phase": "confirmed", "pause": "acknowledged", "hold_released": True},
+        )
+        latest_work = {**old, "work_id": "latest-work", "state": latest, "state_revision": 0}
+        tx.put("work", "latest-work", latest_work, schema="WorkRecord")
+        for work in [old, latest_work]:
+            tx.emit(
+                "work.state_changed",
+                work,
+                actor={"kind": "system", "id": "fixture"},
+                work_id=work["work_id"],
+            )
+        assert copilot.state.idle_restart_hold(tx, copilot.state.control(tx)) is (
+            latest == "completed"
+        )
+    assert snapshot(runtime)["hold_reason_code"] == (
+        "awaiting_resume" if latest == "completed" else "work_stopped"
+    )
+    copilot.state.submit(OWNER, request_record("new")["submission"])
+    asyncio.run(copilot.tick(PROJECT))
+    with store.transaction(write=False) as tx:
+        if latest == "completed":
+            assert tx.require("copilot.auto_releases", "new")["state"] == "completed"
+        else:
+            assert not tx.all("copilot.auto_releases")
+            assert copilot.state.control(tx)["fenced"]
+
+
 @pytest.mark.parametrize("restore", [False, True])
 def test_tick_does_not_release_a_queue_admitted_in_another_owner_epoch(runtime, restore):
     state, store, gate, _ = runtime
@@ -649,6 +685,7 @@ def test_already_idle_stop_holds_queue_across_restart_until_explicit_resume(runt
             assert not stop.get("hold_released")
 
         restart("epoch-b")
+        assert snapshot(runtime)["hold_reason_code"] == "queue_paused"
         assert (
             copilot.state.submit(OWNER, request_record("held")["submission"])[0]["state"] == "held"
         )

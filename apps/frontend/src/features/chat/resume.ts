@@ -1,4 +1,20 @@
-import { ApiError, type ApiClient, type Event, type ProjectSnapshot, type ResumeCommand, type ResumeOperationStatus, type WorkRecord } from "../../api";
+import { ApiError, type ApiClient, type Event, type ProjectSnapshot, type RequestRecord, type ResumeCommand, type ResumeOperationStatus, type WorkRecord } from "../../api";
+
+export function heldRequestIds(snapshot: ProjectSnapshot | null, requests: RequestRecord[]): Set<string> {
+  return new Set([
+    ...(snapshot?.held_requests ?? []).map(request => request.request_id),
+    ...requests.filter(request => request.receipt.state === "held").map(request => request.request_id),
+  ]);
+}
+
+export function isIdleAutoReleaseReady(snapshot: ProjectSnapshot | null, requests: RequestRecord[], events: Event[], autoReleasingRequestId: string | null = null): boolean {
+  return snapshot !== null && snapshot.execution?.fenced === true
+    && (snapshot.execution.hold_reason_code ?? "awaiting_resume") === "awaiting_resume"
+    && snapshot.active_work === null && snapshot.pending_decisions.length === 0
+    && !requests.some(r => r.submission.type === "stop" && r.receipt.state === "outcome_uncertain")
+    && resumableWork(snapshot, events).length === 0
+    && ![...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId);
+}
 
 /** Admission is not completion. Keep the original operation until it settles. */
 export async function awaitResume(api: ApiClient, projectId: string, operationId: string, budgetMs = 15000): Promise<ResumeOperationStatus | null> {

@@ -3,6 +3,7 @@ import { AlertTriangle, Pause } from "lucide-react";
 import type { AssistantStatusProps } from "../../api/studio";
 import type { ActivityEventData } from "../../api";
 import { busyAgent, nativeAgents } from "./agents";
+import { isIdleAutoReleaseReady } from "./resume";
 import "./chat.css";
 
 export type { AssistantStatusProps } from "../../api/studio";
@@ -14,14 +15,19 @@ const toolLabels: Record<string, string> = {
   skill: "Loading skill", view: "Reading project file", get_project_capabilities: "Checking capabilities",
   search_web: "Searching the web", web_fetch: "Fetching web page",
 };
-export function assistantState({ snapshot, requests, events, jobs, submitting, stopping }: AssistantStatusProps): { state: string; label: string; detail?: string; reason?: string } {
+export function assistantState({ snapshot, requests, events, jobs, submitting, stopping, autoReleasingRequestId = null }: AssistantStatusProps): { state: string; label: string; detail?: string; reason?: string } {
   const work = snapshot?.active_work;
   const execution = snapshot?.execution;
-  if (submitting) return { state: "sending", label: "Sending…" };
-  if (snapshot?.pending_decisions.length) return { state: "attention", label: "Needs your input" };
   if (stopping || work?.state === "stop_requested" || requests.some(r => r.submission.type === "stop" && r.receipt.state === "stop_requested")) return { state: "stopping", label: "Stopping…" };
   if (work?.state === "outcome_uncertain" || requests.some(r => r.submission.type === "stop" && r.receipt.state === "outcome_uncertain") || execution?.hold_reason_code === "uncertain_stop") return { state: "recovery", label: "Needs recovery" };
-  if (execution?.fenced || snapshot?.project.state === "awaiting_resume" || work?.state === "awaiting_resume") return { state: "paused", label: "Paused", reason: execution?.hold_reason ?? execution?.fence_reason ?? "Execution awaits explicit Resume" };
+  if (isIdleAutoReleaseReady(snapshot, requests, events, autoReleasingRequestId)) {
+    if (submitting) return { state: "sending", label: "Sending…" };
+    return autoReleasingRequestId !== null ? { state: "working", label: "Starting…" } : { state: "ready", label: "Ready" };
+  }
+  if (execution?.fenced || execution?.queue_released === false || ["queue_paused", "work_stopped", "resume_pending"].includes(execution?.hold_reason_code ?? "")
+    || (!execution && snapshot?.project.state === "awaiting_resume") || work?.state === "awaiting_resume") return { state: "paused", label: "Paused", reason: execution?.hold_reason ?? execution?.fence_reason ?? "Execution awaits explicit Resume" };
+  if (submitting) return { state: "sending", label: "Sending…" };
+  if (snapshot?.pending_decisions.length) return { state: "attention", label: "Needs your input" };
   if (work?.state === "awaiting_user") return { state: "attention", label: "Needs your input" };
   if (work?.state === "running" && !execution?.fenced) {
     const activeEvents = events.filter(event => event.project_id === snapshot?.project.project_id && (event.work_id === work.work_id || (work.native_session_id && event.native_session_id === work.native_session_id)));

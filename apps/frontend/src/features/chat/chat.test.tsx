@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
-import { mergeReviews, revisionScope, versionRefreshBuffer } from "../../app/useProjectData";
+import { backfillWindows, mergeReviews, revisionScope, validateWindowEvents, versionRefreshBuffer } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
 import { CriticPanel, criticRequestTarget, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
 import { annotationContext } from "../review/context";
@@ -15,7 +15,7 @@ import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
-import { awaitResume, resumableWork } from "./resume";
+import { awaitResume, isIdleAutoReleaseReady, resumableWork } from "./resume";
 import { steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
@@ -594,6 +594,40 @@ test("resumableWork offers stopped work only until newer work runs and ChatPanel
 
 const resumeCard = /aria-label="Resume Copilot"/;
 const heldRequest = (id: string) => ({ ...request(id, "2026-11-17T10:00:00Z", "Queued prompt"), receipt: { ...receipt, state: "held" } }) as RequestRecord;
+
+test("backfill windows descend to the floor and reject non-contiguous event pages", () => {
+  assert.deepEqual(backfillWindows(350), [
+    { after: 250, end: 350, limit: 100 }, { after: 150, end: 250, limit: 100 },
+    { after: 50, end: 150, limit: 100 }, { after: 0, end: 50, limit: 50 },
+  ]);
+  assert.deepEqual(backfillWindows(520, 450, 50, 1), [{ after: 470, end: 520, limit: 50 }]);
+  assert.deepEqual(backfillWindows(450, 450), []);
+  const page = [1, 2, 3, 4].map(sequence => event(sequence, "assistant.completed", {}));
+  assert.deepEqual(validateWindowEvents(page, 1, 3), page.slice(1, 3));
+  for (const bad of [[page[1]], [page[2], page[1]], [page[1], page[1], page[2]]]) {
+    assert.throws(() => validateWindowEvents(bad, 1, 3), /Event journal has a gap/);
+  }
+});
+
+test("idle restart status, Queue notice and Resume card share the same recovery boundary", () => {
+  const initial = snapshot("completed", true);
+  const idle = { ...initial, active_work: null, held_requests: [], execution: { ...initial.execution!, hold_reason_code: "awaiting_resume" } };
+  const check = (current: ProjectSnapshot, requests: RequestRecord[], paused: boolean, autoId: string | null = null) => {
+    assert.equal(isIdleAutoReleaseReady(current, requests, [], autoId), !paused);
+    assert.equal(shouldShowQueueHold(current, "queue", requests, [], autoId), paused);
+    assert.equal(shouldShowResumeCard(current, requests, 0, false, autoId), paused);
+    const status = assistantState({ snapshot: current, requests, events: [], connection: "Connected", autoReleasingRequestId: autoId });
+    if (paused) assert.ok(["Paused", "Needs recovery"].includes(status.label));
+    else assert.equal(status.label, autoId ? "Starting…" : "Ready");
+  };
+  check(idle, [], false);
+  check(idle, [heldRequest("new")], false, "new");
+  check(idle, [heldRequest("new")], true);
+  for (const hold_reason_code of ["work_stopped", "queue_paused", "resume_pending", "attribution_unavailable", "uncertain_stop"]) {
+    check({ ...idle, execution: { ...idle.execution, hold_reason_code } }, [], true);
+  }
+  check({ ...idle, active_work: snapshot("awaiting_resume").active_work }, [], true);
+});
 
 test("ordinary idle and FIFO Queue receipts do not show Resume but remain cancellable", () => {
   const requests = [heldRequest("follow-up")];

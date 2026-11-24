@@ -473,7 +473,7 @@ test("draft motion frames cause no retained artefact reads until settlement and 
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   };
   await studio.open(); await studio.ready();
-  await expect.poll(() => startupReads).toBe(2); // Initial load and socket catch-up.
+  await expect.poll(() => startupReads).toBe(1); // Initial hydration; caught_up does not rehydrate.
   measuring = true;
 
   const frameIds = Array.from({ length: 5 }, (_, i) => `draft-frame-${i + 1}`);

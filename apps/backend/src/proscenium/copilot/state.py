@@ -17,6 +17,7 @@ from proscenium.db.store import now
 from proscenium.jobs import transition
 from proscenium.services import Services
 
+from . import eligibility
 from .activity import (
     error_fields,
     failure_summary,
@@ -136,20 +137,7 @@ class State:
         return active_binding_revision(getattr(self.services.registry, "store", None))
 
     def idle_restart_hold(self, tx: Transaction, control: dict[str, Any]) -> bool:
-        raw_gate = tx.get("copilot.control", "gate", required=False) or {}
-        return (
-            control["fenced"] is True
-            and control.get("reason") == "awaiting_resume"
-            and raw_gate.get("queue_released", True) is not False
-            and all(w["state"] == "completed" for w in tx.all("work"))
-            and all(
-                s.get("phase") == "confirmed"
-                and (s.get("pause") == "released" or s.get("hold_released") is True)
-                for s in tx.all("copilot.stops")
-            )
-            and not any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes"))
-            and not any(d["state"] == "pending" for d in tx.all("decisions"))
-        )
+        return eligibility.idle_restart_hold(tx, control)
 
     def submit(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         if caller.channel != "owner":
