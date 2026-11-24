@@ -255,6 +255,108 @@ test("events committed after a zero-watermark snapshot populate the live project
   studio.assertHermetic();
 });
 
+test("middle backfill above the hydration watermark delivers request and publication updates", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.events = longHistory(750).map(event => event.sequence === 220
+    ? { ...event, event_type: "request.accepted", payload: request("middle", "Middle wave request", "held", historyTime(220)) } as Event
+    : event.sequence === 221 ? { ...event, event_type: "publication.created", payload: {} } as Event : event);
+  const older = deferred();
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+    const query = new URL(route.request().url()).searchParams;
+    const after = Number(query.get("after")), limit = Number(query.get("limit"));
+    if (after >= 100 && after < 350) await older.promise;
+    const events = studio.events.slice(after, after + limit);
+    await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: 750 } });
+  } }] });
+  try {
+    await studio.open(); await studio.ready();
+    await expect(page.getByText("Assistant reply 750", { exact: true })).toBeVisible();
+    await expect(page.getByText("Middle wave request", { exact: true })).toHaveCount(0);
+    // Wait for both hydrations before measuring the publication invalidation.
+    await expect.poll(() => studio.guard!.calls.filter(c => c.url === `${base}/snapshot`).length).toBeGreaterThanOrEqual(2);
+    const itemReads = () => studio.guard!.calls.filter(c => c.url.startsWith(`${base}/items?`)).length;
+    await expect.poll(itemReads).toBeGreaterThanOrEqual(2);
+    const before = itemReads();
+    older.release();
+    await expect(page.getByText("Middle wave request", { exact: true })).toBeVisible();
+    await expect.poll(itemReads).toBeGreaterThan(before);
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
+
+for (const persistent of [false, true]) {
+  test(`replacement watermark expiry ${persistent ? "fails visibly after a bounded retry" : "retries with fresh projections"}`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.event_sequence = 30;
+    studio.events = longHistory(30);
+    studio.requests = [request("old", "Expired generation prompt")];
+    studio.snapshot.active_work = work("running", 5);
+    studio.snapshot.execution!.fenced = true;
+    let expiredReads = 0;
+    await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: route => {
+      const query = new URL(route.request().url()).searchParams;
+      const after = Number(query.get("after")), limit = Number(query.get("limit"));
+      if (limit === 20 || (persistent && limit === 10)) {
+        expiredReads++;
+        studio.snapshot.event_sequence = 10;
+        studio.events = longHistory(10);
+        studio.requests = [request("replacement", "Current generation prompt")];
+        studio.snapshot.active_work = null;
+        studio.snapshot.execution!.fenced = false;
+        return route.fulfill({ status: 410, json: { schema_version: "1.0", error: { code: "cursor_expired", message: "Replacement cursor expired" } } });
+      }
+      const events = studio.events.slice(after, after + limit);
+      return route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: studio.events.length } });
+    } }] });
+    await studio.open(); await studio.ready();
+    await expect(page.getByText("Expired generation prompt", { exact: true })).toBeVisible();
+    studio.snapshot.event_sequence = 20;
+    studio.events = longHistory(20);
+    studio.sockets.at(-1)!.send(JSON.stringify({ schema_version: "1.0", type: "resync_required", project_id: projectId, reason: "cursor_expired" }));
+    if (persistent) {
+      await expect(page.getByRole("alert")).toContainText("Replacement cursor expired");
+      await expect(page.getByText("Current generation prompt", { exact: true })).toHaveCount(0);
+    } else {
+      await expect(page.getByText("Current generation prompt", { exact: true })).toBeVisible();
+      await expect(page.getByText("Assistant reply 10", { exact: true })).toBeVisible();
+    }
+    expect(expiredReads).toBe(persistent ? 2 : 1);
+    await expect(page.getByText("Expired generation prompt", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
+    await expect(page.getByRole("region", { name: "Resume Copilot" })).toHaveCount(0);
+    studio.assertHermetic();
+  });
+}
+
+test("a collapsed tool group remains anchored when older members change its key", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.event_sequence = 750;
+  studio.events = longHistory(750).map(event => event.sequence >= 340 && event.sequence <= 360 ? {
+    ...event, event_type: "tool.completed",
+    payload: { invocation_id: `step-${event.sequence}`, name: "view", state: "completed", summary: "", artifact_ids: [], model_id: null },
+  } as Event : event);
+  const older = deferred();
+  await studio.install({ savedLayout: true, routes: [{ path: `${base}/events`, handler: async route => {
+    const query = new URL(route.request().url()).searchParams;
+    const after = Number(query.get("after")), limit = Number(query.get("limit"));
+    if (after < 350) await older.promise;
+    const events = studio.events.slice(after, after + limit);
+    await route.fulfill({ json: { schema_version: "1.0", events, next_after: events.at(-1)?.sequence ?? after, last_available: 750 } });
+  } }] });
+  try {
+    await studio.open(); await studio.ready();
+    const group = page.locator(".activity-group");
+    await expect(group).toContainText("10 tool steps completed");
+    await group.evaluate(el => { const viewport = el.closest(".chat-scroll")!; viewport.scrollTop += el.getBoundingClientRect().top - viewport.getBoundingClientRect().top; });
+    await expect(page.getByRole("button", { name: "Jump to latest" })).toBeVisible();
+    const y = (await group.boundingBox())!.y;
+    older.release();
+    await expect(group).toContainText("21 tool steps completed");
+    await expect.poll(async () => Math.abs((await group.boundingBox())!.y - y)).toBeLessThan(2);
+    studio.assertHermetic();
+  } finally { older.release(); }
+});
+
 test("journal resync replaces older projections with a lower watermark", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   studio.events = longHistory(12);
@@ -315,6 +417,7 @@ for (const status of [500, 410]) {
         await page.getByRole("button", { name: "Refresh project metadata" }).click();
       }
       await expect(page.getByText("Assistant reply 2", { exact: true })).toBeAttached();
+      await expect(page.getByRole("alert").filter({ hasText: "Older history unavailable" })).toHaveCount(0);
       expect(oldestReads).toBe(2);
       expect(studio.guard!.calls.filter(call => call.url === `${base}/snapshot`)).toHaveLength(2);
       studio.assertHermetic();

@@ -200,6 +200,8 @@ def execution_status(tx: Transaction, epoch: str, project: dict[str, Any]) -> di
             else "stop_requested"
         )
         message = "An earlier Stop awaits reconciliation before new work can run."
+    elif any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes")):
+        code, message = "resume_pending", "The original Resume operation awaits reconciliation."
     elif fenced or any(w["state"] in {"awaiting_resume", "outcome_uncertain"} for w in works):
         code = reason or "awaiting_resume"
         message = "Execution is held awaiting explicit Resume or queue release."
@@ -222,13 +224,6 @@ def execution_status(tx: Transaction, epoch: str, project: dict[str, Any]) -> di
                     "work_stopped",
                     "Previous work did not finish. Use Resume to continue it or release the queue.",
                 )
-            elif any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes")):
-                code, message = (
-                    "resume_pending",
-                    "The original Resume operation awaits reconciliation.",
-                )
-    elif any(r["state"] in {"pending", "dispatching"} for r in tx.all("copilot.resumes")):
-        code, message = "resume_pending", "The original Resume operation awaits reconciliation."
     elif active:
         awaiting = any(w["state"] == "awaiting_user" for w in active) or any(
             d["state"] == "pending" for d in tx.all("decisions")

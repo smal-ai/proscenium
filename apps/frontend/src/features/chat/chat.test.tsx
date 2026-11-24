@@ -625,6 +625,8 @@ test("idle restart status, Queue notice and Resume card share the same recovery 
     check({ ...idle, execution: { ...idle.execution, hold_reason_code } }, [], true);
   }
   check({ ...idle, active_work: snapshot("awaiting_resume").active_work }, [], true);
+  const legacy = { ...idle, execution: undefined, project: { ...idle.project, state: "awaiting_resume" as const } };
+  check(legacy, [], true);
 });
 
 test("ordinary idle and FIFO Queue receipts do not show Resume but remain cancellable", () => {

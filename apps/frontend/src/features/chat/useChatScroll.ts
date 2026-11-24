@@ -8,7 +8,7 @@ export function useChatScroll(projectId: string, requests: RequestRecord[], even
   const contentRef = useRef<HTMLDivElement>(null);
   const following = useRef(true);
   const lastScrollTop = useRef(0);
-  const anchorRef = useRef<{ key: string; offsetTop: number } | null>(null);
+  const anchorRef = useRef<Array<{ key: string; memberKeys: string[]; offsetTop: number }>>([]);
   const [isFollowing, setIsFollowing] = useState(true);
 
   const scrollToLatest = useCallback(() => {
@@ -19,21 +19,17 @@ export function useChatScroll(projectId: string, requests: RequestRecord[], even
     }
   }, []);
 
-  const findAnchorElement = useCallback((key: string) => {
-    const entries = contentRef.current?.querySelectorAll<HTMLElement>("[data-entry-key]");
-    return entries && Array.from(entries).find(el => el.dataset.entryKey === key);
-  }, []);
-
   const captureAnchor = useCallback(() => {
     const viewport = scrollRef.current;
     const entries = contentRef.current?.querySelectorAll<HTMLElement>("[data-entry-key]");
-    anchorRef.current = null;
+    anchorRef.current = [];
     if (following.current || !viewport || !entries) return;
     const bounds = viewport.getBoundingClientRect();
     for (const el of entries) {
       const rect = el.getBoundingClientRect();
       if (rect.bottom > bounds.top && rect.top < bounds.bottom) {
-        anchorRef.current = { key: el.dataset.entryKey!, offsetTop: rect.top - bounds.top };
+        anchorRef.current.push({ key: el.dataset.entryKey!, memberKeys: el.dataset.memberKeys?.split("\n") ?? [], offsetTop: rect.top - bounds.top });
+      } else if (rect.top >= bounds.bottom) {
         break;
       }
     }
@@ -42,21 +38,30 @@ export function useChatScroll(projectId: string, requests: RequestRecord[], even
   const restoreAnchor = useCallback(() => {
     if (following.current) {
       scrollToLatest();
-      anchorRef.current = null;
+      anchorRef.current = [];
       return;
     }
     const viewport = scrollRef.current;
-    const anchor = anchorRef.current;
-    const entry = anchor && findAnchorElement(anchor.key);
-    if (viewport && anchor && entry) {
-      const delta = entry.getBoundingClientRect().top - viewport.getBoundingClientRect().top - anchor.offsetTop;
-      if (Math.abs(delta) > 0.5) {
-        viewport.scrollTop += delta;
-        lastScrollTop.current = viewport.scrollTop;
+    const entries = contentRef.current?.querySelectorAll<HTMLElement>("[data-entry-key]");
+    if (viewport && entries && anchorRef.current.length) {
+      const byKey = new Map<string, HTMLElement>();
+      for (const el of entries) {
+        byKey.set(el.dataset.entryKey!, el);
+        for (const key of el.dataset.memberKeys?.split("\n") ?? []) byKey.set(key, el);
+      }
+      for (const anchor of anchorRef.current) {
+        const entry = byKey.get(anchor.key) ?? anchor.memberKeys.map(key => byKey.get(key)).find(Boolean);
+        if (!entry) continue;
+        const delta = entry.getBoundingClientRect().top - viewport.getBoundingClientRect().top - anchor.offsetTop;
+        if (Math.abs(delta) > 0.5) {
+          viewport.scrollTop += delta;
+          lastScrollTop.current = viewport.scrollTop;
+        }
+        break;
       }
     }
     captureAnchor();
-  }, [captureAnchor, findAnchorElement, scrollToLatest]);
+  }, [captureAnchor, scrollToLatest]);
 
   const onScroll = useCallback(() => {
     const viewport = scrollRef.current;
@@ -73,7 +78,7 @@ export function useChatScroll(projectId: string, requests: RequestRecord[], even
 
   const jumpToLatest = useCallback(() => {
     following.current = true;
-    anchorRef.current = null;
+    anchorRef.current = [];
     setIsFollowing(true);
     scrollToLatest();
   }, [scrollToLatest]);

@@ -17,6 +17,7 @@ interface TimelineEntry {
   routineTool?: boolean;
   toolRunning?: boolean;
   toolLabel?: string;
+  memberKeys?: string[];
   node: ReactNode;
 }
 
@@ -127,6 +128,7 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
           : `${group.length} tool steps completed`;
         entries.push({
           key: `group.${group[0].key}`,
+          memberKeys: group.map(item => item.key),
           time: group[0].time,
           sequence: group[0].sequence,
           node: <details className="activity activity-group" key={`group.${group[0].key}`}>
@@ -142,5 +144,5 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
     i++;
   }
 
-  return <div className="conversation" aria-label="Project conversation" aria-live="polite">{entries.map(entry => <div key={entry.key} data-entry-key={entry.key}>{entry.node}</div>)}{!requests.length && !entries.length && <div className="conversation-empty"><h3>What would you like to make?</h3><p>Choose a starting point, or type any idea directly.</p>{onStarter && <div className="starter-actions"><button onClick={() => onStarter("storyboard")}>Plan a storyboard</button><button onClick={() => onStarter("asset")}>Create an asset</button><button onClick={() => onStarter("scene")}>Build a scene</button></div>}<small>These options prepare a draft. Nothing is sent until you choose Queue or Steer.</small></div>}</div>;
+  return <div className="conversation" aria-label="Project conversation" aria-live="polite">{entries.map(entry => <div key={entry.key} data-entry-key={entry.key} data-member-keys={entry.memberKeys?.join("\n")}>{entry.node}</div>)}{!requests.length && !entries.length && <div className="conversation-empty"><h3>What would you like to make?</h3><p>Choose a starting point, or type any idea directly.</p>{onStarter && <div className="starter-actions"><button onClick={() => onStarter("storyboard")}>Plan a storyboard</button><button onClick={() => onStarter("asset")}>Create an asset</button><button onClick={() => onStarter("scene")}>Build a scene</button></div>}<small>These options prepare a draft. Nothing is sent until you choose Queue or Steer.</small></div>}</div>;
 }

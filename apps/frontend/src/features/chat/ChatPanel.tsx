@@ -39,13 +39,14 @@ export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests:
   const work = snapshot.active_work;
   const execution = snapshot.execution;
   const reason = execution?.hold_reason_code;
+  if (!execution && snapshot.project.state === "awaiting_resume") return true;
   if (uncertainStop || resumableCount > 0 || (work && ["stopped", "awaiting_resume", "outcome_uncertain", "failed"].includes(work.state))) return true;
   if (["queue_paused", "work_stopped", "resume_pending"].includes(reason ?? "") || (execution?.queue_released === false && !execution.fenced)) return true;
   if (execution?.fenced) {
     if (work && ["running", "awaiting_user"].includes(work.state)) return true;
     if (reason && !["awaiting_resume", "stop_requested", "active_work_running", "awaiting_user"].includes(reason)) return true;
   }
-  return Boolean((execution ? Boolean(execution.fenced) : snapshot.project.state === "awaiting_resume")
+  return Boolean(execution?.fenced
     && work?.state !== "stop_requested"
     && [...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId));
 }
