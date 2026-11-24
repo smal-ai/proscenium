@@ -91,10 +91,45 @@ class CallbackOwner:
     models: tuple[str, str, str] | None = None
 
 
+RETIRED_HOUSEKEEPING_EVENTS = frozenset(
+    {
+        "session.shutdown",
+        "session.idle",
+        "assistant.idle",
+        "session.background_tasks_changed",
+        "session.usage_checkpoint",
+        "session.usage_info",
+        "session.usage_record",
+        "session.info",
+        "session.title_changed",
+        "session.model_change",
+        "session.model_deselected",
+        "session.skills_loaded",
+        "session.custom_agents_updated",
+        "session.tools_updated",
+        "session.extensions_loaded",
+        "session.mcp_servers_loaded",
+        "session.mcp_server_status_changed",
+        "session.mcp_server_tools_loaded",
+        "session.mcp_server_removed",
+        "session.workspace_file_changed",
+        "session.context_changed",
+        "session.managed_settings_resolved",
+        "session.indexed_search",
+        "mcp.tools.list_changed",
+        "mcp.resources.list_changed",
+        "mcp.prompts.list_changed",
+        "pending_messages.modified",
+        "commands.changed",
+        "capabilities.changed",
+    }
+)
+
+
 def retired_housekeeping(event: dict[str, Any]) -> bool:
     # Never use a broad session/assistant/tool prefix here. Completion of a model
     # turn is not proof of settlement, and execution/content must not be discarded.
-    return event.get("type") in {"session.shutdown", "session.idle", "assistant.idle"} or (
+    return event.get("type") in RETIRED_HOUSEKEEPING_EVENTS or (
         event.get("type") in {"hook.start", "hook.end"}
         and event.get("data", {}).get("hookType") == "sessionEnd"
     )
@@ -554,6 +589,11 @@ class Copilot:
                     await cached.disconnect()
                 except Exception:
                     self.callback_failure(previous, "provider_unavailable")
+            if previous.failure:
+                raise DomainError(previous.failure, 409)
+            if previous.failure_handled:
+                # The delivery loop may have consumed the callback failure while disconnect awaited.
+                raise DomainError("attribution_unavailable", 409)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             association = tx.get("copilot.session", "native", required=False)
         if not association and not allow_create:
@@ -1007,24 +1047,37 @@ class Copilot:
         except BaseException as exc:
             with self.services.registry.project_store(project_id).transaction() as tx:
                 record = tx.require("requests", request_id)
-                if record["receipt"]["state"] not in TERMINAL:
-                    self.state.request_state(
-                        tx,
-                        request_id,
-                        "outcome_uncertain",
-                        detail_code=exc.code
-                        if isinstance(exc, DomainError)
-                        else "provider_unavailable",
-                    )
-                self.state.fence(tx, "outcome_uncertain")
+                code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
                 send = tx.get("copilot.sends", request_id, required=False)
-                if send:
-                    save(tx, "copilot.sends", request_id, {**send, "state": "outcome_uncertain"})
-                    tx.settle_intent(
-                        request_id,
-                        "outcome_uncertain",
-                        {"detail": "send outcome requires reconciliation"},
+                outbox = tx.connection.execute(
+                    "SELECT state FROM outbox WHERE id=?", (request_id,)
+                ).fetchone()
+                unattempted = (
+                    send is None
+                    and record["receipt"]["state"] in {"held", "accepted"}
+                    and record["receipt"].get("native_message_id") is None
+                    and (outbox is None or outbox[0] == "pending")
+                )
+                if unattempted:
+                    self.state.request_state(
+                        tx, request_id, record["receipt"]["state"], detail_code=code
                     )
+                    self.state.fence(tx, code)
+                else:
+                    if record["receipt"]["state"] not in TERMINAL:
+                        self.state.request_state(
+                            tx, request_id, "outcome_uncertain", detail_code=code
+                        )
+                    self.state.fence(tx, "outcome_uncertain")
+                    if send:
+                        save(
+                            tx, "copilot.sends", request_id, {**send, "state": "outcome_uncertain"}
+                        )
+                        tx.settle_intent(
+                            request_id,
+                            "outcome_uncertain",
+                            {"detail": "send outcome requires reconciliation"},
+                        )
             if isinstance(exc, asyncio.CancelledError):
                 raise
         finally:
@@ -1514,11 +1567,14 @@ class Copilot:
                         and e.get("data", {}).get("clientTurnId") == record["request_id"]
                     ]
                     if len(matches) == 1:
+                        send = tx.get("copilot.sends", record["request_id"], required=False)
+                        if send is None:
+                            # Native admission contradicts the missing host intent. Leave it fenced.
+                            continue
                         native_id = matches[0]["data"]["messageId"]
                         self.state.request_state(
                             tx, record["request_id"], "acknowledged", native_message_id=native_id
                         )
-                        send = tx.require("copilot.sends", record["request_id"])
                         save(
                             tx,
                             "copilot.sends",
@@ -1684,6 +1740,13 @@ class Copilot:
         """Return whether required native inactivity remains unproven."""
         store = self.services.registry.project_store(project_id)
         session_id = session.session_id
+        recorded_turns = {
+            e["data"]["clientTurnId"]
+            for e in history
+            if e["type"] == "user.message"
+            and not e.get("data", {}).get("isAutopilotContinuation")
+            and isinstance(e.get("data", {}).get("clientTurnId"), str)
+        }
         with store.transaction() as tx:
             if self._uncertain_stops(tx):
                 return False
@@ -1700,18 +1763,29 @@ class Copilot:
                     self._acknowledge_recovered_send(
                         tx, request_id, message_id, {"acknowledged_message_id": message_id}
                     )
+                elif (
+                    send is None
+                    and record["receipt"]["state"] == "outcome_uncertain"
+                    and record["receipt"].get("native_message_id") is None
+                    and request_id not in recorded_turns
+                ):
+                    intent = tx.connection.execute(
+                        "SELECT state FROM outbox WHERE id=?", (request_id,)
+                    ).fetchone()
+                    work_id = record["receipt"].get("work_id")
+                    work = tx.get("work", work_id, required=False) if work_id else None
+                    if (
+                        intent
+                        and intent[0] == "pending"
+                        and (work is None or work["state"] == "pending")
+                    ):
+                        target = "held" if record["submission"]["type"] == "queue" else "accepted"
+                        self.state.request_state(tx, request_id, target)
 
         if departed is not None and "session_id" not in departed:
             departed = {**departed, "session_id": session_id}
         recover_departed = cold_stop.process_departure_proven(departed, session_id)
         recover_sends = recover_departed and hasattr(session, "get_events")
-        recorded_turns = {
-            e["data"]["clientTurnId"]
-            for e in history
-            if e["type"] == "user.message"
-            and not e.get("data", {}).get("isAutopilotContinuation")
-            and isinstance(e.get("data", {}).get("clientTurnId"), str)
-        }
         states = {"awaiting_resume"}
         prior = set(prior_invocations)
         with store.transaction(write=False) as tx:

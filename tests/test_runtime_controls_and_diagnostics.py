@@ -1525,6 +1525,146 @@ def admit_recovery(copilot, store, operation_id, mode):
     )
 
 
+def queue_resume(copilot, operation_id, mode):
+    copilot.admit_resume(
+        OWNER,
+        {
+            "schema_version": "1.0",
+            "project_id": PROJECT,
+            "operation_id": operation_id,
+            "mode": mode,
+            "work_id": None,
+            "expected_revision": copilot.services.registry.get(PROJECT)["state_revision"],
+        },
+    )
+    return copilot.resume(PROJECT, operation_id)
+
+
+@pytest.mark.parametrize("failure", ["session", "payload"])
+def test_send_failure_before_claim_keeps_queue_held_and_releasable(runtime, failure):
+    state, store, gate, _ = runtime
+    set_work(store, "completed")
+    copilot, sent, _ = recovery_copilot(runtime)
+    open_for_recovery = copilot.session
+    with store.transaction() as tx:
+        state.request_state(tx, REQUEST, "completed")
+        tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
+    copilot.state.submit(OWNER, request_record("new")["submission"])
+
+    def blocked_payload(*args):
+        raise DomainError("provider_unavailable", 503)
+
+    async def session(project_id, *, allow_create=False):
+        assert allow_create
+        if failure == "session":
+            raise DomainError("provider_unavailable", 503)
+        return await open_for_recovery(project_id)
+
+    copilot.session = session
+    copilot.contexts.payload = blocked_payload
+    asyncio.run(copilot.send(PROJECT, "new"))
+    copilot.session = open_for_recovery
+    with store.transaction(write=False) as tx:
+        receipt = tx.require("requests", "new")["receipt"]
+        assert receipt["state"] == "held" and receipt["detail_code"] == "provider_unavailable"
+        assert copilot.state.control(tx)["fenced"]
+        assert copilot.state.control(tx)["reason"] == "provider_unavailable"
+        assert tx.get("copilot.sends", "new", required=False) is None
+        assert (
+            tx.connection.execute("SELECT state FROM outbox WHERE id='new'").fetchone()[0]
+            == "pending"
+        )
+    with pytest.raises(DomainError):
+        gate.require(PROJECT)
+    asyncio.run(queue_resume(copilot, "reconcile-queue", "reconcile_only"))
+    asyncio.run(queue_resume(copilot, "release-queue", "release_held_queue"))
+    with store.transaction(write=False) as tx:
+        assert tx.require("copilot.resumes", "reconcile-queue")["state"] == "completed"
+        assert tx.require("copilot.resumes", "release-queue")["state"] == "completed"
+        assert tx.require("requests", "new")["receipt"]["state"] == "held"
+        assert not copilot.state.control(tx)["fenced"]
+    gate.require(PROJECT)
+    assert not sent
+
+
+@pytest.mark.parametrize(
+    "barrier",
+    [None, "dispatching", "outcome_uncertain", "running", "awaiting_resume", "native_history"],
+)
+def test_legacy_predispatch_queue_recovery_requires_pending_intent_and_no_native_history(
+    runtime, barrier
+):
+    state, store, gate, _ = runtime
+    set_work(store, "completed")
+    history = (
+        [
+            event(
+                "recorded",
+                "user.message",
+                clientTurnId="legacy",
+                messageId="native-legacy",
+                content="Synthetic request",
+            )
+        ]
+        if barrier == "native_history"
+        else []
+    )
+    copilot, sent, checks = recovery_copilot(runtime, history=history)
+    with store.transaction() as tx:
+        state.request_state(tx, REQUEST, "completed")
+        state.fence(tx, "attribution_unavailable")
+        tx.put("copilot.session", "native", {"session_id": SESSION, "owner_epoch": "epoch"})
+    copilot.state.submit(OWNER, request_record("legacy")["submission"])
+    with store.transaction() as tx:
+        receipt = state.request_state(
+            tx, "legacy", "outcome_uncertain", detail_code="attribution_unavailable"
+        )["receipt"]
+        work_id = receipt["work_id"]
+        assert receipt["native_message_id"] is None
+        assert tx.get("work", work_id, required=False) is None
+        assert tx.get("copilot.sends", "legacy", required=False) is None
+        if barrier in {"dispatching", "outcome_uncertain"}:
+            tx.claim_intent("legacy")
+            if barrier == "outcome_uncertain":
+                tx.settle_intent("legacy", barrier, {"detail": "fixture"})
+        if barrier in {"running", "awaiting_resume"}:
+            old = tx.require("work", WORK)
+            tx.put(
+                "work",
+                work_id,
+                {
+                    **old,
+                    "work_id": work_id,
+                    "originating_request_id": "legacy",
+                    "state": barrier,
+                    "state_revision": 0,
+                },
+                schema="WorkRecord",
+            )
+    asyncio.run(queue_resume(copilot, "reconcile-legacy", "reconcile_only"))
+    with store.transaction(write=False) as tx:
+        receipt = tx.require("requests", "legacy")["receipt"]
+        operation = tx.require("copilot.resumes", "reconcile-legacy")
+        assert receipt["state"] == ("outcome_uncertain" if barrier else "held")
+        assert operation["state"] == ("outcome_uncertain" if barrier else "completed")
+        if barrier:
+            assert operation["detail_code"] == "attribution_unavailable"
+        assert tx.get("copilot.sends", "legacy", required=False) is None
+        expected_intent = barrier if barrier in {"dispatching", "outcome_uncertain"} else "pending"
+        assert (
+            tx.connection.execute("SELECT state FROM outbox WHERE id='legacy'").fetchone()[0]
+            == expected_intent
+        )
+        if not barrier:
+            assert not copilot._unsettled_requests(tx)
+    if not barrier:
+        asyncio.run(queue_resume(copilot, "release-legacy", "release_held_queue"))
+        with store.transaction(write=False) as tx:
+            assert tx.require("copilot.resumes", "release-legacy")["state"] == "completed"
+        gate.require(PROJECT)
+    assert not sent and not checks
+
+
 def test_pre_turn_failure_preserves_ack_and_recovers_legacy_ack_with_original_context(runtime):
     state, store, _, project = runtime
     copilot, sent, checks = recovery_copilot(runtime)

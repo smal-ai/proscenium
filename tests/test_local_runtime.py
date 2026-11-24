@@ -35,6 +35,7 @@ from proscenium.copilot.native import (
     resolve_mcp_servers,
     unity_agent,
 )
+from proscenium.copilot.service import retired_housekeeping
 from proscenium.db.ownership import Ownership
 from proscenium.db.store import Transaction
 from proscenium.projects import service as project_service
@@ -276,7 +277,10 @@ def test_owner_profiles_revision_replay_restart_and_preview_configuration(tmp_pa
         assert settings.view() == frozen
 
 
-def test_profiles_project_selection_frozen_models_and_native_session_refresh(tmp_path):
+@pytest.mark.parametrize("disconnect_event", [None, "tool.execution_start", "assistant.message"])
+def test_profiles_project_selection_frozen_models_and_native_session_refresh(
+    tmp_path, disconnect_event
+):
     settings = Settings(data_directory=tmp_path / "machine", profiles=(deepcopy(AUTHORING),))
     with TestClient(create_app(settings), base_url=settings.origin) as browser:
         pair(browser)
@@ -293,7 +297,9 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(tmp
         )
         services = browser.app.state.services
         owner = Caller("owner", "fixture")
-        services.upsert_profile(owner, "custom", profile_command())
+        services.upsert_profile(
+            owner, "custom", {**profile_command(), "lead_model_id": "gpt-6.1-sol"}
+        )
         projects = services.extension("projects")
         projects.update_settings(
             owner,
@@ -346,12 +352,12 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(tmp
         )
         with services.registry.project_store(project_id).transaction(write=False) as tx:
             eff = tx.require("copilot.effective", "profile-request")
-        models = ("claude-sonnet-5.5", "gpt-5.3-codex", "gemini-4-carbon")
+        models = ("gpt-6.1-sol", "gpt-5.3-codex", "gemini-4-carbon")
         assert tuple(eff[k] for k in ("lead_model", "worker_model", "unity_worker_model")) == models
         # Editing the profile after admission must not reinterpret this request.
         edited = {
             **profile_command(1),
-            "lead_model_id": "new-lead",
+            "lead_model_id": "gemini-4-neon",
             "worker_model_ids": ["new-worker"],
         }
         services.upsert_profile(owner, "custom", edited)
@@ -375,6 +381,16 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(tmp
 
             async def disconnect():
                 disconnected.append(True)
+                events = [
+                    ("session.background_tasks_changed", {}),
+                    ("hook.start", {"hookType": "sessionEnd"}),
+                    ("hook.end", {"hookType": "sessionEnd"}),
+                    ("session.shutdown", {}),
+                ]
+                if disconnect_event:
+                    events.append((disconnect_event, {}))
+                for index, (kind, data) in enumerate(events):
+                    callbacks["on_event"]({"id": f"disconnect-{index}", "type": kind, "data": data})
 
             return SimpleNamespace(
                 session_id=session_id or "profile-session", disconnect=disconnect
@@ -413,16 +429,60 @@ def test_profiles_project_selection_frozen_models_and_native_session_refresh(tmp
                 tx.put(
                     "invocations", "live-invocation", {"state": "completed"}, expected_revision=0
                 )
+            services.gate.resume(project_id, reconciliation_evidence="fixture idle session")
+            previous = runtime.session_callback_owners[id(first)]
             runtime.sends["preparing"] = asyncio.current_task()
             runtime.send_projects["preparing"] = project_id
-            second = await runtime.session(project_id)
-            runtime.sends.clear()
-            runtime.send_projects.clear()
+            try:
+                if disconnect_event:
+                    with pytest.raises(DomainError) as rejected:
+                        await runtime.session(project_id)
+                    assert rejected.value.code == "attribution_unavailable"
+                    assert rejected.value.status == 409
+                    assert previous.failure == "attribution_unavailable"
+                    assert opens == [(None, models)]
+                    assert disconnected == [True]
+                    return
+                second = await runtime.session(project_id)
+            finally:
+                runtime.sends.clear()
+                runtime.send_projects.clear()
             assert second is not first and disconnected == [True]
-            assert opens[-1] == ("profile-session", ("new-lead", "new-worker", "new-worker"))
-            assert runtime.session_callback_owners[id(first)].settled
+            assert opens[-1] == ("profile-session", ("gemini-4-neon", "new-worker", "new-worker"))
+            assert previous.settled and previous.failure is None
+            services.gate.require(project_id)
+            with services.registry.project_store(project_id).transaction(write=False) as tx:
+                assert not runtime.state.control(tx)["fenced"]
 
         browser.portal.call(verify)
+
+
+def test_retired_housekeeping_does_not_accept_execution_events():
+    for event_type in (
+        "assistant.message",
+        "assistant.message_delta",
+        "assistant.turn_start",
+        "assistant.turn_end",
+        "assistant.streaming_delta",
+        "assistant.tool_call_delta",
+        "assistant.usage",
+        "tool.execution_start",
+        "tool.execution_complete",
+        "subagent.started",
+        "subagent.completed",
+        "user.message",
+        "permission.requested",
+        "permission.completed",
+        "user_input.requested",
+        "external_tool.requested",
+        "session.error",
+        "session.task_complete",
+        "abort",
+        "session.future_event",
+    ):
+        assert not retired_housekeeping({"type": event_type}), event_type
+    for event_type in ("hook.start", "hook.end"):
+        assert not retired_housekeeping({"type": event_type, "data": {"hookType": "sessionStart"}})
 
 
 @pytest.mark.parametrize(
