@@ -23,7 +23,7 @@ import "./chat.css";
 export { AssistantStatus } from "./AssistantStatus";
 
 const pendingExistingError = "Choose a published item for Existing… or switch target mode before sending.";
-const AUTO_RELEASE_VISIBILITY_TIMEOUT_MS = 35_000;
+export const AUTO_RELEASE_VISIBILITY_TIMEOUT_MS = 5_000;
 
 export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "queue" | "steer"): boolean {
   if (mode !== "queue" || !snapshot) return false;
@@ -51,7 +51,7 @@ export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests:
     if (work && ["running", "awaiting_user"].includes(work.state)) return true;
     if (reason && !["awaiting_resume", "stop_requested", "active_work_running", "awaiting_user"].includes(reason)) return true;
   }
-  return Boolean((execution?.fenced || snapshot.project.state === "awaiting_resume")
+  return Boolean((execution ? Boolean(execution.fenced) : snapshot.project.state === "awaiting_resume")
     && work?.state !== "stop_requested"
     && [...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId));
 }
@@ -76,12 +76,11 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [targetWork, setTargetWork] = useState("");
   const [resumeWorkId, setResumeWorkId] = useState("");
   const [pendingResume, setPendingResume] = useState<ResumeCommand | null>(() => readPrivate(`command.resume.${projectId}`));
-  const [autoReleasingId, setAutoReleasingId] = useState<string | null>(null);
+  const [autoRelease, setAutoRelease] = useState<{ phase: "submitting" } | { phase: "held"; requestId: string } | null>(null);
   const [error, setError] = useState("");
   const [resuming, setResuming] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const preparingLatch = useRef(false);
-  const autoReleasingSubmission = useRef(false);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const [composerPanel, setComposerPanel] = useState<"message" | "jobs" | "context" | "agents">("message");
   const [targetOpen, setTargetOpen] = useState(false);
@@ -115,26 +114,29 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     if (!isRenderPassStreamArtifact(summary) && (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && summary.published_versions.length === 0 && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id))))) renderedOutputIds.add(summary.artifact.artifact_id);
   }
   const resumable = resumableWork(snapshot, events);
+  const suppressingAutoRelease = autoRelease !== null;
+  const autoReleasingRequestId = autoRelease?.phase === "held" ? autoRelease.requestId
+    : autoRelease?.phase === "submitting" ? composer.pending?.submission.request_id ?? null : null;
   useEffect(() => {
-    if (autoReleasingId === null) return;
-    const held = heldRequestIds(snapshot, requests);
+    if (!suppressingAutoRelease) return;
     // Absence alone is not settlement: submit() can return before the list refresh arrives.
     if (snapshot?.project.project_id !== projectId || snapshot.project.state === "inactive" || !snapshot.execution?.fenced
-      || snapshot.execution.hold_reason_code !== "awaiting_resume"
-      || [...held].some(id => id !== autoReleasingId)
-      || requests.some(request => request.request_id === autoReleasingId && request.receipt.state !== "held")) {
-      setAutoReleasingId(null);
+      || (snapshot.execution.hold_reason_code ?? "awaiting_resume") !== "awaiting_resume"
+      || (autoReleasingRequestId !== null && (
+        [...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId)
+        || requests.some(request => request.request_id === autoReleasingRequestId && request.receipt.state !== "held")
+      ))) {
+      setAutoRelease(null);
     }
-  }, [autoReleasingId, projectId, snapshot, requests]);
+  }, [suppressingAutoRelease, autoReleasingRequestId, projectId, snapshot, requests]);
   useEffect(() => {
-    if (autoReleasingId === null) return;
-    // A superseded auto-release can leave the same held receipt and fence without a new event.
-    const timeout = window.setTimeout(() => setAutoReleasingId(null), AUTO_RELEASE_VISIBILITY_TIMEOUT_MS);
+    if (!suppressingAutoRelease) return;
+    // The deadline covers both the submission and the held receipt, even if the ACK never arrives.
+    const timeout = window.setTimeout(() => setAutoRelease(null), AUTO_RELEASE_VISIBILITY_TIMEOUT_MS);
     return () => window.clearTimeout(timeout);
-  }, [autoReleasingId]);
+  }, [suppressingAutoRelease]);
   const chosenResumeWork = resumable.length === 1 ? resumable[0] : resumable.find(record => record.work_id === (resumeWorkId || work?.work_id));
   const canReleaseQueue = !uncertainStop && (!work || ["completed", "failed", "stopped"].includes(work.state));
-  const autoReleasingRequestId = autoReleasingId ?? (autoReleasingSubmission.current ? composer.pending?.submission.request_id ?? null : null);
   const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>(() => uncertainStop ? "reconcile_only" : work?.state === "awaiting_resume" && chosenResumeWork ? "continue_work" : canReleaseQueue ? "release_held_queue" : "reconcile_only");
   const recoveryStateKey = `${projectId}:${uncertainStop}:${work?.work_id ?? ""}:${work?.state ?? ""}:${Boolean(snapshot?.execution?.fenced)}:${snapshot?.execution?.hold_reason_code ?? ""}`;
   useEffect(() => {
@@ -236,15 +238,16 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     try {
       const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments, items: catalogue }, prepareContext);
       if (submittedMode === "steer" && steerWorkId(snapshotRef.current) !== submittedWorkId) throw new Error("Work is no longer steerable. Your Steer mode and draft are retained. Switch to Queue deliberately.");
-      autoReleasingSubmission.current = autoReleasing;
+      if (autoReleasing) setAutoRelease({ phase: "submitting" });
       const submitted = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId);
+      setAutoRelease(current => current?.phase !== "submitting" ? current
+        : submitted?.receipt.state === "held" ? { phase: "held", requestId: submitted.request_id } : null);
       if (submitted) {
-        if (autoReleasing && submitted.receipt.state === "held") setAutoReleasingId(submitted.request_id);
         if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
         setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
       }
-    } catch (e) { setError(describeError(e)); }
-    finally { autoReleasingSubmission.current = false; preparingLatch.current = false; setPreparing(false); }
+    } catch (e) { setAutoRelease(current => current?.phase === "submitting" ? null : current); setError(describeError(e)); }
+    finally { preparingLatch.current = false; setPreparing(false); }
   }
   async function resume(original?: ResumeCommand) {
     if (!snapshot || resuming) return;

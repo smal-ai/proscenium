@@ -605,6 +605,12 @@ test("ordinary idle and FIFO Queue receipts do not show Resume but remain cancel
     const markup = chatMarkup([], { snapshot: current, requests });
     assert.doesNotMatch(markup, resumeCard);
     assert.match(markup, /Cancel held request/);
+    if (state === null) {
+      const staleProject = { ...current, project: { ...current.project, state: "awaiting_resume" as const } };
+      assert.equal(shouldShowResumeCard(staleProject, requests, 0, false), false);
+      assert.doesNotMatch(chatMarkup([], { snapshot: staleProject, requests }), resumeCard);
+      assert.equal(shouldShowResumeCard({ ...staleProject, execution: undefined }, requests, 0, false), true);
+    }
   }
 });
 
@@ -618,6 +624,7 @@ test("idle restart shows Resume only for a held request that is not auto-releasi
   assert.equal(shouldShowResumeCard(idle, [], 0, false), false);
   assert.doesNotMatch(chatMarkup([], { snapshot: idle }), resumeCard);
   assert.equal(shouldShowResumeCard(held, [newRequest], 0, false, "new"), false);
+  assert.equal(shouldShowResumeCard({ ...held, execution: { ...held.execution, hold_reason_code: null } }, [newRequest], 0, false, "new"), false);
   assert.equal(shouldShowResumeCard(held, [heldRequest("other")], 0, false, "new"), true);
   assert.equal(shouldShowResumeCard(held, [], 0, false), true);
   assert.match(chatMarkup([], { snapshot: held }), resumeCard);

@@ -128,9 +128,10 @@ test("send mode is deliberate, stale Steer stays guarded, held cancellation and 
   studio.assertHermetic();
 });
 
-test("Queue submission on an idle restart hold leaves release to the backend", async ({ page, baseURL }) => {
+for (const stalled of [false, true]) {
+test(stalled ? "Resume appears after the auto-release deadline while Queue admission is stalled" : "Queue submission on an idle restart hold leaves release to the backend", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
-  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: "awaiting_resume" };
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, hold_reason_code: null };
   const ack = deferred();
   await studio.install({ savedLayout: true, routes: [
     { method: "POST", path: `${base}/requests`, handler: async route => {
@@ -145,6 +146,7 @@ test("Queue submission on an idle restart hold leaves release to the backend", a
       await route.fulfill({ status: 202, json: held.receipt });
     } },
   ] });
+  if (stalled) await page.clock.install();
   await studio.open(); await studio.ready();
   const input = page.getByRole("textbox", { name: "Message Copilot" });
   const queue = page.getByRole("button", { name: "Queue message" });
@@ -154,11 +156,16 @@ test("Queue submission on an idle restart hold leaves release to the backend", a
   try {
     await expect(page.getByRole("button", { name: "Cancel held request" })).toBeVisible();
     await expect(resume).toHaveCount(0);
+    if (stalled) {
+      await page.clock.fastForward(5_001);
+      await expect(resume).toBeVisible();
+      await expect(input).toHaveValue("Explicit Queue");
+    }
   } finally {
     ack.release();
   }
   await expect(input).toHaveValue("");
-  await expect(resume).toHaveCount(0);
+  await expect(resume).toHaveCount(stalled ? 1 : 0);
   await input.fill("Not submitted");
   await expect(queue).toBeEnabled();
   expect(studio.submissions).toHaveLength(1);
@@ -172,6 +179,7 @@ test("Queue submission on an idle restart hold leaves release to the backend", a
   await expect(resume).toBeVisible();
   studio.assertHermetic();
 });
+}
 
 for (const active of ["running", "awaiting_user"] as const) {
   test(`Queue behind ${active} work is cancellable without showing Resume`, async ({ page, baseURL }) => {
