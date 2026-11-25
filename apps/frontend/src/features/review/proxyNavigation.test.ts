@@ -104,6 +104,24 @@ for (const camera of [new PerspectiveCamera(50, 1, 1, 10), new OrthographicCamer
   });
 }
 
+test("wide perspective depth accepts the clip planes but rejects points beyond them", () => {
+  const camera = new PerspectiveCamera(50, 1, 0.01, 1000);
+  for (const depth of [0.01, 1000]) assert.equal(isPointWithinCameraClip(camera, new Vector3(0, 0, -depth)), true);
+  for (const depth of [0.009, 1050]) assert.equal(isPointWithinCameraClip(camera, new Vector3(0, 0, -depth)), false);
+});
+
+test("clip depth refreshes a moved camera ancestor before testing a hit", () => {
+  const parent = new Group();
+  const camera = new PerspectiveCamera(50, 1, 1, 10);
+  parent.add(camera);
+  const point = new Vector3(0, 0, -5);
+  assert.equal(isPointWithinCameraClip(camera, point), true);
+  parent.position.set(0, 0, 10);
+  assert.equal(isPointWithinCameraClip(camera, point), false);
+  parent.position.set(0, 0, -2);
+  assert.equal(isPointWithinCameraClip(camera, point), true);
+});
+
 test("clip depth follows the restored projection rather than the camera scalar planes", () => {
   const camera = new PerspectiveCamera(50, 1, 5, 10);
   camera.projectionMatrix.copy(new PerspectiveCamera(50, 1, 0.5, 50).projectionMatrix);

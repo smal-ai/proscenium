@@ -51,7 +51,7 @@ export function translateCameraAndTarget(camera: InspectionCamera, target: Vecto
 }
 
 export function recenterOrbitTarget(camera: InspectionCamera, target: Vector3, hitPoint: Vector3): boolean {
-  camera.updateMatrixWorld();
+  camera.updateWorldMatrix(true, false);
   if (!Number.isFinite(hitPoint.x + hitPoint.y + hitPoint.z) || camera.getWorldPosition(new Vector3()).distanceTo(hitPoint) <= 1e-4) return false;
   target.copy(hitPoint);
   return true;
@@ -59,12 +59,12 @@ export function recenterOrbitTarget(camera: InspectionCamera, target: Vector3, h
 
 export function isPointWithinCameraClip(camera: InspectionCamera, worldPoint: Vector3): boolean {
   if (!Number.isFinite(worldPoint.x + worldPoint.y + worldPoint.z)) return false;
-  camera.updateMatrixWorld();
+  camera.updateWorldMatrix(true, false);
   const clip = new Vector4(worldPoint.x, worldPoint.y, worldPoint.z, 1)
     .applyMatrix4(camera.matrixWorldInverse)
     .applyMatrix4(camera.projectionMatrix);
   if (!Number.isFinite(clip.z) || !Number.isFinite(clip.w) || clip.w <= 0) return false;
-  const epsilon = 1e-6 * clip.w;
+  const epsilon = 1e-12 * clip.w;
   return clip.z >= -clip.w - epsilon && clip.z <= clip.w + epsilon;
 }
 

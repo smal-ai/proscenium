@@ -209,11 +209,11 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
     const dom = gl.domElement;
     const publish = (orbit: ComponentRef<typeof OrbitControls>) => {
       orbit.update();
-      inspectionCamera.updateMatrixWorld();
+      inspectionCamera.updateWorldMatrix(true, false);
       state.current.onCamera(captureCamera(inspectionCamera));
     };
     const step = (target: Vector3) => {
-      inspectionCamera.updateMatrixWorld();
+      inspectionCamera.updateWorldMatrix(true, false);
       return computeNavigationStep(inspectionCamera.getWorldPosition(new Vector3()).distanceTo(target), state.current.sceneRadius);
     };
 
@@ -254,7 +254,7 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
       const u = (event.clientX - rect.left) / rect.width;
       const v = (event.clientY - rect.top) / rect.height;
       if (u < 0 || u > 1 || v < 0 || v > 1) return;
-      inspectionCamera.updateMatrixWorld();
+      inspectionCamera.updateWorldMatrix(true, false);
       current.model.scene.updateMatrixWorld(true);
       const raycaster = new Raycaster();
       raycaster.setFromCamera(new Vector2(u * 2 - 1, 1 - v * 2), inspectionCamera);
