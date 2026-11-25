@@ -522,6 +522,17 @@ class State:
             else None
         )
 
+    def parent_event_binding(
+        self, tx: Transaction, session_id: str, parent_id: str | None
+    ) -> dict[str, Any] | None:
+        if not parent_id:
+            return None
+        pending = tx.get("copilot.pending_events", key(session_id, parent_id), required=False)
+        if pending is not None and not pending.get("resolved"):
+            # Legacy reducers could bind an event before staging it.
+            return None
+        return self.binding(tx, session_id, "event", parent_id)
+
     def bind(
         self, tx: Transaction, session_id: str, kind: str, identity: str, binding: dict[str, Any]
     ) -> None:
@@ -667,7 +678,7 @@ class State:
                     if kind in {"permission.completed", "user_input.completed"}
                     else None
                 )
-                or self.binding(tx, session_id, "event", event.get("parentId"))
+                or self.parent_event_binding(tx, session_id, event.get("parentId"))
             )
             tool_start = kind == "tool.execution_start"
             child_start = kind == "subagent.started"
@@ -1333,7 +1344,21 @@ class State:
                                     )
                                 except (ValueError, TypeError):
                                     return
-                                if original_start and args_match:
+                                matching_start_ids = [
+                                    archived[0]
+                                    for archived in tx.connection.execute(
+                                        """SELECT native_event_id FROM events
+                                           WHERE native_session_id = ?
+                                             AND json_extract(body, '$.event_type') = ?
+                                             AND json_extract(body, '$.payload.invocation_id') = ?""",
+                                        (session_id, public["event_type"], invocation_id),
+                                    )
+                                ]
+                                if (
+                                    original_start
+                                    and args_match
+                                    and matching_start_ids == [event["id"]]
+                                ):
                                     save(
                                         tx,
                                         "invocations",

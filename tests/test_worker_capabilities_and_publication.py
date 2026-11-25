@@ -1563,6 +1563,56 @@ def test_conflicting_completion_parent_preserves_running_invocation(
         assert not tx.require("copilot.pending_events", key(SESSION, descendant["id"]))["resolved"]
 
 
+def test_legacy_staged_completion_binding_cannot_attribute_descendant(runtime, copilot):
+    joined = dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one")
+    completion = dict(
+        id="legacy-completion",
+        type="tool.execution_complete",
+        data=dict(toolCallId="custom-call", parentToolCallId="task-call-2", success=True),
+    )
+    completion_key = key(SESSION, completion["id"])
+    with runtime.store.transaction() as tx:
+        for parent in ("task-call-1", "task-call-2"):
+            copilot.state.bind(tx, SESSION, "tool", parent, joined)
+        copilot.state.bind(tx, SESSION, "event", completion["id"], joined)
+        tx.put(
+            "copilot.pending_events",
+            completion_key,
+            dict(
+                event=completion,
+                fingerprint=hashlib.sha256(canonical(completion)).hexdigest(),
+                session_id=SESSION,
+                resolved=False,
+            ),
+        )
+    custom_event(
+        copilot,
+        "initial-start",
+        "tool.execution_start",
+        toolCallId="custom-call",
+        parentToolCallId="task-call-1",
+        toolName="register_artifact",
+        arguments=register_body(runtime),
+    )
+    copilot.state.drain_pending(PROJECT, SESSION)
+
+    descendant = dict(
+        id="legacy-descendant",
+        type="assistant.message",
+        parentId=completion["id"],
+        data=dict(messageId="descendant-message", content="Must stay unbound"),
+    )
+    copilot.state.reduce(PROJECT, SESSION, descendant)
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.require("copilot.pending_events", completion_key)["resolved"]
+        assert copilot.state.binding(tx, SESSION, "event", completion["id"]) == joined
+        assert copilot.state.binding(tx, SESSION, "event", descendant["id"]) is None
+        assert not tx.require("copilot.pending_events", key(SESSION, descendant["id"]))["resolved"]
+        assert tx.get("copilot.native", key(SESSION, descendant["id"]), required=False) is None
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+
+
 def test_tool_completion_can_omit_parent_tool_call_id(runtime, copilot):
     inv_id, _, parent_ids, emit, _ = parent_linked_invocation(runtime, copilot, child=False)
     emit("completion", None, starting=False)
@@ -1615,6 +1665,54 @@ def test_legacy_child_invocation_parent_is_unknown_until_verified_start_replay(
                 assert "parent_tool_call_id" not in result
             else:
                 assert result["parent_tool_call_id"] == parent_ids[0]
+
+
+def test_legacy_replay_does_not_choose_between_archived_tool_starts(runtime, copilot):
+    inv_id, original, parent_ids, _, first = parent_linked_invocation(runtime, copilot, child=False)
+    new_args = {**first["data"]["arguments"], "artifact_id": "different-artifact"}
+    second = {
+        **first,
+        "id": "second-start",
+        "data": {
+            **first["data"],
+            "arguments": new_args,
+            "parentToolCallId": parent_ids[1],
+        },
+    }
+    legacy = {k: v for k, v in original.items() if k != "parent_tool_call_id"}
+    legacy["arguments_sha256"] = hashlib.sha256(canonical(new_args)).hexdigest()
+    with runtime.store.transaction() as tx:
+        [first_public] = tx.events()["events"]
+        assert first_public["native_event_id"] == first["id"]
+        assert (
+            tx.require("copilot.native", key(SESSION, first["id"]))["fingerprint"]
+            == hashlib.sha256(canonical(first)).hexdigest()
+        )
+        tx.put(
+            "copilot.native",
+            key(SESSION, second["id"]),
+            dict(
+                fingerprint=hashlib.sha256(canonical(second)).hexdigest(),
+                type=second["type"],
+                attributed=True,
+                session_id=SESSION,
+            ),
+        )
+        tx.emit(
+            first_public["event_type"],
+            first_public["payload"],
+            actor=first_public["actor"],
+            work_id=original["work_id"],
+            request_id=original["request_id"],
+            native_session_id=SESSION,
+            native_event_id=second["id"],
+        )
+        tx.put("invocations", inv_id, legacy, expected_revision=tx.revision("invocations", inv_id))
+    for event in (first, second):
+        copilot.state.replay_event(PROJECT, SESSION, event)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == legacy
+            assert not copilot.state.control(tx)["fenced"]
 
 
 def test_duplicate_tool_start_is_a_noop_before_and_after_completion(runtime, copilot):
