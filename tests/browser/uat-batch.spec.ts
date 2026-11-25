@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { Decision, DecisionAnswer, Event, MessageSubmit, ProjectRecord, ProjectSnapshot, ReviewRequest } from "../../apps/frontend/src/api";
+import type { ContextSnapshot, Decision, DecisionAnswer, Event, MessageSubmit, ProjectRecord, ProjectSnapshot, ReviewRequest } from "../../apps/frontend/src/api";
 import { verifyLayout } from "./layout-journey";
 import { base, deferred, job, pageOf, project, projectId, request, retained, snapshot, StudioFixture, work } from "./studio-fixture";
 
@@ -225,6 +225,7 @@ for (const [scenario, title] of [
   ["settled", "A successful lookup clears a remounted card after the original mount settled it"],
   ["rejected", "A remounted card does not replay a request rejected by the original mount"],
   ["rejected-during-lookup", "A remounted card checks storage again after a rejection during lookup"],
+  ["rejected-during-context", "A remounted card cannot submit after a rejection during replayed context capture"],
 ] as const) {
 test(title, async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
@@ -234,7 +235,10 @@ test(title, async ({ page, baseURL }) => {
   let revision = 0;
   const asProject = (record: ProjectRecord): ProjectRecord => ({ ...record, state: activeId === record.project_id ? "active" : "inactive", state_revision: revision });
   const delayedAck = deferred(), lookupEntered = deferred(), delayedLookup = deferred();
-  const rejected = scenario === "rejected" || scenario === "rejected-during-lookup";
+  const contextEntered = deferred(), delayedContext = deferred();
+  const rejectedDuringLookup = scenario === "rejected-during-lookup";
+  const rejectedDuringContext = scenario === "rejected-during-context";
+  const rejected = scenario === "rejected" || rejectedDuringLookup || rejectedDuringContext;
   let originalLookups = 0;
   await studio.install({ savedLayout: true, additionalProjectIds: [otherId], routes: [
     { path: "/api/v1/projects", handler: route => route.fulfill({ json: pageOf([asProject(project), asProject(otherProject)]) }) },
@@ -248,6 +252,17 @@ test(title, async ({ page, baseURL }) => {
     { path: `${otherBase}/snapshot`, handler: route => route.fulfill({ json: { ...snapshot(), project: asProject(otherProject) } }) },
     ...["requests", "items", "jobs", "artifacts", "reviews", "selections"].map(resource => ({ path: `${otherBase}/${resource}`, body: pageOf([]) })),
     { path: `${otherBase}/events`, body: { schema_version: "1.0", project_id: otherId, events: [], last_available: 0 } },
+    { method: "POST", path: `${base}/contexts`, handler: async route => {
+      const body = route.request().postDataJSON() as ContextSnapshot;
+      studio.contexts.push(body);
+      if (rejectedDuringContext && studio.contexts.length === 2) {
+        contextEntered.release();
+        await delayedContext.promise;
+        await route.fulfill({ status: 200, json: body });
+        return;
+      }
+      await route.fulfill({ status: 201, json: body });
+    } },
     { method: "POST", path: `${base}/requests`, handler: async route => {
       const body = route.request().postDataJSON() as MessageSubmit;
       studio.submissions.push(body);
@@ -314,19 +329,30 @@ test(title, async ({ page, baseURL }) => {
       await (await lateFailure).finished();
       expect(originalLookups).toBe(2);
     } else {
-      if (scenario === "rejected-during-lookup") {
+      if (rejectedDuringLookup || rejectedDuringContext) {
         await reconcile.click();
         await lookupEntered.promise;
+        expect((await retained()).submission).toEqual(original);
+      }
+      if (rejectedDuringContext) {
+        const lookup = originalReceipt(404);
+        delayedLookup.release();
+        await (await lookup).finished();
+        await contextEntered.promise;
+        expect(studio.contexts[1]).toEqual(studio.contexts[0]);
         expect((await retained()).submission).toEqual(original);
       }
       delayedAck.release();
       await expect.poll(retained).toBeNull();
       await expect(confirmation).toBeVisible();
 
-      const lookup = originalReceipt(rejected ? 404 : 200);
-      if (scenario !== "rejected-during-lookup") await reconcile.click();
-      delayedLookup.release();
-      await (await lookup).finished();
+      if (rejectedDuringContext) delayedContext.release();
+      else {
+        const lookup = originalReceipt(rejected ? 404 : 200);
+        if (!rejectedDuringLookup) await reconcile.click();
+        delayedLookup.release();
+        await (await lookup).finished();
+      }
       await expect(confirmation).toHaveCount(0);
       expect(originalLookups).toBe(rejected ? 1 : 2);
       if (rejected) {
@@ -338,6 +364,7 @@ test(title, async ({ page, baseURL }) => {
     await expect(confirmation).toHaveCount(0);
     expect(studio.guard!.calls.filter(call => call.method === "POST" && [`${base}/contexts`, `${base}/requests`].includes(call.url))).toEqual([
       { method: "POST", url: `${base}/contexts` }, { method: "POST", url: `${base}/requests` },
+      ...(rejectedDuringContext ? [{ method: "POST", url: `${base}/contexts` }] : []),
     ]);
 
     await input.fill("New submission on the remount"); await input.press("Enter");
@@ -347,7 +374,7 @@ test(title, async ({ page, baseURL }) => {
     expect(studio.submissions[1].request_id).not.toBe(original.request_id);
     expect(await retained()).toBeNull();
     await expect(confirmation).toHaveCount(0);
-  } finally { delayedAck.release(); delayedLookup.release(); }
+  } finally { delayedAck.release(); delayedLookup.release(); delayedContext.release(); }
   studio.assertHermetic();
 });
 }

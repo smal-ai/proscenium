@@ -69,6 +69,16 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
     setActiveBusy(true); setError("");
     setNeedsConfirmation(retry);
     const ownsState = () => mountedRef.current && activePendingRef.current?.submission.request_id === expectedId;
+    function ensureStoredOwner(): boolean {
+      if (readPrivate<PendingRequest>(key)?.submission.request_id === expectedId) return true;
+      if (ownsState()) {
+        activePendingRef.current = null;
+        (stop ? setPendingStop : setPending)(null);
+        setNeedsConfirmation(false);
+        setError("The original request was already settled or rejected. Review your draft and submit again.");
+      }
+      return false;
+    }
     function accept(record: RequestRecord): RequestRecord | null {
       const active = ownsState();
       if (active) { onAccepted(record); setNeedsConfirmation(false); }
@@ -85,23 +95,15 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
           return null;
         });
         if (lookup) return accept(lookup.record);
-        // This mount may still remember a command another mount cleared during lookup.
-        if (readPrivate<PendingRequest>(key)?.submission.request_id !== expectedId) {
-          if (ownsState()) {
-            activePendingRef.current = null;
-            (stop ? setPendingStop : setPending)(null);
-            setNeedsConfirmation(false);
-            setError("The original request was already settled or rejected. Review your draft and submit again.");
-          }
-          return null;
-        }
       }
       stage = "submit";
       if (command.context) {
+        if (!ensureStoredOwner()) return null;
         await api.call("captureContext", { path: { project_id: projectId }, body: command.context, idempotencyKey: command.context.context_id });
         try { writePrivate(`context.${projectId}.${command.context.context_id}`, command.context); }
         catch { /* The command already retains the captured context. */ }
       }
+      if (!ensureStoredOwner()) return null;
       await api.call("submitRequest", { path: { project_id: projectId }, body: command.submission, idempotencyKey: command.submission.request_id });
       stage = "confirm";
       command = { ...command, acknowledged: true }; persistIfOwner(command, stop, expectedId);
