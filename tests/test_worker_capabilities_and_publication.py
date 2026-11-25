@@ -1474,7 +1474,7 @@ def test_staged_tool_start_preserves_argument_digest_for_handler_and_duplicates(
         assert not copilot.state.control(tx)["fenced"]
 
 
-def parent_linked_invocation(runtime, copilot, child):
+def parent_linked_invocation(runtime, copilot, child, *, stage_completion=False):
     parent_ids = ("task-call-1", "task-call-2")
     joined = dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one")
     with runtime.store.transaction() as tx:
@@ -1498,20 +1498,24 @@ def parent_linked_invocation(runtime, copilot, child):
             )
             if parent is not None:
                 event["data"]["parentToolCallId"] = parent
-        copilot.state.reduce(PROJECT, SESSION, dict(id=event_id, **event))
+        event = dict(id=event_id, **event)
+        copilot.state.reduce(PROJECT, SESSION, event)
+        return event
 
-    emit("initial-start", parent_ids[0], starting=True)
+    if stage_completion:
+        emit("conflicting-completion", parent_ids[1], starting=False)
+    start = emit("initial-start", parent_ids[0], starting=True)
     with runtime.store.transaction(write=False) as tx:
         original = tx.require("invocations", inv_id)
         assert original["state"] == "running"
         assert original["parent_tool_call_id"] == parent_ids[0]
         assert not copilot.state.control(tx)["fenced"]
-    return inv_id, original, parent_ids, emit
+    return inv_id, original, parent_ids, emit, start
 
 
 @pytest.mark.parametrize("child", [False, True], ids=["tool", "subagent"])
 def test_conflicting_native_parent_tool_call_preserves_original_invocation(runtime, copilot, child):
-    inv_id, original, parent_ids, emit = parent_linked_invocation(runtime, copilot, child)
+    inv_id, original, parent_ids, emit, _ = parent_linked_invocation(runtime, copilot, child)
     emit("conflicting-start", parent_ids[1], starting=True)
     with runtime.store.transaction(write=False) as tx:
         assert tx.require("invocations", inv_id) == original
@@ -1526,17 +1530,41 @@ def test_conflicting_native_parent_tool_call_preserves_original_invocation(runti
 
 
 @pytest.mark.parametrize("child", [False, True], ids=["tool", "subagent"])
-def test_conflicting_completion_parent_preserves_running_invocation(runtime, copilot, child):
-    inv_id, original, parent_ids, emit = parent_linked_invocation(runtime, copilot, child)
-    emit("conflicting-completion", parent_ids[1], starting=False)
+@pytest.mark.parametrize("out_of_order", [False, True], ids=["live", "staged"])
+def test_conflicting_completion_parent_preserves_running_invocation(
+    runtime, copilot, child, out_of_order
+):
+    inv_id, original, parent_ids, emit, _ = parent_linked_invocation(
+        runtime, copilot, child, stage_completion=out_of_order
+    )
+    rejected = "conflicting-completion"
+    if out_of_order:
+        copilot.state.drain_pending(PROJECT, SESSION)
+    else:
+        emit(rejected, parent_ids[1], starting=False)
     with runtime.store.transaction(write=False) as tx:
         assert tx.require("invocations", inv_id) == original
         control = copilot.state.control(tx)
         assert control["fenced"] and control["reason"] == "attribution_unavailable"
+        assert tx.get("copilot.native", key(SESSION, rejected), required=False) is None
+        assert copilot.state.binding(tx, SESSION, "event", rejected) is None
+        if out_of_order:
+            assert not tx.require("copilot.pending_events", key(SESSION, rejected))["resolved"]
+
+    descendant = dict(
+        id="descendant",
+        type="assistant.message",
+        parentId=rejected,
+        data=dict(messageId="descendant-message", content="Unbound completion descendant"),
+    )
+    copilot.state.reduce(PROJECT, SESSION, descendant)
+    with runtime.store.transaction(write=False) as tx:
+        assert copilot.state.binding(tx, SESSION, "event", descendant["id"]) is None
+        assert not tx.require("copilot.pending_events", key(SESSION, descendant["id"]))["resolved"]
 
 
 def test_tool_completion_can_omit_parent_tool_call_id(runtime, copilot):
-    inv_id, _, parent_ids, emit = parent_linked_invocation(runtime, copilot, child=False)
+    inv_id, _, parent_ids, emit, _ = parent_linked_invocation(runtime, copilot, child=False)
     emit("completion", None, starting=False)
     with runtime.store.transaction(write=False) as tx:
         completed = tx.require("invocations", inv_id)
@@ -1545,6 +1573,48 @@ def test_tool_completion_can_omit_parent_tool_call_id(runtime, copilot):
             parent_ids[0],
         )
         assert not copilot.state.control(tx)["fenced"]
+
+
+@pytest.mark.parametrize("mode", ["no-replay", "matching", "conflicting"])
+def test_legacy_child_invocation_parent_is_unknown_until_verified_start_replay(
+    runtime, copilot, mode
+):
+    inv_id, original, parent_ids, emit, start = parent_linked_invocation(
+        runtime, copilot, child=True
+    )
+    # Preserve the original native and public start evidence, but use main's invocation shape.
+    legacy = {k: v for k, v in original.items() if k != "parent_tool_call_id"}
+    with runtime.store.transaction() as tx:
+        tx.put("invocations", inv_id, legacy, expected_revision=tx.revision("invocations", inv_id))
+
+    if mode == "no-replay":
+        emit("duplicate-start", parent_ids[0], starting=True)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == legacy
+            assert not copilot.state.control(tx)["fenced"]
+    else:
+        altered = {**start, "data": {**start["data"], "toolCallId": parent_ids[1]}}
+        copilot.state.replay_event(PROJECT, SESSION, altered)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == legacy
+        copilot.state.replay_event(PROJECT, SESSION, start)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == original
+            assert not copilot.state.control(tx)["fenced"]
+    emit("completion", parent_ids[1] if mode == "conflicting" else parent_ids[0], starting=False)
+    with runtime.store.transaction(write=False) as tx:
+        result = tx.require("invocations", inv_id)
+        control = copilot.state.control(tx)
+        if mode == "conflicting":
+            assert result == original
+            assert control["fenced"] and control["reason"] == "attribution_unavailable"
+        else:
+            assert result["state"] == "completed"
+            assert not control["fenced"]
+            if mode == "no-replay":
+                assert "parent_tool_call_id" not in result
+            else:
+                assert result["parent_tool_call_id"] == parent_ids[0]
 
 
 def test_duplicate_tool_start_is_a_noop_before_and_after_completion(runtime, copilot):
