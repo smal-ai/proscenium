@@ -1041,9 +1041,24 @@ class State:
                     if child
                     else None
                 )
-                if not starting and old_invocation is None:
-                    self.fence(tx, "attribution_unavailable")
-                    return
+                if not starting:
+                    completion_parent = (
+                        data.get("toolCallId") if child else data.get("parentToolCallId")
+                    )
+                    if (
+                        old_invocation is None
+                        or (
+                            completion_parent is not None
+                            and completion_parent != old_invocation.get("parent_tool_call_id")
+                        )
+                        or old_invocation.get("agent_id") != agent
+                        or any(
+                            old_invocation.get(k) != binding.get(k)
+                            for k in ("work_id", "request_id", "delivery_id")
+                        )
+                    ):
+                        self.fence(tx, "attribution_unavailable")
+                        return
                 invocation = {
                     **binding,
                     "invocation_id": invocation_id,
