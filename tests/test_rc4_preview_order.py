@@ -312,6 +312,7 @@ def assembly_completion(studio, monkeypatch):
         ],
     )
     snapshot = dict(
+        sequence={"silent": True},
         frame_map=frame_map,
         input_frames=[{"artifact_id": "assembly-source-f1", "dimensions": DIMENSIONS}],
     )
@@ -340,9 +341,10 @@ def assembly_completion(studio, monkeypatch):
         ),
     )
 
-    def verify_fixture_video(path, fps, frame_count, dimensions, config):
+    def verify_fixture_video(path, fps, frame_count, dimensions, config, *, expect_audio):
         # FFprobe is the only substituted adapter. The publisher still verifies the
         # committed hashes, validates artefact records and writes the actual links.
+        assert expect_audio is False
         assert path.read_bytes() == video
         assert (fps, frame_count, dimensions) == (FPS, 1, DIMENSIONS)
 

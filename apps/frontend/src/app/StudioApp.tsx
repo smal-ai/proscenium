@@ -209,7 +209,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     resetPublicationStatus();
     setInspectedArtifact(artifact);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
-    if (!version) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: [{ artifact_id: artifact.artifact_id, role: "reference" }] });
+    if (!version) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: artifact.kind === "audio" ? [] : [{ artifact_id: artifact.artifact_id, role: "reference" }] });
   }
   async function onQueue(text: string, context: TurnSelection) {
     setRightTab("Copilot");
@@ -261,7 +261,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>
-      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} image · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>
+      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} ${inspectedArtifact.kind === "audio" ? "audio" : "image"} · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>
         {inspectedArtifact ? <div className="source-identity"><span>Unpublished retained media · Not a catalogue version</span></div> : version && <div className="review-version-status">
           <span className={latestId === version.version_id ? "version-status-pill" : "version-status-pill outdated"} title={`${version.version_id} · Git ${version.source_commit.slice(0, 10)}`}>
             Viewing {shortVersionLabel(version.version_id)}{latestId !== version.version_id && ` · ${latestShort} available`}
@@ -278,7 +278,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       <aside className={`right-panel${layout.assistantCollapsed ? " collapsed" : ""}`} style={chatFocus && layout.assistantCollapsed ? { gridColumn: 4 } : undefined} aria-label="Assistant panel">
         {layout.assistantCollapsed && <div className="panel-rail"><button aria-label="Expand Assistant" title="Expand Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: false }))}><PanelRight size={17} /></button><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={17} /> : <Maximise2 size={17} />}</button><div className="panel-rail-status">{renderAssistantStatus(true)}</div></div>}
         <div className="panel-expanded" hidden={layout.assistantCollapsed}><header className="assistant-heading"><nav className="panel-tabs" aria-label="Assistant tabs"><button aria-selected={rightTab === "Copilot"} onClick={() => setRightTab("Copilot")}><Sparkles size={13} />Copilot{data.snapshot?.pending_decisions.length ? <span className="tab-count">{data.snapshot.pending_decisions.length}</span> : null}</button><button aria-selected={rightTab === "Critic"} data-pending-reviews={pendingReviewCount} title={pendingReviewCount ? `${pendingReviewCount} pending ${pendingReviewCount === 1 ? "review" : "reviews"}` : undefined} onClick={() => setRightTab("Critic")}>Critic{pendingReviewCount > 0 ? <span className="tab-count" aria-hidden="true">{pendingReviewCount}</span> : null}</button></nav><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={15} /> : <Maximise2 size={15} />}</button><button aria-label="Collapse Assistant" title="Collapse Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: true }))}><PanelRight size={15} /></button></header>
-        <div data-seed-nonce={seedIntent?.nonce} className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} autoRelease={autoRelease} onRefresh={data.refresh} items={data.items} retainedArtifacts={data.retainedArtifacts} onInspectArtifact={onInspectArtifact} seedIntent={seedIntent} hydrated={data.hydrated} connection={data.connection} showHeaderStatus={false} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
+        <div data-seed-nonce={seedIntent?.nonce} className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel visible={!layout.assistantCollapsed && rightTab === "Copilot"} api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} autoRelease={autoRelease} onRefresh={data.refresh} items={data.items} retainedArtifacts={data.retainedArtifacts} onInspectArtifact={onInspectArtifact} seedIntent={seedIntent} hydrated={data.hydrated} connection={data.connection} showHeaderStatus={false} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
         <div className={rightTab === "Critic" ? "critic-content" : "critic-content hidden"}>{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.baseRevision} reviews={data.reviews} items={data.items} retainedArtifacts={data.retainedArtifacts} pendingDecisions={data.snapshot?.pending_decisions} onInspectArtifact={onInspectArtifact} onRefresh={data.refresh} onQueue={onQueue} onSteer={canSteer ? onSteer : undefined} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>
         {(rightTab === "Critic" || !projectId) && <footer className="assistant-footer">{renderAssistantStatus(false)}</footer>}
         </div>
@@ -306,7 +306,7 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, inspec
   }, [visible, inspectedArtifact]);
   useEffect(() => {
     if (inspectedArtifact) {
-      const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: [{ artifact_id: inspectedArtifact.artifact_id, role: "reference" }] };
+      const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: inspectedArtifact.kind === "audio" ? [] : [{ artifact_id: inspectedArtifact.artifact_id, role: "reference" }] };
       onContextChange(context);
       onContextPreparer?.(async () => structuredClone(context));
       return () => onContextPreparer?.(null);
@@ -316,6 +316,6 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, inspec
     pinnedContext.current = context;
     onContextChange(context);
   }, [mode, version, projectId, inspectedArtifact, onContextChange, onContextPreparer]);
-  if (inspectedArtifact) return <RetainedReview {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  if (inspectedArtifact) return <RetainedReview visible={visible} {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
   return <ReviewEmpty {...{mode, hasProject, version}} onChange={setMode}/>;
 }

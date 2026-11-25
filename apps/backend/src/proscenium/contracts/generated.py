@@ -48,6 +48,12 @@ class ArtifactRegister(ContractModel):
 class Attachment(ContractModel):
     definition = "Attachment"
 
+class AudioGenerationPrepare(ContractModel):
+    definition = "AudioGenerationPrepare"
+
+class AudioGenerationPrepared(ContractModel):
+    definition = "AudioGenerationPrepared"
+
 class AuthoredDocumentValidationRequest(ContractModel):
     definition = "AuthoredDocumentValidationRequest"
 
@@ -377,6 +383,9 @@ class SelectionSave(ContractModel):
 
 class SelectionSlot(ContractModel):
     definition = "SelectionSlot"
+
+class SequenceAudioTrack(ContractModel):
+    definition = "SequenceAudioTrack"
 
 class SequenceContributor(ContractModel):
     definition = "SequenceContributor"

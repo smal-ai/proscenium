@@ -33,7 +33,7 @@ export interface Operations {
   listPreviewSegments: { body: never; response: C.SegmentPage; path: { project_id: string; job_id: string }; query: { cursor?: string; limit?: number } };
   requestJobCancellation: { body: C.RevisionCommand; response: C.CommandReceipt; path: { project_id: string; job_id: string }; query: Record<string, never> };
   uploadImage: { body: Blob; response: C.Artifact; path: { project_id: string; upload_id: string }; query: Record<string, never> };
-  listRetainedArtifacts: { body: never; response: C.RetainedArtifactPage; path: { project_id: string }; query: { cursor?: string; limit?: number; kind?: "image" | "mask" | "proxy" | "proxy_map" | "video" | "frame_map" | "document" | "source_blob" | "log"; purpose?: "reference" | "concept" | "keyframe" | "draft_motion" | "final" | "inspection" | "metadata" | "mask" | "log" } };
+  listRetainedArtifacts: { body: never; response: C.RetainedArtifactPage; path: { project_id: string }; query: { cursor?: string; limit?: number; kind?: "image" | "mask" | "proxy" | "proxy_map" | "video" | "frame_map" | "document" | "source_blob" | "log" | "audio"; purpose?: "reference" | "concept" | "keyframe" | "draft_motion" | "final" | "inspection" | "metadata" | "mask" | "log" } };
   getArtifact: { body: never; response: C.Artifact; path: { project_id: string; artifact_id: string }; query: Record<string, never> };
   getArtifactContent: { body: never; response: ArrayBuffer; path: { project_id: string; artifact_id: string }; query: Record<string, never> };
   headArtifactContent: { body: never; response: ArrayBuffer; path: { project_id: string; artifact_id: string }; query: Record<string, never> };

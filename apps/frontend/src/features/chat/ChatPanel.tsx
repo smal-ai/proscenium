@@ -60,7 +60,7 @@ export interface ChatPanelProps {
   autoRelease?: AutoReleaseController;
   prepareContext?: ContextPreparer;
   items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; seedIntent?: ComposerSeedIntent | null;
-  hydrated?: boolean; connection?: string; showHeaderStatus?: boolean; onInspectArtifact?: (artifact: Artifact) => void;
+  visible?: boolean; hydrated?: boolean; connection?: string; showHeaderStatus?: boolean; onInspectArtifact?: (artifact: Artifact) => void;
 }
 
 export function shouldShowPendingRequestCard(composer: Pick<ChatPanelProps["composer"], "pending" | "busy"> & { pendingNeedsConfirmation?: boolean }): boolean {
@@ -71,7 +71,7 @@ export function shouldShowPendingStopCard(composer: Pick<ChatPanelProps["compose
   return Boolean(composer.pendingStop && (composer.pendingStopNeedsConfirmation ?? !composer.stopping));
 }
 
-export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = [], seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact }: ChatPanelProps) {
+export function ChatPanel({ visible = true, api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = [], seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact }: ChatPanelProps) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
   const [uploads, setUploads] = useState<Upload[]>([]);
@@ -264,12 +264,12 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
         const summary = summaryById.get(id);
         return !renderedOutputIds.has(id) && (!summary || !isRenderPassStreamArtifact(summary));
       });
-      const cards = <OutputCards api={api} projectId={projectId} artifactIds={unrenderedIds} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />;
+      const cards = <OutputCards visible={visible} api={api} projectId={projectId} artifactIds={unrenderedIds} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />;
       if (output.status === "publication_blocked") return <section className="publication-status" key={output.work_id} role="status"><strong>Finished · publication blocked</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p>{cards}</section>;
       return unrenderedIds.length > 0 ? <div className="retained-turn-outputs" key={output.work_id}>{cards}</div> : null;
     })}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
-    <Conversation api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
+    <Conversation visible={visible} api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
   </div></div>
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="chat-recovery">

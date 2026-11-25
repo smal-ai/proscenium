@@ -10,9 +10,11 @@ from typing import Any
 from PIL import Image, ImageCms, ImageOps, UnidentifiedImageError
 
 from proscenium.api.errors import DomainError
+from proscenium.audio_formats import AUDIO_DEMUXERS
 from proscenium.auth import Caller
 from proscenium.contracts import validate
 from proscenium.db import Transaction
+from proscenium.db.paths import read_bounded_regular_file
 from proscenium.services import Services
 from proscenium.sources.common import (
     active,
@@ -23,6 +25,9 @@ from proscenium.sources.common import (
     replay,
     sha,
 )
+
+AUDIO_MEDIA_TYPES = frozenset(AUDIO_DEMUXERS)
+AUDIO_METADATA = frozenset({"duration_seconds", "sample_rate_hz", "channels"})
 
 TYPES = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}
 
@@ -149,6 +154,22 @@ class Artifacts:
         derived_from: list[dict[str, Any]] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        metadata = dict(metadata or {})
+        if kind == "audio":
+            from proscenium.providers.stable_audio import MAX_AUDIO_BYTES, verify_audio_bytes
+
+            if len(data) > MAX_AUDIO_BYTES:
+                raise DomainError("upload_too_large", 413)
+            if media_type not in AUDIO_MEDIA_TYPES:
+                raise DomainError("unsupported_media_type", 415)
+            rendering = self.services.settings.rendering
+            inspection = verify_audio_bytes(
+                data, media_type, ffmpeg=rendering.get("ffmpeg"), ffprobe=rendering.get("ffprobe")
+            )
+            for key in AUDIO_METADATA:
+                if metadata.get(key, inspection[key]) != inspection[key]:
+                    raise DomainError("hash_mismatch", 422)
+                metadata[key] = inspection[key]
         if not data:
             raise DomainError("invalid_request")
         if kind in {"proxy_map", "frame_map"}:
@@ -179,7 +200,10 @@ class Artifacts:
         )
         if dimensions:
             result["dimensions"] = dimensions
-        if set(metadata or {}) - {"fps", "frame_count", "source_version_id", "dimensions"}:
+        if set(metadata) - (
+            {"fps", "frame_count", "source_version_id", "dimensions"}
+            | (AUDIO_METADATA if kind == "audio" else frozenset())
+        ):
             raise ValueError("Trusted media metadata cannot replace immutable byte/identity fields")
         if dimensions and (metadata or {}).get("dimensions", dimensions) != dimensions:
             raise DomainError("hash_mismatch", 422)
@@ -302,8 +326,13 @@ class Artifacts:
             admitted(self.services, tx, caller)
         if not body["staging_path"].startswith(".proscenium/tool-output/staging/"):
             raise DomainError("scope_denied", 403)
-        path = managed(root, body["staging_path"], exists=True)
-        data = path.read_bytes()
+        from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
+
+        managed(root, body["staging_path"])
+        path = root / body["staging_path"]
+        data = read_bounded_regular_file(
+            path, MAX_AUDIO_BYTES if body["kind"] == "audio" else None, root=root
+        )
         if sha(data) != body["sha256"]:
             raise DomainError("hash_mismatch", 422)
         artifact = self.promote(

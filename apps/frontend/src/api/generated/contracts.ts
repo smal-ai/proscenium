@@ -90,6 +90,22 @@ export type Point2 = [number, number];
 export type Vector3 = [number, number, number];
 export type Revision = number;
 export type RelativePath = string;
+export type SelectionSlot =
+  | {
+      kind: "item";
+      item_id: Id;
+    }
+  | {
+      kind: "storyboard_frame";
+      storyboard_version: VersionRef;
+      shot_id: Id;
+      frame_id: Id;
+    }
+  | {
+      kind: "assembly_shot";
+      sequence_version: VersionRef;
+      entry_id: Id;
+    };
 export type AuthoredDocumentValidationRequest = {
   schema_version: "1.0";
   project_id: Id;
@@ -211,22 +227,6 @@ export type FindingPage = RecordPage & {
 export type FramePage = RecordPage & {
   items?: FrameReceipt[];
 };
-export type SelectionSlot =
-  | {
-      kind: "item";
-      item_id: Id;
-    }
-  | {
-      kind: "storyboard_frame";
-      storyboard_version: VersionRef;
-      shot_id: Id;
-      frame_id: Id;
-    }
-  | {
-      kind: "assembly_shot";
-      sequence_version: VersionRef;
-      entry_id: Id;
-    };
 export type ItemPage = RecordPage & {
   items?: ItemRecord[];
 };
@@ -247,7 +247,7 @@ export type JobRecord = {
   target: JobTarget;
   attempt_id: Id;
   attempt_number: number;
-  kind: "render" | "encode" | "image_generation" | "mesh_generation" | "unity" | "vlm_review";
+  kind: "render" | "encode" | "image_generation" | "mesh_generation" | "audio_generation" | "unity" | "vlm_review";
   state:
     | "planned"
     | "waiting_resource"
@@ -385,6 +385,39 @@ export type SequenceEntry = {
   choice?: "agent" | "owner";
   contributors?: SequenceContributor[];
 };
+export type SequenceMap =
+  | {
+      schema_version: "1.0";
+      sequence_version_id: Id;
+      project_id: Id;
+      fps: Fps;
+      frame_count: number;
+      silent: true;
+      /**
+       * @minItems 1
+       */
+      entries: [SequenceEntry, ...SequenceEntry[]];
+      /**
+       * @maxItems 0
+       */
+      audio_tracks?: [];
+    }
+  | {
+      schema_version: "1.0";
+      sequence_version_id: Id;
+      project_id: Id;
+      fps: Fps;
+      frame_count: number;
+      silent: false;
+      /**
+       * @minItems 1
+       */
+      entries: [SequenceEntry, ...SequenceEntry[]];
+      /**
+       * @minItems 1
+       */
+      audio_tracks: [SequenceAudioTrack, ...SequenceAudioTrack[]];
+    };
 export type SocketControl =
   | {
       schema_version: "1.0";
@@ -442,6 +475,8 @@ export interface ContractDefinitions {
   Artifact: Artifact;
   ArtifactRegister: ArtifactRegister;
   Attachment: Attachment;
+  AudioGenerationPrepare: AudioGenerationPrepare;
+  AudioGenerationPrepared: AudioGenerationPrepared;
   AuthoredDocumentValidationRequest: AuthoredDocumentValidationRequest;
   AuthoredDocumentValidationResult: AuthoredDocumentValidationResult;
   AuthoredShotPlan: AuthoredShotPlan;
@@ -552,6 +587,7 @@ export interface ContractDefinitions {
   SelectionRecord: SelectionRecord;
   SelectionSave: SelectionSave;
   SelectionSlot: SelectionSlot;
+  SequenceAudioTrack: SequenceAudioTrack;
   SequenceContributor: SequenceContributor;
   SequenceEntry: SequenceEntry;
   SequenceMap: SequenceMap;
@@ -663,7 +699,7 @@ export interface Artifact {
   schema_version: "1.0";
   artifact_id: Id;
   project_id: Id;
-  kind: "image" | "mask" | "proxy" | "proxy_map" | "video" | "frame_map" | "document" | "source_blob" | "log";
+  kind: "image" | "mask" | "proxy" | "proxy_map" | "video" | "frame_map" | "document" | "source_blob" | "log" | "audio";
   purpose: "reference" | "concept" | "keyframe" | "draft_motion" | "final" | "inspection" | "metadata" | "mask" | "log";
   sha256: Sha256;
   bytes: number;
@@ -672,6 +708,9 @@ export interface Artifact {
   dimensions?: Dimensions;
   fps?: Fps;
   frame_count?: number;
+  duration_seconds?: number;
+  sample_rate_hz?: number;
+  channels?: number;
   derived_from: Transformation[];
   source_version_id?: NullableId;
 }
@@ -693,7 +732,7 @@ export interface ArtifactRegister {
   project_id: Id;
   artifact_id: Id;
   staging_path: RelativePath;
-  kind: "image" | "mask" | "proxy" | "proxy_map" | "video" | "frame_map" | "document" | "source_blob" | "log";
+  kind: "image" | "mask" | "proxy" | "proxy_map" | "video" | "frame_map" | "document" | "source_blob" | "log" | "audio";
   purpose: "reference" | "concept" | "keyframe" | "draft_motion" | "final" | "inspection" | "metadata" | "mask" | "log";
   sha256: Sha256;
   media_type: string;
@@ -703,6 +742,55 @@ export interface Attachment {
   artifact_id: Id;
   role: "reference" | "concept" | "render" | "markup" | "mask";
   use?: string;
+}
+export interface AudioGenerationPrepare {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id?: Id;
+  generation_task_id?: Id;
+  prompt: string;
+  seed: string;
+  provider_id?: NullableId;
+  target_id?: NullableId;
+  target_slot?: SelectionSlot | null;
+  mode?: "music" | "sfx";
+  duration_seconds: number;
+  steps?: number;
+}
+export interface AudioGenerationPrepared {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  replayed: boolean;
+  provider_id: Id;
+  profile_revision: string;
+  /**
+   * @minItems 1
+   */
+  model_ids: [string, ...string[]];
+  mode: "music" | "sfx";
+  duration_seconds: number;
+  workflow_artifact_id: Id;
+  prompt_artifact_id: Id;
+  submit_request: GenerationSubmit;
+}
+export interface GenerationSubmit {
+  schema_version: "1.0";
+  job_id: Id;
+  project_id: Id;
+  generation_task_id: Id;
+  target_id: Id;
+  provider_id: Id;
+  capability: "image" | "image_to_3d" | "audio";
+  workflow_artifact_id: Id;
+  prompt_artifact_id: Id;
+  input_artifact_ids: Id[];
+  seed: string | null;
+  /**
+   * @minItems 1
+   */
+  model_ids: [string, ...string[]];
+  settings: {};
 }
 export interface AuthoredDocumentValidationResult {
   schema_version: "1.0";
@@ -851,7 +939,7 @@ export interface ConfigurationStatus {
 }
 export interface ProviderCapabilitySummary {
   provider_id: Id;
-  capability: "image" | "image_to_3d" | "vlm";
+  capability: "image" | "image_to_3d" | "vlm" | "audio";
   status: CapabilityStatus;
   profile_revision: string | null;
   selected_models: string[];
@@ -877,7 +965,7 @@ export interface ConfigurationView {
   services: {
     provider_id: Id;
     endpoint: string;
-    capabilities: ("vlm" | "image" | "image_to_3d")[];
+    capabilities: ("vlm" | "image" | "image_to_3d" | "audio")[];
     model_id: string | null;
     available: boolean | null;
   }[];
@@ -1056,24 +1144,6 @@ export interface FrameReceipt {
   sha256: Sha256;
   dimensions: Dimensions;
   input_digest: Sha256;
-}
-export interface GenerationSubmit {
-  schema_version: "1.0";
-  job_id: Id;
-  project_id: Id;
-  generation_task_id: Id;
-  target_id: Id;
-  provider_id: Id;
-  capability: "image" | "image_to_3d";
-  workflow_artifact_id: Id;
-  prompt_artifact_id: Id;
-  input_artifact_ids: Id[];
-  seed: string | null;
-  /**
-   * @minItems 1
-   */
-  model_ids: [string, ...string[]];
-  settings: {};
 }
 export interface ImageGenerationPrepare {
   schema_version: "1.0";
@@ -1551,23 +1621,21 @@ export interface SelectionRecord {
   state_revision: number;
   actor: Actor;
 }
+export interface SequenceAudioTrack {
+  track_id: Id;
+  artifact_id: Id;
+  start_seconds: number;
+  trim_start_seconds?: number;
+  duration_seconds?: number;
+  gain_db?: number;
+  fade_in_seconds?: number;
+  fade_out_seconds?: number;
+}
 export interface SequenceContributor {
   shot_id: NullableId;
   version_id: Id;
   job_id?: NullableId;
   source_frames: FrameRange;
-}
-export interface SequenceMap {
-  schema_version: "1.0";
-  sequence_version_id: Id;
-  project_id: Id;
-  fps: Fps;
-  frame_count: number;
-  silent: true;
-  /**
-   * @minItems 1
-   */
-  entries: [SequenceEntry, ...SequenceEntry[]];
 }
 export interface ShotPlan {
   schema_version: "1.0";

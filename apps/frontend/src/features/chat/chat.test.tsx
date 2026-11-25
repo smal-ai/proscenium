@@ -178,7 +178,7 @@ test("queue hold recognises explicit fences, pause codes and legacy idle holds o
 
 test("live tool calls provide readable working steps and reconnecting status", () => {
   const labels = {
-    prepare_image_generation: "Preparing image", submit_generation: "Submitting image", get_job: "Waiting on job",
+    prepare_image_generation: "Preparing image", prepare_audio_generation: "Preparing audio", submit_generation: "Submitting generation", get_job: "Waiting on job",
     get_artifact: "Inspecting output", validate_authored_document: "Validating plan", checkpoint_sources: "Checkpointing sources",
     publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", get_vlm_review: "Waiting on VLM critique",
     escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",
@@ -895,4 +895,17 @@ test("Conversation suppresses draft_motion frame/segment floods inside user bubb
     <OutputCards api={api} projectId="project" artifactIds={fiveIds} retainedArtifacts={fiveSummaries} />,
   );
   assert.match(batchMarkup, /Show 2 more retained outputs/);
+});
+
+
+test("ready FLAC output cards provide accessible playback, inspection and download", () => {
+  const artifact: Artifact = { schema_version: "1.0", artifact_id: "tone", project_id: "project", state: "ready", kind: "audio", purpose: "concept", media_type: "audio/flac", sha256: "a".repeat(64), bytes: 1234, derived_from: [] };
+  const summary: RetainedArtifactSummary = { schema_version: "1.0", artifact, attribution_status: "unrecorded", request_id: null, work_id: null, invocation_id: null, job_id: null, published_versions: [] };
+  const render = (value: Artifact) => renderToStaticMarkup(<OutputCards api={api} projectId="project" artifactIds={[value.artifact_id]} retainedArtifacts={[{ ...summary, artifact: value }]} onInspectArtifact={() => {}} />);
+  const markup = render(artifact);
+  assert.match(markup, /<audio controls="" preload="metadata" src="[^"]+\/tone\/content" aria-label="Retained audio tone"/);
+  assert.match(markup, /Inspect audio/);
+  assert.match(markup, /Download output/);
+  assert.doesNotMatch(render({ ...artifact, state: "unavailable" }), /<audio/);
+  assert.doesNotMatch(render({ ...artifact, media_type: "text/html" }), /<audio/);
 });

@@ -58,7 +58,7 @@ export function SequencePlayer({visible = true, projectId, artifact, mapping, re
   }
 
   return <section className="review-player" aria-label="Mapped sequence animation">
-    <video ref={video} src={mediaUrl(projectId,artifact.artifact_id)} controls muted playsInline preload="auto" onError={() => setError(`media_unavailable: ${artifact.artifact_id}`)}/>
+    <video ref={video} src={mediaUrl(projectId,artifact.artifact_id)} controls playsInline preload="auto" onError={() => setError(`media_unavailable: ${artifact.artifact_id}`)}/>
     <div className="review-bar review-player-overlay-bar"><span className="toolbar-meta">Sequence frame {presented ?? "—"} · {mapping.fps.numerator}/{mapping.fps.denominator} fps · mapped contributors</span><div className="toolbar-spacer"/><button className="toolbar-btn toolbar-btn-accent" disabled={!visible || busy || presented === null} onClick={() => void annotate()}><PenLine size={14}/>{busy ? "Saving clean frame…" : "Annotate presented sequence frame"}</button></div>
     {error && <div className="review-status-banner" role="alert">{error}</div>}
   </section>;

@@ -7,11 +7,21 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from proscenium.api.errors import DomainError
+from proscenium.audio_formats import AUDIO_DEMUXERS
 from proscenium.contracts import SCHEMA, validate
 from proscenium.db import Transaction
 
 DISTINCT_DISSOLVE_SOURCES = "A dissolve requires distinct shots"
 EXPLICIT_FRAME_MAP_REQUIRED = "Explicit hold/drop/dissolve map required"
+
+SILENT_AUDIO_TRACKS = "Silent sequences must not declare audio_tracks"
+MISSING_AUDIO_TRACKS = "Non-silent sequences require at least one audio track"
+DUPLICATE_AUDIO_TRACK = "Duplicate audio track identity"
+INVALID_AUDIO_ARTEFACT = "Audio track must reference a ready audio artefact"
+INVALID_AUDIO_START = "Audio track starts at or after the end of the sequence"
+INVALID_AUDIO_FADE = "Audio track fade durations exceed the track duration"
+INVALID_AUDIO_TRIM = "Audio track trim leaves no source audio"
+
 
 # Only fixed, host-authored text may be returned to Copilot as a semantic reason.
 SAFE_VALIDATION_REASONS: frozenset[str] = frozenset(
@@ -29,6 +39,13 @@ SAFE_VALIDATION_REASONS: frozenset[str] = frozenset(
         "Identity and trim sequence entries must have equal source_frames and sequence_frames lengths",
         "Frame-rate changes require an explicit retime map",
         "Sequence entries must cover frames 1 through frame_count contiguously",
+        SILENT_AUDIO_TRACKS,
+        MISSING_AUDIO_TRACKS,
+        DUPLICATE_AUDIO_TRACK,
+        INVALID_AUDIO_ARTEFACT,
+        INVALID_AUDIO_START,
+        INVALID_AUDIO_FADE,
+        INVALID_AUDIO_TRIM,
         DISTINCT_DISSOLVE_SOURCES,
         EXPLICIT_FRAME_MAP_REQUIRED,
     }
@@ -61,18 +78,30 @@ def schema_guidance_messages() -> dict[str, frozenset[str]]:
 
 def safe_schema_guidance(code: str, message: str) -> bool:
     return (
-        message == f"Field failed {code} validation"
+        (code == "maxItems" and message == SILENT_AUDIO_TRACKS)
+        or (code in {"required", "minItems"} and message == MISSING_AUDIO_TRACKS)
+        or message == f"Field failed {code} validation"
         or message in schema_guidance_messages().get(code, frozenset())
     )
 
 
 def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
     """Bounded host-authored diagnostics. Never interpolate rejected values or keys."""
+    definition = SCHEMA["$defs"][name]
+    if (
+        name == "SequenceMap"
+        and isinstance(document, dict)
+        and type(document.get("silent")) is bool
+    ):
+        # Diagnose the chosen branch, not the failures from its opposite.
+        definition = definition["oneOf"][0 if document["silent"] else 1]
     known = {
-        key for definition in SCHEMA["$defs"].values() for key in definition.get("properties", {})
+        key
+        for schema in (*SCHEMA["$defs"].values(), definition)
+        for key in schema.get("properties", {})
     }
     validator = Draft202012Validator(
-        {"$ref": f"#/$defs/{name}", "$defs": SCHEMA["$defs"]}, format_checker=FormatChecker()
+        {**definition, "$defs": SCHEMA["$defs"]}, format_checker=FormatChecker()
     )
     issues = []
     seen: set[tuple[str, str]] = set()
@@ -94,6 +123,19 @@ def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
             if pair in seen:
                 continue
             seen.add(pair)
+            if name == "SequenceMap" and path == "audio_tracks":
+                audio_reason = {
+                    "maxItems": SILENT_AUDIO_TRACKS,
+                    "minItems": MISSING_AUDIO_TRACKS,
+                    "required": MISSING_AUDIO_TRACKS,
+                }.get(pair[1])
+                if audio_reason:
+                    issues.append(
+                        dict(phase="schema", code=pair[1], path=path, message=audio_reason)
+                    )
+                    if len(issues) >= 25:
+                        return issues
+                    continue
             allowed_keys = (
                 sorted(error.schema.get("properties", {}))
                 if error.validator == "additionalProperties" and isinstance(error.schema, dict)
@@ -231,13 +273,53 @@ def distinct_transition_source(contributor: dict[str, Any]) -> Any:
     )
 
 
+def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: Fraction) -> None:
+    ids = set()
+    for track in document.get("audio_tracks", []):
+        identity = track["track_id"]
+        if identity in ids:
+            raise DomainError("invalid_request", 422, DUPLICATE_AUDIO_TRACK)
+        ids.add(identity)
+        artifact = tx.get("artifacts", track["artifact_id"], required=False)
+        if (
+            not artifact
+            or artifact["kind"] != "audio"
+            or artifact["state"] != "ready"
+            or artifact["project_id"] != tx.project_id
+            or artifact["media_type"] not in AUDIO_DEMUXERS
+            or not artifact.get("duration_seconds")
+        ):
+            raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT)
+        start = Fraction(str(track["start_seconds"]))
+        if start >= duration:
+            raise DomainError("invalid_request", 422, INVALID_AUDIO_START)
+        effective = duration - start
+        if "duration_seconds" in track:
+            effective = min(effective, Fraction(str(track["duration_seconds"])))
+        source = Fraction(str(artifact["duration_seconds"])) - Fraction(
+            str(track.get("trim_start_seconds", 0))
+        )
+        if source <= 0:
+            raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM)
+        effective = min(effective, source)
+        fades = sum(Fraction(str(track.get(k, 0))) for k in ("fade_in_seconds", "fade_out_seconds"))
+        if fades > effective:
+            raise DomainError("invalid_request", 422, INVALID_AUDIO_FADE)
+
+
 def sequence_map(
     tx: Transaction, document: dict[str, Any], version_id: str, maps: dict[str, dict[str, Any]]
 ) -> None:
+    tracks = document.get("audio_tracks")
+    if document.get("silent") is True and isinstance(tracks, list) and tracks:
+        raise DomainError("invalid_request", 422, SILENT_AUDIO_TRACKS)
+    if document.get("silent") is False and (tracks is None or tracks == []):
+        raise DomainError("invalid_request", 422, MISSING_AUDIO_TRACKS)
     validate("SequenceMap", document)
     if document["project_id"] != tx.project_id or document["sequence_version_id"] != version_id:
         raise DomainError("scope_denied", 403)
-    rational(document["fps"])
+    fps = rational(document["fps"])
+    validate_audio_tracks(tx, document, document["frame_count"] / fps)
     next_frame = 1
     entries = set()
     for entry in document["entries"]:

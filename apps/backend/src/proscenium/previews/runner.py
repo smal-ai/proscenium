@@ -73,6 +73,14 @@ def launch_assembly(service, project_id: str, body: dict) -> dict:
         if sha(data) != row["sha256"]:
             raise DomainError("hash_mismatch", 422)
         atomic_bytes(root / "assembly-inputs" / (row["sha256"] + ".png"), data)
+    from .assembly import audio_path
+
+    for row in assembly.get("input_audio", []):
+        identity = row["artifact_id"]
+        data = service.artifacts.ready_path(project_id, identity).read_bytes()
+        if len(data) != row["bytes"] or sha(data) != row["sha256"]:
+            raise DomainError("hash_mismatch", 422)
+        atomic_bytes(audio_path(root, row), data)
     task = {
         "config": config,
         "assembly": assembly,
@@ -332,6 +340,7 @@ def publish_proxy(service, job: dict, root: Path) -> list[str]:
 
 
 def publish_assembly(service, job: dict, root: Path) -> list[str]:
+    from .assembly import input_ids
     from .media import verify_video
 
     task = read(root / "task.json")
@@ -355,11 +364,12 @@ def publish_assembly(service, job: dict, root: Path) -> list[str]:
         frame_map["frame_count"],
         dimensions,
         task["config"],
+        expect_audio=not snapshot["sequence"]["silent"],
     )
     lineage = [
         {
             "kind": "encode",
-            "input_artifact_ids": sorted({r["artifact_id"] for r in snapshot["input_frames"]}),
+            "input_artifact_ids": input_ids(snapshot),
             "parameters": {"frame_map_sha256": sha(mapping), "blend_space": "linear_rgb"},
         }
     ]

@@ -1,9 +1,7 @@
 """Exact-attempt provider output registration. This is not a worker-to-tool token exchange."""
 
 import hashlib
-import os
-import stat
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any, cast
 
 from proscenium.api.errors import DomainError
@@ -11,6 +9,7 @@ from proscenium.auth import Caller
 from proscenium.catalogue.artifacts import Artifacts
 from proscenium.contracts import validate
 from proscenium.db import Transaction
+from proscenium.db.paths import read_bounded_regular_file
 from proscenium.services import Services
 from proscenium.sources.common import managed, replay
 
@@ -27,33 +26,11 @@ def _worker(tx: Transaction, caller: Caller) -> JSON:
         or attempt["job_id"] != caller.job_id
         or attempt["input_digest"] != caller.input_digest
         or attempt["project_id"] != caller.project_id
-        or job["kind"] not in {"image_generation", "mesh_generation", "vlm_review"}
+        or job["kind"]
+        not in {"image_generation", "mesh_generation", "audio_generation", "vlm_review"}
     ):
         raise DomainError("scope_denied", 403)
     return job
-
-
-def _read(root: Path, relative: str) -> bytes:
-    """Validate containment/secrets, then open every component without following symlinks."""
-    managed(root, relative, exists=True)
-    descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    try:
-        parts = PurePosixPath(relative).parts
-        for component in parts[:-1]:
-            child = os.open(
-                component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=descriptor
-            )
-            os.close(descriptor)
-            descriptor = child
-        file = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=descriptor)
-        with os.fdopen(file, "rb") as stream:
-            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
-                raise DomainError("scope_denied", 403)
-            return stream.read()
-    except OSError as exc:
-        raise DomainError("scope_denied", 403) from exc
-    finally:
-        os.close(descriptor)
 
 
 def register_provider_artifact(services: Services, caller: Caller, request: JSON) -> JSON:
@@ -96,7 +73,11 @@ def register_provider_artifact(services: Services, caller: Caller, request: JSON
     if not request["staging_path"].startswith(prefix):
         raise DomainError("scope_denied", 403)
     root = Path(services.registry.get(project_id)["path"])
-    data = _read(root, request["staging_path"])
+    from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
+
+    managed(root, request["staging_path"])
+    path = root / request["staging_path"]
+    data = read_bounded_regular_file(path, MAX_AUDIO_BYTES, root=root)
     if hashlib.sha256(data).hexdigest() != request["sha256"]:
         raise DomainError("hash_mismatch", 422)
     artifacts = cast(Artifacts, services.extension("artifacts"))

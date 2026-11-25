@@ -8,9 +8,10 @@ from typing import Any, Protocol
 from PIL import Image
 
 from proscenium.api.errors import DomainError
-from proscenium.providers import budget3d, hunyuan, sd_turbo, sd_turbo_fp16
-from proscenium.providers.comfy import bind_graph, preflight
+from proscenium.providers import budget3d, hunyuan, sd_turbo, sd_turbo_fp16, stable_audio
+from proscenium.providers.comfy import IMAGE_OUTPUT_NODES, bind_graph, preflight
 from proscenium.providers.mesh import inspect_glb_bytes
+from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
 
 JSON = dict[str, Any]
 
@@ -25,6 +26,7 @@ class ArtifactFormat:
 
 IMAGE = ArtifactFormat("image", "image/png", "png", "concept")
 GLB = ArtifactFormat("source_blob", "model/gltf-binary", "glb", "concept")
+AUDIO = ArtifactFormat("audio", "audio/flac", "flac", "concept")
 METADATA = ArtifactFormat("document", "application/json", "json", "metadata")
 
 
@@ -46,7 +48,9 @@ class GenerationCapabilityPlugin(Protocol):
     ) -> JSON: ...
     def preflight(self, graph: JSON, catalog: JSON, models: list[str]) -> None: ...
     def output_descriptors(self, history: JSON) -> list[JSON]: ...
-    def inspect_output(self, data: bytes, maximum_pixels: int) -> JSON: ...
+    def inspect_output(
+        self, data: bytes, maximum_pixels: int, *, rendering: JSON | None = None
+    ) -> JSON: ...
 
 
 class ImagePlugin:
@@ -61,7 +65,7 @@ class ImagePlugin:
         return bind_graph(workflow, prompt, seed, references)
 
     def preflight(self, graph, catalog, models):
-        preflight(graph, catalog, models)
+        preflight(graph, catalog, models, allowed_output_nodes=IMAGE_OUTPUT_NODES)
 
     def output_descriptors(self, history):
         return [
@@ -70,7 +74,7 @@ class ImagePlugin:
             for item in output.get("images", [])
         ]
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         with Image.open(io.BytesIO(data)) as image:
             if image.format != "PNG" or image.width * image.height > maximum_pixels:
                 raise DomainError("unsupported_media_type", 415)
@@ -129,6 +133,38 @@ class ImagePlugin:
         return {"sha256_verified_during_registration": True}
 
 
+class StableAudio3Plugin:
+    capability = "audio"
+    revision = stable_audio.REVISION
+    job_kind = "audio_generation"
+    output_format = AUDIO
+    maximum_output_bytes = MAX_AUDIO_BYTES
+    expected_model_hashes: dict[str, str] = {}
+
+    def bind_graph(self, workflow, prompt, seed, references, models):
+        return stable_audio.bind(workflow, prompt, seed, references, models)
+
+    def preflight(self, graph, catalog, models):
+        preflight(graph, catalog, models, allowed_output_nodes=frozenset({"SaveAudio"}))
+
+    def output_descriptors(self, history):
+        return [
+            item
+            for output in history.get("outputs", {}).values()
+            for item in output.get("audio", [])
+        ]
+
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
+        config = rendering or {}
+        return stable_audio.verify_audio_bytes(
+            data,
+            AUDIO.media_type,
+            ffmpeg=config.get("ffmpeg"),
+            ffprobe=config.get("ffprobe"),
+            provider_output=True,
+        )
+
+
 class Budget3DPlugin:
     capability = "image_to_3d"
     revision = budget3d.TURBO_REVISION
@@ -163,7 +199,7 @@ class Budget3DPlugin:
     def output_descriptors(self, history):
         return budget3d.output_files(history)
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         return inspect_glb_bytes(data)
 
 
@@ -198,7 +234,7 @@ class HunyuanPlugin:
     def output_descriptors(self, history):
         return hunyuan.output_files(history)
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         return inspect_glb_bytes(data)
 
 
@@ -220,7 +256,7 @@ class SDTurboImg2ImgPlugin(ImagePlugin):
     def bind_graph(self, workflow, prompt, seed, references, models):
         return sd_turbo.bind(workflow, prompt, seed, references, models)
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         result = super().inspect_output(data, maximum_pixels)
         with Image.open(io.BytesIO(data)) as image:
             if image.size != (512, 512):
@@ -245,6 +281,7 @@ class SDTurboFP16Img2ImgPlugin(SDTurboImg2ImgPlugin):
 PLUGINS: dict[str, GenerationCapabilityPlugin] = {
     "image": ImagePlugin(),
     "image_to_3d": Budget3DPlugin(),
+    "audio": StableAudio3Plugin(),
 }
 REGISTRY = MappingProxyType(PLUGINS)
 IMAGE_REVISIONS = MappingProxyType(
@@ -263,12 +300,17 @@ MESH_REVISIONS = MappingProxyType(
 )
 
 
+AUDIO_REVISIONS = MappingProxyType({stable_audio.REVISION: PLUGINS["audio"]})
+
+
 def plugin(capability: str, revision: str | None = None) -> GenerationCapabilityPlugin:
     result = (
         IMAGE_REVISIONS.get(revision)
         if capability == "image" and revision is not None
         else MESH_REVISIONS.get(revision)
         if capability == "image_to_3d" and revision is not None
+        else AUDIO_REVISIONS.get(revision)
+        if capability == "audio" and revision is not None
         else REGISTRY.get(capability)
     )
     if result is None or (revision is not None and revision != result.revision):

@@ -530,6 +530,7 @@ class Import:
         row["preview_requests"].append(spec)
 
     def validate_sequence_bounds(self, sequence: dict) -> None:
+        self.require_silent_sequence(sequence)
         count = sequence["frame_count"]
         ceiling = self.config["max_frames"]
         if not 1 <= count <= ceiling:
@@ -600,7 +601,15 @@ class Import:
             raise DomainError("invalid_frame_mapping", 422, "Frame maps do not agree")
         return full
 
+    @staticmethod
+    def require_silent_sequence(sequence: dict) -> None:
+        if not sequence["silent"]:
+            raise DomainError(
+                "invalid_request", 422, "Offline import currently supports silent sequences only"
+            )
+
     def delivery(self, row: dict, declaration: dict, sequence: dict, full: dict) -> None:
+        self.require_silent_sequence(sequence)
         fields(declaration, "job_id external_job_id video dimensions")
         fields(declaration["video"], "path sha256")
         dimensions = declaration["dimensions"]

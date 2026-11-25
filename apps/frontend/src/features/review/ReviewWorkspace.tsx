@@ -554,7 +554,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const hasServerTarget = !draft?.targetBlob || Boolean(draft.targetUploaded);
   const draftContext = draft ? annotationContext(draft.annotation, version?.kind) : null;
-  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
+  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: inspectedArtifact.kind === "audio" ? [] : [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
     // A local capture has no stable artefact ID until the outbox uploads it.
     target: hasServerTarget ? draftContext.target : null,
     attachments: draft.state === "saved" ? draftContext.attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
@@ -1115,7 +1115,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const merged = useMemo(() => version ? mergeItemAnnotations({itemId: version.item_id, currentVersionId: version.version_id, drafts, saved, itemVersions}) : null,
     [version, drafts, saved, itemVersions]);
 
-  if (inspectedArtifact) return <RetainedReview {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  if (inspectedArtifact) return <RetainedReview visible={surfaceVisible} {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
   if (!version || !merged) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
   const activePins: SpatialPinMarker[] = draft && isSpatialDraft
     ? draft.annotation.spatial_hits.map((hit, idx) => ({

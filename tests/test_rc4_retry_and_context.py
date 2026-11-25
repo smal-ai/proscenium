@@ -7,6 +7,7 @@ import subprocess
 import sys
 from copy import deepcopy
 from dataclasses import replace
+from fractions import Fraction
 from types import SimpleNamespace
 
 import pytest
@@ -38,6 +39,7 @@ from proscenium.sources.read_only import read_authored_json
 from proscenium.sources.resolver import Resolver, closure_digest
 from proscenium.workflows import install as install_workflows
 from proscenium.workflows.assembly import prepared as prepare_assembly_inputs
+from test_audio_generation import flac
 from test_request_targeting import STAMP, context, request_record
 from test_vlm_critic_workflow import make_png
 from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK, publication
@@ -793,6 +795,7 @@ def sequence_runtime(runtime, tmp_path):
     "mode",
     [
         "identity",
+        "audio",
         "distinct-scenes",
         "duplicate-scene",
         "duplicate-shot",
@@ -800,7 +803,9 @@ def sequence_runtime(runtime, tmp_path):
         "duplicate-frame",
     ],
 )
-def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mode, monkeypatch):
+def test_standalone_scene_sequence_publication_and_assembly(
+    sequence_runtime, mode, monkeypatch, tmp_path
+):
     studio = sequence_runtime
     services = studio.services
     artifacts = services.extension("artifacts")
@@ -813,14 +818,15 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
     duplicate = mode.startswith("duplicate-")
     dissolve_error = "A dissolve requires distinct shots"
     shot_id = "shot-01" if mode == "duplicate-shot" else None
-    source_frames = {"start": 1, "end": 2}
+    count = 24 if mode == "audio" else 2
+    source_frames = {"start": 1, "end": count}
     sources = []
     for i, ref in enumerate(refs):
         publish(studio, ref, "scene")
         planned = seed_job(
-            studio, f"scene-render-{i}", ref, "succeeded", frames=(1, 2), shot_id=shot_id
+            studio, f"scene-render-{i}", ref, "succeeded", frames=(1, count), shot_id=shot_id
         )
-        seed_frames(studio, planned[0], 1, 2)
+        seed_frames(studio, planned[0], 1, count)
         rendered = settle(studio, planned)
         assert rendered["target"]["shot_id"] == shot_id
         sources.append(
@@ -844,12 +850,54 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
         project_id=PROJECT,
         sequence_version_id=DRAFT["version_id"],
         fps=FPS,
-        frame_count=2,
-        silent=True,
+        frame_count=count,
+        silent=mode != "audio",
         entries=[entry],
     )
+    audio_ids = []
+    if mode == "audio":
+        tracks = [
+            dict(
+                track_id="music",
+                artifact_id="z-score",
+                start_seconds=0,
+                gain_db=-6,
+                fade_in_seconds=0.05,
+                fade_out_seconds=0.2,
+            ),
+            dict(
+                track_id="sfx",
+                artifact_id="a-effect",
+                start_seconds=0.55,
+                trim_start_seconds=0.05,
+                duration_seconds=0.25,
+                gain_db=-3,
+                fade_in_seconds=0.025,
+                fade_out_seconds=0.075,
+            ),
+        ]
+        sequence["audio_tracks"] = tracks
+        promoted = []
+        for track, frequency, duration in zip(tracks, (440, 880), (1.25, 0.4), strict=True):
+            identity = track["artifact_id"]
+            audio_ids.append(identity)
+            promoted.append(
+                artifacts.promote(
+                    PROJECT,
+                    identity,
+                    flac(tmp_path / f"{identity}.flac", frequency=frequency, seconds=duration),
+                    kind="audio",
+                    purpose="concept",
+                    media_type="audio/flac",
+                )
+            )
+        with studio.store.transaction() as tx:
+            for asset in promoted:
+                artifacts.put(tx, asset)
+            artifacts.put(tx, {**promoted[0], "artifact_id": "not-ready", "state": "unavailable"})
+            artifacts.put(tx, {**promoted[0], "artifact_id": "wrong-kind", "kind": "document"})
     declared_map = None
-    if mode != "identity":
+    if mode not in {"identity", "audio"}:
         contributors = [sources[0], sources[-1]]
         entry.update(
             transform="transition",
@@ -902,6 +950,47 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
     request = dict(
         schema_version="1.0", project_id=PROJECT, document_kind="sequence_map", document=sequence
     )
+    if mode == "audio":
+        first, second = sequence["audio_tracks"]
+        for change, reason in (
+            ({"silent": True}, "Silent sequences must not declare audio_tracks"),
+            ({"audio_tracks": []}, "Non-silent sequences require at least one audio track"),
+            (
+                {"audio_tracks": [{**first, "artifact_id": "wrong-kind"}]},
+                "Audio track must reference a ready audio artefact",
+            ),
+            (
+                {"audio_tracks": [{**first, "artifact_id": "not-ready"}]},
+                "Audio track must reference a ready audio artefact",
+            ),
+            (
+                {"audio_tracks": [{**first, "start_seconds": 1}]},
+                "Audio track starts at or after the end of the sequence",
+            ),
+            (
+                {"audio_tracks": [first, {**second, "track_id": first["track_id"]}]},
+                "Duplicate audio track identity",
+            ),
+            (
+                {"audio_tracks": [first, {**second, "fade_out_seconds": 0.25}]},
+                "Audio track fade durations exceed the track duration",
+            ),
+            (
+                {"audio_tracks": [first, {**second, "trim_start_seconds": 0.4}]},
+                "Audio track trim leaves no source audio",
+            ),
+        ):
+            invalid = validate_authored_document(
+                services, PROJECT, dict(request, document={**sequence, **change})
+            )
+            assert not invalid["valid"] and invalid["issues"][0]["message"] == reason
+        missing = {k: v for k, v in sequence.items() if k != "audio_tracks"}
+        invalid = validate_authored_document(services, PROJECT, dict(request, document=missing))
+        assert (
+            not invalid["valid"]
+            and invalid["issues"][0]["message"]
+            == "Non-silent sequences require at least one audio track"
+        )
     validated = validate_authored_document(services, PROJECT, request)
     assert (validated["valid"], validated["schema_valid"], validated["semantic_valid"]) == (
         not duplicate,
@@ -989,7 +1078,7 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
     assert result_type == "success", result
     assert (result["kind"], result["state"]) == ("encode", "planned")
 
-    # Own and reap the one permitted detached worker. It only encodes two 64×64 frames.
+    # Own and reap the one permitted detached worker. It only encodes fixture media.
     spawn = subprocess.Popen
     processes = []
     attempt_root = studio.previews.root(result)
@@ -1027,22 +1116,77 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
         catalogue.version(PROJECT, DRAFT["version_id"])["artifact_ids"]
     )
     video_path = artifacts.ready_path(PROJECT, video_id)
-    assert verify_video(video_path, FPS, 2, DIMENSIONS, studio.previews.config.snapshot())[
-        "metadata"
-    ] == dict(dimensions=DIMENSIONS, fps=FPS, frame_count=2)
+    checked = verify_video(
+        video_path,
+        FPS,
+        count,
+        DIMENSIONS,
+        studio.previews.config.snapshot(),
+        expect_audio=mode == "audio",
+    )
+    assert checked["metadata"] == dict(dimensions=DIMENSIONS, fps=FPS, frame_count=count)
+    assert int(checked["stream"]["nb_frames"]) == count
+    assert checked["pts"] == [str(Fraction(i, FPS["numerator"])) for i in range(count)]
     assert artifacts.get(PROJECT, map_id)["kind"] == "frame_map"
     mapping_bytes = artifacts.ready_path(PROJECT, map_id).read_bytes()
     mapping = validate("FrameMap", json.loads(mapping_bytes))
     if declared_map is not None:
         assert mapping == declared_map
     else:
-        assert [row["contributors"][0]["source_frame"] for row in mapping["frames"]] == [1, 2]
+        assert [row["contributors"][0]["source_frame"] for row in mapping["frames"]] == list(
+            range(1, count + 1)
+        )
         assert all(row["contributors"][0]["shot_id"] is None for row in mapping["frames"])
     manifest = json.loads(artifacts.ready_path(PROJECT, manifest_id).read_bytes())
     assert manifest["input_digest"] == finished["input_digest"]
     assert manifest["sequence"] == sequence
     assert manifest["frame_map_sha256"] == sha(mapping_bytes)
     assert manifest["video_sha256"] == video["sha256"] == sha(video_path.read_bytes())
+
+    with studio.store.transaction(write=False) as tx:
+        snapshot = tx.require("preview_assemblies", finished["job_id"])
+        job_admission = tx.require("job_inputs", finished["job_id"])["admission"]
+    legacy_snapshot = dict(
+        sequence=sequence, frame_map=mapping, input_frames=manifest["input_frames"]
+    )
+    expected_ids = sorted(
+        {*audio_ids, *(row["artifact_id"] for row in legacy_snapshot["input_frames"])}
+    )
+    assert (
+        job_admission["input_artifact_ids"]
+        == video["derived_from"][0]["input_artifact_ids"]
+        == expected_ids
+    )
+    if mode != "audio":
+        assert canonical(snapshot) == canonical(legacy_snapshot)
+        assert finished["input_digest"] == fingerprint(legacy_snapshot)
+        assert "input_audio" not in manifest and "-an" in manifest["encode_argv"]
+        return
+    assert [row["artifact_id"] for row in snapshot["input_audio"]] == sorted(audio_ids)
+    assert snapshot["input_audio"] == manifest["input_audio"]
+    assert [row["duration_seconds"] for row in snapshot["input_audio"]] == [0.4, 1.25]
+    assert finished["input_digest"] == fingerprint(snapshot) != fingerprint(legacy_snapshot)
+    command = manifest["encode_argv"]
+    filter_graph = command[command.index("-filter_complex") + 1]
+    assert command.count("-protocol_whitelist") == 2
+    assert command.count("flac") == 2
+    assert "amix=inputs=2:duration=longest:normalize=0" in filter_graph
+    assert (
+        "adelay=24255S:all=1" in filter_graph
+        and "afade=t=out:st=0.175000:d=0.075000" in filter_graph
+    )
+    streams = json.loads(
+        subprocess.check_output(
+            ["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(video_path)], timeout=10
+        )
+    )["streams"]
+    assert len(streams) == 2 and streams[0]["codec_name"] == "h264"
+    assert (streams[1]["codec_name"], streams[1]["sample_rate"], streams[1]["channels"]) == (
+        "aac",
+        "44100",
+        2,
+    )
+    assert abs(float(streams[1]["duration"]) - 1) <= 1 / 44100
 
 
 @pytest.mark.parametrize("via_frame_map", [False, True], ids=["direct", "frame-map"])

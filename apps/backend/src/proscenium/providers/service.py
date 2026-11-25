@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import io
 import json
+import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -18,12 +19,13 @@ from proscenium.api.interfaces import ArtifactService, ReviewStore
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
-from proscenium.db.paths import project_path
+from proscenium.db.paths import project_path, read_bounded_regular_file
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
-from proscenium.providers import klein, sd_turbo, sd_turbo_fp16
+from proscenium.providers import klein, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
+from proscenium.providers.preparation import validate_recipes
 from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.providers.vlm import (
     DEFAULT_VLM_MAX_TOKENS,
@@ -37,6 +39,7 @@ from proscenium.reviews.references import References
 from proscenium.services import Services
 
 JSON = dict[str, Any]
+GENERATION_KINDS = frozenset({"image_generation", "mesh_generation", "audio_generation"})
 Registrar = Callable[[Caller, JSON], JSON]
 REVIEWABLE_IMAGE_PURPOSES = frozenset(
     {"concept", "reference", "keyframe", "draft_motion", "inspection", "final"}
@@ -145,6 +148,8 @@ class ProviderService:
             "image_recipes",
             "mesh_profiles",
             "mesh_recipes",
+            "audio_profiles",
+            "audio_recipes",
         }
         if set(self.options) - allowed:
             raise ValueError(
@@ -192,8 +197,6 @@ class ProviderService:
             if not isinstance(revision, str):
                 raise ValueError("mesh profile revision must be a string")
             plugin("image_to_3d", revision)
-        from .preparation import validate_recipes
-
         validate_recipes(self.options)
 
     @property
@@ -277,6 +280,10 @@ class ProviderService:
                     raise DomainError("idempotency_conflict", 409)
                 return tx.require("jobs", request["job_id"]), True
             prepared = tx.get("providers.prepared", request["workflow_artifact_id"], required=False)
+        if request["capability"] == "audio" and prepared is None:
+            raise DomainError(
+                "invalid_request", message="Audio generation requires prepare_audio_generation"
+            )
         revision = (
             self.options.get("image_profiles", {}).get(request["provider_id"])
             if request["capability"] == "image"
@@ -289,12 +296,20 @@ class ProviderService:
             if request["capability"] == "image_to_3d"
             else None
         )
-        if prepared:
-            if request != prepared["submit_request"]:
+        if prepared is not None:
+            if request != prepared.get("submit_request"):
                 raise DomainError("idempotency_conflict", 409)
             revision = prepared["profile_revision"]
         capability = plugin(request["capability"], revision)
         resolved = resolve_target(self.services, caller, request)
+        if (resolved.get("context") or {}).get("execution_scope") == "planning_only":
+            raise DomainError(
+                "scope_denied",
+                403,
+                "Generation is unavailable while execution_scope is planning_only",
+            )
+        if capability.capability == "audio":
+            stable_audio.resolve_audio_verifier(self.services.settings.rendering)
         provider = self.provider(request["provider_id"], capability.capability)
         workflow, data = self.artifact_bytes(project_id, request["workflow_artifact_id"])
         prompt_artifact, prompt_bytes = self.artifact_bytes(
@@ -309,6 +324,8 @@ class ProviderService:
             raise DomainError("invalid_request")
         references: dict[str, JSON] = {}
         reference_ids = request["input_artifact_ids"]
+        if capability.capability == "audio" and reference_ids:
+            raise DomainError("invalid_request", message=stable_audio.NO_REFERENCES)
         if len(set(reference_ids)) != len(reference_ids):
             raise DomainError("invalid_request", message="Duplicate conditioning image")
         if (
@@ -703,19 +720,40 @@ class ProviderService:
         digest = sha(data)
         root = Path(self.services.registry.get(job["project_id"])["path"])
         relative = f".proscenium/jobs/{job['job_id']}/{digest}.{format.suffix}"
-        path = project_path(root, relative, managed=True, must_exist=False)
+        project_path(root, relative, managed=True, must_exist=False)
+        path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        tmp = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:
-            with path.open("xb") as stream:
+            with os.fdopen(fd, "wb") as stream:
+                fd = -1
                 stream.write(data)
                 stream.flush()
-                import os
-
+                os.fchmod(stream.fileno(), 0o400)
                 os.fsync(stream.fileno())
-            path.chmod(0o400)
-        except FileExistsError:
-            if sha(path.read_bytes()) != digest:
-                raise DomainError("hash_mismatch", 422) from None
+            try:
+                # Publish the complete inode without replacing an immutable prior output.
+                os.link(tmp, path)
+            except FileExistsError:
+                existing_digest = sha(
+                    read_bounded_regular_file(path, stable_audio.MAX_AUDIO_BYTES, root=root)
+                )
+                if existing_digest != digest:
+                    raise DomainError("hash_mismatch", 422) from None
+        finally:
+            if fd >= 0:
+                os.close(fd)
+            tmp.unlink(missing_ok=True)
+        try:
+            directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        except OSError:
+            # Some filesystems cannot fsync directories. The published file is still complete.
+            pass
         request = dict(
             schema_version="1.0",
             operation_id=f"{job['job_id']}-register-{index}",
@@ -753,33 +791,61 @@ class ProviderService:
         if job["external_job_id"] is None or job["state"] == "outcome_uncertain":
             job = self.update(job, "running", external_job_id=prompt_id)
         self._settle(job, executed=True)
-        history = client.status(prompt_id)
-        if not history:
-            return job
-        status = history.get("status", {})
-        if status.get("status_str") == "error":
-            job = self.update(job, "failed", error_code="provider_unavailable")
-            self._release(job)
-            return job
-        if not status.get("completed"):
-            return job
-        # Provider execution is proved terminal. Download/storage recovery needs no GPU claim.
-        self._release(job)
         capability = self._plugin(inputs)
+        verifying = execution.get("phase") == "verifying"
+        recorded = execution.get("output_descriptors")
+        if verifying and isinstance(recorded, list):
+            descriptors = recorded
+        else:
+            history = client.status(prompt_id)
+            if not history:
+                if verifying:
+                    raise DomainError("media_unavailable", 422)
+                return job
+            status = history.get("status", {})
+            if status.get("status_str") == "error":
+                job = self.update(job, "failed", error_code="provider_unavailable")
+                self._release(job)
+                return job
+            if not status.get("completed"):
+                return job
+            # Persist only fields needed to download. History may disappear before a retry.
+            self._release(job)
+            try:
+                items = capability.output_descriptors(history)
+            except (AttributeError, KeyError, TypeError, ValueError):
+                # Invalid output metadata does not make a completed inference uncertain.
+                items = []
+            descriptors = [
+                {
+                    key: item[key]
+                    for key in ("filename", "subfolder", "type")
+                    if isinstance(item.get(key), str)
+                }
+                for item in items
+                if isinstance(item, dict) and isinstance(item.get("filename"), str)
+            ]
+            execution.update(phase="verifying", output_descriptors=descriptors)
+            self.execution(job["project_id"], job["job_id"], execution)
         artifacts: list[str] = []
         inspections = []
-        for item in capability.output_descriptors(history):
-            data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
+        for item in descriptors:
             try:
+                data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
                 inspection = capability.inspect_output(
-                    data, self.services.settings.upload_max_pixels
+                    data,
+                    self.services.settings.upload_max_pixels,
+                    rendering=self.services.settings.rendering,
                 )
             except DomainError as exc:
-                if exc.code != "corrupt_provider_output":
+                invalid_audio = (
+                    capability.capability == "audio" and exc.code == "unsupported_media_type"
+                )
+                if exc.code != "corrupt_provider_output" and not invalid_audio:
                     raise
                 execution["phase"] = "failed"
                 self.execution(job["project_id"], job["job_id"], execution)
-                return self.update(job, "failed", error_code="corrupt_provider_output")
+                return self.update(job, "failed", error_code=exc.code)
             artifacts.append(
                 self._register(
                     job,
@@ -815,7 +881,7 @@ class ProviderService:
         if frozen is None:
             # Compatibility for accepted pre-plugin IMAGE admissions only. Never infer a mesh revision.
             if inputs["request"]["capability"] != "image":
-                raise DomainError("capability_unavailable", 501, "Missing frozen mesh plugin")
+                raise DomainError("capability_unavailable", 501, "Missing frozen generation plugin")
             return plugin("image", "comfy-image-1")
         if frozen["capability"] != inputs["request"]["capability"]:
             raise DomainError("source_conflict", 409)
@@ -826,13 +892,15 @@ class ProviderService:
         if capability.job_kind != job["kind"]:
             raise DomainError("source_conflict", 409)
         client = ComfyClient(inputs["provider"]["endpoint"], self.client)
-        if execution.get("phase") == "submitting":
+        if execution.get("phase") in {"submitting", "verifying"}:
             return self._finish_generation(job, inputs, execution, client)
         if execution.get("phase") not in {None, "waiting"}:
             # A crash in preparation cannot have submitted inference. Explicit recovery only.
             return job
         if self.registrar is None:
             raise DomainError("capability_unavailable", 501, "Artifact registrar is not bound")
+        if capability.capability == "audio":
+            stable_audio.resolve_audio_verifier(self.services.settings.rendering)
         catalog = client.capabilities()
         capability.preflight(inputs["graph"], catalog, inputs["request"]["model_ids"])
         if client.busy(inputs["minimum_free_vram_bytes"]) or not self.services.resources.acquire(
@@ -842,7 +910,6 @@ class ProviderService:
             if job["state"] == "waiting_resource":
                 return job
             return self.update(job, "waiting_resource")
-        self.execution(job["project_id"], job["job_id"], {"phase": "preparing"})
         references = {}
         derivatives: list[str] = []
         # Canonical storage sorts object keys. The request array preserves conditioning order.
@@ -1138,13 +1205,16 @@ class ProviderService:
                         # Another worker or a crashed preflight owns this intent. Never relaunch.
                         continue
                     current_execution = tx.get("providers.execution", job["job_id"], required=False)
-                    if current_execution and current_execution.get("phase") == "checking":
+                    if current_execution and current_execution.get("phase") in {
+                        "checking",
+                        "preparing",
+                    }:
                         continue
                     if execution.get("phase") in {None, "waiting"}:
                         tx.put(
                             "providers.execution",
                             job["job_id"],
-                            {"phase": "checking"},
+                            {"phase": "preparing"},
                             expected_revision=tx.revision("providers.execution", job["job_id"])
                             if current_execution
                             else None,
@@ -1153,7 +1223,7 @@ class ProviderService:
                     check_storage(
                         store.path.parent, self.services.settings.free_space_reserve_bytes
                     )
-                    if job["kind"] in {"image_generation", "mesh_generation"}:
+                    if job["kind"] in GENERATION_KINDS:
                         result = self._generation(job, inputs, execution)
                     else:
                         raise DomainError("scope_denied", 403)
@@ -1169,11 +1239,18 @@ class ProviderService:
                 ) as exc:
                     job = self.services.jobs.get(project_id, job["job_id"])
                     execution = self.execution(project_id, job["job_id"])
-                    uncertain = execution.get("phase") == "submitting"
-                    code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
-                    if job["kind"] in {"image_generation", "mesh_generation"} and not uncertain:
+                    phase = execution.get("phase")
+                    uncertain = phase == "submitting"
+                    code = (
+                        exc.code
+                        if isinstance(exc, DomainError)
+                        else "media_unavailable"
+                        if isinstance(exc, OSError) and phase == "verifying"
+                        else "provider_unavailable"
+                    )
+                    if job["kind"] in GENERATION_KINDS and phase in {None, "waiting", "preparing"}:
                         self._settle(job, executed=False)
-                        if execution.get("phase") == "preparing":
+                        if phase == "preparing":
                             self._release(job)
                     result = self.update(
                         job, "outcome_uncertain" if uncertain else "failed", error_code=code
