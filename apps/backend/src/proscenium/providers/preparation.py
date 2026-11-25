@@ -421,6 +421,8 @@ class Preparation:
                     )
                 )
             )
+        if self.capability == "audio":
+            stable_audio.resolve_audio_verifier(self.services.settings.rendering)
         provider = self.provider.provider(body.get("provider_id"), self.capability)
         try:
             catalog = bounded_get(self.provider, provider, "/object_info")

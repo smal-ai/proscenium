@@ -155,22 +155,16 @@ class Artifacts:
     ) -> dict[str, Any]:
         metadata = dict(metadata or {})
         if kind == "audio":
+            from proscenium.providers.stable_audio import MAX_AUDIO_BYTES, verify_audio_bytes
+
+            if len(data) > MAX_AUDIO_BYTES:
+                raise DomainError("upload_too_large", 413)
             if media_type not in AUDIO_MEDIA_TYPES:
                 raise DomainError("unsupported_media_type", 415)
-            from proscenium.providers.stable_audio import INVALID_AUDIO_BYTES, verify_audio_bytes
-
             rendering = self.services.settings.rendering
-            try:
-                inspection = verify_audio_bytes(
-                    data,
-                    media_type,
-                    ffmpeg=rendering.get("ffmpeg"),
-                    ffprobe=rendering.get("ffprobe"),
-                )
-            except DomainError as exc:
-                if exc.code != "corrupt_provider_output":
-                    raise
-                raise DomainError("media_unavailable", 422, INVALID_AUDIO_BYTES) from exc
+            inspection = verify_audio_bytes(
+                data, media_type, ffmpeg=rendering.get("ffmpeg"), ffprobe=rendering.get("ffprobe")
+            )
             for key in AUDIO_METADATA:
                 if metadata.get(key, inspection[key]) != inspection[key]:
                     raise DomainError("hash_mismatch", 422)
@@ -332,7 +326,17 @@ class Artifacts:
         if not body["staging_path"].startswith(".proscenium/tool-output/staging/"):
             raise DomainError("scope_denied", 403)
         path = managed(root, body["staging_path"], exists=True)
-        data = path.read_bytes()
+        if body["kind"] == "audio":
+            from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
+
+            if path.stat().st_size > MAX_AUDIO_BYTES:
+                raise DomainError("upload_too_large", 413)
+            with path.open("rb") as stream:
+                data = stream.read(MAX_AUDIO_BYTES + 1)
+            if len(data) > MAX_AUDIO_BYTES:
+                raise DomainError("upload_too_large", 413)
+        else:
+            data = path.read_bytes()
         if sha(data) != body["sha256"]:
             raise DomainError("hash_mismatch", 422)
         artifact = self.promote(

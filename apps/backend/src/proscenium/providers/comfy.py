@@ -14,6 +14,12 @@ import httpx
 
 from proscenium.api.errors import DomainError
 
+IMAGE_OUTPUT_NODES = frozenset({"SaveImage", "PreviewImage"})
+AUDIO_OUTPUT_NODES = frozenset(
+    {"SaveAudio", "SaveAudioMP3", "SaveAudioOpus", "SaveAudioAdvanced", "PreviewAudio"}
+)
+OUTPUT_CAPABILITY_MISMATCH = "Graph output node does not match capability"
+
 
 def endpoint(value: str) -> str:
     url = urlsplit(value)
@@ -29,7 +35,13 @@ def endpoint(value: str) -> str:
     return value.rstrip("/")
 
 
-def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str]) -> None:
+def preflight(
+    graph: dict[str, Any],
+    catalog: dict[str, Any],
+    models: list[str],
+    *,
+    allowed_output_nodes: frozenset[str] | None = None,
+) -> None:
     if not graph or "nodes" in graph:
         raise DomainError("invalid_request", message="Expected a non-empty API graph")
     schemas: dict[str, Any] = {}
@@ -40,6 +52,13 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
         if kind not in catalog:
             raise DomainError("capability_unavailable", 501, "Graph node is not installed")
         schemas[identity] = catalog[kind]
+    output_nodes = {
+        graph[nid]["class_type"] for nid, schema in schemas.items() if schema.get("output_node")
+    }
+    if not output_nodes or (
+        allowed_output_nodes is not None and not output_nodes <= allowed_output_nodes
+    ):
+        raise DomainError("invalid_request", message=OUTPUT_CAPABILITY_MISMATCH)
     selected_models: set[str] = set()
     for identity, schema in schemas.items():
         inputs = graph[identity]["inputs"]
@@ -96,7 +115,7 @@ def preflight(graph: dict[str, Any], catalog: dict[str, Any], models: list[str])
                 "bg_removal_name",
             }:
                 selected_models.add(value)
-    if set(models) != selected_models or not any(s.get("output_node") for s in schemas.values()):
+    if set(models) != selected_models:
         raise DomainError("invalid_request", message="Model manifest/output graph mismatch")
 
 
@@ -110,6 +129,8 @@ def bind_graph(
     load_ids: dict[str, str] = {}
     used: set[str] = set()
     for identity, node in graph.items():
+        if node.get("class_type") in AUDIO_OUTPUT_NODES:
+            raise DomainError("invalid_request", message=OUTPUT_CAPABILITY_MISMATCH)
         if node.get("class_type") != "LoadImage":
             continue
         inputs = node.get("inputs")
@@ -152,8 +173,10 @@ def bind_graph(
         reachable.add(identity)
 
     for identity, node in graph.items():
-        if node["class_type"] == "SaveImage":
+        if node["class_type"] in IMAGE_OUTPUT_NODES:
             visit(identity)
+    if not reachable:
+        raise DomainError("invalid_request", message=OUTPUT_CAPABILITY_MISMATCH)
 
     def output_zero(link: Any) -> str | None:
         if (

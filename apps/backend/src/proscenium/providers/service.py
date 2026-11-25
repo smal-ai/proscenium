@@ -307,6 +307,8 @@ class ProviderService:
                 403,
                 "Generation is unavailable while execution_scope is planning_only",
             )
+        if capability.capability == "audio":
+            stable_audio.resolve_audio_verifier(self.services.settings.rendering)
         provider = self.provider(request["provider_id"], capability.capability)
         workflow, data = self.artifact_bytes(project_id, request["workflow_artifact_id"])
         prompt_artifact, prompt_bytes = self.artifact_bytes(
@@ -779,6 +781,9 @@ class ProviderService:
             return job
         # Provider execution is proved terminal. Download/storage recovery needs no GPU claim.
         self._release(job)
+        if execution.get("phase") != "verifying":
+            execution["phase"] = "verifying"
+            self.execution(job["project_id"], job["job_id"], execution)
         capability = self._plugin(inputs)
         artifacts: list[str] = []
         inspections = []
@@ -845,13 +850,15 @@ class ProviderService:
         if capability.job_kind != job["kind"]:
             raise DomainError("source_conflict", 409)
         client = ComfyClient(inputs["provider"]["endpoint"], self.client)
-        if execution.get("phase") == "submitting":
+        if execution.get("phase") in {"submitting", "verifying"}:
             return self._finish_generation(job, inputs, execution, client)
         if execution.get("phase") not in {None, "waiting"}:
             # A crash in preparation cannot have submitted inference. Explicit recovery only.
             return job
         if self.registrar is None:
             raise DomainError("capability_unavailable", 501, "Artifact registrar is not bound")
+        if capability.capability == "audio":
+            stable_audio.resolve_audio_verifier(self.services.settings.rendering)
         catalog = client.capabilities()
         capability.preflight(inputs["graph"], catalog, inputs["request"]["model_ids"])
         if client.busy(inputs["minimum_free_vram_bytes"]) or not self.services.resources.acquire(
@@ -861,7 +868,6 @@ class ProviderService:
             if job["state"] == "waiting_resource":
                 return job
             return self.update(job, "waiting_resource")
-        self.execution(job["project_id"], job["job_id"], {"phase": "preparing"})
         references = {}
         derivatives: list[str] = []
         # Canonical storage sorts object keys. The request array preserves conditioning order.
@@ -1157,13 +1163,16 @@ class ProviderService:
                         # Another worker or a crashed preflight owns this intent. Never relaunch.
                         continue
                     current_execution = tx.get("providers.execution", job["job_id"], required=False)
-                    if current_execution and current_execution.get("phase") == "checking":
+                    if current_execution and current_execution.get("phase") in {
+                        "checking",
+                        "preparing",
+                    }:
                         continue
                     if execution.get("phase") in {None, "waiting"}:
                         tx.put(
                             "providers.execution",
                             job["job_id"],
-                            {"phase": "checking"},
+                            {"phase": "preparing"},
                             expected_revision=tx.revision("providers.execution", job["job_id"])
                             if current_execution
                             else None,
@@ -1188,11 +1197,18 @@ class ProviderService:
                 ) as exc:
                     job = self.services.jobs.get(project_id, job["job_id"])
                     execution = self.execution(project_id, job["job_id"])
-                    uncertain = execution.get("phase") == "submitting"
-                    code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
-                    if job["kind"] in GENERATION_KINDS and not uncertain:
+                    phase = execution.get("phase")
+                    uncertain = phase == "submitting"
+                    code = (
+                        exc.code
+                        if isinstance(exc, DomainError)
+                        else "media_unavailable"
+                        if isinstance(exc, OSError) and phase == "verifying"
+                        else "provider_unavailable"
+                    )
+                    if job["kind"] in GENERATION_KINDS and phase in {None, "waiting", "preparing"}:
                         self._settle(job, executed=False)
-                        if execution.get("phase") == "preparing":
+                        if phase == "preparing":
                             self._release(job)
                     result = self.update(
                         job, "outcome_uncertain" if uncertain else "failed", error_code=code

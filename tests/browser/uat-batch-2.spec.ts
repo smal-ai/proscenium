@@ -984,40 +984,51 @@ test("retained FLAC plays in Chat and Review and the sequence player is unmuted"
     studio.artifactContent.set(id, { bytes, contentType: metadata.media_type });
   }
   addMedia("audio-tone", flac, { kind: "audio", media_type: "audio/flac", duration_seconds: 1, sample_rate_hz: 44100, channels: 2 });
+  addMedia("audio-nested", flac, { kind: "audio", media_type: "audio/flac", duration_seconds: 1, sample_rate_hz: 44100, channels: 2 });
+  for (const id of ["padding-a", "padding-b"]) addMedia(id, Buffer.from("fixture"), { kind: "document", media_type: "text/plain", purpose: "metadata" });
   addMedia("muxed-video", video, { kind: "video", purpose: "final", media_type: "video/mp4", fps, frame_count: 2, dimensions: { width: 64, height: 64 } });
   addMedia("mapped-frames", Buffer.from(JSON.stringify(map)), { kind: "frame_map", purpose: "metadata", media_type: "application/json" });
 
   await studio.open(); await studio.ready();
-  studio.emit("tool.completed", { invocation_id: "audio-result", name: "get_job", state: "completed", summary: "Retained score", artifact_ids: ["audio-tone"], model_id: null });
+  studio.emit("tool.completed", { invocation_id: "audio-result", name: "get_job", state: "completed", summary: "Retained score", artifact_ids: ["audio-tone", "padding-a", "padding-b", "audio-nested"], model_id: null });
   const card = page.locator(".retained-output-card").filter({ hasText: "audio-tone" });
   const inline = card.locator("audio[controls]");
   await expect(inline).toHaveAttribute("src", `${base}/artifacts/audio-tone/content`);
   await expect.poll(() => inline.evaluate((audio: HTMLAudioElement) => audio.duration || 0)).toBe(1);
   await expect(card.getByRole("link", { name: "Download output" })).toBeVisible();
   const play = async (audio: typeof inline) => {
-    await audio.evaluate(async (element: HTMLAudioElement) => { element.currentTime = 0; await element.play(); });
+    await audio.evaluate(async (element: HTMLAudioElement) => { element.loop = true; element.currentTime = 0; await element.play(); });
     await expect(audio).toHaveJSProperty("paused", false);
+  };
+  const expectHiddenPause = async (audio: typeof inline) => {
+    await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => ({ paused: element.paused, ended: element.ended }))).toEqual({ paused: true, ended: false });
   };
   await page.getByRole("button", { name: "Copilot", exact: true }).click();
   await play(inline);
   await page.getByRole("button", { name: "Critic", exact: true }).click();
-  await expect(inline).toHaveJSProperty("paused", true);
+  await expectHiddenPause(inline);
   await page.getByRole("button", { name: "Copilot", exact: true }).click();
   await play(inline);
   await page.getByRole("button", { name: "Collapse Assistant", exact: true }).click();
-  await expect(inline).toHaveJSProperty("paused", true);
+  await expectHiddenPause(inline);
   await page.getByRole("button", { name: "Expand Assistant", exact: true }).click();
+  const more = page.locator(".retained-output-more summary").filter({ hasText: "Show 1 more retained output" });
+  await more.click();
+  const nestedAudio = page.locator(".retained-output-more audio[aria-label='Retained audio audio-nested']");
+  await expect(nestedAudio).toBeVisible();
+  await play(nestedAudio);
+  await more.click();
+  await expectHiddenPause(nestedAudio);
   await card.getByRole("button", { name: "Inspect audio" }).click();
   const review = page.locator("main.review-panel");
   const player = review.locator(".review-audio audio[controls]");
   await expect(player).toHaveAttribute("aria-label", "Retained audio audio-tone");
-  await player.evaluate((audio: HTMLAudioElement) => audio.play());
+  await play(player);
   await expect.poll(() => player.evaluate((audio: HTMLAudioElement) => audio.currentTime)).toBeGreaterThan(0);
   await expect(review.getByRole("link", { name: "Download audio" })).toBeVisible();
   for (const chip of ["1 s", "44,100 Hz", "2 channels"]) await expect(review.getByText(chip, { exact: true })).toBeVisible();
-  await play(player);
   await page.getByRole("button", { name: "Chat focus", exact: true }).click();
-  await expect(player).toHaveJSProperty("paused", true);
+  await expectHiddenPause(player);
   await page.getByRole("button", { name: "Restore split view", exact: true }).click();
   const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
   await expect(navigator.locator(".retained-output").filter({ hasText: "audio-tone" }).getByRole("button", { name: "Inspect audio" })).toBeVisible();

@@ -321,6 +321,8 @@ SAFE_REASONS = frozenset(
         "Unbound conditioning image",
         "Reference is not conditioning",
         "Graph node is not installed",
+        "Graph output node does not match capability",
+        "Local storage unavailable for audio verification",
         "Model/choice is unavailable",
         "An exact JSON-safe decimal seed is required",
         "Image width and height must be multiples of 16 between 64 and 4096",

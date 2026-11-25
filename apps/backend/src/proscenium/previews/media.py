@@ -2,6 +2,7 @@
 
 import fcntl
 import json
+import math
 import os
 import signal
 import subprocess
@@ -203,16 +204,29 @@ def _verify_video(
         frames = [frame for frame in frames if frame.get("media_type") == "video"]
         audio_stream = audio[0]
         try:
-            audio_duration = Fraction(audio_stream["duration"])
-            audio_start = Fraction(audio_stream.get("start_time", "0"))
+            if any(
+                type(audio_stream[key]) not in {str, int, float}
+                for key in ("start_time", "duration")
+            ):
+                raise ValueError
+            audio_start = float(audio_stream["start_time"])
+            audio_duration = float(audio_stream["duration"])
+            if not math.isfinite(audio_start) or not math.isfinite(audio_duration):
+                raise ValueError
+        except (KeyError, ValueError, TypeError, OverflowError) as exc:
+            raise DomainError(
+                "media_unavailable", 422, "Incomplete MP4 audio stream metadata"
+            ) from exc
+        try:
+            sample_rate = int(audio_stream["sample_rate"])
             if (
                 audio_stream.get("codec_name") != "aac"
-                or int(audio_stream["sample_rate"]) != 44100
+                or sample_rate != 44100
                 or int(audio_stream["channels"]) != 2
                 or audio_duration <= 0
             ):
                 raise ValueError
-        except (KeyError, ValueError, TypeError, ZeroDivisionError) as exc:
+        except (KeyError, ValueError, TypeError, OverflowError) as exc:
             raise DomainError(
                 "media_unavailable", 422, "Expected positive-duration stereo AAC at 44100 Hz"
             ) from exc
@@ -249,11 +263,12 @@ def _verify_video(
         or any(metadata[key] != value for key, value in expected.items())
     ):
         raise DomainError("media_unavailable", 422, "Encoded video does not match admitted profile")
-    if expect_audio and (
-        abs(audio_start) > Fraction(6, 100)
-        or abs(audio_duration - Fraction(count, 1) / fps) > Fraction(15, 100)
-    ):
-        raise DomainError("media_unavailable", 422, "Audio timeline does not match the video")
+    if expect_audio:
+        tolerance = 2 * (1024 / sample_rate)
+        video_duration = float(Fraction(count, 1) / fps)
+        audio_end = audio_start + audio_duration
+        if abs(audio_start) > tolerance or abs(audio_end - video_duration) > tolerance:
+            raise DomainError("media_unavailable", 422, "Audio timeline does not match the video")
     try:
         pts = [Fraction(frame["best_effort_timestamp"]) * time_base for frame in frames]
     except (KeyError, ValueError, TypeError, ZeroDivisionError) as exc:

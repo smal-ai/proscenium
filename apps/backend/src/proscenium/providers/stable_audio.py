@@ -29,6 +29,7 @@ INVALID_SEED = "An exact JSON-safe decimal seed is required"
 INVALID_DURATION = "Audio duration is outside the supported bounds for this mode"
 INVALID_GRAPH = "Invalid Stable Audio graph or model manifest"
 UNAVAILABLE = "Stable Audio recipe nodes or models are unavailable"
+MAX_AUDIO_BYTES = 256 * 1024**2
 MAX_PCM_BYTES = 400 * 1024**2
 AUDIO_VERIFY_UNAVAILABLE = "Audio verification requires ffmpeg and ffprobe"
 INVALID_AUDIO_BYTES = "Audio bytes failed bounded decode verification"
@@ -187,6 +188,8 @@ def _bounded_output(
     argv: list[str], deadline: float, maximum: int, *, capture: bool = False
 ) -> tuple[int, bytes]:
     """Drain both pipes without trusting EOF, stderr size or process duration."""
+    if time.monotonic() >= deadline:
+        raise subprocess.TimeoutExpired(argv, 0)
     with subprocess.Popen(
         argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True
     ) as process:
@@ -200,7 +203,7 @@ def _bounded_output(
                 while selector.get_map():
                     remaining = deadline - time.monotonic()
                     if remaining <= 0:
-                        raise corrupt_audio()
+                        raise subprocess.TimeoutExpired(argv, 0)
                     for key, _ in selector.select(remaining):
                         chunk = os.read(key.fd, 64 * 1024)
                         if not chunk:
@@ -224,84 +227,85 @@ def _bounded_output(
         return count, bytes(result)
 
 
-def verify_audio_bytes(
-    data: bytes,
-    media_type: str,
-    *,
-    ffmpeg: str | None = None,
-    ffprobe: str | None = None,
-    timeout: int = 30,
-) -> dict[str, Any]:
-    """Verify isolated audio bytes by counting the samples produced by a full PCM decode."""
-    if media_type not in AUDIO_DEMUXERS:
-        raise DomainError("unsupported_media_type", 415)
-    if not data:
-        raise corrupt_audio()
-    declared = inspect_flac_bytes(data) if media_type == "audio/flac" else None
-    decoder, probe = shutil.which(ffmpeg or "ffmpeg"), shutil.which(ffprobe or "ffprobe")
-    if not decoder or not probe:
+def resolve_audio_verifier(rendering: dict[str, Any] | None = None) -> tuple[str, str]:
+    config = rendering or {}
+    decoder = shutil.which(config.get("ffmpeg") or "ffmpeg")
+    probe = shutil.which(config.get("ffprobe") or "ffprobe")
+    if (
+        not decoder
+        or not probe
+        or not all(Path(path).is_file() and os.access(path, os.X_OK) for path in (decoder, probe))
+    ):
         raise DomainError("capability_unavailable", 501, AUDIO_VERIFY_UNAVAILABLE)
+    return decoder, probe
+
+
+def _verify_staged_audio(
+    path: Path,
+    media_type: str,
+    declared: dict[str, Any] | None,
+    decoder: str,
+    probe: str,
+    deadline: float,
+) -> dict[str, Any]:
     demuxer, codecs = AUDIO_DEMUXERS[media_type]
     input_options = ["-protocol_whitelist", "file", "-f", demuxer]
     try:
-        with TemporaryDirectory(prefix="proscenium-audio-verify-") as directory:
-            path = Path(directory) / "audio"
-            path.write_bytes(data)
-            deadline = time.monotonic() + timeout
-            _, raw = _bounded_output(
-                [
-                    probe,
-                    "-v",
-                    "error",
-                    *input_options,
-                    "-show_streams",
-                    "-show_format",
-                    "-of",
-                    "json",
-                    str(path),
-                ],
-                deadline,
-                1024**2,
-                capture=True,
-            )
-            (stream,) = json.loads(raw)["streams"]
-            codec = stream["codec_name"]
-            if stream["codec_type"] != "audio" or not (
-                codec.startswith("pcm_") if codecs is None else codec in codecs
-            ):
-                raise DomainError("unsupported_media_type", 415)
-            rate, channels = int(stream["sample_rate"]), int(stream["channels"])
-            if rate < 8000 or not 1 <= channels <= 8:
-                raise DomainError("unsupported_media_type", 415)
-            if declared and (rate, channels) != (declared["sample_rate_hz"], declared["channels"]):
-                raise corrupt_audio()
-            pcm, _ = _bounded_output(
-                [
-                    decoder,
-                    "-nostdin",
-                    "-v",
-                    "error",
-                    "-xerror",
-                    *input_options,
-                    "-i",
-                    str(path),
-                    "-map",
-                    "0:a:0",
-                    "-f",
-                    "s16le",
-                    "-",
-                ],
-                deadline,
-                MAX_PCM_BYTES,
-            )
-    except (
-        OSError,
-        subprocess.TimeoutExpired,
-        ValueError,
-        TypeError,
-        KeyError,
-        AttributeError,
-    ) as exc:
+        _, raw = _bounded_output(
+            [
+                probe,
+                "-v",
+                "error",
+                *input_options,
+                "-show_streams",
+                "-show_format",
+                "-of",
+                "json",
+                str(path),
+            ],
+            deadline,
+            1024**2,
+            capture=True,
+        )
+        (stream,) = json.loads(raw)["streams"]
+        codec = stream["codec_name"]
+        if stream["codec_type"] != "audio" or not (
+            codec.startswith("pcm_") if codecs is None else codec in codecs
+        ):
+            raise DomainError("unsupported_media_type", 415)
+        rate, channels = int(stream["sample_rate"]), int(stream["channels"])
+        if rate < 8000 or not 1 <= channels <= 8:
+            raise DomainError("unsupported_media_type", 415)
+        if declared and (rate, channels) != (declared["sample_rate_hz"], declared["channels"]):
+            raise corrupt_audio()
+        pcm, _ = _bounded_output(
+            [
+                decoder,
+                "-nostdin",
+                "-v",
+                "error",
+                "-xerror",
+                *input_options,
+                "-i",
+                str(path),
+                "-map",
+                "0:a:0",
+                "-f",
+                "s16le",
+                "-",
+            ],
+            deadline,
+            MAX_PCM_BYTES,
+        )
+    except OSError as exc:
+        raise DomainError(
+            "media_unavailable", 503, "Local audio verification process unavailable"
+        ) from exc
+    except subprocess.TimeoutExpired as exc:
+        raise DomainError(
+            "media_unavailable", 503, "Audio verification exceeded its deadline"
+        ) from exc
+    except (ValueError, TypeError, KeyError, AttributeError) as exc:
         raise corrupt_audio() from exc
     samples, remainder = divmod(pcm, channels * 2)
     duration = round(samples / rate, 6)
@@ -313,3 +317,38 @@ def verify_audio_bytes(
         channels=channels,
         sha256_verified_during_registration=True,
     )
+
+
+def verify_audio_bytes(
+    data: bytes,
+    media_type: str,
+    *,
+    ffmpeg: str | None = None,
+    ffprobe: str | None = None,
+    timeout: int = 30,
+    provider_output: bool = False,
+) -> dict[str, Any]:
+    """Verify isolated audio bytes by counting the samples produced by a full PCM decode."""
+    if len(data) > MAX_AUDIO_BYTES:
+        raise DomainError("upload_too_large", 413)
+    if media_type not in AUDIO_DEMUXERS:
+        raise DomainError("unsupported_media_type", 415)
+    try:
+        if not data:
+            raise corrupt_audio()
+        declared = inspect_flac_bytes(data) if media_type == "audio/flac" else None
+        decoder, probe = resolve_audio_verifier({"ffmpeg": ffmpeg, "ffprobe": ffprobe})
+        deadline = time.monotonic() + timeout
+        try:
+            with TemporaryDirectory(prefix="proscenium-audio-verify-") as directory:
+                path = Path(directory) / "audio"
+                path.write_bytes(data)
+                return _verify_staged_audio(path, media_type, declared, decoder, probe, deadline)
+        except OSError as exc:
+            raise DomainError(
+                "media_unavailable", 503, "Local storage unavailable for audio verification"
+            ) from exc
+    except DomainError as exc:
+        if provider_output or exc.code != "corrupt_provider_output":
+            raise
+        raise DomainError("media_unavailable", 422, INVALID_AUDIO_BYTES) from exc

@@ -19,6 +19,7 @@ export function isRenderPassStreamArtifact(summary: RetainedArtifactSummary): bo
 export function OutputCards({ visible = true, api, projectId, artifactIds, retainedArtifacts = [], onInspectArtifact }: {
   visible?: boolean; api: ApiClient; projectId: string; artifactIds: string[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
 }) {
+  const [moreOpen, setMoreOpen] = useState(false);
   const uniqueIds = [...new Set(artifactIds)];
   if (!uniqueIds.length) return null;
   const knownById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary.artifact]));
@@ -28,10 +29,10 @@ export function OutputCards({ visible = true, api, projectId, artifactIds, retai
     <div className="retained-output-cards">
       {visibleIds.map(id => <OutputCard visible={visible} key={id} api={api} projectId={projectId} artifactId={id} known={knownById.get(id)} onInspectArtifact={onInspectArtifact} />)}
     </div>
-    {hiddenIds.length > 0 && <details className="retained-output-more">
+    {hiddenIds.length > 0 && <details className="retained-output-more" onToggle={event => setMoreOpen(event.currentTarget.open)}>
       <summary>Show {hiddenIds.length} more retained {hiddenIds.length === 1 ? "output" : "outputs"}</summary>
       <div className="retained-output-cards">
-        {hiddenIds.map(id => <OutputCard visible={visible} key={id} api={api} projectId={projectId} artifactId={id} known={knownById.get(id)} onInspectArtifact={onInspectArtifact} />)}
+        {hiddenIds.map(id => <OutputCard visible={visible && moreOpen} key={id} api={api} projectId={projectId} artifactId={id} known={knownById.get(id)} onInspectArtifact={onInspectArtifact} />)}
       </div>
     </details>}
   </>;

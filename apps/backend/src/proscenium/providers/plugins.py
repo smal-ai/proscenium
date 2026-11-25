@@ -9,8 +9,9 @@ from PIL import Image
 
 from proscenium.api.errors import DomainError
 from proscenium.providers import budget3d, hunyuan, sd_turbo, sd_turbo_fp16, stable_audio
-from proscenium.providers.comfy import bind_graph, preflight
+from proscenium.providers.comfy import IMAGE_OUTPUT_NODES, bind_graph, preflight
 from proscenium.providers.mesh import inspect_glb_bytes
+from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
 
 JSON = dict[str, Any]
 
@@ -64,7 +65,7 @@ class ImagePlugin:
         return bind_graph(workflow, prompt, seed, references)
 
     def preflight(self, graph, catalog, models):
-        preflight(graph, catalog, models)
+        preflight(graph, catalog, models, allowed_output_nodes=IMAGE_OUTPUT_NODES)
 
     def output_descriptors(self, history):
         return [
@@ -137,14 +138,14 @@ class StableAudio3Plugin:
     revision = stable_audio.REVISION
     job_kind = "audio_generation"
     output_format = AUDIO
-    maximum_output_bytes = 256 * 1024**2
+    maximum_output_bytes = MAX_AUDIO_BYTES
     expected_model_hashes: dict[str, str] = {}
 
     def bind_graph(self, workflow, prompt, seed, references, models):
         return stable_audio.bind(workflow, prompt, seed, references, models)
 
     def preflight(self, graph, catalog, models):
-        preflight(graph, catalog, models)
+        preflight(graph, catalog, models, allowed_output_nodes=frozenset({"SaveAudio"}))
 
     def output_descriptors(self, history):
         return [
@@ -156,7 +157,11 @@ class StableAudio3Plugin:
     def inspect_output(self, data, maximum_pixels, *, rendering=None):
         config = rendering or {}
         return stable_audio.verify_audio_bytes(
-            data, AUDIO.media_type, ffmpeg=config.get("ffmpeg"), ffprobe=config.get("ffprobe")
+            data,
+            AUDIO.media_type,
+            ffmpeg=config.get("ffmpeg"),
+            ffprobe=config.get("ffprobe"),
+            provider_output=True,
         )
 
 

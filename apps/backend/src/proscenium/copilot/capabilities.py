@@ -151,6 +151,12 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                     reason_code="model_not_configured", summary="Configure a vision model ID"
                 )
                 continue
+            if capability == "audio":
+                try:
+                    stable_audio.resolve_audio_verifier(services.settings.rendering)
+                except DomainError as exc:
+                    row.update(reason_code="audio_verifier_missing", summary=exc.message)
+                    continue
             try:
                 catalog = bounded_get(
                     provider, service, "/v1/models" if capability == "vlm" else "/object_info"
