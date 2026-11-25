@@ -1,4 +1,4 @@
-import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, Info, MapPin, Pause, PenLine, Play, X } from "lucide-react";
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, JobRecord, Markup, PreviewSegment, ProxyMapping, SpatialHit, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
@@ -9,7 +9,7 @@ import { frameTarget, mediaUrl, segmentAt, sequenceTarget, stableJson, typingTar
 import { flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
 import { SequencePlayer } from "./SequencePlayer";
-import { ProxyView, type FrozenProxyCapture, type ProxyCapture, type ProxyPinPlacement, type SpatialPinMarker } from "./ProxyView";
+import type { FrozenProxyCapture, ProxyCapture, ProxyPinPlacement, SpatialPinMarker } from "./ProxyView";
 import { readProxyCapture, writeProxyCapture, type PendingProxyCapture } from "./proxyCaptureStore";
 import { allPages } from "./records";
 import { formatRenderPresetOption, RENDER_PRESETS, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
@@ -25,6 +25,8 @@ import { useReviewSelection } from "./state";
 import { RetainedReview, ReviewEmpty, ReviewModeSwitcher } from "./ReviewChrome";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "./refreshKeys";
 import "./review.css";
+
+const ProxyView = lazy(() => import("./ProxyView").then(module => ({ default: module.ProxyView })));
 
 type Mode = "3d_inspection" | "keyframes" | "animation";
 type StoryboardPanel = { shot_id: string; frame_id: string; role: string; composition: string; artifact_id: string };
@@ -867,6 +869,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         source_frame: activeMapping.sample_frame,
         media_artifact_id: null,
       };
+      if (!Number.isFinite(placement.pinUv[0]) || !Number.isFinite(placement.pinUv[1])) {
+        throw new Error("Spatial pin projection is unavailable for this camera");
+      }
       const clampedUv: [number, number] = [
         Math.min(1, Math.max(0, placement.pinUv[0])),
         Math.min(1, Math.max(0, placement.pinUv[1])),
@@ -1218,24 +1223,26 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     ) : (mode === "3d_inspection" || (draft && isSpatialDraft)) ? (
       activeMapping ? (
         <MediaBoundary key={activeMapping.proxy_artifact_id} onError={handleProxyError}>
-          <ProxyView
-            visible={visible}
-            url={mediaUrl(projectId, activeMapping.proxy_artifact_id)}
-            mapping={activeMapping}
-            pinMode={pinMode}
-            pins={activePins}
-            onSelect={pairs => choice.select(scope, pairs)}
-            onCamera={setCamera}
-            onCaptureReady={bindCapture}
-            renderPreset={draft && isSpatialDraft ? "viewport" : renderPreset}
-            onViewportPixels={setViewportPixels}
-            onPlacePin={placement => void handlePlacePin(placement)}
-            onPinMiss={handlePinMiss}
-            restoreCamera={frameOverride ? null : effectiveRestoreCamera}
-            restoreCameraNonce={restorePinNonce}
-            frameNonce={frameRequest?.nonce}
-            suppressFramingGate={Boolean(draft && isSpatialDraft)}
-          />
+          <Suspense fallback={<div className="review-proxy" role="status">Loading 3D inspection viewer…</div>}>
+            <ProxyView
+              visible={visible}
+              url={mediaUrl(projectId, activeMapping.proxy_artifact_id)}
+              mapping={activeMapping}
+              pinMode={pinMode}
+              pins={activePins}
+              onSelect={pairs => choice.select(scope, pairs)}
+              onCamera={setCamera}
+              onCaptureReady={bindCapture}
+              renderPreset={draft && isSpatialDraft ? "viewport" : renderPreset}
+              onViewportPixels={setViewportPixels}
+              onPlacePin={placement => void handlePlacePin(placement)}
+              onPinMiss={handlePinMiss}
+              restoreCamera={frameOverride ? null : effectiveRestoreCamera}
+              restoreCameraNonce={restorePinNonce}
+              frameNonce={frameRequest?.nonce}
+              suppressFramingGate={Boolean(draft && isSpatialDraft)}
+            />
+          </Suspense>
         </MediaBoundary>
       ) : pinnedHit ? (
         <div className="viewer-empty">Loading pinned 3D proxy {pinnedHit.mapping_artifact_id}…</div>

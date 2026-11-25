@@ -4,16 +4,15 @@ import { OrthographicCamera, PerspectiveCamera, Raycaster, Vector2, Vector3 } fr
 import { GLTFLoader } from "three-stdlib";
 import type { AnnotationSnapshot, ProxyMapping } from "../../api/generated/contracts";
 import { annotationContext } from "./context";
-import { captureCamera, projectBlenderPoint } from "./media";
+import { projectBlenderPoint } from "./media";
+import { captureCamera } from "./proxyCamera";
 import {
-  blenderPointToProxy,
   indexProxyScene,
-  projectBlenderPointVisible,
   proxyPointToBlender,
   proxySurfaceNormalToBlender,
   resolveProxyNode,
-  verifySpatialMapping,
-} from "./spatial";
+} from "./proxySpatial";
+import { blenderPointToProxy, projectBlenderPointVisible, verifySpatialMapping } from "./spatial";
 
 function buildMultiPrimitiveProxyGlb(): ArrayBuffer {
   // Unit-ish box [-0.8, 0.8]^3: 6 faces * 2 triangles = 12 triangles (36 vertices, unindexed for crisp face normals).

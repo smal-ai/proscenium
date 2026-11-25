@@ -20,10 +20,10 @@ import { allPages, useProjectData } from "./useProjectData";
 import { describeError, id, readPrivate, writePrivate } from "./storage";
 import { ASSISTANT_MAX_WIDTH, ASSISTANT_MIN_WIDTH, NAVIGATOR_MAX_WIDTH, NAVIGATOR_MIN_WIDTH, useStudioLayout } from "./useStudioLayout";
 import { Splitter } from "./Splitter";
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "@fontsource/jetbrains-mono/latin-400.css";
 import "./studio.css";
 
 export function StudioApp({ components = {} }: { components?: StudioComponents }) {
