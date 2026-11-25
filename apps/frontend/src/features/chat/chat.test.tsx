@@ -15,10 +15,10 @@ import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
-import { awaitResume, isIdleAutoReleaseReady, resumableWork } from "./resume";
+import { awaitResume, heldRequestIds, isIdleAutoReleaseReady, resumableWork } from "./resume";
 import { handleSubmitEnter, isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
-import { ChatPanel, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
+import { ChatPanel, shouldShowPendingRequestCard, shouldShowPendingStopCard, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
 import { JobList, jobsBadgeState } from "./ComposerPanel";
 import { TargetPicker } from "./TargetPicker";
 
@@ -35,8 +35,22 @@ const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
   attempt_id: `attempt-${job_id}`, attempt_number: 1, state_revision: 1, availability: "pending", input_digest: "a".repeat(64), external_job_id: null, owner_epoch: "test", artifact_ids: [],
 });
 const asset: ItemRecord = { schema_version: "1.0", project_id: "project", item_id: ref.item_id, kind: "asset", name: "Relay dish", current_version_id: "version-new", selected_version_id: null, state_revision: 1 };
-const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, busy: false, stopping: false, error: "", submit: async () => null, stop: async () => {}, retry: async () => null };
+const composer: ChatPanelProps["composer"] = { pending: null, pendingStop: null, pendingNeedsConfirmation: false, pendingStopNeedsConfirmation: false, busy: false, stopping: false, error: "", submit: async () => null, stop: async () => {}, retry: async () => null };
 const chatMarkup = (jobs: JobRecord[], overrides: Partial<ChatPanelProps> = {}) => renderToStaticMarkup(<ChatPanel api={api} projectId="project" snapshot={snapshot()} requests={[]} events={[]} jobs={jobs} selection={emptySelection()} composer={composer} onRefresh={async () => {}} showHeaderStatus={false} {...overrides} />);
+
+test("Request and Stop cards distinguish an initial submission from confirmation and manual retry", () => {
+  const command = (type: "queue" | "stop") => ({ submission: request(type, "2026-11-15T09:00:00Z", "Prompt", type).submission, context: null, acknowledged: false });
+  const pending = command("queue"), pendingStop = command("stop");
+  for (const [busy, needsConfirmation, visible] of [
+    [true, false, false], [false, true, true], [true, true, true],
+    [true, undefined, false], [false, undefined, true],
+  ] as const) {
+    assert.equal(shouldShowPendingRequestCard({ pending, busy, pendingNeedsConfirmation: needsConfirmation }), visible);
+    assert.equal(shouldShowPendingStopCard({ pendingStop, stopping: busy, pendingStopNeedsConfirmation: needsConfirmation }), visible);
+  }
+  assert.equal(shouldShowPendingRequestCard({ pending: null, busy: false, pendingNeedsConfirmation: true }), false);
+  assert.equal(shouldShowPendingStopCard({ pendingStop: null, stopping: false, pendingStopNeedsConfirmation: true }), false);
+});
 
 test("submit Enter accepts plain and legacy shortcuts but leaves multiline editing and IME alone", () => {
   const enter = { key: "Enter", shiftKey: false, altKey: false, ctrlKey: false, metaKey: false };
@@ -617,6 +631,35 @@ test("resumableWork offers stopped work only until newer work runs and ChatPanel
 
 const resumeCard = /aria-label="Resume Copilot"/;
 const heldRequest = (id: string) => ({ ...request(id, "2026-11-17T10:00:00Z", "Queued prompt"), receipt: { ...receipt, state: "held" } }) as RequestRecord;
+
+test("held request IDs prefer current receipts unless the snapshot holds a newer revision", () => {
+  const held = heldRequest("request");
+  const dispatching = { ...held, receipt: { ...held.receipt, state: "dispatching" as const, state_revision: 2 } };
+  const current = { ...snapshot(), held_requests: [held] };
+  assert.deepEqual([...heldRequestIds(current, [dispatching])], []);
+  assert.deepEqual([...heldRequestIds(current, [{ ...dispatching, receipt: { ...dispatching.receipt, state_revision: 1 } }])], []);
+  assert.deepEqual([...heldRequestIds(current, [])], ["request"]);
+  assert.deepEqual([...heldRequestIds({ ...current, held_requests: [{ ...held, receipt: { ...held.receipt, state_revision: 3 } }] }, [dispatching])], ["request"]);
+  assert.deepEqual([...heldRequestIds(current, [held])], ["request"]);
+});
+
+test("running work from the auto-releasing request suppresses only its stale idle restart fence", () => {
+  const initial = snapshot("running", true);
+  const held = heldRequest("new");
+  const current = { ...initial, active_work: { ...initial.active_work!, work_id: "w1" }, held_requests: [held],
+    execution: { ...initial.execution!, hold_reason_code: "awaiting_resume" } };
+  const dispatching = { ...held, receipt: { ...held.receipt, state: "dispatching" as const, state_revision: 2, work_id: "w1" } };
+  const check = (snap: ProjectSnapshot, requests: RequestRecord[], paused: boolean) => {
+    assert.equal(shouldShowResumeCard(snap, requests, 0, false, held.request_id), paused);
+    assert.equal(shouldShowQueueHold(snap, "queue", requests, [], held.request_id), paused);
+    assert.equal(assistantState({ snapshot: snap, requests, events: [], connection: "Connected", autoReleasingRequestId: held.request_id }).label, paused ? "Paused" : "Starting…");
+  };
+  check(current, [dispatching], false);
+  check({ ...current, active_work: { ...current.active_work, work_id: "other-work" } }, [dispatching], true);
+  check({ ...current, execution: { ...current.execution, hold_reason_code: "provider_unavailable" } }, [dispatching], true);
+  check({ ...current, execution: { ...current.execution, hold_reason_code: null, fence_reason: "Unknown recovery fence" } }, [dispatching], true);
+  check(current, [dispatching, heldRequest("other-request")], true);
+});
 
 test("backfill windows descend to the floor and reject non-contiguous event pages", () => {
   assert.deepEqual(backfillWindows(350), [

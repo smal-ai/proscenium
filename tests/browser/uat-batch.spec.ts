@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
-import type { Decision, DecisionAnswer, Event, MessageSubmit, ReviewRequest } from "../../apps/frontend/src/api";
+import { expect, test, type Page } from "@playwright/test";
+import type { ContextSnapshot, Decision, DecisionAnswer, Event, MessageSubmit, ProjectRecord, ProjectSnapshot, ReviewRequest } from "../../apps/frontend/src/api";
 import { verifyLayout } from "./layout-journey";
-import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
+import { base, deferred, job, pageOf, project, projectId, request, retained, snapshot, StudioFixture, work } from "./studio-fixture";
 
 test("hydration gates onboarding and starter intents never send or overwrite drafts", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
@@ -132,6 +132,385 @@ test("Composer Enter submits Queue and Steer but respects empty and unselected t
   await input.press("Enter");
   await expect(input).toHaveValue("");
   expect(studio.submissions[1]).toMatchObject({ type: "steer", text: "Steer the active turn", target_work_id: "work" });
+  studio.assertHermetic();
+});
+
+for (const stop of [false, true]) {
+  test(`Healthy ${stop ? "Stop" : "Queue"} hides confirmation until an uncertain submission`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    const initial = deferred(), failure = deferred(), retry = deferred();
+    let lookups = 0;
+    if (stop) {
+      studio.snapshot.active_work = work();
+      studio.snapshot.execution!.can_stop_work_id = "work";
+    }
+    await studio.install({ savedLayout: true, routes: [
+      { method: "POST", path: `${base}/requests`, handler: async route => {
+        const body = route.request().postDataJSON() as MessageSubmit;
+        studio.submissions.push(body);
+        const record = request(body.request_id, body.type === "stop" ? "" : body.text, "accepted");
+        record.submission = body;
+        record.receipt.type = body.type;
+        studio.requests.push(record);
+        if (studio.submissions.length === 1) {
+          await initial.promise;
+          await route.fulfill({ status: 202, json: record.receipt });
+        } else {
+          await failure.promise;
+          await route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "service_unavailable", message: "Response unavailable", retryable: true, details: {} } } });
+        }
+      } },
+      { method: "GET", path: new RegExp(`${base}/requests/[^/]+$`), handler: async route => {
+        const id = new URL(route.request().url()).pathname.split("/").at(-1);
+        if (id === studio.submissions[1]?.request_id) {
+          await retry.promise;
+          if (++lookups === 1) {
+            await route.fulfill({ status: 403, json: { schema_version: "1.0", error: { code: "forbidden", message: "Receipt access denied", retryable: false, details: {} } } });
+            return;
+          }
+        }
+        await route.fulfill({ json: studio.requests.find(record => record.request_id === id) });
+      } },
+    ] });
+    await studio.open(); await studio.ready();
+    const input = page.getByRole("textbox", { name: "Message Copilot" });
+    const action = page.getByRole("button", { name: stop ? "Stop" : "Queue message", exact: true });
+    const confirmation = page.getByText(`${stop ? "Stop" : "Request"} awaiting confirmation`, { exact: true });
+    const reconcile = page.getByRole("button", { name: stop ? "Reconcile original Stop receipt" : "Reconcile original request / retry same ID" });
+    const storageKey = `proscenium.owner.${stop ? "stop" : "request"}.${projectId}`;
+    const retainedSubmission = () => page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "null")?.submission ?? null, storageKey);
+    if (!stop) await input.fill("Healthy Queue");
+    try {
+      await action.click();
+      await expect.poll(() => studio.submissions.length).toBe(1);
+      await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", stop ? "Stopping…" : "Sending…");
+      expect(await retainedSubmission()).toEqual(studio.submissions[0]);
+      await expect(confirmation).toHaveCount(0);
+      initial.release();
+      await expect.poll(retainedSubmission).toBeNull();
+      await expect(confirmation).toHaveCount(0);
+
+      if (stop) await action.click();
+      else { await input.fill("Uncertain Queue"); await input.press("Enter"); }
+      await expect.poll(() => studio.submissions.length).toBe(2);
+      await expect(confirmation).toHaveCount(0);
+      failure.release();
+      await expect(confirmation).toBeVisible();
+      await expect(reconcile).toBeEnabled();
+      expect(await retainedSubmission()).toEqual(studio.submissions[1]);
+      await page.reload(); await studio.ready();
+      await expect(confirmation).toBeVisible();
+      await reconcile.click();
+      await expect(reconcile).toBeDisabled();
+      await expect(confirmation).toBeVisible();
+      retry.release();
+      await expect(page.getByRole("alert")).toContainText("Receipt access denied");
+      await expect(page.getByRole("alert")).not.toContainText("not admitted");
+      await expect(confirmation).toBeVisible();
+      expect(await retainedSubmission()).toEqual(studio.submissions[1]);
+      await reconcile.click();
+      await expect(confirmation).toHaveCount(0);
+      expect(await retainedSubmission()).toBeNull();
+      expect(studio.submissions).toHaveLength(2);
+      expect(studio.guard!.calls.filter(call => call.method === "GET" && call.url === `${base}/requests/${studio.submissions[1].request_id}`)).toHaveLength(2);
+    } finally {
+      initial.release(); failure.release(); retry.release();
+    }
+    studio.assertHermetic();
+  });
+}
+
+for (const [scenario, title, contextStatus] of [
+  ["late-ack", "A late acknowledgement cannot restore a request reconciled by a remounted project"],
+  ["settled", "A successful lookup clears a remounted card after the original mount settled it"],
+  ["rejected", "A remounted card does not replay a request rejected by the original mount"],
+  ["rejected-during-lookup", "A remounted card checks storage again after a rejection during lookup"],
+  ["rejected-during-context", "A remounted card cannot submit after rejection during replayed context capture (200)", 200],
+  ["rejected-during-context", "A remounted card clears after rejection during replayed context capture (503)", 503],
+] as const) {
+test(title, async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const otherId = "isolated-uat-b", otherBase = `/api/v1/projects/${otherId}`;
+  const otherProject = { ...project, project_id: otherId, repository_id: "repository-b", name: "Isolated UAT B", path: "/synthetic/uat-b" };
+  let activeId = projectId;
+  let revision = 0;
+  const asProject = (record: ProjectRecord): ProjectRecord => ({ ...record, state: activeId === record.project_id ? "active" : "inactive", state_revision: revision });
+  const delayedAck = deferred(), lookupEntered = deferred(), delayedLookup = deferred();
+  const contextEntered = deferred(), delayedContext = deferred();
+  const rejectedDuringLookup = scenario === "rejected-during-lookup";
+  const rejectedDuringContext = scenario === "rejected-during-context";
+  const rejected = scenario === "rejected" || rejectedDuringLookup || rejectedDuringContext;
+  let originalLookups = 0;
+  await studio.install({ savedLayout: true, additionalProjectIds: [otherId], routes: [
+    { path: "/api/v1/projects", handler: route => route.fulfill({ json: pageOf([asProject(project), asProject(otherProject)]) }) },
+    { method: "POST", path: new RegExp(`^(?:${base}|${otherBase})/activate$`), handler: route => {
+      activeId = new URL(route.request().url()).pathname.split("/").at(-2)!;
+      revision += 1;
+      studio.snapshot.project = asProject(project);
+      const body = route.request().postDataJSON();
+      return route.fulfill({ json: { schema_version: "1.0", operation_id: body.operation_id, resource_id: activeId, state: "updated", state_revision: revision, replayed: false } });
+    } },
+    { path: `${otherBase}/snapshot`, handler: route => route.fulfill({ json: { ...snapshot(), project: asProject(otherProject) } }) },
+    ...["requests", "items", "jobs", "artifacts", "reviews", "selections"].map(resource => ({ path: `${otherBase}/${resource}`, body: pageOf([]) })),
+    { path: `${otherBase}/events`, body: { schema_version: "1.0", project_id: otherId, events: [], last_available: 0 } },
+    { method: "POST", path: `${base}/contexts`, handler: async route => {
+      const body = route.request().postDataJSON() as ContextSnapshot;
+      studio.contexts.push(body);
+      if (rejectedDuringContext && studio.contexts.length === 2) {
+        contextEntered.release();
+        await delayedContext.promise;
+        await route.fulfill({ status: contextStatus, json: contextStatus === 200 ? body : {
+          schema_version: "1.0", error: { code: "service_unavailable", message: "Context capture unavailable", retryable: true, details: {} },
+        } });
+        return;
+      }
+      await route.fulfill({ status: 201, json: body });
+    } },
+    { method: "POST", path: `${base}/requests`, handler: async route => {
+      const body = route.request().postDataJSON() as MessageSubmit;
+      studio.submissions.push(body);
+      const first = studio.submissions.length === 1;
+      if (first && rejected) {
+        await delayedAck.promise;
+        await route.fulfill({ status: 422, json: { schema_version: "1.0", error: { code: "invalid_request", message: "Original submission rejected", retryable: false, details: {} } } });
+        return;
+      }
+      const record = request(body.request_id, body.type === "stop" ? "" : body.text, "accepted");
+      record.submission = body;
+      studio.requests.push(record);
+      if (first) await delayedAck.promise;
+      await route.fulfill({ status: 202, json: record.receipt });
+    } },
+    { method: "GET", path: new RegExp(`${base}/requests/[^/]+$`), handler: async route => {
+      const id = new URL(route.request().url()).pathname.split("/").at(-1);
+      if (id === studio.submissions[0]?.request_id) {
+        originalLookups += 1;
+        if (rejected) {
+          lookupEntered.release();
+          await delayedLookup.promise;
+          return route.fulfill({ status: 404, json: { schema_version: "1.0", error: { code: "not_found", message: "Original request not found", retryable: false, details: {} } } });
+        }
+        if (scenario === "late-ack" && originalLookups === 2) {
+          return route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "service_unavailable", message: "Late confirmation unavailable", retryable: true, details: {} } } });
+        }
+      }
+      return route.fulfill({ json: studio.requests.find(record => record.request_id === id) });
+    } },
+  ] });
+  await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  const confirmation = page.getByText("Request awaiting confirmation", { exact: true });
+  const reconcile = page.getByRole("button", { name: "Reconcile original request / retry same ID" });
+  const retained = () => page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.request.${id}`) ?? "null"), projectId);
+  async function activate(from: ProjectRecord, to: ProjectRecord) {
+    await page.getByRole("button", { name: from.name, exact: true }).click();
+    await page.getByRole("combobox", { name: "Saved project" }).selectOption(to.project_id);
+    await page.getByRole("button", { name: "Activate selected project" }).click();
+    await expect(page.getByRole("button", { name: to.name, exact: true })).toBeVisible();
+    await studio.ready();
+  }
+  try {
+    await input.fill("Submitted on the first mount"); await input.press("Enter");
+    await expect.poll(() => studio.submissions.length).toBe(1);
+    const original = studio.submissions[0];
+    expect((await retained()).submission).toEqual(original);
+    await expect(confirmation).toHaveCount(0);
+
+    await activate(project, otherProject);
+    await activate(otherProject, project);
+    await expect(confirmation).toBeVisible();
+    const originalReceipt = (status: number) => page.waitForResponse(response =>
+      response.url().endsWith(`${base}/requests/${original.request_id}`) && response.request().method() === "GET" && response.status() === status);
+    if (scenario === "late-ack") {
+      await reconcile.click();
+      await expect(confirmation).toHaveCount(0);
+      expect(await retained()).toBeNull();
+      expect(originalLookups).toBe(1);
+
+      const lateFailure = originalReceipt(503);
+      delayedAck.release();
+      await (await lateFailure).finished();
+      expect(originalLookups).toBe(2);
+    } else {
+      if (rejectedDuringLookup || rejectedDuringContext) {
+        await reconcile.click();
+        await lookupEntered.promise;
+        expect((await retained()).submission).toEqual(original);
+      }
+      if (rejectedDuringContext) {
+        const lookup = originalReceipt(404);
+        delayedLookup.release();
+        await (await lookup).finished();
+        await contextEntered.promise;
+        expect(studio.contexts[1]).toEqual(studio.contexts[0]);
+        expect((await retained()).submission).toEqual(original);
+      }
+      delayedAck.release();
+      await expect.poll(retained).toBeNull();
+      await expect(confirmation).toBeVisible();
+
+      if (rejectedDuringContext) {
+        const replayedContext = page.waitForResponse(response => response.url().endsWith(`${base}/contexts`)
+          && response.request().method() === "POST" && response.status() === contextStatus);
+        delayedContext.release();
+        await (await replayedContext).finished();
+      } else {
+        const lookup = originalReceipt(rejected ? 404 : 200);
+        if (!rejectedDuringLookup) await reconcile.click();
+        delayedLookup.release();
+        await (await lookup).finished();
+      }
+      await expect(confirmation).toHaveCount(0);
+      expect(originalLookups).toBe(rejected ? 1 : 2);
+      if (rejected) {
+        await expect(page.getByRole("alert")).toContainText("The original request was already settled or rejected.");
+        await expect(input).toHaveValue("Submitted on the first mount");
+      }
+    }
+    expect(await retained()).toBeNull();
+    await expect(confirmation).toHaveCount(0);
+    expect(studio.guard!.calls.filter(call => call.method === "POST" && [`${base}/contexts`, `${base}/requests`].includes(call.url))).toEqual([
+      { method: "POST", url: `${base}/contexts` }, { method: "POST", url: `${base}/requests` },
+      ...(rejectedDuringContext ? [{ method: "POST", url: `${base}/contexts` }] : []),
+    ]);
+
+    await input.fill("New submission on the remount"); await input.press("Enter");
+    await expect(input).toHaveValue("");
+    expect(studio.submissions).toHaveLength(2);
+    expect(studio.submissions[1]).toMatchObject({ type: "queue", text: "New submission on the remount" });
+    expect(studio.submissions[1].request_id).not.toBe(original.request_id);
+    expect(await retained()).toBeNull();
+    await expect(confirmation).toHaveCount(0);
+  } finally { delayedAck.release(); delayedLookup.release(); delayedContext.release(); }
+  studio.assertHermetic();
+});
+}
+
+for (const initialFailure of [true, false]) {
+  test(initialFailure ? "Initial request storage failure blocks sending without locking the Composer" : "Secondary storage failures do not interrupt request submission or confirmation", async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    await studio.install({ savedLayout: true });
+    await studio.open(); await studio.ready();
+    const input = page.getByRole("textbox", { name: "Message Copilot" });
+    const confirmation = page.getByText("Request awaiting confirmation", { exact: true });
+    const brokenWrites = await page.evaluateHandle(({ id, initial }) => {
+      const original = Storage.prototype.setItem;
+      const errors: string[] = [];
+      Storage.prototype.setItem = function (key, value) {
+        const requestKey = key === `proscenium.owner.request.${id}`;
+        if (initial ? requestKey : (requestKey && JSON.parse(value).acknowledged) || key.startsWith(`proscenium.owner.context.${id}.`)) {
+          errors.push(requestKey ? "request" : "context");
+          throw new DOMException("Storage quota exhausted", "QuotaExceededError");
+        }
+        return original.call(this, key, value);
+      };
+      return { errors, restore: () => { Storage.prototype.setItem = original; } };
+    }, { id: projectId, initial: initialFailure });
+    const prompt = "Queue survives storage limits";
+    try {
+      await input.fill(prompt); await input.press("Enter");
+      if (initialFailure) {
+        await expect(page.getByRole("alert")).toContainText("Could not save request before sending. Nothing was sent.");
+        expect(studio.guard!.calls.filter(call => call.method === "POST" && [`${base}/contexts`, `${base}/requests`].includes(call.url))).toEqual([]);
+        await expect(confirmation).toHaveCount(0);
+        await expect(input).toHaveValue(prompt);
+        await expect(page.getByRole("button", { name: "Queue message", exact: true })).toBeEnabled();
+        expect(await brokenWrites.evaluate(value => value.errors)).toEqual(["request"]);
+        await brokenWrites.evaluate(value => value.restore());
+        await input.press("Enter");
+      }
+      await expect(input).toHaveValue("");
+      expect(studio.contexts).toHaveLength(1);
+      expect(studio.submissions).toMatchObject([{ type: "queue", text: prompt }]);
+      const id = studio.submissions[0].request_id;
+      expect(studio.guard!.calls.filter(call => call.method === "GET" && call.url === `${base}/requests/${id}`)).toHaveLength(1);
+      if (!initialFailure) expect(await brokenWrites.evaluate(value => value.errors)).toEqual(["context", "request"]);
+      await expect(confirmation).toHaveCount(0);
+      expect(await page.evaluate(id => localStorage.getItem(`proscenium.owner.request.${id}`), projectId)).toBeNull();
+    } finally { await brokenWrites.evaluate(value => value.restore()); }
+    studio.assertHermetic();
+  });
+}
+
+async function prepareAnnotationQueue(page: Page, text: string) {
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  await page.getByRole("button", { name: "Annotate presented frame" }).click();
+  await page.getByRole("textbox", { name: "Feedback" }).fill(text);
+  await page.getByRole("button", { name: "Save annotation" }).click();
+  const queue = page.getByRole("button", { name: "Queue feedback", exact: true });
+  await expect(queue).toBeEnabled();
+  return queue;
+}
+
+for (const statusCode of [422, 503]) {
+  test(`Annotation Queue ${statusCode} clears idle auto-release without waiting for its deadline`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, queue_released: false, hold_reason_code: "awaiting_resume" };
+    const response = deferred();
+    await studio.install({ catalogue: true, savedLayout: true, routes: [
+      { method: "POST", path: `${base}/requests`, handler: async route => {
+        studio.submissions.push(route.request().postDataJSON() as MessageSubmit);
+        await response.promise;
+        await route.fulfill({ status: statusCode, json: { schema_version: "1.0", error: { code: statusCode === 422 ? "invalid_request" : "service_unavailable", message: "Queue could not be confirmed", retryable: statusCode === 503, details: {} } } });
+      } },
+    ] });
+    await studio.open(); await studio.ready();
+    const queue = await prepareAnnotationQueue(page, "Try external Queue");
+    const status = page.locator(".composer-footer .assistant-status");
+    const confirmation = page.getByText("Request awaiting confirmation", { exact: true });
+    await expect(status).toHaveAttribute("aria-label", "Ready");
+    try {
+      await queue.click();
+      await expect.poll(() => studio.submissions.length).toBe(1);
+      await expect(status).toHaveAttribute("aria-label", "Sending…");
+      await expect(confirmation).toHaveCount(0);
+    } finally { response.release(); }
+    await expect(status).toHaveAttribute("aria-label", "Ready", { timeout: 2_000 });
+    await expect(confirmation).toHaveCount(statusCode === 503 ? 1 : 0);
+    const retained = await page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.request.${id}`) ?? "null"), projectId);
+    if (statusCode === 503) expect(retained?.submission).toEqual(studio.submissions[0]);
+    else expect(retained).toBeNull();
+    studio.assertHermetic();
+  });
+}
+
+test("Same-tick Composer and annotation Queue compete for one slot without disturbing a concurrent Stop", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work();
+  studio.snapshot.execution!.can_stop_work_id = "work";
+  const response = deferred();
+  await studio.install({ catalogue: true, savedLayout: true, routes: [
+    { method: "POST", path: `${base}/requests`, handler: async route => {
+      studio.submissions.push(route.request().postDataJSON() as MessageSubmit);
+      await response.promise;
+      await route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "service_unavailable", message: "Response unavailable", retryable: true, details: {} } } });
+    } },
+  ] });
+  await studio.open(); await studio.ready();
+  await prepareAnnotationQueue(page, "External Queue owns its slot");
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  await input.fill("Keep the Composer draft");
+  const savedSlots = () => page.evaluate(id => ["request", "stop"].map(slot =>
+    JSON.parse(localStorage.getItem(`proscenium.owner.${slot}.${id}`) ?? "null")?.submission ?? null), projectId);
+  try {
+    await input.evaluate(element => {
+      const externalQueue = [...document.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent === "Queue feedback")!;
+      element.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      externalQueue.click();
+    });
+    await expect.poll(() => studio.submissions.length).toBe(1);
+    expect(studio.submissions[0]).toMatchObject({ type: "queue", text: "External Queue owns its slot" });
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    await expect.poll(() => studio.submissions.length).toBe(2);
+    expect(studio.submissions[1]).toMatchObject({ type: "stop", target_work_id: "work" });
+    expect(await savedSlots()).toEqual(studio.submissions);
+  } finally { response.release(); }
+  await expect(page.getByText("Request awaiting confirmation", { exact: true })).toBeVisible();
+  await expect(page.getByText("Stop awaiting confirmation", { exact: true })).toBeVisible();
+  await expect(input).toHaveValue("Keep the Composer draft");
+  expect(studio.contexts).toHaveLength(1);
+  expect(studio.submissions).toHaveLength(2);
+  expect(await savedSlots()).toEqual(studio.submissions);
   studio.assertHermetic();
 });
 
@@ -308,6 +687,128 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
   await expect(resume).toBeVisible();
   await expect(banner).toBeVisible();
   await expect(status).toHaveAttribute("aria-label", "Paused");
+  studio.assertHermetic();
+});
+}
+
+for (const external of [false, true]) {
+test(`Idle-restart ${external ? "annotation Queue" : "Composer Queue"} keeps Resume hidden when live dispatch leads the refreshed execution gate`, async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, queue_released: false, hold_reason_code: "awaiting_resume" };
+  const ack = deferred(), staleEntered = deferred(), releaseStale = deferred(), releaseFresh = deferred();
+  let staleSnapshot: ProjectSnapshot | null = null;
+  let staleBlocked = false;
+  await studio.install({ catalogue: external, savedLayout: true, routes: [
+    { method: "GET", path: `${base}/snapshot`, handler: async route => {
+      if (staleSnapshot && !staleBlocked) {
+        const frozen = staleSnapshot;
+        staleBlocked = true;
+        staleEntered.release();
+        await releaseStale.promise;
+        await route.fulfill({ json: frozen });
+        return;
+      }
+      if (staleSnapshot) await releaseFresh.promise;
+      await route.fulfill({ json: studio.snapshot });
+    } },
+    { method: "POST", path: `${base}/requests`, handler: async route => {
+      const body = route.request().postDataJSON() as MessageSubmit;
+      studio.submissions.push(body);
+      const held = request(body.request_id, body.type === "stop" ? "" : body.text, "held");
+      held.submission = body;
+      held.receipt = { ...held.receipt, work_id: null, state_revision: 1 };
+      studio.requests = [held];
+      studio.snapshot.held_requests = [held];
+      await ack.promise;
+      await route.fulfill({ status: 202, json: held.receipt });
+    } },
+  ] });
+  await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  const resume = page.getByRole("region", { name: "Resume Copilot" });
+  const banner = page.locator(".queue-hold");
+  const status = page.locator(".composer-footer .assistant-status");
+  const rail = page.locator(".panel-rail-status .assistant-status");
+  const critic = page.locator(".assistant-footer .assistant-status");
+  const flashes = await page.getByRole("complementary", { name: "Assistant panel" }).evaluateHandle(panel => {
+    const seen: string[] = [];
+    const watch = () => {
+      for (const node of panel.querySelectorAll(".resume-card, .queue-hold, .status-paused")) {
+        seen.push(node.getAttribute("aria-label") ?? node.textContent ?? "");
+      }
+    };
+    new MutationObserver(watch).observe(panel, { subtree: true, childList: true, attributes: true });
+    watch();
+    return seen;
+  });
+  if (external) {
+    await (await prepareAnnotationQueue(page, "Auto-release this turn")).click();
+  } else {
+    await input.fill("Auto-release this turn"); await input.press("Enter");
+  }
+  try {
+    await expect.poll(() => studio.submissions.length).toBe(1);
+    await expect(status).toHaveAttribute("aria-label", "Sending…");
+    ack.release();
+    if (external) await expect(page.getByRole("button", { name: "Feedback queued", exact: true })).toBeVisible();
+    else await expect(input).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Cancel held request" })).toBeVisible();
+    await expect(status).toHaveAttribute("aria-label", "Starting…");
+    await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+
+    const [held] = studio.requests;
+    staleSnapshot = structuredClone(studio.snapshot);
+    expect(staleSnapshot.execution).toMatchObject({ fenced: true, hold_reason_code: "awaiting_resume" });
+    expect(staleSnapshot.held_requests).toEqual([held]);
+    await page.getByRole("button", { name: "Refresh project metadata" }).click();
+    await staleEntered.promise;
+    const dispatching = { ...held, receipt: { ...held.receipt, state: "dispatching" as const, state_revision: 2, work_id: "work" } };
+    studio.requests = [dispatching];
+    studio.emit("request.state_changed", dispatching);
+    await expect(page.getByRole("button", { name: "Cancel held request" })).toHaveCount(0);
+    await expect(status).toHaveAttribute("aria-label", "Starting…");
+    await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+
+    const running = { ...work(), originating_request_id: held.request_id };
+    studio.emit("work.state_changed", running);
+    await expect(page.locator(".copilot-identity small")).toHaveText("running");
+    await expect(status).toHaveAttribute("aria-label", "Starting…");
+    await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+
+    const staleResponse = page.waitForResponse(response => response.url().endsWith(`${base}/snapshot`));
+    releaseStale.release();
+    const response = await staleResponse;
+    expect(await response.json()).toEqual(staleSnapshot);
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    await expect(page.locator(".copilot-identity small")).toHaveText("running");
+    await expect(status).toHaveAttribute("aria-label", "Starting…");
+    await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+    await page.getByRole("button", { name: "Collapse Assistant" }).click();
+    await expect(rail).toHaveAttribute("aria-label", "Starting…");
+    await page.getByRole("button", { name: "Expand Assistant" }).click();
+    await page.getByRole("button", { name: "Critic", exact: true }).click();
+    await expect(critic).toHaveAttribute("aria-label", "Starting…");
+
+    studio.snapshot.active_work = running;
+    studio.snapshot.held_requests = [];
+    studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: false, queue_released: true, hold_reason_code: "active_work_running" };
+  } finally {
+    ack.release(); releaseStale.release(); releaseFresh.release();
+  }
+  await expect(critic).toHaveAttribute("aria-label", "Working…");
+  await page.getByRole("button", { name: "Collapse Assistant" }).click();
+  await expect(rail).toHaveAttribute("aria-label", "Working…");
+  await page.getByRole("button", { name: "Expand Assistant" }).click();
+  await page.getByRole("button", { name: "Copilot", exact: true }).click();
+  await expect(status).toHaveAttribute("aria-label", "Working…");
+  await expect(resume).toHaveCount(0);
+  await expect(banner).toHaveCount(0);
+  expect(await flashes.jsonValue()).toEqual([]);
+  expect(studio.submissions).toHaveLength(1);
   studio.assertHermetic();
 });
 }

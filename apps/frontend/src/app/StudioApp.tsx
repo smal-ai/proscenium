@@ -11,6 +11,8 @@ import { ProjectMenu } from "../features/projects/ProjectMenu";
 import { CatalogueFallback } from "../features/projects/CatalogueFallback";
 import { shortVersionLabel } from "../features/catalogue/catalogueHelpers";
 import { ChatPanel } from "../features/chat/ChatPanel";
+import { isIdleAutoReleaseReady } from "../features/chat/resume";
+import { useAutoRelease } from "../features/chat/useAutoRelease";
 import { useRequestComposer } from "../features/chat/useRequestComposer";
 import { ConfigurationMenu } from "./ConfigurationMenu";
 import { Pairing, restoreOwner } from "./Pairing";
@@ -98,6 +100,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const selectionRef = useRef(selection); selectionRef.current = selection;
   const prepareContext = useCallback(async () => contextPreparer.current ? contextPreparer.current() : structuredClone(selectionRef.current), []);
   const composer = useRequestComposer(api, projectId ?? "none", () => { void data.refresh(); });
+  const autoRelease = useAutoRelease(projectId, data.snapshot, data.requests);
   function seedNewItem(itemKind: "asset" | "scene" | "storyboard") {
     setRightTab("Copilot");
     setLayout(previous => ({ ...previous, assistantCollapsed: false, mode: version ? previous.mode : "chat_focus" }));
@@ -210,8 +213,16 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   }
   async function onQueue(text: string, context: TurnSelection) {
     setRightTab("Copilot");
-    if (!projectId || !await composer.submit(text, context, "queue", null, data.snapshot?.settings.default_profile_id ?? null)) {
-      throw new Error("Submission is not confirmed. Inspect the retained request in Copilot before retrying.");
+    const requestId = id();
+    try {
+      if (!projectId || composer.busy || composer.pending) throw new Error("A Queue submission is unavailable. Inspect Copilot before retrying.");
+      if (isIdleAutoReleaseReady(data.snapshot, data.requests, data.events)) autoRelease.start(requestId);
+      const submitted = await composer.submit(text, context, "queue", null, data.snapshot?.settings.default_profile_id ?? null, requestId);
+      autoRelease.settle(requestId, submitted);
+      if (!submitted) throw new Error("Submission is not confirmed. Inspect the retained request in Copilot before retrying.");
+    } catch (error) {
+      autoRelease.settle(requestId, null);
+      throw error;
     }
   }
   const activeWork = data.snapshot?.active_work;
@@ -236,7 +247,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const uncertain = activeWork?.state === "outcome_uncertain" || (!!composer.pendingStop && !composer.stopping) || data.requests.some(request => request.receipt.state === "outcome_uncertain");
   const stopping = composer.stopping || unsettledStop || activeWork?.state === "stop_requested" || data.requests.some(request => request.receipt.state === "stop_requested");
   const fallbackStatus = !data.hydrated ? "Loading" : uncertain ? "Needs recovery" : stopping ? "Stopping" : composer.busy ? "Sending" : data.snapshot?.execution?.fenced || data.snapshot?.project.state === "awaiting_resume" ? `Paused${data.snapshot?.execution?.hold_reason ? `: ${data.snapshot.execution.hold_reason}` : ""}` : data.snapshot?.pending_decisions.length || activeWork?.state === "awaiting_user" ? "Needs your input" : activeWork?.state === "running" ? "Working" : "Ready";
-  const renderAssistantStatus = (compact: boolean) => AssistantStatus ? <AssistantStatus jobs={data.jobs} snapshot={data.snapshot} requests={data.requests} events={data.events} connection={data.connection} hydrated={data.hydrated} submitting={composer.busy} stopping={composer.stopping} compact={compact} /> : <span className="assistant-status" role="status">{fallbackStatus}{data.hydrated && data.connection !== "Connected" ? " · Last known" : ""}</span>;
+  const renderAssistantStatus = (compact: boolean) => AssistantStatus ? <AssistantStatus jobs={data.jobs} snapshot={data.snapshot} requests={data.requests} events={data.events} connection={data.connection} hydrated={data.hydrated} submitting={composer.busy} stopping={composer.stopping} autoReleasingRequestId={autoRelease.requestId} compact={compact} /> : <span className="assistant-status" role="status">{fallbackStatus}{data.hydrated && data.connection !== "Connected" ? " · Last known" : ""}</span>;
   return <div className="studio-shell" onPointerDownCapture={cancelFirstOpen} onClickCapture={cancelFirstOpen}>
     <header className="studio-header"><div className="brand"><span className="brand-mark">P</span><strong>PROSCENIUM</strong></div><div className="header-divider" /><ProjectMenu api={api} projects={projects} activeId={projectId} onRefresh={onRefreshProjects} />
       <code className="workspace-path" title={data.snapshot?.project.path}>{data.snapshot?.project.path ?? "No active workstation folder"}</code>
@@ -267,7 +278,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       <aside className={`right-panel${layout.assistantCollapsed ? " collapsed" : ""}`} style={chatFocus && layout.assistantCollapsed ? { gridColumn: 4 } : undefined} aria-label="Assistant panel">
         {layout.assistantCollapsed && <div className="panel-rail"><button aria-label="Expand Assistant" title="Expand Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: false }))}><PanelRight size={17} /></button><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={17} /> : <Maximise2 size={17} />}</button><div className="panel-rail-status">{renderAssistantStatus(true)}</div></div>}
         <div className="panel-expanded" hidden={layout.assistantCollapsed}><header className="assistant-heading"><nav className="panel-tabs" aria-label="Assistant tabs"><button aria-selected={rightTab === "Copilot"} onClick={() => setRightTab("Copilot")}><Sparkles size={13} />Copilot{data.snapshot?.pending_decisions.length ? <span className="tab-count">{data.snapshot.pending_decisions.length}</span> : null}</button><button aria-selected={rightTab === "Critic"} data-pending-reviews={pendingReviewCount} title={pendingReviewCount ? `${pendingReviewCount} pending ${pendingReviewCount === 1 ? "review" : "reviews"}` : undefined} onClick={() => setRightTab("Critic")}>Critic{pendingReviewCount > 0 ? <span className="tab-count" aria-hidden="true">{pendingReviewCount}</span> : null}</button></nav><button aria-label={chatFocus ? "Restore split view" : "Chat focus"} title={chatFocus ? "Restore split view" : "Chat focus"} aria-pressed={chatFocus} onClick={toggleChatFocus}>{chatFocus ? <Minimise2 size={15} /> : <Maximise2 size={15} />}</button><button aria-label="Collapse Assistant" title="Collapse Assistant" onClick={() => setLayout(previous => ({ ...previous, assistantCollapsed: true }))}><PanelRight size={15} /></button></header>
-        <div data-seed-nonce={seedIntent?.nonce} className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} onRefresh={data.refresh} items={data.items} retainedArtifacts={data.retainedArtifacts} onInspectArtifact={onInspectArtifact} seedIntent={seedIntent} hydrated={data.hydrated} connection={data.connection} showHeaderStatus={false} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
+        <div data-seed-nonce={seedIntent?.nonce} className={rightTab === "Copilot" ? "assistant-content" : "assistant-content hidden"}>{projectId ? <ChatPanel api={api} projectId={projectId} snapshot={data.snapshot} requests={data.requests} events={data.events} jobs={data.jobs} selection={selection} prepareContext={prepareContext} composer={composer} autoRelease={autoRelease} onRefresh={data.refresh} items={data.items} retainedArtifacts={data.retainedArtifacts} onInspectArtifact={onInspectArtifact} seedIntent={seedIntent} hydrated={data.hydrated} connection={data.connection} showHeaderStatus={false} /> : <Empty icon={<Sparkles size={24} />} title="Your project discussion" text="Activate a project to restore its conversation. No model request is sent on open." />}</div>
         <div className={rightTab === "Critic" ? "critic-content" : "critic-content hidden"}>{projectId && Critic ? <Critic api={api} projectId={projectId} selection={selection} refreshRevision={data.baseRevision} reviews={data.reviews} items={data.items} retainedArtifacts={data.retainedArtifacts} pendingDecisions={data.snapshot?.pending_decisions} onInspectArtifact={onInspectArtifact} onRefresh={data.refresh} onQueue={onQueue} onSteer={canSteer ? onSteer : undefined} /> : <Empty icon={<Image size={24} />} title="Critic unavailable" text="Visual assessment is not installed. Existing outputs and ordinary project discussion remain available." />}</div>
         {(rightTab === "Critic" || !projectId) && <footer className="assistant-footer">{renderAssistantStatus(false)}</footer>}
         </div>
