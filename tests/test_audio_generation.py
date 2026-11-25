@@ -171,6 +171,7 @@ def audio_catalog():
         "corrupt_provider_output",
         "media_unavailable",
         "resume_verification",
+        "resume_interrupted_staging",
         "legacy_verification_no_history",
         "malformed_completed_outputs",
     ],
@@ -303,7 +304,37 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
                         provider.pump(PROJECT, job["job_id"])
                 else:
                     (finished,) = provider.pump(PROJECT, job["job_id"])
-        if simulate_crash:
+        if outcome == "resume_interrupted_staging":
+            staged = (
+                runtime.root
+                / ".proscenium/jobs"
+                / job["job_id"]
+                / (sha256(data).hexdigest() + ".flac")
+            )
+            link = os.link
+
+            def interrupt_staging(source, destination, *args, **kwargs):
+                if Path(destination) == staged:
+                    temp = Path(source)
+                    assert temp.parent == staged.parent
+                    assert temp.name.startswith(f".{staged.name}.") and temp.suffix == ".tmp"
+                    assert temp.read_bytes() == data and temp.stat().st_mode & 0o777 == 0o400
+                    assert not staged.exists()
+                    raise SystemExit("Simulated crash before publishing staged audio")
+                return link(source, destination, *args, **kwargs)
+
+            with monkeypatch.context() as patch:
+                patch.setattr(os, "link", interrupt_staging)
+                with pytest.raises(
+                    SystemExit, match="Simulated crash before publishing staged audio"
+                ):
+                    provider.pump(PROJECT, job["job_id"])
+            assert not staged.exists()
+            assert not list(staged.parent.iterdir())
+            execution = provider.execution(PROJECT, job["job_id"])
+            assert execution["phase"] == "verifying"
+            assert execution["output_descriptors"] == [descriptor]
+        if simulate_crash or outcome == "resume_interrupted_staging":
             history_available = False
         if outcome == "legacy_verification_no_history":
             execution = provider.execution(PROJECT, job["job_id"])
@@ -319,7 +350,7 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
                 == "consumed"
             )
         assert calls.count("/prompt") == 1
-        if outcome not in {None, "resume_verification"}:
+        if outcome not in {None, "resume_verification", "resume_interrupted_staging"}:
             expected = (
                 "media_unavailable"
                 if outcome in {"legacy_verification_no_history", "malformed_completed_outputs"}
@@ -343,8 +374,15 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
             "/prompt",
             "/history/audio-prompt",
             "/view",
-            *(["/view"] if outcome == "resume_verification" else []),
+            *(
+                ["/view"]
+                if outcome in {"resume_verification", "resume_interrupted_staging"}
+                else []
+            ),
         ]
+        if outcome == "resume_interrupted_staging":
+            assert staged.read_bytes() == data
+            assert not list(staged.parent.glob(".*.tmp"))
         outcome, provenance = finished["artifact_ids"]
         artifact = artifacts.get(PROJECT, outcome)
         assert {

@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import io
 import json
+import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -722,24 +723,37 @@ class ProviderService:
         project_path(root, relative, managed=True, must_exist=False)
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        tmp = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:
-            with path.open("xb") as stream:
+            with os.fdopen(fd, "wb") as stream:
+                fd = -1
                 stream.write(data)
                 stream.flush()
-                import os
-
+                os.fchmod(stream.fileno(), 0o400)
                 os.fsync(stream.fileno())
-            path.chmod(0o400)
-        except FileExistsError:
-            if (
-                sha(
-                    read_bounded_regular_file(
-                        root / relative, stable_audio.MAX_AUDIO_BYTES, root=root
-                    )
+            try:
+                # Publish the complete inode without replacing an immutable prior output.
+                os.link(tmp, path)
+            except FileExistsError:
+                existing_digest = sha(
+                    read_bounded_regular_file(path, stable_audio.MAX_AUDIO_BYTES, root=root)
                 )
-                != digest
-            ):
-                raise DomainError("hash_mismatch", 422) from None
+                if existing_digest != digest:
+                    raise DomainError("hash_mismatch", 422) from None
+        finally:
+            if fd >= 0:
+                os.close(fd)
+            tmp.unlink(missing_ok=True)
+        try:
+            directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        except OSError:
+            # Some filesystems cannot fsync directories. The published file is still complete.
+            pass
         request = dict(
             schema_version="1.0",
             operation_id=f"{job['job_id']}-register-{index}",
