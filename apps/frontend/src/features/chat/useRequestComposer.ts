@@ -86,7 +86,7 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       return active ? record : null;
     }
     const path = { project_id: projectId, request_id: expectedId };
-    let stage: "lookup" | "submit" | "confirm" = "submit";
+    let stage: "lookup" | "context" | "submit" | "confirm" = "submit";
     try {
       if (retry || command.acknowledged) {
         stage = "lookup";
@@ -96,22 +96,24 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
         });
         if (lookup) return accept(lookup.record);
       }
-      stage = "submit";
       if (command.context) {
         if (!ensureStoredOwner()) return null;
+        stage = "context";
         await api.call("captureContext", { path: { project_id: projectId }, body: command.context, idempotencyKey: command.context.context_id });
         try { writePrivate(`context.${projectId}.${command.context.context_id}`, command.context); }
         catch { /* The command already retains the captured context. */ }
       }
       if (!ensureStoredOwner()) return null;
+      stage = "submit";
       await api.call("submitRequest", { path: { project_id: projectId }, body: command.submission, idempotencyKey: command.submission.request_id });
       stage = "confirm";
       command = { ...command, acknowledged: true }; persistIfOwner(command, stop, expectedId);
       return accept(await api.call("getRequest", { path }));
     } catch (e) {
-      const rejected = stage === "submit" && !command.acknowledged && e instanceof ApiError &&
+      const rejected = (stage === "context" || stage === "submit") && !command.acknowledged && e instanceof ApiError &&
         e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429 &&
         e.envelope.error.code !== "idempotency_conflict";
+      if (!rejected && stage === "context" && !ensureStoredOwner()) return null;
       if (ownsState()) {
         setNeedsConfirmation(!rejected);
         setError(`${describeError(e)} ${rejected ? "This request was not admitted. Correct the input and submit again."

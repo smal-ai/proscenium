@@ -220,12 +220,13 @@ for (const stop of [false, true]) {
   });
 }
 
-for (const [scenario, title] of [
+for (const [scenario, title, contextStatus] of [
   ["late-ack", "A late acknowledgement cannot restore a request reconciled by a remounted project"],
   ["settled", "A successful lookup clears a remounted card after the original mount settled it"],
   ["rejected", "A remounted card does not replay a request rejected by the original mount"],
   ["rejected-during-lookup", "A remounted card checks storage again after a rejection during lookup"],
-  ["rejected-during-context", "A remounted card cannot submit after a rejection during replayed context capture"],
+  ["rejected-during-context", "A remounted card cannot submit after rejection during replayed context capture (200)", 200],
+  ["rejected-during-context", "A remounted card clears after rejection during replayed context capture (503)", 503],
 ] as const) {
 test(title, async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
@@ -258,7 +259,9 @@ test(title, async ({ page, baseURL }) => {
       if (rejectedDuringContext && studio.contexts.length === 2) {
         contextEntered.release();
         await delayedContext.promise;
-        await route.fulfill({ status: 200, json: body });
+        await route.fulfill({ status: contextStatus, json: contextStatus === 200 ? body : {
+          schema_version: "1.0", error: { code: "service_unavailable", message: "Context capture unavailable", retryable: true, details: {} },
+        } });
         return;
       }
       await route.fulfill({ status: 201, json: body });
@@ -346,8 +349,12 @@ test(title, async ({ page, baseURL }) => {
       await expect.poll(retained).toBeNull();
       await expect(confirmation).toBeVisible();
 
-      if (rejectedDuringContext) delayedContext.release();
-      else {
+      if (rejectedDuringContext) {
+        const replayedContext = page.waitForResponse(response => response.url().endsWith(`${base}/contexts`)
+          && response.request().method() === "POST" && response.status() === contextStatus);
+        delayedContext.release();
+        await (await replayedContext).finished();
+      } else {
         const lookup = originalReceipt(rejected ? 404 : 200);
         if (!rejectedDuringLookup) await reconcile.click();
         delayedLookup.release();
