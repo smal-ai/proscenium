@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { Vector3 } from "three";
 import type { Camera, JobRecord, ProjectOpen, ProjectRecord } from "../../apps/frontend/src/api";
 import { projectBlenderPoint } from "../../apps/frontend/src/features/review/media";
 import type { Draft } from "../../apps/frontend/src/features/review/outbox";
@@ -614,6 +615,109 @@ test("3D Inspection frames and lights a half-metre graphite proxy before enablin
   const pixels = await samplePng(studio.artifactContent.get(artifact.artifact_id)!.bytes);
   assertReadable(pixels);
   expect(pixels[3]).toEqual([35, 36, 45, 255]);
+  studio.assertHermetic();
+});
+
+test("3D Inspection translates depth without zoom and recentres on a clicked surface", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.installProxyFixture("a-v2", { smallDark: true });
+  await studio.install({ catalogue: true, savedLayout: true });
+  await studio.open(); await studio.ready();
+  await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+  const review = reviewPanel(page);
+  await dockButton(review, "3D Inspection").click();
+  await expect(dockButton(review, "Pin note")).toBeEnabled();
+  const canvas = review.locator(".review-proxy canvas");
+  const position = ({ camera_to_world: m }: Camera) => new Vector3(m[3], m[7], m[11]);
+  const axis = ({ camera_to_world: m }: Camera, i: number) => new Vector3(m[i], m[4 + i], m[8 + i]);
+  const framed = (await liveCamera(page))!;
+  const origin = position(framed);
+  const look = axis(framed, 2).negate();
+  expect(origin.length()).toBeLessThan(2);
+  const deltaFrom = async (point: Vector3) => position((await liveCamera(page))!).sub(point);
+  const frame = async () => {
+    await dockButton(review, "Frame model").click();
+    await expect.poll(async () => (await deltaFrom(origin)).length()).toBeLessThan(1e-6);
+    await expect.poll(async () => axis((await liveCamera(page))!, 2).negate().distanceTo(look)).toBeLessThan(1e-6);
+  };
+
+  await canvas.hover(); await page.mouse.wheel(0, 120);
+  await expect.poll(async () => (await deltaFrom(origin)).length()).toBeGreaterThan(0.01);
+  const zoomStep = (await deltaFrom(origin)).dot(look);
+  expect(zoomStep).toBeLessThan(0);
+  await frame();
+
+  for (const axis of ["deltaY", "deltaX"]) {
+    const before = position((await liveCamera(page))!);
+    const consumed = await canvas.evaluate((el, axis) => {
+      const event = new WheelEvent("wheel", { shiftKey: true, [axis]: -120, cancelable: true, bubbles: true });
+      el.dispatchEvent(event);
+      return event.defaultPrevented;
+    }, axis);
+    expect(consumed).toBe(true);
+    await expect.poll(async () => (await deltaFrom(before)).dot(look)).toBeGreaterThan(0.01);
+    expect((await deltaFrom(before)).cross(look).length()).toBeLessThan(1e-6);
+  }
+  const translated = position((await liveCamera(page))!);
+  await canvas.hover(); await page.mouse.wheel(0, 120);
+  // Identical dolly distance proves both Shift+wheel events preserved the pivot distance.
+  await expect.poll(async () => (await deltaFrom(translated)).dot(look)).toBeCloseTo(zoomStep, 5);
+  await frame();
+
+  for (const [out, back, direction] of [["w", "s", look], ["d", "a", axis(framed, 0)], ["e", "q", axis(framed, 1)]] as const) {
+    await page.keyboard.press(out);
+    await expect.poll(async () => (await deltaFrom(origin)).dot(direction)).toBeGreaterThan(0.01);
+    expect((await deltaFrom(origin)).cross(direction).length()).toBeLessThan(1e-6);
+    await page.keyboard.press(back);
+    await expect.poll(async () => (await deltaFrom(origin)).length()).toBeLessThan(1e-6);
+  }
+  const composer = page.getByRole("textbox", { name: "Message Copilot" });
+  await composer.press("w");
+  await expect(composer).toHaveValue("w");
+  expect((await deltaFrom(origin)).length()).toBeLessThan(1e-6);
+  await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+  await expect(review).toBeHidden();
+  await page.keyboard.press("w");
+  await page.getByRole("button", { name: "Restore split view", exact: true }).click();
+  await expect(review).toBeVisible();
+  expect((await deltaFrom(origin)).length()).toBeLessThan(1e-6);
+  await expect(dockButton(review, "Pin note")).toBeEnabled();
+  await frame();
+
+  const surface = new Vector3(0.07, -0.065, 0);
+  const [u, v] = projectBlenderPoint((await liveCamera(page))!, surface.toArray());
+  const bounds = (await canvas.boundingBox())!;
+  await page.mouse.dblclick(bounds.x + u * bounds.width, bounds.y + v * bounds.height);
+  const desiredLook = surface.clone().sub(origin).normalize();
+  await expect.poll(async () => axis((await liveCamera(page))!, 2).negate().distanceTo(desiredLook)).toBeLessThan(0.01);
+  expect((await deltaFrom(origin)).length()).toBeLessThan(1e-6);
+  const dragX = bounds.x + bounds.width * 0.5;
+  const dragY = bounds.y + bounds.height * 0.5;
+  await page.mouse.move(dragX, dragY);
+  await page.mouse.down();
+  await page.mouse.move(dragX + 100, dragY + 25, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => (await deltaFrom(origin)).length()).toBeGreaterThan(0.05);
+  for (const coordinate of projectBlenderPoint((await liveCamera(page))!, surface.toArray())) {
+    expect(Math.abs(coordinate - 0.5)).toBeLessThan(0.02);
+  }
+  await frame();
+  await dockButton(review, "Pin note").click();
+  const pinBounds = (await canvas.boundingBox())!;
+  const beforePin = (await liveCamera(page))!;
+  const [pinU, pinV] = projectBlenderPoint(beforePin, surface.toArray());
+  expect(Math.hypot(pinU - 0.5, pinV - 0.5)).toBeGreaterThan(0.04);
+  await page.mouse.dblclick(pinBounds.x + pinU * pinBounds.width, pinBounds.y + pinV * pinBounds.height);
+  const pin = review.getByTestId("proxy-spatial-pin");
+  await expect(pin).toHaveCount(1);
+  // Read the live overlay after the camera observer has had time to publish.
+  await pin.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const [liveU, liveV] = await pin.evaluate(el => [parseFloat(el.style.left) / 100, parseFloat(el.style.top) / 100]);
+  expect(Math.abs(liveU - pinU)).toBeLessThan(0.02);
+  expect(Math.abs(liveV - pinV)).toBeLessThan(0.02);
+  expect(Math.hypot(liveU - 0.5, liveV - 0.5)).toBeGreaterThan(0.04);
+  expect((await deltaFrom(position(beforePin))).length()).toBeLessThan(1e-6);
+  expect(axis((await liveCamera(page))!, 2).distanceTo(axis(beforePin, 2))).toBeLessThan(1e-6);
   studio.assertHermetic();
 });
 
