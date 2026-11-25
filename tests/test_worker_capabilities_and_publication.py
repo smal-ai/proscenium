@@ -1431,6 +1431,96 @@ def test_tool_callback_fails_closed_without_exact_invocation(runtime, case):
         assert tx.all("copilot.tool_outcomes") == tx.all("artifacts") == []
 
 
+def test_staged_tool_start_preserves_argument_digest_for_handler_and_duplicates(runtime, copilot):
+    body = register_body(runtime)
+    name, call_id = "register_artifact", "early-call"
+    start = dict(toolCallId=call_id, toolName=name, arguments=body)
+    digest = hashlib.sha256(canonical(body)).hexdigest()
+    event_id = key(SESSION, "early-start")
+    inv_id = key(SESSION, "tool", call_id)
+    custom_event(copilot, "early-start", "tool.execution_start", **start)
+    with runtime.store.transaction() as tx:
+        pending = tx.require("copilot.pending_events", event_id)
+        assert not pending["resolved"]
+        assert pending["arguments_sha256"] == digest
+        assert "arguments" not in pending["event"]["data"]
+        assert tx.get("invocations", inv_id, required=False) is None
+        copilot.state.bind(
+            tx,
+            SESSION,
+            "event",
+            "origin",
+            dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one"),
+        )
+    copilot.state.reduce(
+        PROJECT, SESSION, dict(id="root", type="assistant.turn_start", parentId="origin")
+    )
+    copilot.state.drain_pending(PROJECT, SESSION)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("copilot.pending_events", event_id)["resolved"]
+        original = tx.require("invocations", inv_id)
+        assert original["arguments_sha256"] == digest
+
+    call = ToolInvocation(
+        session_id=SESSION, tool_call_id=call_id, tool_name=name, arguments=body, agent_id=None
+    )
+    result = asyncio.run(runtime.tools.invoke(name, call))
+    assert result.result_type == "success", result.text_result_for_llm
+    assert json.loads(result.text_result_for_llm)["artifact_id"] == body["artifact_id"]
+
+    custom_event(copilot, "duplicate-early-start", "tool.execution_start", **start)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        assert not copilot.state.control(tx)["fenced"]
+
+
+@pytest.mark.parametrize("child", [False, True], ids=["tool", "subagent"])
+def test_conflicting_native_parent_tool_call_preserves_original_invocation(runtime, copilot, child):
+    parent_ids = ("task-call-1", "task-call-2")
+    joined = dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one")
+    with runtime.store.transaction() as tx:
+        for parent in parent_ids:
+            copilot.state.bind(tx, SESSION, "tool", parent, joined)
+    name = "authoring-specialist" if child else "register_artifact"
+    inv_id = key(SESSION, "agent", "child-one") if child else key(SESSION, "tool", "custom-call")
+    body = register_body(runtime)
+
+    def emit(event_id, parent, *, starting):
+        if child:
+            event = dict(
+                type="subagent.started" if starting else "subagent.completed",
+                agentId="child-one",
+                data=dict(agentName=name, toolCallId=parent),
+            )
+        else:
+            event = dict(
+                type="tool.execution_start" if starting else "tool.execution_complete",
+                data=dict(
+                    toolName=name, toolCallId="custom-call", parentToolCallId=parent, arguments=body
+                ),
+            )
+        copilot.state.reduce(PROJECT, SESSION, dict(id=event_id, **event))
+
+    emit("initial-start", parent_ids[0], starting=True)
+    with runtime.store.transaction(write=False) as tx:
+        original = tx.require("invocations", inv_id)
+        assert original["parent_tool_call_id"] == parent_ids[0]
+        assert not copilot.state.control(tx)["fenced"]
+    emit("conflicting-start", parent_ids[1], starting=True)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+
+    emit("completion", parent_ids[1], starting=False)
+    with runtime.store.transaction(write=False) as tx:
+        completed = tx.require("invocations", inv_id)
+        assert (completed["state"], completed["parent_tool_call_id"]) == (
+            "completed",
+            parent_ids[0],
+        )
+
+
 def test_duplicate_tool_start_is_a_noop_before_and_after_completion(runtime, copilot):
     _, _, call = custom_permission(runtime, copilot, "register_artifact", register_body(runtime))
     inv_id = key(SESSION, "tool", call.tool_call_id)

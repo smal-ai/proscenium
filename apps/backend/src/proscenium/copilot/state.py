@@ -520,6 +520,7 @@ class State:
         event: dict[str, Any],
         *,
         original_fingerprint: str | None = None,
+        staged_arguments_sha256: str | None = None,
     ) -> None:
         """Only allowlisted public output is retained. Private reasoning/arguments are discarded."""
         with self.services.registry.project_store(project_id).transaction() as tx:
@@ -651,6 +652,13 @@ class State:
             )
             tool_start = kind == "tool.execution_start"
             child_start = kind == "subagent.started"
+            incoming_parent_tool_call_id = (
+                data.get("toolCallId")
+                if child_start
+                else data.get("parentToolCallId")
+                if tool_start
+                else None
+            )
             duplicate_start = False
             incoming_sha = None
             if tool_start or child_start:
@@ -661,12 +669,15 @@ class State:
                     else key(session_id, "agent", str(agent)),
                     required=False,
                 )
-                if tool_start and isinstance(data.get("arguments"), dict):
-                    try:
-                        incoming_sha = hashlib.sha256(canonical(data["arguments"])).hexdigest()
-                    except (ValueError, TypeError):
-                        self.fence(tx, "attribution_unavailable")
-                        return
+                if tool_start:
+                    if isinstance(data.get("arguments"), dict):
+                        try:
+                            incoming_sha = hashlib.sha256(canonical(data["arguments"])).hexdigest()
+                        except (ValueError, TypeError):
+                            self.fence(tx, "attribution_unavailable")
+                            return
+                    elif staged_arguments_sha256 is not None:
+                        incoming_sha = staged_arguments_sha256
                 if prior is not None:
                     incoming_name = data.get(
                         "agentName", data.get("toolName", prior.get("name", "tool"))
@@ -676,6 +687,7 @@ class State:
                         or prior.get("agent_id") != agent
                         or prior.get("name") != incoming_name
                         or (tool_start and prior.get("arguments_sha256") != incoming_sha)
+                        or prior.get("parent_tool_call_id") != incoming_parent_tool_call_id
                         or any(
                             prior.get(k) != (binding or {}).get(k)
                             for k in ("work_id", "request_id", "delivery_id")
@@ -832,6 +844,7 @@ class State:
                         "fingerprint": fingerprint,
                         "session_id": session_id,
                         "resolved": False,
+                        **({"arguments_sha256": incoming_sha} if incoming_sha is not None else {}),
                     },
                 )
                 return
@@ -1049,6 +1062,9 @@ class State:
                     "arguments_sha256": incoming_sha
                     if starting
                     else (old_invocation or {}).get("arguments_sha256"),
+                    "parent_tool_call_id": incoming_parent_tool_call_id
+                    if starting
+                    else (old_invocation or {}).get("parent_tool_call_id"),
                 }
                 summary = failure_summary(tx, invocation, data) if state == "failed" else ""
                 if summary:
@@ -1210,6 +1226,7 @@ class State:
                     session_id,
                     record["event"],
                     original_fingerprint=record["fingerprint"],
+                    staged_arguments_sha256=record.get("arguments_sha256"),
                 )
             with store.transaction(write=False) as tx:
                 remaining = sum(
