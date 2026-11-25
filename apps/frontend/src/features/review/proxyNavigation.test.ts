@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Group, OrthographicCamera, PerspectiveCamera, Vector3 } from "three";
-import { computeNavigationStep, isTextInputTarget, keyboardMoveDirection, normalizeWheelNotches, recenterOrbitTarget, translateCameraAndTarget } from "./proxyNavigation";
+import { computeNavigationStep, isPointWithinCameraClip, isTextInputTarget, keyboardMoveDirection, normalizeWheelNotches, recenterOrbitTarget, translateCameraAndTarget } from "./proxyNavigation";
 
 test("depth navigation steps scale with distance and radius, with a floor and cap", () => {
   assert.equal(computeNavigationStep(10, 1), 1.2);
@@ -76,11 +76,30 @@ test("surface recenter moves only the pivot and rejects invalid or coincident po
 test("translation uses the camera's world axes under a rotated parent", () => {
   const parent = new Group();
   const camera = new PerspectiveCamera();
+  parent.position.set(10, -5, 2);
   parent.rotation.z = Math.PI / 2;
   parent.add(camera);
   parent.updateMatrixWorld();
-  const target = new Vector3(0, 0, -3);
+  const before = camera.getWorldPosition(new Vector3());
+  const target = before.clone().add(new Vector3(0, 0, -3));
+  const pivot = target.clone();
+  const delta = new Vector3(-2, 1, 0);
   assert.equal(translateCameraAndTarget(camera, target, { right: 1, up: 2 }), true);
-  assert.ok(camera.position.distanceTo(new Vector3(-2, 1, 0)) < 1e-12);
-  assert.ok(target.distanceTo(new Vector3(-2, 1, -3)) < 1e-12);
+  camera.updateMatrixWorld();
+  const world = camera.getWorldPosition(new Vector3());
+  assert.ok(world.distanceTo(before.clone().add(delta)) < 1e-12);
+  assert.ok(target.distanceTo(pivot.clone().add(delta)) < 1e-12);
+  assert.ok(Math.abs(world.distanceTo(target) - before.distanceTo(pivot)) < 1e-12);
+  assert.equal(recenterOrbitTarget(camera, target, world), false);
+  assert.equal(recenterOrbitTarget(camera, target, pivot), true);
+  assert.ok(target.equals(pivot));
+  assert.ok(camera.getWorldPosition(new Vector3()).equals(world));
 });
+
+for (const camera of [new PerspectiveCamera(50, 1, 1, 10), new OrthographicCamera(-1, 1, 1, -1, 1, 10)]) {
+  test(`${camera.type} rejects surface hits outside the visible clip depth`, () => {
+    camera.position.set(5, 0, 2);
+    for (const z of [1, -3, -8]) assert.equal(isPointWithinCameraClip(camera, new Vector3(5, 0, z)), true);
+    for (const z of [1.5, -9, 3, Infinity, NaN]) assert.equal(isPointWithinCameraClip(camera, new Vector3(5, 0, z)), false);
+  });
+}

@@ -681,15 +681,35 @@ test("3D Inspection translates depth without zoom and recentres on a clicked sur
   await page.getByRole("button", { name: "Restore split view", exact: true }).click();
   await expect(review).toBeVisible();
   expect((await deltaFrom(origin)).length()).toBeLessThan(1e-6);
+  await expect(dockButton(review, "Pin note")).toBeEnabled();
+  await frame();
 
   const surface = new Vector3(0.07, -0.065, 0);
-  const [u, v] = projectBlenderPoint(framed, surface.toArray());
+  const [u, v] = projectBlenderPoint((await liveCamera(page))!, surface.toArray());
   const bounds = (await canvas.boundingBox())!;
   await page.mouse.dblclick(bounds.x + u * bounds.width, bounds.y + v * bounds.height);
-  const desiredLook = surface.sub(origin).normalize();
+  const desiredLook = surface.clone().sub(origin).normalize();
   await expect.poll(async () => axis((await liveCamera(page))!, 2).negate().distanceTo(desiredLook)).toBeLessThan(0.01);
   expect((await deltaFrom(origin)).length()).toBeLessThan(1e-6);
+  const dragX = bounds.x + bounds.width * 0.5;
+  const dragY = bounds.y + bounds.height * 0.5;
+  await page.mouse.move(dragX, dragY);
+  await page.mouse.down();
+  await page.mouse.move(dragX + 100, dragY + 25, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => (await deltaFrom(origin)).length()).toBeGreaterThan(0.05);
+  for (const coordinate of projectBlenderPoint((await liveCamera(page))!, surface.toArray())) {
+    expect(Math.abs(coordinate - 0.5)).toBeLessThan(0.02);
+  }
   await frame();
+  await dockButton(review, "Pin note").click();
+  const pinBounds = (await canvas.boundingBox())!;
+  const beforePin = (await liveCamera(page))!;
+  const [pinU, pinV] = projectBlenderPoint(beforePin, surface.toArray());
+  await page.mouse.dblclick(pinBounds.x + pinU * pinBounds.width, pinBounds.y + pinV * pinBounds.height);
+  await expect(review.getByTestId("proxy-spatial-pin")).toHaveCount(1);
+  expect((await deltaFrom(position(beforePin))).length()).toBeLessThan(1e-6);
+  expect(axis((await liveCamera(page))!, 2).distanceTo(axis(beforePin, 2))).toBeLessThan(1e-6);
   studio.assertHermetic();
 });
 

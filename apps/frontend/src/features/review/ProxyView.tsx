@@ -5,7 +5,7 @@ import { Box3, Matrix4, Mesh, OrthographicCamera, PerspectiveCamera, Raycaster, 
 import type { Camera, ObjectSelection, ProxyMapping } from "../../api/generated/contracts";
 import { cloneInspectionMaterial } from "./inspectionMaterials";
 import { captureCamera, projectBlenderPoint } from "./media";
-import { computeNavigationStep, isTextInputTarget, keyboardMoveDirection, normalizeWheelNotches, recenterOrbitTarget, translateCameraAndTarget } from "./proxyNavigation";
+import { computeNavigationStep, isPointWithinCameraClip, isTextInputTarget, keyboardMoveDirection, normalizeWheelNotches, recenterOrbitTarget, translateCameraAndTarget } from "./proxyNavigation";
 import { computeAutoFramePose, computeCanvasFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
 import { indexProxyScene, projectBlenderPointVisible, proxyPointToBlender, proxySurfaceNormalToBlender, resolveProxyNode, type ProxyNode } from "./spatial";
 import "./renderFraming.css";
@@ -206,12 +206,16 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
     if (!(camera instanceof PerspectiveCamera || camera instanceof OrthographicCamera)) return;
     const inspectionCamera = camera;
     const dom = gl.domElement;
+    let suppressDblclick = false;
     const publish = (orbit: ComponentRef<typeof OrbitControls>) => {
       orbit.update();
       inspectionCamera.updateMatrixWorld();
       state.current.onCamera(captureCamera(inspectionCamera));
     };
-    const step = (target: Vector3) => computeNavigationStep(inspectionCamera.position.distanceTo(target), state.current.sceneRadius);
+    const step = (target: Vector3) => {
+      inspectionCamera.updateMatrixWorld();
+      return computeNavigationStep(inspectionCamera.getWorldPosition(new Vector3()).distanceTo(target), state.current.sceneRadius);
+    };
 
     function wheel(event: WheelEvent) {
       if (!state.current.enabled || !event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -233,7 +237,14 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
       if (translateCameraAndTarget(inspectionCamera, orbit.target, { forward: move.forward * distance, right: move.right * distance, up: move.up * distance })) publish(orbit);
     }
 
+    function mousedown(event: MouseEvent) {
+      if (event.button !== 0) return;
+      if (state.current.pinMode) suppressDblclick = true;
+      else if (event.detail <= 1) suppressDblclick = false;
+    }
+
     function recenter(event: MouseEvent) {
+      if (suppressDblclick) { suppressDblclick = false; return; }
       const current = state.current;
       if (!current.enabled || current.pinMode || !current.model || event.button !== 0) return;
       const orbit = controls.current;
@@ -247,16 +258,19 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
       current.model.scene.updateMatrixWorld(true);
       const raycaster = new Raycaster();
       raycaster.setFromCamera(new Vector2(u * 2 - 1, 1 - v * 2), inspectionCamera);
-      const hit = raycaster.intersectObject(current.model.scene, true).find(entry => entry.instanceId === undefined);
+      const hit = raycaster.intersectObject(current.model.scene, true)
+        .find(entry => entry.instanceId === undefined && isPointWithinCameraClip(inspectionCamera, entry.point));
       if (hit && recenterOrbitTarget(inspectionCamera, orbit.target, hit.point)) publish(orbit);
     }
 
     dom.addEventListener("wheel", wheel, { passive: false, capture: true });
     window.addEventListener("keydown", keydown);
+    dom.addEventListener("mousedown", mousedown, true);
     dom.addEventListener("dblclick", recenter);
     return () => {
       dom.removeEventListener("wheel", wheel, true);
       window.removeEventListener("keydown", keydown);
+      dom.removeEventListener("mousedown", mousedown, true);
       dom.removeEventListener("dblclick", recenter);
     };
   }, [camera, controls, gl]);
@@ -590,7 +604,7 @@ export function ProxyView({
     )}
     <div className="review-proxy-footer">
       <span className="review-proxy-label">Static inspection proxy · sample frame {mapping.sample_frame} · not material evidence</span>
-      {visible && ready && !pinMode && <span className="review-proxy-controls-hint">Drag orbit · Right-drag pan · Wheel zoom · Shift+wheel / WASD depth · Double-click recentre</span>}
+      {visible && ready && !pinMode && <span className="review-proxy-controls-hint">Drag orbit · Right-drag pan · Wheel zoom · Shift+wheel or W/S depth · A/D sideways · Q/E down/up · Double-click recentre</span>}
     </div>
   </div>;
 }

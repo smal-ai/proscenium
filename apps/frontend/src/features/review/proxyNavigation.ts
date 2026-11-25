@@ -1,4 +1,4 @@
-import { Vector3, type OrthographicCamera, type PerspectiveCamera } from "three";
+import { PerspectiveCamera, Vector3, type OrthographicCamera } from "three";
 
 type InspectionCamera = PerspectiveCamera | OrthographicCamera;
 
@@ -34,22 +34,37 @@ export function keyboardMoveDirection(event: { code?: string; key: string; shift
 }
 
 export function translateCameraAndTarget(camera: InspectionCamera, target: Vector3, offset: { forward?: number; right?: number; up?: number }): boolean {
-  camera.updateMatrixWorld();
+  camera.updateWorldMatrix(true, false);
   const forward = camera.getWorldDirection(new Vector3());
   const right = new Vector3().setFromMatrixColumn(camera.matrixWorld, 0).normalize();
   const up = new Vector3().setFromMatrixColumn(camera.matrixWorld, 1).normalize();
   const delta = new Vector3().addScaledVector(forward, offset.forward ?? 0)
     .addScaledVector(right, offset.right ?? 0).addScaledVector(up, offset.up ?? 0);
   if (!Number.isFinite(delta.x + delta.y + delta.z) || delta.lengthSq() === 0) return false;
-  camera.position.add(delta);
+  const nextWorldPosition = camera.getWorldPosition(new Vector3()).add(delta);
+  if (camera.parent) {
+    camera.parent.updateMatrixWorld();
+    camera.position.copy(camera.parent.worldToLocal(nextWorldPosition));
+  } else camera.position.copy(nextWorldPosition);
   target.add(delta);
   return true;
 }
 
 export function recenterOrbitTarget(camera: InspectionCamera, target: Vector3, hitPoint: Vector3): boolean {
-  if (!Number.isFinite(hitPoint.x + hitPoint.y + hitPoint.z) || camera.position.distanceTo(hitPoint) <= 1e-4) return false;
+  camera.updateMatrixWorld();
+  if (!Number.isFinite(hitPoint.x + hitPoint.y + hitPoint.z) || camera.getWorldPosition(new Vector3()).distanceTo(hitPoint) <= 1e-4) return false;
   target.copy(hitPoint);
   return true;
+}
+
+export function isPointWithinCameraClip(camera: InspectionCamera, worldPoint: Vector3): boolean {
+  if (!Number.isFinite(worldPoint.x + worldPoint.y + worldPoint.z)) return false;
+  camera.updateWorldMatrix(true, false);
+  const depth = -worldPoint.clone().applyMatrix4(camera.matrixWorldInverse).z;
+  if (camera instanceof PerspectiveCamera && depth <= 0) return false;
+  if (depth < camera.near - 1e-6 || depth > camera.far + 1e-6) return false;
+  const ndc = worldPoint.clone().project(camera);
+  return Number.isFinite(ndc.z) && ndc.z >= -1 - 1e-6 && ndc.z <= 1 + 1e-6;
 }
 
 export function isTextInputTarget(target: EventTarget | null): boolean {
