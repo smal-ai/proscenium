@@ -33,9 +33,8 @@ from .read_recovery import interrupt as interrupt_read_wait
 from .read_recovery import probe as probe_read_wait
 from .read_recovery import retired_stage as retired_read_stage
 from .state import SYSTEM, TERMINAL, State, key, receipt, save
-from .tools import DISCOVERY_READS, READ_TOOLS, TOOLS, Tools, read_arguments
+from .tools import DISCOVERY_READS, READ_TOOLS, TOOLS, Tools
 from .workflows import WORKFLOW_TOOLS
-from .workflows import arguments as workflow_arguments
 
 CHARGEABLE_MCP_TOOLS = frozenset({"create_generation", "generate_3d", "generate_gaussian_world"})
 UNSETTLED_SEND = {"dispatching", "outcome_uncertain"}
@@ -1924,6 +1923,8 @@ class Copilot:
             ):
                 try:
                     self.custom_tool_arguments(project_id, request)
+                    # Recovery evidence still requires a well-formed checkpoint request.
+                    validate(TOOLS["checkpoint_sources"][2], request["args"])
                     from proscenium.sources.common import git
 
                     head = (
@@ -2514,21 +2515,23 @@ class Copilot:
         return None
 
     def custom_tool_arguments(self, project_id: str, request: dict[str, Any]) -> bool:
-        """Classify registered operation semantics, never prose/path words as shell commands."""
+        """Check project scope for known host tools, leaving schema validation to the handler."""
         name, arguments = request.get("toolName"), request.get("args")
         if not isinstance(name, str) or not isinstance(arguments, dict):
             raise DomainError("invalid_request")
-        if name in TOOLS:
-            validate(TOOLS[name][2], arguments)
-            if arguments.get("project_id", project_id) != project_id:
+        if name in TOOLS or name in READ_TOOLS or name in DISCOVERY_READS or name in WORKFLOW_TOOLS:
+            if "project_id" in arguments and arguments["project_id"] != project_id:
                 raise DomainError("scope_denied", 403)
-        elif name in READ_TOOLS or name in DISCOVERY_READS:
-            read_arguments(name, arguments)
-        elif name in WORKFLOW_TOOLS:
-            workflow_arguments(name, arguments)
-        else:
-            return False
-        return True
+            document = arguments.get("document")
+            if (
+                name == "validate_authored_document"
+                and isinstance(document, dict)
+                and "project_id" in document
+                and document["project_id"] != project_id
+            ):
+                raise DomainError("scope_denied", 403)
+            return True
+        return False
 
     async def permission(self, project_id: str, request: dict[str, Any], invocation: Any) -> Any:
         try:
@@ -2537,7 +2540,10 @@ class Copilot:
             return PermissionDecisionReject()
         sid = invocation.get("session_id")
         tool_id = request.get("toolCallId")
-        fingerprint = hashlib.sha256(canonical(request)).hexdigest()
+        try:
+            fingerprint = hashlib.sha256(canonical(request)).hexdigest()
+        except ValueError:
+            return PermissionDecisionReject()
         claim_id = uuid4().hex
         needs_invocation = request.get("kind") in {"custom-tool", "read", "write"}
         claimed = False
@@ -2696,7 +2702,7 @@ class Copilot:
                             != hashlib.sha256(canonical(request["args"])).hexdigest()
                         ):
                             raise DomainError("attribution_unavailable", 409)
-            except DomainError:
+            except (DomainError, ValueError):
                 return reply(False, "host")
             if known_custom:
                 # This grants entry only. The handler retains path/source/job/budget/caller guards.

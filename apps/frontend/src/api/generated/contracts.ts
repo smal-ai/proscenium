@@ -375,7 +375,7 @@ export type SequenceEntry = {
   [k: string]: unknown;
 } & {
   entry_id: Id;
-  shot_id: Id;
+  shot_id: NullableId;
   version_id: Id;
   job_id: Id;
   source_frames: FrameRange;
@@ -1005,7 +1005,7 @@ export interface FrameAvailability {
   state_revision: Revision;
 }
 export interface FrameContributor {
-  shot_id: Id;
+  shot_id: NullableId;
   version_id: Id;
   job_id: Id;
   source_frame: number;
@@ -1552,7 +1552,7 @@ export interface SelectionRecord {
   actor: Actor;
 }
 export interface SequenceContributor {
-  shot_id: Id;
+  shot_id: NullableId;
   version_id: Id;
   job_id?: NullableId;
   source_frames: FrameRange;

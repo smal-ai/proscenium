@@ -597,6 +597,7 @@ def test_vlm_preflight_rejects_bad_media_without_review_or_provider_call(
             "root",
             {"work_id": WORK, "request_id": "request-one", "delivery_id": "request-one"},
         )
+    body = review_request([target])
     state.reduce(
         PROJECT,
         SESSION,
@@ -604,12 +605,14 @@ def test_vlm_preflight_rejects_bad_media_without_review_or_provider_call(
             "id": "start",
             "type": "tool.execution_start",
             "parentId": "root",
-            "data": {"toolCallId": "call-review", "toolName": "request_vlm_review"},
+            "data": {
+                "toolCallId": "call-review",
+                "toolName": "request_vlm_review",
+                "arguments": body,
+            },
         },
     )
-    error, status = invoke(
-        studio, "request_vlm_review", review_request([target]), identity="call-review"
-    )
+    error, status = invoke(studio, "request_vlm_review", body, identity="call-review")
     assert (status, error["error"], error["message"]) == ("failure", code, message)
     state.reduce(
         PROJECT,

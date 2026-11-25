@@ -1,9 +1,10 @@
-"""Disposable Signal Lost recovery regression. No native or provider execution."""
+"""Disposable recovery and assembly regressions. No Blender or provider execution."""
 
 import asyncio
 import json
 import struct
 import subprocess
+import sys
 from copy import deepcopy
 from dataclasses import replace
 from types import SimpleNamespace
@@ -18,6 +19,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.validation import sequence_map
 from proscenium.contracts import canonical, validate
+from proscenium.copilot.capabilities import validate_authored_document
 from proscenium.copilot.context import Contexts
 from proscenium.copilot.outcomes import get_tool_outcome
 from proscenium.copilot.router import router as copilot_router
@@ -28,15 +30,17 @@ from proscenium.jobs.resources import Resources
 from proscenium.previews import install as install_previews
 from proscenium.previews import runner
 from proscenium.previews.config import REVISION, Rendering
+from proscenium.previews.media import verify_video
 from proscenium.previews.service import worker_caller
 from proscenium.reviews.references import References
 from proscenium.sources.common import fingerprint, sha
 from proscenium.sources.read_only import read_authored_json
-from proscenium.sources.resolver import closure_digest
+from proscenium.sources.resolver import Resolver, closure_digest
 from proscenium.workflows import install as install_workflows
+from proscenium.workflows.assembly import prepared as prepare_assembly_inputs
 from test_request_targeting import STAMP, context, request_record
 from test_vlm_critic_workflow import make_png
-from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK
+from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK, publication
 from test_worker_capabilities_and_publication import offline as offline
 from test_worker_capabilities_and_publication import runtime as runtime
 
@@ -132,7 +136,17 @@ def publish(runtime, ref, kind, document=None, dependencies=()):
     return version
 
 
-def seed_job(runtime, identity, ref, state, *, kind="render", frames=None, purpose="draft_motion"):
+def seed_job(
+    runtime,
+    identity,
+    ref,
+    state,
+    *,
+    kind="render",
+    frames=None,
+    purpose="draft_motion",
+    shot_id=None,
+):
     services = runtime.services
     with runtime.store.transaction() as tx:
         source = tx.require("versions", ref["version_id"])["source"]
@@ -141,7 +155,7 @@ def seed_job(runtime, identity, ref, state, *, kind="render", frames=None, purpo
             first, last = frames
             spec = dict(
                 intent_id=identity,
-                shot_id=identity,
+                shot_id=shot_id,
                 purpose=purpose,
                 source_closure_digest=source["digest"],
                 scene_name="Signal Lost",
@@ -162,7 +176,7 @@ def seed_job(runtime, identity, ref, state, *, kind="render", frames=None, purpo
             tx,
             job_id=identity,
             kind=kind,
-            target=dict(target_id=ref["item_id"], version=ref, shot_id=identity if spec else None),
+            target=dict(target_id=ref["item_id"], version=ref, shot_id=shot_id),
             input_digest=fingerprint(dict(version=ref, render_spec=spec)),
             operation_id=f"initial-{identity}",
             work_id=WORK,
@@ -304,7 +318,7 @@ def signal_lost(runtime, tmp_path, monkeypatch):
     entries = []
     runtime.jobs = {}
     for identity, first, last, retained, state in SHOTS:
-        planned = seed_job(runtime, identity, SCENE, state, frames=(first, last))
+        planned = seed_job(runtime, identity, SCENE, state, frames=(first, last), shot_id=identity)
         seed_frames(runtime, planned[0], first, retained)
         runtime.jobs[identity] = settle(runtime, planned)
         entries.append(
@@ -332,12 +346,22 @@ def signal_lost(runtime, tmp_path, monkeypatch):
     publish(runtime, DRAFT, "sequence", runtime.sequence, dependencies=[SCENE])
     runtime.jobs[PROXY] = settle(
         runtime,
-        seed_job(runtime, PROXY, SCENE, "succeeded", frames=(300, 300), purpose="proxy"),
+        seed_job(
+            runtime, PROXY, SCENE, "succeeded", frames=(300, 300), purpose="proxy", shot_id=PROXY
+        ),
         proxy_artifacts(runtime, scene),
     )
     runtime.jobs[ASSET_RENDER] = settle(
         runtime,
-        seed_job(runtime, ASSET_RENDER, ASSET_V1, "failed", frames=(1, 1), purpose="keyframe"),
+        seed_job(
+            runtime,
+            ASSET_RENDER,
+            ASSET_V1,
+            "failed",
+            frames=(1, 1),
+            purpose="keyframe",
+            shot_id=ASSET_RENDER,
+        ),
     )
     for kind in ("encode", "unity"):
         identity = f"{kind}-earlier"
@@ -389,6 +413,8 @@ def invocation(runtime, name, body, *, work=NEW_WORK, call=None, context_request
                     invocation_id=identity,
                     agent_id=None,
                     session_id=SESSION,
+                    name=name,
+                    arguments_sha256=fingerprint(body),
                     work_id=work,
                     request_id=tx.require("work", work)["originating_request_id"],
                     context_request_id=context_request,
@@ -406,7 +432,7 @@ def run_tool(runtime, invocation):
     return result.result_type, json.loads(result.text_result_for_llm)
 
 
-def retry(runtime, identity, **kwargs):
+def retry(runtime, identity, *, stale=False, **kwargs):
     return invocation(
         runtime,
         "retry_job",
@@ -415,16 +441,14 @@ def retry(runtime, identity, **kwargs):
             operation_id=f"retry-{identity}",
             project_id=PROJECT,
             job_id=identity,
-            expected_revision=runtime.jobs[identity]["state_revision"],
+            expected_revision=0 if stale else runtime.jobs[identity]["state_revision"],
         ),
         **kwargs,
     )
 
 
 def rejection(runtime, identity, code, message=None, *, status=None, stale=False, **kwargs):
-    call = retry(runtime, identity, **kwargs)
-    if stale:
-        call.arguments["expected_revision"] = 0
+    call = retry(runtime, identity, stale=stale, **kwargs)
     attempts = records(runtime, "attempts")
     audit = records(runtime, "job_retry_authorisations")
     result_type, error = run_tool(runtime, call)
@@ -434,7 +458,9 @@ def rejection(runtime, identity, code, message=None, *, status=None, stale=False
         assert error["message"] == message
     if status:
         with pytest.raises(DomainError) as caught:
-            runtime.services.jobs.retry(runtime.tools.caller(call), call.arguments)
+            runtime.services.jobs.retry(
+                runtime.tools.caller(call, name="retry_job"), call.arguments
+            )
         assert (caught.value.status, caught.value.code, caught.value.message) == (
             status,
             code,
@@ -531,7 +557,7 @@ def test_direct_cross_turn_retry_requires_a_live_invocation(signal_lost, invalid
     studio = signal_lost
     new_turn(studio, {"request_target": SCENE_TARGET})
     call = retry(studio, MACRO)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     identity = caller.invocation_id
     assert identity is not None
     with studio.store.transaction(write=False) as tx:
@@ -579,7 +605,7 @@ def test_direct_same_turn_retry_rejects_an_invalid_supplied_invocation(signal_lo
     studio = signal_lost
     set_work_state(studio, WORK, "awaiting_user")
     call = retry(studio, MACRO, work=WORK)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     assert_direct_retry_denied(
         studio, replace(caller, invocation_id="unknown-invocation"), call.arguments
     )
@@ -602,7 +628,7 @@ def test_direct_cross_turn_retry_requires_an_existing_origin(signal_lost, origin
         tx.put("jobs", MACRO, job, schema="JobRecord", expected_revision=revision)
     studio.jobs[MACRO] = job
     call = retry(studio, MACRO)
-    assert_direct_retry_denied(studio, studio.tools.caller(call), call.arguments)
+    assert_direct_retry_denied(studio, studio.tools.caller(call, name="retry_job"), call.arguments)
 
 
 @pytest.mark.parametrize("identity", [MACRO, "encode-earlier", "unity-earlier"])
@@ -744,6 +770,281 @@ def test_recover_four_pinned_shots_and_never_assemble_missing_frames(
     assert not any(j["job_id"] == "draft-movie" for j in records(studio, "jobs"))
 
 
+@pytest.fixture
+def sequence_runtime(runtime, tmp_path):
+    services = runtime.services
+    services.settings = services.jobs.settings = replace(
+        services.settings,
+        execution_profiles=frozenset({"blender-cpu"}),
+        rendering=dict(
+            blender="/bin/false", claim_path=str(tmp_path / "encode.lock"), encode_timeout=10
+        ),
+    )
+    services.resources = Resources(Store(tmp_path / "claims.sqlite3"))
+    runtime.previews = install_previews(services)
+    workflows = install_workflows(services)
+    try:
+        yield runtime
+    finally:
+        workflows.close_idle()
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "identity",
+        "distinct-scenes",
+        "duplicate-scene",
+        "duplicate-shot",
+        "duplicate-optional-job",
+        "duplicate-frame",
+    ],
+)
+def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mode, monkeypatch):
+    studio = sequence_runtime
+    services = studio.services
+    artifacts = services.extension("artifacts")
+    second_scene = {"item_id": "scene-two", "version_id": "scene-two-v1"}
+    refs = (
+        [SCENE, second_scene]
+        if mode in {"distinct-scenes", "duplicate-shot", "duplicate-frame"}
+        else [SCENE]
+    )
+    duplicate = mode.startswith("duplicate-")
+    dissolve_error = "A dissolve requires distinct shots"
+    shot_id = "shot-01" if mode == "duplicate-shot" else None
+    source_frames = {"start": 1, "end": 2}
+    sources = []
+    for i, ref in enumerate(refs):
+        publish(studio, ref, "scene")
+        planned = seed_job(
+            studio, f"scene-render-{i}", ref, "succeeded", frames=(1, 2), shot_id=shot_id
+        )
+        seed_frames(studio, planned[0], 1, 2)
+        rendered = settle(studio, planned)
+        assert rendered["target"]["shot_id"] == shot_id
+        sources.append(
+            dict(
+                shot_id=shot_id,
+                version_id=ref["version_id"],
+                job_id=rendered["job_id"],
+                source_frames=source_frames,
+            )
+        )
+
+    entry = dict(
+        entry_id="scene-entry",
+        **sources[0],
+        sequence_frames=source_frames,
+        transform="identity",
+        mapping_artifact_id=None,
+    )
+    sequence = dict(
+        schema_version="1.0",
+        project_id=PROJECT,
+        sequence_version_id=DRAFT["version_id"],
+        fps=FPS,
+        frame_count=2,
+        silent=True,
+        entries=[entry],
+    )
+    declared_map = None
+    if mode != "identity":
+        contributors = [sources[0], sources[-1]]
+        entry.update(
+            transform="transition",
+            contributors=[contributors[0], {**contributors[1], "job_id": None}]
+            if mode == "duplicate-optional-job"
+            else contributors,
+            mapping_artifact_id="dissolve-map",
+        )
+        declared_map = dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            sequence_version_id=DRAFT["version_id"],
+            fps=FPS,
+            frame_count=2,
+            blend_space="linear_rgb",
+            frames=[
+                dict(
+                    sequence_frame=frame,
+                    contributors=[
+                        dict(
+                            shot_id=s["shot_id"],
+                            version_id=s["version_id"],
+                            job_id=s["job_id"],
+                            source_frame=frame,
+                            weight=dict(numerator=1, denominator=2),
+                        )
+                        for s in (
+                            [sources[0], sources[0]]
+                            if mode == "duplicate-frame" and frame == 2
+                            else contributors
+                        )
+                    ],
+                )
+                for frame in (1, 2)
+            ],
+        )
+        with studio.store.transaction() as tx:
+            artifacts.put(
+                tx,
+                artifacts.promote(
+                    PROJECT,
+                    "dissolve-map",
+                    canonical(declared_map),
+                    kind="frame_map",
+                    purpose="metadata",
+                    media_type="application/json",
+                ),
+            )
+
+    request = dict(
+        schema_version="1.0", project_id=PROJECT, document_kind="sequence_map", document=sequence
+    )
+    validated = validate_authored_document(services, PROJECT, request)
+    assert (validated["valid"], validated["schema_valid"], validated["semantic_valid"]) == (
+        not duplicate,
+        True,
+        not duplicate,
+    )
+    if duplicate:
+        assert validated["issues"] == [
+            dict(phase="semantic", code="invalid_frame_mapping", path="$", message=dissolve_error)
+        ]
+    if mode == "identity":
+        wrong_shot = {**sequence, "entries": [{**entry, "shot_id": "shot-01"}]}
+        invalid = validate_authored_document(services, PROJECT, dict(request, document=wrong_shot))
+        assert (invalid["valid"], invalid["schema_valid"], invalid["semantic_valid"]) == (
+            False,
+            True,
+            False,
+        )
+        assert invalid["issues"] == [
+            dict(
+                phase="semantic",
+                code="invalid_frame_mapping",
+                path="$",
+                message="Sequence contributor shot_id must match the source render job's shot_id (use null for standalone scene renders)",
+            )
+        ]
+
+    body = publication(studio, canonical(sequence))
+    item = body["items"][0]
+    item.update(**DRAFT, kind="sequence", name="Scene assembly")
+    item["source"]["dependencies"] = refs
+    item["source"]["digest"] = closure_digest(item["source"])
+    catalogue = services.extension("catalogue")
+    catalogue.sources = Resolver(services)
+    result_type, result = run_tool(
+        studio, invocation(studio, "publish_outputs", body, work=WORK, call="publish-sequence")
+    )
+    job_id = "standalone-delivery"
+    assemble = invocation(
+        studio,
+        "assemble_sequence",
+        dict(
+            operation_id="assemble-scenes",
+            job_id=job_id,
+            execution_profile_id="blender-cpu",
+            version=DRAFT,
+        ),
+        work=WORK,
+    )
+    if duplicate:
+        assert (result_type, result["error"], result["message"]) == (
+            "failure",
+            "invalid_frame_mapping",
+            dissolve_error,
+        )
+        assert not any(
+            version["version_id"] == DRAFT["version_id"] for version in records(studio, "versions")
+        )
+
+        # A prior version that bypassed publication still fails through the tool.
+        publish(studio, DRAFT, "sequence", sequence, dependencies=refs)
+        result_type, result = run_tool(studio, assemble)
+        assert (result_type, result["error"], result["message"]) == (
+            "failure",
+            "invalid_frame_mapping",
+            dissolve_error,
+        )
+
+        # Bypass catalogue validation as well. Admission must check the resolved rows.
+        monkeypatch.setattr(catalogue, "sequence_map", lambda *_: sequence)
+        caller = studio.tools.caller(assemble, name="assemble_sequence")
+        admission, _, full = prepare_assembly_inputs(services, caller, assemble.arguments)
+        with pytest.raises(DomainError) as caught:
+            studio.previews.assembly(caller, admission, sequence, full)
+        assert (caught.value.code, caught.value.status, caught.value.message) == (
+            "invalid_frame_mapping",
+            422,
+            dissolve_error,
+        )
+        assert not any(job["job_id"] == job_id for job in records(studio, "jobs"))
+        return
+    assert result_type == "success", result
+    assert result["versions"] == [DRAFT]
+    result_type, result = run_tool(studio, assemble)
+    assert result_type == "success", result
+    assert (result["kind"], result["state"]) == ("encode", "planned")
+
+    # Own and reap the one permitted detached worker. It only encodes two 64×64 frames.
+    spawn = subprocess.Popen
+    processes = []
+    attempt_root = studio.previews.root(result)
+
+    def owned_worker(argv, **kwargs):
+        assert argv == [sys.executable, "-m", "proscenium.previews.worker", str(attempt_root)]
+        process = spawn(argv, **kwargs)
+        processes.append(process)
+        return process
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(subprocess, "Popen", owned_worker)
+            studio.previews.pump(PROJECT)
+        assert len(processes) == 1
+        assert processes[0].wait(timeout=45) == 0
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+
+    studio.previews.reconcile(PROJECT)
+    finished = services.jobs.get(PROJECT, job_id)
+    assert (finished["state"], finished["availability"]) == ("succeeded", "complete")
+    video_id, map_id, manifest_id = finished["artifact_ids"]
+    video = artifacts.get(PROJECT, video_id)
+    assert (video["kind"], video["purpose"], video["media_type"], video["state"]) == (
+        "video",
+        "final",
+        "video/mp4",
+        "ready",
+    )
+    assert set(finished["artifact_ids"]) <= set(
+        catalogue.version(PROJECT, DRAFT["version_id"])["artifact_ids"]
+    )
+    video_path = artifacts.ready_path(PROJECT, video_id)
+    assert verify_video(video_path, FPS, 2, DIMENSIONS, studio.previews.config.snapshot())[
+        "metadata"
+    ] == dict(dimensions=DIMENSIONS, fps=FPS, frame_count=2)
+    assert artifacts.get(PROJECT, map_id)["kind"] == "frame_map"
+    mapping_bytes = artifacts.ready_path(PROJECT, map_id).read_bytes()
+    mapping = validate("FrameMap", json.loads(mapping_bytes))
+    if declared_map is not None:
+        assert mapping == declared_map
+    else:
+        assert [row["contributors"][0]["source_frame"] for row in mapping["frames"]] == [1, 2]
+        assert all(row["contributors"][0]["shot_id"] is None for row in mapping["frames"])
+    manifest = json.loads(artifacts.ready_path(PROJECT, manifest_id).read_bytes())
+    assert manifest["input_digest"] == finished["input_digest"]
+    assert manifest["sequence"] == sequence
+    assert manifest["frame_map_sha256"] == sha(mapping_bytes)
+    assert manifest["video_sha256"] == video["sha256"] == sha(video_path.read_bytes())
+
+
 @pytest.mark.parametrize("via_frame_map", [False, True], ids=["direct", "frame-map"])
 def test_sequence_transition_requires_an_exact_pinned_contributor(signal_lost, via_frame_map):
     studio = signal_lost
@@ -809,7 +1110,7 @@ def test_sequence_transition_requires_an_exact_pinned_contributor(signal_lost, v
     publish(studio, dissolve, "sequence", document, dependencies=[SCENE])
     new_turn(studio, {**DRAFT_VIEW, **dissolve})
     call = retry(studio, MACRO)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     job = studio.jobs[MACRO]
     # Neither a direct contributor nor a mapped contributor authorises retry without the full map.
     assert_direct_retry_denied(studio, caller, call.arguments)
@@ -859,17 +1160,17 @@ def test_steer_context_is_the_durable_authority_and_only_service_replay_bypasses
         steer["receipt"]["work_id"] = NEW_WORK
         tx.put("requests", steer_id, steer, schema="RequestRecord")
     call = retry(studio, MACRO, context_request=steer_id)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     result_type, job = run_tool(studio, call)
     assert result_type == "success"
     [audit] = records(studio, "job_retry_authorisations")
     assert audit["authorising_request_id"] == steer_id
 
     unseen = retry(studio, SHOTS[1][0], context_request=steer_id)
-    unseen_caller = studio.tools.caller(unseen)
+    unseen_caller = studio.tools.caller(unseen, name="retry_job")
     monkeypatch.setattr(studio.state, "control", lambda tx: {"fenced": True})
     with pytest.raises(DomainError) as fenced:
-        studio.tools.caller(call)
+        studio.tools.caller(call, name="retry_job")
     assert fenced.value.code == "permission_denied"
     studio.services.gate.close(PROJECT)
     set_work_state(studio, NEW_WORK, "completed")

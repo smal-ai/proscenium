@@ -17,6 +17,7 @@ from proscenium.catalogue.service import Catalogue
 from proscenium.configuration import Settings
 from proscenium.contracts import canonical, validate
 from proscenium.copilot.capabilities import validate_authored_document
+from proscenium.copilot.state import key as native_key
 from proscenium.copilot.tools import Tools, result_text
 from proscenium.db import Store
 from proscenium.jobs.gate import ExecutionGate
@@ -715,7 +716,23 @@ def test_large_scene_closure_inheritance_and_checkpoint_publication(runtime):
         required_runtime=base["required_runtime"],
     )
     tool = Tools(runtime.services, SimpleNamespace(), PROJECT)
-    tool.caller = lambda *args, **kwargs: runtime.caller
+    invocation_id = native_key("session-one", "tool", "checkpoint-one")
+    with runtime.store.transaction() as tx:
+        tx.put(
+            "invocations",
+            invocation_id,
+            dict(
+                invocation_id=invocation_id,
+                session_id="session-one",
+                agent_id=None,
+                name="checkpoint_sources",
+                arguments_sha256=sha(canonical(body)),
+                work_id="work-one",
+                request_id="request-one",
+                owner_epoch="epoch",
+                state="running",
+            ),
+        )
     text = asyncio.run(
         tool.invoke(
             "checkpoint_sources",

@@ -37,6 +37,25 @@ def key(*parts: str) -> str:
     return hashlib.sha256(canonical(list(parts))).hexdigest()
 
 
+def completion_conflicts(
+    prior: dict[str, Any], parent: Any, agent: Any, binding: dict[str, Any] | None
+) -> bool:
+    return (
+        (
+            "parent_tool_call_id" in prior
+            and parent is not None
+            and parent != prior["parent_tool_call_id"]
+        )
+        or prior.get("agent_id") != agent
+        or (
+            binding is not None
+            and any(
+                prior.get(k) != binding.get(k) for k in ("work_id", "request_id", "delivery_id")
+            )
+        )
+    )
+
+
 def save(tx: Transaction, namespace: str, identity: str, body: dict[str, Any]) -> None:
     old = tx.get(namespace, identity, required=False)
     tx.put(
@@ -503,6 +522,17 @@ class State:
             else None
         )
 
+    def parent_event_binding(
+        self, tx: Transaction, session_id: str, parent_id: str | None
+    ) -> dict[str, Any] | None:
+        if not parent_id:
+            return None
+        pending = tx.get("copilot.pending_events", key(session_id, parent_id), required=False)
+        if pending is not None and not pending.get("resolved"):
+            # Legacy reducers could bind an event before staging it.
+            return None
+        return self.binding(tx, session_id, "event", parent_id)
+
     def bind(
         self, tx: Transaction, session_id: str, kind: str, identity: str, binding: dict[str, Any]
     ) -> None:
@@ -520,13 +550,20 @@ class State:
         event: dict[str, Any],
         *,
         original_fingerprint: str | None = None,
+        staged_arguments_sha256: str | None = None,
     ) -> None:
         """Only allowlisted public output is retained. Private reasoning/arguments are discarded."""
         with self.services.registry.project_store(project_id).transaction() as tx:
             identity, kind, data = event["id"], event["type"], event.get("data", {})
             event_key = key(session_id, identity)
             # Hash the original solely for conflicting duplicate detection, never retain it.
-            fingerprint = original_fingerprint or hashlib.sha256(canonical(event)).hexdigest()
+            try:
+                fingerprint = original_fingerprint or hashlib.sha256(canonical(event)).hexdigest()
+            except (ValueError, TypeError):
+                if kind != "tool.execution_start":
+                    raise
+                self.fence(tx, "attribution_unavailable")
+                return
             old = tx.get("copilot.native", event_key, required=False)
             if old:
                 if old["fingerprint"] != fingerprint:
@@ -641,9 +678,78 @@ class State:
                     if kind in {"permission.completed", "user_input.completed"}
                     else None
                 )
-                or self.binding(tx, session_id, "event", event.get("parentId"))
+                or self.parent_event_binding(tx, session_id, event.get("parentId"))
             )
-            if binding:
+            tool_start = kind == "tool.execution_start"
+            child_start = kind == "subagent.started"
+            incoming_parent_tool_call_id = (
+                data.get("toolCallId")
+                if child_start
+                else data.get("parentToolCallId")
+                if tool_start
+                else None
+            )
+            duplicate_start = False
+            incoming_sha = None
+            if tool_start or child_start:
+                prior = tx.get(
+                    "invocations",
+                    key(session_id, "tool", data["toolCallId"])
+                    if tool_start
+                    else key(session_id, "agent", str(agent)),
+                    required=False,
+                )
+                if tool_start:
+                    if isinstance(data.get("arguments"), dict):
+                        try:
+                            incoming_sha = hashlib.sha256(canonical(data["arguments"])).hexdigest()
+                        except (ValueError, TypeError):
+                            self.fence(tx, "attribution_unavailable")
+                            return
+                    elif staged_arguments_sha256 is not None:
+                        incoming_sha = staged_arguments_sha256
+                if prior is not None:
+                    incoming_name = data.get(
+                        "agentName", data.get("toolName", prior.get("name", "tool"))
+                    )
+                    if (
+                        prior.get("kind") != ("child" if child_start else "tool")
+                        or prior.get("agent_id") != agent
+                        or prior.get("name") != incoming_name
+                        or (tool_start and prior.get("arguments_sha256") != incoming_sha)
+                        or (
+                            "parent_tool_call_id" in prior
+                            and prior["parent_tool_call_id"] != incoming_parent_tool_call_id
+                        )
+                        or any(
+                            prior.get(k) != (binding or {}).get(k)
+                            for k in ("work_id", "request_id", "delivery_id")
+                        )
+                    ):
+                        self.fence(tx, "attribution_unavailable")
+                        return
+                    duplicate_start = True
+            tool_complete = kind == "tool.execution_complete"
+            child_complete = kind in {"subagent.completed", "subagent.failed"}
+            missing_start = False
+            completion_parent = None
+            if tool_complete or child_complete:
+                prior = tx.get(
+                    "invocations",
+                    key(session_id, "tool", data["toolCallId"])
+                    if tool_complete
+                    else key(session_id, "agent", str(agent)),
+                    required=False,
+                )
+                missing_start = prior is None
+                completion_parent = data.get("toolCallId" if child_complete else "parentToolCallId")
+                if prior is not None and completion_conflicts(
+                    prior, completion_parent, agent, binding
+                ):
+                    self.fence(tx, "attribution_unavailable")
+                    return
+            # Even a staged completion cannot lend attribution until its start is known.
+            if binding and not missing_start:
                 self.bind(tx, session_id, "event", identity, binding)
                 if kind == "user.message" and data.get("messageId"):
                     self.bind(tx, session_id, "message", data["messageId"], binding)
@@ -727,22 +833,13 @@ class State:
                             "invocation_id": key(session_id, "tool", tool_call),
                         },
                     )
-                if kind in {
+                if not duplicate_start and kind in {
                     "user.message",
                     "assistant.turn_start",
                     "tool.execution_start",
                     "subagent.started",
                 }:
                     save(tx, "copilot.idle", session_id, {**binding, "idle": False})
-            missing_start = (
-                kind == "tool.execution_complete"
-                and not tx.get(
-                    "invocations", key(session_id, "tool", data["toolCallId"]), required=False
-                )
-            ) or (
-                kind in {"subagent.completed", "subagent.failed"}
-                and not tx.get("invocations", key(session_id, "agent", str(agent)), required=False)
-            )
             if missing_start or (
                 not binding
                 and kind.startswith(
@@ -791,6 +888,7 @@ class State:
                         "fingerprint": fingerprint,
                         "session_id": session_id,
                         "resolved": False,
+                        **({"arguments_sha256": incoming_sha} if incoming_sha is not None else {}),
                     },
                 )
                 return
@@ -808,7 +906,7 @@ class State:
                     "session_id": session_id,
                 },
             )
-            if not binding:
+            if not binding or duplicate_start:
                 return
             work_id, request_id = binding["work_id"], binding["request_id"]
             actor = {"kind": "subagent" if agent else "lead", "id": agent or "copilot-lead"}
@@ -987,7 +1085,10 @@ class State:
                     if child
                     else None
                 )
-                if not starting and old_invocation is None:
+                if not starting and (
+                    old_invocation is None
+                    or completion_conflicts(old_invocation, completion_parent, agent, binding)
+                ):
                     self.fence(tx, "attribution_unavailable")
                     return
                 invocation = {
@@ -999,19 +1100,20 @@ class State:
                     "owner_epoch": self.services.ownership.epoch,
                     "kind": "child" if child else "tool",
                     "state": state,
-                    "name": data.get(
-                        "agentName",
-                        data.get("toolName", (old_invocation or {}).get("name", "tool")),
-                    ),
+                    "name": old_invocation["name"]
+                    if old_invocation is not None
+                    else data.get("agentName", data.get("toolName", "tool")),
                     "model_id": data.get("model", (old_invocation or {}).get("model_id")),
                     "updated_at": now(),
                     "display_name": display_name,
-                    "arguments_sha256": hashlib.sha256(canonical(data["arguments"])).hexdigest()
-                    if starting and isinstance(data.get("arguments"), dict)
+                    "arguments_sha256": incoming_sha
+                    if starting
                     else (old_invocation or {}).get("arguments_sha256"),
                 }
-                if old_invocation and old_invocation["state"] in TERMINAL and starting:
-                    return
+                if starting:
+                    invocation["parent_tool_call_id"] = incoming_parent_tool_call_id
+                elif old_invocation is not None and "parent_tool_call_id" in old_invocation:
+                    invocation["parent_tool_call_id"] = old_invocation["parent_tool_call_id"]
                 summary = failure_summary(tx, invocation, data) if state == "failed" else ""
                 if summary:
                     invocation["failure_summary"] = summary
@@ -1172,6 +1274,7 @@ class State:
                     session_id,
                     record["event"],
                     original_fingerprint=record["fingerprint"],
+                    staged_arguments_sha256=record.get("arguments_sha256"),
                 )
             with store.transaction(write=False) as tx:
                 remaining = sum(
@@ -1185,7 +1288,8 @@ class State:
         """Native load rewrites private system messages. Compare existing public projections,
         not their intentionally discarded private vendor payload. Live duplicates remain strict.
         """
-        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+        start = event["type"] in {"tool.execution_start", "subagent.started"}
+        with self.services.registry.project_store(project_id).transaction(write=start) as tx:
             old = tx.get("copilot.native", key(session_id, event["id"]), required=False)
             if old:
                 if old["type"] != event["type"]:
@@ -1214,6 +1318,58 @@ class State:
                         )
                         if invocation_id != public["payload"]["invocation_id"]:
                             raise DomainError("attribution_unavailable", 409)
+                        if start and public["event_type"] in {"tool.started", "subagent.started"}:
+                            inv = tx.get("invocations", invocation_id, required=False)
+                            if (
+                                inv is not None
+                                and "parent_tool_call_id" not in inv
+                                and inv.get("kind") == ("child" if child else "tool")
+                                and inv.get("session_id") == session_id
+                                and inv.get("agent_id") == event.get("agentId")
+                                and inv.get("name")
+                                == data.get("agentName" if child else "toolName", inv.get("name"))
+                            ):
+                                try:
+                                    # The public projection does not prove the parent. Only the
+                                    # archived start fingerprint binds that private field.
+                                    original_start = (
+                                        old["fingerprint"]
+                                        == hashlib.sha256(canonical(event)).hexdigest()
+                                    )
+                                    args_match = (
+                                        child
+                                        or not isinstance(data.get("arguments"), dict)
+                                        or inv.get("arguments_sha256")
+                                        == hashlib.sha256(canonical(data["arguments"])).hexdigest()
+                                    )
+                                except (ValueError, TypeError):
+                                    return
+                                matching_start_ids = [
+                                    archived[0]
+                                    for archived in tx.connection.execute(
+                                        """SELECT native_event_id FROM events
+                                           WHERE native_session_id = ?
+                                             AND json_extract(body, '$.event_type') = ?
+                                             AND json_extract(body, '$.payload.invocation_id') = ?""",
+                                        (session_id, public["event_type"], invocation_id),
+                                    )
+                                ]
+                                if (
+                                    original_start
+                                    and args_match
+                                    and matching_start_ids == [event["id"]]
+                                ):
+                                    save(
+                                        tx,
+                                        "invocations",
+                                        invocation_id,
+                                        {
+                                            **inv,
+                                            "parent_tool_call_id": data.get(
+                                                "toolCallId" if child else "parentToolCallId"
+                                            ),
+                                        },
+                                    )
                 if (
                     event["type"] == "user.message"
                     and event.get("data", {}).get("clientTurnId")

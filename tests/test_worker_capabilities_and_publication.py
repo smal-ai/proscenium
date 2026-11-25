@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import copy
+import hashlib
 import importlib.util
 import io
 import json
@@ -37,8 +38,9 @@ from proscenium.copilot.capabilities import (
     validate_authored_document,
 )
 from proscenium.copilot.native import Configuration
-from proscenium.copilot.outcomes import get_tool_outcome
-from proscenium.copilot.state import key
+from proscenium.copilot.outcomes import get_tool_outcome, record_tool_outcome
+from proscenium.copilot.service import Copilot
+from proscenium.copilot.state import State, key
 from proscenium.copilot.tools import Tools
 from proscenium.db import Store
 from proscenium.db.pagination import Cursors
@@ -259,6 +261,8 @@ def invocation(runtime, name, body, identity="call-one"):
                     invocation_id=invocation_id,
                     agent_id=None,
                     session_id=SESSION,
+                    name=name,
+                    arguments_sha256=hashlib.sha256(canonical(body)).hexdigest(),
                     request_id="request-one",
                     work_id=WORK,
                     owner_epoch="epoch",
@@ -598,7 +602,9 @@ def test_preparation_submission_replay_budget_and_attribution(runtime, revision,
     runtime.provider.options["image_recipes"] = {"comfy": {"profile_revision": "changed"}}
     replayed, _ = invoke(runtime, "prepare_image_generation", body)
     assert replayed == {**result, "replayed": True} and len(runtime.calls) == previous_calls
-    conflict, _ = invoke(runtime, "prepare_image_generation", {**body, "prompt": "Different"})
+    conflict, _ = invoke(
+        runtime, "prepare_image_generation", {**body, "prompt": "Different"}, "new-call"
+    )
     assert conflict["error"] == "idempotency_conflict"
     runtime.state.control = lambda tx: {"fenced": False}
     runtime.services.gate.resume(PROJECT, reconciliation_evidence="Offline fixture")
@@ -744,7 +750,7 @@ def test_publish_outputs_rejects_inline_preview_for_unsupported_blender_features
     call = invocation(runtime, "publish_outputs", body)
     catalogue = runtime.services.extension("catalogue")
     with pytest.raises(DomainError) as error:
-        catalogue.publish(runtime.tools.caller(call), body)
+        catalogue.publish(runtime.tools.caller(call, name="publish_outputs"), body)
     assert (error.value.code, error.value.status, error.value.message) == (
         "capability_unavailable",
         501,
@@ -1208,7 +1214,7 @@ def test_asset_first_preparation_uses_frozen_creation_intent(runtime):
         assert not tx.all("items") and not tx.all("versions")
 
 
-def test_register_artifact_records_verified_output(runtime):
+def register_body(runtime):
     from proscenium.sources.common import sha
 
     data = b"Synthetic retained metadata"
@@ -1216,7 +1222,7 @@ def test_register_artifact_records_verified_output(runtime):
     staging = runtime.root / path
     staging.parent.mkdir(parents=True)
     staging.write_bytes(data)
-    body = dict(
+    return dict(
         schema_version="1.0",
         project_id=PROJECT,
         operation_id="register-one",
@@ -1227,6 +1233,10 @@ def test_register_artifact_records_verified_output(runtime):
         media_type="text/plain",
         sha256=sha(data),
     )
+
+
+def test_register_artifact_records_verified_output(runtime):
+    body = register_body(runtime)
     result, kind = invoke(runtime, "register_artifact", body)
     assert kind != "failure", result
     assert (
@@ -1235,6 +1245,588 @@ def test_register_artifact_records_verified_output(runtime):
         ]
         == "verified"
     )
+
+
+@pytest.mark.parametrize("has_outcome", [False, True])
+@pytest.mark.parametrize(
+    "mismatch", ["recorded-name", "callback-name", "active-args", "replayable-args"]
+)
+def test_mismatched_tool_handler_cannot_execute_or_write_outcome(
+    runtime, monkeypatch, mismatch, has_outcome
+):
+    if mismatch == "active-args":
+        name = "retry_job"
+        body = dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            job_id="job-one",
+            operation_id="retry-one",
+            expected_revision=1,
+        )
+        args = {**body, "expected_revision": 2}
+        service, method = runtime.services.jobs, "retry"
+    else:
+        name = "register_artifact"
+        body = register_body(runtime)
+        args = (
+            {**body, "artifact_id": "different-artifact"} if mismatch == "replayable-args" else body
+        )
+        service, method = runtime.services.extension("artifacts"), "register"
+    recorded_name = "publish_outputs" if mismatch == "recorded-name" else name
+    call = invocation(runtime, recorded_name, body)
+    callback = replace(
+        call, tool_name="publish_outputs" if mismatch == "callback-name" else name, arguments=args
+    )
+    inv_id = key(SESSION, "tool", call.tool_call_id)
+    prior = None
+    if has_outcome:
+        prior = record_tool_outcome(
+            runtime.store,
+            invocation_id=inv_id,
+            session_id=SESSION,
+            project_id=PROJECT,
+            work_id=WORK,
+            request_id="request-one",
+            tool_name=recorded_name,
+            status="succeeded",
+        )
+
+    effects = []
+    monkeypatch.setattr(service, method, lambda *args: effects.append(args))
+    result = asyncio.run(runtime.tools.invoke(name, callback))
+    assert result.result_type == "failure"
+    assert json.loads(result.text_result_for_llm)["error"] == "attribution_unavailable"
+    assert not effects
+    with runtime.store.transaction(write=False) as tx:
+        assert get_tool_outcome(tx, inv_id) == prior
+        assert tx.all("copilot.tool_outcomes") == ([prior] if has_outcome else [])
+        assert tx.all("artifacts") == tx.all("jobs") == []
+
+
+@pytest.fixture
+def copilot(runtime):
+    copilot = Copilot.__new__(Copilot)
+    state = State(runtime.services, None)
+    copilot.services, copilot.state, copilot.closing = runtime.services, state, False
+    runtime.tools.state = state
+    with runtime.store.transaction() as tx:
+        tx.put(
+            "copilot.control",
+            "gate",
+            dict(fenced=False, epoch="epoch", reconciled_epoch="epoch", revision=0),
+        )
+    return copilot
+
+
+def custom_event(copilot, event_id, kind, **data):
+    copilot.state.reduce(PROJECT, SESSION, dict(id=event_id, type=kind, parentId="root", data=data))
+
+
+def custom_permission(runtime, copilot, name, body):
+    call_id, permission_id = "custom-call", "custom-permission"
+    call = ToolInvocation(
+        session_id=SESSION, tool_call_id=call_id, tool_name=name, arguments=body, agent_id=None
+    )
+    stage_id = key(SESSION, permission_id)
+    request = dict(kind="custom-tool", toolName=name, args=body, toolCallId=call_id)
+    joined = dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one")
+    with runtime.store.transaction() as tx:
+        copilot.state.bind(tx, SESSION, "event", "root", joined)
+    custom_event(
+        copilot,
+        "initial-start",
+        "tool.execution_start",
+        toolCallId=call_id,
+        toolName=name,
+        arguments=body,
+    )
+    custom_event(
+        copilot,
+        "initial-permission",
+        "permission.requested",
+        requestId=permission_id,
+        permissionRequest=request,
+    )
+    decision = asyncio.run(copilot.permission(PROJECT, request, {"session_id": SESSION}))
+    with runtime.store.transaction(write=False) as tx:
+        stage = tx.require("copilot.permissions", stage_id)
+        assert not copilot.state.control(tx)["fenced"]
+        assert tx.require("work", WORK)["state"] == "running"
+    return decision, stage, call
+
+
+@pytest.mark.parametrize("has_outcome", [False, True])
+@pytest.mark.parametrize("conflict", ["name", "arguments", "noncanonical"])
+def test_conflicting_native_start_cannot_rebind_approved_handler(
+    runtime, copilot, monkeypatch, conflict, has_outcome
+):
+    body = register_body(runtime)
+    decision, stage, call = custom_permission(runtime, copilot, "register_artifact", body)
+    assert (decision.kind, stage["authority"]) == ("approve-once", "automatic_policy")
+    inv_id = key(SESSION, "tool", call.tool_call_id)
+    if has_outcome:
+        result = asyncio.run(runtime.tools.invoke(call.tool_name, call))
+        assert result.result_type == "success"
+    with runtime.store.transaction(write=False) as tx:
+        original = tx.require("invocations", inv_id)
+        assert original["name"] == call.tool_name
+        assert original["arguments_sha256"] == hashlib.sha256(canonical(body)).hexdigest()
+        outcomes = tx.all("copilot.tool_outcomes")
+        assert bool(outcomes) == has_outcome
+
+    name = "publish_outputs" if conflict == "name" else call.tool_name
+    args = (
+        body
+        if conflict == "name"
+        else {
+            **body,
+            "artifact_id": float("nan") if conflict == "noncanonical" else "different-artifact",
+        }
+    )
+    custom_event(
+        copilot,
+        "conflicting-start",
+        "tool.execution_start",
+        toolCallId=call.tool_call_id,
+        toolName=name,
+        arguments=args,
+    )
+
+    effects = []
+    for extension, method in [("artifacts", "register"), ("catalogue", "publish")]:
+        monkeypatch.setattr(
+            runtime.services.extension(extension), method, lambda *args: effects.append(args)
+        )
+    conflicting = replace(call, tool_name=name, arguments=args)
+    with pytest.raises(DomainError) as caught:
+        runtime.tools.caller(conflicting, name=name, admit=False)
+    assert (caught.value.code, caught.value.status) == ("attribution_unavailable", 409)
+    result = asyncio.run(runtime.tools.invoke(name, conflicting))
+    assert result.result_type == "failure"
+    assert json.loads(result.text_result_for_llm)["error"] == "attribution_unavailable"
+    assert not effects
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+        assert tx.all("copilot.tool_outcomes") == outcomes
+
+
+@pytest.mark.parametrize("case", ["empty-name", "missing-invocation"])
+def test_tool_callback_fails_closed_without_exact_invocation(runtime, case):
+    name = "register_artifact"
+    call = invocation(runtime, name, register_body(runtime))
+    call = (
+        replace(call, tool_name="")
+        if case == "empty-name"
+        else replace(call, tool_call_id="unknown")
+    )
+    with pytest.raises(DomainError) as caught:
+        runtime.tools.caller(call, name=name, admit=False)
+    assert (caught.value.code, caught.value.status) == ("attribution_unavailable", 409)
+    result = asyncio.run(runtime.tools.invoke(name, call))
+    assert result.result_type == "failure"
+    assert json.loads(result.text_result_for_llm)["error"] == "attribution_unavailable"
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.all("copilot.tool_outcomes") == tx.all("artifacts") == []
+
+
+def test_staged_tool_start_preserves_argument_digest_for_handler_and_duplicates(runtime, copilot):
+    body = register_body(runtime)
+    name, call_id = "register_artifact", "early-call"
+    start = dict(toolCallId=call_id, toolName=name, arguments=body)
+    digest = hashlib.sha256(canonical(body)).hexdigest()
+    event_id = key(SESSION, "early-start")
+    inv_id = key(SESSION, "tool", call_id)
+    custom_event(copilot, "early-start", "tool.execution_start", **start)
+    with runtime.store.transaction() as tx:
+        pending = tx.require("copilot.pending_events", event_id)
+        assert not pending["resolved"]
+        assert pending["arguments_sha256"] == digest
+        assert "arguments" not in pending["event"]["data"]
+        assert tx.get("invocations", inv_id, required=False) is None
+        copilot.state.bind(
+            tx,
+            SESSION,
+            "event",
+            "origin",
+            dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one"),
+        )
+    copilot.state.reduce(
+        PROJECT, SESSION, dict(id="root", type="assistant.turn_start", parentId="origin")
+    )
+    copilot.state.drain_pending(PROJECT, SESSION)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("copilot.pending_events", event_id)["resolved"]
+        original = tx.require("invocations", inv_id)
+        assert original["arguments_sha256"] == digest
+
+    call = ToolInvocation(
+        session_id=SESSION, tool_call_id=call_id, tool_name=name, arguments=body, agent_id=None
+    )
+    result = asyncio.run(runtime.tools.invoke(name, call))
+    assert result.result_type == "success", result.text_result_for_llm
+    assert json.loads(result.text_result_for_llm)["artifact_id"] == body["artifact_id"]
+
+    custom_event(copilot, "duplicate-early-start", "tool.execution_start", **start)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        assert not copilot.state.control(tx)["fenced"]
+
+
+def parent_linked_invocation(runtime, copilot, child, *, stage_completion=False):
+    parent_ids = ("task-call-1", "task-call-2")
+    joined = dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one")
+    with runtime.store.transaction() as tx:
+        for parent in parent_ids:
+            copilot.state.bind(tx, SESSION, "tool", parent, joined)
+    name = "authoring-specialist" if child else "register_artifact"
+    inv_id = key(SESSION, "agent", "child-one") if child else key(SESSION, "tool", "custom-call")
+    body = register_body(runtime)
+
+    def emit(event_id, parent, *, starting):
+        if child:
+            event = dict(
+                type="subagent.started" if starting else "subagent.completed",
+                agentId="child-one",
+                data=dict(agentName=name, toolCallId=parent),
+            )
+        else:
+            event = dict(
+                type="tool.execution_start" if starting else "tool.execution_complete",
+                data=dict(toolName=name, toolCallId="custom-call", arguments=body),
+            )
+            if parent is not None:
+                event["data"]["parentToolCallId"] = parent
+        event = dict(id=event_id, **event)
+        copilot.state.reduce(PROJECT, SESSION, event)
+        return event
+
+    if stage_completion:
+        emit("conflicting-completion", parent_ids[1], starting=False)
+    start = emit("initial-start", parent_ids[0], starting=True)
+    with runtime.store.transaction(write=False) as tx:
+        original = tx.require("invocations", inv_id)
+        assert original["state"] == "running"
+        assert original["parent_tool_call_id"] == parent_ids[0]
+        assert not copilot.state.control(tx)["fenced"]
+    return inv_id, original, parent_ids, emit, start
+
+
+@pytest.mark.parametrize("child", [False, True], ids=["tool", "subagent"])
+def test_conflicting_native_parent_tool_call_preserves_original_invocation(runtime, copilot, child):
+    inv_id, original, parent_ids, emit, _ = parent_linked_invocation(runtime, copilot, child)
+    emit("conflicting-start", parent_ids[1], starting=True)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+
+    emit("completion", parent_ids[1], starting=False)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+
+
+@pytest.mark.parametrize("child", [False, True], ids=["tool", "subagent"])
+@pytest.mark.parametrize("out_of_order", [False, True], ids=["live", "staged"])
+def test_conflicting_completion_parent_preserves_running_invocation(
+    runtime, copilot, child, out_of_order
+):
+    inv_id, original, parent_ids, emit, _ = parent_linked_invocation(
+        runtime, copilot, child, stage_completion=out_of_order
+    )
+    rejected = "conflicting-completion"
+    if out_of_order:
+        copilot.state.drain_pending(PROJECT, SESSION)
+    else:
+        emit(rejected, parent_ids[1], starting=False)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+        assert tx.get("copilot.native", key(SESSION, rejected), required=False) is None
+        assert copilot.state.binding(tx, SESSION, "event", rejected) is None
+        if out_of_order:
+            assert not tx.require("copilot.pending_events", key(SESSION, rejected))["resolved"]
+
+    descendant = dict(
+        id="descendant",
+        type="assistant.message",
+        parentId=rejected,
+        data=dict(messageId="descendant-message", content="Unbound completion descendant"),
+    )
+    copilot.state.reduce(PROJECT, SESSION, descendant)
+    with runtime.store.transaction(write=False) as tx:
+        assert copilot.state.binding(tx, SESSION, "event", descendant["id"]) is None
+        assert not tx.require("copilot.pending_events", key(SESSION, descendant["id"]))["resolved"]
+
+
+def test_legacy_staged_completion_binding_cannot_attribute_descendant(runtime, copilot):
+    joined = dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one")
+    completion = dict(
+        id="legacy-completion",
+        type="tool.execution_complete",
+        data=dict(toolCallId="custom-call", parentToolCallId="task-call-2", success=True),
+    )
+    completion_key = key(SESSION, completion["id"])
+    with runtime.store.transaction() as tx:
+        for parent in ("task-call-1", "task-call-2"):
+            copilot.state.bind(tx, SESSION, "tool", parent, joined)
+        copilot.state.bind(tx, SESSION, "event", completion["id"], joined)
+        tx.put(
+            "copilot.pending_events",
+            completion_key,
+            dict(
+                event=completion,
+                fingerprint=hashlib.sha256(canonical(completion)).hexdigest(),
+                session_id=SESSION,
+                resolved=False,
+            ),
+        )
+    custom_event(
+        copilot,
+        "initial-start",
+        "tool.execution_start",
+        toolCallId="custom-call",
+        parentToolCallId="task-call-1",
+        toolName="register_artifact",
+        arguments=register_body(runtime),
+    )
+    copilot.state.drain_pending(PROJECT, SESSION)
+
+    descendant = dict(
+        id="legacy-descendant",
+        type="assistant.message",
+        parentId=completion["id"],
+        data=dict(messageId="descendant-message", content="Must stay unbound"),
+    )
+    copilot.state.reduce(PROJECT, SESSION, descendant)
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.require("copilot.pending_events", completion_key)["resolved"]
+        assert copilot.state.binding(tx, SESSION, "event", completion["id"]) == joined
+        assert copilot.state.binding(tx, SESSION, "event", descendant["id"]) is None
+        assert not tx.require("copilot.pending_events", key(SESSION, descendant["id"]))["resolved"]
+        assert tx.get("copilot.native", key(SESSION, descendant["id"]), required=False) is None
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+
+
+def test_tool_completion_can_omit_parent_tool_call_id(runtime, copilot):
+    inv_id, _, parent_ids, emit, _ = parent_linked_invocation(runtime, copilot, child=False)
+    emit("completion", None, starting=False)
+    with runtime.store.transaction(write=False) as tx:
+        completed = tx.require("invocations", inv_id)
+        assert (completed["state"], completed["parent_tool_call_id"]) == (
+            "completed",
+            parent_ids[0],
+        )
+        assert not copilot.state.control(tx)["fenced"]
+
+
+@pytest.mark.parametrize("mode", ["no-replay", "matching", "conflicting"])
+def test_legacy_child_invocation_parent_is_unknown_until_verified_start_replay(
+    runtime, copilot, mode
+):
+    inv_id, original, parent_ids, emit, start = parent_linked_invocation(
+        runtime, copilot, child=True
+    )
+    # Preserve the original native and public start evidence, but use main's invocation shape.
+    legacy = {k: v for k, v in original.items() if k != "parent_tool_call_id"}
+    with runtime.store.transaction() as tx:
+        tx.put("invocations", inv_id, legacy, expected_revision=tx.revision("invocations", inv_id))
+
+    if mode == "no-replay":
+        emit("duplicate-start", parent_ids[0], starting=True)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == legacy
+            assert not copilot.state.control(tx)["fenced"]
+    else:
+        altered = {**start, "data": {**start["data"], "toolCallId": parent_ids[1]}}
+        copilot.state.replay_event(PROJECT, SESSION, altered)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == legacy
+        copilot.state.replay_event(PROJECT, SESSION, start)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == original
+            assert not copilot.state.control(tx)["fenced"]
+    emit("completion", parent_ids[1] if mode == "conflicting" else parent_ids[0], starting=False)
+    with runtime.store.transaction(write=False) as tx:
+        result = tx.require("invocations", inv_id)
+        control = copilot.state.control(tx)
+        if mode == "conflicting":
+            assert result == original
+            assert control["fenced"] and control["reason"] == "attribution_unavailable"
+        else:
+            assert result["state"] == "completed"
+            assert not control["fenced"]
+            if mode == "no-replay":
+                assert "parent_tool_call_id" not in result
+            else:
+                assert result["parent_tool_call_id"] == parent_ids[0]
+
+
+def test_legacy_replay_does_not_choose_between_archived_tool_starts(runtime, copilot):
+    inv_id, original, parent_ids, _, first = parent_linked_invocation(runtime, copilot, child=False)
+    new_args = {**first["data"]["arguments"], "artifact_id": "different-artifact"}
+    second = {
+        **first,
+        "id": "second-start",
+        "data": {
+            **first["data"],
+            "arguments": new_args,
+            "parentToolCallId": parent_ids[1],
+        },
+    }
+    legacy = {k: v for k, v in original.items() if k != "parent_tool_call_id"}
+    legacy["arguments_sha256"] = hashlib.sha256(canonical(new_args)).hexdigest()
+    with runtime.store.transaction() as tx:
+        [first_public] = tx.events()["events"]
+        assert first_public["native_event_id"] == first["id"]
+        assert (
+            tx.require("copilot.native", key(SESSION, first["id"]))["fingerprint"]
+            == hashlib.sha256(canonical(first)).hexdigest()
+        )
+        tx.put(
+            "copilot.native",
+            key(SESSION, second["id"]),
+            dict(
+                fingerprint=hashlib.sha256(canonical(second)).hexdigest(),
+                type=second["type"],
+                attributed=True,
+                session_id=SESSION,
+            ),
+        )
+        tx.emit(
+            first_public["event_type"],
+            first_public["payload"],
+            actor=first_public["actor"],
+            work_id=original["work_id"],
+            request_id=original["request_id"],
+            native_session_id=SESSION,
+            native_event_id=second["id"],
+        )
+        tx.put("invocations", inv_id, legacy, expected_revision=tx.revision("invocations", inv_id))
+    for event in (first, second):
+        copilot.state.replay_event(PROJECT, SESSION, event)
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require("invocations", inv_id) == legacy
+            assert not copilot.state.control(tx)["fenced"]
+
+
+def test_duplicate_tool_start_is_a_noop_before_and_after_completion(runtime, copilot):
+    _, _, call = custom_permission(runtime, copilot, "register_artifact", register_body(runtime))
+    inv_id = key(SESSION, "tool", call.tool_call_id)
+    data = dict(toolCallId=call.tool_call_id, toolName=call.tool_name, arguments=call.arguments)
+    with runtime.store.transaction(write=False) as tx:
+        original = tx.require("invocations", inv_id)
+        revision, watermark = tx.revision("invocations", inv_id), tx.watermark()
+    custom_event(copilot, "redundant-start", "tool.execution_start", **data)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == original
+        assert (tx.revision("invocations", inv_id), tx.watermark()) == (revision, watermark)
+    custom_event(
+        copilot,
+        "completion",
+        "tool.execution_complete",
+        **dict(data, toolName="wrong-name", arguments={}, success=True),
+    )
+    with runtime.store.transaction(write=False) as tx:
+        completed = tx.require("invocations", inv_id)
+        assert completed["state"] == "completed"
+        assert all(completed[k] == original[k] for k in ("name", "arguments_sha256"))
+        revision, watermark = tx.revision("invocations", inv_id), tx.watermark()
+    custom_event(copilot, "late-start", "tool.execution_start", **data)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == completed
+        assert (tx.revision("invocations", inv_id), tx.watermark()) == (revision, watermark)
+        assert not copilot.state.control(tx)["fenced"]
+
+
+def test_subagent_completion_and_conflicting_start_keep_original_identity(runtime, copilot):
+    custom_permission(runtime, copilot, "register_artifact", register_body(runtime))
+    agent = "specialist-one"
+    inv_id = key(SESSION, "agent", agent)
+
+    def child_event(identity, kind, name):
+        copilot.state.reduce(
+            PROJECT,
+            SESSION,
+            dict(id=identity, type=kind, parentId="root", agentId=agent, data=dict(agentName=name)),
+        )
+
+    child_event("child-start", "subagent.started", "authoring-specialist")
+    child_event("child-done", "subagent.completed", "wrong-name")
+    with runtime.store.transaction(write=False) as tx:
+        completed = tx.require("invocations", inv_id)
+        assert (completed["state"], completed["name"], completed["arguments_sha256"]) == (
+            "completed",
+            "authoring-specialist",
+            None,
+        )
+    child_event("child-conflict", "subagent.started", "wrong-name")
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require("invocations", inv_id) == completed
+        control = copilot.state.control(tx)
+        assert control["fenced"] and control["reason"] == "attribution_unavailable"
+
+
+@pytest.mark.parametrize("name", ["register_artifact", "validate_authored_document"])
+def test_schema_invalid_custom_tools_enter_the_handler_without_fencing(runtime, copilot, name):
+    if name == "register_artifact":
+        body = dict(register_body(runtime), derived_from=["bad-string"])
+        issue_path = "derived_from[0]"
+    else:
+        body = dict(schema_version="1.0", project_id=PROJECT, document=plan())
+        issue_path = "document_kind"
+    assert copilot.custom_tool_arguments(PROJECT, dict(toolName=name, args=body)) is True
+    decision, stage, call = custom_permission(runtime, copilot, name, body)
+    assert decision.kind == "approve-once"
+    assert (stage["authority"], stage["reply"]) == ("automatic_policy", "approve")
+
+    result = asyncio.run(runtime.tools.invoke(name, call))
+    error = json.loads(result.text_result_for_llm)
+    assert result.result_type == "failure" and error["error"] == "invalid_request"
+    assert any(issue["path"] == issue_path for issue in error["details"]["issues"])
+    assert "bad-string" not in result.text_result_for_llm
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.all("artifacts") == []
+        assert not copilot.state.control(tx)["fenced"]
+        assert tx.require("work", WORK)["state"] == "running"
+    runtime.services.gate.require(PROJECT)
+
+
+@pytest.mark.parametrize("name", ["register_artifact", "validate_authored_document"])
+def test_custom_tool_permission_still_rejects_cross_project_arguments(runtime, copilot, name):
+    if name == "register_artifact":
+        body = dict(register_body(runtime), project_id="other-project")
+    else:
+        body = dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            document_kind="authored_shot_plan",
+            document=dict(plan(), project_id="other-project"),
+        )
+    with pytest.raises(DomainError) as caught:
+        copilot.custom_tool_arguments(PROJECT, dict(toolName=name, args=body))
+    assert (caught.value.code, caught.value.status) == ("scope_denied", 403)
+    decision, stage, _ = custom_permission(runtime, copilot, name, body)
+    assert decision.kind == "reject"
+    assert (stage["authority"], stage["reply"]) == ("host", "reject")
+
+
+def test_custom_tool_permission_does_not_grant_unknown_or_non_json_arguments(copilot):
+    assert copilot.custom_tool_arguments(PROJECT, dict(toolName="unknown", args={})) is False
+    request = dict(kind="custom-tool", toolName="register_artifact", toolCallId="bad-call")
+    with pytest.raises(DomainError, match="invalid request"):
+        copilot.custom_tool_arguments(PROJECT, dict(request, args=[]))
+    decision = asyncio.run(
+        copilot.permission(
+            PROJECT, dict(request, args={"value": float("nan")}), {"session_id": SESSION}
+        )
+    )
+    assert decision.kind == "reject"
 
 
 def retained_image(runtime, format="PNG", media_type="image/png"):
@@ -1276,12 +1868,16 @@ def test_inline_image_sdk_binary_and_zero_files(runtime, format, media_type):
     assert {
         str(p.relative_to(runtime.root)): p.is_symlink() for p in runtime.root.rglob("*")
     } == before
-    for body in (
-        {"artifact_id": artifact["artifact_id"]},
-        {"artifact_id": artifact["artifact_id"], "include_image": False},
+    for i, body in enumerate(
+        (
+            {"artifact_id": artifact["artifact_id"]},
+            {"artifact_id": artifact["artifact_id"], "include_image": False},
+        )
     ):
         metadata = asyncio.run(
-            runtime.tools.invoke("get_artifact", invocation(runtime, "get_artifact", body))
+            runtime.tools.invoke(
+                "get_artifact", invocation(runtime, "get_artifact", body, f"metadata-{i}")
+            )
         )
         assert metadata.binary_results_for_llm is None
 
@@ -1500,8 +2096,10 @@ def test_job_wait_deadline_and_default_read_only(runtime, monkeypatch):
 
     monkeypatch.setattr("proscenium.copilot.tools.time.monotonic", lambda: clock[0])
     monkeypatch.setattr("proscenium.copilot.tools.asyncio.sleep", tick)
-    for body in ({"job_id": job["job_id"]}, {"job_id": job["job_id"], "wait_seconds": 0}):
-        result, kind = invoke(runtime, "get_job", body)
+    for i, body in enumerate(
+        ({"job_id": job["job_id"]}, {"job_id": job["job_id"], "wait_seconds": 0})
+    ):
+        result, kind = invoke(runtime, "get_job", body, f"inspect-{i}")
         assert kind == "success" and result == job and not ticks
     result, kind = invoke(runtime, "get_job", {"job_id": job["job_id"], "wait_seconds": 1})
     assert kind == "success" and result == job and ticks == [0.5, 0.5]

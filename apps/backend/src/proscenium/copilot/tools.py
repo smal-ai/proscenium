@@ -16,7 +16,11 @@ from copilot.tools import Tool, ToolBinaryResult, ToolInvocation, ToolResult
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.catalogue.validation import safe_schema_guidance
+from proscenium.catalogue.validation import (
+    SAFE_VALIDATION_REASONS,
+    safe_schema_guidance,
+    schema_issues,
+)
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.previews.journal import UNSUPPORTED_BLENDER_FEATURE_REASON
 from proscenium.services import Services
@@ -255,6 +259,7 @@ SAFE_REASONS = frozenset(
         SERVICE_UNAVAILABLE,
         INVALID_QUERY,
         UNSUPPORTED_BLENDER_FEATURE_REASON,
+        *SAFE_VALIDATION_REASONS,
         "This installed profile is Cycles CPU. No GPU fallback is permitted",
         "Render exceeds configured profile bounds",
         "Rendering profile is not enabled",
@@ -497,19 +502,34 @@ def tool_schema(name: str) -> dict[str, Any]:
     return root
 
 
+def _matches_invocation(record: dict[str, Any], invocation: ToolInvocation, name: str) -> bool:
+    if (
+        record.get("agent_id") != invocation.agent_id
+        or record.get("session_id") != invocation.session_id
+        or record.get("name") != name
+        or invocation.tool_name != name
+        or not isinstance(invocation.arguments, dict)
+    ):
+        return False
+    try:
+        args_sha = hashlib.sha256(canonical(invocation.arguments)).hexdigest()
+    except (ValueError, TypeError):
+        return False
+    return record.get("arguments_sha256") == args_sha
+
+
 class Tools:
     def __init__(self, services: Services, state: State, project_id: str):
         self.services, self.state, self.project_id = services, state, project_id
 
-    def caller(self, invocation: ToolInvocation, *, admit: bool = True) -> Caller:
+    def caller(self, invocation: ToolInvocation, *, name: str, admit: bool = True) -> Caller:
         with self.services.registry.project_store(self.project_id).transaction(write=False) as tx:
-            record = tx.require(
-                "invocations", key(invocation.session_id, "tool", invocation.tool_call_id)
+            record = tx.get(
+                "invocations",
+                key(invocation.session_id, "tool", invocation.tool_call_id),
+                required=False,
             )
-            if (
-                record["agent_id"] != invocation.agent_id
-                or record["session_id"] != invocation.session_id
-            ):
+            if record is None or not _matches_invocation(record, invocation, name):
                 raise DomainError("attribution_unavailable", 409)
             work = tx.require("work", record["work_id"])
             if admit and (
@@ -637,6 +657,7 @@ class Tools:
             # a new effect. Preserve the ORIGINAL invocation/work/epoch for that replay.
             caller = self.caller(
                 invocation,
+                name=name,
                 admit=name
                 not in {
                     "checkpoint_sources",
@@ -715,11 +736,21 @@ class Tools:
                 ):
                     # Preserve W01's native fence as well as F00's gate. Only a proved
                     # existing effect can be read/reconciled after a callback is held.
-                    self.caller(invocation, admit=True)
+                    self.caller(invocation, name=name, admit=True)
                 result = await getattr(service, method)(caller, body)
             else:
                 extension, method, schema, result_schema, _ = TOOLS[name]
-                body = copy.deepcopy(validate(schema, invocation.arguments))
+                try:
+                    validate(schema, invocation.arguments)
+                except DomainError as exc:
+                    if exc.code == "invalid_request" and not exc.details.get("issues"):
+                        issues = schema_issues(schema, invocation.arguments)
+                        if issues:
+                            raise DomainError(
+                                exc.code, exc.status, exc.message, issues=issues
+                            ) from exc
+                    raise
+                body = copy.deepcopy(invocation.arguments)
                 if body.get("project_id", self.project_id) != self.project_id:
                     raise DomainError("scope_denied", 403)
                 body.setdefault("project_id", self.project_id)
@@ -742,7 +773,7 @@ class Tools:
                 if name == "prepare_image_generation" and not self.services.extension(
                     "image_preparation"
                 ).replayable(caller, body):
-                    self.caller(invocation, admit=True)
+                    self.caller(invocation, name=name, admit=True)
                 result = function(caller, body)
                 if inspect.isawaitable(result):
                     result = await result
@@ -862,11 +893,7 @@ class Tools:
                 key(invocation.session_id, "tool", invocation.tool_call_id),
                 required=False,
             )
-            if (
-                record is None
-                or record["session_id"] != invocation.session_id
-                or record["agent_id"] != invocation.agent_id
-            ):
+            if record is None or not _matches_invocation(record, invocation, name):
                 return
             previous = get_tool_outcome(tx, record["invocation_id"])
             if previous and values.get("status") == "failed":

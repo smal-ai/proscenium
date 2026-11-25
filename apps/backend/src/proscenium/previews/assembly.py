@@ -9,7 +9,11 @@ from PIL import Image
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.catalogue.validation import rational, sequence_map
+from proscenium.catalogue.validation import (
+    EXPLICIT_FRAME_MAP_REQUIRED,
+    rational,
+    sequence_map,
+)
 from proscenium.contracts import canonical, validate
 from proscenium.sources.common import active, admitted, atomic_bytes, fingerprint
 
@@ -31,9 +35,7 @@ def expand(sequence: dict, frame_map: dict | None) -> dict:
     rows = []
     for entry in sequence["entries"]:
         if entry["transform"] not in {"identity", "trim"}:
-            raise DomainError(
-                "invalid_frame_mapping", 422, "Explicit hold/drop/dissolve map required"
-            )
+            raise DomainError("invalid_frame_mapping", 422, EXPLICIT_FRAME_MAP_REQUIRED)
         for destination in range(
             entry["sequence_frames"]["start"], entry["sequence_frames"]["end"] + 1
         ):
@@ -173,12 +175,6 @@ def prepare(
     if frame_map is None and maps:
         frame_map = next(iter(maps.values()))
     full = expand(sequence, frame_map)
-    for entry in sequence["entries"]:
-        if (
-            entry["transform"] == "transition"
-            and len({c["shot_id"] for c in entry["contributors"]}) < 2
-        ):
-            raise DomainError("invalid_frame_mapping", 422, "A dissolve requires distinct shots")
     if any(value != full for value in maps.values()):
         raise DomainError("invalid_frame_mapping", 422)
     local = deepcopy(sequence)

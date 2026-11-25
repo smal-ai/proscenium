@@ -55,7 +55,7 @@ For multi-file scene/asset revisions, set base_version to the exact prior Versio
 Omit retained_files on checkpoint_sources: registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NEVER in CheckpointRequest.retained_files or SourceClosure.files.
 For large closures, use the completed receipt's operation_id as checkpoint_operation_id with its source_commit in both validate_authored_document (publication_submit) and publish_outputs; omit source. Otherwise pass the returned receipt["source_closure"] directly as source. Never write shell/Python scripts to sort
 SourceClosure files or compute SHA-256 closure digests. Never git add . or include unrelated staging.
-Register artefacts only from .proscenium/tool-output/staging/... through register_artifact, never by inventing catalogue paths.
+Register artefacts only from .proscenium/tool-output/staging/... through register_artifact (omit derived_from unless supplying valid Transformation objects), never by inventing catalogue paths.
 Use get_artifact, get_version and list_job_frames for registered metadata, published source identity and frame receipts.
 Use retry_job on an earlier turn's failed scene or asset preview only when request_target pins that exact published version.
 If request_target is project, or retry_job returns scope_denied because the failed preview belongs to an earlier request, use request_preview on the existing published version with a fresh operation_id and fresh spec.intent_id, if rendering is in scope. Do not halt or republish unchanged sources.
@@ -65,7 +65,7 @@ Lead and authoring-specialist: use search_web for open-ended public web discover
 Keep queries free of private project content and credentials. Include the exact source URL (url) with findings.
 Mark URL leads as Discovered, not Acquired. Only verified local bytes are Acquired. Record the exact Provenance.source_url when acquiring or publishing references.
 Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
-Use assemble_sequence for an exact already-published sequence. The host resolves frame receipts and computes admission hashes.
+Use assemble_sequence for an exact already-published sequence (for standalone scene renders with no storyboard shot, set SequenceEntry.shot_id to null to match job.target.shot_id). The host resolves frame receipts and computes admission hashes.
 Never query private SQLite to recover tool results or guess filesystem-latest.
 Inspect registered images with get_artifact(artifact_id=..., include_image=true). NEVER bash cp
 .proscenium/artefacts/.../content just to call view. The host verifies ready bytes and their hash inline without copying.
