@@ -9,6 +9,7 @@ import httpx
 from proscenium.api.errors import DomainError
 from proscenium.catalogue import validation
 from proscenium.catalogue.service import CHECKPOINT_SOURCE_CONFLICT
+from proscenium.catalogue.validation import SAFE_VALIDATION_REASONS
 from proscenium.contracts import canonical, validate
 from proscenium.db.store import now
 from proscenium.previews.journal import (
@@ -373,7 +374,14 @@ def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
 def validate_authored_document(
     services: Any, project_id: str, request: dict[str, Any]
 ) -> dict[str, Any]:
-    validate("AuthoredDocumentValidationRequest", request)
+    try:
+        validate("AuthoredDocumentValidationRequest", request)
+    except DomainError as exc:
+        if exc.code == "invalid_request" and not exc.details.get("issues"):
+            issues = validation.schema_issues("AuthoredDocumentValidationRequest", request)
+            if issues:
+                raise DomainError(exc.code, exc.status, exc.message, issues=issues) from exc
+        raise
     if request["project_id"] != project_id:
         raise DomainError("scope_denied", 403)
     root = Path(services.registry.get(project_id)["path"])
@@ -520,9 +528,12 @@ def validate_authored_document(
                         phase="semantic",
                         code=code,
                         path="$",
-                        message=CHECKPOINT_SOURCE_CONFLICT
+                        message=exc.message
                         if isinstance(exc, DomainError)
-                        and exc.message == CHECKPOINT_SOURCE_CONFLICT
+                        and (
+                            exc.message in SAFE_VALIDATION_REASONS
+                            or exc.message == CHECKPOINT_SOURCE_CONFLICT
+                        )
                         else "Authored document relationships or pinned sources failed validation",
                     )
                 ]

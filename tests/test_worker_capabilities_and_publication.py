@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import copy
+import hashlib
 import importlib.util
 import io
 import json
@@ -38,7 +39,8 @@ from proscenium.copilot.capabilities import (
 )
 from proscenium.copilot.native import Configuration
 from proscenium.copilot.outcomes import get_tool_outcome
-from proscenium.copilot.state import key
+from proscenium.copilot.service import Copilot
+from proscenium.copilot.state import State, key
 from proscenium.copilot.tools import Tools
 from proscenium.db import Store
 from proscenium.db.pagination import Cursors
@@ -1208,7 +1210,7 @@ def test_asset_first_preparation_uses_frozen_creation_intent(runtime):
         assert not tx.all("items") and not tx.all("versions")
 
 
-def test_register_artifact_records_verified_output(runtime):
+def register_body(runtime):
     from proscenium.sources.common import sha
 
     data = b"Synthetic retained metadata"
@@ -1216,7 +1218,7 @@ def test_register_artifact_records_verified_output(runtime):
     staging = runtime.root / path
     staging.parent.mkdir(parents=True)
     staging.write_bytes(data)
-    body = dict(
+    return dict(
         schema_version="1.0",
         project_id=PROJECT,
         operation_id="register-one",
@@ -1227,6 +1229,10 @@ def test_register_artifact_records_verified_output(runtime):
         media_type="text/plain",
         sha256=sha(data),
     )
+
+
+def test_register_artifact_records_verified_output(runtime):
+    body = register_body(runtime)
     result, kind = invoke(runtime, "register_artifact", body)
     assert kind != "failure", result
     assert (
@@ -1235,6 +1241,117 @@ def test_register_artifact_records_verified_output(runtime):
         ]
         == "verified"
     )
+
+
+@pytest.fixture
+def copilot(runtime):
+    copilot = Copilot.__new__(Copilot)
+    state = State(runtime.services, None)
+    copilot.services, copilot.state, copilot.closing = runtime.services, state, False
+    runtime.tools.state = state
+    with runtime.store.transaction() as tx:
+        tx.put(
+            "copilot.control", "gate", dict(fenced=False, epoch="epoch", reconciled_epoch="epoch")
+        )
+    return copilot
+
+
+def custom_permission(runtime, copilot, name, body):
+    call_id, permission_id = "custom-call", "custom-permission"
+    call = invocation(runtime, name, body, call_id)
+    inv_id = key(SESSION, "tool", call_id)
+    stage_id = key(SESSION, permission_id)
+    request = dict(kind="custom-tool", toolName=name, args=body, toolCallId=call_id)
+    joined = dict(work_id=WORK, request_id="request-one", delivery_id="delivery-one")
+    with runtime.store.transaction() as tx:
+        copilot.state.bind(tx, SESSION, "tool", call_id, joined)
+        tx.put(
+            "invocations",
+            inv_id,
+            dict(
+                tx.require("invocations", inv_id),
+                **joined,
+                name=name,
+                native_id=call_id,
+                arguments_sha256=hashlib.sha256(canonical(body)).hexdigest(),
+            ),
+            expected_revision=tx.revision("invocations", inv_id),
+        )
+        tx.put(
+            "copilot.permissions",
+            stage_id,
+            dict(
+                **joined,
+                native_id=permission_id,
+                session_id=SESSION,
+                tool_call_id=call_id,
+                phase="pending",
+                fingerprint=hashlib.sha256(canonical(request)).hexdigest(),
+            ),
+        )
+    decision = asyncio.run(copilot.permission(PROJECT, request, {"session_id": SESSION}))
+    with runtime.store.transaction(write=False) as tx:
+        stage = tx.require("copilot.permissions", stage_id)
+        assert not copilot.state.control(tx)["fenced"]
+        assert tx.require("work", WORK)["state"] == "running"
+    return decision, stage, call
+
+
+@pytest.mark.parametrize("name", ["register_artifact", "validate_authored_document"])
+def test_schema_invalid_custom_tools_enter_the_handler_without_fencing(runtime, copilot, name):
+    if name == "register_artifact":
+        body = dict(register_body(runtime), derived_from=["bad-string"])
+        issue_path = "derived_from[0]"
+    else:
+        body = dict(schema_version="1.0", project_id=PROJECT, document=plan())
+        issue_path = "document_kind"
+    assert copilot.custom_tool_arguments(PROJECT, dict(toolName=name, args=body)) is True
+    decision, stage, call = custom_permission(runtime, copilot, name, body)
+    assert decision.kind == "approve-once"
+    assert (stage["authority"], stage["reply"]) == ("automatic_policy", "approve")
+
+    result = asyncio.run(runtime.tools.invoke(name, call))
+    error = json.loads(result.text_result_for_llm)
+    assert result.result_type == "failure" and error["error"] == "invalid_request"
+    assert any(issue["path"] == issue_path for issue in error["details"]["issues"])
+    assert "bad-string" not in result.text_result_for_llm
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.all("artifacts") == []
+        assert not copilot.state.control(tx)["fenced"]
+        assert tx.require("work", WORK)["state"] == "running"
+    runtime.services.gate.require(PROJECT)
+
+
+@pytest.mark.parametrize("name", ["register_artifact", "validate_authored_document"])
+def test_custom_tool_permission_still_rejects_cross_project_arguments(runtime, copilot, name):
+    if name == "register_artifact":
+        body = dict(register_body(runtime), project_id="other-project")
+    else:
+        body = dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            document_kind="authored_shot_plan",
+            document=dict(plan(), project_id="other-project"),
+        )
+    with pytest.raises(DomainError) as caught:
+        copilot.custom_tool_arguments(PROJECT, dict(toolName=name, args=body))
+    assert (caught.value.code, caught.value.status) == ("scope_denied", 403)
+    decision, stage, _ = custom_permission(runtime, copilot, name, body)
+    assert decision.kind == "reject"
+    assert (stage["authority"], stage["reply"]) == ("host", "reject")
+
+
+def test_custom_tool_permission_does_not_grant_unknown_or_non_json_arguments(copilot):
+    assert copilot.custom_tool_arguments(PROJECT, dict(toolName="unknown", args={})) is False
+    request = dict(kind="custom-tool", toolName="register_artifact", toolCallId="bad-call")
+    with pytest.raises(DomainError, match="invalid request"):
+        copilot.custom_tool_arguments(PROJECT, dict(request, args=[]))
+    decision = asyncio.run(
+        copilot.permission(
+            PROJECT, dict(request, args={"value": float("nan")}), {"session_id": SESSION}
+        )
+    )
+    assert decision.kind == "reject"
 
 
 def retained_image(runtime, format="PNG", media_type="image/png"):

@@ -16,7 +16,11 @@ from copilot.tools import Tool, ToolBinaryResult, ToolInvocation, ToolResult
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.catalogue.validation import safe_schema_guidance
+from proscenium.catalogue.validation import (
+    SAFE_VALIDATION_REASONS,
+    safe_schema_guidance,
+    schema_issues,
+)
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.previews.journal import UNSUPPORTED_BLENDER_FEATURE_REASON
 from proscenium.services import Services
@@ -255,6 +259,7 @@ SAFE_REASONS = frozenset(
         SERVICE_UNAVAILABLE,
         INVALID_QUERY,
         UNSUPPORTED_BLENDER_FEATURE_REASON,
+        *SAFE_VALIDATION_REASONS,
         "This installed profile is Cycles CPU. No GPU fallback is permitted",
         "Render exceeds configured profile bounds",
         "Rendering profile is not enabled",
@@ -719,7 +724,17 @@ class Tools:
                 result = await getattr(service, method)(caller, body)
             else:
                 extension, method, schema, result_schema, _ = TOOLS[name]
-                body = copy.deepcopy(validate(schema, invocation.arguments))
+                try:
+                    validate(schema, invocation.arguments)
+                except DomainError as exc:
+                    if exc.code == "invalid_request" and not exc.details.get("issues"):
+                        issues = schema_issues(schema, invocation.arguments)
+                        if issues:
+                            raise DomainError(
+                                exc.code, exc.status, exc.message, issues=issues
+                            ) from exc
+                    raise
+                body = copy.deepcopy(invocation.arguments)
                 if body.get("project_id", self.project_id) != self.project_id:
                     raise DomainError("scope_denied", 403)
                 body.setdefault("project_id", self.project_id)

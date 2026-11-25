@@ -1,9 +1,10 @@
-"""Disposable Signal Lost recovery regression. No native or provider execution."""
+"""Disposable recovery and assembly regressions. No Blender or provider execution."""
 
 import asyncio
 import json
 import struct
 import subprocess
+import sys
 from copy import deepcopy
 from dataclasses import replace
 from types import SimpleNamespace
@@ -18,6 +19,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.validation import sequence_map
 from proscenium.contracts import canonical, validate
+from proscenium.copilot.capabilities import validate_authored_document
 from proscenium.copilot.context import Contexts
 from proscenium.copilot.outcomes import get_tool_outcome
 from proscenium.copilot.router import router as copilot_router
@@ -28,15 +30,16 @@ from proscenium.jobs.resources import Resources
 from proscenium.previews import install as install_previews
 from proscenium.previews import runner
 from proscenium.previews.config import REVISION, Rendering
+from proscenium.previews.media import verify_video
 from proscenium.previews.service import worker_caller
 from proscenium.reviews.references import References
 from proscenium.sources.common import fingerprint, sha
 from proscenium.sources.read_only import read_authored_json
-from proscenium.sources.resolver import closure_digest
+from proscenium.sources.resolver import Resolver, closure_digest
 from proscenium.workflows import install as install_workflows
 from test_request_targeting import STAMP, context, request_record
 from test_vlm_critic_workflow import make_png
-from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK
+from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK, publication
 from test_worker_capabilities_and_publication import offline as offline
 from test_worker_capabilities_and_publication import runtime as runtime
 
@@ -132,7 +135,17 @@ def publish(runtime, ref, kind, document=None, dependencies=()):
     return version
 
 
-def seed_job(runtime, identity, ref, state, *, kind="render", frames=None, purpose="draft_motion"):
+def seed_job(
+    runtime,
+    identity,
+    ref,
+    state,
+    *,
+    kind="render",
+    frames=None,
+    purpose="draft_motion",
+    shot_id=None,
+):
     services = runtime.services
     with runtime.store.transaction() as tx:
         source = tx.require("versions", ref["version_id"])["source"]
@@ -141,7 +154,7 @@ def seed_job(runtime, identity, ref, state, *, kind="render", frames=None, purpo
             first, last = frames
             spec = dict(
                 intent_id=identity,
-                shot_id=identity,
+                shot_id=shot_id,
                 purpose=purpose,
                 source_closure_digest=source["digest"],
                 scene_name="Signal Lost",
@@ -162,7 +175,7 @@ def seed_job(runtime, identity, ref, state, *, kind="render", frames=None, purpo
             tx,
             job_id=identity,
             kind=kind,
-            target=dict(target_id=ref["item_id"], version=ref, shot_id=identity if spec else None),
+            target=dict(target_id=ref["item_id"], version=ref, shot_id=shot_id),
             input_digest=fingerprint(dict(version=ref, render_spec=spec)),
             operation_id=f"initial-{identity}",
             work_id=WORK,
@@ -304,7 +317,7 @@ def signal_lost(runtime, tmp_path, monkeypatch):
     entries = []
     runtime.jobs = {}
     for identity, first, last, retained, state in SHOTS:
-        planned = seed_job(runtime, identity, SCENE, state, frames=(first, last))
+        planned = seed_job(runtime, identity, SCENE, state, frames=(first, last), shot_id=identity)
         seed_frames(runtime, planned[0], first, retained)
         runtime.jobs[identity] = settle(runtime, planned)
         entries.append(
@@ -332,12 +345,22 @@ def signal_lost(runtime, tmp_path, monkeypatch):
     publish(runtime, DRAFT, "sequence", runtime.sequence, dependencies=[SCENE])
     runtime.jobs[PROXY] = settle(
         runtime,
-        seed_job(runtime, PROXY, SCENE, "succeeded", frames=(300, 300), purpose="proxy"),
+        seed_job(
+            runtime, PROXY, SCENE, "succeeded", frames=(300, 300), purpose="proxy", shot_id=PROXY
+        ),
         proxy_artifacts(runtime, scene),
     )
     runtime.jobs[ASSET_RENDER] = settle(
         runtime,
-        seed_job(runtime, ASSET_RENDER, ASSET_V1, "failed", frames=(1, 1), purpose="keyframe"),
+        seed_job(
+            runtime,
+            ASSET_RENDER,
+            ASSET_V1,
+            "failed",
+            frames=(1, 1),
+            purpose="keyframe",
+            shot_id=ASSET_RENDER,
+        ),
     )
     for kind in ("encode", "unity"):
         identity = f"{kind}-earlier"
@@ -742,6 +765,234 @@ def test_recover_four_pinned_shots_and_never_assemble_missing_frames(
     assert (result_type, error["error"]) == ("failure", "media_unavailable")
     assert len(records(studio, "frames")) == 297
     assert not any(j["job_id"] == "draft-movie" for j in records(studio, "jobs"))
+
+
+@pytest.fixture
+def sequence_runtime(runtime, tmp_path):
+    services = runtime.services
+    services.settings = services.jobs.settings = replace(
+        services.settings,
+        execution_profiles=frozenset({"blender-cpu"}),
+        rendering=dict(
+            blender="/bin/false", claim_path=str(tmp_path / "encode.lock"), encode_timeout=10
+        ),
+    )
+    services.resources = Resources(Store(tmp_path / "claims.sqlite3"))
+    runtime.previews = install_previews(services)
+    workflows = install_workflows(services)
+    try:
+        yield runtime
+    finally:
+        workflows.close_idle()
+
+
+@pytest.mark.parametrize(
+    "mode", ["identity", "distinct-scenes", "duplicate-scene", "duplicate-shot"]
+)
+def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mode, monkeypatch):
+    studio = sequence_runtime
+    services = studio.services
+    artifacts = services.extension("artifacts")
+    second_scene = {"item_id": "scene-two", "version_id": "scene-two-v1"}
+    refs = [SCENE, second_scene] if mode in {"distinct-scenes", "duplicate-shot"} else [SCENE]
+    shot_id = "shot-01" if mode == "duplicate-shot" else None
+    source_frames = {"start": 1, "end": 2}
+    sources = []
+    for i, ref in enumerate(refs):
+        publish(studio, ref, "scene")
+        planned = seed_job(
+            studio, f"scene-render-{i}", ref, "succeeded", frames=(1, 2), shot_id=shot_id
+        )
+        seed_frames(studio, planned[0], 1, 2)
+        rendered = settle(studio, planned)
+        assert rendered["target"]["shot_id"] == shot_id
+        sources.append(
+            dict(
+                shot_id=shot_id,
+                version_id=ref["version_id"],
+                job_id=rendered["job_id"],
+                source_frames=source_frames,
+            )
+        )
+
+    entry = dict(
+        entry_id="scene-entry",
+        **sources[0],
+        sequence_frames=source_frames,
+        transform="identity",
+        mapping_artifact_id=None,
+    )
+    sequence = dict(
+        schema_version="1.0",
+        project_id=PROJECT,
+        sequence_version_id=DRAFT["version_id"],
+        fps=FPS,
+        frame_count=2,
+        silent=True,
+        entries=[entry],
+    )
+    declared_map = None
+    if mode != "identity":
+        contributors = [sources[0], sources[-1]]
+        entry.update(
+            transform="transition", contributors=contributors, mapping_artifact_id="dissolve-map"
+        )
+        declared_map = dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            sequence_version_id=DRAFT["version_id"],
+            fps=FPS,
+            frame_count=2,
+            blend_space="linear_rgb",
+            frames=[
+                dict(
+                    sequence_frame=frame,
+                    contributors=[
+                        dict(
+                            shot_id=s["shot_id"],
+                            version_id=s["version_id"],
+                            job_id=s["job_id"],
+                            source_frame=frame,
+                            weight=dict(numerator=1, denominator=2),
+                        )
+                        for s in contributors
+                    ],
+                )
+                for frame in (1, 2)
+            ],
+        )
+        with studio.store.transaction() as tx:
+            artifacts.put(
+                tx,
+                artifacts.promote(
+                    PROJECT,
+                    "dissolve-map",
+                    canonical(declared_map),
+                    kind="frame_map",
+                    purpose="metadata",
+                    media_type="application/json",
+                ),
+            )
+
+    request = dict(
+        schema_version="1.0", project_id=PROJECT, document_kind="sequence_map", document=sequence
+    )
+    validated = validate_authored_document(services, PROJECT, request)
+    assert (validated["valid"], validated["schema_valid"], validated["semantic_valid"]) == (
+        True,
+        True,
+        True,
+    )
+    if mode == "identity":
+        wrong_shot = {**sequence, "entries": [{**entry, "shot_id": "shot-01"}]}
+        invalid = validate_authored_document(services, PROJECT, dict(request, document=wrong_shot))
+        assert (invalid["valid"], invalid["schema_valid"], invalid["semantic_valid"]) == (
+            False,
+            True,
+            False,
+        )
+        assert invalid["issues"] == [
+            dict(
+                phase="semantic",
+                code="invalid_frame_mapping",
+                path="$",
+                message="Sequence contributor shot_id must match the source render job's shot_id (use null for standalone scene renders)",
+            )
+        ]
+
+    body = publication(studio, canonical(sequence))
+    item = body["items"][0]
+    item.update(**DRAFT, kind="sequence", name="Scene assembly")
+    item["source"]["dependencies"] = refs
+    item["source"]["digest"] = closure_digest(item["source"])
+    catalogue = services.extension("catalogue")
+    catalogue.sources = Resolver(services)
+    result_type, result = run_tool(
+        studio, invocation(studio, "publish_outputs", body, work=WORK, call="publish-sequence")
+    )
+    assert result_type == "success", result
+    assert result["versions"] == [DRAFT]
+
+    job_id = "standalone-delivery"
+    result_type, result = run_tool(
+        studio,
+        invocation(
+            studio,
+            "assemble_sequence",
+            dict(
+                operation_id="assemble-scenes",
+                job_id=job_id,
+                execution_profile_id="blender-cpu",
+                version=DRAFT,
+            ),
+            work=WORK,
+        ),
+    )
+    if mode.startswith("duplicate-"):
+        assert (result_type, result["error"], result["message"]) == (
+            "failure",
+            "invalid_frame_mapping",
+            "A dissolve requires distinct shots",
+        )
+        assert not any(job["job_id"] == job_id for job in records(studio, "jobs"))
+        return
+    assert result_type == "success", result
+    assert (result["kind"], result["state"]) == ("encode", "planned")
+
+    # Own and reap the one permitted detached worker. It only encodes two 64×64 frames.
+    spawn = subprocess.Popen
+    processes = []
+    attempt_root = studio.previews.root(result)
+
+    def owned_worker(argv, **kwargs):
+        assert argv == [sys.executable, "-m", "proscenium.previews.worker", str(attempt_root)]
+        process = spawn(argv, **kwargs)
+        processes.append(process)
+        return process
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(subprocess, "Popen", owned_worker)
+            studio.previews.pump(PROJECT)
+        assert len(processes) == 1
+        assert processes[0].wait(timeout=45) == 0
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+
+    studio.previews.reconcile(PROJECT)
+    finished = services.jobs.get(PROJECT, job_id)
+    assert (finished["state"], finished["availability"]) == ("succeeded", "complete")
+    video_id, map_id, manifest_id = finished["artifact_ids"]
+    video = artifacts.get(PROJECT, video_id)
+    assert (video["kind"], video["purpose"], video["media_type"], video["state"]) == (
+        "video",
+        "final",
+        "video/mp4",
+        "ready",
+    )
+    assert set(finished["artifact_ids"]) <= set(
+        catalogue.version(PROJECT, DRAFT["version_id"])["artifact_ids"]
+    )
+    video_path = artifacts.ready_path(PROJECT, video_id)
+    assert verify_video(video_path, FPS, 2, DIMENSIONS, studio.previews.config.snapshot())[
+        "metadata"
+    ] == dict(dimensions=DIMENSIONS, fps=FPS, frame_count=2)
+    assert artifacts.get(PROJECT, map_id)["kind"] == "frame_map"
+    mapping_bytes = artifacts.ready_path(PROJECT, map_id).read_bytes()
+    mapping = validate("FrameMap", json.loads(mapping_bytes))
+    if declared_map is not None:
+        assert mapping == declared_map
+    else:
+        assert [row["contributors"][0]["source_frame"] for row in mapping["frames"]] == [1, 2]
+        assert all(row["contributors"][0]["shot_id"] is None for row in mapping["frames"])
+    manifest = json.loads(artifacts.ready_path(PROJECT, manifest_id).read_bytes())
+    assert manifest["input_digest"] == finished["input_digest"]
+    assert manifest["sequence"] == sequence
+    assert manifest["frame_map_sha256"] == sha(mapping_bytes)
+    assert manifest["video_sha256"] == video["sha256"] == sha(video_path.read_bytes())
 
 
 @pytest.mark.parametrize("via_frame_map", [False, True], ids=["direct", "frame-map"])

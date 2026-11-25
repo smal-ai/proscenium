@@ -10,6 +10,30 @@ from proscenium.api.errors import DomainError
 from proscenium.contracts import SCHEMA, validate
 from proscenium.db import Transaction
 
+DISTINCT_DISSOLVE_SOURCES = "A dissolve requires distinct shots"
+EXPLICIT_FRAME_MAP_REQUIRED = "Explicit hold/drop/dissolve map required"
+
+# Only fixed, host-authored text may be returned to Copilot as a semantic reason.
+SAFE_VALIDATION_REASONS: frozenset[str] = frozenset(
+    {
+        "Frame rates and weights must be reduced",
+        "Frame range start must not exceed end",
+        "Duplicate shot identity",
+        "Duplicate shot-frame identity",
+        "Frame roles must be ordered start, intermediate, end",
+        "Sequence contributor job must be a render job",
+        "Sequence contributor job does not match the referenced version",
+        "Sequence contributor shot_id must match the source render job's shot_id (use null for standalone scene renders)",
+        "Sequence source_frames exceed the source render job's admitted frame range",
+        "Sequence entries must partition destination frames",
+        "Identity and trim sequence entries must have equal source_frames and sequence_frames lengths",
+        "Frame-rate changes require an explicit retime map",
+        "Sequence entries must cover frames 1 through frame_count contiguously",
+        DISTINCT_DISSOLVE_SOURCES,
+        EXPLICIT_FRAME_MAP_REQUIRED,
+    }
+)
+
 
 @cache
 def schema_guidance_messages() -> dict[str, frozenset[str]]:
@@ -104,7 +128,7 @@ def rational(value: dict[str, int]) -> Fraction:
 
 def interval(value: dict[str, int]) -> int:
     if value["start"] > value["end"]:
-        raise DomainError("invalid_frame_mapping", 422)
+        raise DomainError("invalid_frame_mapping", 422, "Frame range start must not exceed end")
     return value["end"] - value["start"] + 1
 
 
@@ -165,14 +189,25 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
 def source_job(tx: Transaction, source: dict[str, Any]) -> dict[str, Any]:
     version = tx.require("versions", source["version_id"])
     job = tx.require("jobs", source["job_id"])
-    if (
-        job["kind"] != "render"
-        or job["target"]["version"]
-        != {"item_id": version["item_id"], "version_id": version["version_id"]}
-        or job["target"]["shot_id"] != source["shot_id"]
-        or job["render_spec"] is None
-    ):
-        raise DomainError("invalid_frame_mapping", 422)
+    if job["kind"] != "render" or job["render_spec"] is None:
+        raise DomainError(
+            "invalid_frame_mapping", 422, "Sequence contributor job must be a render job"
+        )
+    if job["target"]["version"] != {
+        "item_id": version["item_id"],
+        "version_id": version["version_id"],
+    }:
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Sequence contributor job does not match the referenced version",
+        )
+    if job["target"]["shot_id"] != source["shot_id"]:
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Sequence contributor shot_id must match the source render job's shot_id (use null for standalone scene renders)",
+        )
     frames = source.get("source_frames") or {
         "start": source["source_frame"],
         "end": source["source_frame"],
@@ -180,7 +215,11 @@ def source_job(tx: Transaction, source: dict[str, Any]) -> dict[str, Any]:
     interval(frames)
     admitted = job["render_spec"]["frames"]
     if frames["start"] < admitted["start"] or frames["end"] > admitted["end"]:
-        raise DomainError("invalid_frame_mapping", 422)
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Sequence source_frames exceed the source render job's admitted frame range",
+        )
     return job
 
 
@@ -207,7 +246,11 @@ def sequence_map(
             entry["transform"] in {"identity", "trim"}
             and interval(entry["source_frames"]) != length
         ):
-            raise DomainError("invalid_frame_mapping", 422)
+            raise DomainError(
+                "invalid_frame_mapping",
+                422,
+                "Identity and trim sequence entries must have equal source_frames and sequence_frames lengths",
+            )
         if (
             entry["transform"] in {"identity", "trim"}
             and job["render_spec"]["fps"] != document["fps"]
@@ -222,7 +265,11 @@ def sequence_map(
             else:
                 tx.require("versions", contributor["version_id"])
     if next_frame != document["frame_count"] + 1:
-        raise DomainError("invalid_frame_mapping", 422)
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Sequence entries must cover frames 1 through frame_count contiguously",
+        )
     for identity in {
         entry["mapping_artifact_id"]
         for entry in document["entries"]

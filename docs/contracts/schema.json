@@ -441,7 +441,7 @@
     },
     "FrameContributor": {
       "type": "object", "additionalProperties": false, "required": ["shot_id", "version_id", "job_id", "source_frame", "weight"],
-      "properties": {"shot_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "source_frame": {"type": "integer", "minimum": 1}, "weight": {"$ref": "#/$defs/Weight"}}
+      "properties": {"shot_id": {"$ref": "#/$defs/NullableId"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "source_frame": {"type": "integer", "minimum": 1}, "weight": {"$ref": "#/$defs/Weight"}}
     },
     "FrameMap": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "sequence_version_id", "fps", "frame_count", "blend_space", "frames"],
@@ -449,12 +449,12 @@
     },
     "SequenceContributor": {
       "type": "object", "additionalProperties": false, "required": ["shot_id", "version_id", "source_frames"],
-      "properties": {"shot_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/NullableId"}, "source_frames": {"$ref": "#/$defs/FrameRange"}}
+      "properties": {"shot_id": {"$ref": "#/$defs/NullableId"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/NullableId"}, "source_frames": {"$ref": "#/$defs/FrameRange"}}
     },
     "SequenceEntry": {
       "type": "object", "additionalProperties": false, "required": ["entry_id", "shot_id", "version_id", "job_id", "source_frames", "sequence_frames", "transform", "mapping_artifact_id"],
       "properties": {
-        "entry_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "sequence_frames": {"$ref": "#/$defs/FrameRange"},
+        "entry_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "version_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "sequence_frames": {"$ref": "#/$defs/FrameRange"},
         "transform": {"enum": ["identity", "trim", "retime", "transition"]}, "mapping_artifact_id": {"$ref": "#/$defs/NullableId"}, "choice": {"enum": ["agent", "owner"]},
         "contributors": {"type": "array", "items": {"$ref": "#/$defs/SequenceContributor"}}
       },
