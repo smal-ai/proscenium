@@ -216,7 +216,7 @@ export class StudioFixture {
     return next;
   }
 
-  async install(options: { catalogue?: boolean; savedLayout?: boolean; created?: boolean; shotPlan?: ShotPlan; routes?: MockRoute[] } = {}) {
+  async install(options: { catalogue?: boolean; savedLayout?: boolean; created?: boolean; shotPlan?: ShotPlan; routes?: MockRoute[]; additionalProjectIds?: string[] } = {}) {
     this.page.on("pageerror", error => this.pageErrors.push(error.message));
     if (options.catalogue) this.snapshot.items = structuredClone(items);
     await this.page.addInitScript(({ id, saved, created }) => {
@@ -354,9 +354,12 @@ export class StudioFixture {
       expect(new URL(socket.url()).pathname).toBe("/api/v1/events");
       expect(new URL(socket.url()).origin).toBe(this.origin.replace(/^http/, "ws"));
       this.sockets.push(socket);
-      socket.onMessage(() => {
-        socket.send(JSON.stringify({ schema_version: "1.0", type: "welcome", project_id: projectId, earliest_sequence: 0, last_sequence: this.events.length }));
-        socket.send(JSON.stringify({ schema_version: "1.0", type: "caught_up", project_id: projectId, through_sequence: this.events.length }));
+      socket.onMessage(message => {
+        const { project_id } = JSON.parse(String(message));
+        expect([projectId, ...(options.additionalProjectIds ?? [])]).toContain(project_id);
+        const sequence = project_id === projectId ? this.events.length : 0;
+        socket.send(JSON.stringify({ schema_version: "1.0", type: "welcome", project_id, earliest_sequence: 0, last_sequence: sequence }));
+        socket.send(JSON.stringify({ schema_version: "1.0", type: "caught_up", project_id, through_sequence: sequence }));
       });
     });
   }

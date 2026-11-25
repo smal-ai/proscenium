@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { Decision, DecisionAnswer, Event, MessageSubmit, ProjectSnapshot, ReviewRequest } from "../../apps/frontend/src/api";
+import type { Decision, DecisionAnswer, Event, MessageSubmit, ProjectRecord, ProjectSnapshot, ReviewRequest } from "../../apps/frontend/src/api";
 import { verifyLayout } from "./layout-journey";
-import { base, deferred, job, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
+import { base, deferred, job, pageOf, project, projectId, request, retained, snapshot, StudioFixture, work } from "./studio-fixture";
 
 test("hydration gates onboarding and starter intents never send or overwrite drafts", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
@@ -216,6 +216,134 @@ for (const stop of [false, true]) {
     } finally {
       initial.release(); failure.release(); retry.release();
     }
+    studio.assertHermetic();
+  });
+}
+
+test("A late acknowledgement cannot restore a request reconciled by a remounted project", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const otherId = "isolated-uat-b", otherBase = `/api/v1/projects/${otherId}`;
+  const otherProject = { ...project, project_id: otherId, repository_id: "repository-b", name: "Isolated UAT B", path: "/synthetic/uat-b" };
+  let activeId = projectId;
+  let revision = 0;
+  const asProject = (record: ProjectRecord): ProjectRecord => ({ ...record, state: activeId === record.project_id ? "active" : "inactive", state_revision: revision });
+  const delayedAck = deferred();
+  let originalLookups = 0;
+  await studio.install({ savedLayout: true, additionalProjectIds: [otherId], routes: [
+    { path: "/api/v1/projects", handler: route => route.fulfill({ json: pageOf([asProject(project), asProject(otherProject)]) }) },
+    { method: "POST", path: new RegExp(`^(?:${base}|${otherBase})/activate$`), handler: route => {
+      activeId = new URL(route.request().url()).pathname.split("/").at(-2)!;
+      revision += 1;
+      studio.snapshot.project = asProject(project);
+      const body = route.request().postDataJSON();
+      return route.fulfill({ json: { schema_version: "1.0", operation_id: body.operation_id, resource_id: activeId, state: "updated", state_revision: revision, replayed: false } });
+    } },
+    { path: `${otherBase}/snapshot`, handler: route => route.fulfill({ json: { ...snapshot(), project: asProject(otherProject) } }) },
+    ...["requests", "items", "jobs", "artifacts", "reviews", "selections"].map(resource => ({ path: `${otherBase}/${resource}`, body: pageOf([]) })),
+    { path: `${otherBase}/events`, body: { schema_version: "1.0", project_id: otherId, events: [], last_available: 0 } },
+    { method: "POST", path: `${base}/requests`, handler: async route => {
+      const body = route.request().postDataJSON() as MessageSubmit;
+      studio.submissions.push(body);
+      const record = request(body.request_id, body.type === "stop" ? "" : body.text, "accepted");
+      record.submission = body;
+      studio.requests.push(record);
+      if (studio.submissions.length === 1) await delayedAck.promise;
+      await route.fulfill({ status: 202, json: record.receipt });
+    } },
+    { method: "GET", path: new RegExp(`${base}/requests/[^/]+$`), handler: route => {
+      const id = new URL(route.request().url()).pathname.split("/").at(-1);
+      if (id === studio.submissions[0]?.request_id && ++originalLookups === 2) {
+        return route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "service_unavailable", message: "Late confirmation unavailable", retryable: true, details: {} } } });
+      }
+      return route.fulfill({ json: studio.requests.find(record => record.request_id === id) });
+    } },
+  ] });
+  await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  const confirmation = page.getByText("Request awaiting confirmation", { exact: true });
+  const retained = () => page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.request.${id}`) ?? "null"), projectId);
+  async function activate(from: ProjectRecord, to: ProjectRecord) {
+    await page.getByRole("button", { name: from.name, exact: true }).click();
+    await page.getByRole("combobox", { name: "Saved project" }).selectOption(to.project_id);
+    await page.getByRole("button", { name: "Activate selected project" }).click();
+    await expect(page.getByRole("button", { name: to.name, exact: true })).toBeVisible();
+    await studio.ready();
+  }
+  try {
+    await input.fill("Admitted on the first mount"); await input.press("Enter");
+    await expect.poll(() => studio.submissions.length).toBe(1);
+    const original = studio.submissions[0];
+    expect((await retained()).submission).toEqual(original);
+    await expect(confirmation).toHaveCount(0);
+
+    await activate(project, otherProject);
+    await activate(otherProject, project);
+    await expect(confirmation).toBeVisible();
+    await page.getByRole("button", { name: "Reconcile original request / retry same ID" }).click();
+    await expect(confirmation).toHaveCount(0);
+    expect(await retained()).toBeNull();
+    expect(originalLookups).toBe(1);
+
+    const lateFailure = page.waitForResponse(response => response.url().endsWith(`${base}/requests/${original.request_id}`) && response.status() === 503);
+    delayedAck.release();
+    await (await lateFailure).finished();
+    expect(originalLookups).toBe(2);
+    expect(await retained()).toBeNull();
+    await expect(confirmation).toHaveCount(0);
+
+    await input.fill("New submission on the remount"); await input.press("Enter");
+    await expect(input).toHaveValue("");
+    expect(studio.submissions).toHaveLength(2);
+    expect(studio.submissions[1]).toMatchObject({ type: "queue", text: "New submission on the remount" });
+    expect(studio.submissions[1].request_id).not.toBe(original.request_id);
+    expect(await retained()).toBeNull();
+    await expect(confirmation).toHaveCount(0);
+  } finally { delayedAck.release(); }
+  studio.assertHermetic();
+});
+
+for (const initialFailure of [true, false]) {
+  test(initialFailure ? "Initial request storage failure blocks sending without locking the Composer" : "Secondary storage failures do not interrupt request submission or confirmation", async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    await studio.install({ savedLayout: true });
+    await studio.open(); await studio.ready();
+    const input = page.getByRole("textbox", { name: "Message Copilot" });
+    const confirmation = page.getByText("Request awaiting confirmation", { exact: true });
+    const brokenWrites = await page.evaluateHandle(({ id, initial }) => {
+      const original = Storage.prototype.setItem;
+      const errors: string[] = [];
+      Storage.prototype.setItem = function (key, value) {
+        const requestKey = key === `proscenium.owner.request.${id}`;
+        if (initial ? requestKey : (requestKey && JSON.parse(value).acknowledged) || key.startsWith(`proscenium.owner.context.${id}.`)) {
+          errors.push(requestKey ? "request" : "context");
+          throw new DOMException("Storage quota exhausted", "QuotaExceededError");
+        }
+        return original.call(this, key, value);
+      };
+      return { errors, restore: () => { Storage.prototype.setItem = original; } };
+    }, { id: projectId, initial: initialFailure });
+    const prompt = "Queue survives storage limits";
+    try {
+      await input.fill(prompt); await input.press("Enter");
+      if (initialFailure) {
+        await expect(page.getByRole("alert")).toContainText("Could not save request before sending. Nothing was sent.");
+        expect(studio.guard!.calls.filter(call => call.method === "POST" && [`${base}/contexts`, `${base}/requests`].includes(call.url))).toEqual([]);
+        await expect(confirmation).toHaveCount(0);
+        await expect(input).toHaveValue(prompt);
+        await expect(page.getByRole("button", { name: "Queue message", exact: true })).toBeEnabled();
+        expect(await brokenWrites.evaluate(value => value.errors)).toEqual(["request"]);
+        await brokenWrites.evaluate(value => value.restore());
+        await input.press("Enter");
+      }
+      await expect(input).toHaveValue("");
+      expect(studio.contexts).toHaveLength(1);
+      expect(studio.submissions).toMatchObject([{ type: "queue", text: prompt }]);
+      const id = studio.submissions[0].request_id;
+      expect(studio.guard!.calls.filter(call => call.method === "GET" && call.url === `${base}/requests/${id}`)).toHaveLength(1);
+      if (!initialFailure) expect(await brokenWrites.evaluate(value => value.errors)).toEqual(["context", "request"]);
+      await expect(confirmation).toHaveCount(0);
+      expect(await page.evaluate(id => localStorage.getItem(`proscenium.owner.request.${id}`), projectId)).toBeNull();
+    } finally { await brokenWrites.evaluate(value => value.restore()); }
     studio.assertHermetic();
   });
 }

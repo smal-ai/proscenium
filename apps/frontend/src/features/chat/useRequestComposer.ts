@@ -28,9 +28,15 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
   function persistIfOwner(next: PendingRequest | null, stop: boolean, expectedId: string) {
     const key = `${stop ? "stop" : "request"}.${projectId}`;
     const stored = readPrivate<PendingRequest>(key);
-    if (stored === null || stored.submission.request_id === expectedId) writePrivate(key, next);
+    if (stored?.submission.request_id === expectedId) {
+      if (next === null) writePrivate(key, null);
+      else {
+        try { writePrivate(key, next); }
+        catch { /* Keep the original durable command and still confirm the receipt. */ }
+      }
+    }
     const activePendingRef = stop ? pendingStopRef : pendingRef;
-    if (mountedRef.current && (activePendingRef.current === null || activePendingRef.current.submission.request_id === expectedId)) {
+    if (mountedRef.current && activePendingRef.current?.submission.request_id === expectedId) {
       activePendingRef.current = next;
       (stop ? setPendingStop : setPending)(next);
     }
@@ -45,8 +51,23 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
     const key = `${stop ? "stop" : "request"}.${projectId}`;
     if (!mountedRef.current || activeBusyRef.current) return null;
     const stored = readPrivate<PendingRequest>(key);
-    if (retry ? activePendingRef.current?.submission.request_id !== expectedId || (stored !== null && stored.submission.request_id !== expectedId)
-      : activePendingRef.current !== null || stored !== null) return null;
+    if (retry) {
+      if (activePendingRef.current?.submission.request_id !== expectedId || (stored !== null && stored.submission.request_id !== expectedId)) return null;
+    } else {
+      if (activePendingRef.current !== null || stored !== null) return null;
+      try { writePrivate(key, command); }
+      catch (e) {
+        if (mountedRef.current) setError(`${describeError(e)} Could not save request before sending. Nothing was sent.`);
+        return null;
+      }
+    }
+    activeBusyRef.current = true;
+    if (!retry) {
+      activePendingRef.current = command;
+      (stop ? setPendingStop : setPending)(command);
+    }
+    setActiveBusy(true); setError("");
+    setNeedsConfirmation(retry);
     const ownsState = () => mountedRef.current && activePendingRef.current?.submission.request_id === expectedId;
     function accept(record: RequestRecord): RequestRecord | null {
       const active = ownsState();
@@ -54,15 +75,9 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       persistIfOwner(null, stop, expectedId);
       return active ? record : null;
     }
-    activeBusyRef.current = true;
-    activePendingRef.current = command;
     const path = { project_id: projectId, request_id: expectedId };
     let stage: "lookup" | "submit" | "confirm" = "submit";
     try {
-      writePrivate(key, command);
-      setActiveBusy(true); setError("");
-      (stop ? setPendingStop : setPending)(command);
-      setNeedsConfirmation(retry);
       if (retry || command.acknowledged) {
         stage = "lookup";
         const lookup = await api.call("getRequest", { path }).then(record => ({ record })).catch(e => {
@@ -74,7 +89,8 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       stage = "submit";
       if (command.context) {
         await api.call("captureContext", { path: { project_id: projectId }, body: command.context, idempotencyKey: command.context.context_id });
-        writePrivate(`context.${projectId}.${command.context.context_id}`, command.context);
+        try { writePrivate(`context.${projectId}.${command.context.context_id}`, command.context); }
+        catch { /* The command already retains the captured context. */ }
       }
       await api.call("submitRequest", { path: { project_id: projectId }, body: command.submission, idempotencyKey: command.submission.request_id });
       stage = "confirm";
