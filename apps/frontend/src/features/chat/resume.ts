@@ -1,16 +1,29 @@
 import { ApiError, type ApiClient, type Event, type ProjectSnapshot, type RequestRecord, type ResumeCommand, type ResumeOperationStatus, type WorkRecord } from "../../api";
 
 export function heldRequestIds(snapshot: ProjectSnapshot | null, requests: RequestRecord[]): Set<string> {
-  return new Set([
-    ...(snapshot?.held_requests ?? []).map(request => request.request_id),
-    ...requests.filter(request => request.receipt.state === "held").map(request => request.request_id),
-  ]);
+  const latest = new Map(requests.map(request => [request.request_id, request]));
+  const ids = new Set<string>();
+  for (const request of snapshot?.held_requests ?? []) {
+    const current = latest.get(request.request_id);
+    if (!current || current.receipt.state_revision < request.receipt.state_revision) ids.add(request.request_id);
+  }
+  for (const request of requests) {
+    if (request.receipt.state === "held") ids.add(request.request_id);
+  }
+  return ids;
+}
+
+export function isAutoReleasingWork(snapshot: ProjectSnapshot | null, requests: RequestRecord[], autoReleasingRequestId: string | null): boolean {
+  if (!snapshot || !autoReleasingRequestId || !snapshot.active_work || snapshot.active_work.state !== "running") return false;
+  const request = requests.find(r => r.request_id === autoReleasingRequestId);
+  return request?.receipt.work_id === snapshot.active_work.work_id;
 }
 
 export function isIdleAutoReleaseReady(snapshot: ProjectSnapshot | null, requests: RequestRecord[], events: Event[], autoReleasingRequestId: string | null = null): boolean {
   return snapshot !== null && snapshot.execution?.fenced === true
     && (snapshot.execution.hold_reason_code ?? "awaiting_resume") === "awaiting_resume"
-    && snapshot.active_work === null && snapshot.pending_decisions.length === 0
+    && (snapshot.active_work === null || isAutoReleasingWork(snapshot, requests, autoReleasingRequestId))
+    && snapshot.pending_decisions.length === 0
     && !requests.some(r => r.submission.type === "stop" && r.receipt.state === "outcome_uncertain")
     && resumableWork(snapshot, events).length === 0
     && ![...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId);

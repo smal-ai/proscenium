@@ -7,7 +7,7 @@ import { DecisionCard } from "./DecisionCard";
 import { ContextPreview } from "./ContextPreview";
 import { Conversation } from "./Conversation";
 import type { useRequestComposer } from "./useRequestComposer";
-import { awaitResume, heldRequestIds, isIdleAutoReleaseReady, resumableWork, resumeCommand } from "./resume";
+import { awaitResume, heldRequestIds, isAutoReleasingWork, isIdleAutoReleaseReady, resumableWork, resumeCommand } from "./resume";
 import { useChatScroll } from "./useChatScroll";
 import { ComposerPanel, JobList, jobsBadgeState } from "./ComposerPanel";
 import { AssistantStatus } from "./AssistantStatus";
@@ -43,7 +43,8 @@ export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests:
   if (uncertainStop || resumableCount > 0 || (work && ["stopped", "awaiting_resume", "outcome_uncertain", "failed"].includes(work.state))) return true;
   if (["queue_paused", "work_stopped", "resume_pending"].includes(reason ?? "") || (execution?.queue_released === false && !execution.fenced)) return true;
   if (execution?.fenced) {
-    if (work && ["running", "awaiting_user"].includes(work.state)) return true;
+    if (work && ["running", "awaiting_user"].includes(work.state)
+      && !((reason ?? "awaiting_resume") === "awaiting_resume" && isAutoReleasingWork(snapshot, requests, autoReleasingRequestId))) return true;
     if (reason && !["awaiting_resume", "stop_requested", "active_work_running", "awaiting_user"].includes(reason)) return true;
   }
   return Boolean(execution?.fenced
@@ -59,6 +60,15 @@ export interface ChatPanelProps {
   items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; seedIntent?: ComposerSeedIntent | null;
   hydrated?: boolean; connection?: string; showHeaderStatus?: boolean; onInspectArtifact?: (artifact: Artifact) => void;
 }
+
+export function shouldShowPendingRequestCard(composer: Pick<ChatPanelProps["composer"], "pending" | "busy"> & { pendingNeedsConfirmation?: boolean }): boolean {
+  return Boolean(composer.pending && (composer.pendingNeedsConfirmation ?? !composer.busy));
+}
+
+export function shouldShowPendingStopCard(composer: Pick<ChatPanelProps["composer"], "pendingStop" | "stopping"> & { pendingStopNeedsConfirmation?: boolean }): boolean {
+  return Boolean(composer.pendingStop && (composer.pendingStopNeedsConfirmation ?? !composer.stopping));
+}
+
 export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, onRefresh, items, retainedArtifacts = [], seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact }: ChatPanelProps) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
@@ -71,7 +81,8 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
   const [targetWork, setTargetWork] = useState("");
   const [resumeWorkId, setResumeWorkId] = useState("");
   const [pendingResume, setPendingResume] = useState<ResumeCommand | null>(() => readPrivate(`command.resume.${projectId}`));
-  const [autoRelease, setAutoRelease] = useState<{ phase: "submitting" } | { phase: "held"; requestId: string } | null>(null);
+  const [autoRelease, setAutoRelease] = useState<{ phase: "submitting" | "settling"; requestId: string } | null>(null);
+  const trackedAutoReleaseId = useRef<string | null>(null);
   const [error, setError] = useState("");
   const [resuming, setResuming] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -109,28 +120,35 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     if (!isRenderPassStreamArtifact(summary) && (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && summary.published_versions.length === 0 && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id))))) renderedOutputIds.add(summary.artifact.artifact_id);
   }
   const resumable = resumableWork(snapshot, events);
-  const suppressingAutoRelease = autoRelease !== null;
-  const autoReleasingRequestId = autoRelease?.phase === "held" ? autoRelease.requestId
-    : autoRelease?.phase === "submitting" ? composer.pending?.submission.request_id ?? null : null;
+  const pendingSubmission = composer.pending?.submission;
+  const externalAutoReleaseId = autoRelease === null && composer.busy && !composer.pendingNeedsConfirmation
+    && pendingSubmission?.type === "queue" && pendingSubmission.request_id !== trackedAutoReleaseId.current
+    && isIdleAutoReleaseReady(snapshot, requests, events, pendingSubmission.request_id) ? pendingSubmission.request_id : null;
+  const trackedRequestId = autoRelease?.requestId ?? null;
+  const autoReleasingRequestId = trackedRequestId ?? externalAutoReleaseId;
   const statusProps = { snapshot, requests, events, jobs, hydrated, connection, submitting: composer.busy || preparing, stopping: composer.stopping, autoReleasingRequestId };
   useEffect(() => {
-    if (!suppressingAutoRelease) return;
-    // Absence alone is not settlement: submit() can return before the list refresh arrives.
+    if (!externalAutoReleaseId) return;
+    // Do not latch the same submission again if it outlasts the deadline.
+    trackedAutoReleaseId.current = externalAutoReleaseId;
+    setAutoRelease({ phase: "settling", requestId: externalAutoReleaseId });
+  }, [externalAutoReleaseId]);
+  useEffect(() => {
+    if (!trackedRequestId) return;
+    // A progressing receipt may arrive before the snapshot clears the fence.
     if (snapshot?.project.project_id !== projectId || snapshot.project.state === "inactive" || !snapshot.execution?.fenced
       || (snapshot.execution.hold_reason_code ?? "awaiting_resume") !== "awaiting_resume"
-      || (autoReleasingRequestId !== null && (
-        [...heldRequestIds(snapshot, requests)].some(id => id !== autoReleasingRequestId)
-        || requests.some(request => request.request_id === autoReleasingRequestId && request.receipt.state !== "held")
-      ))) {
+      || [...heldRequestIds(snapshot, requests)].some(id => id !== trackedRequestId)
+      || requests.some(request => request.request_id === trackedRequestId && ["cancelled", "failed", "rejected", "outcome_uncertain"].includes(request.receipt.state))) {
       setAutoRelease(null);
     }
-  }, [suppressingAutoRelease, autoReleasingRequestId, projectId, snapshot, requests]);
+  }, [trackedRequestId, projectId, snapshot, requests]);
   useEffect(() => {
-    if (!suppressingAutoRelease) return;
-    // The deadline covers both the submission and the held receipt, even if the ACK never arrives.
-    const timeout = window.setTimeout(() => setAutoRelease(null), AUTO_RELEASE_VISIBILITY_TIMEOUT_MS);
+    if (!trackedRequestId) return;
+    // Keep a single deadline across submission and settlement, even if the ACK never arrives.
+    const timeout = window.setTimeout(() => setAutoRelease(current => current?.requestId === trackedRequestId ? null : current), AUTO_RELEASE_VISIBILITY_TIMEOUT_MS);
     return () => window.clearTimeout(timeout);
-  }, [suppressingAutoRelease]);
+  }, [trackedRequestId]);
   const chosenResumeWork = resumable.length === 1 ? resumable[0] : resumable.find(record => record.work_id === (resumeWorkId || work?.work_id));
   const canReleaseQueue = !uncertainStop && (!work || ["completed", "failed", "stopped"].includes(work.state));
   const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>(() => uncertainStop ? "reconcile_only" : work?.state === "awaiting_resume" && chosenResumeWork ? "continue_work" : canReleaseQueue ? "release_held_queue" : "reconcile_only");
@@ -219,6 +237,7 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     if (preparingLatch.current || composer.busy || composer.pending || uploads.length || !draft.trim()) return;
     if (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId)) { setError("Steer is unavailable for this work. Switch to Queue deliberately to send a new request."); return; }
     preparingLatch.current = true; setPreparing(true); setError("");
+    const requestId = id();
     const text = draft;
     const submittedMode = mode;
     const autoReleasing = submittedMode === "queue" && isIdleAutoReleaseReady(snapshot, requests, events);
@@ -232,15 +251,18 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
     try {
       const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments, items: catalogue }, prepareContext);
       if (submittedMode === "steer" && steerWorkId(snapshotRef.current) !== submittedWorkId) throw new Error("Work is no longer steerable. Your Steer mode and draft are retained. Switch to Queue deliberately.");
-      if (autoReleasing) setAutoRelease({ phase: "submitting" });
-      const submitted = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId);
-      setAutoRelease(current => current?.phase !== "submitting" ? current
-        : submitted?.receipt.state === "held" ? { phase: "held", requestId: submitted.request_id } : null);
+      if (autoReleasing) {
+        trackedAutoReleaseId.current = requestId;
+        setAutoRelease({ phase: "submitting", requestId });
+      }
+      const submitted = await composer.submit(text, context, submittedMode, submittedMode === "steer" ? submittedWorkId : null, profileId, requestId);
+      setAutoRelease(current => current?.phase !== "submitting" || current.requestId !== requestId ? current
+        : submitted ? { phase: "settling", requestId: submitted.request_id } : null);
       if (submitted) {
         if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
         setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
       }
-    } catch (e) { setAutoRelease(current => current?.phase === "submitting" ? null : current); setError(describeError(e)); }
+    } catch (e) { setAutoRelease(current => current?.phase === "submitting" && current.requestId === requestId ? null : current); setError(describeError(e)); }
     finally { preparingLatch.current = false; setPreparing(false); }
   }
   async function resume(original?: ResumeCommand) {
@@ -291,8 +313,8 @@ export function ChatPanel({ api, projectId, snapshot, requests, events, jobs, se
       if (targetOpen && event.key === "Escape" && !event.nativeEvent.isComposing && !event.defaultPrevented) closeTargetPicker();
     }}>
       {(composer.error || error) && <p role="alert">{composer.error || error}</p>}
-      {composer.pending && <div className="retry-card"><strong>Request awaiting confirmation</strong><code>{composer.pending.submission.request_id}</code><p>Its original text and context are frozen. Your draft is retained.</p><button disabled={composer.busy} onClick={() => void composer.retry(false)}>Reconcile original request / retry same ID</button></div>}
-      {composer.pendingStop && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
+      {shouldShowPendingRequestCard(composer) && <div className="retry-card"><strong>Request awaiting confirmation</strong><code>{composer.pending?.submission.request_id}</code><p>Its original text and context are frozen. Your draft is retained.</p><button disabled={composer.busy} onClick={() => void composer.retry(false)}>Reconcile original request / retry same ID</button></div>}
+      {shouldShowPendingStopCard(composer) && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
       {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
       {shouldShowQueueHold(snapshot, mode, requests, events, autoReleasingRequestId) && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
       <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />

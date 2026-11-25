@@ -13,6 +13,8 @@ export interface PendingRequest {
 export function useRequestComposer(api: ApiClient, projectId: string, onAccepted: (record: RequestRecord) => void) {
   const [pending, setPending] = useState<PendingRequest | null>(() => readPrivate(`request.${projectId}`));
   const [pendingStop, setPendingStop] = useState<PendingRequest | null>(() => readPrivate(`stop.${projectId}`));
+  const [pendingNeedsConfirmation, setPendingNeedsConfirmation] = useState(() => Boolean(readPrivate(`request.${projectId}`)));
+  const [pendingStopNeedsConfirmation, setPendingStopNeedsConfirmation] = useState(() => Boolean(readPrivate(`stop.${projectId}`)));
   const [busy, setBusy] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [error, setError] = useState("");
@@ -20,8 +22,12 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
     writePrivate(`${stop ? "stop" : "request"}.${projectId}`, value);
     (stop ? setPendingStop : setPending)(value);
   }
+  function setNeedsConfirmation(value: boolean, stop: boolean) {
+    (stop ? setPendingStopNeedsConfirmation : setPendingNeedsConfirmation)(value);
+  }
   async function send(command: PendingRequest, retry: boolean): Promise<RequestRecord | null> {
     const stop = command.submission.type === "stop";
+    setNeedsConfirmation(retry, stop);
     (stop ? setStopping : setBusy)(true); setError("");
     persist(command, stop);
     const path = { project_id: projectId, request_id: command.submission.request_id };
@@ -29,7 +35,7 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       if (retry || command.acknowledged) {
         try {
           const record = await api.call("getRequest", { path });
-          onAccepted(record); persist(null, stop); return record;
+          onAccepted(record); persist(null, stop); setNeedsConfirmation(false, stop); return record;
         } catch (e) {
           if (!(e instanceof ApiError) || e.status !== 404 || command.acknowledged) throw e;
         }
@@ -41,27 +47,29 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
       await api.call("submitRequest", { path: { project_id: projectId }, body: command.submission, idempotencyKey: command.submission.request_id });
       command = { ...command, acknowledged: true }; persist(command, stop);
       const record = await api.call("getRequest", { path });
-      onAccepted(record); persist(null, stop); return record;
+      onAccepted(record); persist(null, stop); setNeedsConfirmation(false, stop); return record;
     } catch (e) {
       const rejected = !command.acknowledged && e instanceof ApiError &&
         e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429 &&
         e.envelope.error.code !== "idempotency_conflict";
       if (rejected) {
         persist(null, stop);
+        setNeedsConfirmation(false, stop);
         setError(`${describeError(e)} This request was not admitted. Correct the input and submit again.`);
       } else {
+        setNeedsConfirmation(true, stop);
         setError(`${describeError(e)} The original request and captured context are retained. Reconcile before retrying. No prompt is replayed automatically.`);
       }
       return null;
     } finally { (stop ? setStopping : setBusy)(false); }
   }
-  async function submit(text: string, selection: TurnSelection, mode: "queue" | "steer", workId: string | null, profileId: string | null): Promise<RequestRecord | null> {
+  async function submit(text: string, selection: TurnSelection, mode: "queue" | "steer", workId: string | null, profileId: string | null, requestId = id()): Promise<RequestRecord | null> {
     if (pending || busy || !text.trim()) return null;
     if (mode === "steer" && !workId) { setError("Steer requires an explicit active-work target."); return null; }
     const context: ContextSnapshot = {
       ...structuredClone(selection), schema_version: "1.0", context_id: id(), project_id: projectId, captured_at: new Date().toISOString(),
     };
-    const common = { schema_version: "1.0" as const, request_id: id(), project_id: projectId, text, context_id: context.context_id };
+    const common = { schema_version: "1.0" as const, request_id: requestId, project_id: projectId, text, context_id: context.context_id };
     const submission: MessageSubmit = mode === "steer" ? { ...common, type: "steer", target_work_id: workId! } : { ...common, type: "queue", ...(profileId ? { profile_id: profileId } : {}) };
     return send({ submission, context, acknowledged: false }, false);
   }
@@ -69,5 +77,5 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
     if (pendingStop || stopping) return;
     await send({ submission: { schema_version: "1.0", request_id: id(), project_id: projectId, type: "stop", target_work_id: workId }, context: null, acknowledged: false }, false);
   }
-  return { pending, pendingStop, busy, stopping, error, submit, stop, retry: (stop: boolean) => { const command = stop ? pendingStop : pending; return command ? send(command, true) : Promise.resolve(null); } };
+  return { pending, pendingStop, pendingNeedsConfirmation, pendingStopNeedsConfirmation, busy, stopping, error, submit, stop, retry: (stop: boolean) => { const command = stop ? pendingStop : pending; return command ? send(command, true) : Promise.resolve(null); } };
 }

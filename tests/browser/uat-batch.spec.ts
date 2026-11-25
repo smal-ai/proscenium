@@ -135,6 +135,79 @@ test("Composer Enter submits Queue and Steer but respects empty and unselected t
   studio.assertHermetic();
 });
 
+for (const stop of [false, true]) {
+  test(`Healthy ${stop ? "Stop" : "Queue"} hides confirmation until an uncertain submission`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    const initial = deferred(), failure = deferred(), retry = deferred();
+    if (stop) {
+      studio.snapshot.active_work = work();
+      studio.snapshot.execution!.can_stop_work_id = "work";
+    }
+    await studio.install({ savedLayout: true, routes: [
+      { method: "POST", path: `${base}/requests`, handler: async route => {
+        const body = route.request().postDataJSON() as MessageSubmit;
+        studio.submissions.push(body);
+        const record = request(body.request_id, body.type === "stop" ? "" : body.text, "accepted");
+        record.submission = body;
+        record.receipt.type = body.type;
+        studio.requests.push(record);
+        if (studio.submissions.length === 1) {
+          await initial.promise;
+          await route.fulfill({ status: 202, json: record.receipt });
+        } else {
+          await failure.promise;
+          await route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "service_unavailable", message: "Response unavailable", retryable: true, details: {} } } });
+        }
+      } },
+      { method: "GET", path: new RegExp(`${base}/requests/[^/]+$`), handler: async route => {
+        const id = new URL(route.request().url()).pathname.split("/").at(-1);
+        if (id === studio.submissions[1]?.request_id) await retry.promise;
+        await route.fulfill({ json: studio.requests.find(record => record.request_id === id) });
+      } },
+    ] });
+    await studio.open(); await studio.ready();
+    const input = page.getByRole("textbox", { name: "Message Copilot" });
+    const action = page.getByRole("button", { name: stop ? "Stop" : "Queue message", exact: true });
+    const confirmation = page.getByText(`${stop ? "Stop" : "Request"} awaiting confirmation`, { exact: true });
+    const reconcile = page.getByRole("button", { name: stop ? "Reconcile original Stop receipt" : "Reconcile original request / retry same ID" });
+    const storageKey = `proscenium.owner.${stop ? "stop" : "request"}.${projectId}`;
+    const retainedSubmission = () => page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "null")?.submission ?? null, storageKey);
+    if (!stop) await input.fill("Healthy Queue");
+    try {
+      await action.click();
+      await expect.poll(() => studio.submissions.length).toBe(1);
+      await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", stop ? "Stopping…" : "Sending…");
+      expect(await retainedSubmission()).toEqual(studio.submissions[0]);
+      await expect(confirmation).toHaveCount(0);
+      initial.release();
+      await expect.poll(retainedSubmission).toBeNull();
+      await expect(confirmation).toHaveCount(0);
+
+      if (stop) await action.click();
+      else { await input.fill("Uncertain Queue"); await input.press("Enter"); }
+      await expect.poll(() => studio.submissions.length).toBe(2);
+      await expect(confirmation).toHaveCount(0);
+      failure.release();
+      await expect(confirmation).toBeVisible();
+      await expect(reconcile).toBeEnabled();
+      expect(await retainedSubmission()).toEqual(studio.submissions[1]);
+      await page.reload(); await studio.ready();
+      await expect(confirmation).toBeVisible();
+      await reconcile.click();
+      await expect(reconcile).toBeDisabled();
+      await expect(confirmation).toBeVisible();
+      retry.release();
+      await expect(confirmation).toHaveCount(0);
+      expect(await retainedSubmission()).toBeNull();
+      expect(studio.submissions).toHaveLength(2);
+      expect(studio.guard!.calls.filter(call => call.method === "GET" && call.url === `${base}/requests/${studio.submissions[1].request_id}`)).toHaveLength(1);
+    } finally {
+      initial.release(); failure.release(); retry.release();
+    }
+    studio.assertHermetic();
+  });
+}
+
 function questionDecision(): Decision {
   return { schema_version: "1.0", project_id: projectId, decision_id: "question", work_id: "work", kind: "user_input", state: "pending", state_revision: 1, fingerprint: "b".repeat(64), prompt: "Which lighting direction?", options: [] };
 }
@@ -308,6 +381,99 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
   await expect(resume).toBeVisible();
   await expect(banner).toBeVisible();
   await expect(status).toHaveAttribute("aria-label", "Paused");
+  studio.assertHermetic();
+});
+}
+
+for (const external of [false, true]) {
+test(`Idle-restart ${external ? "annotation Queue" : "Composer Queue"} keeps Resume hidden when live dispatch leads the refreshed execution gate`, async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: true, queue_released: false, hold_reason_code: "awaiting_resume" };
+  const ack = deferred(), refresh = deferred();
+  let gateRefresh = false;
+  await studio.install({ catalogue: external, savedLayout: true, routes: [
+    { method: "GET", path: `${base}/snapshot`, handler: async route => {
+      if (gateRefresh) await refresh.promise;
+      await route.fulfill({ json: studio.snapshot });
+    } },
+    { method: "POST", path: `${base}/requests`, handler: async route => {
+      const body = route.request().postDataJSON() as MessageSubmit;
+      studio.submissions.push(body);
+      const held = request(body.request_id, body.type === "stop" ? "" : body.text, "held");
+      held.submission = body;
+      held.receipt = { ...held.receipt, work_id: null, state_revision: 1 };
+      studio.requests = [held];
+      studio.snapshot.held_requests = [held];
+      await ack.promise;
+      await route.fulfill({ status: 202, json: held.receipt });
+    } },
+  ] });
+  await studio.open(); await studio.ready();
+  const input = page.getByRole("textbox", { name: "Message Copilot" });
+  const resume = page.getByRole("region", { name: "Resume Copilot" });
+  const banner = page.locator(".queue-hold");
+  const status = page.locator(".composer-footer .assistant-status");
+  const flashes = await page.locator(".chat-panel").evaluateHandle(panel => {
+    const seen: string[] = [];
+    const watch = () => {
+      for (const node of panel.querySelectorAll(".resume-card, .queue-hold, .composer-footer .status-paused")) {
+        seen.push(node.textContent ?? "");
+      }
+    };
+    new MutationObserver(watch).observe(panel, { subtree: true, childList: true, attributes: true });
+    watch();
+    return seen;
+  });
+  if (external) {
+    await page.locator(".catalogue-item-header").filter({ hasText: "Asset A" }).click();
+    await page.getByRole("button", { name: "Annotate presented frame" }).click();
+    await page.getByRole("textbox", { name: "Feedback" }).fill("Auto-release this turn");
+    await page.getByRole("button", { name: "Save annotation" }).click();
+    await page.getByRole("button", { name: "Queue feedback", exact: true }).click();
+  } else {
+    await input.fill("Auto-release this turn"); await input.press("Enter");
+  }
+  try {
+    await expect.poll(() => studio.submissions.length).toBe(1);
+    await expect(status).toHaveAttribute("aria-label", "Sending…");
+    ack.release();
+    if (external) await expect(page.getByRole("button", { name: "Feedback queued", exact: true })).toBeVisible();
+    else await expect(input).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Cancel held request" })).toBeVisible();
+    await expect(status).toHaveAttribute("aria-label", "Starting…");
+    await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+
+    gateRefresh = true;
+    const previousSnapshotCalls = studio.guard!.calls.filter(call => call.url === `${base}/snapshot`).length;
+    const [held] = studio.requests;
+    const dispatching = { ...held, receipt: { ...held.receipt, state: "dispatching" as const, state_revision: 2, work_id: "work" } };
+    studio.requests = [dispatching];
+    studio.emit("request.state_changed", dispatching);
+    await expect(page.getByRole("button", { name: "Cancel held request" })).toHaveCount(0);
+    await expect(status).toHaveAttribute("aria-label", "Starting…");
+    await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+
+    const running = { ...work(), originating_request_id: held.request_id };
+    studio.emit("work.state_changed", running);
+    await expect.poll(() => studio.guard!.calls.filter(call => call.url === `${base}/snapshot`).length).toBeGreaterThan(previousSnapshotCalls);
+    await expect(page.locator(".copilot-identity small")).toHaveText("running");
+    await expect(status).toHaveAttribute("aria-label", "Starting…");
+    await expect(resume).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+
+    studio.snapshot.active_work = running;
+    studio.snapshot.held_requests = [];
+    studio.snapshot.execution = { ...studio.snapshot.execution!, fenced: false, queue_released: true, hold_reason_code: "active_work_running" };
+  } finally {
+    ack.release(); refresh.release();
+  }
+  await expect(status).toHaveAttribute("aria-label", "Working…");
+  await expect(resume).toHaveCount(0);
+  await expect(banner).toHaveCount(0);
+  expect(await flashes.jsonValue()).toEqual([]);
+  expect(studio.submissions).toHaveLength(1);
   studio.assertHermetic();
 });
 }
