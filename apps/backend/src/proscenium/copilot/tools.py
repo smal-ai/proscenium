@@ -38,6 +38,8 @@ from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 from .workflows import parameters as workflow_parameters
 
+PREPARATION_TOOLS = frozenset({"prepare_image_generation", "prepare_audio_generation"})
+
 # Extension, method, normative input, normative result, capability operation.
 TOOLS = {
     "validate_authored_document": (
@@ -53,6 +55,13 @@ TOOLS = {
         "ImageGenerationPrepare",
         "ImageGenerationPrepared",
         "prepareImageGeneration",
+    ),
+    "prepare_audio_generation": (
+        "audio_preparation",
+        "prepare",
+        "AudioGenerationPrepare",
+        "AudioGenerationPrepared",
+        "prepareAudioGeneration",
     ),
     "checkpoint_sources": (
         "sources",
@@ -294,6 +303,11 @@ SAFE_REASONS = frozenset(
         "Multiple compatible image model tuples exist; configure provider_options.image_recipes",
         "Configure one explicit provider",
         "Image recipe nodes or models are unavailable",
+        "Stable Audio recipe nodes or models are unavailable",
+        "Audio duration is outside the supported bounds for this mode",
+        "Audio generation does not accept reference artefacts",
+        "Invalid Stable Audio graph or model manifest",
+        "Provider returned empty or corrupted audio",
         "Provider catalogue could not be read",
         "Selected image profile requires one exact 512x512 reference",
         "SD-Turbo image recipes require 512x512 and four steps",
@@ -325,7 +339,7 @@ SAFE_REASONS = frozenset(
     }
 )
 ERROR_GUIDANCE = {
-    "corrupt_provider_output": "The provider returned a corrupted raster image. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
+    "corrupt_provider_output": "The provider returned a corrupted raster image or invalid audio. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
     "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
     "scope_denied": "The requested resource or target is outside the active request scope. Check the active project and pinned request target before retrying.",
     "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
@@ -357,13 +371,13 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
     )
     details: dict[str, Any] = {}
     if (
-        name == "prepare_image_generation"
+        name in PREPARATION_TOOLS
         and error.code == "scope_denied"
         and error.message not in SAFE_REASONS
     ):
-        message = "The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on prepare_image_generation, or use an existing published item/slot."
+        message = f"The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on {name}, or use an existing published item/slot."
     if (
-        name in {"prepare_image_generation", "validate_authored_document"}
+        name in (PREPARATION_TOOLS | {"validate_authored_document"})
         and error.code == "invalid_request"
         and error.message not in SAFE_REASONS
     ):
@@ -664,7 +678,7 @@ class Tools:
                     "publish_outputs",
                     "register_artifact",
                     "set_preview_order",
-                    "prepare_image_generation",
+                    *PREPARATION_TOOLS,
                     "validate_authored_document",
                     *READ_TOOLS,
                     *(set(DISCOVERY_READS) - {"search_web"}),
@@ -754,7 +768,7 @@ class Tools:
                 if body.get("project_id", self.project_id) != self.project_id:
                     raise DomainError("scope_denied", 403)
                 body.setdefault("project_id", self.project_id)
-                if name == "prepare_image_generation" and "generation_task_id" not in body:
+                if name in PREPARATION_TOOLS and "generation_task_id" not in body:
                     assert caller.work_id is not None
                     with self.services.registry.project_store(self.project_id).transaction(
                         write=False
@@ -770,9 +784,9 @@ class Tools:
                 function = getattr(service, method, None)
                 if function is None:
                     raise DomainError("capability_unavailable", 501)
-                if name == "prepare_image_generation" and not self.services.extension(
-                    "image_preparation"
-                ).replayable(caller, body):
+                if name in PREPARATION_TOOLS and not self.services.extension(extension).replayable(
+                    caller, body
+                ):
                     self.caller(invocation, name=name, admit=True)
                 result = function(caller, body)
                 if inspect.isawaitable(result):
@@ -786,7 +800,7 @@ class Tools:
             outcome: dict[str, Any] = {}
             if name == "register_artifact":
                 outcome["artifact_ids"] = [result["artifact_id"]]
-            elif name == "prepare_image_generation":
+            elif name in PREPARATION_TOOLS:
                 outcome["artifact_ids"] = [
                     result["workflow_artifact_id"],
                     result["prompt_artifact_id"],

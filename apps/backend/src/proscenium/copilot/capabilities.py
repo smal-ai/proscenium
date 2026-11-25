@@ -16,9 +16,16 @@ from proscenium.previews.journal import (
     UNSUPPORTED_BLENDER_FEATURE_REASON,
     unsupported_blender_features,
 )
-from proscenium.providers import budget3d, hunyuan
+from proscenium.providers import budget3d, hunyuan, stable_audio
 from proscenium.providers.plugins import plugin
-from proscenium.providers.preparation import AMBIGUOUS, bounded_get, compatible_recipes, models
+from proscenium.providers.preparation import (
+    AMBIGUOUS,
+    audio_revision,
+    bounded_get,
+    compatible_audio_recipes,
+    compatible_recipes,
+    models,
+)
 from proscenium.sources.common import git, relative
 from proscenium.sources.read_only import read_authored_json, read_closure_files
 
@@ -39,6 +46,7 @@ RECOMMENDED_TOOLS = frozenset(
         "web_fetch",
         "validate_authored_document",
         "prepare_image_generation",
+        "prepare_audio_generation",
         "checkpoint_sources",
         "publish_outputs",
         "request_preview",
@@ -86,6 +94,8 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                     or plugin("image_to_3d").revision
                 )
                 if capability == "image_to_3d"
+                else audio_revision(provider.options, service["provider_id"])
+                if capability == "audio"
                 else None
             )
             row = dict(
@@ -193,6 +203,26 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                         row.update(
                             reason_code="nodes_or_models_missing",
                             summary="Image recipe nodes or models are unavailable",
+                        )
+                elif capability == "audio":
+                    recipes = compatible_audio_recipes(provider, service["provider_id"], catalog)
+                    if recipes:
+                        selected = list(
+                            dict.fromkeys(
+                                model for recipe in recipes for model in recipe["model_ids"]
+                            )
+                        )
+                        modes = ", ".join(recipe["mode"] for recipe in recipes)
+                        row.update(
+                            status="ready",
+                            selected_models=selected,
+                            compatible_models=sorted(selected),
+                            default_steps=recipes[0]["steps"],
+                            summary=f"Stable Audio preflight passed for {modes}. Inference remains untested",
+                        )
+                    else:
+                        row.update(
+                            reason_code="nodes_or_models_missing", summary=stable_audio.UNAVAILABLE
                         )
                 else:
                     assert revision is not None

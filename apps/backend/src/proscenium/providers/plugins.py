@@ -8,7 +8,7 @@ from typing import Any, Protocol
 from PIL import Image
 
 from proscenium.api.errors import DomainError
-from proscenium.providers import budget3d, hunyuan, sd_turbo, sd_turbo_fp16
+from proscenium.providers import budget3d, hunyuan, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import bind_graph, preflight
 from proscenium.providers.mesh import inspect_glb_bytes
 
@@ -25,6 +25,7 @@ class ArtifactFormat:
 
 IMAGE = ArtifactFormat("image", "image/png", "png", "concept")
 GLB = ArtifactFormat("source_blob", "model/gltf-binary", "glb", "concept")
+AUDIO = ArtifactFormat("audio", "audio/flac", "flac", "concept")
 METADATA = ArtifactFormat("document", "application/json", "json", "metadata")
 
 
@@ -127,6 +128,31 @@ class ImagePlugin:
                             "Provider returned a corrupted scanline or noise image",
                         )
         return {"sha256_verified_during_registration": True}
+
+
+class StableAudio3Plugin:
+    capability = "audio"
+    revision = stable_audio.REVISION
+    job_kind = "audio_generation"
+    output_format = AUDIO
+    maximum_output_bytes = 256 * 1024**2
+    expected_model_hashes: dict[str, str] = {}
+
+    def bind_graph(self, workflow, prompt, seed, references, models):
+        return stable_audio.bind(workflow, prompt, seed, references, models)
+
+    def preflight(self, graph, catalog, models):
+        preflight(graph, catalog, models)
+
+    def output_descriptors(self, history):
+        return [
+            item
+            for output in history.get("outputs", {}).values()
+            for item in output.get("audio", [])
+        ]
+
+    def inspect_output(self, data, maximum_pixels):
+        return stable_audio.inspect_flac_bytes(data)
 
 
 class Budget3DPlugin:
@@ -245,6 +271,7 @@ class SDTurboFP16Img2ImgPlugin(SDTurboImg2ImgPlugin):
 PLUGINS: dict[str, GenerationCapabilityPlugin] = {
     "image": ImagePlugin(),
     "image_to_3d": Budget3DPlugin(),
+    "audio": StableAudio3Plugin(),
 }
 REGISTRY = MappingProxyType(PLUGINS)
 IMAGE_REVISIONS = MappingProxyType(
@@ -263,12 +290,17 @@ MESH_REVISIONS = MappingProxyType(
 )
 
 
+AUDIO_REVISIONS = MappingProxyType({stable_audio.REVISION: PLUGINS["audio"]})
+
+
 def plugin(capability: str, revision: str | None = None) -> GenerationCapabilityPlugin:
     result = (
         IMAGE_REVISIONS.get(revision)
         if capability == "image" and revision is not None
         else MESH_REVISIONS.get(revision)
         if capability == "image_to_3d" and revision is not None
+        else AUDIO_REVISIONS.get(revision)
+        if capability == "audio" and revision is not None
         else REGISTRY.get(capability)
     )
     if result is None or (revision is not None and revision != result.revision):

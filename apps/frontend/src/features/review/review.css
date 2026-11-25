@@ -132,3 +132,5 @@
 .spatial-fallback-banner{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:8px;background:#1d151aee;border:1px solid #7f3b4a;color:#fce7eb;font-size:12px}
 .spatial-fallback-confirm{display:inline-flex;flex-direction:row!important;align-items:center;gap:8px;margin:2px 0 0!important;color:#fafafa;cursor:pointer}
 .spatial-fallback-confirm input{width:auto!important;margin:0}
+
+.review-audio{display:grid;place-items:center;flex:1;min-height:0;padding:16px;background:#09090b}.review-audio audio{width:min(100%,520px)}

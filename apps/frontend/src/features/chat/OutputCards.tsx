@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ApiClient, Artifact, RetainedArtifactSummary } from "../../api";
 import { describeError } from "../../app/storage";
+import { isReadyAudio } from "../retainedAudio";
 import { artifactUrl } from "./ContextPreview";
 
 const INLINE_CARD_LIMIT = 3;
@@ -47,11 +48,13 @@ function OutputCard({ api, projectId, artifactId, known, onInspectArtifact }: { 
     return () => { disposed = true; };
   }, [api, projectId, artifactId, known]);
   const preview = artifact?.state === "ready" && artifact.kind === "image" && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type);
+  const audio = artifact && isReadyAudio(artifact);
   return <figure className="retained-output-card">
     {preview && !previewUnavailable && (onInspectArtifact ? <button type="button" className="retained-output-preview" aria-label={`Inspect retained ${artifact.purpose} output ${artifactId}`} onClick={() => onInspectArtifact(artifact)}><img loading="lazy" src={artifactUrl(projectId, artifactId)} alt={`Retained ${artifact.purpose} output`} onError={() => setPreviewUnavailable(true)} /></button> : <img loading="lazy" src={artifactUrl(projectId, artifactId)} alt={`Retained ${artifact.purpose} output`} onError={() => setPreviewUnavailable(true)} />)}
+    {audio && <audio controls preload="metadata" src={artifactUrl(projectId, artifactId)} aria-label={`Retained audio ${artifactId}`} />}
     <figcaption><strong>{artifact ? `${artifact.kind} · ${artifact.purpose}` : "Retained output"}</strong><code title={artifactId}>{artifactId}</code>
       {previewUnavailable && <small>Image preview unavailable. Inspect the retained output metadata before retrying.</small>}
-      {artifact?.state === "ready" ? <><a href={artifactUrl(projectId, artifactId)} download={artifactId}>Download output</a>{preview && onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect image</button>}</> : <small>{error || (artifact ? `Output ${artifact.state}` : "Checking output metadata…")}</small>}
+      {artifact?.state === "ready" ? <><a href={artifactUrl(projectId, artifactId)} download={artifactId}>Download output</a>{(preview || audio) && onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect {audio ? "audio" : "image"}</button>}</> : <small>{error || (artifact ? `Output ${artifact.state}` : "Checking output metadata…")}</small>}
     </figcaption>
   </figure>;
 }

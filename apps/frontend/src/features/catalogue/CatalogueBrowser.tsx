@@ -1,3 +1,4 @@
+import { isReadyAudio } from "../retainedAudio";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Ellipsis, Plus } from "lucide-react";
 import type { Provenance, RetainedArtifactSummary, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
@@ -80,7 +81,7 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
     if (retainedArtifacts !== undefined) return;
     const controller = new AbortController();
     setRetainedError("");
-    void allPages(cursor => api.call("listRetainedArtifacts", { path: { project_id: projectId }, query: { cursor, limit: 100, kind: "image" }, signal: controller.signal }))
+    void allPages(cursor => api.call("listRetainedArtifacts", { path: { project_id: projectId }, query: { cursor, limit: 100 }, signal: controller.signal }))
       .then(records => { if (!controller.signal.aborted) setRetained(records); })
       .catch(cause => {
         if (controller.signal.aborted || (cause instanceof ApiError && [404, 501].includes(cause.status))) return;
@@ -193,11 +194,10 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   </div>;
   const retainedList = (retainedArtifacts ?? retained).filter(({artifact, job_id, published_versions = []}) =>
     artifact.project_id === projectId
-    && artifact.kind === "image"
-    && artifact.state === "ready"
+    && (isReadyAudio(artifact) || (artifact.kind === "image" && artifact.state === "ready"
+      && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type)))
     && artifact.purpose !== "draft_motion"
-    && !(Boolean(job_id) && published_versions.length > 0 && artifact.artifact_id.startsWith("preview-"))
-    && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type));
+    && !(Boolean(job_id) && published_versions.length > 0 && artifact.artifact_id.startsWith("preview-")));
   const showRetained = retainedExpanded ?? (items.length === 0 || retainedList.length > 0);
 
   return <section className="review-catalogue" aria-label="Version catalogue">
@@ -279,17 +279,19 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
         </section>;
       })}
       <section className="retained-outputs" aria-label="Retained outputs">
-        <h3><button className="retained-outputs-toggle" aria-expanded={showRetained} onClick={() => setRetainedExpanded(!showRetained)}>{showRetained ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>} Retained images ({retainedList.length})</button></h3>
-        {showRetained && <><p>Ready images, separate from published catalogue items. Concept images are not 3D meshes.</p>
+        <h3><button className="retained-outputs-toggle" aria-expanded={showRetained} onClick={() => setRetainedExpanded(!showRetained)}>{showRetained ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>} Retained media ({retainedList.length})</button></h3>
+        {showRetained && <><p>Ready images and audio, separate from published catalogue items. Concept images are not 3D meshes.</p>
           {retainedList.map(({artifact, published_versions, attribution_status}) => {
             const url = mediaUrl(projectId, artifact.artifact_id);
-            const preview = <img src={url} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }}/>;
+            const audio = isReadyAudio(artifact);
+            const label = audio ? "audio" : "image";
+            const preview = !audio && <img src={url} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }}/>;
             return <article key={artifact.artifact_id} className="retained-output">
-              <strong>{artifact.purpose} image</strong>
+              <strong>{artifact.purpose} {label}</strong>
               <small>{published_versions.length ? `Also published · ${published_versions.length} version(s)` : "Unpublished retained media"} · {attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</small>
-              {onInspectArtifact ? <button className="retained-preview" aria-label={`Inspect retained ${artifact.purpose} image ${artifact.artifact_id}`} onClick={() => onInspectArtifact(artifact)}>{preview}</button> : preview}
-              <small>{artifact.dimensions ? `${artifact.dimensions.width} × ${artifact.dimensions.height}` : "Dimensions unrecorded"}</small><code>{artifact.artifact_id}</code>
-              <div className="button-row"><a href={url} download={artifact.artifact_id}>Download image</a>{onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect image</button>}</div>
+              {!audio && onInspectArtifact ? <button className="retained-preview" aria-label={`Inspect retained ${artifact.purpose} image ${artifact.artifact_id}`} onClick={() => onInspectArtifact(artifact)}>{preview}</button> : preview}
+              <small>{artifact.dimensions ? `${artifact.dimensions.width} × ${artifact.dimensions.height}` : audio ? (artifact.duration_seconds === undefined ? "Duration unrecorded" : `${artifact.duration_seconds} s`) : "Dimensions unrecorded"}</small><code>{artifact.artifact_id}</code>
+              <div className="button-row"><a href={url} download={artifact.artifact_id}>Download {label}</a>{onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect {label}</button>}</div>
             </article>;
           })}
         </>}

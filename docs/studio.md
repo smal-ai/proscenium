@@ -104,3 +104,15 @@ Open the separate **References** disclosure to add published versions without ch
 - **Realtime Critic badge:** The **Critic** tab header counts reviews currently awaiting human attention (once per review, regardless of finding count). Routine agent self-checks stay out of **Pending** unless escalated with an explicit question; owner-requested critiques count while processing and while unreviewed findings remain, clearing automatically on zero-defect completion or when you click **Done without changes**.
 - **Pending / All inbox:** Defaults to **Pending**, listing compact review cards newest-first with only the **review name** and **24-hour SAST date/time** (`Date unavailable` when unrecorded).
 - **Critique conversation & anchored actions:** Selecting a card displays the original criteria, any lead escalation question, and atomic **Critic** finding entries with clickable target images and expandable evidence, above an anchored Composer that submits selected revisions against the reviewed target/version via **Queue** or **Steer**.
+
+## Audio and soundtracks
+
+With Stable Audio configured, Copilot can generate music or sound effects through
+`prepare_audio_generation` and `submit_generation`. Use the inline Chat controls to
+listen, **Inspect audio** to see the retained track and its metadata in Review, or
+find the track in the Navigator under **Retained media**.
+
+A published `SequenceMap` with `silent: false` uses ready `audio_tracks` to assemble
+a soundtrack. Tracks can be delayed, trimmed, balanced and faded. Assembly mixes the
+tracks to stereo AAC at 44.1 kHz alongside the mapped H.264 frames. Press Play in
+Review to hear the soundtrack. Existing `silent: true` sequences still export without audio.

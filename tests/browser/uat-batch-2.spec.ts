@@ -1,6 +1,9 @@
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
-import { base, deferred, job, projectId, request, StudioFixture, work } from "./studio-fixture";
-import type { Decision, DecisionAnswer, JobRecord, ShotPlan } from "../../apps/frontend/src/api";
+import { base, deferred, job, projectId, request, retained, StudioFixture, version, work } from "./studio-fixture";
+import type { Artifact, FrameMap, Decision, DecisionAnswer, JobRecord, ShotPlan } from "../../apps/frontend/src/api";
 
 test("pending shell Decision stays above Composer with a long bottom-scrolled Conversation", async ({ page, baseURL }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -947,5 +950,65 @@ test("3D spatial pin resolves multi-primitive & scaled child instances, survives
     derived_from: saved.annotation_id,
   });
 
+  studio.assertHermetic();
+});
+
+test("retained FLAC plays in Chat and Review and the sequence player is unmuted", async ({ page, baseURL }, testInfo) => {
+  const scratch = testInfo.outputPath("audio-fixtures");
+  await mkdir(scratch, { recursive: true });
+  const flacPath = `${scratch}/tone.flac`, videoPath = `${scratch}/sequence.mp4`;
+  let flac: Buffer, video: Buffer;
+  try {
+    const ffmpeg = ["-nostdin", "-v", "error", "-f", "lavfi", "-i"];
+    execFileSync("ffmpeg", [...ffmpeg, "sine=440:sample_rate=44100:duration=1", "-ac", "2", "-c:a", "flac", flacPath], { timeout: 10_000 });
+    execFileSync("ffmpeg", [...ffmpeg, "color=c=blue:s=64x64:r=2:d=1", "-f", "lavfi", "-i", "sine=440:duration=1", "-c:v", "libx264", "-threads", "1", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", videoPath], { timeout: 10_000 });
+    [flac, video] = await Promise.all([readFile(flacPath), readFile(videoPath)]);
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
+  }
+
+  const studio = new StudioFixture(page, baseURL!);
+  await studio.install({ catalogue: true, savedLayout: true });
+  const seq = version("soundtrack", "soundtrack-v1", "Soundtrack sequence", "sequence");
+  seq.artifact_ids = ["muxed-video", "mapped-frames"];
+  studio.versionRecords.push(seq);
+  studio.snapshot.items.push({ schema_version: "1.0", item_id: seq.item_id, project_id: projectId, name: seq.name, kind: "sequence", current_version_id: seq.version_id, selected_version_id: null, state_revision: 1 });
+  const fps = { numerator: 2, denominator: 1 };
+  const frame = (ordinal: number): FrameMap["frames"][number] => ({ sequence_frame: ordinal, contributors: [{ shot_id: null, version_id: "scene-v1", job_id: "render", source_frame: ordinal, weight: { numerator: 1, denominator: 1 } }] });
+  const map: FrameMap = { schema_version: "1.0", project_id: projectId, sequence_version_id: seq.version_id, frame_count: 2, fps, blend_space: "linear_rgb", frames: [frame(1), frame(2)] };
+  function addMedia(id: string, bytes: Buffer, metadata: Partial<Artifact> & Pick<Artifact, "kind" | "media_type">) {
+    const summary = retained(id, "verified");
+    delete summary.artifact.dimensions;
+    Object.assign(summary.artifact, metadata, { bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
+    studio.retained.push(summary);
+    studio.artifactContent.set(id, { bytes, contentType: metadata.media_type });
+  }
+  addMedia("audio-tone", flac, { kind: "audio", media_type: "audio/flac", duration_seconds: 1, sample_rate_hz: 44100, channels: 2 });
+  addMedia("muxed-video", video, { kind: "video", purpose: "final", media_type: "video/mp4", fps, frame_count: 2, dimensions: { width: 64, height: 64 } });
+  addMedia("mapped-frames", Buffer.from(JSON.stringify(map)), { kind: "frame_map", purpose: "metadata", media_type: "application/json" });
+
+  await studio.open(); await studio.ready();
+  studio.emit("tool.completed", { invocation_id: "audio-result", name: "get_job", state: "completed", summary: "Retained score", artifact_ids: ["audio-tone"], model_id: null });
+  const card = page.locator(".retained-output-card").filter({ hasText: "audio-tone" });
+  const inline = card.locator("audio[controls]");
+  await expect(inline).toHaveAttribute("src", `${base}/artifacts/audio-tone/content`);
+  await expect.poll(() => inline.evaluate((audio: HTMLAudioElement) => audio.duration || 0)).toBe(1);
+  await expect(card.getByRole("link", { name: "Download output" })).toBeVisible();
+  await card.getByRole("button", { name: "Inspect audio" }).click();
+  const review = page.locator("main.review-panel");
+  const player = review.locator(".review-audio audio[controls]");
+  await expect(player).toHaveAttribute("aria-label", "Retained audio audio-tone");
+  await player.evaluate((audio: HTMLAudioElement) => audio.play());
+  await expect.poll(() => player.evaluate((audio: HTMLAudioElement) => audio.currentTime)).toBeGreaterThan(0);
+  await expect(review.getByRole("link", { name: "Download audio" })).toBeVisible();
+  for (const chip of ["1 s", "44,100 Hz", "2 channels"]) await expect(review.getByText(chip, { exact: true })).toBeVisible();
+  const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
+  await expect(navigator.locator(".retained-output").filter({ hasText: "audio-tone" }).getByRole("button", { name: "Inspect audio" })).toBeVisible();
+  await navigator.locator(".catalogue-item-header").filter({ hasText: seq.name }).click();
+  await review.getByRole("button", { name: "Animation", exact: true }).click();
+  const sequence = review.locator("video[controls]");
+  await expect(sequence).toHaveJSProperty("muted", false);
+  await expect(sequence).toHaveAttribute("src", `${base}/artifacts/muxed-video/content`);
+  await expect(review.getByText(/Sequence frame .* mapped contributors/)).toBeVisible();
   studio.assertHermetic();
 });

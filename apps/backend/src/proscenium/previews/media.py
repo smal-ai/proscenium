@@ -7,6 +7,7 @@ import signal
 import subprocess
 from fractions import Fraction
 from pathlib import Path
+from typing import Any
 
 from proscenium.api.errors import DomainError
 
@@ -31,7 +32,63 @@ def run(argv: list[str], timeout: int = 60) -> bytes:
         return stdout
 
 
-def encode(root: Path, start: int, count: int, fps: dict, config: dict, target: Path) -> list[str]:
+def audio_filters(tracks: list[dict[str, Any]], video_duration: Fraction) -> str:
+    chains = []
+    for index, track in enumerate(tracks):
+        start = float(track["start_seconds"])
+        trim_start = float(track.get("trim_start_seconds", 0))
+        remaining = float(video_duration) - start
+        duration = min(float(track.get("duration_seconds", remaining)), remaining)
+        source_duration = track.get("source_duration_seconds")
+        effective = (
+            duration
+            if source_duration is None
+            else min(duration, max(0, float(source_duration) - trim_start))
+        )
+        filters = [f"atrim=start={trim_start:.6f}:duration={duration:.6f}", "asetpts=PTS-STARTPTS"]
+        if "gain_db" in track:
+            filters.append(f"volume={float(track['gain_db']):.4f}dB")
+        if fade_in := float(track.get("fade_in_seconds", 0)):
+            filters.append(f"afade=t=in:st=0:d={fade_in:.6f}")
+        if fade_out := float(track.get("fade_out_seconds", 0)):
+            filters.append(f"afade=t=out:st={max(0, effective - fade_out):.6f}:d={fade_out:.6f}")
+        filters.append("aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo")
+        if delay_ms := round(start * 1000):
+            filters.append(f"adelay={delay_ms}|{delay_ms}")
+        chains.append(f"[{index + 1}:a]" + ",".join(filters) + f"[a{index}]")
+    combined = "".join(f"[a{i}]" for i in range(len(tracks)))
+    if len(tracks) > 1:
+        combined += f"amix=inputs={len(tracks)}:duration=longest:normalize=0,"
+    chains.append(combined + f"apad,atrim=0:{float(video_duration):.6f},asetpts=PTS-STARTPTS[aout]")
+    return ";".join(chains)
+
+
+def encode(
+    root: Path,
+    start: int,
+    count: int,
+    fps: dict,
+    config: dict,
+    target: Path,
+    *,
+    audio_tracks: list[dict[str, Any]] | None = None,
+) -> list[str]:
+    audio_inputs: list[str] = []
+    audio_codec: list[str] = []
+    maps = ["-an"]
+    if audio_tracks:
+        for track in audio_tracks:
+            audio_inputs.extend(("-i", str(track["path"])))
+        video_duration = Fraction(count, 1) / Fraction(fps["numerator"], fps["denominator"])
+        maps = [
+            "-filter_complex",
+            audio_filters(audio_tracks, video_duration),
+            "-map",
+            "0:v:0",
+            "-map",
+            "[aout]",
+        ]
+        audio_codec = ["-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2"]
     command = [
         config["ffmpeg"],
         "-nostdin",
@@ -44,9 +101,10 @@ def encode(root: Path, start: int, count: int, fps: dict, config: dict, target: 
         str(start),
         "-i",
         str(root / "frames/%08d.png"),
+        *audio_inputs,
         "-frames:v",
         str(count),
-        "-an",
+        *maps,
         "-c:v",
         "libx264",
         "-threads",
@@ -67,6 +125,7 @@ def encode(root: Path, start: int, count: int, fps: dict, config: dict, target: 
         "0",
         "-flags",
         "+cgop",
+        *audio_codec,
         "-movflags",
         "+faststart",
         "-video_track_timescale",
@@ -81,9 +140,14 @@ def encode(root: Path, start: int, count: int, fps: dict, config: dict, target: 
     return command
 
 
-def verify_video(path: Path, fps: dict, count: int, dimensions: dict, config: dict) -> dict:
+def verify_video(
+    path: Path, fps: dict, count: int, dimensions: dict, config: dict, *, expect_audio: bool = False
+) -> dict:
     return _verify_video(
-        path, config, expected={"fps": fps, "frame_count": count, "dimensions": dimensions}
+        path,
+        config,
+        expected={"fps": fps, "frame_count": count, "dimensions": dimensions},
+        expect_audio=expect_audio,
     )
 
 
@@ -93,7 +157,12 @@ def inspect_video(path: Path, config: dict, *, expected: dict) -> dict:
 
 
 def _verify_video(
-    path: Path, config: dict, *, expected: dict, require_container_count: bool = False
+    path: Path,
+    config: dict,
+    *,
+    expected: dict,
+    require_container_count: bool = False,
+    expect_audio: bool = False,
 ) -> dict:
     probe = json.loads(
         run(
@@ -118,10 +187,30 @@ def _verify_video(
         "major_brand"
     ) in {None, "qt  "}:
         raise DomainError("media_unavailable", 422, "Expected an MP4 container")
-    if len(streams) != 1:
-        raise DomainError("media_unavailable", 422, "Video must be silent")
-    stream = streams[0]
     frames = probe.get("frames", [])
+    if expect_audio:
+        video = [stream for stream in streams if stream.get("codec_type") == "video"]
+        audio = [stream for stream in streams if stream.get("codec_type") == "audio"]
+        if len(streams) != 2 or len(video) != 1 or len(audio) != 1:
+            raise DomainError("media_unavailable", 422, "Expected one video and one audio stream")
+        stream = video[0]
+        frames = [frame for frame in frames if frame.get("media_type") == "video"]
+        try:
+            if (
+                audio[0].get("codec_name") != "aac"
+                or int(audio[0]["sample_rate"]) != 44100
+                or int(audio[0]["channels"]) != 2
+                or Fraction(audio[0]["duration"]) <= 0
+            ):
+                raise ValueError
+        except (KeyError, ValueError, TypeError, ZeroDivisionError) as exc:
+            raise DomainError(
+                "media_unavailable", 422, "Expected positive-duration stereo AAC at 44100 Hz"
+            ) from exc
+    else:
+        if len(streams) != 1:
+            raise DomainError("media_unavailable", 422, "Video must be silent")
+        stream = streams[0]
     try:
         fps = Fraction(stream["avg_frame_rate"])
         nominal_fps = Fraction(stream["r_frame_rate"])
@@ -169,6 +258,7 @@ def _verify_video(
             str(path),
             "-map",
             "0:v:0",
+            *(["-map", "0:a:0"] if expect_audio else []),
             "-f",
             "null",
             "-",

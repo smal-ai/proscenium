@@ -2202,7 +2202,11 @@ def test_prepare_omitted_project_and_task_bound_by_host(runtime, monkeypatch):
 def test_preflight_diagnostics_never_echo_unknown_reasons():
     from proscenium.copilot.tools import ERROR_GUIDANCE, tool_failure
 
-    for name in ("prepare_image_generation", "validate_authored_document"):
+    for name in (
+        "prepare_image_generation",
+        "prepare_audio_generation",
+        "validate_authored_document",
+    ):
         result = tool_failure(DomainError("invalid_request", message="private-provider-body"), name)
         message = json.loads(result.text_result_for_llm)["message"]
         assert "before any external job or inference was submitted" in message
@@ -2240,6 +2244,8 @@ def test_native_lead_specialist_prompt_wiring(runtime, monkeypatch):
         'receipt["source_closure"]',
         "omit project_id and generation_task_id",
         "request_vlm_review",
+        "prepare_audio_generation",
+        "audio-generation",
         "owner-approved findings",
     ):
         assert rule in LEAD_INSTRUCTIONS and rule in SPECIALIST_INSTRUCTIONS

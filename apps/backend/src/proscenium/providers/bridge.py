@@ -27,7 +27,8 @@ def _worker(tx: Transaction, caller: Caller) -> JSON:
         or attempt["job_id"] != caller.job_id
         or attempt["input_digest"] != caller.input_digest
         or attempt["project_id"] != caller.project_id
-        or job["kind"] not in {"image_generation", "mesh_generation", "vlm_review"}
+        or job["kind"]
+        not in {"image_generation", "mesh_generation", "audio_generation", "vlm_review"}
     ):
         raise DomainError("scope_denied", 403)
     return job

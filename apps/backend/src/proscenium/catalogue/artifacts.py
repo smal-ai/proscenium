@@ -24,6 +24,9 @@ from proscenium.sources.common import (
     sha,
 )
 
+AUDIO_MEDIA_TYPES = frozenset({"audio/flac", "audio/wav", "audio/mpeg", "audio/ogg", "audio/mp4"})
+AUDIO_METADATA = frozenset({"duration_seconds", "sample_rate_hz", "channels"})
+
 TYPES = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}
 
 
@@ -149,6 +152,18 @@ class Artifacts:
         derived_from: list[dict[str, Any]] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        metadata = dict(metadata or {})
+        if kind == "audio":
+            if media_type not in AUDIO_MEDIA_TYPES:
+                raise DomainError("unsupported_media_type", 415)
+            if media_type == "audio/flac":
+                from proscenium.providers.stable_audio import inspect_flac_bytes
+
+                inspection = inspect_flac_bytes(data)
+                for key in AUDIO_METADATA:
+                    if metadata.get(key, inspection[key]) != inspection[key]:
+                        raise DomainError("hash_mismatch", 422)
+                    metadata[key] = inspection[key]
         if not data:
             raise DomainError("invalid_request")
         if kind in {"proxy_map", "frame_map"}:
@@ -179,7 +194,10 @@ class Artifacts:
         )
         if dimensions:
             result["dimensions"] = dimensions
-        if set(metadata or {}) - {"fps", "frame_count", "source_version_id", "dimensions"}:
+        if set(metadata) - (
+            {"fps", "frame_count", "source_version_id", "dimensions"}
+            | (AUDIO_METADATA if kind == "audio" else frozenset())
+        ):
             raise ValueError("Trusted media metadata cannot replace immutable byte/identity fields")
         if dimensions and (metadata or {}).get("dimensions", dimensions) != dimensions:
             raise DomainError("hash_mismatch", 422)

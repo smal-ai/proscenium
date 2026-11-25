@@ -1,9 +1,10 @@
-"""Pinned silent sequence assembly. Callable trusted tool, no additional HTTP schema."""
+"""Pinned sequence assembly. Callable trusted tool, no additional HTTP schema."""
 
 import io
 from copy import deepcopy
 from fractions import Fraction
 from pathlib import Path
+from typing import Any
 
 from PIL import Image
 
@@ -11,14 +12,56 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.validation import (
     EXPLICIT_FRAME_MAP_REQUIRED,
+    INVALID_AUDIO_ARTEFACT,
     rational,
     sequence_map,
 )
 from proscenium.contracts import canonical, validate
+from proscenium.providers.stable_audio import inspect_flac_bytes
 from proscenium.sources.common import active, admitted, atomic_bytes, fingerprint
 
 from .journal import atomic, sha
 from .media import encode, verify_video
+
+AUDIO_EXTENSIONS = {
+    "audio/flac": ".flac",
+    "audio/wav": ".wav",
+    "audio/mpeg": ".mp3",
+    "audio/ogg": ".ogg",
+    "audio/mp4": ".m4a",
+}
+
+
+def audio_path(root: Path, row: dict) -> Path:
+    return root / "assembly-inputs" / (row["sha256"] + AUDIO_EXTENSIONS[row["media_type"]])
+
+
+def input_audio(artifacts: Any, project_id: str, sequence: dict) -> list[dict]:
+    result = []
+    for identity in sorted({track["artifact_id"] for track in sequence.get("audio_tracks", [])}):
+        record = artifacts.get(project_id, identity)
+        if (
+            record["kind"] != "audio"
+            or record["state"] != "ready"
+            or record["project_id"] != project_id
+            or record["media_type"] not in AUDIO_EXTENSIONS
+        ):
+            raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT)
+        artifacts.ready_path(project_id, identity)
+        result.append({k: record[k] for k in ("artifact_id", "sha256", "bytes", "media_type")})
+    return result
+
+
+def with_audio(snapshot: dict, artifacts: Any, project_id: str) -> dict:
+    if not snapshot["sequence"]["silent"]:
+        snapshot["input_audio"] = input_audio(artifacts, project_id, snapshot["sequence"])
+    return snapshot
+
+
+def input_ids(snapshot: dict) -> list[str]:
+    return sorted(
+        {row["artifact_id"] for row in snapshot["input_frames"] + snapshot.get("input_audio", [])}
+    )
 
 
 def technical(value: dict) -> dict:
@@ -97,8 +140,8 @@ def admit_assembly(
 ) -> tuple[dict, bool]:
     """Use normative JobAdmission(kind=encode), SequenceMap and full FrameMap only.
 
-    admission.input_digest fingerprints {sequence,frame_map,input_frames}; see prepare().
-    Input artefact IDs must equal the unique pinned source receipt artefacts exactly.
+    admission.input_digest fingerprints the snapshot, including any audio inputs.
+    Input artefact IDs must equal the unique pinned frame and audio artefacts.
     """
     validate("JobAdmission", admission)
     active(service.services, caller, "admitToolJob", admission["project_id"])
@@ -210,9 +253,13 @@ def prepare(
                     )
                 inputs[receipt["artifact_id"]] = receipt
     ordered = [inputs[key] for key in sorted(inputs)]
-    if sorted(admission["input_artifact_ids"]) != sorted(inputs):
+    snapshot = with_audio(
+        {"sequence": sequence, "frame_map": full, "input_frames": ordered},
+        service.artifacts,
+        project_id,
+    )
+    if sorted(admission["input_artifact_ids"]) != input_ids(snapshot):
         raise DomainError("invalid_frame_mapping", 422)
-    snapshot = {"sequence": sequence, "frame_map": full, "input_frames": ordered}
     if admission["input_digest"] != fingerprint(snapshot):
         raise DomainError("hash_mismatch", 422, "Assembly digest does not bind exact contributors")
     dimensions = {tuple(sorted(row["dimensions"].items())) for row in ordered}
@@ -224,7 +271,7 @@ def prepare(
 
 
 def execute(root: Path, task: dict) -> None:
-    """Runs in the detached supervisor from sealed, copied source PNGs only."""
+    """Runs in the detached supervisor from sealed frame and audio files."""
     snapshot = task["assembly"]
     frames = snapshot["input_frames"]
     by_identity = {
@@ -259,8 +306,32 @@ def execute(root: Path, task: dict) -> None:
         atomic_bytes(output_frames / f"{row['sequence_frame']:08d}.png", stream.getvalue())
     fps, count = snapshot["frame_map"]["fps"], snapshot["frame_map"]["frame_count"]
     video = root / "delivery.mp4"
-    command = encode(root, 1, count, fps, task["config"], video)
-    verify_video(video, fps, count, frames[0]["dimensions"], task["config"])
+    sequenced_audio = {}
+    for row in snapshot.get("input_audio", []):
+        path = audio_path(root, row)
+        data = path.read_bytes()
+        if len(data) != row["bytes"] or sha(data) != row["sha256"]:
+            raise ValueError("Pinned assembly audio input changed")
+        identity = row["artifact_id"]
+        duration = (
+            inspect_flac_bytes(data)["duration_seconds"]
+            if row["media_type"] == "audio/flac"
+            else task.get("audio_durations", {}).get(identity)
+        )
+        sequenced_audio[identity] = {"path": path, "source_duration_seconds": duration}
+    tracks = [
+        {**track, **sequenced_audio[track["artifact_id"]]}
+        for track in snapshot["sequence"].get("audio_tracks", [])
+    ]
+    command = encode(root, 1, count, fps, task["config"], video, audio_tracks=tracks)
+    verify_video(
+        video,
+        fps,
+        count,
+        frames[0]["dimensions"],
+        task["config"],
+        expect_audio=not snapshot["sequence"]["silent"],
+    )
     atomic_bytes(root / "frame-map.json", canonical(snapshot["frame_map"]))
     manifest = {
         "input_digest": task["input_digest"],
@@ -270,5 +341,7 @@ def execute(root: Path, task: dict) -> None:
         "input_frames": frames,
         "encode_argv": command,
     }
+    if "input_audio" in snapshot:
+        manifest["input_audio"] = snapshot["input_audio"]
     atomic(root / "assembly-manifest.json", manifest)
     atomic(root / "assembly-ready.json", {"complete": True})

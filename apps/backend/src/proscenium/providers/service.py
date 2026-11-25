@@ -21,9 +21,10 @@ from proscenium.db import Transaction
 from proscenium.db.paths import project_path
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
-from proscenium.providers import klein, sd_turbo, sd_turbo_fp16
+from proscenium.providers import klein, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
+from proscenium.providers.preparation import audio_revision, validate_recipes
 from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.providers.vlm import (
     DEFAULT_VLM_MAX_TOKENS,
@@ -37,6 +38,7 @@ from proscenium.reviews.references import References
 from proscenium.services import Services
 
 JSON = dict[str, Any]
+GENERATION_KINDS = frozenset({"image_generation", "mesh_generation", "audio_generation"})
 Registrar = Callable[[Caller, JSON], JSON]
 REVIEWABLE_IMAGE_PURPOSES = frozenset(
     {"concept", "reference", "keyframe", "draft_motion", "inspection", "final"}
@@ -145,6 +147,8 @@ class ProviderService:
             "image_recipes",
             "mesh_profiles",
             "mesh_recipes",
+            "audio_profiles",
+            "audio_recipes",
         }
         if set(self.options) - allowed:
             raise ValueError(
@@ -192,8 +196,6 @@ class ProviderService:
             if not isinstance(revision, str):
                 raise ValueError("mesh profile revision must be a string")
             plugin("image_to_3d", revision)
-        from .preparation import validate_recipes
-
         validate_recipes(self.options)
 
     @property
@@ -287,6 +289,8 @@ class ProviderService:
                 )
             )
             if request["capability"] == "image_to_3d"
+            else audio_revision(self.options, request["provider_id"])
+            if request["capability"] == "audio"
             else None
         )
         if prepared:
@@ -309,6 +313,8 @@ class ProviderService:
             raise DomainError("invalid_request")
         references: dict[str, JSON] = {}
         reference_ids = request["input_artifact_ids"]
+        if capability.capability == "audio" and reference_ids:
+            raise DomainError("invalid_request", message=stable_audio.NO_REFERENCES)
         if len(set(reference_ids)) != len(reference_ids):
             raise DomainError("invalid_request", message="Duplicate conditioning image")
         if (
@@ -769,17 +775,20 @@ class ProviderService:
         artifacts: list[str] = []
         inspections = []
         for item in capability.output_descriptors(history):
-            data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
             try:
+                data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
                 inspection = capability.inspect_output(
                     data, self.services.settings.upload_max_pixels
                 )
             except DomainError as exc:
-                if exc.code != "corrupt_provider_output":
+                invalid_audio = (
+                    capability.capability == "audio" and exc.code == "unsupported_media_type"
+                )
+                if exc.code != "corrupt_provider_output" and not invalid_audio:
                     raise
                 execution["phase"] = "failed"
                 self.execution(job["project_id"], job["job_id"], execution)
-                return self.update(job, "failed", error_code="corrupt_provider_output")
+                return self.update(job, "failed", error_code=exc.code)
             artifacts.append(
                 self._register(
                     job,
@@ -815,7 +824,7 @@ class ProviderService:
         if frozen is None:
             # Compatibility for accepted pre-plugin IMAGE admissions only. Never infer a mesh revision.
             if inputs["request"]["capability"] != "image":
-                raise DomainError("capability_unavailable", 501, "Missing frozen mesh plugin")
+                raise DomainError("capability_unavailable", 501, "Missing frozen generation plugin")
             return plugin("image", "comfy-image-1")
         if frozen["capability"] != inputs["request"]["capability"]:
             raise DomainError("source_conflict", 409)
@@ -1153,7 +1162,7 @@ class ProviderService:
                     check_storage(
                         store.path.parent, self.services.settings.free_space_reserve_bytes
                     )
-                    if job["kind"] in {"image_generation", "mesh_generation"}:
+                    if job["kind"] in GENERATION_KINDS:
                         result = self._generation(job, inputs, execution)
                     else:
                         raise DomainError("scope_denied", 403)
@@ -1171,7 +1180,7 @@ class ProviderService:
                     execution = self.execution(project_id, job["job_id"])
                     uncertain = execution.get("phase") == "submitting"
                     code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
-                    if job["kind"] in {"image_generation", "mesh_generation"} and not uncertain:
+                    if job["kind"] in GENERATION_KINDS and not uncertain:
                         self._settle(job, executed=False)
                         if execution.get("phase") == "preparing":
                             self._release(job)

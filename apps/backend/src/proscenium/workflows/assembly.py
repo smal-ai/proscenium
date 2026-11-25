@@ -5,7 +5,7 @@ from typing import Any
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import validate
-from proscenium.previews.assembly import expand, technical
+from proscenium.previews.assembly import expand, input_ids, technical, with_audio
 from proscenium.services import Services
 from proscenium.sources.common import fingerprint
 
@@ -74,6 +74,7 @@ def prepared(services: Services, caller: Caller, body: dict[str, Any]) -> tuple[
         frame_map=full,
         input_frames=[inputs[key] for key in sorted(inputs)],
     )
+    with_audio(snapshot, previews.artifacts, project_id)
     admission = dict(
         schema_version="1.0",
         operation_id=body["operation_id"],
@@ -82,7 +83,7 @@ def prepared(services: Services, caller: Caller, body: dict[str, Any]) -> tuple[
         kind="encode",
         target=dict(target_id=version["item_id"], version=body["version"], shot_id=None),
         input_digest=fingerprint(snapshot),
-        input_artifact_ids=sorted(inputs),
+        input_artifact_ids=input_ids(snapshot),
         execution_profile_id=body["execution_profile_id"],
     )
     validate("JobAdmission", admission)
