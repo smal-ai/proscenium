@@ -520,11 +520,29 @@ def runtime(tmp_path):
 
 
 def invoke(tools, name=NAME, arguments=None):
+    args = QUERY if arguments is None else arguments
+    call_id = TOOL
+    if name != NAME or args != QUERY:
+        call_id = f"{name}-call"
+        inv_id = key(SESSION, "tool", call_id)
+        with tools.services.registry.project_store(PROJECT).transaction() as tx:
+            if tx.get("invocations", inv_id, required=False) is None:
+                tx.put(
+                    "invocations",
+                    inv_id,
+                    dict(
+                        tx.require("invocations", INVOCATION),
+                        invocation_id=inv_id,
+                        native_id=call_id,
+                        name=name,
+                        arguments_sha256=hashlib.sha256(canonical(args)).hexdigest(),
+                    ),
+                )
     invocation = ToolInvocation(
         session_id=SESSION,
-        tool_call_id=TOOL,
+        tool_call_id=call_id,
         tool_name=name,
-        arguments=QUERY if arguments is None else arguments,
+        arguments=args,
         agent_id=None,
     )
     result = asyncio.run(tools.invoke(name, invocation))

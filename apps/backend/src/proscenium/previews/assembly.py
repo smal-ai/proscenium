@@ -10,7 +10,6 @@ from PIL import Image
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.validation import (
-    DISTINCT_DISSOLVE_SOURCES,
     EXPLICIT_FRAME_MAP_REQUIRED,
     rational,
     sequence_map,
@@ -176,20 +175,6 @@ def prepare(
     if frame_map is None and maps:
         frame_map = next(iter(maps.values()))
     full = expand(sequence, frame_map)
-    for entry in sequence["entries"]:
-        if (
-            entry["transform"] == "transition"
-            and len(
-                {
-                    c["shot_id"]
-                    if c["shot_id"] is not None
-                    else ("scene", c["version_id"], c.get("job_id"))
-                    for c in entry["contributors"]
-                }
-            )
-            < 2
-        ):
-            raise DomainError("invalid_frame_mapping", 422, DISTINCT_DISSOLVE_SOURCES)
     if any(value != full for value in maps.values()):
         raise DomainError("invalid_frame_mapping", 422)
     local = deepcopy(sequence)

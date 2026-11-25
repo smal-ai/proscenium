@@ -502,19 +502,32 @@ def tool_schema(name: str) -> dict[str, Any]:
     return root
 
 
+def _matches_invocation(record: dict[str, Any], invocation: ToolInvocation, name: str) -> bool:
+    if (
+        record.get("agent_id") != invocation.agent_id
+        or record.get("session_id") != invocation.session_id
+        or record.get("name") != name
+        or (invocation.tool_name and invocation.tool_name != name)
+        or not isinstance(invocation.arguments, dict)
+    ):
+        return False
+    try:
+        args_sha = hashlib.sha256(canonical(invocation.arguments)).hexdigest()
+    except (ValueError, TypeError):
+        return False
+    return record.get("arguments_sha256") == args_sha
+
+
 class Tools:
     def __init__(self, services: Services, state: State, project_id: str):
         self.services, self.state, self.project_id = services, state, project_id
 
-    def caller(self, invocation: ToolInvocation, *, admit: bool = True) -> Caller:
+    def caller(self, invocation: ToolInvocation, *, name: str, admit: bool = True) -> Caller:
         with self.services.registry.project_store(self.project_id).transaction(write=False) as tx:
             record = tx.require(
                 "invocations", key(invocation.session_id, "tool", invocation.tool_call_id)
             )
-            if (
-                record["agent_id"] != invocation.agent_id
-                or record["session_id"] != invocation.session_id
-            ):
+            if not _matches_invocation(record, invocation, name):
                 raise DomainError("attribution_unavailable", 409)
             work = tx.require("work", record["work_id"])
             if admit and (
@@ -642,6 +655,7 @@ class Tools:
             # a new effect. Preserve the ORIGINAL invocation/work/epoch for that replay.
             caller = self.caller(
                 invocation,
+                name=name,
                 admit=name
                 not in {
                     "checkpoint_sources",
@@ -720,7 +734,7 @@ class Tools:
                 ):
                     # Preserve W01's native fence as well as F00's gate. Only a proved
                     # existing effect can be read/reconciled after a callback is held.
-                    self.caller(invocation, admit=True)
+                    self.caller(invocation, name=name, admit=True)
                 result = await getattr(service, method)(caller, body)
             else:
                 extension, method, schema, result_schema, _ = TOOLS[name]
@@ -757,7 +771,7 @@ class Tools:
                 if name == "prepare_image_generation" and not self.services.extension(
                     "image_preparation"
                 ).replayable(caller, body):
-                    self.caller(invocation, admit=True)
+                    self.caller(invocation, name=name, admit=True)
                 result = function(caller, body)
                 if inspect.isawaitable(result):
                     result = await result
@@ -877,11 +891,7 @@ class Tools:
                 key(invocation.session_id, "tool", invocation.tool_call_id),
                 required=False,
             )
-            if (
-                record is None
-                or record["session_id"] != invocation.session_id
-                or record["agent_id"] != invocation.agent_id
-            ):
+            if record is None or not _matches_invocation(record, invocation, name):
                 return
             previous = get_tool_outcome(tx, record["invocation_id"])
             if previous and values.get("status") == "failed":

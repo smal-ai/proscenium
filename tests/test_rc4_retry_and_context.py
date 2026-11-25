@@ -37,6 +37,7 @@ from proscenium.sources.common import fingerprint, sha
 from proscenium.sources.read_only import read_authored_json
 from proscenium.sources.resolver import Resolver, closure_digest
 from proscenium.workflows import install as install_workflows
+from proscenium.workflows.assembly import prepared as prepare_assembly_inputs
 from test_request_targeting import STAMP, context, request_record
 from test_vlm_critic_workflow import make_png
 from test_worker_capabilities_and_publication import PROJECT, SESSION, WORK, publication
@@ -412,6 +413,8 @@ def invocation(runtime, name, body, *, work=NEW_WORK, call=None, context_request
                     invocation_id=identity,
                     agent_id=None,
                     session_id=SESSION,
+                    name=name,
+                    arguments_sha256=fingerprint(body),
                     work_id=work,
                     request_id=tx.require("work", work)["originating_request_id"],
                     context_request_id=context_request,
@@ -429,7 +432,7 @@ def run_tool(runtime, invocation):
     return result.result_type, json.loads(result.text_result_for_llm)
 
 
-def retry(runtime, identity, **kwargs):
+def retry(runtime, identity, *, stale=False, **kwargs):
     return invocation(
         runtime,
         "retry_job",
@@ -438,16 +441,14 @@ def retry(runtime, identity, **kwargs):
             operation_id=f"retry-{identity}",
             project_id=PROJECT,
             job_id=identity,
-            expected_revision=runtime.jobs[identity]["state_revision"],
+            expected_revision=0 if stale else runtime.jobs[identity]["state_revision"],
         ),
         **kwargs,
     )
 
 
 def rejection(runtime, identity, code, message=None, *, status=None, stale=False, **kwargs):
-    call = retry(runtime, identity, **kwargs)
-    if stale:
-        call.arguments["expected_revision"] = 0
+    call = retry(runtime, identity, stale=stale, **kwargs)
     attempts = records(runtime, "attempts")
     audit = records(runtime, "job_retry_authorisations")
     result_type, error = run_tool(runtime, call)
@@ -457,7 +458,9 @@ def rejection(runtime, identity, code, message=None, *, status=None, stale=False
         assert error["message"] == message
     if status:
         with pytest.raises(DomainError) as caught:
-            runtime.services.jobs.retry(runtime.tools.caller(call), call.arguments)
+            runtime.services.jobs.retry(
+                runtime.tools.caller(call, name="retry_job"), call.arguments
+            )
         assert (caught.value.status, caught.value.code, caught.value.message) == (
             status,
             code,
@@ -554,7 +557,7 @@ def test_direct_cross_turn_retry_requires_a_live_invocation(signal_lost, invalid
     studio = signal_lost
     new_turn(studio, {"request_target": SCENE_TARGET})
     call = retry(studio, MACRO)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     identity = caller.invocation_id
     assert identity is not None
     with studio.store.transaction(write=False) as tx:
@@ -602,7 +605,7 @@ def test_direct_same_turn_retry_rejects_an_invalid_supplied_invocation(signal_lo
     studio = signal_lost
     set_work_state(studio, WORK, "awaiting_user")
     call = retry(studio, MACRO, work=WORK)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     assert_direct_retry_denied(
         studio, replace(caller, invocation_id="unknown-invocation"), call.arguments
     )
@@ -625,7 +628,7 @@ def test_direct_cross_turn_retry_requires_an_existing_origin(signal_lost, origin
         tx.put("jobs", MACRO, job, schema="JobRecord", expected_revision=revision)
     studio.jobs[MACRO] = job
     call = retry(studio, MACRO)
-    assert_direct_retry_denied(studio, studio.tools.caller(call), call.arguments)
+    assert_direct_retry_denied(studio, studio.tools.caller(call, name="retry_job"), call.arguments)
 
 
 @pytest.mark.parametrize("identity", [MACRO, "encode-earlier", "unity-earlier"])
@@ -787,14 +790,28 @@ def sequence_runtime(runtime, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "mode", ["identity", "distinct-scenes", "duplicate-scene", "duplicate-shot"]
+    "mode",
+    [
+        "identity",
+        "distinct-scenes",
+        "duplicate-scene",
+        "duplicate-shot",
+        "duplicate-optional-job",
+        "duplicate-frame",
+    ],
 )
 def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mode, monkeypatch):
     studio = sequence_runtime
     services = studio.services
     artifacts = services.extension("artifacts")
     second_scene = {"item_id": "scene-two", "version_id": "scene-two-v1"}
-    refs = [SCENE, second_scene] if mode in {"distinct-scenes", "duplicate-shot"} else [SCENE]
+    refs = (
+        [SCENE, second_scene]
+        if mode in {"distinct-scenes", "duplicate-shot", "duplicate-frame"}
+        else [SCENE]
+    )
+    duplicate = mode.startswith("duplicate-")
+    dissolve_error = "A dissolve requires distinct shots"
     shot_id = "shot-01" if mode == "duplicate-shot" else None
     source_frames = {"start": 1, "end": 2}
     sources = []
@@ -835,7 +852,11 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
     if mode != "identity":
         contributors = [sources[0], sources[-1]]
         entry.update(
-            transform="transition", contributors=contributors, mapping_artifact_id="dissolve-map"
+            transform="transition",
+            contributors=[contributors[0], {**contributors[1], "job_id": None}]
+            if mode == "duplicate-optional-job"
+            else contributors,
+            mapping_artifact_id="dissolve-map",
         )
         declared_map = dict(
             schema_version="1.0",
@@ -855,7 +876,11 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
                             source_frame=frame,
                             weight=dict(numerator=1, denominator=2),
                         )
-                        for s in contributors
+                        for s in (
+                            [sources[0], sources[0]]
+                            if mode == "duplicate-frame" and frame == 2
+                            else contributors
+                        )
                     ],
                 )
                 for frame in (1, 2)
@@ -879,10 +904,14 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
     )
     validated = validate_authored_document(services, PROJECT, request)
     assert (validated["valid"], validated["schema_valid"], validated["semantic_valid"]) == (
+        not duplicate,
         True,
-        True,
-        True,
+        not duplicate,
     )
+    if duplicate:
+        assert validated["issues"] == [
+            dict(phase="semantic", code="invalid_frame_mapping", path="$", message=dissolve_error)
+        ]
     if mode == "identity":
         wrong_shot = {**sequence, "entries": [{**entry, "shot_id": "shot-01"}]}
         invalid = validate_authored_document(services, PROJECT, dict(request, document=wrong_shot))
@@ -910,32 +939,53 @@ def test_standalone_scene_sequence_publication_and_assembly(sequence_runtime, mo
     result_type, result = run_tool(
         studio, invocation(studio, "publish_outputs", body, work=WORK, call="publish-sequence")
     )
-    assert result_type == "success", result
-    assert result["versions"] == [DRAFT]
-
     job_id = "standalone-delivery"
-    result_type, result = run_tool(
+    assemble = invocation(
         studio,
-        invocation(
-            studio,
-            "assemble_sequence",
-            dict(
-                operation_id="assemble-scenes",
-                job_id=job_id,
-                execution_profile_id="blender-cpu",
-                version=DRAFT,
-            ),
-            work=WORK,
+        "assemble_sequence",
+        dict(
+            operation_id="assemble-scenes",
+            job_id=job_id,
+            execution_profile_id="blender-cpu",
+            version=DRAFT,
         ),
+        work=WORK,
     )
-    if mode.startswith("duplicate-"):
+    if duplicate:
         assert (result_type, result["error"], result["message"]) == (
             "failure",
             "invalid_frame_mapping",
-            "A dissolve requires distinct shots",
+            dissolve_error,
+        )
+        assert not any(
+            version["version_id"] == DRAFT["version_id"] for version in records(studio, "versions")
+        )
+
+        # A prior version that bypassed publication still fails through the tool.
+        publish(studio, DRAFT, "sequence", sequence, dependencies=refs)
+        result_type, result = run_tool(studio, assemble)
+        assert (result_type, result["error"], result["message"]) == (
+            "failure",
+            "invalid_frame_mapping",
+            dissolve_error,
+        )
+
+        # Bypass catalogue validation as well. Admission must check the resolved rows.
+        monkeypatch.setattr(catalogue, "sequence_map", lambda *_: sequence)
+        caller = studio.tools.caller(assemble, name="assemble_sequence")
+        admission, _, full = prepare_assembly_inputs(services, caller, assemble.arguments)
+        with pytest.raises(DomainError) as caught:
+            studio.previews.assembly(caller, admission, sequence, full)
+        assert (caught.value.code, caught.value.status, caught.value.message) == (
+            "invalid_frame_mapping",
+            422,
+            dissolve_error,
         )
         assert not any(job["job_id"] == job_id for job in records(studio, "jobs"))
         return
+    assert result_type == "success", result
+    assert result["versions"] == [DRAFT]
+    result_type, result = run_tool(studio, assemble)
     assert result_type == "success", result
     assert (result["kind"], result["state"]) == ("encode", "planned")
 
@@ -1060,7 +1110,7 @@ def test_sequence_transition_requires_an_exact_pinned_contributor(signal_lost, v
     publish(studio, dissolve, "sequence", document, dependencies=[SCENE])
     new_turn(studio, {**DRAFT_VIEW, **dissolve})
     call = retry(studio, MACRO)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     job = studio.jobs[MACRO]
     # Neither a direct contributor nor a mapped contributor authorises retry without the full map.
     assert_direct_retry_denied(studio, caller, call.arguments)
@@ -1110,17 +1160,17 @@ def test_steer_context_is_the_durable_authority_and_only_service_replay_bypasses
         steer["receipt"]["work_id"] = NEW_WORK
         tx.put("requests", steer_id, steer, schema="RequestRecord")
     call = retry(studio, MACRO, context_request=steer_id)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="retry_job")
     result_type, job = run_tool(studio, call)
     assert result_type == "success"
     [audit] = records(studio, "job_retry_authorisations")
     assert audit["authorising_request_id"] == steer_id
 
     unseen = retry(studio, SHOTS[1][0], context_request=steer_id)
-    unseen_caller = studio.tools.caller(unseen)
+    unseen_caller = studio.tools.caller(unseen, name="retry_job")
     monkeypatch.setattr(studio.state, "control", lambda tx: {"fenced": True})
     with pytest.raises(DomainError) as fenced:
-        studio.tools.caller(call)
+        studio.tools.caller(call, name="retry_job")
     assert fenced.value.code == "permission_denied"
     studio.services.gate.close(PROJECT)
     set_work_state(studio, NEW_WORK, "completed")

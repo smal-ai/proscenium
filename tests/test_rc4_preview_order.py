@@ -166,7 +166,7 @@ def request_preview(studio, shot, *, operation=None, ref=SCENE):
         spec=spec(version, f"intent-{shot}", shot, 1, 24),
     )
     call = invocation(studio, "request_preview", body, work=WORK)
-    return studio.previews.request(studio.tools.caller(call), body)
+    return studio.previews.request(studio.tools.caller(call, name="request_preview"), body)
 
 
 def test_request_preview_rejects_unsupported_blender_features_before_job_admission(studio):
@@ -401,7 +401,7 @@ def test_http_order_preserves_omitted_jobs_and_replays_after_new_admission(histo
     request_context(studio, request_target=PINNED)
     requested = [PASS_IDS[i] for i in (4, 0, 2, 1, 3)]
     call = order_invocation(studio, *requested)
-    caller = studio.tools.caller(call, admit=False)
+    caller = studio.tools.caller(call, name="set_preview_order", admit=False)
     token = studio.services.auth.issue_capability(caller)
     app = FastAPI()
     app.state.services = studio.services
@@ -451,7 +451,7 @@ def test_copilot_partial_order_records_outcome_and_replays_after_invocation_sett
     request_context(studio, request_target=PINNED)
     requested = [PASS_IDS[4], PASS_IDS[2]]
     call = order_invocation(studio, *requested)
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="set_preview_order")
     assert caller.invocation_id is not None
     with studio.store.transaction(write=False) as tx:
         jobs_before = tx.all("jobs")
@@ -488,7 +488,9 @@ def test_rejects_jobs_outside_target_render_membership(historical, bad_job):
     historical_job(studio, "non-render", None, kind="encode")
     call = order_invocation(studio, PASS_IDS[4], bad_job)
     with pytest.raises(DomainError) as denied:
-        studio.previews.set_order(studio.tools.caller(call), call.arguments)
+        studio.previews.set_order(
+            studio.tools.caller(call, name="set_preview_order"), call.arguments
+        )
     assert (denied.value.status, denied.value.code) == (409, "source_conflict")
     status, result = run_tool(studio, call)
     assert status == "failure"
@@ -514,7 +516,9 @@ def test_denies_out_of_scope_requests(historical, selection):
     request_context(studio, **selection)
     call = order_invocation(studio, PASS_IDS[4])
     with pytest.raises(DomainError) as denied:
-        studio.previews.set_order(studio.tools.caller(call), call.arguments)
+        studio.previews.set_order(
+            studio.tools.caller(call, name="set_preview_order"), call.arguments
+        )
     assert (denied.value.status, denied.value.code) == (403, "scope_denied")
     assert not order_events(studio)
 
@@ -524,7 +528,7 @@ def test_new_effect_needs_active_invocation(historical, state):
     studio = historical
     request_context(studio, request_target=PINNED)
     call = order_invocation(studio, PASS_IDS[4])
-    caller = studio.tools.caller(call)
+    caller = studio.tools.caller(call, name="set_preview_order")
     assert caller.invocation_id is not None
     if state == "completed":
         with studio.store.transaction() as tx:
@@ -547,7 +551,9 @@ def test_new_item_work_can_reorder_its_own_publication_using_steer_context(histo
     with studio.store.transaction() as tx:
         tx.put("publications", studio.version["publication_id"], {"work_id": WORK})
     call = order_invocation(studio, PASS_IDS[4], context_request="steer-one")
-    result, replayed = studio.previews.set_order(studio.tools.caller(call), call.arguments)
+    result, replayed = studio.previews.set_order(
+        studio.tools.caller(call, name="set_preview_order"), call.arguments
+    )
     assert not replayed
     assert result["preview_job_ids"] == [PASS_IDS[4], *PASS_IDS[:4], PASS_IDS[5]]
     assert order_events(studio)[0]["request_id"] == ORIGIN
@@ -564,7 +570,9 @@ def test_steer_item_pin_overrides_same_work_publication(historical):
         tx.put("publications", studio.version["publication_id"], {"work_id": WORK})
     call = order_invocation(studio, PASS_IDS[4], context_request="steer-one")
     with pytest.raises(DomainError) as denied:
-        studio.previews.set_order(studio.tools.caller(call), call.arguments)
+        studio.previews.set_order(
+            studio.tools.caller(call, name="set_preview_order"), call.arguments
+        )
     assert (denied.value.status, denied.value.code) == (403, "scope_denied")
     assert get_version(studio)["preview_job_ids"] == PASS_IDS
     assert not order_events(studio)
@@ -599,12 +607,14 @@ def test_legacy_sequence_scope_requires_a_valid_contributor(historical, semantic
     call = order_invocation(studio, PASS_IDS[4])
     if semantic_validity:
         assert (
-            studio.previews.set_order(studio.tools.caller(call), call.arguments)[0][
-                "preview_job_ids"
-            ][0]
+            studio.previews.set_order(
+                studio.tools.caller(call, name="set_preview_order"), call.arguments
+            )[0]["preview_job_ids"][0]
             == PASS_IDS[4]
         )
     else:
         with pytest.raises(DomainError, match="Pin the target version"):
-            studio.previews.set_order(studio.tools.caller(call), call.arguments)
+            studio.previews.set_order(
+                studio.tools.caller(call, name="set_preview_order"), call.arguments
+            )
         assert not order_events(studio)

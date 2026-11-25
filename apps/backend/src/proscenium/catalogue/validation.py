@@ -223,6 +223,14 @@ def source_job(tx: Transaction, source: dict[str, Any]) -> dict[str, Any]:
     return job
 
 
+def distinct_transition_source(contributor: dict[str, Any]) -> Any:
+    return (
+        contributor["shot_id"]
+        if contributor["shot_id"] is not None
+        else ("scene", contributor["version_id"], contributor["job_id"])
+    )
+
+
 def sequence_map(
     tx: Transaction, document: dict[str, Any], version_id: str, maps: dict[str, dict[str, Any]]
 ) -> None:
@@ -305,8 +313,11 @@ def sequence_map(
                 != 1
             ):
                 raise DomainError("invalid_frame_mapping", 422)
-            if entry["transform"] == "transition" and len(row["contributors"]) < 2:
-                raise DomainError("invalid_frame_mapping", 422)
+            if (
+                entry["transform"] == "transition"
+                and len({distinct_transition_source(c) for c in row["contributors"]}) < 2
+            ):
+                raise DomainError("invalid_frame_mapping", 422, DISTINCT_DISSOLVE_SOURCES)
             if entry["transform"] == "retime" and len(row["contributors"]) != 1:
                 raise DomainError("invalid_frame_mapping", 422)
             for contributor in row["contributors"]:

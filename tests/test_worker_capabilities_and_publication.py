@@ -38,7 +38,7 @@ from proscenium.copilot.capabilities import (
     validate_authored_document,
 )
 from proscenium.copilot.native import Configuration
-from proscenium.copilot.outcomes import get_tool_outcome
+from proscenium.copilot.outcomes import get_tool_outcome, record_tool_outcome
 from proscenium.copilot.service import Copilot
 from proscenium.copilot.state import State, key
 from proscenium.copilot.tools import Tools
@@ -261,6 +261,8 @@ def invocation(runtime, name, body, identity="call-one"):
                     invocation_id=invocation_id,
                     agent_id=None,
                     session_id=SESSION,
+                    name=name,
+                    arguments_sha256=hashlib.sha256(canonical(body)).hexdigest(),
                     request_id="request-one",
                     work_id=WORK,
                     owner_epoch="epoch",
@@ -600,7 +602,9 @@ def test_preparation_submission_replay_budget_and_attribution(runtime, revision,
     runtime.provider.options["image_recipes"] = {"comfy": {"profile_revision": "changed"}}
     replayed, _ = invoke(runtime, "prepare_image_generation", body)
     assert replayed == {**result, "replayed": True} and len(runtime.calls) == previous_calls
-    conflict, _ = invoke(runtime, "prepare_image_generation", {**body, "prompt": "Different"})
+    conflict, _ = invoke(
+        runtime, "prepare_image_generation", {**body, "prompt": "Different"}, "new-call"
+    )
     assert conflict["error"] == "idempotency_conflict"
     runtime.state.control = lambda tx: {"fenced": False}
     runtime.services.gate.resume(PROJECT, reconciliation_evidence="Offline fixture")
@@ -746,7 +750,7 @@ def test_publish_outputs_rejects_inline_preview_for_unsupported_blender_features
     call = invocation(runtime, "publish_outputs", body)
     catalogue = runtime.services.extension("catalogue")
     with pytest.raises(DomainError) as error:
-        catalogue.publish(runtime.tools.caller(call), body)
+        catalogue.publish(runtime.tools.caller(call, name="publish_outputs"), body)
     assert (error.value.code, error.value.status, error.value.message) == (
         "capability_unavailable",
         501,
@@ -1243,6 +1247,62 @@ def test_register_artifact_records_verified_output(runtime):
     )
 
 
+@pytest.mark.parametrize("has_outcome", [False, True])
+@pytest.mark.parametrize(
+    "mismatch", ["recorded-name", "callback-name", "active-args", "replayable-args"]
+)
+def test_mismatched_tool_handler_cannot_execute_or_write_outcome(
+    runtime, monkeypatch, mismatch, has_outcome
+):
+    if mismatch == "active-args":
+        name = "retry_job"
+        body = dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            job_id="job-one",
+            operation_id="retry-one",
+            expected_revision=1,
+        )
+        args = {**body, "expected_revision": 2}
+        service, method = runtime.services.jobs, "retry"
+    else:
+        name = "register_artifact"
+        body = register_body(runtime)
+        args = (
+            {**body, "artifact_id": "different-artifact"} if mismatch == "replayable-args" else body
+        )
+        service, method = runtime.services.extension("artifacts"), "register"
+    recorded_name = "publish_outputs" if mismatch == "recorded-name" else name
+    call = invocation(runtime, recorded_name, body)
+    callback = replace(
+        call, tool_name="publish_outputs" if mismatch == "callback-name" else name, arguments=args
+    )
+    inv_id = key(SESSION, "tool", call.tool_call_id)
+    prior = None
+    if has_outcome:
+        prior = record_tool_outcome(
+            runtime.store,
+            invocation_id=inv_id,
+            session_id=SESSION,
+            project_id=PROJECT,
+            work_id=WORK,
+            request_id="request-one",
+            tool_name=recorded_name,
+            status="succeeded",
+        )
+
+    effects = []
+    monkeypatch.setattr(service, method, lambda *args: effects.append(args))
+    result = asyncio.run(runtime.tools.invoke(name, callback))
+    assert result.result_type == "failure"
+    assert json.loads(result.text_result_for_llm)["error"] == "attribution_unavailable"
+    assert not effects
+    with runtime.store.transaction(write=False) as tx:
+        assert get_tool_outcome(tx, inv_id) == prior
+        assert tx.all("copilot.tool_outcomes") == ([prior] if has_outcome else [])
+        assert tx.all("artifacts") == tx.all("jobs") == []
+
+
 @pytest.fixture
 def copilot(runtime):
     copilot = Copilot.__new__(Copilot)
@@ -1271,9 +1331,7 @@ def custom_permission(runtime, copilot, name, body):
             dict(
                 tx.require("invocations", inv_id),
                 **joined,
-                name=name,
                 native_id=call_id,
-                arguments_sha256=hashlib.sha256(canonical(body)).hexdigest(),
             ),
             expected_revision=tx.revision("invocations", inv_id),
         )
@@ -1393,12 +1451,16 @@ def test_inline_image_sdk_binary_and_zero_files(runtime, format, media_type):
     assert {
         str(p.relative_to(runtime.root)): p.is_symlink() for p in runtime.root.rglob("*")
     } == before
-    for body in (
-        {"artifact_id": artifact["artifact_id"]},
-        {"artifact_id": artifact["artifact_id"], "include_image": False},
+    for i, body in enumerate(
+        (
+            {"artifact_id": artifact["artifact_id"]},
+            {"artifact_id": artifact["artifact_id"], "include_image": False},
+        )
     ):
         metadata = asyncio.run(
-            runtime.tools.invoke("get_artifact", invocation(runtime, "get_artifact", body))
+            runtime.tools.invoke(
+                "get_artifact", invocation(runtime, "get_artifact", body, f"metadata-{i}")
+            )
         )
         assert metadata.binary_results_for_llm is None
 
@@ -1617,8 +1679,10 @@ def test_job_wait_deadline_and_default_read_only(runtime, monkeypatch):
 
     monkeypatch.setattr("proscenium.copilot.tools.time.monotonic", lambda: clock[0])
     monkeypatch.setattr("proscenium.copilot.tools.asyncio.sleep", tick)
-    for body in ({"job_id": job["job_id"]}, {"job_id": job["job_id"], "wait_seconds": 0}):
-        result, kind = invoke(runtime, "get_job", body)
+    for i, body in enumerate(
+        ({"job_id": job["job_id"]}, {"job_id": job["job_id"], "wait_seconds": 0})
+    ):
+        result, kind = invoke(runtime, "get_job", body, f"inspect-{i}")
         assert kind == "success" and result == job and not ticks
     result, kind = invoke(runtime, "get_job", {"job_id": job["job_id"], "wait_seconds": 1})
     assert kind == "success" and result == job and ticks == [0.5, 0.5]
