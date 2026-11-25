@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../../api";
 import type { ApiClient, ContextSnapshot, MessageSubmit, RequestRecord } from "../../api";
 import type { TurnSelection } from "../../api/studio";
@@ -18,53 +18,86 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
   const [busy, setBusy] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [error, setError] = useState("");
-  function persist(value: PendingRequest | null, stop: boolean) {
-    writePrivate(`${stop ? "stop" : "request"}.${projectId}`, value);
-    (stop ? setPendingStop : setPending)(value);
-  }
-  function setNeedsConfirmation(value: boolean, stop: boolean) {
-    (stop ? setPendingStopNeedsConfirmation : setPendingNeedsConfirmation)(value);
+  const mountedRef = useRef(false);
+  const pendingRef = useRef(pending), pendingStopRef = useRef(pendingStop);
+  const busyRef = useRef(false), stoppingRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+  function persistIfOwner(next: PendingRequest | null, stop: boolean, expectedId: string) {
+    const key = `${stop ? "stop" : "request"}.${projectId}`;
+    const stored = readPrivate<PendingRequest>(key);
+    if (stored === null || stored.submission.request_id === expectedId) writePrivate(key, next);
+    const activePendingRef = stop ? pendingStopRef : pendingRef;
+    if (mountedRef.current && (activePendingRef.current === null || activePendingRef.current.submission.request_id === expectedId)) {
+      activePendingRef.current = next;
+      (stop ? setPendingStop : setPending)(next);
+    }
   }
   async function send(command: PendingRequest, retry: boolean): Promise<RequestRecord | null> {
     const stop = command.submission.type === "stop";
-    setNeedsConfirmation(retry, stop);
-    (stop ? setStopping : setBusy)(true); setError("");
-    persist(command, stop);
-    const path = { project_id: projectId, request_id: command.submission.request_id };
+    const activeBusyRef = stop ? stoppingRef : busyRef;
+    const activePendingRef = stop ? pendingStopRef : pendingRef;
+    const setActiveBusy = stop ? setStopping : setBusy;
+    const setNeedsConfirmation = stop ? setPendingStopNeedsConfirmation : setPendingNeedsConfirmation;
+    const expectedId = command.submission.request_id;
+    const key = `${stop ? "stop" : "request"}.${projectId}`;
+    if (!mountedRef.current || activeBusyRef.current) return null;
+    const stored = readPrivate<PendingRequest>(key);
+    if (retry ? activePendingRef.current?.submission.request_id !== expectedId || (stored !== null && stored.submission.request_id !== expectedId)
+      : activePendingRef.current !== null || stored !== null) return null;
+    const ownsState = () => mountedRef.current && activePendingRef.current?.submission.request_id === expectedId;
+    function accept(record: RequestRecord): RequestRecord | null {
+      const active = ownsState();
+      if (active) { onAccepted(record); setNeedsConfirmation(false); }
+      persistIfOwner(null, stop, expectedId);
+      return active ? record : null;
+    }
+    activeBusyRef.current = true;
+    activePendingRef.current = command;
+    const path = { project_id: projectId, request_id: expectedId };
+    let stage: "lookup" | "submit" | "confirm" = "submit";
     try {
+      writePrivate(key, command);
+      setActiveBusy(true); setError("");
+      (stop ? setPendingStop : setPending)(command);
+      setNeedsConfirmation(retry);
       if (retry || command.acknowledged) {
-        try {
-          const record = await api.call("getRequest", { path });
-          onAccepted(record); persist(null, stop); setNeedsConfirmation(false, stop); return record;
-        } catch (e) {
+        stage = "lookup";
+        const lookup = await api.call("getRequest", { path }).then(record => ({ record })).catch(e => {
           if (!(e instanceof ApiError) || e.status !== 404 || command.acknowledged) throw e;
-        }
+          return null;
+        });
+        if (lookup) return accept(lookup.record);
       }
+      stage = "submit";
       if (command.context) {
         await api.call("captureContext", { path: { project_id: projectId }, body: command.context, idempotencyKey: command.context.context_id });
         writePrivate(`context.${projectId}.${command.context.context_id}`, command.context);
       }
       await api.call("submitRequest", { path: { project_id: projectId }, body: command.submission, idempotencyKey: command.submission.request_id });
-      command = { ...command, acknowledged: true }; persist(command, stop);
-      const record = await api.call("getRequest", { path });
-      onAccepted(record); persist(null, stop); setNeedsConfirmation(false, stop); return record;
+      stage = "confirm";
+      command = { ...command, acknowledged: true }; persistIfOwner(command, stop, expectedId);
+      return accept(await api.call("getRequest", { path }));
     } catch (e) {
-      const rejected = !command.acknowledged && e instanceof ApiError &&
+      const rejected = stage === "submit" && !command.acknowledged && e instanceof ApiError &&
         e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429 &&
         e.envelope.error.code !== "idempotency_conflict";
-      if (rejected) {
-        persist(null, stop);
-        setNeedsConfirmation(false, stop);
-        setError(`${describeError(e)} This request was not admitted. Correct the input and submit again.`);
-      } else {
-        setNeedsConfirmation(true, stop);
-        setError(`${describeError(e)} The original request and captured context are retained. Reconcile before retrying. No prompt is replayed automatically.`);
+      if (ownsState()) {
+        setNeedsConfirmation(!rejected);
+        setError(`${describeError(e)} ${rejected ? "This request was not admitted. Correct the input and submit again."
+          : "The original request and captured context are retained. Reconcile before retrying. No prompt is replayed automatically."}`);
       }
+      if (rejected) persistIfOwner(null, stop, expectedId);
       return null;
-    } finally { (stop ? setStopping : setBusy)(false); }
+    } finally {
+      activeBusyRef.current = false;
+      if (mountedRef.current && (activePendingRef.current === null || ownsState())) setActiveBusy(false);
+    }
   }
   async function submit(text: string, selection: TurnSelection, mode: "queue" | "steer", workId: string | null, profileId: string | null, requestId = id()): Promise<RequestRecord | null> {
-    if (pending || busy || !text.trim()) return null;
+    if (!mountedRef.current || pendingRef.current || busyRef.current || !text.trim()) return null;
     if (mode === "steer" && !workId) { setError("Steer requires an explicit active-work target."); return null; }
     const context: ContextSnapshot = {
       ...structuredClone(selection), schema_version: "1.0", context_id: id(), project_id: projectId, captured_at: new Date().toISOString(),
@@ -74,8 +107,8 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
     return send({ submission, context, acknowledged: false }, false);
   }
   async function stop(workId: string) {
-    if (pendingStop || stopping) return;
+    if (pendingStopRef.current || stoppingRef.current) return;
     await send({ submission: { schema_version: "1.0", request_id: id(), project_id: projectId, type: "stop", target_work_id: workId }, context: null, acknowledged: false }, false);
   }
-  return { pending, pendingStop, pendingNeedsConfirmation, pendingStopNeedsConfirmation, busy, stopping, error, submit, stop, retry: (stop: boolean) => { const command = stop ? pendingStop : pending; return command ? send(command, true) : Promise.resolve(null); } };
+  return { pending, pendingStop, pendingNeedsConfirmation, pendingStopNeedsConfirmation, busy, stopping, error, submit, stop, retry: (stop: boolean) => { const command = (stop ? pendingStopRef : pendingRef).current; return command ? send(command, true) : Promise.resolve(null); } };
 }

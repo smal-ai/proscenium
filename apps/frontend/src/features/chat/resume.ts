@@ -20,9 +20,11 @@ export function isAutoReleasingWork(snapshot: ProjectSnapshot | null, requests: 
 }
 
 export function isIdleAutoReleaseReady(snapshot: ProjectSnapshot | null, requests: RequestRecord[], events: Event[], autoReleasingRequestId: string | null = null): boolean {
+  const reason = snapshot?.execution?.hold_reason_code;
+  const idleReady = snapshot?.active_work === null && (reason ?? "awaiting_resume") === "awaiting_resume";
+  const autoWorkReady = reason === "awaiting_resume" && isAutoReleasingWork(snapshot, requests, autoReleasingRequestId);
   return snapshot !== null && snapshot.execution?.fenced === true
-    && (snapshot.execution.hold_reason_code ?? "awaiting_resume") === "awaiting_resume"
-    && (snapshot.active_work === null || isAutoReleasingWork(snapshot, requests, autoReleasingRequestId))
+    && (idleReady || autoWorkReady)
     && snapshot.pending_decisions.length === 0
     && !requests.some(r => r.submission.type === "stop" && r.receipt.state === "outcome_uncertain")
     && resumableWork(snapshot, events).length === 0

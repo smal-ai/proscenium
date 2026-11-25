@@ -657,6 +657,7 @@ test("running work from the auto-releasing request suppresses only its stale idl
   check(current, [dispatching], false);
   check({ ...current, active_work: { ...current.active_work, work_id: "other-work" } }, [dispatching], true);
   check({ ...current, execution: { ...current.execution, hold_reason_code: "provider_unavailable" } }, [dispatching], true);
+  check({ ...current, execution: { ...current.execution, hold_reason_code: null, fence_reason: "Unknown recovery fence" } }, [dispatching], true);
   check(current, [dispatching, heldRequest("other-request")], true);
 });
 
