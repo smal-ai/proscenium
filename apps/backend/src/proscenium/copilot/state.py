@@ -526,7 +526,13 @@ class State:
             identity, kind, data = event["id"], event["type"], event.get("data", {})
             event_key = key(session_id, identity)
             # Hash the original solely for conflicting duplicate detection, never retain it.
-            fingerprint = original_fingerprint or hashlib.sha256(canonical(event)).hexdigest()
+            try:
+                fingerprint = original_fingerprint or hashlib.sha256(canonical(event)).hexdigest()
+            except (ValueError, TypeError):
+                if kind != "tool.execution_start":
+                    raise
+                self.fence(tx, "attribution_unavailable")
+                return
             old = tx.get("copilot.native", event_key, required=False)
             if old:
                 if old["fingerprint"] != fingerprint:
@@ -643,6 +649,41 @@ class State:
                 )
                 or self.binding(tx, session_id, "event", event.get("parentId"))
             )
+            tool_start = kind == "tool.execution_start"
+            child_start = kind == "subagent.started"
+            duplicate_start = False
+            incoming_sha = None
+            if tool_start or child_start:
+                prior = tx.get(
+                    "invocations",
+                    key(session_id, "tool", data["toolCallId"])
+                    if tool_start
+                    else key(session_id, "agent", str(agent)),
+                    required=False,
+                )
+                if tool_start and isinstance(data.get("arguments"), dict):
+                    try:
+                        incoming_sha = hashlib.sha256(canonical(data["arguments"])).hexdigest()
+                    except (ValueError, TypeError):
+                        self.fence(tx, "attribution_unavailable")
+                        return
+                if prior is not None:
+                    incoming_name = data.get(
+                        "agentName", data.get("toolName", prior.get("name", "tool"))
+                    )
+                    if (
+                        prior.get("kind") != ("child" if child_start else "tool")
+                        or prior.get("agent_id") != agent
+                        or prior.get("name") != incoming_name
+                        or (tool_start and prior.get("arguments_sha256") != incoming_sha)
+                        or any(
+                            prior.get(k) != (binding or {}).get(k)
+                            for k in ("work_id", "request_id", "delivery_id")
+                        )
+                    ):
+                        self.fence(tx, "attribution_unavailable")
+                        return
+                    duplicate_start = True
             if binding:
                 self.bind(tx, session_id, "event", identity, binding)
                 if kind == "user.message" and data.get("messageId"):
@@ -727,7 +768,7 @@ class State:
                             "invocation_id": key(session_id, "tool", tool_call),
                         },
                     )
-                if kind in {
+                if not duplicate_start and kind in {
                     "user.message",
                     "assistant.turn_start",
                     "tool.execution_start",
@@ -808,7 +849,7 @@ class State:
                     "session_id": session_id,
                 },
             )
-            if not binding:
+            if not binding or duplicate_start:
                 return
             work_id, request_id = binding["work_id"], binding["request_id"]
             actor = {"kind": "subagent" if agent else "lead", "id": agent or "copilot-lead"}
@@ -999,19 +1040,16 @@ class State:
                     "owner_epoch": self.services.ownership.epoch,
                     "kind": "child" if child else "tool",
                     "state": state,
-                    "name": data.get(
-                        "agentName",
-                        data.get("toolName", (old_invocation or {}).get("name", "tool")),
-                    ),
+                    "name": old_invocation["name"]
+                    if old_invocation is not None
+                    else data.get("agentName", data.get("toolName", "tool")),
                     "model_id": data.get("model", (old_invocation or {}).get("model_id")),
                     "updated_at": now(),
                     "display_name": display_name,
-                    "arguments_sha256": hashlib.sha256(canonical(data["arguments"])).hexdigest()
-                    if starting and isinstance(data.get("arguments"), dict)
+                    "arguments_sha256": incoming_sha
+                    if starting
                     else (old_invocation or {}).get("arguments_sha256"),
                 }
-                if old_invocation and old_invocation["state"] in TERMINAL and starting:
-                    return
                 summary = failure_summary(tx, invocation, data) if state == "failed" else ""
                 if summary:
                     invocation["failure_summary"] = summary

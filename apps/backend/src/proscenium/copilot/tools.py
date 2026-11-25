@@ -507,7 +507,7 @@ def _matches_invocation(record: dict[str, Any], invocation: ToolInvocation, name
         record.get("agent_id") != invocation.agent_id
         or record.get("session_id") != invocation.session_id
         or record.get("name") != name
-        or (invocation.tool_name and invocation.tool_name != name)
+        or invocation.tool_name != name
         or not isinstance(invocation.arguments, dict)
     ):
         return False
@@ -524,10 +524,12 @@ class Tools:
 
     def caller(self, invocation: ToolInvocation, *, name: str, admit: bool = True) -> Caller:
         with self.services.registry.project_store(self.project_id).transaction(write=False) as tx:
-            record = tx.require(
-                "invocations", key(invocation.session_id, "tool", invocation.tool_call_id)
+            record = tx.get(
+                "invocations",
+                key(invocation.session_id, "tool", invocation.tool_call_id),
+                required=False,
             )
-            if not _matches_invocation(record, invocation, name):
+            if record is None or not _matches_invocation(record, invocation, name):
                 raise DomainError("attribution_unavailable", 409)
             work = tx.require("work", record["work_id"])
             if admit and (
