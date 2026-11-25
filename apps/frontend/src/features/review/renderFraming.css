@@ -29,3 +29,22 @@
 .review-proxy-label {
   z-index: 3;
 }
+.review-proxy { container-type: inline-size; }
+.review-proxy-controls-hint {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  z-index: 3;
+  max-width: calc(50% - 24px);
+  background: #101013dd;
+  border: 1px solid #272730;
+  border-radius: 5px;
+  padding: 3px 8px;
+  color: #a1a1aa;
+  font-size: 10px;
+  text-align: right;
+  pointer-events: none;
+}
+@container (max-width: 660px) {
+  .review-proxy-controls-hint { display: none; }
+}

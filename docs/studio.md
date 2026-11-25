@@ -48,6 +48,8 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
 
 ## Reviewing published versions
 
+- **3D Inspection navigation:** Drag to orbit, right-drag to pan and use the wheel to zoom. Use **Shift+wheel** or **W/S** to move forwards and backwards without changing the orbit distance, **A/D** to move sideways, and **Q/E** to move down or up. Hold **Shift** with a movement key for faster travel. Double-click a surface outside pin mode to centre the orbit on that point. **Frame model** restores the fitted view.
+
 - **Version status:** The Review header shows **Viewing vX · vY available** when there is a newer publication. Use **View vY** to switch. Unsaved drafts stay on their original version. Dismiss **Draft kept on vX** without changing the draft.
 - **3D Inspection:** **Render output format** offers **16:9 · 1920 × 1080**, **16:10 · 1920 × 1200** and **Match viewport**. Fixed formats show a live safe frame inside the canvas, including when inspecting through a restored render camera. Spatial pin placement and editing hide the guide. **Render this view** captures the framed composition at the selected camera aspect, or uses the full viewport at its native pixel size for **Match viewport**. If upload fails, **Retry captured view upload** uses the same capture, camera and retained dimensions rather than taking a new image.
 - **Keyframes:** Arrows step between rendered frames in the selected pass, including over gaps. A pass with one rendered frame disables both arrows. If you enter an unavailable frame, the transport explains why and keeps the frame number in sync with the image shown.

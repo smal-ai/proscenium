@@ -1,10 +1,11 @@
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
 import { Canvas, useFrame, useThree, type RootState, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
-import { Box3, Matrix4, Mesh, OrthographicCamera, PerspectiveCamera, Raycaster, Vector2, Vector3, type Camera as ThreeCamera, type Material, type Object3D, type Scene, type WebGLRenderer } from "three";
+import { Box3, Matrix4, Mesh, OrthographicCamera, PerspectiveCamera, Raycaster, Sphere, Vector2, Vector3, type Camera as ThreeCamera, type Material, type Object3D, type Scene, type WebGLRenderer } from "three";
 import type { Camera, ObjectSelection, ProxyMapping } from "../../api/generated/contracts";
 import { cloneInspectionMaterial } from "./inspectionMaterials";
 import { captureCamera, projectBlenderPoint } from "./media";
+import { computeNavigationStep, isTextInputTarget, keyboardMoveDirection, normalizeWheelNotches, recenterOrbitTarget, translateCameraAndTarget } from "./proxyNavigation";
 import { computeAutoFramePose, computeCanvasFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
 import { indexProxyScene, projectBlenderPointVisible, proxyPointToBlender, proxySurfaceNormalToBlender, resolveProxyNode, type ProxyNode } from "./spatial";
 import "./renderFraming.css";
@@ -187,6 +188,79 @@ function Model({
     onSelect([{object_id: node.object_id, instance_id: node.instance_id}]);
   }
   return <primitive object={scene} onClick={pick}/>;
+}
+
+function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, controls, onCamera }: {
+  enabled: boolean;
+  pinMode: boolean;
+  model: {scene: Object3D} | null;
+  sceneRadius: number;
+  controls: RefObject<ComponentRef<typeof OrbitControls> | null>;
+  onCamera: (camera: Camera) => void;
+}) {
+  const { gl, camera } = useThree();
+  const state = useRef({ enabled, pinMode, model, sceneRadius, onCamera });
+  state.current = { enabled, pinMode, model, sceneRadius, onCamera };
+
+  useEffect(() => {
+    if (!(camera instanceof PerspectiveCamera || camera instanceof OrthographicCamera)) return;
+    const inspectionCamera = camera;
+    const dom = gl.domElement;
+    const publish = (orbit: ComponentRef<typeof OrbitControls>) => {
+      orbit.update();
+      inspectionCamera.updateMatrixWorld();
+      state.current.onCamera(captureCamera(inspectionCamera));
+    };
+    const step = (target: Vector3) => computeNavigationStep(inspectionCamera.position.distanceTo(target), state.current.sceneRadius);
+
+    function wheel(event: WheelEvent) {
+      if (!state.current.enabled || !event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+      const orbit = controls.current;
+      if (orbit?.object !== inspectionCamera) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const notches = normalizeWheelNotches(event.deltaY, event.deltaX, event.deltaMode);
+      if (notches !== 0 && translateCameraAndTarget(inspectionCamera, orbit.target, { forward: notches * step(orbit.target) })) publish(orbit);
+    }
+
+    function keydown(event: KeyboardEvent) {
+      if (!state.current.enabled || event.defaultPrevented || isTextInputTarget(event.target)) return;
+      const move = keyboardMoveDirection(event);
+      const orbit = controls.current;
+      if (!move || orbit?.object !== inspectionCamera) return;
+      event.preventDefault();
+      const distance = step(orbit.target) * 0.75 * move.boost;
+      if (translateCameraAndTarget(inspectionCamera, orbit.target, { forward: move.forward * distance, right: move.right * distance, up: move.up * distance })) publish(orbit);
+    }
+
+    function recenter(event: MouseEvent) {
+      const current = state.current;
+      if (!current.enabled || current.pinMode || !current.model || event.button !== 0) return;
+      const orbit = controls.current;
+      if (orbit?.object !== inspectionCamera) return;
+      const rect = dom.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const u = (event.clientX - rect.left) / rect.width;
+      const v = (event.clientY - rect.top) / rect.height;
+      if (u < 0 || u > 1 || v < 0 || v > 1) return;
+      inspectionCamera.updateMatrixWorld();
+      current.model.scene.updateMatrixWorld(true);
+      const raycaster = new Raycaster();
+      raycaster.setFromCamera(new Vector2(u * 2 - 1, 1 - v * 2), inspectionCamera);
+      const hit = raycaster.intersectObject(current.model.scene, true).find(entry => entry.instanceId === undefined);
+      if (hit && recenterOrbitTarget(inspectionCamera, orbit.target, hit.point)) publish(orbit);
+    }
+
+    dom.addEventListener("wheel", wheel, { passive: false, capture: true });
+    window.addEventListener("keydown", keydown);
+    dom.addEventListener("dblclick", recenter);
+    return () => {
+      dom.removeEventListener("wheel", wheel, true);
+      window.removeEventListener("keydown", keydown);
+      dom.removeEventListener("dblclick", recenter);
+    };
+  }, [camera, controls, gl]);
+  return null;
 }
 
 function SurfacePinController({
@@ -421,6 +495,12 @@ export function ProxyView({
 }) {
   const [modelState, setModelState] = useState<{scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null>(null);
   const ready = modelState !== null;
+  const model = modelState?.scene;
+  const sceneRadius = useMemo(() => {
+    if (!model) return 1;
+    const box = new Box3().setFromObject(model);
+    return box.isEmpty() ? 1 : Math.max(box.getBoundingSphere(new Sphere()).radius, 0.05);
+  }, [model]);
   const frameKey = `${url}:${frameNonce}`;
   const [framedKey, setFramedKey] = useState<string | null>(null);
   const autoFramed = framedKey === frameKey;
@@ -476,6 +556,7 @@ export function ProxyView({
       <directionalLight position={[0,1.5,7]} intensity={0.75}/>
       <Suspense fallback={null}><Model url={url} mapping={mapping} pinMode={pinMode} onSelect={onSelect} onSceneReady={setModelState}/></Suspense>
       <OrbitControls ref={controls} makeDefault enableDamping={false}/>
+      <ProxyDepthNavigationController enabled={visible && ready && (Boolean(restoreCamera) || autoFramed)} pinMode={pinMode} model={modelState} sceneRadius={sceneRadius} controls={controls} onCamera={handleCamera}/>
       <RestoreCamera record={restoreCamera} nonce={restoreCameraNonce} controls={controls}/><CameraObserver onCamera={handleCamera}/>
       <AutoFrameCamera model={modelState?.scene ?? null} frameKey={frameKey} restoreCamera={restoreCamera} controls={controls} onCamera={handleCamera} onFramed={setFramedKey}/>
       <CaptureBinding ready={visible && ready && (Boolean(restoreCamera) || autoFramed) && size.width > 0 && size.height > 0} bind={bindCapture} onViewportPixels={onViewportPixels}/>
@@ -508,5 +589,6 @@ export function ProxyView({
       </div>
     )}
     <span className="review-proxy-label">Static inspection proxy · sample frame {mapping.sample_frame} · not material evidence</span>
+    {visible && ready && !pinMode && <span className="review-proxy-controls-hint">Drag orbit · Right-drag pan · Wheel zoom · Shift+wheel / WASD depth · Double-click recenter</span>}
   </div>;
 }
