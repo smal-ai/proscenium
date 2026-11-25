@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 
 from proscenium.api.dependencies import command, owner, tool
+from proscenium.api.entity_tags import if_none_match
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.artifacts import Artifacts
@@ -139,14 +140,9 @@ def artifact(request: Request, project_id: str, artifact_id: str, caller: Owner)
 @router.get(BASE + "/artifacts/{artifact_id}/content", operation_id="getArtifactContent")
 @router.head(BASE + "/artifacts/{artifact_id}/content", operation_id="headArtifactContent")
 def content(request: Request, project_id: str, artifact_id: str, caller: Owner) -> Response:
-    from proscenium.sources.common import sha
-
     artifacts: Artifacts = get_services(request).extension("artifacts")
-    record = artifacts.get(project_id, artifact_id)
     # Serve this verified byte buffer, not a mutable path re-opened later by FileResponse.
-    data = artifacts.ready_path(project_id, artifact_id).read_bytes()
-    if sha(data) != record["sha256"] or len(data) != record["bytes"]:
-        raise DomainError("hash_mismatch", 422)
+    record, data = artifacts.ready_bytes(project_id, artifact_id)
     size = len(data)
     etag = '"' + record["sha256"] + '"'
     headers = {
@@ -154,9 +150,11 @@ def content(request: Request, project_id: str, artifact_id: str, caller: Owner) 
         "Accept-Ranges": "bytes",
         "Cache-Control": "private, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
-        "Content-Length": str(size),
         "Content-Security-Policy": "default-src 'none'; sandbox",
     }
+    if if_none_match(request.headers.getlist("if-none-match"), etag):
+        return Response(status_code=304, headers=headers)
+    headers["Content-Length"] = str(size)
     if "dimensions" in record:
         headers.update(
             {

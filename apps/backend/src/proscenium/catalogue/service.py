@@ -7,7 +7,7 @@ from typing import Any
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.contracts import validate
+from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.db.store import now
 from proscenium.previews.journal import (
@@ -47,8 +47,7 @@ class Catalogue:
         self.services, self.sources, self.artifacts = services, sources, artifacts
 
     @staticmethod
-    def selected_choice(tx: Transaction, slot: dict[str, Any]) -> dict[str, Any] | None:
-        records = [row for row in tx.all("selections") if row["slot"] == slot]
+    def choice_from_records(records: list[dict[str, Any]]) -> dict[str, Any] | None:
         if len(records) > 1:
             raise DomainError(
                 "source_conflict", 409, "More than one current selection record for a slot"
@@ -56,6 +55,17 @@ class Catalogue:
         if not records or records[0]["state"] != "selected":
             return None
         return dict(records[0]["choice"])
+
+    @classmethod
+    def selected_choice(cls, tx: Transaction, slot: dict[str, Any]) -> dict[str, Any] | None:
+        return cls.choice_from_records([row for row in tx.all("selections") if row["slot"] == slot])
+
+    @staticmethod
+    def selections_by_slot(tx: Transaction) -> dict[bytes, list[dict[str, Any]]]:
+        result: dict[bytes, list[dict[str, Any]]] = {}
+        for row in tx.all("selections"):
+            result.setdefault(canonical(row["slot"]), []).append(row)
+        return result
 
     @classmethod
     def item_view(cls, tx: Transaction, row: dict[str, Any]) -> dict[str, Any]:
@@ -476,6 +486,7 @@ class Catalogue:
             raise DomainError("scope_denied", 403)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             validation.shot_plan(tx, result, {})
+            selections = self.selections_by_slot(tx)
             for shot in result["shots"]:
                 for frame in shot["frames"]:
                     slot = dict(
@@ -488,7 +499,7 @@ class Catalogue:
                         frame_id=frame["frame_id"],
                     )
                     selected = False
-                    choice = self.selected_choice(tx, slot)
+                    choice = self.choice_from_records(selections.get(canonical(slot), []))
                     if choice:
                         if choice["kind"] == "artifact":
                             chosen = choice["artifact_id"]
@@ -522,18 +533,17 @@ class Catalogue:
         maps = self.frame_maps(project_id, result)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             validation.sequence_map(tx, result, version_id, maps)
+            selections = self.selections_by_slot(tx)
             for entry in result["entries"]:
-                choice = self.selected_choice(
-                    tx,
-                    {
-                        "kind": "assembly_shot",
-                        "sequence_version": {
-                            "item_id": version["item_id"],
-                            "version_id": version_id,
-                        },
-                        "entry_id": entry["entry_id"],
+                slot = {
+                    "kind": "assembly_shot",
+                    "sequence_version": {
+                        "item_id": version["item_id"],
+                        "version_id": version_id,
                     },
-                )
+                    "entry_id": entry["entry_id"],
+                }
+                choice = self.choice_from_records(selections.get(canonical(slot), []))
                 if (
                     choice
                     and choice["kind"] == "version"

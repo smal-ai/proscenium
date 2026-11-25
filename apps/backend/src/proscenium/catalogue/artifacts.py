@@ -110,6 +110,19 @@ class Artifacts:
             raise DomainError("hash_mismatch", 422)
         return path
 
+    def ready_bytes(self, project_id: str, artifact_id: str) -> tuple[dict[str, Any], bytes]:
+        artifact = self.get(project_id, artifact_id)
+        if artifact["state"] != "ready":
+            raise DomainError("media_unavailable", 422)
+        path = self.path(project_id, artifact["sha256"])
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            raise DomainError("media_unavailable", 422) from exc
+        if len(data) != artifact["bytes"] or sha(data) != artifact["sha256"]:
+            raise DomainError("hash_mismatch", 422)
+        return artifact, data
+
     def decode(self, data: bytes, media_type: str, *, mask: bool = False) -> Image.Image:
         if len(data) > self.limits.bytes:
             raise DomainError("upload_too_large", 413)
