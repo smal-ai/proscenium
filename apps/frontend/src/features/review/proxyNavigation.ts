@@ -5,7 +5,8 @@ type InspectionCamera = PerspectiveCamera | OrthographicCamera;
 export function computeNavigationStep(orbitDistance: number, sceneRadius: number): number {
   const distance = Number.isFinite(orbitDistance) ? Math.max(0, orbitDistance) : 0;
   const radius = Number.isFinite(sceneRadius) ? Math.max(0, sceneRadius) : 0;
-  const raw = Math.max(distance * 0.12, radius * 0.025, 0.05);
+  const floor = Math.min(Math.max(radius * 0.01, 0.02), 0.25);
+  const raw = Math.max(distance * 0.12, floor);
   const cap = Math.max(radius * 0.5, 5);
   return Math.min(raw, cap);
 }
@@ -35,8 +36,8 @@ export function keyboardMoveDirection(event: { code?: string; key: string; shift
 export function translateCameraAndTarget(camera: InspectionCamera, target: Vector3, offset: { forward?: number; right?: number; up?: number }): boolean {
   camera.updateMatrixWorld();
   const forward = camera.getWorldDirection(new Vector3());
-  const right = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
-  const up = new Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+  const right = new Vector3().setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+  const up = new Vector3().setFromMatrixColumn(camera.matrixWorld, 1).normalize();
   const delta = new Vector3().addScaledVector(forward, offset.forward ?? 0)
     .addScaledVector(right, offset.right ?? 0).addScaledVector(up, offset.up ?? 0);
   if (!Number.isFinite(delta.x + delta.y + delta.z) || delta.lengthSq() === 0) return false;

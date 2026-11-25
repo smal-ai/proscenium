@@ -1,16 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { OrthographicCamera, PerspectiveCamera, Vector3 } from "three";
+import { Group, OrthographicCamera, PerspectiveCamera, Vector3 } from "three";
 import { computeNavigationStep, isTextInputTarget, keyboardMoveDirection, normalizeWheelNotches, recenterOrbitTarget, translateCameraAndTarget } from "./proxyNavigation";
 
 test("depth navigation steps scale with distance and radius, with a floor and cap", () => {
   assert.equal(computeNavigationStep(10, 1), 1.2);
-  assert.equal(computeNavigationStep(0, 100), 2.5);
-  assert.equal(computeNavigationStep(0.0001, 0.0001), 0.05);
+  assert.equal(computeNavigationStep(0, 10), 0.1);
+  assert.equal(computeNavigationStep(0.5, 200), 0.25);
+  assert.equal(computeNavigationStep(10, 200), 1.2);
+  assert.equal(computeNavigationStep(0.0001, 0.0001), 0.02);
   assert.equal(computeNavigationStep(1e10, 0.001), 5);
   assert.equal(computeNavigationStep(1e20, 1e10), 5e9);
-  assert.equal(computeNavigationStep(NaN, Infinity), 0.05);
-  assert.equal(computeNavigationStep(-1, -10), 0.05);
+  assert.equal(computeNavigationStep(NaN, Infinity), 0.02);
+  assert.equal(computeNavigationStep(-1, -10), 0.02);
 });
 
 test("wheel normalisation uses the dominant axis and converts pixel, line and page units", () => {
@@ -69,4 +71,16 @@ test("surface recenter moves only the pivot and rejects invalid or coincident po
   assert.equal(recenterOrbitTarget(camera, target, position), false);
   assert.equal(recenterOrbitTarget(camera, target, new Vector3(Infinity, 0, 0)), false);
   assert.ok(target.equals(hit));
+});
+
+test("translation uses the camera's world axes under a rotated parent", () => {
+  const parent = new Group();
+  const camera = new PerspectiveCamera();
+  parent.rotation.z = Math.PI / 2;
+  parent.add(camera);
+  parent.updateMatrixWorld();
+  const target = new Vector3(0, 0, -3);
+  assert.equal(translateCameraAndTarget(camera, target, { right: 1, up: 2 }), true);
+  assert.ok(camera.position.distanceTo(new Vector3(-2, 1, 0)) < 1e-12);
+  assert.ok(target.distanceTo(new Vector3(-2, 1, -3)) < 1e-12);
 });

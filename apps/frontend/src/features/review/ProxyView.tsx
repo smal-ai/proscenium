@@ -588,7 +588,9 @@ export function ProxyView({
         })}
       </div>
     )}
-    <span className="review-proxy-label">Static inspection proxy · sample frame {mapping.sample_frame} · not material evidence</span>
-    {visible && ready && !pinMode && <span className="review-proxy-controls-hint">Drag orbit · Right-drag pan · Wheel zoom · Shift+wheel / WASD depth · Double-click recenter</span>}
+    <div className="review-proxy-footer">
+      <span className="review-proxy-label">Static inspection proxy · sample frame {mapping.sample_frame} · not material evidence</span>
+      {visible && ready && !pinMode && <span className="review-proxy-controls-hint">Drag orbit · Right-drag pan · Wheel zoom · Shift+wheel / WASD depth · Double-click recentre</span>}
+    </div>
   </div>;
 }
