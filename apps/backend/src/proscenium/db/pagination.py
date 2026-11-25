@@ -2,10 +2,11 @@ import base64
 import hashlib
 import hmac
 import json
+from collections.abc import Callable
 from typing import Any
 
 from proscenium.api.errors import DomainError
-from proscenium.contracts import canonical
+from proscenium.contracts import canonical, validate_stored_json
 
 
 class Cursors:
@@ -48,3 +49,29 @@ class Cursors:
         selected = remaining[:limit]
         next_cursor = self.encode(scope, selected[-1][key]) if len(remaining) > limit else None
         return dict(schema_version="1.0", items=selected, next_cursor=next_cursor)
+
+    def stored_page(
+        self,
+        scope: str,
+        rows: list[tuple[str, dict[str, Any]]],
+        key: str | Callable[[dict[str, Any]], str],
+        record_schema: str,
+        *,
+        cursor: str | None = None,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        """Retain each record's exact bytes until the selected page has been validated."""
+        keyed = []
+        for raw, record in rows:
+            try:
+                order = record[key] if isinstance(key, str) else key(record)
+            except (KeyError, TypeError, ValueError, AttributeError, OverflowError) as exc:
+                raise DomainError("invalid_request", message=f"Invalid {record_schema}") from exc
+            if not isinstance(order, str):
+                raise DomainError("invalid_request", message=f"Invalid {record_schema}")
+            keyed.append(dict(order=order, raw=raw, record=record))
+        page = self.page(scope, keyed, "order", cursor=cursor, limit=limit)
+        page["items"] = [
+            validate_stored_json(record_schema, row["raw"], row["record"]) for row in page["items"]
+        ]
+        return page

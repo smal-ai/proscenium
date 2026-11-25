@@ -1,11 +1,14 @@
+import json
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
 from proscenium.api.dependencies import command, owner
+from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.contracts import validate
+from proscenium.contracts import validate, validate_stored_page
+from proscenium.reviews.store import ReviewStore
 from proscenium.services import get_services
 
 router = APIRouter()
@@ -25,32 +28,14 @@ def page(
 ) -> dict[str, Any]:
     services = get_services(request)
     with services.registry.project_store(project_id).transaction(write=False) as tx:
-        records = tx.all(namespace)
-        if namespace == "annotations":
-            records = [
-                r
-                for r in records
-                if not filters.get("version_id")
-                or r["target"]["version_id"] == filters["version_id"]
-            ]
-        else:
-            records = [
-                r
-                for r in records
-                if all(value is None or r.get(name) == value for name, value in filters.items())
-            ]
-        if namespace == "findings":
-            tx.require("reviews", str(filters["review_id"]))
         if namespace == "reviews":
-            reviews_ext = services.extension("reviews")
+            reviews_ext: ReviewStore = services.extension("reviews")
             filter_mode = filters.get("filter") or "all"
             if filter_mode not in {"pending", "all"}:
-                from proscenium.api.errors import DomainError
-
                 raise DomainError("invalid_request")
             # Sequence is durable creation order, not a lexicographic UUID approximation.
             rows = tx.connection.execute(
-                "SELECT id FROM records WHERE namespace='reviews' ORDER BY rowid DESC"
+                "SELECT id, body FROM records WHERE namespace='reviews' ORDER BY rowid DESC"
             ).fetchall()
             order = {row[0]: i for i, row in enumerate(rows)}
             scope = (
@@ -59,20 +44,20 @@ def page(
                 else f"{project_id}:reviews:newest:{filter_mode}"
             )
             after = services.cursors.decode(scope, cursor)
-            projected = [reviews_ext.ticket_view(tx, r) for r in tx.all("reviews")]
+            if after and after not in order:
+                raise DomainError("invalid_cursor")
+            if not 1 <= limit <= 100:
+                raise DomainError("invalid_cursor")
+            context = reviews_ext.preload_ticket_context(tx) if rows else None
+            projected = [
+                reviews_ext.ticket_view(
+                    tx, json.loads(body), context=context, validate_output=False
+                )
+                for identity, body in rows
+                if not after or order[identity] > order[after]
+            ]
             if filter_mode == "pending":
                 projected = [r for r in projected if r.get("awaiting_human") is True]
-            projected.sort(key=lambda r: order[r[key]])
-            if after:
-                if after not in order:
-                    from proscenium.api.errors import DomainError
-
-                    raise DomainError("invalid_cursor")
-                projected = [r for r in projected if order[r[key]] > order[after]]
-            if not 1 <= limit <= 100:
-                from proscenium.api.errors import DomainError
-
-                raise DomainError("invalid_cursor")
             selected = projected[:limit]
             return validate(
                 schema,
@@ -84,10 +69,39 @@ def page(
                     else None,
                 ),
             )
-        result = services.cursors.page(
-            f"{project_id}:{namespace}:{filters}", records, key, cursor=cursor, limit=limit
+        if namespace == "findings":
+            tx.require("reviews", str(filters["review_id"]))
+        records = tx.all_raw(namespace)
+        if namespace == "annotations":
+            records = [
+                (raw, r)
+                for raw, r in records
+                if not filters.get("version_id")
+                or (
+                    isinstance(r.get("target"), dict)
+                    and r["target"].get("version_id") == filters["version_id"]
+                )
+            ]
+        else:
+            records = [
+                (raw, r)
+                for raw, r in records
+                if all(value is None or r.get(name) == value for name, value in filters.items())
+            ]
+        record_schema = {
+            "annotations": "AnnotationSnapshot",
+            "selections": "SelectionRecord",
+            "findings": "ReviewFinding",
+        }[namespace]
+        result = services.cursors.stored_page(
+            f"{project_id}:{namespace}:{filters}",
+            records,
+            key,
+            record_schema,
+            cursor=cursor,
+            limit=limit,
         )
-        return validate(schema, result)
+        return validate_stored_page(schema, result)
 
 
 @router.get(BASE + "/annotations", operation_id="listAnnotations")

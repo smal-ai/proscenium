@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Annotated
 
@@ -54,8 +55,12 @@ def items(
         raise DomainError("invalid_request")
     catalogue: Catalogue = services.extension("catalogue")
     with services.registry.project_store(project_id).transaction(write=False) as tx:
+        selections = catalogue.selections_by_slot(tx)
+        selected_versions = catalogue.selected_versions(tx, selections)
         records = [
-            catalogue.item_view(tx, row)
+            catalogue.item_view(
+                tx, row, selections_by_slot=selections, selected_versions=selected_versions
+            )
             for row in tx.all("items")
             if kind is None or row["kind"] == kind
         ]
@@ -77,10 +82,23 @@ def versions(
     catalogue: Catalogue = services.extension("catalogue")
     with services.registry.project_store(project_id).transaction(write=False) as tx:
         tx.require("items", item_id)
+        rows = [row for row in tx.all("versions") if row["item_id"] == item_id]
+        render_jobs = catalogue.render_jobs_by_version(tx) if rows else {}
+        links = (
+            {
+                identity: json.loads(body)
+                for identity, body in tx.connection.execute(
+                    "SELECT id, body FROM records WHERE namespace='version_links' "
+                    "AND id IN (SELECT value FROM json_each(?))",
+                    (json.dumps([row["version_id"] for row in rows]),),
+                )
+            }
+            if len(rows) > 1
+            else None
+        )
         records = [
-            catalogue.version_view(tx, row)
-            for row in tx.all("versions")
-            if row["item_id"] == item_id
+            catalogue.version_view(tx, row, render_jobs_by_version=render_jobs, version_links=links)
+            for row in rows
         ]
     return services.cursors.page(
         f"{project_id}:versions:{item_id}", records, "version_id", cursor=cursor, limit=limit

@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,10 @@ class Registry:
     def __init__(self, store: Store):
         self.store = store
         self.project_committed: Callable[[str], None] | None = None
+        self.on_project_commit: Callable[[str, set[str], bool], None] | None = None
+        self.on_registry_commit: Callable[[set[str]], None] | None = None
         previous = store.before_commit
+        previous_after = store.after_commit
 
         def rebind_guard(tx: Transaction) -> None:
             if previous is not None:
@@ -45,6 +49,14 @@ class Registry:
                     self.assert_preparations_settled(target)
 
         store.before_commit = rebind_guard
+
+        def after_commit(tx: Transaction) -> None:
+            if previous_after is not None:
+                previous_after(tx)
+            if self.on_registry_commit is not None:
+                self.on_registry_commit(tx.changed_namespaces)
+
+        store.after_commit = after_commit
 
     def register(self, record: dict[str, Any], *, expected_root: Path | None = None) -> None:
         validate("ProjectRecord", record)
@@ -75,10 +87,26 @@ class Registry:
             state = tx.get("registry", "active", required=False)
             return state["project_id"] if state else None
 
+    def _project_binding(self, project_id: str) -> tuple[str | None, dict[str, Any] | None]:
+        with self.store.transaction(write=False) as tx:
+            rows = {
+                row["namespace"]: json.loads(row["body"])
+                for row in tx.connection.execute(
+                    "SELECT namespace, id, body FROM records WHERE "
+                    "(namespace='registry' AND id='active') OR (namespace='projects' AND id=?)",
+                    (project_id,),
+                )
+            }
+        state = rows.get("registry")
+        return (state["project_id"] if state else None), rows.get("projects")
+
     def project_store(self, project_id: str, *, active: bool = True) -> Store:
-        if active and project_id != self.active_id():
+        active_id, project = self._project_binding(project_id)
+        if active and project_id != active_id:
             raise DomainError("scope_denied", 403)
-        registered = Path(self.get(project_id)["path"])
+        if project is None:
+            raise DomainError("not_found", 404)
+        registered = Path(project["path"])
         root = registered.resolve(strict=True)
         if root != registered:
             raise DomainError("project_location_conflict", 409)
@@ -89,9 +117,12 @@ class Registry:
         def guard() -> None:
             # A previously obtained handle may outlive rebind/activation while doing
             # filesystem work. It must not mutate the abandoned original afterwards.
-            if self.get(project_id)["path"] != str(root):
+            active_id, project = self._project_binding(project_id)
+            if project is None:
+                raise DomainError("not_found", 404)
+            if project["path"] != str(root):
                 raise DomainError("source_conflict", 409, "Project location changed")
-            if active and self.active_id() != project_id:
+            if active and active_id != project_id:
                 raise DomainError("scope_denied", 403)
 
         def before(tx) -> None:
@@ -102,15 +133,20 @@ class Registry:
                     raise DomainError("source_conflict", 409, "Native session identity changed")
 
         def after(tx) -> None:
-            if self.project_committed and tx.changed_namespaces & {
-                "copilot.session",
-                "copilot.control",
-            }:
-                self.project_committed(project_id)
+            try:
+                if self.project_committed and tx.changed_namespaces & {
+                    "copilot.session",
+                    "copilot.control",
+                }:
+                    self.project_committed(project_id)
+            finally:
+                if self.on_project_commit is not None:
+                    self.on_project_commit(project_id, tx.changed_namespaces, tx.emitted_events)
 
         return Store(
             runtime / "state.sqlite3",
             project_id,
+            defer_migrate=True,
             write_barrier=self.store.write_barrier,
             write_guard=guard,
             before_commit=before,

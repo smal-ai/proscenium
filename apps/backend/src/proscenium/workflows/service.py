@@ -574,6 +574,11 @@ class Workflows:
                 raise DomainError("scope_denied", 403)
             return tx.require(NAMESPACE, index["identity"])
 
+    @staticmethod
+    def reap_idle() -> None:
+        """Reap owned children without reading project state or touching detached workers."""
+        reap_unity_supervisors()
+
     async def reconcile(self, project_id: str) -> list[dict]:
         """Parent calls with gate closed too. Observation only, never dispatch or export."""
         async with self.operation():

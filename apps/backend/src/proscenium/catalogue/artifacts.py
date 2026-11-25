@@ -12,7 +12,7 @@ from PIL import Image, ImageCms, ImageOps, UnidentifiedImageError
 from proscenium.api.errors import DomainError
 from proscenium.audio_formats import AUDIO_DEMUXERS
 from proscenium.auth import Caller
-from proscenium.contracts import validate
+from proscenium.contracts import validate, validate_retained_artifact_page
 from proscenium.db import Transaction
 from proscenium.db.paths import read_bounded_regular_file
 from proscenium.services import Services
@@ -58,30 +58,32 @@ class Artifacts:
             ):
                 raise DomainError("invalid_request")
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
-            attributions = artifact_attributions(tx)
             records = []
-            for artifact in tx.all("artifacts"):
-                if artifact["project_id"] != project_id:
+            for raw, artifact in tx.all_raw("artifacts"):
+                if artifact.get("project_id") != project_id:
                     raise DomainError("scope_denied", 403)
-                if (kind is None or artifact["kind"] == kind) and (
-                    purpose is None or artifact["purpose"] == purpose
+                if (kind is None or artifact.get("kind") == kind) and (
+                    purpose is None or artifact.get("purpose") == purpose
                 ):
-                    summary = dict(
-                        schema_version="1.0",
-                        artifact=artifact,
-                        **attributions[artifact["artifact_id"]],
-                    )
-                    validate("RetainedArtifactSummary", summary)
-                    records.append({"artifact_id": artifact["artifact_id"], "summary": summary})
-        result = self.services.cursors.page(
-            f"{project_id}:retained-artifacts:{kind}:{purpose}",
-            records,
-            "artifact_id",
-            cursor=cursor,
-            limit=limit,
-        )
-        result["items"] = [row["summary"] for row in result["items"]]
-        return validate("RetainedArtifactPage", result)
+                    records.append((raw, artifact))
+            result = self.services.cursors.stored_page(
+                f"{project_id}:retained-artifacts:{kind}:{purpose}",
+                records,
+                "artifact_id",
+                "Artifact",
+                cursor=cursor,
+                limit=limit,
+            )
+            attributions = artifact_attributions(
+                tx, artifact_ids={artifact["artifact_id"] for artifact in result["items"]}
+            )
+            result["items"] = [
+                dict(
+                    schema_version="1.0", artifact=artifact, **attributions[artifact["artifact_id"]]
+                )
+                for artifact in result["items"]
+            ]
+        return validate_retained_artifact_page(result)
 
     def __init__(self, services: Services, limits: ImageLimits | None = None):
         self.services = services
