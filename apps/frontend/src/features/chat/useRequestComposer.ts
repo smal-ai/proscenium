@@ -85,6 +85,16 @@ export function useRequestComposer(api: ApiClient, projectId: string, onAccepted
           return null;
         });
         if (lookup) return accept(lookup.record);
+        // This mount may still remember a command another mount cleared during lookup.
+        if (readPrivate<PendingRequest>(key)?.submission.request_id !== expectedId) {
+          if (ownsState()) {
+            activePendingRef.current = null;
+            (stop ? setPendingStop : setPending)(null);
+            setNeedsConfirmation(false);
+            setError("The original request was already settled or rejected. Review your draft and submit again.");
+          }
+          return null;
+        }
       }
       stage = "submit";
       if (command.context) {

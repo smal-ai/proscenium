@@ -220,14 +220,21 @@ for (const stop of [false, true]) {
   });
 }
 
-test("A late acknowledgement cannot restore a request reconciled by a remounted project", async ({ page, baseURL }) => {
+for (const [scenario, title] of [
+  ["late-ack", "A late acknowledgement cannot restore a request reconciled by a remounted project"],
+  ["settled", "A successful lookup clears a remounted card after the original mount settled it"],
+  ["rejected", "A remounted card does not replay a request rejected by the original mount"],
+  ["rejected-during-lookup", "A remounted card checks storage again after a rejection during lookup"],
+] as const) {
+test(title, async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   const otherId = "isolated-uat-b", otherBase = `/api/v1/projects/${otherId}`;
   const otherProject = { ...project, project_id: otherId, repository_id: "repository-b", name: "Isolated UAT B", path: "/synthetic/uat-b" };
   let activeId = projectId;
   let revision = 0;
   const asProject = (record: ProjectRecord): ProjectRecord => ({ ...record, state: activeId === record.project_id ? "active" : "inactive", state_revision: revision });
-  const delayedAck = deferred();
+  const delayedAck = deferred(), lookupEntered = deferred(), delayedLookup = deferred();
+  const rejected = scenario === "rejected" || scenario === "rejected-during-lookup";
   let originalLookups = 0;
   await studio.install({ savedLayout: true, additionalProjectIds: [otherId], routes: [
     { path: "/api/v1/projects", handler: route => route.fulfill({ json: pageOf([asProject(project), asProject(otherProject)]) }) },
@@ -244,16 +251,30 @@ test("A late acknowledgement cannot restore a request reconciled by a remounted 
     { method: "POST", path: `${base}/requests`, handler: async route => {
       const body = route.request().postDataJSON() as MessageSubmit;
       studio.submissions.push(body);
+      const first = studio.submissions.length === 1;
+      if (first && rejected) {
+        await delayedAck.promise;
+        await route.fulfill({ status: 422, json: { schema_version: "1.0", error: { code: "invalid_request", message: "Original submission rejected", retryable: false, details: {} } } });
+        return;
+      }
       const record = request(body.request_id, body.type === "stop" ? "" : body.text, "accepted");
       record.submission = body;
       studio.requests.push(record);
-      if (studio.submissions.length === 1) await delayedAck.promise;
+      if (first) await delayedAck.promise;
       await route.fulfill({ status: 202, json: record.receipt });
     } },
-    { method: "GET", path: new RegExp(`${base}/requests/[^/]+$`), handler: route => {
+    { method: "GET", path: new RegExp(`${base}/requests/[^/]+$`), handler: async route => {
       const id = new URL(route.request().url()).pathname.split("/").at(-1);
-      if (id === studio.submissions[0]?.request_id && ++originalLookups === 2) {
-        return route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "service_unavailable", message: "Late confirmation unavailable", retryable: true, details: {} } } });
+      if (id === studio.submissions[0]?.request_id) {
+        originalLookups += 1;
+        if (rejected) {
+          lookupEntered.release();
+          await delayedLookup.promise;
+          return route.fulfill({ status: 404, json: { schema_version: "1.0", error: { code: "not_found", message: "Original request not found", retryable: false, details: {} } } });
+        }
+        if (scenario === "late-ack" && originalLookups === 2) {
+          return route.fulfill({ status: 503, json: { schema_version: "1.0", error: { code: "service_unavailable", message: "Late confirmation unavailable", retryable: true, details: {} } } });
+        }
       }
       return route.fulfill({ json: studio.requests.find(record => record.request_id === id) });
     } },
@@ -261,6 +282,7 @@ test("A late acknowledgement cannot restore a request reconciled by a remounted 
   await studio.open(); await studio.ready();
   const input = page.getByRole("textbox", { name: "Message Copilot" });
   const confirmation = page.getByText("Request awaiting confirmation", { exact: true });
+  const reconcile = page.getByRole("button", { name: "Reconcile original request / retry same ID" });
   const retained = () => page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.request.${id}`) ?? "null"), projectId);
   async function activate(from: ProjectRecord, to: ProjectRecord) {
     await page.getByRole("button", { name: from.name, exact: true }).click();
@@ -270,7 +292,7 @@ test("A late acknowledgement cannot restore a request reconciled by a remounted 
     await studio.ready();
   }
   try {
-    await input.fill("Admitted on the first mount"); await input.press("Enter");
+    await input.fill("Submitted on the first mount"); await input.press("Enter");
     await expect.poll(() => studio.submissions.length).toBe(1);
     const original = studio.submissions[0];
     expect((await retained()).submission).toEqual(original);
@@ -279,17 +301,44 @@ test("A late acknowledgement cannot restore a request reconciled by a remounted 
     await activate(project, otherProject);
     await activate(otherProject, project);
     await expect(confirmation).toBeVisible();
-    await page.getByRole("button", { name: "Reconcile original request / retry same ID" }).click();
-    await expect(confirmation).toHaveCount(0);
-    expect(await retained()).toBeNull();
-    expect(originalLookups).toBe(1);
+    const originalReceipt = (status: number) => page.waitForResponse(response =>
+      response.url().endsWith(`${base}/requests/${original.request_id}`) && response.request().method() === "GET" && response.status() === status);
+    if (scenario === "late-ack") {
+      await reconcile.click();
+      await expect(confirmation).toHaveCount(0);
+      expect(await retained()).toBeNull();
+      expect(originalLookups).toBe(1);
 
-    const lateFailure = page.waitForResponse(response => response.url().endsWith(`${base}/requests/${original.request_id}`) && response.status() === 503);
-    delayedAck.release();
-    await (await lateFailure).finished();
-    expect(originalLookups).toBe(2);
+      const lateFailure = originalReceipt(503);
+      delayedAck.release();
+      await (await lateFailure).finished();
+      expect(originalLookups).toBe(2);
+    } else {
+      if (scenario === "rejected-during-lookup") {
+        await reconcile.click();
+        await lookupEntered.promise;
+        expect((await retained()).submission).toEqual(original);
+      }
+      delayedAck.release();
+      await expect.poll(retained).toBeNull();
+      await expect(confirmation).toBeVisible();
+
+      const lookup = originalReceipt(rejected ? 404 : 200);
+      if (scenario !== "rejected-during-lookup") await reconcile.click();
+      delayedLookup.release();
+      await (await lookup).finished();
+      await expect(confirmation).toHaveCount(0);
+      expect(originalLookups).toBe(rejected ? 1 : 2);
+      if (rejected) {
+        await expect(page.getByRole("alert")).toContainText("The original request was already settled or rejected.");
+        await expect(input).toHaveValue("Submitted on the first mount");
+      }
+    }
     expect(await retained()).toBeNull();
     await expect(confirmation).toHaveCount(0);
+    expect(studio.guard!.calls.filter(call => call.method === "POST" && [`${base}/contexts`, `${base}/requests`].includes(call.url))).toEqual([
+      { method: "POST", url: `${base}/contexts` }, { method: "POST", url: `${base}/requests` },
+    ]);
 
     await input.fill("New submission on the remount"); await input.press("Enter");
     await expect(input).toHaveValue("");
@@ -298,9 +347,10 @@ test("A late acknowledgement cannot restore a request reconciled by a remounted 
     expect(studio.submissions[1].request_id).not.toBe(original.request_id);
     expect(await retained()).toBeNull();
     await expect(confirmation).toHaveCount(0);
-  } finally { delayedAck.release(); }
+  } finally { delayedAck.release(); delayedLookup.release(); }
   studio.assertHermetic();
 });
+}
 
 for (const initialFailure of [true, false]) {
   test(initialFailure ? "Initial request storage failure blocks sending without locking the Composer" : "Secondary storage failures do not interrupt request submission or confirmation", async ({ page, baseURL }) => {
