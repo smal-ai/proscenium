@@ -14,6 +14,7 @@ from proscenium.audio_formats import AUDIO_DEMUXERS
 from proscenium.auth import Caller
 from proscenium.contracts import validate
 from proscenium.db import Transaction
+from proscenium.db.paths import read_bounded_regular_file
 from proscenium.services import Services
 from proscenium.sources.common import (
     active,
@@ -325,18 +326,13 @@ class Artifacts:
             admitted(self.services, tx, caller)
         if not body["staging_path"].startswith(".proscenium/tool-output/staging/"):
             raise DomainError("scope_denied", 403)
-        path = managed(root, body["staging_path"], exists=True)
-        if body["kind"] == "audio":
-            from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
+        from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
 
-            if path.stat().st_size > MAX_AUDIO_BYTES:
-                raise DomainError("upload_too_large", 413)
-            with path.open("rb") as stream:
-                data = stream.read(MAX_AUDIO_BYTES + 1)
-            if len(data) > MAX_AUDIO_BYTES:
-                raise DomainError("upload_too_large", 413)
-        else:
-            data = path.read_bytes()
+        managed(root, body["staging_path"])
+        path = root / body["staging_path"]
+        data = read_bounded_regular_file(
+            path, MAX_AUDIO_BYTES if body["kind"] == "audio" else None, root=root
+        )
         if sha(data) != body["sha256"]:
             raise DomainError("hash_mismatch", 422)
         artifact = self.promote(

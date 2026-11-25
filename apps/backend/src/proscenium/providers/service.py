@@ -18,7 +18,7 @@ from proscenium.api.interfaces import ArtifactService, ReviewStore
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
-from proscenium.db.paths import project_path
+from proscenium.db.paths import project_path, read_bounded_regular_file
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
 from proscenium.providers import klein, sd_turbo, sd_turbo_fp16, stable_audio
@@ -719,7 +719,8 @@ class ProviderService:
         digest = sha(data)
         root = Path(self.services.registry.get(job["project_id"])["path"])
         relative = f".proscenium/jobs/{job['job_id']}/{digest}.{format.suffix}"
-        path = project_path(root, relative, managed=True, must_exist=False)
+        project_path(root, relative, managed=True, must_exist=False)
+        path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         try:
             with path.open("xb") as stream:
@@ -730,7 +731,14 @@ class ProviderService:
                 os.fsync(stream.fileno())
             path.chmod(0o400)
         except FileExistsError:
-            if sha(path.read_bytes()) != digest:
+            if (
+                sha(
+                    read_bounded_regular_file(
+                        root / relative, stable_audio.MAX_AUDIO_BYTES, root=root
+                    )
+                )
+                != digest
+            ):
                 raise DomainError("hash_mismatch", 422) from None
         request = dict(
             schema_version="1.0",
@@ -769,25 +777,45 @@ class ProviderService:
         if job["external_job_id"] is None or job["state"] == "outcome_uncertain":
             job = self.update(job, "running", external_job_id=prompt_id)
         self._settle(job, executed=True)
-        history = client.status(prompt_id)
-        if not history:
-            return job
-        status = history.get("status", {})
-        if status.get("status_str") == "error":
-            job = self.update(job, "failed", error_code="provider_unavailable")
-            self._release(job)
-            return job
-        if not status.get("completed"):
-            return job
-        # Provider execution is proved terminal. Download/storage recovery needs no GPU claim.
-        self._release(job)
-        if execution.get("phase") != "verifying":
-            execution["phase"] = "verifying"
-            self.execution(job["project_id"], job["job_id"], execution)
         capability = self._plugin(inputs)
+        verifying = execution.get("phase") == "verifying"
+        recorded = execution.get("output_descriptors")
+        if verifying and isinstance(recorded, list):
+            descriptors = recorded
+        else:
+            history = client.status(prompt_id)
+            if not history:
+                if verifying:
+                    raise DomainError("media_unavailable", 422)
+                return job
+            status = history.get("status", {})
+            if status.get("status_str") == "error":
+                job = self.update(job, "failed", error_code="provider_unavailable")
+                self._release(job)
+                return job
+            if not status.get("completed"):
+                return job
+            # Persist only fields needed to download. History may disappear before a retry.
+            self._release(job)
+            try:
+                items = capability.output_descriptors(history)
+            except (AttributeError, KeyError, TypeError, ValueError):
+                # Invalid output metadata does not make a completed inference uncertain.
+                items = []
+            descriptors = [
+                {
+                    key: item[key]
+                    for key in ("filename", "subfolder", "type")
+                    if isinstance(item.get(key), str)
+                }
+                for item in items
+                if isinstance(item, dict) and isinstance(item.get("filename"), str)
+            ]
+            execution.update(phase="verifying", output_descriptors=descriptors)
+            self.execution(job["project_id"], job["job_id"], execution)
         artifacts: list[str] = []
         inspections = []
-        for item in capability.output_descriptors(history):
+        for item in descriptors:
             try:
                 data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
                 inspection = capability.inspect_output(

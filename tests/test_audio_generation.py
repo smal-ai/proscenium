@@ -1,10 +1,10 @@
 """Offline Stable Audio graphs, FLAC registration and provider lifecycle."""
 
 import errno
-import io
 import json
 import os
 import subprocess
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import replace
 from hashlib import sha256
@@ -171,6 +171,8 @@ def audio_catalog():
         "corrupt_provider_output",
         "media_unavailable",
         "resume_verification",
+        "legacy_verification_no_history",
+        "malformed_completed_outputs",
     ],
 )
 def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, monkeypatch, outcome):
@@ -185,6 +187,8 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
     )
     artifacts = services.extension("artifacts")
     calls = []
+    history_available = True
+    descriptor = {"filename": "output.flac", "subfolder": "scores"}
     catalogue = audio_catalog()
     data = (
         b"Not FLAC"
@@ -203,8 +207,15 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
                 workflow(1.25), "Piano underscore", "42", {}, MODELS
             )
             return httpx.Response(200, json={"prompt_id": "audio-prompt"})
+        if path == "/history/audio-prompt":
+            if not history_available:
+                return httpx.Response(200, json={})
+            if outcome == "malformed_completed_outputs":
+                return httpx.Response(
+                    200, json={"audio-prompt": {"status": {"completed": True}, "outputs": []}}
+                )
         if path == "/view":
-            assert request.url.params["filename"] == "output.flac"
+            assert request.url.params == httpx.QueryParams({**descriptor, "type": "output"})
             return httpx.Response(200, content=data)
         return httpx.Response(
             200,
@@ -218,7 +229,9 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
                         "outputs": {
                             "8": {
                                 "audio": [
-                                    {"filename": "output.flac", "subfolder": "", "type": "output"}
+                                    {**descriptor, "type": 42, "unused": "not durable evidence"},
+                                    "malformed",
+                                    {"filename": None, "type": "output"},
                                 ]
                             }
                         },
@@ -269,25 +282,33 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
         assert kind == "failure" and mismatch["error"] == "idempotency_conflict"
         job, kind = invoke(runtime, "submit_generation", request, "submit-audio")
         assert kind == "success" and job["kind"] == "audio_generation", job
-        if outcome in {"media_unavailable", "resume_verification"}:
+        simulate_crash = outcome in {"resume_verification", "legacy_verification_no_history"}
+        if outcome == "media_unavailable" or simulate_crash:
             original_write = Path.write_bytes
 
             def fail_verifier_write(path, contents):
                 if path.name == "audio" and path.parent.name.startswith("proscenium-audio-verify-"):
                     execution = provider.execution(PROJECT, job["job_id"])
                     assert execution["phase"] == "verifying"
-                    if outcome == "resume_verification":
+                    assert execution["output_descriptors"] == [descriptor]
+                    if simulate_crash:
                         raise SystemExit("Simulated crash while verifying")
                     raise OSError(errno.ENOSPC, "Simulated full local temp filesystem")
                 return original_write(path, contents)
 
             with monkeypatch.context() as patch:
                 patch.setattr(Path, "write_bytes", fail_verifier_write)
-                if outcome == "resume_verification":
+                if simulate_crash:
                     with pytest.raises(SystemExit, match="Simulated crash while verifying"):
                         provider.pump(PROJECT, job["job_id"])
                 else:
                     (finished,) = provider.pump(PROJECT, job["job_id"])
+        if simulate_crash:
+            history_available = False
+        if outcome == "legacy_verification_no_history":
+            execution = provider.execution(PROJECT, job["job_id"])
+            execution.pop("output_descriptors")
+            provider.execution(PROJECT, job["job_id"], execution)
         if outcome != "media_unavailable":
             (finished,) = provider.pump(PROJECT, job["job_id"])
         with runtime.store.transaction(write=False) as tx:
@@ -299,7 +320,17 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
             )
         assert calls.count("/prompt") == 1
         if outcome not in {None, "resume_verification"}:
-            assert finished["state"] == "failed" and finished["error_code"] == outcome
+            expected = (
+                "media_unavailable"
+                if outcome in {"legacy_verification_no_history", "malformed_completed_outputs"}
+                else outcome
+            )
+            assert finished["state"] == "failed" and finished["error_code"] == expected
+            if outcome == "legacy_verification_no_history":
+                assert calls.count("/history/audio-prompt") == 2 and calls.count("/view") == 1
+            if outcome == "malformed_completed_outputs":
+                assert "/view" not in calls
+                assert provider.execution(PROJECT, job["job_id"])["output_descriptors"] == []
             assert finished["artifact_ids"] == []
             repeated, kind = invoke(runtime, "submit_generation", request, "submit-audio-replay")
             assert kind == "success" and repeated == finished
@@ -312,7 +343,7 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, mo
             "/prompt",
             "/history/audio-prompt",
             "/view",
-            *(["/history/audio-prompt", "/view"] if outcome == "resume_verification" else []),
+            *(["/view"] if outcome == "resume_verification" else []),
         ]
         outcome, provenance = finished["artifact_ids"]
         artifact = artifacts.get(PROJECT, outcome)
@@ -780,31 +811,40 @@ def test_oversized_staged_audio_has_bounded_read(runtime, monkeypatch, grows):
         pytest.fail("Oversized encoded audio reached verification")
 
     monkeypatch.setattr(stable_audio, "verify_audio_bytes", no_decode)
-    original_stat, original_open = Path.stat, Path.open
+    original_fstat, original_fdopen = os.fstat, os.fdopen
+    file_info = path.stat()
     reads = []
 
-    def stat(candidate, *args, **kwargs):
-        actual = original_stat(candidate, *args, **kwargs)
-        if grows and candidate == path:
-            values = list(actual)
+    def is_staged_file(info):
+        return (info.st_dev, info.st_ino) == (file_info.st_dev, file_info.st_ino)
+
+    def fstat(fd):
+        info = original_fstat(fd)
+        if grows and is_staged_file(info):
+            values = list(info)
             values[6] = 4
             return os.stat_result(values)
-        return actual
+        return info
 
-    class ReadSpy(io.BytesIO):
-        def read(self, size=-1):
-            reads.append(size)
-            assert size == 5
-            return super().read(size)
+    @contextmanager
+    def capture_read(stream):
+        class ReadSpy:
+            def read(self, size=-1):
+                reads.append(size)
+                assert size == 5
+                return stream.read(size)
 
-    def open_path(candidate, *args, **kwargs):
-        if candidate == path:
-            assert grows, "Oversized staged file was opened"
-            return ReadSpy(data)
-        return original_open(candidate, *args, **kwargs)
+        with stream:
+            yield ReadSpy()
 
-    monkeypatch.setattr(Path, "stat", stat)
-    monkeypatch.setattr(Path, "open", open_path)
+    def fdopen(fd, *args, **kwargs):
+        if is_staged_file(original_fstat(fd)):
+            assert grows, "Oversized staged file was read"
+            return capture_read(original_fdopen(fd, *args, **kwargs))
+        return original_fdopen(fd, *args, **kwargs)
+
+    monkeypatch.setattr(os, "fstat", fstat)
+    monkeypatch.setattr(os, "fdopen", fdopen)
     body = dict(
         schema_version="1.0",
         operation_id="oversized",
@@ -930,3 +970,100 @@ def test_short_cut_requires_explicit_finite_audio_timing(short_aac_cut, monkeypa
             expect_audio=True,
         )
     assert (error.value.code, error.value.status) == ("media_unavailable", 422)
+
+
+def test_catalogue_rejects_staged_fifo_without_blocking(runtime, monkeypatch):
+    relative = ".proscenium/tool-output/staging/audio.fifo"
+    path = runtime.root / relative
+    path.parent.mkdir(parents=True)
+    os.mkfifo(path)
+    opened = []
+    original_open = os.open
+
+    def guarded_open(candidate, flags, *args, **kwargs):
+        if candidate in {path, str(path), path.name}:
+            # Check before opening, so the regression fails instead of hanging without a writer.
+            opened.append(flags)
+            assert flags & os.O_NONBLOCK
+            assert flags & os.O_NOFOLLOW
+        return original_open(candidate, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", guarded_open)
+    body = dict(
+        schema_version="1.0",
+        operation_id="fifo",
+        project_id=PROJECT,
+        artifact_id="fifo",
+        kind="audio",
+        purpose="concept",
+        media_type="audio/flac",
+        staging_path=relative,
+        sha256=sha256(b"").hexdigest(),
+    )
+    call = invocation(runtime, "register_artifact", body, "fifo-register")
+    caller = runtime.tools.caller(call, name="register_artifact")
+    with pytest.raises(DomainError, match="Expected a regular file") as captured:
+        runtime.services.extension("artifacts").register(caller, body)
+    assert (captured.value.code, captured.value.status) == ("scope_denied", 403)
+    assert len(opened) == 1
+
+
+def test_provider_bridge_rejects_oversized_stage_before_promotion(runtime, monkeypatch):
+    body = dict(
+        schema_version="1.0",
+        operation_id="bridge-prepare",
+        prompt="Bridge test",
+        seed="42",
+        duration_seconds=1,
+    )
+    with configure_audio(runtime):
+        prepared, status = invoke(runtime, "prepare_audio_generation", body, "bridge-prepare")
+        assert status == "success", prepared
+        job, status = invoke(
+            runtime, "submit_generation", prepared["submit_request"], "bridge-submit"
+        )
+        assert status == "success", job
+    relative = f".proscenium/jobs/{job['job_id']}/oversized.flac"
+    path = runtime.root / relative
+    path.parent.mkdir(parents=True)
+    data = b"over the cap"
+    path.write_bytes(data)
+    monkeypatch.setattr(stable_audio, "MAX_AUDIO_BYTES", 4)
+    monkeypatch.setattr(
+        stable_audio,
+        "verify_audio_bytes",
+        lambda *_a, **_kw: pytest.fail("Oversized audio reached verification"),
+    )
+    body = dict(
+        schema_version="1.0",
+        operation_id="oversized-bridge",
+        project_id=PROJECT,
+        artifact_id="oversized-bridge",
+        kind="audio",
+        purpose="concept",
+        media_type="audio/flac",
+        staging_path=relative,
+        sha256=sha256(data).hexdigest(),
+    )
+    caller = runtime.provider.worker(job)
+    with pytest.raises(DomainError) as captured:
+        register_provider_artifact(runtime.services, caller, body)
+    assert (captured.value.code, captured.value.status) == ("upload_too_large", 413)
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.get("artifacts", body["artifact_id"], required=False) is None
+
+
+def test_provider_existing_stage_is_bounded_before_hashing(runtime, monkeypatch):
+    data = b"small"
+    digest = sha256(data).hexdigest()
+    job = dict(job_id="oversized-existing-stage", project_id=PROJECT)
+    path = runtime.root / f".proscenium/jobs/{job['job_id']}/{digest}.png"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"Larger than the shared staged-output cap")
+    monkeypatch.setattr(stable_audio, "MAX_AUDIO_BYTES", len(data))
+    runtime.provider.registrar = lambda *_args: pytest.fail(
+        "Oversized audio recovery reached registration"
+    )
+    with pytest.raises(DomainError) as captured:
+        runtime.provider._register(job, data, "0")
+    assert (captured.value.code, captured.value.status) == ("upload_too_large", 413)
