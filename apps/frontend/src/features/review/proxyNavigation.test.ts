@@ -103,3 +103,14 @@ for (const camera of [new PerspectiveCamera(50, 1, 1, 10), new OrthographicCamer
     for (const z of [1.5, -9, 3, Infinity, NaN]) assert.equal(isPointWithinCameraClip(camera, new Vector3(5, 0, z)), false);
   });
 }
+
+test("clip depth follows the restored projection rather than the camera scalar planes", () => {
+  const camera = new PerspectiveCamera(50, 1, 5, 10);
+  camera.projectionMatrix.copy(new PerspectiveCamera(50, 1, 0.5, 50).projectionMatrix);
+  for (const depth of [1, 25]) assert.equal(isPointWithinCameraClip(camera, new Vector3(0, 0, -depth)), true);
+  for (const depth of [0.2, 60]) assert.equal(isPointWithinCameraClip(camera, new Vector3(0, 0, -depth)), false);
+  const wide = new PerspectiveCamera(50, 1, 0.1, 100);
+  wide.projectionMatrix.copy(new PerspectiveCamera(50, 1, 20, 40).projectionMatrix);
+  assert.equal(isPointWithinCameraClip(wide, new Vector3(0, 0, -7)), false);
+  assert.equal(isPointWithinCameraClip(wide, new Vector3(0, 0, -30)), true);
+});

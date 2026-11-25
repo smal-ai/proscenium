@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Vector3, type OrthographicCamera } from "three";
+import { Vector3, Vector4, type OrthographicCamera, type PerspectiveCamera } from "three";
 
 type InspectionCamera = PerspectiveCamera | OrthographicCamera;
 
@@ -59,12 +59,13 @@ export function recenterOrbitTarget(camera: InspectionCamera, target: Vector3, h
 
 export function isPointWithinCameraClip(camera: InspectionCamera, worldPoint: Vector3): boolean {
   if (!Number.isFinite(worldPoint.x + worldPoint.y + worldPoint.z)) return false;
-  camera.updateWorldMatrix(true, false);
-  const depth = -worldPoint.clone().applyMatrix4(camera.matrixWorldInverse).z;
-  if (camera instanceof PerspectiveCamera && depth <= 0) return false;
-  if (depth < camera.near - 1e-6 || depth > camera.far + 1e-6) return false;
-  const ndc = worldPoint.clone().project(camera);
-  return Number.isFinite(ndc.z) && ndc.z >= -1 - 1e-6 && ndc.z <= 1 + 1e-6;
+  camera.updateMatrixWorld();
+  const clip = new Vector4(worldPoint.x, worldPoint.y, worldPoint.z, 1)
+    .applyMatrix4(camera.matrixWorldInverse)
+    .applyMatrix4(camera.projectionMatrix);
+  if (!Number.isFinite(clip.z) || !Number.isFinite(clip.w) || clip.w <= 0) return false;
+  const epsilon = 1e-6 * clip.w;
+  return clip.z >= -clip.w - epsilon && clip.z <= clip.w + epsilon;
 }
 
 export function isTextInputTarget(target: EventTarget | null): boolean {

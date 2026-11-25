@@ -199,6 +199,7 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
   onCamera: (camera: Camera) => void;
 }) {
   const { gl, camera } = useThree();
+  const suppressDblclick = useRef(false);
   const state = useRef({ enabled, pinMode, model, sceneRadius, onCamera });
   state.current = { enabled, pinMode, model, sceneRadius, onCamera };
 
@@ -206,7 +207,6 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
     if (!(camera instanceof PerspectiveCamera || camera instanceof OrthographicCamera)) return;
     const inspectionCamera = camera;
     const dom = gl.domElement;
-    let suppressDblclick = false;
     const publish = (orbit: ComponentRef<typeof OrbitControls>) => {
       orbit.update();
       inspectionCamera.updateMatrixWorld();
@@ -239,12 +239,12 @@ function ProxyDepthNavigationController({ enabled, pinMode, model, sceneRadius, 
 
     function mousedown(event: MouseEvent) {
       if (event.button !== 0) return;
-      if (state.current.pinMode) suppressDblclick = true;
-      else if (event.detail <= 1) suppressDblclick = false;
+      if (state.current.pinMode) suppressDblclick.current = true;
+      else if (event.detail <= 1) suppressDblclick.current = false;
     }
 
     function recenter(event: MouseEvent) {
-      if (suppressDblclick) { suppressDblclick = false; return; }
+      if (suppressDblclick.current) { suppressDblclick.current = false; return; }
       const current = state.current;
       if (!current.enabled || current.pinMode || !current.model || event.button !== 0) return;
       const orbit = controls.current;

@@ -706,8 +706,16 @@ test("3D Inspection translates depth without zoom and recentres on a clicked sur
   const pinBounds = (await canvas.boundingBox())!;
   const beforePin = (await liveCamera(page))!;
   const [pinU, pinV] = projectBlenderPoint(beforePin, surface.toArray());
+  expect(Math.hypot(pinU - 0.5, pinV - 0.5)).toBeGreaterThan(0.04);
   await page.mouse.dblclick(pinBounds.x + pinU * pinBounds.width, pinBounds.y + pinV * pinBounds.height);
-  await expect(review.getByTestId("proxy-spatial-pin")).toHaveCount(1);
+  const pin = review.getByTestId("proxy-spatial-pin");
+  await expect(pin).toHaveCount(1);
+  // Read the live overlay after the camera observer has had time to publish.
+  await pin.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const [liveU, liveV] = await pin.evaluate(el => [parseFloat(el.style.left) / 100, parseFloat(el.style.top) / 100]);
+  expect(Math.abs(liveU - pinU)).toBeLessThan(0.02);
+  expect(Math.abs(liveV - pinV)).toBeLessThan(0.02);
+  expect(Math.hypot(liveU - 0.5, liveV - 0.5)).toBeGreaterThan(0.04);
   expect((await deltaFrom(position(beforePin))).length()).toBeLessThan(1e-6);
   expect(axis((await liveCamera(page))!, 2).distanceTo(axis(beforePin, 2))).toBeLessThan(1e-6);
   studio.assertHermetic();
