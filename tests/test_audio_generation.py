@@ -4,13 +4,16 @@ import json
 import subprocess
 from copy import deepcopy
 from dataclasses import replace
+from hashlib import sha256
 
 import httpx
 import pytest
 from proscenium.api.errors import DomainError
 from proscenium.copilot.capabilities import get_project_capabilities
 from proscenium.jobs.resources import Resources
+from proscenium.previews.media import verify_video
 from proscenium.providers import register_provider_artifact, stable_audio
+from proscenium.providers.plugins import StableAudio3Plugin
 from proscenium.providers.preparation import AudioPreparation, validate_recipes
 from test_worker_capabilities_and_publication import PROJECT, TASK, invoke
 from test_worker_capabilities_and_publication import offline as offline
@@ -98,7 +101,7 @@ def test_flac_metadata_rejects_invalid_input(tmp_path):
         duration_seconds=1.25,
         sample_rate_hz=48000,
         channels=2,
-        sha256_verified_during_registration=True,
+        declared_total_samples=60000,
     )
     no_samples = bytearray(data)
     no_samples[21] &= 0xF0
@@ -155,8 +158,8 @@ def audio_catalog():
     }
 
 
-@pytest.mark.parametrize("malformed", [False, True])
-def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, malformed):
+@pytest.mark.parametrize("failure", [None, "unsupported_media_type", "corrupt_provider_output"])
+def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, failure):
     services, provider = runtime.services, runtime.provider
     services.settings = replace(
         services.settings, services=({**services.settings.services[0], "capabilities": ["audio"]},)
@@ -169,7 +172,13 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, ma
     artifacts = services.extension("artifacts")
     calls = []
     catalogue = audio_catalog()
-    data = b"Not FLAC" if malformed else flac(tmp_path / "synth.flac", seconds=1.25)
+    data = (
+        b"Not FLAC"
+        if failure == "unsupported_media_type"
+        else flac(tmp_path / "synth.flac", seconds=1.25)
+    )
+    if failure == "corrupt_provider_output":
+        data = data[:-100]
 
     def respond(request):
         path = request.url.path
@@ -240,13 +249,15 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, ma
             "too-long",
         )
         assert kind == "failure" and invalid["message"] == stable_audio.INVALID_DURATION
+        mismatch, kind = invoke(
+            runtime, "submit_generation", {**request, "seed": "43"}, "changed-submit"
+        )
+        assert kind == "failure" and mismatch["error"] == "idempotency_conflict"
         job, kind = invoke(runtime, "submit_generation", request, "submit-audio")
         assert kind == "success" and job["kind"] == "audio_generation", job
         (finished,) = provider.pump(PROJECT, job["job_id"])
-        if malformed:
-            assert (
-                finished["state"] == "failed" and finished["error_code"] == "unsupported_media_type"
-            )
+        if failure:
+            assert finished["state"] == "failed" and finished["error_code"] == failure
             assert finished["artifact_ids"] == []
             repeated, kind = invoke(runtime, "submit_generation", request, "submit-audio-replay")
             assert kind == "success" and repeated == finished and calls.count("/prompt") == 1
@@ -278,7 +289,7 @@ def test_audio_preparation_submit_provider_pump_and_replay(runtime, tmp_path, ma
             dict(
                 artifact_id=outcome,
                 sha256=artifact["sha256"],
-                inspection=stable_audio.inspect_flac_bytes(data),
+                inspection=stable_audio.verify_audio_bytes(data, "audio/flac"),
             )
         ]
         repeated, kind = invoke(runtime, "submit_generation", request, "submit-audio-replay")
@@ -318,3 +329,289 @@ def test_invalid_audio_recipe(changes):
                 }
             }
         )
+
+
+def configure_audio(runtime, *, image=False):
+    services, provider = runtime.services, runtime.provider
+    services.settings = replace(
+        services.settings,
+        services=({**services.settings.services[0], "capabilities": ["image", "audio"]},),
+    )
+    services.extensions["audio_preparation"] = AudioPreparation(services, provider)
+    provider.client.close()
+    provider.client = httpx.Client(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, json=runtime.catalog if image else audio_catalog())
+        )
+    )
+    return provider.client
+
+
+@pytest.mark.parametrize("capability", ["image", "audio"])
+def test_planning_scope_denies_new_generation_without_reserving_and_preserves_replay(
+    runtime, capability
+):
+    def set_scope(scope):
+        identity = f"context-{scope}"
+        with runtime.store.transaction() as tx:
+            if tx.get("contexts", identity, required=False) is None:
+                tx.put(
+                    "contexts",
+                    identity,
+                    dict(context_id=identity, project_id=PROJECT, execution_scope=scope),
+                )
+            request = tx.require("requests", "request-one")
+            tx.put(
+                "requests",
+                "request-one",
+                {**request, "submission": {**request["submission"], "context_id": identity}},
+                expected_revision=tx.revision("requests", "request-one"),
+            )
+
+    def prepare(operation):
+        body = dict(
+            schema_version="1.0", operation_id=operation, prompt="Prepared prompt", seed="42"
+        )
+        if capability == "audio":
+            body["duration_seconds"] = 2
+        result, status = invoke(runtime, f"prepare_{capability}_generation", body, operation)
+        assert status == "success", result
+        return result["submit_request"]
+
+    with configure_audio(runtime, image=capability == "image"):
+        set_scope("planning_only")
+        request = prepare("planning-preparation")
+        blocked, status = invoke(runtime, "submit_generation", request, "blocked-planning")
+        assert status == "failure" and blocked["error"] == "scope_denied"
+        assert (
+            blocked["message"] == "Generation is unavailable while execution_scope is planning_only"
+        )
+        with runtime.store.transaction(write=False) as tx:
+            assert not tx.all("jobs")
+            assert (
+                tx.connection.execute("SELECT count(*) FROM budget_reservations").fetchone()[0] == 0
+            )
+            assert (
+                tx.connection.execute(
+                    "SELECT count(*) FROM outbox WHERE kind='providers.generation'"
+                ).fetchone()[0]
+                == 0
+            )
+        set_scope("default")
+        admitted, status = invoke(runtime, "submit_generation", request, "allowed-after-planning")
+        assert status == "success", admitted
+        set_scope("planning_only")
+        replay, status = invoke(runtime, "submit_generation", request, "replay-in-planning")
+        assert status == "success" and replay == admitted
+        with runtime.store.transaction(write=False) as tx:
+            assert (
+                tx.connection.execute("SELECT count(*) FROM budget_reservations").fetchone()[0] == 1
+            )
+
+
+def test_direct_audio_submission_cannot_bypass_preparation(runtime):
+    artifacts = runtime.services.extension("artifacts")
+    graph = stable_audio.graph(
+        checkpoint=stable_audio.DEFAULT_SFX_CHECKPOINT, clip=MODELS[1], seconds=200
+    )
+    with configure_audio(runtime), runtime.store.transaction() as tx:
+        for identity, data in (
+            ("direct-graph", json.dumps(graph).encode()),
+            ("direct-prompt", b"Isolated SFX"),
+        ):
+            artifacts.put(
+                tx,
+                artifacts.promote(
+                    PROJECT,
+                    identity,
+                    data,
+                    kind="document",
+                    purpose="metadata",
+                    media_type="application/json",
+                ),
+            )
+    body = dict(
+        schema_version="1.0",
+        job_id="direct-job",
+        project_id=PROJECT,
+        generation_task_id=TASK,
+        target_id=TASK,
+        provider_id="comfy",
+        capability="audio",
+        workflow_artifact_id="direct-graph",
+        prompt_artifact_id="direct-prompt",
+        input_artifact_ids=[],
+        seed="42",
+        model_ids=[stable_audio.DEFAULT_SFX_CHECKPOINT, MODELS[1]],
+        settings={},
+    )
+    blocked, status = invoke(runtime, "submit_generation", body, "direct-submit")
+    assert status == "failure" and blocked["error"] == "invalid_request"
+    assert blocked["message"] == "Audio generation requires prepare_audio_generation"
+    with runtime.store.transaction(write=False) as tx:
+        assert not tx.all("jobs")
+        assert tx.connection.execute("SELECT count(*) FROM budget_reservations").fetchone()[0] == 0
+
+
+@pytest.mark.parametrize("boundary", [False, True], ids=["inside-first-frame", "between-frames"])
+def test_truncated_flac_never_promotes(runtime, tmp_path, boundary):
+    path = tmp_path / "complete.flac"
+    data = flac(path, seconds=1.25)
+    packets = json.loads(
+        subprocess.check_output(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-of",
+                "json",
+                "-show_packets",
+                "-show_entries",
+                "packet=pos,size",
+                str(path),
+            ],
+            timeout=10,
+        )
+    )["packets"]
+    first = packets[0]
+    end = int(packets[1]["pos"]) if boundary else int(first["pos"]) + int(first["size"]) // 2
+    truncated = data[:end]
+    assert stable_audio.inspect_flac_bytes(truncated)["declared_total_samples"] == 60_000
+    if boundary:
+        path.write_bytes(truncated)
+        # FFmpeg alone accepts complete frames even though the file ends early.
+        pcm = subprocess.check_output(
+            [
+                "ffmpeg",
+                "-nostdin",
+                "-v",
+                "error",
+                "-xerror",
+                "-f",
+                "flac",
+                "-i",
+                str(path),
+                "-f",
+                "s16le",
+                "-",
+            ],
+            timeout=10,
+        )
+        assert 0 < len(pcm) < 60_000 * 2 * 2
+    with pytest.raises(DomainError, match="Provider returned empty or corrupted audio") as error:
+        StableAudio3Plugin().inspect_output(truncated, 0)
+    assert error.value.code == "corrupt_provider_output"
+    artifacts = runtime.services.extension("artifacts")
+    with pytest.raises(
+        DomainError, match="Audio bytes failed bounded decode verification"
+    ) as error:
+        artifacts.promote(
+            PROJECT,
+            "truncated",
+            truncated,
+            kind="audio",
+            purpose="concept",
+            media_type="audio/flac",
+        )
+    assert error.value.code == "media_unavailable"
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.get("artifacts", "truncated", required=False) is None
+    assert not artifacts.path(PROJECT, sha256(truncated).hexdigest()).exists()
+
+
+def test_pcm_wave_metadata_and_media_spoofing(runtime, tmp_path, monkeypatch):
+    wave = tmp_path / "tone.wav"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=16000:duration=0.25",
+            "-c:a",
+            "pcm_s16le",
+            str(wave),
+        ],
+        check=True,
+        timeout=10,
+    )
+    data = wave.read_bytes()
+    artifacts = runtime.services.extension("artifacts")
+
+    def promote(data, media):
+        return artifacts.promote(
+            PROJECT, "sound", data, kind="audio", purpose="concept", media_type=media
+        )
+
+    result = promote(data, "audio/wav")
+    assert (result["duration_seconds"], result["sample_rate_hz"], result["channels"]) == (
+        0.25,
+        16000,
+        1,
+    )
+    for payload, media in [
+        (b"ffconcat version 1.0\nfile forbidden\n", "audio/wav"),
+        (data, "audio/mp4"),
+    ]:
+        with pytest.raises(DomainError) as error:
+            promote(payload, media)
+        assert error.value.code in {"unsupported_media_type", "media_unavailable"}
+    monkeypatch.setattr(stable_audio, "MAX_PCM_BYTES", 1024)
+    with pytest.raises(DomainError, match="Audio bytes failed bounded decode verification"):
+        promote(data, "audio/wav")
+
+
+@pytest.mark.parametrize(
+    ("length", "offset"), [("0.5", "0"), ("3", "0"), ("2", "0.5")], ids=["short", "long", "late"]
+)
+def test_verify_video_rejects_wrong_audio_timeline(tmp_path, length, offset):
+    path = tmp_path / "audio-timeline.mp4"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=blue:s=64x64:r=24:d=2",
+            "-itsoffset",
+            offset,
+            "-f",
+            "lavfi",
+            "-i",
+            f"sine=frequency=440:sample_rate=44100:duration={length}",
+            "-c:v",
+            "libx264",
+            "-threads",
+            "1",
+            "-bf",
+            "0",
+            "-pix_fmt",
+            "yuv420p",
+            "-video_track_timescale",
+            "24",
+            "-c:a",
+            "aac",
+            "-ac",
+            "2",
+            str(path),
+        ],
+        check=True,
+        timeout=10,
+    )
+    cfg = dict(ffmpeg="ffmpeg", ffprobe="ffprobe", encode_timeout=10)
+    with pytest.raises(DomainError, match="Audio timeline does not match the video") as error:
+        verify_video(
+            path,
+            dict(numerator=24, denominator=1),
+            48,
+            dict(width=64, height=64),
+            cfg,
+            expect_audio=True,
+        )
+    assert error.value.code == "media_unavailable"

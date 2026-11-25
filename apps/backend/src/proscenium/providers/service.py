@@ -24,7 +24,7 @@ from proscenium.jobs.resources import check_storage, reserve_generation, settle_
 from proscenium.providers import klein, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
-from proscenium.providers.preparation import audio_revision, validate_recipes
+from proscenium.providers.preparation import validate_recipes
 from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.providers.vlm import (
     DEFAULT_VLM_MAX_TOKENS,
@@ -279,6 +279,10 @@ class ProviderService:
                     raise DomainError("idempotency_conflict", 409)
                 return tx.require("jobs", request["job_id"]), True
             prepared = tx.get("providers.prepared", request["workflow_artifact_id"], required=False)
+        if request["capability"] == "audio" and prepared is None:
+            raise DomainError(
+                "invalid_request", message="Audio generation requires prepare_audio_generation"
+            )
         revision = (
             self.options.get("image_profiles", {}).get(request["provider_id"])
             if request["capability"] == "image"
@@ -289,16 +293,20 @@ class ProviderService:
                 )
             )
             if request["capability"] == "image_to_3d"
-            else audio_revision(self.options, request["provider_id"])
-            if request["capability"] == "audio"
             else None
         )
-        if prepared:
-            if request != prepared["submit_request"]:
+        if prepared is not None:
+            if request != prepared.get("submit_request"):
                 raise DomainError("idempotency_conflict", 409)
             revision = prepared["profile_revision"]
         capability = plugin(request["capability"], revision)
         resolved = resolve_target(self.services, caller, request)
+        if (resolved.get("context") or {}).get("execution_scope") == "planning_only":
+            raise DomainError(
+                "scope_denied",
+                403,
+                "Generation is unavailable while execution_scope is planning_only",
+            )
         provider = self.provider(request["provider_id"], capability.capability)
         workflow, data = self.artifact_bytes(project_id, request["workflow_artifact_id"])
         prompt_artifact, prompt_bytes = self.artifact_bytes(
@@ -778,7 +786,9 @@ class ProviderService:
             try:
                 data = client.download(item, maximum_bytes=capability.maximum_output_bytes)
                 inspection = capability.inspect_output(
-                    data, self.services.settings.upload_max_pixels
+                    data,
+                    self.services.settings.upload_max_pixels,
+                    rendering=self.services.settings.rendering,
                 )
             except DomainError as exc:
                 invalid_audio = (

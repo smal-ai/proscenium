@@ -21,8 +21,8 @@ interface TimelineEntry {
   node: ReactNode;
 }
 
-export function Conversation({ api, projectId, requests, events, onRefresh, onError, onStarter, items = [], retainedArtifacts = [], onInspectArtifact }: {
-  api: ApiClient; projectId: string; requests: RequestRecord[]; events: Event[]; onRefresh: () => Promise<void>; onError: (e: unknown) => void;
+export function Conversation({ visible = true, api, projectId, requests, events, onRefresh, onError, onStarter, items = [], retainedArtifacts = [], onInspectArtifact }: {
+  visible?: boolean; api: ApiClient; projectId: string; requests: RequestRecord[]; events: Event[]; onRefresh: () => Promise<void>; onError: (e: unknown) => void;
   onStarter?: (kind: "asset" | "scene" | "storyboard") => void; items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
 }) {
   const { messages, activities, agentLabels, hasSubagents } = useMemo(() => {
@@ -84,7 +84,7 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
           key: `request.outputs.${record.request_id}`,
           time: record.accepted_at,
           sequence: 0,
-          node: <div className="retained-turn-outputs"><OutputCards api={api} projectId={projectId} artifactIds={standaloneOutputs} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></div>,
+          node: <div className="retained-turn-outputs"><OutputCards visible={visible} api={api} projectId={projectId} artifactIds={standaloneOutputs} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></div>,
         }] : []),
       ];
     }),
@@ -108,7 +108,7 @@ export function Conversation({ api, projectId, requests, events, onRefresh, onEr
         routineTool,
         toolRunning,
         toolLabel: activity.display_name || activity.name,
-        node: <ActivityEntry key={key} event={event} api={api} projectId={projectId} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} artifactIds={outputs} />,
+        node: <ActivityEntry visible={visible} key={key} event={event} api={api} projectId={projectId} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} artifactIds={outputs} />,
       }];
     }),
   ].sort(compareConversationEntries);

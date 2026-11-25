@@ -1115,7 +1115,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const merged = useMemo(() => version ? mergeItemAnnotations({itemId: version.item_id, currentVersionId: version.version_id, drafts, saved, itemVersions}) : null,
     [version, drafts, saved, itemVersions]);
 
-  if (inspectedArtifact) return <RetainedReview {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  if (inspectedArtifact) return <RetainedReview visible={surfaceVisible} {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
   if (!version || !merged) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
   const activePins: SpatialPinMarker[] = draft && isSpatialDraft
     ? draft.annotation.spatial_hits.map((hit, idx) => ({

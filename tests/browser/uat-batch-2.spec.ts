@@ -994,6 +994,19 @@ test("retained FLAC plays in Chat and Review and the sequence player is unmuted"
   await expect(inline).toHaveAttribute("src", `${base}/artifacts/audio-tone/content`);
   await expect.poll(() => inline.evaluate((audio: HTMLAudioElement) => audio.duration || 0)).toBe(1);
   await expect(card.getByRole("link", { name: "Download output" })).toBeVisible();
+  const play = async (audio: typeof inline) => {
+    await audio.evaluate(async (element: HTMLAudioElement) => { element.currentTime = 0; await element.play(); });
+    await expect(audio).toHaveJSProperty("paused", false);
+  };
+  await page.getByRole("button", { name: "Copilot", exact: true }).click();
+  await play(inline);
+  await page.getByRole("button", { name: "Critic", exact: true }).click();
+  await expect(inline).toHaveJSProperty("paused", true);
+  await page.getByRole("button", { name: "Copilot", exact: true }).click();
+  await play(inline);
+  await page.getByRole("button", { name: "Collapse Assistant", exact: true }).click();
+  await expect(inline).toHaveJSProperty("paused", true);
+  await page.getByRole("button", { name: "Expand Assistant", exact: true }).click();
   await card.getByRole("button", { name: "Inspect audio" }).click();
   const review = page.locator("main.review-panel");
   const player = review.locator(".review-audio audio[controls]");
@@ -1002,6 +1015,10 @@ test("retained FLAC plays in Chat and Review and the sequence player is unmuted"
   await expect.poll(() => player.evaluate((audio: HTMLAudioElement) => audio.currentTime)).toBeGreaterThan(0);
   await expect(review.getByRole("link", { name: "Download audio" })).toBeVisible();
   for (const chip of ["1 s", "44,100 Hz", "2 channels"]) await expect(review.getByText(chip, { exact: true })).toBeVisible();
+  await play(player);
+  await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+  await expect(player).toHaveJSProperty("paused", true);
+  await page.getByRole("button", { name: "Restore split view", exact: true }).click();
   const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
   await expect(navigator.locator(".retained-output").filter({ hasText: "audio-tone" }).getByRole("button", { name: "Inspect audio" })).toBeVisible();
   await navigator.locator(".catalogue-item-header").filter({ hasText: seq.name }).click();

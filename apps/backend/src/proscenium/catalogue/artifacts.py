@@ -10,6 +10,7 @@ from typing import Any
 from PIL import Image, ImageCms, ImageOps, UnidentifiedImageError
 
 from proscenium.api.errors import DomainError
+from proscenium.audio_formats import AUDIO_DEMUXERS
 from proscenium.auth import Caller
 from proscenium.contracts import validate
 from proscenium.db import Transaction
@@ -24,7 +25,7 @@ from proscenium.sources.common import (
     sha,
 )
 
-AUDIO_MEDIA_TYPES = frozenset({"audio/flac", "audio/wav", "audio/mpeg", "audio/ogg", "audio/mp4"})
+AUDIO_MEDIA_TYPES = frozenset(AUDIO_DEMUXERS)
 AUDIO_METADATA = frozenset({"duration_seconds", "sample_rate_hz", "channels"})
 
 TYPES = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}
@@ -156,14 +157,24 @@ class Artifacts:
         if kind == "audio":
             if media_type not in AUDIO_MEDIA_TYPES:
                 raise DomainError("unsupported_media_type", 415)
-            if media_type == "audio/flac":
-                from proscenium.providers.stable_audio import inspect_flac_bytes
+            from proscenium.providers.stable_audio import INVALID_AUDIO_BYTES, verify_audio_bytes
 
-                inspection = inspect_flac_bytes(data)
-                for key in AUDIO_METADATA:
-                    if metadata.get(key, inspection[key]) != inspection[key]:
-                        raise DomainError("hash_mismatch", 422)
-                    metadata[key] = inspection[key]
+            rendering = self.services.settings.rendering
+            try:
+                inspection = verify_audio_bytes(
+                    data,
+                    media_type,
+                    ffmpeg=rendering.get("ffmpeg"),
+                    ffprobe=rendering.get("ffprobe"),
+                )
+            except DomainError as exc:
+                if exc.code != "corrupt_provider_output":
+                    raise
+                raise DomainError("media_unavailable", 422, INVALID_AUDIO_BYTES) from exc
+            for key in AUDIO_METADATA:
+                if metadata.get(key, inspection[key]) != inspection[key]:
+                    raise DomainError("hash_mismatch", 422)
+                metadata[key] = inspection[key]
         if not data:
             raise DomainError("invalid_request")
         if kind in {"proxy_map", "frame_map"}:

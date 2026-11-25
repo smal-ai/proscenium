@@ -75,24 +75,17 @@ def launch_assembly(service, project_id: str, body: dict) -> dict:
         atomic_bytes(root / "assembly-inputs" / (row["sha256"] + ".png"), data)
     from .assembly import audio_path
 
-    audio_durations = {}
     for row in assembly.get("input_audio", []):
         identity = row["artifact_id"]
         data = service.artifacts.ready_path(project_id, identity).read_bytes()
         if len(data) != row["bytes"] or sha(data) != row["sha256"]:
             raise DomainError("hash_mismatch", 422)
         atomic_bytes(audio_path(root, row), data)
-        if row["media_type"] != "audio/flac":
-            source = service.artifacts.get(project_id, identity)
-            if "duration_seconds" in source:
-                audio_durations[identity] = source["duration_seconds"]
     task = {
         "config": config,
         "assembly": assembly,
         **{key: job[key] for key in ("project_id", "job_id", "attempt_id", "input_digest")},
     }
-    if audio_durations:
-        task["audio_durations"] = audio_durations
     atomic(root / "task.json", task)
     fd = os.open(root / "launch.claim", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     os.close(fd)

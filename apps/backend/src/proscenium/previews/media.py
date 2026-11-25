@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from proscenium.api.errors import DomainError
+from proscenium.audio_formats import AUDIO_DEMUXERS
 
 
 def run(argv: list[str], timeout: int = 60) -> bytes:
@@ -53,8 +54,8 @@ def audio_filters(tracks: list[dict[str, Any]], video_duration: Fraction) -> str
         if fade_out := float(track.get("fade_out_seconds", 0)):
             filters.append(f"afade=t=out:st={max(0, effective - fade_out):.6f}:d={fade_out:.6f}")
         filters.append("aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo")
-        if delay_ms := round(start * 1000):
-            filters.append(f"adelay={delay_ms}|{delay_ms}")
+        if delay_samples := round(start * 44100):
+            filters.append(f"adelay={delay_samples}S:all=1")
         chains.append(f"[{index + 1}:a]" + ",".join(filters) + f"[a{index}]")
     combined = "".join(f"[a{i}]" for i in range(len(tracks)))
     if len(tracks) > 1:
@@ -78,7 +79,12 @@ def encode(
     maps = ["-an"]
     if audio_tracks:
         for track in audio_tracks:
-            audio_inputs.extend(("-i", str(track["path"])))
+            audio_format = AUDIO_DEMUXERS.get(track.get("media_type", ""))
+            if audio_format is None:
+                raise DomainError("unsupported_media_type", 415)
+            audio_inputs.extend(
+                ("-protocol_whitelist", "file", "-f", audio_format[0], "-i", str(track["path"]))
+            )
         video_duration = Fraction(count, 1) / Fraction(fps["numerator"], fps["denominator"])
         maps = [
             "-filter_complex",
@@ -195,12 +201,15 @@ def _verify_video(
             raise DomainError("media_unavailable", 422, "Expected one video and one audio stream")
         stream = video[0]
         frames = [frame for frame in frames if frame.get("media_type") == "video"]
+        audio_stream = audio[0]
         try:
+            audio_duration = Fraction(audio_stream["duration"])
+            audio_start = Fraction(audio_stream.get("start_time", "0"))
             if (
-                audio[0].get("codec_name") != "aac"
-                or int(audio[0]["sample_rate"]) != 44100
-                or int(audio[0]["channels"]) != 2
-                or Fraction(audio[0]["duration"]) <= 0
+                audio_stream.get("codec_name") != "aac"
+                or int(audio_stream["sample_rate"]) != 44100
+                or int(audio_stream["channels"]) != 2
+                or audio_duration <= 0
             ):
                 raise ValueError
         except (KeyError, ValueError, TypeError, ZeroDivisionError) as exc:
@@ -240,6 +249,11 @@ def _verify_video(
         or any(metadata[key] != value for key, value in expected.items())
     ):
         raise DomainError("media_unavailable", 422, "Encoded video does not match admitted profile")
+    if expect_audio and (
+        abs(audio_start) > Fraction(6, 100)
+        or abs(audio_duration - Fraction(count, 1) / fps) > Fraction(15, 100)
+    ):
+        raise DomainError("media_unavailable", 422, "Audio timeline does not match the video")
     try:
         pts = [Fraction(frame["best_effort_timestamp"]) * time_base for frame in frames]
     except (KeyError, ValueError, TypeError, ZeroDivisionError) as exc:

@@ -901,3 +901,63 @@ def test_sequence_bounds_are_checked_before_expansion(
         assert (error.value.code, error.value.status) == ("invalid_frame_mapping", 422)
     finally:
         services.close()
+
+
+def test_offline_import_rejects_nonsilent_sequence_before_media_checks(tmp_path, monkeypatch):
+    from proscenium.projects import importer
+
+    monkeypatch.setattr(
+        importer, "inspect_video", lambda *_a, **_kw: pytest.fail("Unexpected delivery inspection")
+    )
+    monkeypatch.setattr(
+        importer, "verify_video", lambda *_a, **_kw: pytest.fail("Unexpected delivery verification")
+    )
+    root = tmp_path / "project"
+    root.mkdir()
+    git(root, "init", "-b", "main")
+    document = write(
+        root,
+        "sequences/cut.json",
+        dict(
+            schema_version="1.0",
+            sequence_version_id="cut-v1",
+            project_id=P,
+            fps=FPS,
+            frame_count=1,
+            entries=[
+                dict(
+                    entry_id="entry",
+                    shot_id=None,
+                    version_id="scene-v1",
+                    job_id="render-job",
+                    source_frames=dict(start=1, end=1),
+                    sequence_frames=dict(start=1, end=1),
+                    transform="identity",
+                    mapping_artifact_id=None,
+                )
+            ],
+            silent=False,
+            audio_tracks=[dict(track_id="score", artifact_id="music", start_seconds=0)],
+        ),
+    )
+    delivery = dict(
+        job_id="encode-job",
+        external_job_id="external-encode",
+        video=dict(path="no-video.mp4", sha256="a" * 64),
+        dimensions=DIMENSIONS,
+    )
+    manifest = dict(
+        schema_version="1.0",
+        import_id="soundtrack-import",
+        project=IDENTITY,
+        items=[item("cut", "sequence", source(document), delivery=delivery)],
+    )
+    services = Services.create(Settings(data_directory=tmp_path / "registry"))
+    try:
+        with pytest.raises(
+            DomainError, match="Offline import currently supports silent sequences only"
+        ) as error:
+            import_project(services, OWNER, root, manifest)
+        assert (error.value.code, error.value.status) == ("invalid_request", 422)
+    finally:
+        services.close()

@@ -385,21 +385,39 @@ export type SequenceEntry = {
   choice?: "agent" | "owner";
   contributors?: SequenceContributor[];
 };
-export type SequenceMap = {
-  [k: string]: unknown;
-} & {
-  schema_version: "1.0";
-  sequence_version_id: Id;
-  project_id: Id;
-  fps: Fps;
-  frame_count: number;
-  silent: boolean;
-  /**
-   * @minItems 1
-   */
-  entries: [SequenceEntry, ...SequenceEntry[]];
-  audio_tracks?: SequenceAudioTrack[];
-};
+export type SequenceMap =
+  | {
+      schema_version: "1.0";
+      sequence_version_id: Id;
+      project_id: Id;
+      fps: Fps;
+      frame_count: number;
+      silent: true;
+      /**
+       * @minItems 1
+       */
+      entries: [SequenceEntry, ...SequenceEntry[]];
+      /**
+       * @maxItems 0
+       */
+      audio_tracks?: [];
+    }
+  | {
+      schema_version: "1.0";
+      sequence_version_id: Id;
+      project_id: Id;
+      fps: Fps;
+      frame_count: number;
+      silent: false;
+      /**
+       * @minItems 1
+       */
+      entries: [SequenceEntry, ...SequenceEntry[]];
+      /**
+       * @minItems 1
+       */
+      audio_tracks: [SequenceAudioTrack, ...SequenceAudioTrack[]];
+    };
 export type SocketControl =
   | {
       schema_version: "1.0";

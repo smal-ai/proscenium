@@ -178,7 +178,7 @@ test("queue hold recognises explicit fences, pause codes and legacy idle holds o
 
 test("live tool calls provide readable working steps and reconnecting status", () => {
   const labels = {
-    prepare_image_generation: "Preparing image", prepare_audio_generation: "Preparing audio", submit_generation: "Submitting image", get_job: "Waiting on job",
+    prepare_image_generation: "Preparing image", prepare_audio_generation: "Preparing audio", submit_generation: "Submitting generation", get_job: "Waiting on job",
     get_artifact: "Inspecting output", validate_authored_document: "Validating plan", checkpoint_sources: "Checkpointing sources",
     publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", get_vlm_review: "Waiting on VLM critique",
     escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",

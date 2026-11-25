@@ -454,7 +454,7 @@ paths:
       parameters:
         - {$ref: '#/components/parameters/Cursor'}
         - {$ref: '#/components/parameters/Limit'}
-        - {name: kind, in: query, schema: {type: string, enum: [image, mask, proxy, proxy_map, video, frame_map, document, source_blob, log]}}
+        - {name: kind, in: query, schema: {type: string, enum: [image, mask, proxy, proxy_map, video, frame_map, document, source_blob, log, audio]}}
         - {name: purpose, in: query, schema: {type: string, enum: [reference, concept, keyframe, draft_motion, final, inspection, metadata, mask, log]}}
       responses:
         '200':

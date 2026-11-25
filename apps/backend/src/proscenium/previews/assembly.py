@@ -17,7 +17,6 @@ from proscenium.catalogue.validation import (
     sequence_map,
 )
 from proscenium.contracts import canonical, validate
-from proscenium.providers.stable_audio import inspect_flac_bytes
 from proscenium.sources.common import active, admitted, atomic_bytes, fingerprint
 
 from .journal import atomic, sha
@@ -28,7 +27,6 @@ AUDIO_EXTENSIONS = {
     "audio/wav": ".wav",
     "audio/mpeg": ".mp3",
     "audio/ogg": ".ogg",
-    "audio/mp4": ".m4a",
 }
 
 
@@ -45,10 +43,16 @@ def input_audio(artifacts: Any, project_id: str, sequence: dict) -> list[dict]:
             or record["state"] != "ready"
             or record["project_id"] != project_id
             or record["media_type"] not in AUDIO_EXTENSIONS
+            or not record.get("duration_seconds")
         ):
             raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT)
         artifacts.ready_path(project_id, identity)
-        result.append({k: record[k] for k in ("artifact_id", "sha256", "bytes", "media_type")})
+        result.append(
+            {
+                k: record[k]
+                for k in ("artifact_id", "sha256", "bytes", "media_type", "duration_seconds")
+            }
+        )
     return result
 
 
@@ -313,12 +317,11 @@ def execute(root: Path, task: dict) -> None:
         if len(data) != row["bytes"] or sha(data) != row["sha256"]:
             raise ValueError("Pinned assembly audio input changed")
         identity = row["artifact_id"]
-        duration = (
-            inspect_flac_bytes(data)["duration_seconds"]
-            if row["media_type"] == "audio/flac"
-            else task.get("audio_durations", {}).get(identity)
-        )
-        sequenced_audio[identity] = {"path": path, "source_duration_seconds": duration}
+        sequenced_audio[identity] = {
+            "path": path,
+            "media_type": row["media_type"],
+            "source_duration_seconds": row["duration_seconds"],
+        }
     tracks = [
         {**track, **sequenced_audio[track["artifact_id"]]}
         for track in snapshot["sequence"].get("audio_tracks", [])

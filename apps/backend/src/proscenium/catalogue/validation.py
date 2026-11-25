@@ -7,6 +7,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from proscenium.api.errors import DomainError
+from proscenium.audio_formats import AUDIO_DEMUXERS
 from proscenium.contracts import SCHEMA, validate
 from proscenium.db import Transaction
 
@@ -86,11 +87,21 @@ def safe_schema_guidance(code: str, message: str) -> bool:
 
 def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
     """Bounded host-authored diagnostics. Never interpolate rejected values or keys."""
+    definition = SCHEMA["$defs"][name]
+    if (
+        name == "SequenceMap"
+        and isinstance(document, dict)
+        and type(document.get("silent")) is bool
+    ):
+        # Diagnose the chosen branch, not the failures from its opposite.
+        definition = definition["oneOf"][0 if document["silent"] else 1]
     known = {
-        key for definition in SCHEMA["$defs"].values() for key in definition.get("properties", {})
+        key
+        for schema in (*SCHEMA["$defs"].values(), definition)
+        for key in schema.get("properties", {})
     }
     validator = Draft202012Validator(
-        {"$ref": f"#/$defs/{name}", "$defs": SCHEMA["$defs"]}, format_checker=FormatChecker()
+        {**definition, "$defs": SCHEMA["$defs"]}, format_checker=FormatChecker()
     )
     issues = []
     seen: set[tuple[str, str]] = set()
@@ -275,6 +286,8 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
             or artifact["kind"] != "audio"
             or artifact["state"] != "ready"
             or artifact["project_id"] != tx.project_id
+            or artifact["media_type"] not in AUDIO_DEMUXERS
+            or not artifact.get("duration_seconds")
         ):
             raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT)
         start = Fraction(str(track["start_seconds"]))
@@ -283,13 +296,12 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
         effective = duration - start
         if "duration_seconds" in track:
             effective = min(effective, Fraction(str(track["duration_seconds"])))
-        if "duration_seconds" in artifact:
-            source = Fraction(str(artifact["duration_seconds"])) - Fraction(
-                str(track.get("trim_start_seconds", 0))
-            )
-            if source <= 0:
-                raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM)
-            effective = min(effective, source)
+        source = Fraction(str(artifact["duration_seconds"])) - Fraction(
+            str(track.get("trim_start_seconds", 0))
+        )
+        if source <= 0:
+            raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM)
+        effective = min(effective, source)
         fades = sum(Fraction(str(track.get(k, 0))) for k in ("fade_in_seconds", "fade_out_seconds"))
         if fades > effective:
             raise DomainError("invalid_request", 422, INVALID_AUDIO_FADE)

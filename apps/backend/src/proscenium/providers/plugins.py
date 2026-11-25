@@ -47,7 +47,9 @@ class GenerationCapabilityPlugin(Protocol):
     ) -> JSON: ...
     def preflight(self, graph: JSON, catalog: JSON, models: list[str]) -> None: ...
     def output_descriptors(self, history: JSON) -> list[JSON]: ...
-    def inspect_output(self, data: bytes, maximum_pixels: int) -> JSON: ...
+    def inspect_output(
+        self, data: bytes, maximum_pixels: int, *, rendering: JSON | None = None
+    ) -> JSON: ...
 
 
 class ImagePlugin:
@@ -71,7 +73,7 @@ class ImagePlugin:
             for item in output.get("images", [])
         ]
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         with Image.open(io.BytesIO(data)) as image:
             if image.format != "PNG" or image.width * image.height > maximum_pixels:
                 raise DomainError("unsupported_media_type", 415)
@@ -151,8 +153,11 @@ class StableAudio3Plugin:
             for item in output.get("audio", [])
         ]
 
-    def inspect_output(self, data, maximum_pixels):
-        return stable_audio.inspect_flac_bytes(data)
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
+        config = rendering or {}
+        return stable_audio.verify_audio_bytes(
+            data, AUDIO.media_type, ffmpeg=config.get("ffmpeg"), ffprobe=config.get("ffprobe")
+        )
 
 
 class Budget3DPlugin:
@@ -189,7 +194,7 @@ class Budget3DPlugin:
     def output_descriptors(self, history):
         return budget3d.output_files(history)
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         return inspect_glb_bytes(data)
 
 
@@ -224,7 +229,7 @@ class HunyuanPlugin:
     def output_descriptors(self, history):
         return hunyuan.output_files(history)
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         return inspect_glb_bytes(data)
 
 
@@ -246,7 +251,7 @@ class SDTurboImg2ImgPlugin(ImagePlugin):
     def bind_graph(self, workflow, prompt, seed, references, models):
         return sd_turbo.bind(workflow, prompt, seed, references, models)
 
-    def inspect_output(self, data, maximum_pixels):
+    def inspect_output(self, data, maximum_pixels, *, rendering=None):
         result = super().inspect_output(data, maximum_pixels)
         with Image.open(io.BytesIO(data)) as image:
             if image.size != (512, 512):

@@ -474,15 +474,23 @@
       }
     },
     "SequenceMap": {
-      "type": "object", "additionalProperties": false, "required": ["schema_version", "sequence_version_id", "project_id", "fps", "frame_count", "entries", "silent"],
-      "properties": {
-        "schema_version": {"const": "1.0"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "silent": {"type": "boolean"},
-        "entries": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/SequenceEntry"}},
-        "audio_tracks": {"type": "array", "items": {"$ref": "#/$defs/SequenceAudioTrack"}}
-      },
-      "allOf": [
-        {"if": {"properties": {"silent": {"const": true}}}, "then": {"properties": {"audio_tracks": {"maxItems": 0}}}},
-        {"if": {"properties": {"silent": {"const": false}}}, "then": {"required": ["audio_tracks"], "properties": {"audio_tracks": {"minItems": 1}}}}
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false, "required": ["schema_version", "sequence_version_id", "project_id", "fps", "frame_count", "entries", "silent"],
+          "properties": {
+            "schema_version": {"const": "1.0"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "silent": {"const": true},
+            "entries": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/SequenceEntry"}},
+            "audio_tracks": {"type": "array", "maxItems": 0, "items": {"$ref": "#/$defs/SequenceAudioTrack"}}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["schema_version", "sequence_version_id", "project_id", "fps", "frame_count", "entries", "silent", "audio_tracks"],
+          "properties": {
+            "schema_version": {"const": "1.0"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "silent": {"const": false},
+            "entries": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/SequenceEntry"}},
+            "audio_tracks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/SequenceAudioTrack"}}
+          }
+        }
       ]
     },
     "ItemRecord": {

@@ -1164,11 +1164,17 @@ def test_standalone_scene_sequence_publication_and_assembly(
         return
     assert [row["artifact_id"] for row in snapshot["input_audio"]] == sorted(audio_ids)
     assert snapshot["input_audio"] == manifest["input_audio"]
+    assert [row["duration_seconds"] for row in snapshot["input_audio"]] == [0.4, 1.25]
     assert finished["input_digest"] == fingerprint(snapshot) != fingerprint(legacy_snapshot)
     command = manifest["encode_argv"]
     filter_graph = command[command.index("-filter_complex") + 1]
+    assert command.count("-protocol_whitelist") == 2
+    assert command.count("flac") == 2
     assert "amix=inputs=2:duration=longest:normalize=0" in filter_graph
-    assert "adelay=550|550" in filter_graph and "afade=t=out:st=0.175000:d=0.075000" in filter_graph
+    assert (
+        "adelay=24255S:all=1" in filter_graph
+        and "afade=t=out:st=0.175000:d=0.075000" in filter_graph
+    )
     streams = json.loads(
         subprocess.check_output(
             ["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(video_path)], timeout=10

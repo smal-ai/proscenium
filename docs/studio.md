@@ -116,3 +116,7 @@ A published `SequenceMap` with `silent: false` uses ready `audio_tracks` to asse
 a soundtrack. Tracks can be delayed, trimmed, balanced and faded. Assembly mixes the
 tracks to stereo AAC at 44.1 kHz alongside the mapped H.264 frames. Press Play in
 Review to hear the soundtrack. Existing `silent: true` sequences still export without audio.
+
+Retained audio accepts FLAC, PCM WAV, MP3, and Ogg with Vorbis, Opus or FLAC.
+Registration requires FFmpeg and FFprobe to verify and measure the decoded audio.
+Offline project import currently accepts only silent sequences.
