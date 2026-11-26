@@ -1,15 +1,133 @@
+import argparse
 import json
 import math
 import random
 import re
+import shlex
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from proscenium.copilot.native import UNITY_INSTRUCTIONS, Configuration, unity_agent
 
 from tools.unity import export_blender as exporter
 from tools.unity import workflow
+
+
+@pytest.fixture
+def unity_skill_and_prompt(tmp_path, monkeypatch):
+    skill = (Path(__file__).resolve().parents[1] / "agent/skills/unity/SKILL.md").read_text()
+    monkeypatch.chdir(tmp_path)  # Model the active workspace, not the app checkout.
+    config = Configuration.load({"worker_model": "test-worker"})
+    return skill, unity_agent(config)["prompt"]
+
+
+def test_unity_prompt_starts_with_instructions_and_embeds_checkout_independent_skill(
+    unity_skill_and_prompt,
+):
+    skill, prompt = unity_skill_and_prompt
+    assert prompt.startswith(UNITY_INSTRUCTIONS)
+    assert skill in prompt.removeprefix(UNITY_INSTRUCTIONS)
+    assert not re.search(r"\]\(\s*<?\.\./", skill)
+    assert not re.search(r"^\s*\[[^\]\n]+\]:\s*<?\.\./", skill, re.MULTILINE)
+    for forbidden in (
+        "plan_tools.py",
+        "tools/comfy/graph.py",
+        "python3 -m tools.blender",
+        "tools/unity/",
+        "tools.unity.",
+    ):
+        assert forbidden not in prompt
+
+
+def _documented_unity_commands(skill):
+    fences = re.compile(r"^[ \t]*```bash[ \t]*\n(.*?)^[ \t]*```[ \t]*$", re.MULTILINE | re.DOTALL)
+    for block in fences.findall(skill):
+        for line in block.replace("\\\n", " ").splitlines():
+            if re.match(r"\s*unity\s", line):
+                yield shlex.split(line, comments=True)
+    for inline in re.findall(r"`(unity\s+[^`]+)`", fences.sub("", skill)):
+        yield shlex.split(inline)
+
+
+def test_unity_skill_cli_examples_scope_inspection_and_close_positionally(unity_skill_and_prompt):
+    skill, _ = unity_skill_and_prompt
+    parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    parser.add_argument("--project-path")
+    parser.add_argument("--format")
+    editor_commands = []
+    close_commands = []
+    for _, verb, *args in _documented_unity_commands(skill):
+        if verb == "command":
+            separator = args.index("--") if "--" in args else len(args)
+            options, command = parser.parse_known_args(args[:separator])
+            assert options.project_path and not options.project_path.startswith("-")
+            editor_commands.append((tuple(command), options, args[separator + 1 :]))
+        elif verb == "close":
+            assert not any(arg.split("=", 1)[0] == "--project-path" for arg in args)
+            assert len(args) == 1 and not args[0].startswith("-")
+            close_commands.append(args[0])
+
+    project_paths = {options.project_path for _, options, _ in editor_commands}
+    assert project_paths
+    assert set(close_commands) & project_paths
+    assert set(close_commands) <= project_paths | {"<project-path>"}
+
+    console = [
+        (options, args) for cmd, options, args in editor_commands if cmd == ("console", "get")
+    ]
+    assert console
+    for options, args in console:
+        assert options.format == "json"
+        assert "--since-session" in args
+        assert "--tail" not in args
+        assert args[args.index("--level") + 1] == "error"
+
+    auto_tick = [args for cmd, _, args in editor_commands if cmd == ("editor", "set_auto_tick")]
+    assert auto_tick
+    for args in auto_tick:
+        assert args[args.index("--persist") + 1] == "false"
+
+    capture_sources = {
+        args[args.index("--source") + 1]
+        for cmd, _, args in editor_commands
+        if cmd == ("capture", "game_view")
+    }
+    assert {"camera", "screen"} <= capture_sources
+
+
+def test_unity_skill_preserves_exact_runtime_apis_and_receipt_fields(unity_skill_and_prompt):
+    skill, _ = unity_skill_and_prompt
+    for identifier in (
+        "PauseMenu",
+        "Cursor.visible",
+        "Cursor.lockState",
+        "CursorLockMode.None",
+        "CursorLockMode.Locked",
+        "Time.timeScale",
+        "VideoAudioOutputMode.Direct",
+        "VideoAudioOutputMode.AudioSource",
+        "VideoAudioOutputMode.None",
+        "SetTargetAudioSource",
+        "ColorSpace.Linear",
+        "CameraClearFlags.SolidColor",
+        "CameraClearFlags.Skybox",
+        "k_MaxVisibleLightCountMobile",
+        "validation.status",
+        "build_output",
+    ):
+        assert re.search(rf"\b{re.escape(identifier)}\b", skill), identifier
+    assert not re.search(r"\bAudioOutputMode\b", skill)
+    assert re.search(r"\bVP8\b", skill) and re.search(r"\bVP9\b", skill) and ".webm" in skill
+    for field, expected in (
+        ("counts.error", "0"),
+        ("groundTruth.consoleErrors", "0"),
+        ("groundTruth.compilationFailed", "false"),
+        ("dropped", "false"),
+    ):
+        assert re.search(rf"\b{re.escape(field)}\s*==\s*{expected}\b", skill), field
 
 
 def _product(matrix, vector):
