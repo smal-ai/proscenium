@@ -12,7 +12,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate, validate_stored_json
 from proscenium.db import Store
-from proscenium.db.outbox import has_unsettled_outbox
+from proscenium.db.outbox import has_unsettled_outbox, settled_uncertain_vlm_review
 from proscenium.db.ownership import Ownership
 from proscenium.db.paths import DENIED_PARTS, project_path
 from proscenium.projects.workspace_fs import (
@@ -750,10 +750,20 @@ class Projects:
                     "decisions": {"answered", "declined", "cancelled", "expired"},
                 }
                 for namespace, states in terminal.items():
-                    if any(row["state"] not in states for row in tx.all(namespace)):
-                        raise DomainError("project_busy", 409)
+                    if any(
+                        row["state"] not in states
+                        and not (namespace == "jobs" and settled_uncertain_vlm_review(tx, row))
+                        for row in tx.all(namespace)
+                    ):
+                        raise DomainError(
+                            "project_busy", 409, f"Project {project_id} has unsettled {namespace}"
+                        )
                 if has_unsettled_outbox(tx):
-                    raise DomainError("project_busy", 409)
+                    raise DomainError(
+                        "project_busy",
+                        409,
+                        f"Project {project_id} has unsettled background operations",
+                    )
                 for artifact in tx.all("artifacts"):
                     if artifact["state"] == "ready":
                         path = managed(

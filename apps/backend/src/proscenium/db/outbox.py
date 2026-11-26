@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -45,15 +46,28 @@ def dispatch_one(
         tx.settle_intent(identity, "acknowledged", evidence)
 
 
+def settled_uncertain_vlm_review(tx: Transaction, job: dict[str, Any] | None) -> bool:
+    """An abandoned read-only submission has no effect to reconcile or response to replay."""
+    if job is None or job.get("kind") != "vlm_review" or job.get("state") != "outcome_uncertain":
+        return False
+    execution = tx.get("providers.execution", str(job.get("job_id", "")), required=False) or {}
+    if execution.get("phase") != "submitting":
+        return False
+    row = tx.connection.execute(
+        "SELECT state FROM outbox WHERE id=?", (job.get("attempt_id"),)
+    ).fetchone()
+    return row is None or row[0] != "dispatching"
+
+
 def has_unsettled_outbox(tx: Transaction) -> bool:
-    """Check unresolved effects once the caller has verified terminal work and jobs."""
+    """Check whether unresolved outbox effects still require settlement."""
     # Resolve Copilot's proof predicates lazily, after the registry and extensions load.
     from proscenium.copilot.cold_stop import proven_departed_abandonment, settled_send_record
 
     rows = tx.connection.execute(
-        "SELECT id, kind, state FROM outbox WHERE state IN ('dispatching', 'outcome_uncertain')"
+        "SELECT id, kind, state, body FROM outbox WHERE state IN ('dispatching', 'outcome_uncertain')"
     )
-    for row_id, kind, state in rows:
+    for row_id, kind, state, body in rows:
         if state == "dispatching":
             return True
         if kind == "copilot.send":
@@ -77,5 +91,19 @@ def has_unsettled_outbox(tx: Transaction) -> bool:
                 and (pause_release is None or pause_release.get("state") == "acknowledged")
             ):
                 continue
+        elif kind == "providers.review":
+            try:
+                payload = json.loads(body)
+            except (ValueError, TypeError):
+                return True
+            job_id = payload.get("job_id") if isinstance(payload, dict) else None
+            if isinstance(job_id, str) and payload.get("attempt_id") == row_id:
+                job = tx.get("jobs", job_id, required=False)
+                if (
+                    job is not None
+                    and job.get("attempt_id") == row_id
+                    and settled_uncertain_vlm_review(tx, job)
+                ):
+                    continue
         return True
     return False

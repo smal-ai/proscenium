@@ -6,7 +6,7 @@ from typing import Any
 from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
 from proscenium.db import Transaction
-from proscenium.db.outbox import has_unsettled_outbox
+from proscenium.db.outbox import has_unsettled_outbox, settled_uncertain_vlm_review
 from proscenium.db.store import Store
 
 
@@ -173,10 +173,21 @@ class Registry:
                 "invocations": {"completed", "failed", "cancelled"},
             }
             for namespace, terminal in blockers.items():
-                if any(record.get("state") not in terminal for record in tx.all(namespace)):
-                    raise DomainError("project_busy", 409)
+                count = sum(
+                    record.get("state") not in terminal
+                    and not (namespace == "jobs" and settled_uncertain_vlm_review(tx, record))
+                    for record in tx.all(namespace)
+                )
+                if count:
+                    raise DomainError(
+                        "project_busy",
+                        409,
+                        f"Project {project_id} has unsettled {namespace} ({count})",
+                    )
             if has_unsettled_outbox(tx):
-                raise DomainError("project_busy", 409)
+                raise DomainError(
+                    "project_busy", 409, f"Project {project_id} has unsettled background operations"
+                )
 
     @staticmethod
     def assert_preparations_settled(tx: Transaction) -> None:

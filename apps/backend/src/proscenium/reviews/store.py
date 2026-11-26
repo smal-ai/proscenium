@@ -580,8 +580,23 @@ class ReviewStore:
         diagnostics: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         validate("ReviewComplete", request)
-        self.services.jobs.check_caller(caller, "completeToolReview", request["project_id"])
         with self.services.registry.project_store(request["project_id"]).transaction() as tx:
+            return self.complete_in_transaction(tx, caller, request, diagnostics=diagnostics)
+
+    def complete_in_transaction(
+        self,
+        tx: Transaction,
+        caller: Caller,
+        request: dict[str, Any],
+        *,
+        diagnostics: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Apply a review receipt inside the caller's job or cancellation transaction."""
+        validate("ReviewComplete", request)
+        self.services.jobs.check_caller(caller, "completeToolReview", request["project_id"])
+        if tx.project_id != request["project_id"]:
+            raise DomainError("scope_denied", 403)
+        with tx.savepoint():
             ticket = tx.require("reviews", request["review_id"])
             job = tx.require("jobs", ticket["job_id"])
             if caller.channel == "worker":

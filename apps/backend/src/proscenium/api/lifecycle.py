@@ -1,13 +1,14 @@
 """Independent host workers. HTTP and browser connections own none of their lifetimes."""
 
 import asyncio
+import json
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from functools import partial
 from typing import Any
 
 from proscenium.api.errors import DomainError
-from proscenium.db.outbox import has_unsettled_outbox
+from proscenium.db.outbox import has_unsettled_outbox, settled_uncertain_vlm_review
 from proscenium.services import Services
 
 
@@ -95,16 +96,26 @@ class FeatureLifecycle:
             ).fetchone()[0]
         store = registry.project_store(project_id)
         with store.transaction(write=False) as tx:
-            # Held Copilot sends are not jobs to dispatch. Uncertain Copilot
-            # intents still use the same settlement predicates as project switches.
+            # Held Copilot sends are not jobs to dispatch. Uncertain intents
+            # use the same settlement predicates as project switches.
             pending = tx.connection.execute(
-                "SELECT EXISTS(SELECT 1 FROM outbox WHERE state IN ('pending','dispatching','outcome_uncertain') "
+                "SELECT EXISTS(SELECT 1 FROM outbox WHERE state IN ('pending','dispatching') "
                 "AND kind NOT LIKE 'copilot.%') OR EXISTS (SELECT 1 FROM records WHERE "
-                "(namespace='jobs' AND json_extract(body,'$.state') NOT IN ('succeeded','failed','cancelled')) "
-                "OR (namespace='work' AND json_extract(body,'$.state') NOT IN ('completed','failed','stopped')) "
+                "(namespace='work' AND json_extract(body,'$.state') NOT IN ('completed','failed','stopped')) "
                 "OR (namespace='native_workflows' AND json_extract(body,'$.phase') NOT IN ('failed','launched')))"
             ).fetchone()[0]
-            active = bool(pending or claims or has_unsettled_outbox(tx))
+            active = bool(
+                pending
+                or claims
+                or has_unsettled_outbox(tx)
+                or any(
+                    not settled_uncertain_vlm_review(tx, json.loads(body))
+                    for (body,) in tx.connection.execute(
+                        "SELECT body FROM records WHERE namespace='jobs' AND "
+                        "json_extract(body,'$.state') NOT IN ('succeeded','failed','cancelled')"
+                    )
+                )
+            )
         if not active:
             # A terminal supervisor can still be exiting when its last receipt
             # settles. Reap owned children even when we skip workflow DB scans.

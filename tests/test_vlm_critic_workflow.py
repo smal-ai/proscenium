@@ -4,6 +4,7 @@ import io
 import json
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
 import httpx
@@ -15,8 +16,12 @@ from fastapi.testclient import TestClient
 from PIL import Image
 from proscenium.api.dependencies import owner
 from proscenium.api.errors import DomainError
+from proscenium.api.lifecycle import FeatureLifecycle
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
+from proscenium.db.outbox import has_unsettled_outbox, settled_uncertain_vlm_review
+from proscenium.db.registry import Registry
+from proscenium.db.store import Store
 from proscenium.providers.router import router as provider_router
 from proscenium.providers.service import ProviderService
 from proscenium.providers.vlm import (
@@ -473,6 +478,579 @@ def test_pump_reviews_runs_outside_comfy_lock_and_records_timeout_uncertainty(vl
     assert esc_status == "success"
     assert escalated["awaiting_human"] is True
     assert escalated["human_review_state"] == "pending"
+
+
+@pytest.fixture
+def owner_review_runtime(vlm_runtime, tmp_path):
+    rt = vlm_runtime
+    registry = Registry(Store(tmp_path / "registry.sqlite3", write_barrier=threading.RLock()))
+    other = tmp_path / "second-project"
+    other.mkdir()
+    for project_id, path in [(PROJECT, rt.root), ("second-project", other)]:
+        registry.register(
+            dict(
+                schema_version="1.0",
+                project_id=project_id,
+                name=project_id,
+                path=str(path),
+                repository_id=f"repo-{project_id}",
+                state="inactive",
+                state_revision=0,
+                native_session_id=None,
+            )
+        )
+    registry.activate(PROJECT)
+    rt.services.registry = rt.services.jobs.registry = registry
+    rt.store = registry.project_store(PROJECT)
+    with rt.store.transaction() as tx:
+        work = tx.require("work", WORK)
+        work.update(state="completed", state_revision=1)
+        tx.put("work", WORK, work, expected_revision=0, schema="WorkRecord")
+    return rt
+
+
+def request_owner_review(rt):
+    ticket, _ = rt.provider.request_review(
+        Caller("owner", "owner"),
+        {
+            "schema_version": "1.0",
+            "review_id": "rev-owner",
+            "project_id": PROJECT,
+            "targets": [register_png(rt, "art-owner")],
+            "criteria": "Check the lighting.",
+            "telemetry_artifact_ids": [],
+            "human_review": True,
+        },
+    )
+    return rt.services.jobs.get(PROJECT, ticket["job_id"])
+
+
+def time_out_review(rt):
+    rt.vlm_state["raise_exc"] = httpx.ReadTimeout("LM Studio timed out")
+    (job,) = rt.provider.pump_reviews(PROJECT)
+    assert job["state"] == "outcome_uncertain"
+    assert rt.provider.execution(PROJECT, job["job_id"]) == {"phase": "submitting"}
+    requests = len(rt.vlm_state["requests"])
+    assert rt.provider.pump_reviews(PROJECT) == []
+    assert len(rt.vlm_state["requests"]) == requests
+    return job
+
+
+def test_timed_out_vlm_review_allows_idle_and_project_switch(owner_review_runtime):
+    rt = owner_review_runtime
+    request_owner_review(rt)
+    job = time_out_review(rt)
+    with rt.store.transaction(write=False) as tx:
+        assert settled_uncertain_vlm_review(tx, job)
+        assert not has_unsettled_outbox(tx)
+    assert FeatureLifecycle(rt.services)._activity() == (PROJECT, False)
+    rt.services.registry.assert_settled(PROJECT)
+    rt.services.registry.activate("second-project")
+    assert rt.services.registry.active_id() == "second-project"
+
+
+@pytest.mark.parametrize(
+    ("kind", "state", "phase"),
+    [
+        ("vlm_review", "planned", None),
+        ("vlm_review", "waiting_resource", "waiting"),
+        ("vlm_review", "starting", "submitting"),
+        ("vlm_review", "running", "submitting"),
+        ("vlm_review", "cancel_requested", None),
+        ("vlm_review", "outcome_uncertain", "review_complete"),
+        ("vlm_review", "outcome_uncertain", "checking"),
+        ("image_generation", "outcome_uncertain", "submitting"),
+    ],
+)
+def test_live_jobs_still_block_switch_and_keep_workers_active(
+    owner_review_runtime, kind, state, phase
+):
+    rt = owner_review_runtime
+    if kind == "vlm_review":
+        job = request_owner_review(rt)
+        # Isolate the job check from any independently active outbox intent.
+        with rt.store.transaction() as tx:
+            tx.claim_intent(job["attempt_id"])
+            tx.settle_intent(job["attempt_id"], "acknowledged", {"test": "job-only blocker"})
+    else:
+        with rt.store.transaction() as tx:
+            job = rt.services.jobs.create(
+                tx,
+                job_id="job-image",
+                kind=kind,
+                target={"target_id": "concept", "version": None, "shot_id": None},
+                input_digest="0" * 64,
+                operation_id="generate-image",
+                owner_operation_id="generate-image",
+            )
+    if state == "running":
+        job = rt.provider.update(job, "starting")
+    if state != "planned":
+        job = rt.provider.update(job, state)
+    if phase:
+        rt.provider.execution(PROJECT, job["job_id"], {"phase": phase})
+    with pytest.raises(DomainError, match=f"Project {PROJECT} has unsettled jobs") as error:
+        rt.services.registry.assert_settled(PROJECT)
+    assert (error.value.code, error.value.status) == ("project_busy", 409)
+    assert FeatureLifecycle(rt.services)._activity() == (PROJECT, True)
+
+
+@pytest.mark.parametrize(
+    "body", [{"job_id": "missing"}, [], {"job_id": 42}, {"job_id": "wrong-attempt"}]
+)
+def test_unmatched_uncertain_review_intent_still_blocks(owner_review_runtime, body):
+    rt = owner_review_runtime
+    request_owner_review(rt)
+    job = time_out_review(rt)
+    if body == {"job_id": "wrong-attempt"}:
+        body = {"job_id": job["job_id"], "attempt_id": "orphan"}
+    with rt.store.transaction() as tx:
+        tx.connection.execute(
+            "INSERT INTO outbox (id,kind,state,body) VALUES (?,?,?,?)",
+            ("orphan", "providers.review", "outcome_uncertain", json.dumps(body)),
+        )
+        assert has_unsettled_outbox(tx)
+    with pytest.raises(DomainError, match="unsettled background operations") as error:
+        rt.services.registry.assert_settled(PROJECT)
+    assert (error.value.code, error.value.status) == ("project_busy", 409)
+    assert FeatureLifecycle(rt.services)._activity() == (PROJECT, True)
+
+
+def test_uncertain_review_outbox_payload_must_name_exact_attempt(owner_review_runtime):
+    rt = owner_review_runtime
+    request_owner_review(rt)
+    job = time_out_review(rt)
+    with rt.store.transaction() as tx:
+        tx.connection.execute(
+            "UPDATE outbox SET body=json_set(body, '$.attempt_id', 'wrong') WHERE id=?",
+            (job["attempt_id"],),
+        )
+        assert settled_uncertain_vlm_review(tx, job)
+        assert has_unsettled_outbox(tx)
+    with pytest.raises(DomainError, match="unsettled background operations") as error:
+        rt.services.registry.assert_settled(PROJECT)
+    assert (error.value.code, error.value.status) == ("project_busy", 409)
+    assert FeatureLifecycle(rt.services)._activity() == (PROJECT, True)
+
+    assert cancel_owner_review(rt, job)[0]["state"] == "cancel_requested"
+    with pytest.raises(DomainError, match="Review outbox payload does not match attempt") as error:
+        rt.services.jobs.dispatch_cancellations(PROJECT)
+    assert (error.value.code, error.value.status) == ("source_conflict", 409)
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == "cancel_requested"
+        assert tx.require("reviews", "rev-owner")["status"] == "pending"
+        assert outbox_record(tx, job["attempt_id"])[0] == "outcome_uncertain"
+        assert outbox_record(tx, "owner-cancel-review") == ("pending", None)
+        assert has_unsettled_outbox(tx)
+    with pytest.raises(DomainError) as error:
+        rt.services.registry.assert_settled(PROJECT)
+    assert (error.value.code, error.value.status) == ("project_busy", 409)
+
+
+@pytest.mark.parametrize("mismatch_job", [True, False])
+def test_review_completion_cannot_clear_bad_outbox_payload(owner_review_runtime, mismatch_job):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    with rt.store.transaction() as tx:
+        if mismatch_job:
+            tx.connection.execute(
+                "UPDATE outbox SET body=json_set(body, '$.job_id', 'wrong') WHERE id=?",
+                (job["attempt_id"],),
+            )
+        else:
+            tx.connection.execute("UPDATE outbox SET body='[]' WHERE id=?", (job["attempt_id"],))
+    with pytest.raises(DomainError, match="Review outbox payload does not match attempt") as error:
+        rt.provider.complete_review(rt.provider.worker(job), ready_review_request())
+    assert (error.value.code, error.value.status) == ("source_conflict", 409)
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == "planned"
+        assert tx.require("reviews", "rev-owner")["status"] == "pending"
+        assert tx.require("providers.tickets", "rev-owner")["status"] == "pending"
+        assert outbox_record(tx, job["attempt_id"]) == ("pending", None)
+
+
+def test_dispatching_attempt_is_not_a_settled_uncertain_review(owner_review_runtime):
+    rt = owner_review_runtime
+    request_owner_review(rt)
+    job = time_out_review(rt)
+    with rt.store.transaction() as tx:
+        tx.connection.execute(
+            "UPDATE outbox SET state='dispatching' WHERE id=?", (job["attempt_id"],)
+        )
+        assert not settled_uncertain_vlm_review(tx, job)
+        assert has_unsettled_outbox(tx)
+    with pytest.raises(DomainError, match="unsettled jobs"):
+        rt.services.registry.assert_settled(PROJECT)
+    assert FeatureLifecycle(rt.services)._activity() == (PROJECT, True)
+
+
+def cancel_owner_review(rt, job):
+    return rt.services.jobs.cancel(
+        Caller("owner", "owner"),
+        job["job_id"],
+        dict(
+            schema_version="1.0",
+            operation_id="owner-cancel-review",
+            project_id=PROJECT,
+            expected_revision=job["state_revision"],
+        ),
+    )
+
+
+@pytest.mark.parametrize("initial_state", ["planned", "outcome_uncertain"])
+def test_owner_cancels_non_inflight_vlm_review(owner_review_runtime, initial_state):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    if initial_state == "outcome_uncertain":
+        job = time_out_review(rt)
+    requests = len(rt.vlm_state["requests"])
+    receipt, replayed = cancel_owner_review(rt, job)
+    assert not replayed
+    assert receipt["state"] == "cancel_requested"
+    # A worker tick between admission and cancellation delivery must not pick it up.
+    assert rt.provider.pump_reviews(PROJECT) == []
+    assert rt.services.jobs.dispatch_cancellations(PROJECT) == [
+        {"operation_id": "owner-cancel-review"}
+    ]
+    assert rt.services.jobs.dispatch_cancellations(PROJECT) == []
+    cancelled = rt.services.jobs.get(PROJECT, job["job_id"])
+    assert (cancelled["state"], cancelled["error_code"]) == ("cancelled", "cancelled")
+    with rt.store.transaction(write=False) as tx:
+        ticket = tx.require("reviews", "rev-owner")
+        view = rt.reviews.ticket_view(tx, ticket)
+        assert (ticket["status"], view["error_code"], view["awaiting_human"]) == (
+            "failed",
+            "cancelled",
+            False,
+        )
+        assert tx.require("providers.execution", job["job_id"]) == {"phase": "cancelled"}
+        assert tx.get("providers.pending", job["job_id"], required=False) is None
+        outbox = tx.connection.execute(
+            "SELECT state,evidence FROM outbox WHERE id=?", (job["attempt_id"],)
+        ).fetchone()
+        assert outbox["state"] == "failed"
+        assert json.loads(outbox["evidence"]) == {"job_id": job["job_id"], "state": "cancelled"}
+        assert not has_unsettled_outbox(tx)
+    assert rt.provider.pump_reviews(PROJECT) == []
+    assert len(rt.vlm_state["requests"]) == requests
+    assert FeatureLifecycle(rt.services)._activity() == (PROJECT, False)
+
+
+def outbox_record(tx, identity):
+    row = tx.connection.execute(
+        "SELECT state,evidence FROM outbox WHERE id=?", (identity,)
+    ).fetchone()
+    return row["state"], json.loads(row["evidence"]) if row["evidence"] else None
+
+
+def strand_cancel_intent(tx, state):
+    if state != "pending":
+        tx.claim_intent("owner-cancel-review")
+    if state == "outcome_uncertain":
+        tx.settle_intent("owner-cancel-review", state, {"reason": "legacy interruption"})
+
+
+@pytest.mark.parametrize("intent_state", ["pending", "dispatching", "outcome_uncertain"])
+def test_review_cancel_rolls_back_as_one_unit_and_recovers(
+    owner_review_runtime, monkeypatch, intent_state
+):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    cancel_owner_review(rt, job)
+    with rt.store.transaction() as tx:
+        strand_cancel_intent(tx, intent_state)
+        old_intent = outbox_record(tx, "owner-cancel-review")
+        old_ticket = tx.require("providers.tickets", "rev-owner")
+        watermark = tx.watermark()
+    complete = rt.reviews.complete_in_transaction
+
+    def interrupt(*args, **kwargs):
+        complete(*args, **kwargs)
+        raise DomainError("storage_unavailable", 503)
+
+    with monkeypatch.context() as fault:
+        fault.setattr(rt.reviews, "complete_in_transaction", interrupt)
+        with pytest.raises(DomainError) as error:
+            rt.services.jobs.dispatch_cancellations(PROJECT)
+        assert (error.value.code, error.value.status) == ("storage_unavailable", 503)
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == "cancel_requested"
+        assert tx.require("attempts", job["attempt_id"])["state"] == "cancel_requested"
+        assert tx.require("reviews", "rev-owner")["status"] == "pending"
+        assert tx.require("providers.tickets", "rev-owner") == old_ticket
+        assert tx.get("review.diagnostics", "rev-owner", required=False) is None
+        assert tx.get("providers.execution", job["job_id"], required=False) is None
+        assert tx.require("providers.pending", job["job_id"]) == {"kind": "review"}
+        assert outbox_record(tx, job["attempt_id"]) == ("pending", None)
+        assert outbox_record(tx, "owner-cancel-review") == old_intent
+        assert tx.watermark() == watermark
+
+    assert rt.services.jobs.dispatch_cancellations(PROJECT) == [
+        {"operation_id": "owner-cancel-review"}
+    ]
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == "cancelled"
+        assert tx.require("reviews", "rev-owner")["status"] == "failed"
+        assert tx.require("providers.tickets", "rev-owner")["error_code"] == "cancelled"
+        assert outbox_record(tx, "owner-cancel-review") == (
+            "acknowledged",
+            dict(
+                job_id=job["job_id"],
+                attempt_id=job["attempt_id"],
+                observed_state="cancelled",
+                adapter_called=True,
+            ),
+        )
+    rt.services.registry.assert_settled(PROJECT)
+
+
+def test_stranded_cancel_repairs_legacy_cancelled_job_with_pending_ticket(owner_review_runtime):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    cancel_owner_review(rt, job)
+    job = rt.services.jobs.get(PROJECT, job["job_id"])
+    rt.provider.update(job, "cancelled", error_code="cancelled")
+    with rt.store.transaction() as tx:
+        strand_cancel_intent(tx, "outcome_uncertain")
+    rt.services.jobs.dispatch_cancellations(PROJECT)
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("reviews", "rev-owner")["status"] == "failed"
+        assert tx.require("providers.tickets", "rev-owner")["error_code"] == "cancelled"
+        state, evidence = outbox_record(tx, "owner-cancel-review")
+        assert state == "acknowledged"
+        assert evidence["observed_state"] == "cancelled"
+        assert evidence["adapter_called"] is False
+    rt.services.registry.assert_settled(PROJECT)
+
+
+@pytest.mark.parametrize(
+    ("job_state", "missing_projection"),
+    [("cancelled", False), ("succeeded", True), ("failed", False)],
+)
+def test_stranded_cancel_repairs_terminal_review_projection(
+    owner_review_runtime, job_state, missing_projection
+):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    cancel_owner_review(rt, job)
+    job = rt.services.jobs.get(PROJECT, job["job_id"])
+    ready = job_state == "succeeded"
+    request = ready_review_request()
+    if not ready:
+        request.update(
+            status="failed",
+            error_code="cancelled" if job_state == "cancelled" else "provider_unavailable",
+        )
+    rt.reviews.complete(rt.provider.worker(job), request)
+    rt.provider.update(
+        job,
+        job_state,
+        **({"availability": "complete"} if ready else {"error_code": request["error_code"]}),
+    )
+    with rt.store.transaction() as tx:
+        assert tx.require("reviews", "rev-owner")["status"] == request["status"]
+        assert tx.require("providers.tickets", "rev-owner")["status"] == "pending"
+        if missing_projection:
+            tx.connection.execute(
+                "DELETE FROM records WHERE namespace='providers.tickets' AND id='rev-owner'"
+            )
+        strand_cancel_intent(tx, "dispatching")
+
+    assert rt.services.jobs.dispatch_cancellations(PROJECT) == [
+        {"operation_id": "owner-cancel-review"}
+    ]
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == job_state
+        assert tx.require("providers.tickets", "rev-owner") == rt.reviews.ticket_view(
+            tx, tx.require("reviews", "rev-owner")
+        )
+        assert tx.get("providers.pending", job["job_id"], required=False) is None
+        assert outbox_record(tx, job["attempt_id"])[0] == (
+            "failed" if job_state == "cancelled" else "acknowledged"
+        )
+        state, evidence = outbox_record(tx, "owner-cancel-review")
+        assert state == "acknowledged"
+        assert evidence["observed_state"] == job_state
+    rt.services.registry.assert_settled(PROJECT)
+
+
+def ready_review_request():
+    return dict(
+        schema_version="1.0",
+        operation_id="receive-owner-review",
+        project_id=PROJECT,
+        review_id="rev-owner",
+        status="ready",
+        findings=[],
+    )
+
+
+@pytest.mark.parametrize("legacy_ticket_only", [False, True])
+def test_ready_review_wins_against_admitted_cancel(owner_review_runtime, legacy_ticket_only):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    cancel_owner_review(rt, job)
+    if legacy_ticket_only:
+        rt.reviews.complete(rt.provider.worker(job), ready_review_request())
+        assert rt.services.jobs.get(PROJECT, job["job_id"])["state"] == "cancel_requested"
+    else:
+        ticket, replayed = rt.provider.complete_review(
+            rt.provider.worker(job), ready_review_request()
+        )
+        assert ticket["status"] == "ready"
+        assert not replayed
+        assert rt.services.jobs.get(PROJECT, job["job_id"])["state"] == "succeeded"
+    rt.services.jobs.dispatch_cancellations(PROJECT)
+    with rt.store.transaction(write=False) as tx:
+        completed = tx.require("jobs", job["job_id"])
+        assert (completed["state"], completed["availability"]) == ("succeeded", "complete")
+        assert tx.require("reviews", "rev-owner")["status"] == "ready"
+        assert tx.require("providers.tickets", "rev-owner")["status"] == "ready"
+        assert tx.get("providers.pending", job["job_id"], required=False) is None
+        assert outbox_record(tx, job["attempt_id"]) == ("acknowledged", {"review_id": "rev-owner"})
+        state, evidence = outbox_record(tx, "owner-cancel-review")
+        assert state == "acknowledged"
+        assert evidence["observed_state"] == "succeeded"
+        assert evidence["adapter_called"] is legacy_ticket_only
+    rt.services.registry.assert_settled(PROJECT)
+
+
+def test_late_completion_cannot_replace_committed_cancel(owner_review_runtime):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    cancel_owner_review(rt, job)
+    rt.services.jobs.dispatch_cancellations(PROJECT)
+    with pytest.raises(DomainError) as error:
+        rt.provider.complete_review(rt.provider.worker(job), ready_review_request())
+    assert (error.value.code, error.value.status) == ("invalid_state_transition", 409)
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == "cancelled"
+        assert tx.require("reviews", "rev-owner")["status"] == "failed"
+
+
+def test_review_completion_rolls_back_and_replays_saved_response(owner_review_runtime, monkeypatch):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    update = rt.services.jobs.update_in_transaction
+
+    def interrupt(tx, caller, body, **kwargs):
+        result = update(tx, caller, body, **kwargs)
+        if body["state"] == "succeeded":
+            raise DomainError("storage_unavailable", 503)
+        return result
+
+    with monkeypatch.context() as fault:
+        fault.setattr(rt.services.jobs, "update_in_transaction", interrupt)
+        with pytest.raises(DomainError) as error:
+            rt.provider.pump_reviews(PROJECT)
+        assert error.value.code == "storage_unavailable"
+
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == "starting"
+        assert tx.require("reviews", "rev-owner")["status"] == "pending"
+        assert tx.require("providers.tickets", "rev-owner")["status"] == "pending"
+        assert tx.require("providers.execution", job["job_id"])["phase"] == "review_complete"
+        assert tx.require("providers.pending", job["job_id"]) == {"kind": "review"}
+        assert outbox_record(tx, job["attempt_id"]) == ("dispatching", None)
+    assert FeatureLifecycle(rt.services)._activity() == (PROJECT, True)
+    requests = len(rt.vlm_state["requests"])
+    assert rt.provider.pump_reviews(PROJECT)[0]["state"] == "succeeded"
+    assert len(rt.vlm_state["requests"]) == requests
+    rt.services.registry.assert_settled(PROJECT)
+
+
+@pytest.mark.parametrize("kind", ["render", "encode", "unity"])
+def test_uncertain_native_job_cancellation_still_requires_evidence(owner_review_runtime, kind):
+    rt = owner_review_runtime
+    with rt.store.transaction() as tx:
+        job = rt.services.jobs.create(
+            tx,
+            job_id="job-native",
+            kind=kind,
+            target={"target_id": "concept", "version": None, "shot_id": None},
+            input_digest="0" * 64,
+            operation_id="run-native",
+            owner_operation_id="run-native",
+        )
+    rt.services.jobs.cancellers[kind] = lambda _: pytest.fail("Must not cancel a native job")
+    job = rt.provider.update(job, "outcome_uncertain")
+    with pytest.raises(DomainError, match="Reconciliation requires evidence") as error:
+        cancel_owner_review(rt, job)
+    assert error.value.code == "invalid_state_transition"
+    with rt.store.transaction(write=False) as tx:
+        assert tx.require("jobs", job["job_id"])["state"] == "outcome_uncertain"
+        assert (
+            tx.connection.execute("SELECT id FROM outbox WHERE kind='job.cancel'").fetchone()
+            is None
+        )
+    request_owner_review(rt)
+    review_job = time_out_review(rt)
+    with rt.store.transaction(write=False) as tx:
+        assert rt.provider.review_cancellation_evidence(tx, review_job) == (
+            f"provider-execution:{review_job['job_id']}:{review_job['attempt_id']}:submitting"
+        )
+    assert cancel_owner_review(rt, review_job)[0]["state"] == "cancel_requested"
+
+
+@pytest.mark.parametrize("intent_state", ["dispatching", "outcome_uncertain"])
+def test_stranded_nontransactional_cancel_intent_is_not_replayed(
+    owner_review_runtime, intent_state
+):
+    rt = owner_review_runtime
+    with rt.store.transaction() as tx:
+        job = rt.services.jobs.create(
+            tx,
+            job_id="job-native",
+            kind="unity",
+            target={"target_id": "concept", "version": None, "shot_id": None},
+            input_digest="0" * 64,
+            operation_id="run-native",
+            owner_operation_id="run-native",
+        )
+    rt.services.jobs.cancellers["unity"] = lambda _: pytest.fail(
+        "Must not replay a native cancellation"
+    )
+    cancel_owner_review(rt, job)
+    with rt.store.transaction() as tx:
+        strand_cancel_intent(tx, intent_state)
+        original = outbox_record(tx, "owner-cancel-review")
+    assert rt.services.jobs.dispatch_cancellations(PROJECT) == []
+    with rt.store.transaction(write=False) as tx:
+        assert outbox_record(tx, "owner-cancel-review") == original
+        assert tx.require("jobs", job["job_id"])["state"] == "cancel_requested"
+
+
+def test_owner_cannot_cancel_inflight_vlm_http_request(owner_review_runtime, monkeypatch):
+    rt = owner_review_runtime
+    job = request_owner_review(rt)
+    request_entered = threading.Event()
+    release_request = threading.Event()
+    send = rt.provider.client.send
+
+    def blocked_send(request, *args, **kwargs):
+        if request.url.path == "/v1/chat/completions":
+            request_entered.set()
+            assert release_request.wait(timeout=5)
+        return send(request, *args, **kwargs)
+
+    monkeypatch.setattr(rt.provider.client, "send", blocked_send)
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        pumped = pool.submit(rt.provider.pump_reviews, PROJECT)
+        try:
+            assert request_entered.wait(timeout=5)
+            starting = rt.services.jobs.get(PROJECT, job["job_id"])
+            assert starting["state"] == "starting"
+            with pytest.raises(DomainError) as error:
+                cancel_owner_review(rt, starting)
+            assert (error.value.code, error.value.status) == ("cancel_unsupported", 501)
+            running = rt.provider.update(starting, "running")
+            with pytest.raises(DomainError) as error:
+                cancel_owner_review(rt, running)
+            assert (error.value.code, error.value.status) == ("cancel_unsupported", 501)
+            assert rt.services.jobs.dispatch_cancellations(PROJECT) == []
+        finally:
+            release_request.set()
+        assert pumped.result(timeout=5)[0]["state"] == "succeeded"
 
 
 def test_get_vlm_review_work_scoping_stop_interrupted_wait_and_idempotent_escalation(vlm_runtime):
