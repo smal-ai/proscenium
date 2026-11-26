@@ -3,13 +3,13 @@ import math
 import random
 import re
 import sys
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 from tools.unity import export_blender as exporter
+from tools.unity import workflow
 
 
 def _product(matrix, vector):
@@ -180,7 +180,7 @@ def test_principled_material_reads_active_output_and_linked_inputs():
     assert row["material_id"] != exporter.extract_material(source)["material_id"]
 
 
-def test_emission_mix_shader_blends_in_linear_space_and_clamps_hdr_output():
+def test_emission_mix_shader_blends_in_linear_space_and_scales_hdr_output():
     emission: dict[str, Any] = {
         "type": "EMISSION",
         "inputs": {"Color": (0.5, 0.2, 0.0, 1), "Strength": 150},
@@ -194,14 +194,24 @@ def test_emission_mix_shader_blends_in_linear_space_and_clamps_hdr_output():
     assert row["base_colour"]["r"] == pytest.approx(
         exporter.linear_to_srgb(0.024 * 0.75 + 0.5 * 0.25)
     )
-    assert row["emission_colour"]["r"] == pytest.approx(19.2)
+    assert row["emission_colour"] == pytest.approx(
+        {"r": 2.0, "g": 2.0 * 7.725 / 19.2, "b": 0.0, "a": 1.0}
+    )
     mixed["inputs"]["Fac"] = 1.0
     row = exporter.extract_material(_material(mixed))
     assert row["emissive"] is True
-    assert row["emission_colour"] == {"r": 64, "g": 30, "b": 0, "a": 1}
+    assert row["emission_colour"] == pytest.approx({"r": 2.0, "g": 0.8, "b": 0.0, "a": 1.0})
     assert row["base_colour"]["r"] == pytest.approx(0.735356983052)
     emission["inputs"]["Strength"] = 0
     assert exporter.extract_material(_material(mixed))["emissive"] is False
+
+
+def test_hdr_emission_caps_violet_peak_without_losing_rgb_ratios():
+    emission = {"type": "EMISSION", "inputs": {"Color": (0.28, 0.36, 1.0, 1.0), "Strength": 7}}
+    colour = exporter.extract_material(_material(emission))["emission_colour"]
+    assert max(colour[c] for c in "rgb") == 2.0
+    assert colour["r"] < 1.0 and colour["g"] < 1.0
+    assert tuple(colour[c] / colour["b"] for c in "rgb") == pytest.approx((0.28, 0.36, 1.0))
 
 
 @pytest.mark.parametrize("node_type", ["MIX_RGB", "MIX"])
@@ -460,11 +470,16 @@ def test_lights_export_photometric_approximations():
     row = exporter._light(spot, matrix, 0.5)
     assert row is not None
     assert row["type"] == "spot" and row["cast_shadows"]
-    assert row["intensity"] == pytest.approx(2200 / (4 * math.pi))
+    assert row["intensity"] == pytest.approx(2200 / (12 * math.pi))
     assert row["range"] == 28
     assert row["spot_angle"] == pytest.approx(60)
     assert row["inner_spot_angle"] == pytest.approx(45)
     assert row["position"] == {"x": 0.5, "y": 1, "z": 2}
+    for energy, limit in ((0, 0.2), (10000, 120.0)):
+        spot.data.energy = energy
+        clamped = exporter._light(spot, matrix, 0.5)
+        assert clamped is not None
+        assert clamped["intensity"] == limit
     spot.data.energy = float("nan")
     assert exporter._light(spot, matrix, 0.5) is None
 
@@ -503,15 +518,14 @@ def test_world_attenuates_in_linear_space_and_uses_an_srgb_ambient_floor():
     assert interior["world_colour"] == pytest.approx(
         {"r": 0.24780052799, "g": 0.0323, "b": 0, "a": 1}
     )
-    assert interior["ambient_colour"] == pytest.approx(
-        {"r": 0.24780052799, "g": 0.09, "b": 0.11, "a": 1}
+    assert interior["ambient_colour"] == {"r": 0.55, "g": 0.58, "b": 0.66, "a": 1}
+    dark = exporter._environment(None, True)
+    assert dark["ambient_colour"] == interior["ambient_colour"]
+    assert dark["world_colour"] == {"r": 0, "g": 0, "b": 0, "a": 1}
+    warm = exporter._environment({"color": (0.5, 0.025, 0)}, True)
+    assert warm["ambient_colour"] == pytest.approx(
+        {"r": 0.735356983052, "g": 0.58, "b": 0.66, "a": 1}
     )
-    assert exporter._environment(None, True)["ambient_colour"] == {
-        "r": 0.08,
-        "g": 0.09,
-        "b": 0.11,
-        "a": 1,
-    }
 
 
 @pytest.mark.parametrize(
@@ -630,7 +644,136 @@ def test_export_deduplicates_evaluated_instances_and_bakes_shear(monkeypatch, tm
 
 
 def _unity_workflow_source():
-    return (Path(__file__).resolve().parents[1] / "tools/unity/Editor/UnityWorkflow.cs").read_text()
+    return (workflow.HERE / "Editor/UnityWorkflow.cs").read_text()
+
+
+def test_prepare_installs_and_tracks_pause_runtime_scripts(tmp_path):
+    project = "unity/gallery"
+    destination = workflow.prepare(tmp_path, project)
+    tool_root = destination / "Assets/Proscenium"
+    inventory = tool_root / "tool-install.json"
+    installed = json.loads(inventory.read_text())
+    for name in ("Runtime/PauseMenu.cs", "Runtime/WalkthroughPlayer.cs"):
+        script = tool_root / name
+        assert script.read_bytes() == (workflow.HERE / name).read_bytes()
+        assert installed[name] == workflow.sha256(script)
+
+    meta = tool_root / "Runtime/PauseMenu.cs.meta"
+    meta.write_text("guid: existing-unity-guid\n")
+    workflow.prepare(tmp_path, project)
+    assert json.loads(inventory.read_text()) == installed
+    assert meta.read_text() == "guid: existing-unity-guid\n"
+
+
+def test_bootstrap_declares_pause_audio_and_video_modules(tmp_path):
+    destination = workflow.bootstrap_project(tmp_path, "unity/gallery")
+    dependencies = json.loads((destination / "Packages/manifest.json").read_text())["dependencies"]
+    for module in ("imgui", "audio", "video"):
+        assert dependencies[f"com.unity.modules.{module}"] == "1.0.0"
+
+
+def test_walkthrough_releases_cursor_and_restores_time_on_pause_exit():
+    source = (workflow.HERE / "Runtime/WalkthroughPlayer.cs").read_text()
+    assert re.search(
+        r"void ReleaseCursor\(\)\s*\{\s*Cursor\.lockState = CursorLockMode\.None;\s*"
+        r"Cursor\.visible = true;",
+        source,
+    )
+    assert re.search(
+        r"void CaptureCursor\(\)\s*\{\s*Cursor\.lockState = CursorLockMode\.Locked;\s*"
+        r"Cursor\.visible = false;",
+        source,
+    )
+    for pattern in (
+        r"if \(pauseMenuEnabled\) SetPaused\(!IsPaused\);\s*else ReleaseCursor\(\);",
+        r"if \(!hasFocus\) ReleaseCursor\(\);",
+        r"OnDisable\(\) => ReleasePause\(\);",
+        r"OnDestroy\(\) => ReleasePause\(\);",
+        r"RestoreTimeScale\(\);\s*ReleaseCursor\(\);",
+        r"previousTimeScale = Time\.timeScale;\s*Time\.timeScale = 0f;",
+        r"Time\.timeScale = previousTimeScale;",
+        r"LastPolledReset = false;\s*ReleaseCursor\(\);\s*return;",
+        r"if \(IsPaused\) return;\s*if \(reset",
+    ):
+        assert re.search(pattern, source)
+
+
+def test_pause_menu_actions_wired_on_import_without_tightening_validation():
+    menu = (workflow.HERE / "Runtime/PauseMenu.cs").read_text()
+    for label, handler in (
+        ("Resume", "Resume"),
+        ("Reset Position", "ResetAndResume"),
+        ("Quit", "Quit"),
+    ):
+        assert f'GUI.Button(button, "{label}", buttonStyle)) {handler}();' in menu
+    assert "public void Resume() => player?.SetPaused(false);" in menu
+    assert re.search(r"player\?\.Respawn\(\);\s*player\?\.SetPaused\(false\);", menu)
+    assert re.search(
+        r"QuitRequested = true;\s*player\?\.SetPaused\(false\);\s*"
+        r"Cursor\.lockState = CursorLockMode\.None;\s*Cursor\.visible = true;",
+        menu,
+    )
+    assert "if (!IsVisible) return;" in menu
+    assert '"WASD Move  ·  Mouse Look  ·  R Reset  ·  Esc Toggle Pause"' in menu
+    hint_style = menu.split("hintStyle = new GUIStyle", 1)[1].split("buttonStyle =", 1)[0]
+    assert "fontSize = 14" in hint_style
+    assert "wordWrap = false" in hint_style
+    assert "textColor = new Color(0.86f, 0.90f, 0.95f)" in hint_style
+
+    source = _unity_workflow_source()
+    importer = source.split("public static void Import()", 1)[1].split(
+        "private static void ImportInlineMesh(", 1
+    )[0]
+    assert re.search(
+        r"var movement = player\.AddComponent<WalkthroughPlayer>\(\);\s*"
+        r"var pauseMenu = player\.AddComponent<PauseMenu>\(\);\s*pauseMenu\.player = movement;",
+        importer,
+    )
+    validation = source.split("public static void Validate()", 1)[1].split(
+        "public static void ImportRepeatProof()", 1
+    )[0]
+    assert "GetComponentsInChildren<WalkthroughPlayer>().Length != 1" in validation
+    assert "PauseMenu" not in validation
+
+
+def test_pause_playmode_test_uses_production_input_and_restores_settings():
+    source = (workflow.HERE / "Tests/PlayableTests.cs").read_text()
+    test_name = "public IEnumerator F06_EscapePauseMenu_TogglesPauseCursorAndMovement()"
+    assert re.search(rf"\[UnityTest\]\s*{re.escape(test_name)}", source)
+    pause_test = source.split(test_name, 1)[1]
+    assert re.search(
+        r"mouse\.MakeCurrent\(\);\s*(?://[^\n]*\n\s*)?yield return null;\s*Send\(Key\.Escape\);",
+        pause_test,
+    )
+    for snippet in (
+        "Send(Key.Escape);",
+        "Send(Key.W, new Vector2",
+        "AssertPoll(Vector2.zero, Vector2.zero);",
+        "pauseMenu.Resume();",
+        "pauseMenu.ResetAndResume();",
+        "pauseMenu.suppressQuitForTests = true;",
+        "pauseMenu.Quit();",
+        "Time.timeScale = 0f;",
+        "player.enabled = false;",
+        "player.enabled = true;",
+        "Is.EqualTo(initialTimeScale)",
+    ):
+        assert snippet in pause_test
+    assert re.search(
+        r"Send\(\);\s*yield return null;\s*Send\(Key\.Escape\);\s*yield return null;\s*"
+        r"Assert\.That\(player\.IsPaused, Is\.False\);\s*"
+        r"Assert\.That\(pauseMenu\.IsVisible, Is\.False\);",
+        pause_test,
+    )
+    cleanup = pause_test.split("finally", 1)[1]
+    for restoration in (
+        "settings.updateMode = previousMode;",
+        "settings.backgroundBehavior = previousBackground;",
+        "settings.editorInputBehaviorInPlayMode = previousEditorInput;",
+        "Time.captureDeltaTime = previousCaptureDelta;",
+        "Time.timeScale = previousTimeScale;",
+    ):
+        assert restoration in cleanup
 
 
 def test_unity_workflow_has_shared_and_legacy_import_paths():
@@ -660,7 +803,6 @@ def test_unity_workflow_has_shared_and_legacy_import_paths():
         'GetMethod("GetDefaultPostProcessData"',
         "postProcessData.objectReferenceValue = defaultData",
         "GetComponentsInChildren<Collider>().Any(c => !(c is CharacterController))",
-        '"ACES"',
         "mesh.SetTriangles(sm.submeshes[s].triangles, s",
         "export.shared_meshes == null || export.shared_meshes.Length == 0",
         "if (legacy) ImportInlineMesh",
@@ -703,6 +845,27 @@ def test_unity_urp_configuration_checks_ownership_before_writing_asset_propertie
     assert "AddUrpVolume(root, camera, directory);" in source
 
 
+def test_unity_uses_linear_colour_only_for_generated_urp_and_neutral_tonemapping():
+    source = _unity_workflow_source()
+    volume, pipeline = source.split("private static void AddUrpVolume(", 1)[1].split(
+        "private static void ConfigurePipeline(", 1
+    )
+    pipeline = pipeline.split("public static void Validate()", 1)[0]
+    assert source.count("PlayerSettings.colorSpace = ColorSpace.Linear;") == 1
+    assert re.search(
+        r"if \(assetType\.IsInstanceOfType\(asset\) && IsGeneratedAsset\(asset, directory\)\s*"
+        r"&& PlayerSettings\.colorSpace != ColorSpace\.Linear\)\s*"
+        r"PlayerSettings\.colorSpace = ColorSpace\.Linear;",
+        pipeline,
+    )
+    assert re.search(
+        r'SetParameter\(tonemapping, "mode", p => \{\s*'
+        r'int neutral = Array\.IndexOf\(p\.enumNames, "Neutral"\);\s*'
+        r"if \(neutral >= 0\) p\.enumValueIndex = neutral;",
+        volume,
+    )
+
+
 def test_unity_validates_optional_uvs_and_legacy_colour_before_importing():
     source = _unity_workflow_source()
     validation = source.split("private static bool ValidateExport(", 1)[1].split(
@@ -722,8 +885,14 @@ def test_unity_scene_import_restores_skybox_mode_and_avoids_duplicate_audio():
     source = _unity_workflow_source()
     assert re.search(
         r"if \(!environment\.use_skybox\)\s*\{\s*"
-        r"RenderSettings\.ambientMode = AmbientMode\.Flat;\s*"
-        r"RenderSettings\.ambientLight = environment\.ambient_colour;\s*"
+        r"var baseAmbient = environment\.ambient_colour;\s*"
+        r"RenderSettings\.ambientMode = AmbientMode\.Trilight;\s*"
+        r"RenderSettings\.ambientSkyColor = new Color\(baseAmbient\.r, baseAmbient\.g, "
+        r"baseAmbient\.b, 1f\);\s*"
+        r"RenderSettings\.ambientEquatorColor = new Color\(baseAmbient\.r \* 0\.85f, "
+        r"baseAmbient\.g \* 0\.85f,\s*baseAmbient\.b \* 0\.85f, 1f\);\s*"
+        r"RenderSettings\.ambientGroundColor = new Color\(baseAmbient\.r \* 0\.45f, "
+        r"baseAmbient\.g \* 0\.45f,\s*baseAmbient\.b \* 0\.45f, 1f\);\s*"
         r"RenderSettings\.defaultReflectionMode = DefaultReflectionMode\.Custom;\s*"
         r"RenderSettings\.reflectionIntensity = 0f;\s*"
         r"camera\.clearFlags = CameraClearFlags\.SolidColor;",
@@ -743,6 +912,62 @@ def test_unity_scene_import_restores_skybox_mode_and_avoids_duplicate_audio():
             "!UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Any(l => l.enabled)"
         )
         < source.index("cameraObject.AddComponent<AudioListener>()")
+    )
+
+
+def test_unity_caps_active_lights_and_distributes_non_primary_lights():
+    source = _unity_workflow_source()
+    assert "const int MaxActiveLights = 32;" in source
+    assert "const int PrimaryLightCount = 12;" in source
+    selector = source.split("private static HashSet<LightRow> SelectActiveLights(", 1)[1].split(
+        "private static void ImportLighting(", 1
+    )[0]
+    assert "if (lights.Length <= MaxActiveLights) return new HashSet<LightRow>(lights);" in selector
+    assert re.search(
+        r"lights\.OrderByDescending\(l => l\.intensity\)\s*"
+        r"\.ThenBy\(l => l\.name, StringComparer\.Ordinal\)",
+        selector,
+    )
+    assert re.search(
+        r'ranked\.Where\(l => l\.type == "directional"\)\s*'
+        r'\.Concat\(ranked\.Where\(l => l\.type != "directional"\)\.Take\(PrimaryLightCount\)\)\s*'
+        r"\.Take\(MaxActiveLights\)",
+        selector,
+    )
+    assert "while (active.Count < MaxActiveLights)" in selector
+    assert re.search(
+        r"ranked\.Where\(l => !active\.Contains\(l\)\)\s*"
+        r"\.OrderByDescending\(l => active\.Min\(selected => "
+        r"\(l\.position - selected\.position\)\.sqrMagnitude\)\)\s*\.First\(\)",
+        selector,
+    )
+    assert "var active = SelectActiveLights(export.lights);" in source
+    assert "light.enabled = active.Contains(row);" in source
+
+
+def test_unity_prioritises_primary_lights_and_budgets_non_point_shadows():
+    source = _unity_workflow_source()
+    primary = source.split("var primary =", 1)[1].split(";", 1)[0]
+    assert re.search(
+        r"Where\(active\.Contains\)\s*"
+        r'\.OrderByDescending\(l => l\.type == "directional"\)\s*'
+        r"\.ThenByDescending\(l => l\.intensity\)\s*"
+        r'\.ThenByDescending\(l => l\.type == "spot"\)\s*'
+        r"\.ThenBy\(l => l\.name, StringComparer\.Ordinal\)\s*\.Take\(PrimaryLightCount\)",
+        primary,
+    )
+    assert "if (primary.Contains(row)) light.renderMode = LightRenderMode.ForcePixel;" in source
+    shadowed = source.split("var shadowed =", 1)[1].split(";", 1)[0]
+    assert re.search(
+        r'Where\(l => active\.Contains\(l\) && l\.cast_shadows && l\.type != "point"\)\s*'
+        r'\.OrderByDescending\(l => l\.type == "directional"\)\s*'
+        r'\.ThenByDescending\(l => l\.type == "spot"\)\s*'
+        r"\.ThenByDescending\(l => l\.intensity\)\s*"
+        r"\.ThenBy\(l => l\.name, StringComparer\.Ordinal\)\.Take\(5\)",
+        shadowed,
+    )
+    assert (
+        "light.shadows = shadowed.Contains(row) ? LightShadows.Soft : LightShadows.None;" in source
     )
 
 

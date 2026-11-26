@@ -83,6 +83,9 @@ namespace Proscenium.Unity.Editor
 
     public static class UnityWorkflow
     {
+        private const int MaxActiveLights = 32;
+        private const int PrimaryLightCount = 12;
+
         public static string Argument(string flag)
         {
             var args = Environment.GetCommandLineArgs();
@@ -277,6 +280,8 @@ namespace Proscenium.Unity.Editor
             camera.orthographic = recipe.camera == "orthographic";
             camera.orthographicSize = 3;
             var movement = player.AddComponent<WalkthroughPlayer>();
+            var pauseMenu = player.AddComponent<PauseMenu>();
+            pauseMenu.player = movement;
             movement.view = camera;
             movement.spawnPosition = recipe.spawn;
             ImportLighting(export, root, camera, directory);
@@ -378,6 +383,28 @@ namespace Proscenium.Unity.Editor
             return meshes;
         }
 
+        private static HashSet<LightRow> SelectActiveLights(LightRow[] lights)
+        {
+            if (lights.Length <= MaxActiveLights) return new HashSet<LightRow>(lights);
+
+            var ranked = lights.OrderByDescending(l => l.intensity)
+                .ThenBy(l => l.name, StringComparer.Ordinal).ToArray();
+            // Directionals take precedence even when they alone exhaust the hard cap.
+            var active = new HashSet<LightRow>(ranked.Where(l => l.type == "directional")
+                .Concat(ranked.Where(l => l.type != "directional").Take(PrimaryLightCount))
+                .Take(MaxActiveLights));
+            while (active.Count < MaxActiveLights)
+            {
+                // Squared distance preserves Euclidean ordering. Stable ordering retains
+                // the intensity and ordinal-name tie breakers from ranked.
+                var next = ranked.Where(l => !active.Contains(l))
+                    .OrderByDescending(l => active.Min(selected => (l.position - selected.position).sqrMagnitude))
+                    .First();
+                active.Add(next);
+            }
+            return active;
+        }
+
         private static void ImportLighting(Export export, GameObject root, Camera camera, string directory)
         {
             var environment = export.environment;
@@ -385,8 +412,13 @@ namespace Proscenium.Unity.Editor
             {
                 if (!environment.use_skybox)
                 {
-                    RenderSettings.ambientMode = AmbientMode.Flat;
-                    RenderSettings.ambientLight = environment.ambient_colour;
+                    var baseAmbient = environment.ambient_colour;
+                    RenderSettings.ambientMode = AmbientMode.Trilight;
+                    RenderSettings.ambientSkyColor = new Color(baseAmbient.r, baseAmbient.g, baseAmbient.b, 1f);
+                    RenderSettings.ambientEquatorColor = new Color(baseAmbient.r * 0.85f, baseAmbient.g * 0.85f,
+                        baseAmbient.b * 0.85f, 1f);
+                    RenderSettings.ambientGroundColor = new Color(baseAmbient.r * 0.45f, baseAmbient.g * 0.45f,
+                        baseAmbient.b * 0.45f, 1f);
                     RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
                     RenderSettings.reflectionIntensity = 0f;
                     camera.clearFlags = CameraClearFlags.SolidColor;
@@ -410,9 +442,16 @@ namespace Proscenium.Unity.Editor
                 light.shadows = LightShadows.Soft;
                 return;
             }
-            var shadowed = new HashSet<LightRow>(export.lights.Where(l => l.cast_shadows)
+            // OpenGL Core Forward+ caps visible lights before renderMode is considered.
+            var active = SelectActiveLights(export.lights);
+            var primary = new HashSet<LightRow>(export.lights.Where(active.Contains)
                 .OrderByDescending(l => l.type == "directional").ThenByDescending(l => l.intensity)
-                .ThenByDescending(l => l.type == "spot").Take(6));
+                .ThenByDescending(l => l.type == "spot").ThenBy(l => l.name, StringComparer.Ordinal)
+                .Take(PrimaryLightCount));
+            // A point light needs six atlas faces. Reserve this budget for directional and spot shadows.
+            var shadowed = new HashSet<LightRow>(export.lights.Where(l => active.Contains(l) && l.cast_shadows && l.type != "point")
+                .OrderByDescending(l => l.type == "directional").ThenByDescending(l => l.type == "spot")
+                .ThenByDescending(l => l.intensity).ThenBy(l => l.name, StringComparer.Ordinal).Take(5));
             foreach (var row in export.lights)
             {
                 var obj = new GameObject(row.name);
@@ -424,6 +463,8 @@ namespace Proscenium.Unity.Editor
                 light.color = row.colour;
                 light.intensity = row.intensity;
                 light.range = row.range;
+                light.enabled = active.Contains(row);
+                if (primary.Contains(row)) light.renderMode = LightRenderMode.ForcePixel;
                 if (light.type == LightType.Spot)
                 {
                     light.spotAngle = row.spot_angle;
@@ -533,8 +574,8 @@ namespace Proscenium.Unity.Editor
             }
             var tonemapping = new SerializedObject(GetEffect(tonemappingType));
             SetParameter(tonemapping, "mode", p => {
-                int aces = Array.IndexOf(p.enumNames, "ACES");
-                if (aces >= 0) p.enumValueIndex = aces;
+                int neutral = Array.IndexOf(p.enumNames, "Neutral");
+                if (neutral >= 0) p.enumValueIndex = neutral;
             });
             tonemapping.ApplyModifiedPropertiesWithoutUndo();
             var bloom = new SerializedObject(GetEffect(bloomType));
@@ -564,31 +605,38 @@ namespace Proscenium.Unity.Editor
             var assetType = Type.GetType("UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset, Unity.RenderPipelines.Universal.Runtime");
             var rendererType = Type.GetType("UnityEngine.Rendering.Universal.UniversalRendererData, Unity.RenderPipelines.Universal.Runtime");
             if (assetType == null || rendererType == null) throw new InvalidOperationException("URP package unavailable");
-            if (GraphicsSettings.currentRenderPipeline != null)
+            var asset = GraphicsSettings.currentRenderPipeline;
+            if (asset != null)
             {
-                if (!assetType.IsInstanceOfType(GraphicsSettings.currentRenderPipeline))
+                if (!assetType.IsInstanceOfType(asset))
                     throw new InvalidOperationException("Configured pipeline is not URP");
-                return;
             }
-            string path = directory + "/Pipeline.asset";
-            var asset = AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>(path);
-            if (asset == null)
+            else
             {
-                var renderer = ScriptableObject.CreateInstance(rendererType);
-                AssetDatabase.CreateAsset(renderer, directory + "/Renderer.asset");
-                asset = (RenderPipelineAsset)ScriptableObject.CreateInstance(assetType);
-                AssetDatabase.CreateAsset(asset, path);
-                if (!IsGeneratedAsset(asset, directory) || !IsGeneratedAsset(renderer, directory))
-                    throw new InvalidOperationException("Generated pipeline or renderer is outside the source asset directory");
-                var serialized = new SerializedObject(asset);
-                var list = serialized.FindProperty("m_RendererDataList");
-                list.arraySize = 1;
-                list.GetArrayElementAtIndex(0).objectReferenceValue = renderer;
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(asset);
+                string path = directory + "/Pipeline.asset";
+                asset = AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>(path);
+                if (asset == null)
+                {
+                    var renderer = ScriptableObject.CreateInstance(rendererType);
+                    AssetDatabase.CreateAsset(renderer, directory + "/Renderer.asset");
+                    asset = (RenderPipelineAsset)ScriptableObject.CreateInstance(assetType);
+                    AssetDatabase.CreateAsset(asset, path);
+                    if (!IsGeneratedAsset(asset, directory) || !IsGeneratedAsset(renderer, directory))
+                        throw new InvalidOperationException("Generated pipeline or renderer is outside the source asset directory");
+                    var serialized = new SerializedObject(asset);
+                    var list = serialized.FindProperty("m_RendererDataList");
+                    list.arraySize = 1;
+                    list.GetArrayElementAtIndex(0).objectReferenceValue = renderer;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    EditorUtility.SetDirty(asset);
+                }
+                GraphicsSettings.defaultRenderPipeline = asset;
+                QualitySettings.renderPipeline = asset;
             }
-            GraphicsSettings.defaultRenderPipeline = asset;
-            QualitySettings.renderPipeline = asset;
+            // Colour space is project-wide. Leave it alone for user-owned pipelines.
+            if (assetType.IsInstanceOfType(asset) && IsGeneratedAsset(asset, directory)
+                && PlayerSettings.colorSpace != ColorSpace.Linear)
+                PlayerSettings.colorSpace = ColorSpace.Linear;
         }
 
         public static void Validate()

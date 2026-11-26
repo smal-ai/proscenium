@@ -387,12 +387,18 @@ def _surface(socket: Any, verified_images: set[int] | None, depth: int = 0) -> _
     return None
 
 
-def _colour(colour: RGBA, *, srgb: bool = True) -> dict[str, float]:
+def _colour(colour: RGBA) -> dict[str, float]:
     r, g, b, a = colour
-    if srgb:
-        r, g, b = linear_to_srgb(r), linear_to_srgb(g), linear_to_srgb(b)
-    else:
-        r, g, b = clamp(r, 0.0, 64.0), clamp(g, 0.0, 64.0), clamp(b, 0.0, 64.0)
+    return {"r": linear_to_srgb(r), "g": linear_to_srgb(g), "b": linear_to_srgb(b), "a": clamp(a)}
+
+
+def _hdr_emission(colour: RGBA) -> dict[str, float]:
+    r, g, b = (max(0.0, v) if math.isfinite(v) else 0.0 for v in colour[:3])
+    peak = max(r, g, b)
+    if peak > 2.0:
+        # Compress the peak without clipping channels independently and losing chromaticity.
+        r, g, b = (2.0 * (channel / peak) for channel in (r, g, b))
+    a = colour[3]
     return {"r": r, "g": g, "b": b, "a": clamp(a)}
 
 
@@ -415,7 +421,7 @@ def extract_material(material: Any, *, verified_images: set[int] | None = None) 
         metallic=surface.metallic,
         smoothness=1 - surface.roughness,
         emissive=surface.emissive,
-        emission_colour=_colour(surface.emission, srgb=False),
+        emission_colour=_hdr_emission(surface.emission),
     )
     return dict(material_id=_hash(row)[:16], **row)
 
@@ -513,7 +519,7 @@ def _light(obj: Any, matrix: Matrix, unit: float) -> dict[str, Any] | None:
         colour=_colour(_rgba(colour)),
         intensity=clamp(energy, 0.1, 5.0)
         if directional
-        else clamp(energy / (4 * math.pi), 0.2, 350.0),
+        else clamp(energy / (12 * math.pi), 0.2, 120.0),
         range=clamp(math.sqrt(max(0.0, energy)) * 0.65, 3.0, 28.0),
         spot_angle=angle,
         inner_spot_angle=angle * (1 - clamp(_get(light, "spot_blend", 0.15))),
@@ -543,16 +549,16 @@ def _environment(
         max(0.0, colour[2]) * strength,
         1.0,
     )
-    world_colour = _colour(lit_linear, srgb=True)
+    world_colour = _colour(lit_linear)
     use_skybox = not has_lights and _luminance(lit_linear[:3]) >= 0.15
-    ambient = tuple(
-        max(world_colour[c], floor) for c, floor in zip("rgb", (0.08, 0.09, 0.11), strict=True)
-    )
+    ambient = {
+        c: max(world_colour[c], floor) for c, floor in zip("rgb", (0.55, 0.58, 0.66), strict=True)
+    }
     return dict(
         has_environment=True,
         world_colour=world_colour,
         world_strength=strength,
-        ambient_colour=_colour((ambient[0], ambient[1], ambient[2], 1.0), srgb=False),
+        ambient_colour={**ambient, "a": 1.0},
         use_skybox=use_skybox,
     )
 

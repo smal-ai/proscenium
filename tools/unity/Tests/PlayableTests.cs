@@ -192,6 +192,146 @@ namespace Proscenium.Unity.Tests
                 Assert.That(restored, Is.True, "Restore every test-only routing/time setting");
             }
         }
+
+        [UnityTest]
+        public IEnumerator F06_EscapePauseMenu_TogglesPauseCursorAndMovement()
+        {
+            float previousCaptureDelta = Time.captureDeltaTime;
+            float previousTimeScale = Time.timeScale;
+            var settings = InputSystem.settings;
+            var previousMode = settings.updateMode;
+            var previousBackground = settings.backgroundBehavior;
+            var previousEditorInput = settings.editorInputBehaviorInPlayMode;
+            bool originalInjected = false;
+            player = null;
+            keyboard = null;
+            mouse = null;
+            try
+            {
+                Time.timeScale = 1f;
+                Time.captureDeltaTime = 1f / 60;
+                var recipe = JsonUtility.FromJson<TestRecipe>(File.ReadAllText(Argument("--proscenium-recipe")));
+                yield return EditorSceneManager.LoadSceneAsyncInPlayMode(recipe.scene_path,
+                    new LoadSceneParameters(LoadSceneMode.Single));
+                player = UnityEngine.Object.FindFirstObjectByType<WalkthroughPlayer>();
+                Assert.That(player, Is.Not.Null);
+                originalInjected = player.injectedInput;
+                var pauseMenu = player.GetComponent<PauseMenu>();
+                Assert.That(pauseMenu, Is.Not.Null);
+                Assert.That(pauseMenu.player, Is.SameAs(player));
+
+                player.injectedInput = false;
+                keyboard = InputSystem.AddDevice<Keyboard>();
+                mouse = InputSystem.AddDevice<Mouse>();
+                settings.updateMode = InputSettings.UpdateMode.ProcessEventsManually;
+                settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+                settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+                InputSystem.EnableDevice(keyboard);
+                InputSystem.EnableDevice(mouse);
+                keyboard.MakeCurrent();
+                mouse.MakeCurrent();
+
+                // Align after Update so the first manual Escape edge is polled only once.
+                yield return null;
+                Send(Key.Escape);
+                yield return null;
+                Assert.That(player.IsPaused, Is.True);
+                Assert.That(pauseMenu.IsVisible, Is.True);
+                Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
+                Assert.That(Cursor.visible, Is.True);
+                Assert.That(Time.timeScale, Is.Zero);
+
+                Vector3 position = player.transform.position;
+                float yaw = player.Yaw;
+                float pitch = player.Pitch;
+                Send(Key.W, new Vector2(80, -40));
+                yield return null;
+                Assert.That(player.transform.position, Is.EqualTo(position));
+                Assert.That(player.Yaw, Is.EqualTo(yaw));
+                Assert.That(player.Pitch, Is.EqualTo(pitch));
+                AssertPoll(Vector2.zero, Vector2.zero);
+
+                Send();
+                yield return null;
+                Send(Key.Escape);
+                yield return null;
+                Assert.That(player.IsPaused, Is.False);
+                Assert.That(pauseMenu.IsVisible, Is.False);
+                Assert.That(Time.timeScale, Is.EqualTo(1f));
+                player.Respawn();
+                for (int i = 0; i < 20; i++) { Send(Key.W); yield return null; }
+                position = player.transform.position;
+                Assert.That(Vector3.Distance(position, player.spawnPosition), Is.GreaterThan(0.1f));
+
+                Time.timeScale = 0.5f;
+                Send(Key.Escape);
+                yield return null;
+                Assert.That(player.IsPaused, Is.True);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.R));
+                var mouseState = new MouseState().WithButton(MouseButton.Left);
+                InputSystem.QueueStateEvent(mouse, mouseState);
+                InputSystem.Update();
+                Assert.That(keyboard.rKey.isPressed, Is.True);
+                Assert.That(mouse.leftButton.isPressed, Is.True);
+                yield return null;
+                Assert.That(player.transform.position, Is.EqualTo(position));
+                AssertPoll(Vector2.zero, Vector2.zero);
+                Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
+                Assert.That(Cursor.visible, Is.True);
+
+                pauseMenu.ResetAndResume();
+                Assert.That(player.transform.position, Is.EqualTo(player.spawnPosition));
+                Assert.That(player.IsPaused, Is.False);
+                Assert.That(pauseMenu.IsVisible, Is.False);
+                Assert.That(Time.timeScale, Is.EqualTo(0.5f));
+
+                Time.timeScale = 0f;
+                player.SetPaused(true);
+                Assert.That(player.IsPaused, Is.True);
+                pauseMenu.Resume();
+                Assert.That(player.IsPaused, Is.False);
+                Assert.That(Time.timeScale, Is.Zero, "Resume preserves an externally paused clock");
+
+                player.SetPaused(true);
+                player.enabled = false;
+                float disabledTimeScale = Time.timeScale;
+                player.enabled = true;
+                Assert.That(disabledTimeScale, Is.Zero);
+                Assert.That(Time.timeScale, Is.Zero, "Disable and re-enable preserve an externally paused clock");
+                Assert.That(player.IsPaused, Is.False);
+
+                pauseMenu.suppressQuitForTests = true;
+                foreach (float initialTimeScale in new[] { 1f, 0f })
+                {
+                    Time.timeScale = initialTimeScale;
+                    player.SetPaused(true);
+                    pauseMenu.Quit();
+                    Assert.That(pauseMenu.QuitRequested, Is.True);
+                    Assert.That(pauseMenu.IsVisible, Is.False);
+                    Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
+                    Assert.That(Cursor.visible, Is.True);
+                    Assert.That(Time.timeScale, Is.EqualTo(initialTimeScale));
+                }
+            }
+            finally
+            {
+                if (player != null)
+                {
+                    player.injectedInput = true;
+                    player.SetPaused(false);
+                    player.injectedInput = originalInjected;
+                }
+                if (keyboard != null) InputSystem.RemoveDevice(keyboard);
+                if (mouse != null) InputSystem.RemoveDevice(mouse);
+                settings.updateMode = previousMode;
+                settings.backgroundBehavior = previousBackground;
+                settings.editorInputBehaviorInPlayMode = previousEditorInput;
+                Time.captureDeltaTime = previousCaptureDelta;
+                Time.timeScale = previousTimeScale;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+        }
     }
 }
 #endif
