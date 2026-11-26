@@ -50,10 +50,23 @@ def proven_departed_abandonment(record: dict[str, Any]) -> bool:
 
 
 def settled_send_record(record: dict[str, Any]) -> bool:
-    return record.get("state") == "acknowledged" or proven_departed_abandonment(record)
+    return record.get("state") in {
+        "acknowledged",
+        "abandoned_on_reset",
+    } or proven_departed_abandonment(record)
 
 
-def send_settled_before_stop(record: dict[str, Any], origin: dict[str, Any]) -> bool:
+def send_settled_before_stop(
+    record: dict[str, Any], origin: dict[str, Any], *, session_id: str | None = None
+) -> bool:
+    if record.get("state") == "abandoned_on_reset":
+        return (
+            session_id is not None
+            and bool(record.get("reset_operation_id"))
+            and isinstance(retired := record.get("session_id"), str)
+            and bool(retired)
+            and retired != session_id
+        )
     if not settled_send_record(record):
         return False
     if record.get("state") == "acknowledged":
@@ -267,14 +280,14 @@ def apply(
     require(steer_requests_settled(tx, work, stop_origin), "unsettled_steer")
     require(
         not any(
-            not send_settled_before_stop(s, stop_origin)
+            not send_settled_before_stop(s, stop_origin, session_id=observation["session_id"])
             for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
         ),
         "unsettled_send",
     )
     require(
         not any(not e["resolved"] for e in tx.all("copilot.pending_events"))
-        and not tx.all("copilot.duplicates"),
+        and not any(not d.get("reset_operation_id") for d in tx.all("copilot.duplicates")),
         "unknown_attribution",
     )
     require(

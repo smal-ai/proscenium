@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, Paperclip, Square, X, MessageSquare } from "lucide-react";
+import { ArrowDown, Paperclip, RotateCcw, Square, X, MessageSquare } from "lucide-react";
 import type { ActivityEventData, ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, VersionRef } from "../../api";
 import type { ComposerSeedIntent, ContextPreparer, TurnSelection } from "../../api/studio";
-import { describeError, durableCommand, id, readPrivate, writePrivate } from "../../app/storage";
+import { describeError, id, readPrivate, writePrivate } from "../../app/storage";
 import { DecisionCard } from "./DecisionCard";
 import { ContextPreview } from "./ContextPreview";
 import { Conversation } from "./Conversation";
 import type { useRequestComposer } from "./useRequestComposer";
-import { awaitResume, heldRequestIds, isAutoReleasingWork, isIdleAutoReleaseReady, resumableWork, resumeCommand } from "./resume";
+import { canStartFreshSession, defaultResumeMode, executeResumeCommand, heldRequestIds, isAutoReleasingWork, isIdleAutoReleaseReady, isNativeSessionMissing, resumableWork, resumeCommand } from "./resume";
 import { useAutoRelease, type AutoReleaseController } from "./useAutoRelease";
 import { useChatScroll } from "./useChatScroll";
 import { ComposerPanel, JobList, jobsBadgeState } from "./ComposerPanel";
@@ -25,6 +25,8 @@ export { AssistantStatus } from "./AssistantStatus";
 export { AUTO_RELEASE_VISIBILITY_TIMEOUT_MS } from "./useAutoRelease";
 
 const pendingExistingError = "Choose a published item for Existing… or switch target mode before sending.";
+const resetSessionDescription = "Clears the current Copilot session link and seals unsettled Copilot state. The next request opens a fresh session. New requests use the active model configuration. Assets, versions, artefacts, reviews and chat history stay intact.";
+const resetHeldQueueDescription = "Held queued requests run first in the fresh session and keep their admitted profile.";
 const EMPTY_ITEMS: ItemRecord[] = [];
 const EMPTY_SUMMARIES: RetainedArtifactSummary[] = [];
 
@@ -43,7 +45,7 @@ export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests:
   const execution = snapshot.execution;
   const reason = execution?.hold_reason_code;
   if (!execution && snapshot.project.state === "awaiting_resume") return true;
-  if (uncertainStop || resumableCount > 0 || (work && ["stopped", "awaiting_resume", "outcome_uncertain", "failed"].includes(work.state))) return true;
+  if (isNativeSessionMissing(snapshot) || uncertainStop || resumableCount > 0 || (work && ["stopped", "awaiting_resume", "outcome_uncertain", "failed"].includes(work.state))) return true;
   if (["queue_paused", "work_stopped", "resume_pending"].includes(reason ?? "") || (execution?.queue_released === false && !execution.fenced)) return true;
   if (execution?.fenced) {
     if (work && ["running", "awaiting_user"].includes(work.state)
@@ -86,6 +88,9 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   const [targetWork, setTargetWork] = useState("");
   const [resumeWorkId, setResumeWorkId] = useState("");
   const [pendingResume, setPendingResume] = useState<ResumeCommand | null>(() => readPrivate(`command.resume.${projectId}`));
+  const [confirmReset, setConfirmReset] = useState(false);
+  const freshTriggerRef = useRef<HTMLButtonElement>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const localAutoRelease = useAutoRelease(projectId, snapshot, requests);
   const activeAutoRelease = autoRelease ?? localAutoRelease;
   const [error, setError] = useState("");
@@ -143,7 +148,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     }
     return rendered;
   }, [events, requests, retainedArtifacts, suppressedOutputIds]);
-  const resumable = useMemo(() => resumableWork(snapshot, events), [snapshot, events]);
+  const resumable = useMemo(() => resumableWork(snapshot, events, requests), [snapshot, events, requests]);
   const onConversationError = useCallback((e: unknown) => setError(describeError(e)), []);
   const autoReleasingRequestId = activeAutoRelease.requestId;
   const showResumeCard = useMemo(() => shouldShowResumeCard(snapshot, requests, resumable.length, uncertainStop, autoReleasingRequestId), [snapshot, requests, resumable.length, uncertainStop, autoReleasingRequestId]);
@@ -151,13 +156,22 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   const statusProps = { snapshot, requests, events, jobs, hydrated, connection, submitting: composer.busy || preparing, stopping: composer.stopping, autoReleasingRequestId };
   const chosenResumeWork = resumable.length === 1 ? resumable[0] : resumable.find(record => record.work_id === (resumeWorkId || work?.work_id));
   const canReleaseQueue = !uncertainStop && (!work || ["completed", "failed", "stopped"].includes(work.state));
-  const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>(() => uncertainStop ? "reconcile_only" : work?.state === "awaiting_resume" && chosenResumeWork ? "continue_work" : canReleaseQueue ? "release_held_queue" : "reconcile_only");
-  const recoveryStateKey = `${projectId}:${uncertainStop}:${work?.work_id ?? ""}:${work?.state ?? ""}:${Boolean(snapshot?.execution?.fenced)}:${snapshot?.execution?.hold_reason_code ?? ""}`;
-  useEffect(() => {
-    if (uncertainStop) setResumeMode("reconcile_only");
-    else if (work?.state === "awaiting_resume" && chosenResumeWork) setResumeMode("continue_work");
-    else if (canReleaseQueue) setResumeMode("release_held_queue");
-  }, [recoveryStateKey, Boolean(chosenResumeWork)]);
+  const nativeSessionMissing = isNativeSessionMissing(snapshot);
+  const canReset = canStartFreshSession(snapshot, { resuming, pendingResume, submitting: statusProps.submitting, stopping: statusProps.stopping });
+  const freshSessionTitle = canReset ? "Start a fresh native Copilot session and seal unsettled session state"
+    : resuming ? "Resume or reset is already in progress"
+    : pendingResume ? "Reconcile the pending Resume command first"
+    : statusProps.submitting || statusProps.stopping ? "Wait for the current request or Stop to finish"
+    : !snapshot ? "Wait for the project to load"
+    : "Stop active work before starting a fresh session";
+  const resumeDefault = defaultResumeMode(snapshot, { uncertainStop, hasChosenResumeWork: Boolean(chosenResumeWork), canReleaseQueue });
+  const [resumeMode, setResumeMode] = useState<ResumeCommand["mode"]>(resumeDefault);
+  const recoveryStateKey = `${projectId}:${uncertainStop}:${work?.work_id ?? ""}:${work?.state ?? ""}:${Boolean(snapshot?.execution?.fenced)}:${snapshot?.execution?.hold_reason_code ?? ""}:${snapshot?.execution?.fence_reason ?? ""}`;
+  useEffect(() => setResumeMode(resumeDefault), [recoveryStateKey, resumeDefault]);
+  useEffect(() => setConfirmReset(false), [projectId]);
+  useEffect(() => { if (!canReset) setConfirmReset(false); }, [canReset]);
+  useEffect(() => { if (confirmReset && canReset) confirmButtonRef.current?.focus(); }, [confirmReset, canReset]);
+  const showResetQueueNote = (confirmReset || (showResumeCard && resumeMode === "reset_session")) && heldRequestIds(snapshot, requests).size > 0;
   const resolvedTarget = resolveTarget(draftTarget, selection, catalogue);
   const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
   const currentSelection: TurnSelection = pendingExisting
@@ -261,24 +275,31 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     } catch (e) { activeAutoRelease.settle(requestId, null); setError(describeError(e)); }
     finally { preparingLatch.current = false; setPreparing(false); }
   }
-  async function resume(original?: ResumeCommand) {
-    if (!snapshot || resuming) return;
+  async function resume(original?: ResumeCommand, modeOverride?: ResumeCommand["mode"]) {
+    if (!snapshot || resuming || (!original && pendingResume)) return;
     setResuming(true); setError("");
     try {
-      const body = original ?? resumeCommand(snapshot, events, resumeMode, chosenResumeWork?.work_id ?? "", id());
+      const body = original ?? resumeCommand(snapshot, events, modeOverride ?? resumeMode, chosenResumeWork?.work_id ?? "", id());
       setPendingResume(body);
-      const result = await durableCommand(`resume.${projectId}`, () => body, async command => {
-        await api.call("resumeProjectWork", { path: { project_id: projectId }, body: command, idempotencyKey: command.operation_id });
-        return awaitResume(api, projectId, command.operation_id);
-      });
+      const result = await executeResumeCommand(api, projectId, body);
       if (result?.state === "outcome_uncertain") {
         const detail = result.detail_code ? ` · ${result.detail_code}` : "";
-        setError(body.mode === "reconcile_only" ? `Reconciliation could not clear recovery hold${detail}.` : `Resume needs recovery${detail}. Use Reconcile only before continuing original work.`);
+        if (body.mode === "reset_session") setError(`Session reset did not complete${detail}. Inspect recovery status before trying again.`);
+        else if (body.mode === "reconcile_only") setError(`Reconciliation could not clear recovery hold${detail}.`);
+        else setError(`Resume needs recovery${detail}. Use Reconcile only before continuing original work.`);
       }
+      if (modeOverride === "reset_session") setConfirmReset(false);
       setPendingResume(null);
       await onRefresh();
     } catch (e) { setError(describeError(e)); await onRefresh(); }
     finally { setPendingResume(readPrivate(`command.resume.${projectId}`)); setResuming(false); }
+  }
+  async function startFreshSession() {
+    if (canReset) await resume(undefined, "reset_session");
+  }
+  function cancelFreshSession() {
+    setConfirmReset(false);
+    freshTriggerRef.current?.focus();
   }
   const workOutputs = snapshot?.execution?.work_outputs;
   const fallbackOutputs = useMemo(() => workOutputs?.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => {
@@ -288,7 +309,9 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
       return unrenderedIds.length > 0 ? <div className="retained-turn-outputs" key={output.work_id}>{cards}</div> : null;
     }), [api, projectId, workOutputs, artifactsById, renderedOutputIds, suppressedOutputIds, visible, onInspectArtifact]);
   return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
-    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus {...statusProps} />}</div>
+    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus {...statusProps} />}
+      <button ref={freshTriggerRef} type="button" className="subtle fresh-session-trigger" aria-label="Start fresh Copilot session" aria-controls="fresh-session-confirm" aria-expanded={confirmReset} disabled={!canReset} title={freshSessionTitle} onClick={() => setConfirmReset(open => !open)}><RotateCcw size={12} aria-hidden="true" />Fresh session</button>
+    </div>
     {fallbackOutputs}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
     <Conversation visible={visible} api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={onConversationError} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
@@ -296,13 +319,39 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="chat-recovery">
       {snapshot?.pending_decisions.map(decision => <DecisionCard key={`${decision.decision_id}.${decision.state_revision}`} api={api} decision={decision} onRefresh={onRefresh} />)}
+      {confirmReset && <section id="fresh-session-confirm" className="reset-session-card" aria-label="Start fresh Copilot session" onKeyDown={event => {
+        if (event.key === "Escape" && !resuming && !event.nativeEvent.isComposing && !event.defaultPrevented) {
+          event.preventDefault();
+          cancelFreshSession();
+        }
+      }}>
+        <h3>Start fresh Copilot session</h3>
+        <p>{resetSessionDescription}</p>
+        {showResetQueueNote && <p>{resetHeldQueueDescription}</p>}
+        <div className="reset-session-actions">
+          <button ref={confirmButtonRef} type="button" className="primary" disabled={!canReset} onClick={() => void startFreshSession()}>Start fresh session</button>
+          <button type="button" className="subtle" disabled={resuming} onClick={cancelFreshSession}>Cancel</button>
+        </div>
+      </section>}
       {showResumeCard && <section className="resume-card" aria-label="Resume Copilot">
         <h3>Resume Copilot</h3>
         <p>Choose how to continue. Reconcile only checks known outcomes without sending a prompt.</p>
-        <div className="resume-controls"><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work" disabled={!resumable.length || uncertainStop}>Continue original work</option><option value="release_held_queue" disabled={!canReleaseQueue}>Release held queue</option></select><button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork) || (resumeMode === "release_held_queue" && !canReleaseQueue)} onClick={() => void resume()}>Resume</button></div>
+        {resumeMode === "reset_session" && <>
+          <p>{nativeSessionMissing && "The previous native Copilot session is missing on disk. "}{resetSessionDescription}</p>
+          {showResetQueueNote && <p>{resetHeldQueueDescription}</p>}
+        </>}
+        <div className="resume-controls">
+          <select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}>
+            <option value="reconcile_only">Reconcile only</option>
+            <option value="continue_work" disabled={!resumable.length || uncertainStop}>Continue original work</option>
+            <option value="release_held_queue" disabled={!canReleaseQueue}>Release held queue</option>
+            <option value="reset_session" disabled={!canReset}>Start fresh Copilot session</option>
+          </select>
+          <button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork) || (resumeMode === "release_held_queue" && !canReleaseQueue) || (resumeMode === "reset_session" && !canReset)} onClick={() => void resume()}>{resumeMode === "reset_session" ? "Start fresh session" : "Resume"}</button>
+        </div>
         {resumeMode === "continue_work" && resumable.length > 1 && <label>Original work<select aria-label="Original work to continue" value={chosenResumeWork?.work_id ?? ""} disabled={resuming || !!pendingResume} onChange={event => setResumeWorkId(event.target.value)}><option value="">Select original work</option>{resumable.map(record => <option key={record.work_id} value={record.work_id}>{record.work_id} · {record.state}</option>)}</select></label>}
       </section>}
-      {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}
+      {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode === "reset_session" ? "Start fresh Copilot session" : pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}
     </div>
     <div className="composer" onKeyDown={event => {
       if (targetOpen && event.key === "Escape" && !event.nativeEvent.isComposing && !event.defaultPrevented) closeTargetPicker();

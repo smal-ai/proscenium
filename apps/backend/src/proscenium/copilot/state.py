@@ -103,7 +103,14 @@ class State:
         self.services.gate.close(str(tx.project_id))
 
     def request_state(
-        self, tx: Transaction, identity: str, state: str, *, continuing: bool = False, **fields: Any
+        self,
+        tx: Transaction,
+        identity: str,
+        state: str,
+        *,
+        continuing: bool = False,
+        actor: dict[str, str] = SYSTEM,
+        **fields: Any,
     ) -> dict[str, Any]:
         record = tx.require("requests", identity)
         revision = tx.revision("requests", identity)
@@ -122,7 +129,7 @@ class State:
         tx.emit(
             "request.state_changed",
             record,
-            actor=SYSTEM,
+            actor=actor,
             request_id=identity,
             work_id=record["receipt"]["work_id"],
         )

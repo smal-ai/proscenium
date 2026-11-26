@@ -21,7 +21,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
-from proscenium.db.store import now
+from proscenium.db.store import Store, now
 from proscenium.services import Services
 
 from . import cold_stop
@@ -38,6 +38,8 @@ from .workflows import WORKFLOW_TOOLS
 
 CHARGEABLE_MCP_TOOLS = frozenset({"create_generation", "generate_3d", "generate_gaussian_world"})
 UNSETTLED_SEND = {"dispatching", "outcome_uncertain"}
+ACTIVE_WORK = {"running", "awaiting_user", "stop_requested"}
+RESET_BUSY = "Work is actively running; Stop or wait before resetting the session."
 
 CONTINUATION_TEXT = "Continue the previously authorised work from its recorded state. Do not repeat completed operations."
 
@@ -87,6 +89,7 @@ class CallbackOwner:
     progress_at: float = 0
     progress_sequence: int = 0
     activity_sequence: int = 0
+    active_handlers: int = 0
     models: tuple[str, str, str] | None = None
 
 
@@ -200,7 +203,15 @@ class Copilot:
     def _restore(self, project_id: str, *, activation: bool) -> None:
         if project_id:
             with self.services.registry.project_store(project_id).transaction() as tx:
-                if tx.all("requests") or tx.get("copilot.session", "native", required=False):
+                if tx.get("copilot.control", "reset_in_progress", required=False) is not None:
+                    # The exact reset owns recovery. Do not reconcile or rewrite its old session.
+                    self.services.gate.close(project_id)
+                    self.checked_projects.add(project_id)
+                    return
+                has_history = bool(
+                    tx.all("requests") or tx.get("copilot.session", "native", required=False)
+                )
+                if has_history:
                     self.state.fence(tx, "awaiting_resume")
                     for request in tx.all("requests"):
                         if request["receipt"]["state"] == "dispatching":
@@ -228,14 +239,6 @@ class Copilot:
                                 project_id, tx=tx, stop_id=request["request_id"]
                             )
                     self._pin_stop_origin_before_open(project_id, tx=tx)
-                    for operation in tx.all("copilot.resumes"):
-                        if operation["state"] in {"pending", "dispatching"}:
-                            save(
-                                tx,
-                                "copilot.resumes",
-                                operation["body"]["operation_id"],
-                                {**operation, "state": "outcome_uncertain"},
-                            )
                     for work in tx.all("work"):
                         if work["state"] not in TERMINAL and work["state"] != "pending":
                             self.state.work_state(
@@ -259,6 +262,7 @@ class Copilot:
                                 key(stage["session_id"], stage["native_id"]),
                                 {**stage, "phase": "outcome_uncertain", "interrupted_at": now()},
                             )
+                self._restore_resume_operations(tx, project_id, has_history=has_history)
                 for auto in tx.all("copilot.auto_releases"):
                     # The lazy activation check is not a backend restart. Keep a Queue
                     # instruction already admitted by this owner after activation.
@@ -272,6 +276,40 @@ class Copilot:
                             {**auto, "state": "superseded"},
                         )
         self.checked_projects.add(project_id)
+
+    def _restore_resume_operations(
+        self, tx: Transaction, project_id: str, *, has_history: bool
+    ) -> None:
+        for operation in tx.all("copilot.resumes"):
+            if operation["state"] not in {"pending", "dispatching"}:
+                continue
+            body = operation["body"]
+            operation_id = body["operation_id"]
+            if operation["state"] == "pending" and body["mode"] == "reset_session":
+                row = tx.connection.execute(
+                    "SELECT state FROM outbox WHERE id=?", (operation_id,)
+                ).fetchone()
+                status = row[0] if row is not None else None
+                if status == "pending":
+                    try:
+                        registry_sid = self.services.registry.get(project_id)["native_session_id"]
+                        target = self._reset_target(tx, registry_sid)
+                    except DomainError as exc:
+                        if exc.code != "source_conflict":
+                            raise
+                    else:
+                        if target == operation.get("admitted_session_id"):
+                            # The claim never committed, and the admitted target is unchanged.
+                            continue
+                    tx.claim_intent(operation_id)
+                if status in {"pending", "dispatching", "outcome_uncertain"}:
+                    tx.settle_intent(
+                        operation_id, "outcome_uncertain", {"detail_code": "source_conflict"}
+                    )
+                operation = {**operation, "detail_code": "source_conflict"}
+            elif not has_history:
+                continue
+            save(tx, "copilot.resumes", operation_id, {**operation, "state": "outcome_uncertain"})
 
     async def start(self) -> None:
         if self.worker is not None:
@@ -719,7 +757,13 @@ class Copilot:
 
             async def observed_handler(invocation: Any, handler: Any = tool.handler) -> Any:
                 owner.activity_sequence += 1
-                return await handler(invocation)
+                if owner.retired or self.closing:
+                    raise DomainError("permission_denied", 403)
+                owner.active_handlers += 1
+                try:
+                    return await handler(invocation)
+                finally:
+                    owner.active_handlers -= 1
 
             native_tools.append(replace(tool, handler=observed_handler))
         session = await self.native.open(
@@ -815,6 +859,13 @@ class Copilot:
                 self.send_projects.pop(identity, None)
                 self.send_callback_owners.pop(identity, None)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            marker = tx.get("copilot.control", "reset_in_progress", required=False)
+            recovering_reset = (
+                marker["operation_id"]
+                if marker is not None
+                and tx.require("copilot.resumes", marker["operation_id"])["state"] != "completed"
+                else None
+            )
             stops = [
                 (r["request_id"], tx.require("copilot.stops", r["request_id"]))
                 for r in tx.all("requests")
@@ -822,6 +873,13 @@ class Copilot:
             ]
             resumes = [r for r in tx.all("copilot.resumes") if r["state"] == "pending"]
             auto_releases = [a for a in tx.all("copilot.auto_releases") if a["state"] == "pending"]
+        reset = next((r for r in resumes if r["body"]["mode"] == "reset_session"), None)
+        if recovering_reset is not None:
+            await self.resume(project_id, recovering_reset)
+            return
+        if reset is not None:
+            await self.resume(project_id, reset["body"]["operation_id"])
+            return
         if stops:
             await self.stop(project_id, stops[0][1]["work_id"], stops[0][0])
             return
@@ -1266,7 +1324,15 @@ class Copilot:
             }
             with store.transaction(write=False) as tx:
                 for continuation in tx.all("copilot.continuation_sends"):
-                    if cold_stop.proven_departed_abandonment(continuation):
+                    sid = continuation.get("session_id")
+                    if (
+                        cold_stop.proven_departed_abandonment(continuation)
+                        or sid not in (None, session.session_id)
+                        or (
+                            continuation["state"] == "abandoned_on_reset"
+                            and sid != session.session_id
+                        )
+                    ):
                         continue
                     binding = tx.require("copilot.continuations", continuation["operation_id"])
                     if binding["work_id"] == work_id:
@@ -1432,9 +1498,40 @@ class Copilot:
         if caller.channel != "owner":
             raise DomainError("owner_session_required", 401)
         validate("ResumeCommand", body)
-        with self.services.registry.project_store(body["project_id"]).transaction() as tx:
+        project_id = body["project_id"]
+        store = self.services.registry.project_store(project_id)
+        if body["mode"] != "reset_session":
+            return self._admit_resume(store, body)
+        with self.services.activation_lock:
+            try:
+                return self._admit_resume(store, body)
+            except DomainError as exc:
+                if exc.code != "source_conflict":
+                    raise
+                # The admission rolled back. Fence separately without admitting a reset.
+                self.services.gate.close(project_id)
+                committed = False
+                try:
+                    with store.transaction() as tx:
+                        self.state.fence(tx, "source_conflict")
+                        committed = True
+                except DomainError as projection_error:
+                    if not committed or projection_error.code != "source_conflict":
+                        raise
+                raise
+
+    def _admit_resume(self, store: Store, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+        with store.transaction() as tx:
 
             def effect() -> dict[str, Any]:
+                resetting = body["mode"] == "reset_session"
+                if resetting and body["work_id"] is not None:
+                    raise DomainError("invalid_request", 422, "Session reset does not target work")
+                if resetting and (
+                    self._has_live_runtime_activity(body["project_id"])
+                    or tx.get("copilot.control", "reset_in_progress", required=False) is not None
+                ):
+                    raise DomainError("project_busy", 409, RESET_BUSY)
                 resource = (
                     tx.require("work", body["work_id"])
                     if body["work_id"]
@@ -1444,6 +1541,12 @@ class Copilot:
                     raise DomainError(
                         "revision_conflict", 409, current_revision=resource["state_revision"]
                     )
+                operation: dict[str, Any] = {"body": body, "state": "pending"}
+                if resetting:
+                    self._guard_session_reset(tx)
+                    operation["admitted_session_id"] = self._reset_target(
+                        tx, resource["native_session_id"]
+                    )
                 unresolved_stop_work_ids = {
                     r["receipt"]["work_id"]
                     for r in tx.all("requests")
@@ -1451,12 +1554,10 @@ class Copilot:
                     and r["receipt"]["state"] not in {"completed", "failed", "cancelled"}
                 } | {s["work_id"] for s in tx.all("copilot.stops") if s.get("phase") != "confirmed"}
                 if (
-                    not self.state.control(tx)["fenced"]
+                    not resetting
+                    and not self.state.control(tx)["fenced"]
                     and not unresolved_stop_work_ids
-                    and any(
-                        w["state"] in {"running", "awaiting_user", "stop_requested"}
-                        for w in tx.all("work")
-                    )
+                    and any(w["state"] in ACTIVE_WORK for w in tx.all("work"))
                 ):
                     raise DomainError(
                         "project_busy",
@@ -1470,6 +1571,13 @@ class Copilot:
                         "awaiting_resume",
                     }:
                         raise DomainError("invalid_state_transition", 409)
+                    if any(
+                        r["retired_session_id"] == resource["native_session_id"]
+                        for r in tx.all("copilot.retired_sessions")
+                    ):
+                        raise DomainError(
+                            "invalid_state_transition", 409, "Work belongs to a retired session"
+                        )
                     if unresolved_stop_work_ids or any(
                         w["work_id"] != body["work_id"] and w["state"] not in TERMINAL | {"pending"}
                         for w in tx.all("work")
@@ -1488,7 +1596,7 @@ class Copilot:
                         409,
                         "Reconcile, continue or stop the unsettled work before releasing the queue.",
                     )
-                tx.put("copilot.resumes", body["operation_id"], {"body": body, "state": "pending"})
+                tx.put("copilot.resumes", body["operation_id"], operation)
                 tx.enqueue(body["operation_id"], "copilot.resume", body)
                 return receipt(
                     body["operation_id"],
@@ -1651,7 +1759,9 @@ class Copilot:
             "uncertain_continuations": sum(
                 not cold_stop.settled_send_record(c) for c in tx.all("copilot.continuation_sends")
             ),
-            "duplicate_correlations": len(tx.all("copilot.duplicates")),
+            "duplicate_correlations": sum(
+                not d.get("reset_operation_id") for d in tx.all("copilot.duplicates")
+            ),
             "inactivity_unproven": inactivity_unproven,
         }
 
@@ -2126,7 +2236,9 @@ class Copilot:
                         for w in tx.all("work")
                     )
                     and not any(
-                        not cold_stop.send_settled_before_stop(s, stop_origin)
+                        not cold_stop.send_settled_before_stop(
+                            s, stop_origin, session_id=observation["session_id"]
+                        )
                         for s in tx.all("copilot.sends") + tx.all("copilot.continuation_sends")
                     )
                     and cold_stop.steer_requests_settled(tx, work, stop_origin)
@@ -2171,10 +2283,20 @@ class Copilot:
                     "invocations",
                 )
             )
-            if not association and not attempted and not require_session:
-                if not self._uncertain_stops(tx):
-                    self._heal_unattempted_requests(tx, recorded_turns=None)
-                return self._reconciliation_evidence(tx, pending_empty=True)
+            if not association and not require_session:
+                # Retained history is not evidence that a detached session needs resuming.
+                detached = (
+                    any(
+                        r.get("body", {}).get("mode") == "reset_session"
+                        and r["state"] == "completed"
+                        for r in tx.all("copilot.resumes")
+                    )
+                    and self.services.registry.get(project_id)["native_session_id"] is None
+                )
+                if not attempted or detached:
+                    if not self._uncertain_stops(tx):
+                        self._heal_unattempted_requests(tx, recorded_turns=None)
+                    return self._reconciliation_evidence(tx, pending_empty=True)
         return await self.reconcile(project_id)
 
     async def _release_owned_pause(self, project_id: str, operation_id: str) -> None:
@@ -2195,7 +2317,9 @@ class Copilot:
             stop = tx.require("copilot.stops", stop_id)
             save(tx, "copilot.stops", stop_id, {**stop, "pause": "released"})
 
-    def _open_gate(self, tx: Transaction, project_id: str, *, queue_released: bool) -> None:
+    def _open_gate(
+        self, tx: Transaction, project_id: str, *, queue_released: bool, clear_reason: bool = False
+    ) -> None:
         control = self.state.control(tx)
         save(
             tx,
@@ -2203,6 +2327,7 @@ class Copilot:
             "gate",
             {
                 **control,
+                **({"reason": None} if clear_reason else {}),
                 "fenced": False,
                 "epoch": self.services.ownership.epoch,
                 "reconciled_epoch": self.services.ownership.epoch,
@@ -2221,8 +2346,348 @@ class Copilot:
             self.sessions.clear()
             self.pause_owner.clear()
 
+    def _guard_session_reset(self, tx: Transaction) -> None:
+        if not self.state.control(tx)["fenced"] and any(
+            work["state"] in ACTIVE_WORK for work in tx.all("work")
+        ):
+            raise DomainError("project_busy", 409, RESET_BUSY)
+
+    @staticmethod
+    def _reset_target(tx: Transaction, registry_sid: str | None) -> str | None:
+        association = tx.get("copilot.session", "native", required=False)
+        session_id: str | None = association["session_id"] if association else registry_sid
+        if registry_sid is not None and registry_sid != session_id:
+            raise DomainError("source_conflict", 409, "Native session identity changed")
+        return session_id
+
+    def _has_live_runtime_activity(self, project_id: str) -> bool:
+        return any(
+            not task.done() and self.send_projects.get(identity) == project_id
+            for identity, task in self.sends.items()
+        ) or any(
+            owner is not None and owner.project_id == project_id and owner.active_handlers > 0
+            for owner in (
+                self.callback_owners.get(project_id),
+                *self.session_callback_owners.values(),
+                *self.send_callback_owners.values(),
+            )
+        )
+
+    async def _reset_session(self, project_id: str, operation_id: str) -> None:
+        registry = self.services.registry
+        store = self.services.registry.project_store(project_id)
+        async with self.session_locks.setdefault(project_id, asyncio.Lock()):
+            # Claim and persist the exact reset together. A process loss before
+            # this commit leaves a pending operation, never an unowned claim.
+            with self.services.activation_lock, store.transaction() as tx:
+                operation = tx.require("copilot.resumes", operation_id)
+                marker = tx.get("copilot.control", "reset_in_progress", required=False)
+                pending = operation["state"] == "pending"
+                recovering = (
+                    operation["state"] in {"dispatching", "outcome_uncertain"}
+                    and marker is not None
+                    and marker["operation_id"] == operation_id
+                )
+                if not pending and not recovering:
+                    return
+                if marker is not None and marker["operation_id"] != operation_id:
+                    raise DomainError("project_busy", 409, RESET_BUSY)
+                if self._has_live_runtime_activity(project_id):
+                    raise DomainError("project_busy", 409, RESET_BUSY)
+                if marker is None:
+                    self._guard_session_reset(tx)
+                    registry_sid = registry.get(project_id)["native_session_id"]
+                    old_session_id = self._reset_target(tx, registry_sid)
+                    if (
+                        "admitted_session_id" in operation
+                        and old_session_id != operation["admitted_session_id"]
+                    ):
+                        raise DomainError("source_conflict", 409, "Native session identity changed")
+                    at = now()
+                    tx.put(
+                        "copilot.control",
+                        "reset_in_progress",
+                        dict(
+                            operation_id=operation_id,
+                            retired_session_id=old_session_id,
+                            started_at=at,
+                        ),
+                    )
+                    if (
+                        old_session_id is not None
+                        and tx.get("copilot.retired_sessions", operation_id, required=False) is None
+                    ):
+                        tx.put(
+                            "copilot.retired_sessions",
+                            operation_id,
+                            dict(
+                                operation_id=operation_id,
+                                retired_session_id=old_session_id,
+                                retired_at=at,
+                                reason="owner_reset_session",
+                            ),
+                        )
+                else:
+                    old_session_id = marker["retired_session_id"]
+                if pending:
+                    tx.claim_intent(operation_id)
+                operation.update(state="dispatching", detail_code=None)
+                save(tx, "copilot.resumes", operation_id, operation)
+                self.services.gate.close(project_id)
+
+            if self._has_live_runtime_activity(project_id):
+                raise DomainError("project_busy", 409, RESET_BUSY)
+            sends = [i for i in self.sends if self.send_projects.get(i) == project_id]
+            for identity in sends:
+                with suppress(Exception, asyncio.CancelledError):
+                    self.sends[identity].result()
+                del self.sends[identity]
+                self.send_projects.pop(identity, None)
+                self.send_callback_owners.pop(identity, None)
+
+            # Unregister before disconnect: late callbacks must not fence the replacement.
+            cached = self.sessions.pop(project_id, None)
+            for owner in (
+                self.callback_owners.pop(project_id, None),
+                self.session_callback_owners.pop(id(cached), None) if cached is not None else None,
+            ):
+                if owner is not None:
+                    owner.retired = owner.failure_handled = True
+            self.read_wait_recovery.pop(project_id, None)
+            self.pause_owner.pop(project_id, None)
+            if cached is not None and hasattr(cached, "disconnect"):
+                with suppress(Exception):
+                    await cached.disconnect()
+
+            with self.services.activation_lock:
+                with store.transaction(write=False) as tx:
+                    association = tx.get("copilot.session", "native", required=False)
+                if (
+                    association is not None
+                    and association["session_id"] != old_session_id
+                    or registry.get(project_id)["native_session_id"] not in (None, old_session_id)
+                ):
+                    raise DomainError("source_conflict", 409, "Native session identity changed")
+                registry.clear_native_session(project_id, old_session_id)
+                evidence = {"mode": "reset_session", "retired_session_id": old_session_id}
+                with store.transaction() as tx:
+                    if association is not None:
+                        tx.connection.execute(
+                            "DELETE FROM records WHERE namespace='copilot.session' AND id='native'"
+                        )
+                        tx.changed_namespaces.add("copilot.session")
+                    tx.connection.execute(
+                        "DELETE FROM records WHERE namespace='copilot.control' AND id='reset_in_progress'"
+                    )
+                    tx.changed_namespaces.add("copilot.control")
+                    self._seal_reset_state(tx, operation_id, retired_session_id=old_session_id)
+                    self._open_gate(tx, project_id, queue_released=True, clear_reason=True)
+                    save(
+                        tx,
+                        "copilot.resumes",
+                        operation_id,
+                        dict(body=operation["body"], state="completed", detail_code=None),
+                    )
+                    tx.settle_intent(operation_id, "acknowledged", evidence)
+                self.services.gate.resume(
+                    project_id, reconciliation_evidence=canonical(evidence).decode()
+                )
+                self.notify()
+
+    def _seal_reset_state(
+        self, tx: Transaction, operation_id: str, *, retired_session_id: str | None
+    ) -> None:
+        actor = {"kind": "user", "id": "owner"}
+        reset_evidence = {"reason": "owner_reset_session", "operation_id": operation_id}
+        at = now()
+        for work in tx.all("work"):
+            if work["state"] in TERMINAL:
+                continue
+            identity = work["work_id"]
+            revision = tx.revision("work", identity)
+            # An owner detach seals local work, without claiming native Stop/Abort evidence.
+            work.update(state="stopped", state_revision=work["state_revision"] + 1)
+            tx.put("work", identity, work, expected_revision=revision, schema="WorkRecord")
+            tx.emit(
+                "work.state_changed",
+                work,
+                actor=actor,
+                work_id=identity,
+                request_id=work["originating_request_id"],
+            )
+        for invocation in tx.all("invocations"):
+            if invocation["state"] not in {"completed", "failed", "cancelled"}:
+                save(
+                    tx,
+                    "invocations",
+                    invocation["invocation_id"],
+                    {**invocation, "state": "cancelled", "updated_at": at},
+                )
+        for decision in tx.all("decisions"):
+            if decision["state"] == "pending":
+                decision.update(state="cancelled", resolved_by=actor)
+                self.save_decision(tx, decision, actor=actor)
+
+        for identity, encoded in tx.connection.execute(
+            "SELECT id, body FROM records WHERE namespace='copilot.stops'"
+        ).fetchall():
+            stop = json.loads(encoded)
+            if stop["phase"] != "confirmed" or stop.get("hold_released") is not True:
+                save(
+                    tx,
+                    "copilot.stops",
+                    identity,
+                    {
+                        **stop,
+                        "phase": "confirmed",
+                        "hold_released": True,
+                        "reset_operation_id": operation_id,
+                    },
+                )
+
+        for namespace in ("copilot.sends", "copilot.continuation_sends", "copilot.duplicates"):
+            for identity, encoded in tx.connection.execute(
+                "SELECT id, body FROM records WHERE namespace=?", (namespace,)
+            ).fetchall():
+                record = json.loads(encoded)
+                if namespace == "copilot.duplicates":
+                    if not record.get("reset_operation_id"):
+                        save(
+                            tx, namespace, identity, {**record, "reset_operation_id": operation_id}
+                        )
+                elif record["state"] in UNSETTLED_SEND:
+                    if record.get("session_id") is None and retired_session_id is not None:
+                        record["session_id"] = retired_session_id
+                    save(
+                        tx,
+                        namespace,
+                        identity,
+                        {
+                            **record,
+                            "state": "abandoned_on_reset",
+                            "abandoned_at": at,
+                            "reset_operation_id": operation_id,
+                        },
+                    )
+
+        if retired_session_id is not None:
+            for identity, encoded in tx.connection.execute(
+                "SELECT id, body FROM records WHERE namespace='copilot.pending_events' "
+                "AND json_extract(body, '$.session_id')=?",
+                (retired_session_id,),
+            ).fetchall():
+                event = json.loads(encoded)
+                if not event["resolved"]:
+                    save(
+                        tx,
+                        "copilot.pending_events",
+                        identity,
+                        {
+                            **event,
+                            "resolved": True,
+                            "reset_operation_id": operation_id,
+                        },
+                    )
+
+        held_request_ids = set()
+        for request in tx.all("requests"):
+            identity, receipt = request["request_id"], request["receipt"]
+            if receipt["state"] == "held":
+                held_request_ids.add(identity)
+                if tx.get("work", receipt["work_id"], required=False) is not None:
+                    # Delivery needs a reserved work ID. Do not bind a fresh turn to old work.
+                    self.state.request_state(
+                        tx, identity, "held", actor=actor, work_id="work-" + uuid4().hex
+                    )
+                continue
+            if receipt["state"] not in TERMINAL:
+                stop = request["submission"]["type"] == "stop"
+                self.state.request_state(
+                    tx,
+                    identity,
+                    "cancelled" if stop else "stopped",
+                    actor=actor,
+                    detail_code="session_reset",
+                )
+
+        for identity, kind, status in tx.connection.execute(
+            "SELECT id, kind, state FROM outbox WHERE kind LIKE 'copilot.%' AND id<>? "
+            "AND state IN ('pending', 'dispatching', 'outcome_uncertain')",
+            (operation_id,),
+        ).fetchall():
+            if status == "pending":
+                if kind == "copilot.send" and identity in held_request_ids:
+                    continue
+                tx.claim_intent(identity)
+            if kind == "copilot.resume":
+                resume = tx.get("copilot.resumes", identity, required=False)
+                if resume and resume["state"] != "completed":
+                    save(
+                        tx,
+                        "copilot.resumes",
+                        identity,
+                        {**resume, "state": "outcome_uncertain", "detail_code": "session_reset"},
+                    )
+            tx.settle_intent(identity, "failed", reset_evidence)
+
+    def _record_resume_failure(self, store: Store, operation_id: str, failure: Exception) -> None:
+        detail = failure.code if isinstance(failure, DomainError) else "provider_unavailable"
+        committed = False
+        try:
+            with store.transaction() as tx:
+                operation = tx.require("copilot.resumes", operation_id)
+                if operation["state"] == "completed":
+                    raise failure
+                if operation["state"] == "pending":
+                    tx.claim_intent(operation_id)
+                operation.update(state="outcome_uncertain", detail_code=detail)
+                save(tx, "copilot.resumes", operation_id, operation)
+                body = operation["body"]
+                if body["mode"] != "reset_session" or detail != "project_busy":
+                    self.state.fence(tx, detail)
+                if body["work_id"]:
+                    work = tx.require("work", body["work_id"])
+                    original = tx.require("requests", work["originating_request_id"])
+                    if not original["receipt"].get("detail_code"):
+                        self.state.request_state(
+                            tx,
+                            original["request_id"],
+                            original["receipt"]["state"],
+                            detail_code=detail,
+                        )
+                    continuation = tx.get(
+                        "copilot.continuation_sends", operation_id, required=False
+                    )
+                    if continuation and continuation["state"] == "dispatching":
+                        save(
+                            tx,
+                            "copilot.continuation_sends",
+                            operation_id,
+                            {
+                                **continuation,
+                                "state": "outcome_uncertain",
+                            },
+                        )
+                        if work["state"] == "running":
+                            self.state.work_state(tx, work["work_id"], "awaiting_resume")
+                tx.settle_intent(operation_id, "outcome_uncertain", {"detail_code": detail})
+                committed = True
+        except DomainError as projection_error:
+            # Projection can report the same identity dispute after the fence
+            # and failed status are durable. Do not lose the delivery worker.
+            if not committed or projection_error.code != "source_conflict":
+                raise
+
     async def resume(self, project_id: str, operation_id: str) -> None:
         store = self.services.registry.project_store(project_id)
+        with store.transaction(write=False) as tx:
+            reset = tx.require("copilot.resumes", operation_id)["body"]["mode"] == "reset_session"
+        if reset:
+            try:
+                await self._reset_session(project_id, operation_id)
+            except Exception as exc:
+                self._record_resume_failure(store, operation_id, exc)
+            return
         with store.transaction() as tx:
             operation = tx.require("copilot.resumes", operation_id)
             if operation["state"] != "pending":
@@ -2389,44 +2854,13 @@ class Copilot:
                 save(tx, "copilot.resumes", operation_id, operation)
                 tx.settle_intent(operation_id, "acknowledged", evidence)
         except Exception as exc:
-            with store.transaction() as tx:
-                operation.update(
-                    state="outcome_uncertain",
-                    detail_code=exc.code
-                    if isinstance(exc, DomainError)
-                    else "provider_unavailable",
-                )
-                save(tx, "copilot.resumes", operation_id, operation)
-                self.state.fence(tx, operation["detail_code"])
-                if body["work_id"]:
-                    work = tx.require("work", body["work_id"])
-                    original = tx.require("requests", work["originating_request_id"])
-                    if not original["receipt"].get("detail_code"):
-                        self.state.request_state(
-                            tx,
-                            original["request_id"],
-                            original["receipt"]["state"],
-                            detail_code=operation["detail_code"],
-                        )
-                    continuation = tx.get(
-                        "copilot.continuation_sends", operation_id, required=False
-                    )
-                    if continuation and continuation["state"] == "dispatching":
-                        save(
-                            tx,
-                            "copilot.continuation_sends",
-                            operation_id,
-                            {**continuation, "state": "outcome_uncertain"},
-                        )
-                        if work["state"] == "running":
-                            self.state.work_state(tx, work["work_id"], "awaiting_resume")
-                tx.settle_intent(
-                    operation_id, "outcome_uncertain", {"detail_code": operation["detail_code"]}
-                )
+            self._record_resume_failure(store, operation_id, exc)
             await self._close_recovery_session()
         self.notify()
 
-    def save_decision(self, tx: Any, decision: dict[str, Any]) -> None:
+    def save_decision(
+        self, tx: Any, decision: dict[str, Any], *, actor: dict[str, str] = SYSTEM
+    ) -> None:
         revision = tx.revision("decisions", decision["decision_id"])
         decision["state_revision"] = revision + 1
         tx.put(
@@ -2436,7 +2870,7 @@ class Copilot:
             expected_revision=revision,
             schema="Decision",
         )
-        tx.emit("decision.resolved", decision, actor=SYSTEM, work_id=decision["work_id"])
+        tx.emit("decision.resolved", decision, actor=actor, work_id=decision["work_id"])
 
     async def decision(
         self,

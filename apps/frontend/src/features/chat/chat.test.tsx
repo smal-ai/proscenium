@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { ApiError } from "../../api";
 import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
 import { backfillWindows, mergeReviews, mergeSnapshot, orderedEventBuffer, readProjectHydration, revisionScope, validateWindowEvents, versionRefreshBuffer } from "../../app/useProjectData";
@@ -17,7 +18,7 @@ import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation, reuseOutputIds } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
-import { awaitResume, heldRequestIds, isIdleAutoReleaseReady, resumableWork } from "./resume";
+import { awaitResume, canStartFreshSession, defaultResumeMode, executeResumeCommand, heldRequestIds, isIdleAutoReleaseReady, isNativeSessionMissing, resumableWork, resumeCommand, ResumeConfirmationError } from "./resume";
 import { handleSubmitEnter, isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowPendingRequestCard, shouldShowPendingStopCard, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
@@ -873,6 +874,258 @@ test("ChatPanel auto-selects single interrupted work without rendering a work se
   assert.match(markup, /<option value="continue_work" selected="">Continue original work<\/option>/);
   assert.match(markup, /<button>Resume<\/button>/);
   assert.doesNotMatch(markup, /aria-label="Original work to continue"/);
+});
+
+test("reset_session targets the project revision even when work is present", () => {
+  const base = snapshot("awaiting_resume", true);
+  const active = { ...base, project: { ...base.project, state_revision: 23 }, active_work: { ...base.active_work!, state_revision: 8 } };
+  const events = [event(1, "work.state_changed", { ...active.active_work, project_id: "project", state_revision: 9 })];
+  for (const [current, workId] of [[{ ...active, active_work: null }, ""], [active, ""], [active, "work"]] as const) {
+    assert.deepEqual(resumeCommand(current, events, "reset_session", workId, "reset-operation"), {
+      schema_version: "1.0", operation_id: "reset-operation", project_id: "project", mode: "reset_session", work_id: null, expected_revision: 23,
+    });
+  }
+});
+
+const missingSessionSnapshots = () => {
+  const base = snapshot("completed", true);
+  const idle = { ...base, active_work: null };
+  return [
+    { ...idle, execution: { ...base.execution!, hold_reason_code: "native_session_missing", fence_reason: null } },
+    { ...idle, execution: { ...base.execution!, hold_reason_code: null, fence_reason: "native_session_missing" } },
+  ];
+};
+
+test("default Resume mode prioritises missing native sessions then uncertain Stops and original work", () => {
+  const interrupted = snapshot("awaiting_resume", true);
+  const idle = { ...snapshot("completed", true), active_work: null };
+  const options = { uncertainStop: false, hasChosenResumeWork: true, canReleaseQueue: true };
+  assert.equal(isNativeSessionMissing(null), false);
+  assert.equal(isNativeSessionMissing(interrupted), false);
+  for (const missing of missingSessionSnapshots()) {
+    assert.equal(isNativeSessionMissing(missing), true);
+    assert.equal(defaultResumeMode({ ...missing, active_work: interrupted.active_work }, { ...options, uncertainStop: true }), "reset_session");
+    assert.equal(isIdleAutoReleaseReady(missing, [], []), false);
+  }
+  assert.equal(defaultResumeMode(interrupted, { ...options, uncertainStop: true }), "reconcile_only");
+  assert.equal(defaultResumeMode(interrupted, options), "continue_work");
+  assert.equal(defaultResumeMode(interrupted, { ...options, hasChosenResumeWork: false, canReleaseQueue: false }), "reconcile_only");
+  assert.equal(defaultResumeMode(idle, options), "release_held_queue");
+  assert.equal(defaultResumeMode(null, { ...options, canReleaseQueue: false }), "reconcile_only");
+});
+
+test("fresh session is available except during unfenced live work or in-flight commands", () => {
+  const idle = { ...snapshot("completed"), active_work: null };
+  assert.equal(canStartFreshSession(idle), true);
+  for (const state of ["running", "awaiting_user", "stop_requested"]) {
+    assert.equal(canStartFreshSession(snapshot(state)), false, state);
+    assert.equal(canStartFreshSession(snapshot(state, true)), true, state);
+  }
+  const paused = snapshot("completed", true);
+  for (const hold_reason_code of ["queue_paused", "uncertain_stop"]) {
+    assert.equal(canStartFreshSession({ ...paused, active_work: null, execution: { ...paused.execution!, hold_reason_code } }), true, hold_reason_code);
+  }
+  for (const state of ["awaiting_resume", "stopped", "failed", "outcome_uncertain"]) {
+    assert.equal(canStartFreshSession(snapshot(state)), true, state);
+  }
+  for (const missing of missingSessionSnapshots()) assert.equal(canStartFreshSession(missing), true);
+  assert.equal(canStartFreshSession(null), false);
+  assert.equal(canStartFreshSession(idle, { pendingResume: null }), true);
+  for (const options of [{ resuming: true }, { pendingResume: resumeCommand(idle, [], "reset_session", "", "reset") }, { submitting: true }, { stopping: true }]) {
+    assert.equal(canStartFreshSession(idle, options), false, Object.keys(options)[0]);
+  }
+});
+
+test("ChatPanel selects a fresh session in Resume when either execution reason marks the native session missing", () => {
+  for (const current of missingSessionSnapshots()) {
+    const markup = chatMarkup([], { snapshot: current });
+    assert.match(markup, resumeCard);
+    assert.match(markup, /<option value="reset_session" selected="">Start fresh Copilot session<\/option>/);
+    assert.match(markup, /The previous native Copilot session is missing on disk\. Clears the current Copilot session link and seals unsettled Copilot state\./);
+    assert.match(markup, /The next request opens a fresh session\. New requests use the active model configuration\. Assets, versions, artefacts, reviews and chat history stay intact\./);
+    assert.match(markup, /<button>Start fresh session<\/button>/);
+  }
+  assert.match(chatMarkup([], { snapshot: missingSessionSnapshots()[0], requests: [heldRequest("queued")] }), /Held queued requests run first in the fresh session and keep their admitted profile\./);
+});
+
+const freshSessionTrigger = /<button[^>]*aria-label="Start fresh Copilot session"[^>]*>/;
+
+test("ChatPanel makes Fresh session available at idle and disables it during unfenced active work", () => {
+  const running = snapshot();
+  const idle = chatMarkup([], { snapshot: { ...running, active_work: null }, showHeaderStatus: true });
+  assert.doesNotMatch(idle, resumeCard);
+  const idleTrigger = idle.match(freshSessionTrigger)?.[0];
+  assert.ok(idleTrigger);
+  assert.match(idleTrigger, /aria-expanded="false"/);
+  assert.match(idleTrigger, /aria-controls="fresh-session-confirm"/);
+  assert.doesNotMatch(idleTrigger, /disabled=""/);
+  assert.match(idle, /Fresh session<\/button>/);
+  const runningTrigger = chatMarkup([], { snapshot: running }).match(freshSessionTrigger)?.[0];
+  assert.ok(runningTrigger);
+  assert.match(runningTrigger, /disabled=""/);
+  assert.match(runningTrigger, /title="Stop active work before starting a fresh session"/);
+  for (const flags of [{ busy: true }, { stopping: true }]) {
+    const trigger = chatMarkup([], { snapshot: { ...running, active_work: null }, composer: { ...composer, ...flags } }).match(freshSessionTrigger)?.[0] ?? "";
+    assert.match(trigger, /disabled=""/);
+    assert.match(trigger, /title="Wait for the current request or Stop to finish"/);
+  }
+});
+
+test("ChatPanel keeps Reconcile only the default for an uncertain Stop and enables a fresh session", () => {
+  const current = snapshot("awaiting_resume", true);
+  current.execution!.hold_reason_code = "uncertain_stop";
+  const markup = chatMarkup([], { snapshot: current });
+  assert.match(markup, resumeCard);
+  assert.match(markup, /<option value="reconcile_only" selected="">Reconcile only<\/option>/);
+  assert.match(markup, /<option value="continue_work" disabled="">Continue original work<\/option>/);
+  assert.match(markup, /<option value="release_held_queue" disabled="">Release held queue<\/option>/);
+  assert.match(markup, /<option value="reset_session">Start fresh Copilot session<\/option>/);
+  assert.match(markup, /<button>Resume<\/button>/);
+});
+
+test("Resume retains an unconfirmed reset through authentication failures and only replays after a missing status", async () => {
+  const missing = missingSessionSnapshots()[0];
+  const current = { ...missing, project: { ...missing.project, state_revision: 23 } };
+  const pending = resumeCommand(current, [], "reset_session", "", "original-reset");
+  const key = "proscenium.owner.command.resume.project";
+  const values = new Map<string, string>();
+  const storage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  } });
+  const apiError = (status: number, code: string) => new ApiError(status, {
+    schema_version: "1.0", error: { code, message: code, operation_id: null, retryable: false, details: {} },
+  });
+  try {
+    const busy = apiError(409, "project_busy");
+    const rejecting = { call: async (method: string) => {
+      assert.equal(method, "resumeProjectWork");
+      assert.deepEqual(JSON.parse(values.get(key)!), pending);
+      throw busy;
+    } } as unknown as ApiClient;
+    await assert.rejects(executeResumeCommand(rejecting, "project", pending), error => error === busy);
+    assert.equal(values.has(key), false);
+
+    const unauthorised = apiError(401, "unauthorised");
+    const forbidden = apiError(403, "scope_denied");
+    const missingStatus = apiError(404, "not_found");
+    for (const cause of [forbidden, missingStatus, apiError(503, "unavailable"), new TypeError("Network failure"), null, unauthorised]) {
+      assert.equal(values.has(key), false);
+      let admitted = false;
+      const confirming = { call: async (method: string, options: object) => {
+        if (method === "resumeProjectWork") {
+          assert.deepEqual(options, { path: { project_id: "project" }, body: pending, idempotencyKey: "original-reset" });
+          admitted = true;
+          return { state: "accepted" };
+        }
+        assert.equal(method, "getResumeOperation");
+        assert.equal(admitted, true, "First admission must POST before confirming");
+        assert.deepEqual((options as { path: object }).path, { project_id: "project", operation_id: "original-reset" });
+        if (cause) throw cause;
+        return { state: "pending" };
+      } } as unknown as ApiClient;
+      await assert.rejects(executeResumeCommand(confirming, "project", pending, cause ? 1000 : 5), (error: unknown) =>
+        error instanceof ResumeConfirmationError && (cause ? error.cause === cause : /still awaiting confirmation/.test(error.message)));
+      assert.deepEqual(JSON.parse(values.get(key)!), pending);
+      if (cause !== unauthorised) values.delete(key);
+    }
+
+    type Step = ["getResumeOperation" | "resumeProjectWork", Error | { state: string }];
+    const reconcile = async (...steps: Step[]) => {
+      const restored = JSON.parse(values.get(key)!);
+      const client = { call: async (method: string, options: object) => {
+        const step = steps.shift();
+        assert.ok(step, `Unexpected ${method}`);
+        const [expectedMethod, result] = step;
+        assert.equal(method, expectedMethod);
+        if (method === "resumeProjectWork") {
+          assert.deepEqual(options, { path: { project_id: "project" }, body: pending, idempotencyKey: "original-reset" });
+        } else {
+          assert.deepEqual((options as { path: object }).path, { project_id: "project", operation_id: "original-reset" });
+        }
+        if (result instanceof Error) throw result;
+        return result;
+      } } as unknown as ApiClient;
+      try { return await executeResumeCommand(client, "project", restored); }
+      finally { assert.deepEqual(steps, [], "Every expected call must be made"); }
+    };
+    const failure = (cause: Error) => (error: unknown) => error instanceof ResumeConfirmationError && error.cause === cause;
+    // The failed first confirmation above left the original command in browser storage.
+    await assert.rejects(reconcile(["getResumeOperation", unauthorised]), failure(unauthorised));
+    assert.deepEqual(JSON.parse(values.get(key)!), pending);
+    const markup = chatMarkup([], { snapshot: current });
+    assert.match(markup, /aria-label="Resume awaiting confirmation"/);
+    assert.match(markup, /Start fresh Copilot session · project\. The original command and target revision are retained\./);
+    assert.match(markup, /<button>Reconcile original Resume<\/button>/);
+    assert.match(markup, /<select aria-label="Resume mode" disabled="">/);
+    assert.match(markup, /<button disabled="">Start fresh session<\/button>/);
+    const trigger = markup.match(freshSessionTrigger)?.[0] ?? "";
+    assert.match(trigger, /disabled=""/);
+    assert.match(trigger, /title="Reconcile the pending Resume command first"/);
+
+    for (const authFailure of [unauthorised, forbidden]) {
+      await assert.rejects(reconcile(["getResumeOperation", missingStatus], ["resumeProjectWork", authFailure]), failure(authFailure));
+      assert.deepEqual(JSON.parse(values.get(key)!), pending);
+    }
+    assert.equal((await reconcile(["getResumeOperation", missingStatus], ["resumeProjectWork", { state: "accepted" }], ["getResumeOperation", { state: "completed" }]))?.state, "completed");
+    assert.equal(values.has(key), false);
+
+    for (const state of ["completed", "outcome_uncertain"]) {
+      values.set(key, JSON.stringify(pending));
+      assert.equal((await reconcile(["getResumeOperation", { state }]))?.state, state);
+      assert.equal(values.has(key), false);
+    }
+    values.set(key, JSON.stringify(pending));
+    assert.equal((await reconcile(["getResumeOperation", new Error("getResumeOperation not implemented")], ["resumeProjectWork", { state: "accepted" }], ["getResumeOperation", { state: "completed" }]))?.state, "completed");
+    assert.equal(values.has(key), false);
+  } finally {
+    if (storage) Object.defineProperty(globalThis, "localStorage", storage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
+test("ChatPanel does not offer reset-sealed work after detaching or replacing the native session", () => {
+  const base = snapshot("completed");
+  const detached = { ...base, active_work: null, project: { ...base.project, native_session_id: null } };
+  const replaced = { ...detached, project: { ...detached.project, native_session_id: "sess-new" } };
+  const work = { ...base.active_work!, work_id: "work-old", project_id: "project", state: "stopped" as const, native_session_id: "sess-old", originating_request_id: "request-old", state_revision: 4 };
+  const original = request("request-old", "2026-11-17T10:00:00Z", "Original request");
+  const sealed: RequestRecord = { ...original, receipt: { ...original.receipt, state: "stopped", detail_code: "session_reset", work_id: "work-old" } };
+  const workEvent = { ...event(1, "work.state_changed", work), work_id: "work-old", request_id: "request-old" };
+  const sealEvent = { ...event(2, "request.state_changed", sealed), work_id: "work-old", request_id: "request-old" };
+  const assertGone = (current: ProjectSnapshot, events: Event[], requests: RequestRecord[]) => {
+    const resumable = resumableWork(current, events, requests);
+    assert.deepEqual(resumable, []);
+    assert.equal(shouldShowResumeCard(current, requests, resumable.length, false), false);
+    const markup = chatMarkup([], { snapshot: current, events, requests });
+    assert.doesNotMatch(markup, resumeCard);
+    assert.doesNotMatch(markup, /Continue original work/);
+  };
+  assertGone(detached, [workEvent, sealEvent], [sealed]);
+  assertGone(detached, [workEvent], []); // An explicit detach alone rules out continuation.
+  assertGone(replaced, [workEvent, sealEvent], []); // Only replayed events are available on reload.
+  assertGone(replaced, [workEvent], []); // A different session alone rules out continuation.
+
+  const unboundWork = { ...workEvent, native_session_id: null, payload: { ...work, native_session_id: null } };
+  const unrelated = heldRequest("unrelated");
+  const requestIdSeal = { ...sealed, receipt: { ...sealed.receipt, work_id: null } };
+  const workIdSeal = { ...sealed, request_id: "directive-old" };
+  assertGone(replaced, [unboundWork], [requestIdSeal, unrelated]);
+  assertGone(replaced, [unboundWork], [workIdSeal]);
+  assertGone(replaced, [unboundWork, { ...sealEvent, payload: requestIdSeal, request_id: null, work_id: null }], []);
+  assertGone(replaced, [unboundWork, { ...sealEvent, payload: workIdSeal, request_id: null, work_id: null }], []);
+  assertGone(replaced, [unboundWork, { ...sealEvent, payload: { receipt: { detail_code: "session_reset" } }, request_id: null }], []);
+  assertGone(replaced, [unboundWork, { ...sealEvent, payload: { receipt: { detail_code: "session_reset" } }, work_id: null }], []);
+  const restarting = { ...replaced, execution: { ...replaced.execution!, fenced: true, hold_reason_code: "awaiting_resume" } };
+  assert.equal(isIdleAutoReleaseReady(restarting, [requestIdSeal], [unboundWork]), true);
+
+  const activeSession = { ...detached, project: { ...detached.project, native_session_id: "sess-active" } };
+  const ordinaryStop = { ...work, native_session_id: "sess-active" };
+  const ordinaryHistory = [{ ...workEvent, native_session_id: "sess-active", payload: ordinaryStop }];
+  assert.deepEqual(resumableWork(activeSession, ordinaryHistory), [ordinaryStop]);
+  assert.match(chatMarkup([], { snapshot: activeSession, events: ordinaryHistory }), /<option value="continue_work">Continue original work<\/option>/);
 });
 
 test("default Studio split layout starts Navigator and Assistant at maximum width", () => {

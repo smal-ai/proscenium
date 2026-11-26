@@ -1,4 +1,8 @@
 .chat-scroll-content{display:flow-root}
+.copilot-identity{flex-wrap:wrap}
+.copilot-identity .fresh-session-trigger{flex-shrink:0;margin-left:auto;min-height:24px;padding:3px 8px;gap:4px;border-radius:999px;font-size:11px;white-space:nowrap}
+.copilot-identity .assistant-status+.fresh-session-trigger{margin-left:0}
+.fresh-session-trigger[aria-expanded=true]{border-color:#806744;background:#272217}
 .chat-jump{align-self:center;flex-shrink:0;margin:0 0 8px;font-size:11px;color:#a1a1aa}
 .chat-recovery{flex-shrink:0;max-height:42vh;overflow:auto;padding:0 13px 8px}
 .chat-recovery:empty{display:none}
@@ -8,9 +12,15 @@
 .decision-details{border-top:1px solid var(--border);margin:6px 0}
 .decision-details>summary{font-size:10px;padding:5px 0}
 .decision-details ul{margin:5px 0;padding-left:18px;font-size:10px}
-.chat-recovery .resume-card,.chat-recovery .retry-card{margin:0;padding:9px;gap:6px}
+.chat-recovery .resume-card,.chat-recovery .retry-card,.reset-session-card{margin:0;padding:9px;gap:6px}
 .chat-recovery .retry-card{margin-top:6px}
 .chat-recovery h3,.chat-recovery p{font-size:11px}
+.reset-session-card{display:flex;flex-direction:column;border:1px solid #665634;border-radius:8px;background:#272217}
+.reset-session-card h3{color:#dfc994}
+.reset-session-card p{margin:0;color:#d4d4dc}
+.reset-session-card+.resume-card{margin-top:6px}
+.reset-session-actions{display:flex;flex-wrap:wrap;gap:8px}
+.reset-session-actions button{font-size:11px}
 .resume-controls{display:flex;align-items:center;gap:8px}
 .resume-controls select{min-width:0;flex:1;font-size:11px}
 .resume-controls button{flex-shrink:0}

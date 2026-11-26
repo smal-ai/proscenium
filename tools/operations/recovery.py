@@ -165,6 +165,9 @@ def session_ids(store: Store, project: dict) -> list[str]:
                 ids.add(record.get("native_session_id"))
                 ids.add(record.get("session_id"))
         ids.update(
+            record.get("retired_session_id") for record in tx.all("copilot.retired_sessions")
+        )
+        ids.update(
             row[0]
             for row in tx.connection.execute(
                 "SELECT DISTINCT native_session_id FROM events WHERE native_session_id IS NOT NULL"

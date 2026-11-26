@@ -63,7 +63,10 @@ def _reconcile(services: "Services", project_id: str) -> None:
     with registry.project_store(project_id, active=False).transaction(write=False) as tx:
         association = tx.get("copilot.session", "native", required=False)
         control = tx.get("copilot.control", "gate", required=False) or {}
-    session_id = association["session_id"] if association else record["native_session_id"]
+        reset = tx.get("copilot.control", "reset_in_progress", required=False)
+    session_id = (
+        association["session_id"] if association and reset is None else record["native_session_id"]
+    )
     if record["native_session_id"] and session_id != record["native_session_id"]:
         services.gate.close(project_id)
         raise DomainError("source_conflict", 409, "Native session identity changed")
@@ -72,7 +75,7 @@ def _reconcile(services: "Services", project_id: str) -> None:
         old_epoch = bool(
             association and association["owner_epoch"] != services.ownership.epoch
         ) or bool(control.get("epoch") and control["epoch"] != services.ownership.epoch)
-        if control.get("fenced") or old_epoch:
+        if reset is not None or control.get("fenced") or old_epoch:
             state = "awaiting_resume"
         elif (association and not old_epoch) or control.get(
             "reconciled_epoch"

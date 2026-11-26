@@ -1560,14 +1560,14 @@ export interface ResumeCommand {
   operation_id: Id;
   project_id: Id;
   expected_revision: Revision;
-  mode: "continue_work" | "release_held_queue" | "reconcile_only";
+  mode: "continue_work" | "release_held_queue" | "reconcile_only" | "reset_session";
   work_id: NullableId;
 }
 export interface ResumeOperationStatus {
   schema_version: "1.0";
   operation_id: Id;
   project_id: Id;
-  mode: "continue_work" | "release_held_queue" | "reconcile_only";
+  mode: "continue_work" | "release_held_queue" | "reconcile_only" | "reset_session";
   work_id: NullableId;
   state: "pending" | "dispatching" | "completed" | "outcome_uncertain";
   detail_code: string | null;

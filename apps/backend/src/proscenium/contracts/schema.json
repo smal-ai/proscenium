@@ -245,11 +245,11 @@
     },
     "ResumeCommand": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "expected_revision", "mode", "work_id"],
-      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "mode": {"enum": ["continue_work", "release_held_queue", "reconcile_only"]}, "work_id": {"$ref": "#/$defs/NullableId"}}
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "expected_revision": {"$ref": "#/$defs/Revision"}, "mode": {"enum": ["continue_work", "release_held_queue", "reconcile_only", "reset_session"]}, "work_id": {"$ref": "#/$defs/NullableId"}}
     },
     "ResumeOperationStatus": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "mode", "work_id", "state", "detail_code"],
-      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "mode": {"enum": ["continue_work", "release_held_queue", "reconcile_only"]}, "work_id": {"$ref": "#/$defs/NullableId"}, "state": {"enum": ["pending", "dispatching", "completed", "outcome_uncertain"]}, "detail_code": {"type": ["string", "null"]}}
+      "properties": {"schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "mode": {"enum": ["continue_work", "release_held_queue", "reconcile_only", "reset_session"]}, "work_id": {"$ref": "#/$defs/NullableId"}, "state": {"enum": ["pending", "dispatching", "completed", "outcome_uncertain"]}, "detail_code": {"type": ["string", "null"]}}
     },
     "RevisionCommand": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "expected_revision"],

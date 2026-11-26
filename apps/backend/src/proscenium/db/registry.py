@@ -82,6 +82,32 @@ class Registry:
         with self.store.transaction(write=False) as tx:
             return tx.require("projects", project_id)
 
+    def clear_native_session(
+        self, project_id: str, expected_session_id: str | None
+    ) -> dict[str, Any]:
+        with self.store.transaction() as tx:
+            record = tx.require("projects", project_id)
+            if record["native_session_id"] is None:
+                return record
+            if (
+                expected_session_id is not None
+                and record["native_session_id"] != expected_session_id
+            ):
+                raise DomainError("source_conflict", 409, "Native session identity changed")
+            record = {
+                **record,
+                "native_session_id": None,
+                "state_revision": record["state_revision"] + 1,
+            }
+            tx.put(
+                "projects",
+                project_id,
+                record,
+                expected_revision=tx.revision("projects", project_id),
+                schema="ProjectRecord",
+            )
+            return record
+
     def active_id(self) -> str | None:
         with self.store.transaction(write=False) as tx:
             state = tx.get("registry", "active", required=False)
@@ -165,6 +191,8 @@ class Registry:
 
     def assert_settled(self, project_id: str) -> None:
         with self.project_store(project_id, active=False).transaction(write=False) as tx:
+            if tx.get("copilot.control", "reset_in_progress", required=False) is not None:
+                raise DomainError("project_busy", 409, "Copilot session reset is in progress")
             self.assert_preparations_settled(tx)
             blockers = {
                 "jobs": {"succeeded", "failed", "cancelled"},
