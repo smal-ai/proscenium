@@ -85,6 +85,20 @@ class JobService:
             str,
             tuple[Callable[[dict[str, Any]], None], Callable[[Transaction, dict[str, Any]], bool]],
         ] = {}
+        self.cancellation_evidence: dict[
+            str,
+            tuple[
+                Callable[[dict[str, Any]], None],
+                Callable[[Transaction, dict[str, Any]], str | None],
+            ],
+        ] = {}
+        self.transactional_cancellers: dict[
+            str,
+            tuple[
+                Callable[[dict[str, Any]], None],
+                Callable[[Transaction, dict[str, Any]], dict[str, Any]],
+            ],
+        ] = {}
         # Host-only probes return the authorising request for cross-work recovery.
         self.retry_eligibility: dict[
             str, Callable[[Transaction, Caller, dict[str, Any]], str | None]
@@ -273,20 +287,80 @@ class JobService:
     def dispatch_cancellations(self, project_id: str) -> list[dict[str, Any]]:
         """Deliver recorded owner cancellations without opening the execution gate.
 
-        Only pending exact-attempt cancellation intents are eligible. An uncertain
-        adapter acknowledgement remains uncertain until its own receipt reconciliation.
-        Returning from a canceller proves delivery, not a successful native exit.
+        A database-only adapter can recover stranded intents without replaying an
+        external effect. Other adapters only receive pending intents as before.
         """
         if self.registry.active_id() != project_id:
             raise DomainError("scope_denied", 403)
         store = self.registry.project_store(project_id)
+
+        def transactional(
+            job: dict[str, Any] | None,
+        ) -> Callable[[Transaction, dict[str, Any]], dict[str, Any]] | None:
+            if job is not None:
+                bound = self.transactional_cancellers.get(job["kind"])
+                if bound is not None and bound[0] is self.cancellers.get(job["kind"]):
+                    return bound[1]
+            return None
+
         with store.transaction(write=False) as tx:
-            pending = [
-                row[0]
-                for row in tx.connection.execute(
-                    "SELECT id FROM outbox WHERE kind='job.cancel' AND state='pending' ORDER BY rowid"
-                )
-            ]
+            intents = []
+            for identity, state, raw in tx.connection.execute(
+                "SELECT id, state, body FROM outbox WHERE kind='job.cancel' "
+                "AND state IN ('pending','dispatching','outcome_uncertain') ORDER BY rowid"
+            ):
+                body = json.loads(raw)
+                job_id = body.get("job_id") if isinstance(body, dict) else None
+                job = tx.get("jobs", job_id, required=False) if isinstance(job_id, str) else None
+                atomic = transactional(job) is not None
+                if atomic or state == "pending":
+                    intents.append((identity, atomic))
+
+        def deliver_transactional(identity: str) -> bool:
+            with store.transaction() as tx:
+                row = tx.connection.execute(
+                    "SELECT state, body FROM outbox WHERE id=? AND kind='job.cancel'", (identity,)
+                ).fetchone()
+                if row is None or row[0] not in {"pending", "dispatching", "outcome_uncertain"}:
+                    return False
+                state, raw = row
+                body = json.loads(raw)
+                job = tx.require("jobs", body["job_id"])
+                attempt = tx.require("attempts", body["attempt_id"])
+                if (
+                    job["job_id"] != body["job_id"]
+                    or job["project_id"] != project_id
+                    or attempt["job_id"] != job["job_id"]
+                    or attempt["project_id"] != project_id
+                    or attempt["attempt_id"] != body["attempt_id"]
+                ):
+                    raise DomainError("scope_denied", 403)
+                canceller = transactional(job)
+                if canceller is None:
+                    return False
+                if state == "pending":
+                    tx.claim_intent(identity)
+                if attempt["state"] in TERMINAL:
+                    if job["attempt_id"] == attempt["attempt_id"]:
+                        if job["state"] != attempt["state"]:
+                            raise DomainError("source_conflict", 409)
+                        # Repair legacy projections of this attempt without touching newer ones.
+                        canceller(tx, job)
+                    evidence = {
+                        "job_id": job["job_id"],
+                        "attempt_id": attempt["attempt_id"],
+                        "observed_state": attempt["state"],
+                        "adapter_called": False,
+                    }
+                else:
+                    if (
+                        job["attempt_id"] != attempt["attempt_id"]
+                        or job["state"] != "cancel_requested"
+                    ):
+                        raise DomainError("scope_denied", 403)
+                    evidence = canceller(tx, job)
+                tx.settle_intent(identity, "acknowledged", evidence)
+                return True
 
         def deliver(body: dict[str, Any]) -> dict[str, Any]:
             with store.transaction(write=False) as tx:
@@ -319,8 +393,12 @@ class JobService:
             }
 
         results = []
-        for identity in pending:
-            dispatch_one(store, identity, self.gate, {"job.cancel": deliver})
+        for identity, atomic in intents:
+            if atomic:
+                if not deliver_transactional(identity):
+                    continue
+            else:
+                dispatch_one(store, identity, self.gate, {"job.cancel": deliver})
             results.append({"operation_id": identity})
         return results
 
@@ -586,7 +664,15 @@ class JobService:
                         and not probe[1](tx, job)
                     ):
                         raise DomainError("cancel_unsupported", 501)
-                    transition("job_attempt", job["state"], "cancel_requested")
+                    evidence = None
+                    if job["state"] == "outcome_uncertain":
+                        evidence_probe = self.cancellation_evidence.get(job["kind"])
+                        if (
+                            evidence_probe is not None
+                            and evidence_probe[0] is self.cancellers[job["kind"]]
+                        ):
+                            evidence = evidence_probe[1](tx, job)
+                    transition("job_attempt", job["state"], "cancel_requested", evidence=evidence)
                     job.update(state="cancel_requested", state_revision=job["state_revision"] + 1)
                     tx.put(
                         "jobs",

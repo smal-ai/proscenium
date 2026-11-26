@@ -7,6 +7,7 @@ import json
 import os
 import threading
 from collections.abc import Callable
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
@@ -19,6 +20,7 @@ from proscenium.api.interfaces import ArtifactService, ReviewStore
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
+from proscenium.db.outbox import settled_uncertain_vlm_review
 from proscenium.db.paths import project_path, read_bounded_regular_file
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
@@ -198,6 +200,20 @@ class ProviderService:
                 raise ValueError("mesh profile revision must be a string")
             plugin("image_to_3d", revision)
         validate_recipes(self.options)
+        cancel_review = self.cancel_review
+        services.jobs.cancellers["vlm_review"] = cancel_review
+        services.jobs.cancellation_eligibility["vlm_review"] = (
+            cancel_review,
+            self.owns_review_cancellation,
+        )
+        services.jobs.cancellation_evidence["vlm_review"] = (
+            cancel_review,
+            self.review_cancellation_evidence,
+        )
+        services.jobs.transactional_cancellers["vlm_review"] = (
+            cancel_review,
+            self.cancel_review_in_transaction,
+        )
 
     @property
     def artifacts(self) -> ArtifactService:
@@ -560,7 +576,9 @@ class ProviderService:
             operations=("updateJobState", "completeToolReview", "registerToolArtifact"),
         )
 
-    def update(self, job: JSON, state: str, **fields: Any) -> JSON:
+    def update(
+        self, job: JSON, state: str, *, tx: Transaction | None = None, **fields: Any
+    ) -> JSON:
         if state in {"running", "succeeded"}:
             fields.setdefault("error_code", None)
         body = dict(
@@ -574,7 +592,143 @@ class ProviderService:
             availability=fields.pop("availability", job["availability"]),
             **fields,
         )
-        return self.services.jobs.update(self.worker(job), body, evidence="provider observation")[0]
+        jobs = self.services.jobs
+        if tx is not None:
+            return jobs.update_in_transaction(
+                tx, self.worker(job), body, evidence="provider observation"
+            )[0]
+        return jobs.update(self.worker(job), body, evidence="provider observation")[0]
+
+    def owns_review_cancellation(self, tx: Transaction, job: JSON) -> bool:
+        with self._review_claim_lock:
+            if job["job_id"] in self._inflight_reviews:
+                return False
+            return job["kind"] == "vlm_review" and (
+                job["state"] in {"planned", "waiting_resource"}
+                or settled_uncertain_vlm_review(tx, job)
+            )
+
+    def review_cancellation_evidence(self, tx: Transaction, job: JSON) -> str | None:
+        if settled_uncertain_vlm_review(tx, job):
+            return f"provider-execution:{job['job_id']}:{job['attempt_id']}:submitting"
+        return None
+
+    @staticmethod
+    def _settle_review_intent(tx: Transaction, job: JSON, state: str, evidence: JSON) -> None:
+        job_id, attempt_id = job["job_id"], job["attempt_id"]
+        row = tx.connection.execute(
+            "SELECT state, body FROM outbox WHERE id=? AND kind='providers.review'", (attempt_id,)
+        ).fetchone()
+        if row is not None:
+            intent_state, body = row
+            try:
+                payload = json.loads(body)
+            except (ValueError, TypeError):
+                payload = None
+            if (
+                not isinstance(payload, dict)
+                or payload.get("job_id") != job_id
+                or payload.get("attempt_id") != attempt_id
+            ):
+                raise DomainError(
+                    "source_conflict", 409, "Review outbox payload does not match attempt"
+                )
+            if intent_state == "pending":
+                tx.claim_intent(attempt_id)
+            if intent_state in {"pending", "dispatching", "outcome_uncertain"}:
+                tx.settle_intent(attempt_id, state, evidence)
+        if tx.connection.execute(
+            "DELETE FROM records WHERE namespace='providers.pending' AND id=?", (job_id,)
+        ).rowcount:
+            tx.changed_namespaces.add("providers.pending")
+
+    @staticmethod
+    def _save_review_ticket(tx: Transaction, ticket: JSON) -> bool:
+        validate("ReviewTicket", ticket)
+        review_id = ticket["review_id"]
+        prior = tx.get("providers.tickets", review_id, required=False)
+        if prior == ticket:
+            return True
+        tx.put(
+            "providers.tickets",
+            review_id,
+            ticket,
+            expected_revision=tx.revision("providers.tickets", review_id)
+            if prior is not None
+            else None,
+        )
+        return False
+
+    def cancel_review(self, job: JSON) -> None:
+        with self.services.registry.project_store(job["project_id"]).transaction() as tx:
+            self.cancel_review_in_transaction(tx, job)
+
+    def cancel_review_in_transaction(self, tx: Transaction, job: JSON) -> JSON:
+        project_id, job_id, attempt_id = job["project_id"], job["job_id"], job["attempt_id"]
+        with self._review_claim_lock:
+            if job_id in self._inflight_reviews:
+                raise DomainError("project_busy", 409, "VLM review is still in flight")
+            job = tx.require("jobs", job_id)
+            if (
+                tx.project_id != project_id
+                or job["project_id"] != project_id
+                or job["kind"] != "vlm_review"
+                or job["attempt_id"] != attempt_id
+            ):
+                raise DomainError("invalid_state_transition", 409)
+            review_id = job["target"]["target_id"]
+            ticket = tx.get("reviews", review_id, required=False)
+            if ticket is not None and ticket["job_id"] != job_id:
+                raise DomainError("source_conflict", 409)
+            evidence = {"job_id": job_id, "attempt_id": attempt_id, "adapter_called": True}
+            ready = ticket is not None and ticket["status"] == "ready"
+            if ready or job["state"] in {"succeeded", "failed"}:
+                # Recover a receipt that won before older, non-atomic cancellation ran.
+                if job["state"] not in TERMINAL:
+                    if job["state"] in {"planned", "waiting_resource"}:
+                        job = self.update(job, "starting", tx=tx)
+                    job = self.update(job, "succeeded", tx=tx, availability="complete")
+                if ticket is not None and ticket["status"] in {"ready", "failed"}:
+                    projected = self.reviews.ticket_view(tx, ticket)
+                    if ready and projected["status"] != "ready":
+                        # A legacy terminal job cannot be rewritten. Preserve its durable review result.
+                        projected.update(status="ready", error_code=ticket.get("error_code"))
+                    self._save_review_ticket(tx, projected)
+                self._settle_review_intent(tx, job, "acknowledged", {"review_id": review_id})
+                return {**evidence, "observed_state": job["state"]}
+            if job["state"] not in {"cancel_requested", "cancelled"}:
+                raise DomainError("invalid_state_transition", 409)
+            execution = tx.get("providers.execution", job_id, required=False)
+            if execution != {"phase": "cancelled"}:
+                tx.put(
+                    "providers.execution",
+                    job_id,
+                    {"phase": "cancelled"},
+                    expected_revision=tx.revision("providers.execution", job_id)
+                    if execution is not None
+                    else None,
+                )
+            if job["state"] == "cancel_requested":
+                job = self.update(job, "cancelled", tx=tx, error_code="cancelled")
+            self._settle_review_intent(tx, job, "failed", {"job_id": job_id, "state": "cancelled"})
+            if ticket is not None and ticket["status"] in {"pending", "running"}:
+                completed = self.reviews.complete_in_transaction(
+                    tx,
+                    self.worker(job),
+                    dict(
+                        schema_version="1.0",
+                        operation_id=f"cancel-review-{attempt_id}",
+                        project_id=project_id,
+                        review_id=review_id,
+                        status="failed",
+                        findings=[],
+                        error_code="cancelled",
+                    ),
+                )
+                self._save_review_ticket(tx, completed)
+            elif ticket is not None and ticket["status"] == "failed":
+                self._save_review_ticket(tx, self.reviews.ticket_view(tx, ticket))
+            return {**evidence, "observed_state": "cancelled"}
 
     def complete_review(
         self,
@@ -587,83 +741,74 @@ class ProviderService:
         project_id = request["project_id"]
         self.services.jobs.check_caller(caller, "completeToolReview", project_id)
         store = self.services.registry.project_store(project_id)
-        with store.transaction(write=False) as tx:
+        with store.transaction() as tx, self._review_claim_lock:
             admitted = tx.require("providers.review_requests", request["review_id"])
             job = tx.require("jobs", admitted["job_id"])
-        if caller.channel == "worker":
-            if (
-                caller.job_id != job["job_id"]
-                or caller.attempt_id != job["attempt_id"]
-                or caller.input_digest != job["input_digest"]
-            ):
+            if caller.channel == "worker":
+                if (
+                    caller.job_id != job["job_id"]
+                    or caller.attempt_id != job["attempt_id"]
+                    or caller.input_digest != job["input_digest"]
+                ):
+                    raise DomainError("scope_denied", 403)
+            elif caller.channel != "tool" or not job["work_id"] or caller.work_id != job["work_id"]:
                 raise DomainError("scope_denied", 403)
-        elif caller.channel != "tool" or not job["work_id"] or caller.work_id != job["work_id"]:
-            raise DomainError("scope_denied", 403)
-        original = admitted["binding"]["request"]
-        if request["status"] == "failed" and request["findings"]:
-            raise DomainError("invalid_request")
-        # Validate all findings even for the internal completion protocol. Never trust host fields.
-        for finding in request["findings"]:
+            if job["state"] == "cancelled":
+                raise DomainError("invalid_state_transition", 409)
+            original = admitted["binding"]["request"]
+            if request["status"] == "failed" and request["findings"]:
+                raise DomainError("invalid_request")
+            # Validate findings even for the internal completion protocol.
+            for finding in request["findings"]:
+                if (
+                    finding["project_id"] != project_id
+                    or finding["review_id"] != request["review_id"]
+                    or finding["target"] not in original["targets"]
+                    or finding["state"] != "unreviewed"
+                    or finding["revision"] != 1
+                ):
+                    raise DomainError("scope_denied", 403)
+                findings(
+                    original,
+                    {
+                        "findings": [
+                            {
+                                "target_index": original["targets"].index(finding["target"]),
+                                "observation": finding["observation"],
+                                "recommendation": finding["recommendation"],
+                                "evidence": finding["evidence"],
+                            }
+                        ]
+                    },
+                )
+            ticket = self.reviews.complete_in_transaction(
+                tx, caller, request, diagnostics=diagnostics
+            )
             if (
-                finding["project_id"] != project_id
-                or finding["review_id"] != request["review_id"]
-                or finding["target"] not in original["targets"]
-                or finding["state"] != "unreviewed"
-                or finding["revision"] != 1
+                ticket["review_id"] != request["review_id"]
+                or ticket["job_id"] != job["job_id"]
+                or ticket["status"] != request["status"]
             ):
-                raise DomainError("scope_denied", 403)
-            findings(
-                original,
-                {
-                    "findings": [
-                        {
-                            "target_index": original["targets"].index(finding["target"]),
-                            "observation": finding["observation"],
-                            "recommendation": finding["recommendation"],
-                            "evidence": finding["evidence"],
-                        }
-                    ]
-                },
-            )
-        # W05 owns atomic finding storage and its own completion idempotency.
-        ticket = self.reviews.complete(caller, request, diagnostics=diagnostics)
-        validate("ReviewTicket", ticket)
-        if (
-            ticket["review_id"] != request["review_id"]
-            or ticket["job_id"] != job["job_id"]
-            or ticket["status"] != request["status"]
-        ):
-            raise DomainError("source_conflict", 409)
-        with store.transaction() as tx:
-            prior = tx.require("providers.tickets", request["review_id"])
-            replayed = prior == ticket
-            if not replayed:
-                tx.put(
-                    "providers.tickets",
-                    request["review_id"],
-                    ticket,
-                    expected_revision=tx.revision("providers.tickets", request["review_id"]),
+                raise DomainError("source_conflict", 409)
+            replayed = self._save_review_ticket(tx, ticket)
+            if job["state"] not in TERMINAL:
+                ready = request["status"] == "ready"
+                if ready and job["state"] in {"planned", "waiting_resource"}:
+                    job = self.update(job, "starting", tx=tx)
+                error = (
+                    {"error_code": request["error_code"]}
+                    if not ready and "error_code" in request
+                    else {}
                 )
-        job = self.services.jobs.get(project_id, job["job_id"])
-        if job["state"] not in TERMINAL:
-            if request["status"] == "ready" and job["state"] in {"planned", "waiting_resource"}:
-                job = self.update(job, "starting")
-            self.update(
-                job,
-                "succeeded" if request["status"] == "ready" else "failed",
-                availability="complete" if request["status"] == "ready" else job["availability"],
-            )
-        with store.transaction() as tx:
-            row = tx.connection.execute(
-                "SELECT state FROM outbox WHERE id=?", (job["attempt_id"],)
-            ).fetchone()
-            if row and row[0] == "pending":
-                tx.claim_intent(job["attempt_id"])
-            if row and row[0] in {"pending", "dispatching", "outcome_uncertain"}:
-                tx.settle_intent(
-                    job["attempt_id"], "acknowledged", {"review_id": request["review_id"]}
+                job = self.update(
+                    job,
+                    "succeeded" if ready else "failed",
+                    tx=tx,
+                    availability="complete" if ready else job["availability"],
+                    **error,
                 )
-        return ticket, replayed
+            self._settle_review_intent(tx, job, "acknowledged", {"review_id": request["review_id"]})
+            return ticket, replayed
 
     def execution(self, project_id: str, job_id: str, value: JSON | None = None) -> JSON:
         with self.services.registry.project_store(project_id).transaction() as tx:
@@ -1014,12 +1159,15 @@ class ProviderService:
         """Execute a single vlm_review job outside the shared ComfyUI dispatch lock."""
         self.services.gate.require(project_id)
         store = self.services.registry.project_store(project_id)
-        with self._review_claim_lock:
-            if job_id in self._inflight_reviews:
-                return None
+        with ExitStack() as claim:
+            # Cancellation eligibility already holds a writer. Take locks in
+            # the same order, but keep the claim lock through commit and registration.
             with store.transaction() as tx:
+                claim.enter_context(self._review_claim_lock)
+                if job_id in self._inflight_reviews:
+                    return None
                 job = tx.require("jobs", job_id)
-                if job["kind"] != "vlm_review" or job["state"] in TERMINAL:
+                if job["kind"] != "vlm_review" or job["state"] in TERMINAL | {"cancel_requested"}:
                     return None
                 execution = tx.get("providers.execution", job_id, required=False) or {}
                 row = tx.connection.execute(
@@ -1072,6 +1220,10 @@ class ProviderService:
             ) as exc:
                 job = self.services.jobs.get(project_id, job_id)
                 execution = self.execution(project_id, job_id)
+                if job["state"] in TERMINAL:
+                    return job  # Another completion has already settled the attempt.
+                if execution.get("phase") == "review_complete":
+                    raise  # Keep the durable response available for completion replay.
                 uncertain = execution.get("phase") == "submitting"
                 code = exc.code if isinstance(exc, DomainError) else "provider_unavailable"
                 err_diag = (
@@ -1092,10 +1244,8 @@ class ProviderService:
                         inputs["request"]["review_id"],
                         {"error_code": "outcome_uncertain"},
                     )
-                result = self.update(
-                    job, "outcome_uncertain" if uncertain else "failed", error_code=code
-                )
-                if not uncertain:
+                    result = self.update(job, "outcome_uncertain", error_code=code)
+                else:
                     self.complete_review(
                         self.worker(job),
                         dict(
@@ -1109,6 +1259,9 @@ class ProviderService:
                         ),
                         diagnostics=err_diag or {"error_code": code},
                     )
+                    result = self.services.jobs.get(project_id, job_id)
+            if result["state"] != "outcome_uncertain":
+                return result
             with store.transaction() as tx:
                 row = tx.connection.execute(
                     "SELECT state FROM outbox WHERE id=?", (job["attempt_id"],)
@@ -1116,23 +1269,20 @@ class ProviderService:
                 if row and row[0] in {"dispatching", "outcome_uncertain"}:
                     tx.settle_intent(
                         job["attempt_id"],
-                        "outcome_uncertain"
-                        if result["state"] == "outcome_uncertain"
-                        else "acknowledged",
+                        "outcome_uncertain",
                         {"job_id": job_id, "state": result["state"]},
                     )
-                if result["state"] == "outcome_uncertain":
-                    review_id = inputs["request"]["review_id"]
-                    ticket = tx.get("reviews", review_id, required=False)
-                    if ticket is not None:
-                        projected = self.reviews.ticket_view(tx, ticket)
-                        if projected.get("human_review_state") != "not_requested":
-                            tx.emit(
-                                "review.changed",
-                                projected,
-                                actor={"kind": "worker", "id": "provider-worker"},
-                                work_id=job.get("work_id"),
-                            )
+                review_id = inputs["request"]["review_id"]
+                ticket = tx.get("reviews", review_id, required=False)
+                if ticket is not None:
+                    projected = self.reviews.ticket_view(tx, ticket)
+                    if projected.get("human_review_state") != "not_requested":
+                        tx.emit(
+                            "review.changed",
+                            projected,
+                            actor={"kind": "worker", "id": "provider-worker"},
+                            work_id=job.get("work_id"),
+                        )
             return result
         finally:
             with self._review_claim_lock:
