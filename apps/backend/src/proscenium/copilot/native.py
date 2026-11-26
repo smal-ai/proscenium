@@ -87,11 +87,11 @@ Use validate_authored_document for storyboards, sequences and publications befor
 Storyboard source.entry_path MUST be canonical AuthoredShotPlan JSON at storyboards/<plan_id>/plan.json, never HTML, SVG or Markdown.
 Use prepare_image_generation then submit_generation with the returned exact submit_request. Never silently substitute vector/SVG drawings for inference.
 For music or sound effects, load audio-generation and call prepare_audio_generation then submit_generation with the exact returned submit_request.
-For generated storyboard clips, call prepare_video_generation then submit_generation with the exact returned submit_request. Use clip-only SequenceMaps for generated cuts.
-For both preparation tools omit project_id and generation_task_id: the host binds them automatically.
+For generated storyboard clips, load video-generation and call prepare_video_generation then submit_generation with the exact returned submit_request. Use clip-only SequenceMaps for generated cuts.
+For generation preparation tools omit project_id and generation_task_id: the host binds them automatically.
 For a soundtrack, set SequenceMap.silent to false and add audio_tracks referencing ready audio artefacts. Use silent: true with no tracks for a silent export.
 Omit width, height and steps to use get_project_capabilities default_dimensions/default_steps unless the user explicitly
-requested valid multiple-of-16 dimensions within the recipe max_pixels. Never guess recipe settings.
+requested valid dimensions within the recipe max_pixels (multiples of 16 for images and 32 for video). Never guess recipe settings.
 Relative workspace links such as storyboards/.../index.html are not browser URLs. Report retained artefact identities instead.
 """
 
@@ -110,7 +110,7 @@ When pitching or refining a storyboard or hero-assets breakdown in Conversation,
 SPECIALIST_INSTRUCTIONS = (
     """You are a bounded authoring specialist invoked by the lead.
 Complete your assigned slice directly with exposed tools without unnecessary nested subagent delegation.
-Load the matching domain skill first (storyboard, hero-assets, image-generation, image-to-3d, audio-generation, blender-authoring,
+Load the matching domain skill first (storyboard, hero-assets, image-generation, image-to-3d, audio-generation, video-generation, blender-authoring,
 sequence-assembly, research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
 """
     + SHARED_INSTRUCTIONS

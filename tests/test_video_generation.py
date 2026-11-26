@@ -3,6 +3,7 @@
 import io
 import json
 import math
+import re
 import struct
 import subprocess
 import sys
@@ -28,6 +29,28 @@ from test_rc4_retry_and_context import sequence_runtime as sequence_runtime
 from test_worker_capabilities_and_publication import PROJECT, invoke, publication
 from test_worker_capabilities_and_publication import offline as offline
 from test_worker_capabilities_and_publication import runtime as runtime
+
+
+def test_video_generation_skill_describes_checkout_independent_clip_and_reel_workflow():
+    root = Path(__file__).resolve().parents[1]
+    skill = (root / "agent/skills/video-generation/SKILL.md").read_text(encoding="utf-8")
+    for token in (
+        "name: video-generation",
+        "get_project_capabilities",
+        "prepare_video_generation",
+        "fl2va",
+        "ref2va",
+        "<Picture 1>",
+        "SequenceClipEntry",
+        "preserve_clip_audio",
+        "assemble_sequence",
+    ):
+        assert token in skill
+    for path in (root / "agent/skills").glob("*/SKILL.md"):
+        text = path.read_text(encoding="utf-8")
+        assert not re.search(r"\]\(\s*<?\.\./|^\[[^\]]+\]:\s*<?\.\./", text, re.MULTILINE), path
+        for token in ("plan_tools.py", "tools/comfy/graph.py", "python3 -m tools.blender"):
+            assert token not in text, path
 
 
 def workflow(mode="fl2va", **options):

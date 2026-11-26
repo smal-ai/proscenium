@@ -150,3 +150,4 @@
 .retained-turn-outputs{margin:-10px 0 14px}
 
 .retained-output-card:has(audio){width:260px;max-width:100%}.retained-output-card audio{display:block;width:100%}
+.retained-output-card:has(video){width:360px;max-width:100%}.retained-output-card video{display:block;width:100%;max-height:220px;object-fit:contain;border-radius:6px;background:#000}

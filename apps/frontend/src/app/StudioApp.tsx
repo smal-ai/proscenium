@@ -215,7 +215,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     resetPublicationStatus();
     setInspectedArtifact(artifact);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
-    if (!versionRef.current) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: artifact.kind === "audio" ? [] : [{ artifact_id: artifact.artifact_id, role: "reference" }] });
+    if (!versionRef.current) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: artifact.state === "ready" && artifact.kind === "image" ? [{ artifact_id: artifact.artifact_id, role: "reference" }] : [] });
   }, [cancelFirstOpen, resetPublicationStatus, setLayout, onContextChange]);
   const requestInputs = { composer, autoRelease, snapshot: data.snapshot, requests: data.requests, events: data.events };
   const requestInputsRef = useRef(requestInputs); requestInputsRef.current = requestInputs;
@@ -272,8 +272,8 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>
-      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} ${inspectedArtifact.kind === "audio" ? "audio" : "image"} · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>
-        {inspectedArtifact ? <div className="source-identity"><span>Unpublished retained media · Not a catalogue version</span></div> : version && <div className="review-version-status">
+      <main className="review-panel" hidden={chatFocus} aria-label="Review workspace"><div className="review-heading"><div><span className="eyebrow">Review workspace</span><h1>{inspectedArtifact ? `Retained ${inspectedArtifact.purpose} ${inspectedArtifact.kind} · ${inspectedArtifact.artifact_id}` : version?.name ?? "Start with a project. Make something worth reviewing."}</h1></div>
+        {inspectedArtifact ? <div className="source-identity"><span>Retained media · Not a catalogue version</span></div> : version && <div className="review-version-status">
           <span className={latestId === version.version_id ? "version-status-pill" : "version-status-pill outdated"} title={`${version.version_id} · Git ${version.source_commit.slice(0, 10)}`}>
             Viewing {shortVersionLabel(version.version_id)}{latestId !== version.version_id && ` · ${latestShort} available`}
           </span>
@@ -319,7 +319,7 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, inspec
   }, [visible, inspectedArtifact]);
   useEffect(() => {
     if (inspectedArtifact) {
-      const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: liveInspectedArtifact?.state === "ready" && liveInspectedArtifact.kind !== "audio" ? [{ artifact_id: liveInspectedArtifact.artifact_id, role: "reference" }] : [] };
+      const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: liveInspectedArtifact?.state === "ready" && liveInspectedArtifact.kind === "image" ? [{ artifact_id: liveInspectedArtifact.artifact_id, role: "reference" }] : [] };
       onContextChange(context);
       onContextPreparer?.(async () => structuredClone(context));
       return () => onContextPreparer?.(null);

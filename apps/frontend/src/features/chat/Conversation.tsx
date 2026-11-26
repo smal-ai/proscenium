@@ -4,7 +4,7 @@ import { durableCommand, id } from "../../app/storage";
 import { StoredContext } from "./ContextPreview";
 import { ActivityEntry } from "./ActivityEntry";
 import { ChatMarkdown } from "./ChatMarkdown";
-import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
+import { canAttributeRetainedOutputToRequest, isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 
 type EntryOrder = { time: string; timeMs?: number; sequence?: number; key: string };
 export function compareConversationEntries(a: EntryOrder, b: EntryOrder): number {
@@ -79,7 +79,7 @@ export const Conversation = memo(function Conversation({ visible = true, api, pr
       if (isRenderPassStreamArtifact(summary)) { suppressed.add(id); return; }
       suppressed.delete(id);
       if (summary.invocation_id) add(byInvocation, summary.invocation_id, id);
-      else if (summary.published_versions.length === 0) {
+      else if (canAttributeRetainedOutputToRequest(summary)) {
         if (summary.request_id) add(byRequest, summary.request_id, { id, index });
         if (summary.work_id) add(byWork, summary.work_id, { id, index });
       }
