@@ -8,7 +8,7 @@
 | Cloud authoring | Existing supported GitHub Copilot authentication and access to the configured model. The verified login mechanism is GitHub CLI authentication. |
 | Blender authoring and previews | Blender 4.5.16 LTS, build `3f6797307da5`, FFmpeg/FFprobe, and the configured Blender MCP client (`mcp-for-blender==2.3.0`) and installed add-on (2.0, protocol 16) for interactive authoring. |
 | Playable Unity scenes | Unity Editor `6000.3.27f1`, with the packages declared by `tools/unity/workflow.py`. |
-| Image/mesh generation | An independently running ComfyUI service with the selected model and workflow nodes. |
+| Image, mesh, audio and video generation | An independently running ComfyUI service with the selected model and workflow nodes. Audio and video also require FFmpeg and FFprobe for output verification. |
 | Visual critique | An independently running LM Studio vision model, identified by its exact loaded model ID. |
 
 `make bootstrap` installs only the locked Python/Node application dependencies.
@@ -70,6 +70,7 @@ feedback remain accessible when a configured service is unavailable.
 | `budget3d-idol-turbo-1` | `image_to_3d` | Default 5-step Budget3D-Idol-Turbo graph (`budget3d_idol_turbo.safetensors`, `dino_v3_vit_h.safetensors`, `flux2-vae.safetensors`, `idol_vae_decoder_fp32.safetensors`, `birefnet.safetensors`) with `SplatToMesh` → `SaveGLB`. |
 | `budget3d-idol-1` | `image_to_3d` | 50-step guided Budget3D-Idol graph (`budget3d_idol.safetensors` + shared encoders/decoders) with `SplatToMesh` → `SaveGLB`. |
 | `hunyuan3d-native-2.0-1` | `image_to_3d` | Legacy pinned Hunyuan3D 2.0 FP16 checkpoint and untextured `VoxelToMesh` → `SaveGLB`. |
+| `minimax-h3-1` | `video` | MiniMax H3 INT8 FL2VA or Ref2VA graphs for ROCm/Strix Halo. Defaults to 864×480 at 24 fps and a four-step turbo LoRA. |
 
 For example, select explicit FLUX.2 Klein 4B and Budget3D-Idol-Turbo recipes on `local-comfy`, or select an already prepared SD-Turbo FP16 profile:
 
@@ -117,6 +118,20 @@ extracts vertex-coloured `.glb` geometry from the decoded 3D Gaussian splat. New
 requests freeze the profile, endpoint, graph and input hashes. Configuration changes do
 not reinterpret admitted jobs. The default attempt budget is three per human task and
 target.
+
+For generated storyboard reels, enable `video` on the ComfyUI service and use
+`provider_options.video_recipes` to pin exact filenames if they differ from
+`config.example.json`. The video capability probe checks the installed model and
+node choices, and requires local FFmpeg and FFprobe. It does not run inference.
+Use the returned `prepare_video_generation` receipt with `submit_generation`.
+FL2VA accepts first, last and indexed guide frames. Ref2VA accepts ordered image
+references and an optional first-frame guide.
+
+Publish a `SequenceMap` with only clip entries and one-based source frame ranges,
+then call `assemble_sequence`. Use `silent: true` for a silent cut,
+`preserve_clip_audio: true` to retain native sound and optionally mix external
+tracks, or `silent: false` with external `audio_tracks` to replace native sound.
+Clip sequences do not use a render `FrameMap`.
 
 **Services & models** shows bounded live provider catalogue/recipe observations,
 configured workstation bridges and a manual **Refresh status** control. These reads

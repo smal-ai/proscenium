@@ -328,7 +328,9 @@ class Catalogue:
             elif row["kind"] == "sequence":
                 assert document is not None
                 validation.sequence_map(tx, document, row["version_id"], maps)
-                ids = {entry["version_id"] for entry in document["entries"]}
+                ids = {
+                    entry["version_id"] for entry in document["entries"] if "version_id" in entry
+                }
                 ids.update(
                     source["version_id"]
                     for entry in document["entries"]
@@ -614,6 +616,12 @@ class Catalogue:
                     "entry_id": entry["entry_id"],
                 }
                 choice = self.choice_from_records(selections.get(canonical(slot), []))
+                if "clip_artifact_id" in entry:
+                    if choice == {"kind": "artifact", "artifact_id": entry["clip_artifact_id"]}:
+                        entry["choice"] = "owner"
+                    elif "choice" in entry:
+                        entry["choice"] = "agent"
+                    continue
                 if (
                     choice
                     and choice["kind"] == "version"

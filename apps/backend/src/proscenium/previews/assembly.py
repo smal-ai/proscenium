@@ -1,6 +1,7 @@
 """Pinned sequence assembly. Callable trusted tool, no additional HTTP schema."""
 
 import io
+import time
 from copy import deepcopy
 from fractions import Fraction
 from pathlib import Path
@@ -17,10 +18,12 @@ from proscenium.catalogue.validation import (
     sequence_map,
 )
 from proscenium.contracts import canonical, validate
+from proscenium.db.paths import read_bounded_regular_file
+from proscenium.providers.minimax_h3 import MAX_VIDEO_BYTES, verify_video_bytes
 from proscenium.sources.common import active, admitted, atomic_bytes, fingerprint
 
 from .journal import atomic, sha
-from .media import encode, verify_video
+from .media import assemble_clips, clip_canvas, encode, verify_video
 
 AUDIO_EXTENSIONS = {
     "audio/flac": ".flac",
@@ -32,6 +35,45 @@ AUDIO_EXTENSIONS = {
 
 def audio_path(root: Path, row: dict) -> Path:
     return root / "assembly-inputs" / (row["sha256"] + AUDIO_EXTENSIONS[row["media_type"]])
+
+
+def clip_path(root: Path, row: dict) -> Path:
+    return root / "assembly-inputs" / (row["sha256"] + ".mp4")
+
+
+def is_clip_sequence(sequence: dict) -> bool:
+    return "clip_artifact_id" in sequence["entries"][0]
+
+
+def clip_snapshot(artifacts: Any, project_id: str, sequence: dict) -> dict:
+    clips = []
+    for identity in sorted({entry["clip_artifact_id"] for entry in sequence["entries"]}):
+        record = artifacts.get(project_id, identity)
+        if record["bytes"] > MAX_VIDEO_BYTES:
+            raise DomainError("upload_too_large", 413)
+        clips.append(
+            {
+                k: record[k]
+                for k in (
+                    "artifact_id",
+                    "sha256",
+                    "bytes",
+                    "media_type",
+                    "dimensions",
+                    "frame_count",
+                    "fps",
+                    "duration_seconds",
+                    "sample_rate_hz",
+                    "channels",
+                )
+                if k in record
+            }
+        )
+    return with_audio(
+        {"sequence": sequence, "frame_map": None, "input_frames": [], "input_clips": clips},
+        artifacts,
+        project_id,
+    )
 
 
 def input_audio(artifacts: Any, project_id: str, sequence: dict) -> list[dict]:
@@ -64,7 +106,20 @@ def with_audio(snapshot: dict, artifacts: Any, project_id: str) -> dict:
 
 def input_ids(snapshot: dict) -> list[str]:
     return sorted(
-        {row["artifact_id"] for row in snapshot["input_frames"] + snapshot.get("input_audio", [])}
+        {
+            row["artifact_id"]
+            for field in ("input_frames", "input_audio", "input_clips")
+            for row in snapshot.get(field, [])
+        }
+    )
+
+
+def output_dimensions(snapshot: dict) -> dict:
+    if "input_clips" not in snapshot:
+        return snapshot["input_frames"][0]["dimensions"]
+    first = snapshot["sequence"]["entries"][0]["clip_artifact_id"]
+    return clip_canvas(
+        next(row["dimensions"] for row in snapshot["input_clips"] if row["artifact_id"] == first)
     )
 
 
@@ -145,7 +200,7 @@ def admit_assembly(
     """Use normative JobAdmission(kind=encode), SequenceMap and full FrameMap only.
 
     admission.input_digest fingerprints the snapshot, including any audio inputs.
-    Input artefact IDs must equal the unique pinned frame and audio artefacts.
+    Input artefact IDs must equal the unique pinned frames or clips, and audio artefacts.
     """
     validate("JobAdmission", admission)
     active(service.services, caller, "admitToolJob", admission["project_id"])
@@ -218,6 +273,16 @@ def prepare(
         raise DomainError(
             "source_conflict", 409, "Assembly must use its pinned published SequenceMap"
         )
+    if is_clip_sequence(sequence):
+        if frame_map is not None:
+            raise DomainError("invalid_frame_mapping", 422, "Clip sequences do not use a FrameMap")
+        with service.services.registry.project_store(project_id).transaction(write=False) as tx:
+            admitted(service.services, tx, caller)
+            check_target(tx, admission, sequence)
+            sequence_map(tx, sequence, sequence["sequence_version_id"], {})
+        snapshot = clip_snapshot(service.artifacts, project_id, sequence)
+        check_snapshot(admission, snapshot)
+        return snapshot
     maps = catalogue.frame_maps(project_id, sequence)
     if frame_map is None and maps:
         frame_map = next(iter(maps.values()))
@@ -230,10 +295,7 @@ def prepare(
     inputs = {}
     with service.services.registry.project_store(project_id).transaction(write=False) as tx:
         admitted(service.services, tx, caller)
-        version = tx.require("versions", sequence["sequence_version_id"])
-        reference = {"item_id": version["item_id"], "version_id": version["version_id"]}
-        if admission["target"]["version"] != reference:
-            raise DomainError("scope_denied", 403)
+        check_target(tx, admission, sequence)
         sequence_map(tx, local, sequence["sequence_version_id"], {"complete-map": full})
         # A long imported cut can reuse thousands of frames. Read each job's
         # receipts once rather than decoding the entire project ledger per frame.
@@ -262,10 +324,7 @@ def prepare(
         service.artifacts,
         project_id,
     )
-    if sorted(admission["input_artifact_ids"]) != input_ids(snapshot):
-        raise DomainError("invalid_frame_mapping", 422)
-    if admission["input_digest"] != fingerprint(snapshot):
-        raise DomainError("hash_mismatch", 422, "Assembly digest does not bind exact contributors")
+    check_snapshot(admission, snapshot)
     dimensions = {tuple(sorted(row["dimensions"].items())) for row in ordered}
     if len(dimensions) != 1:
         raise DomainError("invalid_frame_mapping", 422, "Assembly input dimensions must agree")
@@ -274,9 +333,21 @@ def prepare(
     return snapshot
 
 
-def execute(root: Path, task: dict) -> None:
-    """Runs in the detached supervisor from sealed frame and audio files."""
-    snapshot = task["assembly"]
+def check_target(tx: Any, admission: dict, sequence: dict) -> None:
+    version = tx.require("versions", sequence["sequence_version_id"])
+    reference = {"item_id": version["item_id"], "version_id": version["version_id"]}
+    if admission["target"]["version"] != reference:
+        raise DomainError("scope_denied", 403)
+
+
+def check_snapshot(admission: dict, snapshot: dict) -> None:
+    if sorted(admission["input_artifact_ids"]) != input_ids(snapshot):
+        raise DomainError("invalid_frame_mapping", 422)
+    if admission["input_digest"] != fingerprint(snapshot):
+        raise DomainError("hash_mismatch", 422, "Assembly digest does not bind exact contributors")
+
+
+def render_frames(root: Path, snapshot: dict) -> None:
     frames = snapshot["input_frames"]
     by_identity = {
         (r["job_id"], r["version_id"], r["shot_id"], r["source_frame"]): r for r in frames
@@ -308,7 +379,14 @@ def execute(root: Path, task: dict) -> None:
         stream = io.BytesIO()
         image.save(stream, format="PNG")
         atomic_bytes(output_frames / f"{row['sequence_frame']:08d}.png", stream.getvalue())
-    fps, count = snapshot["frame_map"]["fps"], snapshot["frame_map"]["frame_count"]
+
+
+def execute(root: Path, task: dict) -> None:
+    """Runs in the detached supervisor from sealed input media."""
+    snapshot, config = task["assembly"], task["config"]
+    sequence = snapshot["sequence"]
+    timeline = sequence if "input_clips" in snapshot else snapshot["frame_map"]
+    fps, count = timeline["fps"], timeline["frame_count"]
     video = root / "delivery.mp4"
     sequenced_audio = {}
     for row in snapshot.get("input_audio", []):
@@ -324,26 +402,71 @@ def execute(root: Path, task: dict) -> None:
         }
     tracks = [
         {**track, **sequenced_audio[track["artifact_id"]]}
-        for track in snapshot["sequence"].get("audio_tracks", [])
+        for track in sequence.get("audio_tracks", [])
     ]
-    command = encode(root, 1, count, fps, task["config"], video, audio_tracks=tracks)
-    verify_video(
-        video,
-        fps,
-        count,
-        frames[0]["dimensions"],
-        task["config"],
-        expect_audio=not snapshot["sequence"]["silent"],
-    )
-    atomic_bytes(root / "frame-map.json", canonical(snapshot["frame_map"]))
+    if "input_clips" in snapshot:
+        clips = {}
+        deadline = time.monotonic() + config["encode_timeout"]
+        for row in snapshot["input_clips"]:
+            if (root / "cancel.json").exists():
+                raise RuntimeError("Assembly cancellation requested")
+            path = clip_path(root, row)
+            data = read_bounded_regular_file(path, MAX_VIDEO_BYTES, root=root)
+            if len(data) != row["bytes"] or sha(data) != row["sha256"]:
+                raise DomainError("hash_mismatch", 422)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise DomainError(
+                    "media_unavailable", 422, "Clip verification exceeded its deadline"
+                )
+            metadata = verify_video_bytes(
+                data, ffmpeg=config["ffmpeg"], ffprobe=config["ffprobe"], timeout=min(remaining, 30)
+            )
+            if any(
+                row[key] != metadata.get(key)
+                for key in metadata.keys() | {"sample_rate_hz", "channels"}
+                if key in row
+            ):
+                raise DomainError(
+                    "hash_mismatch", 422, "Pinned clip metadata does not match the MP4"
+                )
+            clips[row["artifact_id"]] = {**metadata, "path": path}
+        command = assemble_clips(
+            clips,
+            sequence["entries"],
+            fps,
+            video,
+            silent=sequence["silent"],
+            preserve_clip_audio=sequence.get("preserve_clip_audio", False),
+            audio_tracks=tracks,
+            ffmpeg=config["ffmpeg"],
+            ffprobe=config["ffprobe"],
+            timeout=config["encode_timeout"],
+            claim_path=config["claim_path"],
+        )
+    else:
+        render_frames(root, snapshot)
+        command = encode(root, 1, count, fps, config, video, audio_tracks=tracks)
+        verify_video(
+            video,
+            fps,
+            count,
+            output_dimensions(snapshot),
+            config,
+            expect_audio=not sequence["silent"],
+        )
+        atomic_bytes(root / "frame-map.json", canonical(snapshot["frame_map"]))
     manifest = {
         "input_digest": task["input_digest"],
-        "sequence": snapshot["sequence"],
-        "frame_map_sha256": sha((root / "frame-map.json").read_bytes()),
+        "sequence": sequence,
         "video_sha256": sha(video.read_bytes()),
-        "input_frames": frames,
+        "input_frames": snapshot["input_frames"],
         "encode_argv": command,
     }
+    if "input_clips" in snapshot:
+        manifest["input_clips"] = snapshot["input_clips"]
+    else:
+        manifest["frame_map_sha256"] = sha((root / "frame-map.json").read_bytes())
     if "input_audio" in snapshot:
         manifest["input_audio"] = snapshot["input_audio"]
     atomic(root / "assembly-manifest.json", manifest)

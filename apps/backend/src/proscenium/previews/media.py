@@ -13,6 +13,8 @@ from typing import Any
 from proscenium.api.errors import DomainError
 from proscenium.audio_formats import AUDIO_DEMUXERS
 
+CLIP_AUDIO_RATE = 48_000
+
 
 def run(argv: list[str], timeout: int = 60) -> bytes:
     with subprocess.Popen(
@@ -34,7 +36,14 @@ def run(argv: list[str], timeout: int = 60) -> bytes:
         return stdout
 
 
-def audio_filters(tracks: list[dict[str, Any]], video_duration: Fraction) -> str:
+def audio_filters(
+    tracks: list[dict[str, Any]],
+    video_duration: Fraction,
+    *,
+    first_input: int = 1,
+    sample_rate: int = 44_100,
+    extra: tuple[str, ...] = (),
+) -> str:
     chains = []
     for index, track in enumerate(tracks):
         start = float(track["start_seconds"])
@@ -54,15 +63,30 @@ def audio_filters(tracks: list[dict[str, Any]], video_duration: Fraction) -> str
             filters.append(f"afade=t=in:st=0:d={fade_in:.6f}")
         if fade_out := float(track.get("fade_out_seconds", 0)):
             filters.append(f"afade=t=out:st={max(0, effective - fade_out):.6f}:d={fade_out:.6f}")
-        filters.append("aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo")
-        if delay_samples := round(start * 44100):
+        filters.append(
+            f"aformat=sample_fmts=fltp:sample_rates={sample_rate}:channel_layouts=stereo"
+        )
+        if delay_samples := round(start * sample_rate):
             filters.append(f"adelay={delay_samples}S:all=1")
-        chains.append(f"[{index + 1}:a]" + ",".join(filters) + f"[a{index}]")
-    combined = "".join(f"[a{i}]" for i in range(len(tracks)))
-    if len(tracks) > 1:
-        combined += f"amix=inputs={len(tracks)}:duration=longest:normalize=0,"
+        chains.append(f"[{index + first_input}:a]" + ",".join(filters) + f"[a{index}]")
+    combined = "".join(f"[a{i}]" for i in range(len(tracks))) + "".join(extra)
+    sources = len(tracks) + len(extra)
+    if sources > 1:
+        combined += f"amix=inputs={sources}:duration=longest:normalize=0,"
     chains.append(combined + f"apad,atrim=0:{float(video_duration):.6f},asetpts=PTS-STARTPTS[aout]")
     return ";".join(chains)
+
+
+def audio_inputs(tracks: list[dict[str, Any]]) -> list[str]:
+    args: list[str] = []
+    for track in tracks:
+        audio_format = AUDIO_DEMUXERS.get(track.get("media_type", ""))
+        if audio_format is None:
+            raise DomainError("unsupported_media_type", 415)
+        args.extend(
+            ("-protocol_whitelist", "file", "-f", audio_format[0], "-i", str(track["path"]))
+        )
+    return args
 
 
 def encode(
@@ -75,17 +99,9 @@ def encode(
     *,
     audio_tracks: list[dict[str, Any]] | None = None,
 ) -> list[str]:
-    audio_inputs: list[str] = []
     audio_codec: list[str] = []
     maps = ["-an"]
     if audio_tracks:
-        for track in audio_tracks:
-            audio_format = AUDIO_DEMUXERS.get(track.get("media_type", ""))
-            if audio_format is None:
-                raise DomainError("unsupported_media_type", 415)
-            audio_inputs.extend(
-                ("-protocol_whitelist", "file", "-f", audio_format[0], "-i", str(track["path"]))
-            )
         video_duration = Fraction(count, 1) / Fraction(fps["numerator"], fps["denominator"])
         maps = [
             "-filter_complex",
@@ -108,7 +124,7 @@ def encode(
         str(start),
         "-i",
         str(root / "frames/%08d.png"),
-        *audio_inputs,
+        *audio_inputs(audio_tracks or []),
         "-frames:v",
         str(count),
         *maps,
@@ -139,22 +155,204 @@ def encode(
         str(fps["numerator"]),
         str(target),
     ]
-    claim = Path(config["claim_path"]).with_name("ffmpeg-encode.lock")
+    run_encode(command, config["encode_timeout"], config["claim_path"])
+    return command
+
+
+def run_encode(command: list[str], timeout: int, claim_path: str | None) -> None:
+    if claim_path is None:
+        run(command, timeout)
+        return
+    claim = Path(claim_path).with_name("ffmpeg-encode.lock")
     claim.parent.mkdir(parents=True, exist_ok=True)
     with claim.open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        run(command, config["encode_timeout"])
+        run(command, timeout)
+
+
+def clip_canvas(dimensions: dict) -> dict:
+    return {key: value + value % 2 for key, value in dimensions.items()}
+
+
+def tempo_filters(ratio: Fraction) -> list[str]:
+    if not Fraction(1, 240) <= ratio <= 240:
+        raise DomainError(
+            "invalid_frame_mapping", 422, "Clip frame rates diverge beyond supported bounds"
+        )
+    chain = []
+    while ratio > 2:
+        chain.append("atempo=2")
+        ratio /= 2
+    while ratio < Fraction(1, 2):
+        chain.append("atempo=0.5")
+        ratio *= 2
+    if ratio != 1:
+        chain.append(f"atempo={float(ratio):.10f}")
+    return chain
+
+
+def assemble_clips(
+    clips: dict[str, dict],
+    entries: list[dict],
+    fps: dict,
+    output_path: Path,
+    *,
+    silent: bool,
+    preserve_clip_audio: bool,
+    audio_tracks: list[dict[str, Any]],
+    ffmpeg: str,
+    ffprobe: str,
+    timeout: int,
+    claim_path: str | None = None,
+) -> list[str]:
+    """Trim and concatenate verified local clips on the exact sequence-frame timeline."""
+    dimensions = clip_canvas(clips[entries[0]["clip_artifact_id"]]["dimensions"])
+    width, height = dimensions["width"], dimensions["height"]
+    rate = Fraction(fps["numerator"], fps["denominator"])
+    rate_expr = f"{rate.numerator}/{rate.denominator}"
+    timing = f"settb={rate.denominator}/{rate.numerator},setpts=N"
+    keep_audio = not silent and preserve_clip_audio
+    count = entries[-1]["sequence_frames"]["end"]
+    argv = [ffmpeg, "-nostdin", "-v", "error", "-xerror", "-n", "-filter_complex_threads", "1"]
+    chains, labels = [], []
+    for index, entry in enumerate(entries):
+        clip = clips[entry["clip_artifact_id"]]
+        argv.extend(
+            (
+                "-threads",
+                "1",
+                "-protocol_whitelist",
+                "file",
+                "-f",
+                "mov",
+                "-enable_drefs",
+                "0",
+                "-i",
+                str(clip["path"]),
+            )
+        )
+        start, end = entry["source_frames"]["start"] - 1, entry["source_frames"]["end"]
+        # Source and destination intervals have equal lengths. Conform cadence
+        # frame-for-frame rather than allowing fps to silently drop/duplicate frames.
+        chains.append(
+            f"[{index}:v:0]trim=start_frame={start}:end_frame={end},setpts=PTS-STARTPTS,"
+            f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
+            f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,"
+            f"{timing},fps={rate_expr}[vclip{index}]"
+        )
+        labels.append(f"[vclip{index}]")
+        if not keep_audio:
+            continue
+        sample_format = (
+            f"aformat=sample_fmts=fltp:sample_rates={CLIP_AUDIO_RATE}:channel_layouts=stereo"
+        )
+        trimmed = float(Fraction(end - start) / rate)
+        if entry.get("include_audio", True) and clip.get("channels") and clip.get("sample_rate_hz"):
+            native_rate = Fraction(clip["fps"]["numerator"], clip["fps"]["denominator"])
+            audio_chain = [
+                f"[{index}:a:0]aresample={CLIP_AUDIO_RATE}:first_pts=0",
+                f"atrim=start={float(start / native_rate):.9f}:end={float(end / native_rate):.9f}",
+                "asetpts=PTS-STARTPTS",
+                sample_format,
+                *tempo_filters(rate / native_rate),
+                "apad",
+            ]
+        else:
+            audio_chain = [f"anullsrc=r={CLIP_AUDIO_RATE}:cl=stereo", sample_format]
+        audio_chain.append(f"atrim=duration={trimmed:.9f},asetpts=PTS-STARTPTS[aclip{index}]")
+        chains.append(",".join(audio_chain))
+        labels.append(f"[aclip{index}]")
+
+    chains.append(
+        "".join(labels)
+        + f"concat=n={len(entries)}:v=1:a={int(keep_audio)}[vcuts]"
+        + ("[acuts]" if keep_audio else "")
+    )
+    chains.append(f"[vcuts]{timing}[vout]")
+    maps = ["-map", "[vout]"]
+    if silent:
+        maps.append("-an")
+    else:
+        if not keep_audio and not audio_tracks:
+            raise DomainError(
+                "invalid_request", 422, "Non-silent sequences require an audio source"
+            )
+        argv.extend(audio_inputs(audio_tracks))
+        chains.append(
+            audio_filters(
+                audio_tracks,
+                Fraction(count) / rate,
+                first_input=len(entries),
+                sample_rate=CLIP_AUDIO_RATE,
+                extra=("[acuts]",) if keep_audio else (),
+            )
+        )
+        maps.extend(
+            (
+                "-map",
+                "[aout]",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "192k",
+                "-ar",
+                str(CLIP_AUDIO_RATE),
+                "-ac",
+                "2",
+            )
+        )
+    command = [
+        *argv,
+        "-filter_complex",
+        ";".join(chains),
+        *maps,
+        "-r",
+        rate_expr,
+        "-c:v",
+        "libx264",
+        "-threads",
+        "2",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "18",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "-video_track_timescale",
+        str(rate.numerator),
+        str(output_path),
+    ]
+    run_encode(command, timeout, claim_path)
+    verify_video(
+        output_path,
+        fps,
+        count,
+        dimensions,
+        {"ffmpeg": ffmpeg, "ffprobe": ffprobe, "encode_timeout": timeout},
+        expect_audio=not silent,
+        audio_sample_rate=CLIP_AUDIO_RATE,
+    )
     return command
 
 
 def verify_video(
-    path: Path, fps: dict, count: int, dimensions: dict, config: dict, *, expect_audio: bool = False
+    path: Path,
+    fps: dict,
+    count: int,
+    dimensions: dict,
+    config: dict,
+    *,
+    expect_audio: bool = False,
+    audio_sample_rate: int = 44_100,
 ) -> dict:
     return _verify_video(
         path,
         config,
         expected={"fps": fps, "frame_count": count, "dimensions": dimensions},
         expect_audio=expect_audio,
+        audio_sample_rate=audio_sample_rate,
     )
 
 
@@ -170,6 +368,7 @@ def _verify_video(
     expected: dict,
     require_container_count: bool = False,
     expect_audio: bool = False,
+    audio_sample_rate: int = 44_100,
 ) -> dict:
     probe = json.loads(
         run(
@@ -221,14 +420,16 @@ def _verify_video(
             sample_rate = int(audio_stream["sample_rate"])
             if (
                 audio_stream.get("codec_name") != "aac"
-                or sample_rate != 44100
+                or sample_rate != audio_sample_rate
                 or int(audio_stream["channels"]) != 2
                 or audio_duration <= 0
             ):
                 raise ValueError
         except (KeyError, ValueError, TypeError, OverflowError) as exc:
             raise DomainError(
-                "media_unavailable", 422, "Expected positive-duration stereo AAC at 44100 Hz"
+                "media_unavailable",
+                422,
+                f"Expected positive-duration stereo AAC at {audio_sample_rate} Hz",
             ) from exc
     else:
         if len(streams) != 1:

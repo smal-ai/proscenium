@@ -24,7 +24,7 @@ from proscenium.db.outbox import settled_uncertain_vlm_review
 from proscenium.db.paths import project_path, read_bounded_regular_file
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
-from proscenium.providers import klein, sd_turbo, sd_turbo_fp16, stable_audio
+from proscenium.providers import klein, minimax_h3, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
 from proscenium.providers.preparation import validate_recipes
@@ -41,7 +41,9 @@ from proscenium.reviews.references import References
 from proscenium.services import Services
 
 JSON = dict[str, Any]
-GENERATION_KINDS = frozenset({"image_generation", "mesh_generation", "audio_generation"})
+GENERATION_KINDS = frozenset(
+    {"image_generation", "mesh_generation", "audio_generation", "video_generation"}
+)
 Registrar = Callable[[Caller, JSON], JSON]
 REVIEWABLE_IMAGE_PURPOSES = frozenset(
     {"concept", "reference", "keyframe", "draft_motion", "inspection", "final"}
@@ -152,6 +154,7 @@ class ProviderService:
             "mesh_recipes",
             "audio_profiles",
             "audio_recipes",
+            "video_recipes",
         }
         if set(self.options) - allowed:
             raise ValueError(
@@ -296,9 +299,10 @@ class ProviderService:
                     raise DomainError("idempotency_conflict", 409)
                 return tx.require("jobs", request["job_id"]), True
             prepared = tx.get("providers.prepared", request["workflow_artifact_id"], required=False)
-        if request["capability"] == "audio" and prepared is None:
+        if request["capability"] in {"audio", "video"} and prepared is None:
             raise DomainError(
-                "invalid_request", message="Audio generation requires prepare_audio_generation"
+                "invalid_request",
+                message=f"{request['capability'].capitalize()} generation requires prepare_{request['capability']}_generation",
             )
         revision = (
             self.options.get("image_profiles", {}).get(request["provider_id"])
@@ -326,6 +330,8 @@ class ProviderService:
             )
         if capability.capability == "audio":
             stable_audio.resolve_audio_verifier(self.services.settings.rendering)
+        elif capability.capability == "video":
+            minimax_h3.resolve_video_verifier(self.services.settings.rendering)
         provider = self.provider(request["provider_id"], capability.capability)
         workflow, data = self.artifact_bytes(project_id, request["workflow_artifact_id"])
         prompt_artifact, prompt_bytes = self.artifact_bytes(
@@ -882,7 +888,13 @@ class ProviderService:
                 os.link(tmp, path)
             except FileExistsError:
                 existing_digest = sha(
-                    read_bounded_regular_file(path, stable_audio.MAX_AUDIO_BYTES, root=root)
+                    read_bounded_regular_file(
+                        path,
+                        minimax_h3.MAX_VIDEO_BYTES
+                        if format.kind == "video"
+                        else stable_audio.MAX_AUDIO_BYTES,
+                        root=root,
+                    )
                 )
                 if existing_digest != digest:
                     raise DomainError("hash_mismatch", 422) from None
@@ -958,6 +970,10 @@ class ProviderService:
             self._release(job)
             try:
                 items = capability.output_descriptors(history)
+            except DomainError as exc:
+                execution["phase"] = "failed"
+                self.execution(job["project_id"], job["job_id"], execution)
+                return self.update(job, "failed", error_code=exc.code)
             except (AttributeError, KeyError, TypeError, ValueError):
                 # Invalid output metadata does not make a completed inference uncertain.
                 items = []
@@ -982,11 +998,14 @@ class ProviderService:
                     self.services.settings.upload_max_pixels,
                     rendering=self.services.settings.rendering,
                 )
+                if capability.capability == "video":
+                    minimax_h3.verify_matches_graph(execution["graph"], inspection)
             except DomainError as exc:
-                invalid_audio = (
-                    capability.capability == "audio" and exc.code == "unsupported_media_type"
+                unsupported_media = (
+                    capability.capability in {"audio", "video"}
+                    and exc.code == "unsupported_media_type"
                 )
-                if exc.code != "corrupt_provider_output" and not invalid_audio:
+                if exc.code != "corrupt_provider_output" and not unsupported_media:
                     raise
                 execution["phase"] = "failed"
                 self.execution(job["project_id"], job["job_id"], execution)
@@ -1046,6 +1065,8 @@ class ProviderService:
             raise DomainError("capability_unavailable", 501, "Artifact registrar is not bound")
         if capability.capability == "audio":
             stable_audio.resolve_audio_verifier(self.services.settings.rendering)
+        elif capability.capability == "video":
+            minimax_h3.resolve_video_verifier(self.services.settings.rendering)
         catalog = client.capabilities()
         capability.preflight(inputs["graph"], catalog, inputs["request"]["model_ids"])
         if client.busy(inputs["minimum_free_vram_bytes"]) or not self.services.resources.acquire(

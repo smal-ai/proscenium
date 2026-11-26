@@ -489,6 +489,7 @@
           "properties": {
             "schema_version": {"const": "1.0"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "silent": {"const": true},
             "entries": {"type": "array", "minItems": 1, "items": {"oneOf": [{"$ref": "#/$defs/SequenceEntry"}, {"$ref": "#/$defs/SequenceClipEntry"}]}},
+            "preserve_clip_audio": {"const": false},
             "audio_tracks": {"type": "array", "maxItems": 0, "items": {"$ref": "#/$defs/SequenceAudioTrack"}}
           }
         },
@@ -497,6 +498,7 @@
           "properties": {
             "schema_version": {"const": "1.0"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "silent": {"const": false},
             "entries": {"type": "array", "minItems": 1, "items": {"oneOf": [{"$ref": "#/$defs/SequenceEntry"}, {"$ref": "#/$defs/SequenceClipEntry"}]}},
+            "preserve_clip_audio": {"const": false},
             "audio_tracks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/SequenceAudioTrack"}}
           }
         },
@@ -505,7 +507,7 @@
           "properties": {
             "schema_version": {"const": "1.0"}, "sequence_version_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "fps": {"$ref": "#/$defs/Fps"}, "frame_count": {"type": "integer", "minimum": 1}, "silent": {"const": false}, "preserve_clip_audio": {"const": true},
             "entries": {"type": "array", "minItems": 1, "items": {"oneOf": [{"$ref": "#/$defs/SequenceEntry"}, {"$ref": "#/$defs/SequenceClipEntry"}]}, "contains": {"$ref": "#/$defs/SequenceClipEntry"}},
-            "audio_tracks": {"type": "array", "maxItems": 0, "items": {"$ref": "#/$defs/SequenceAudioTrack"}}
+            "audio_tracks": {"type": "array", "items": {"$ref": "#/$defs/SequenceAudioTrack"}}
           }
         }
       ]
@@ -693,7 +695,7 @@
       "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "prompt", "seed"],
       "properties": {
         "schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "generation_task_id": {"$ref": "#/$defs/Id"},
-        "target_id": {"$ref": "#/$defs/Id"}, "target_slot": {"type": "string", "minLength": 1, "maxLength": 160}, "provider_id": {"$ref": "#/$defs/Id"},
+        "target_id": {"$ref": "#/$defs/Id"}, "target_slot": {"$ref": "#/$defs/SelectionSlot"}, "provider_id": {"$ref": "#/$defs/Id"},
         "mode": {"enum": ["fl2va", "ref2va"]}, "prompt": {"type": "string", "minLength": 1, "maxLength": 8000},
         "seed": {"type": "string", "minLength": 1, "maxLength": 16, "not": {"pattern": "[^0-9]"}, "$comment": "Allow leading zeroes, but cap the value at 9007199254740991, the largest JSON-safe integer.", "pattern": "^(?:[0-9]{1,15}|[0-8][0-9]{15}|900[0-6][0-9]{12}|90070[0-9]{11}|90071[0-8][0-9]{10}|900719[0-8][0-9]{9}|9007199[0-1][0-9]{8}|90071992[0-4][0-9]{7}|900719925[0-3][0-9]{6}|9007199254[0-6][0-9]{5}|90071992547[0-3][0-9]{4}|9007199254740[0-8][0-9]{2}|90071992547409[0-8][0-9]|900719925474099[01])$"},
         "width": {"type": "integer", "minimum": 320, "maximum": 1344}, "height": {"type": "integer", "minimum": 256, "maximum": 1344},

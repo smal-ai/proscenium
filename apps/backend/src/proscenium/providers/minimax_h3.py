@@ -99,7 +99,7 @@ def _graph_error() -> DomainError:
 
 
 def _validate_model_roles(
-    mode: str, unet: str, clip: str, video_vae: str, audio_vae: str, lora: str | None
+    mode: str, steps: int, unet: str, clip: str, video_vae: str, audio_vae: str, lora: str | None
 ) -> None:
     names = [unet, clip, video_vae, audio_vae] + ([lora] if lora is not None else [])
     if not all(isinstance(name, str) and name.strip() for name in names) or len(set(names)) != len(
@@ -108,17 +108,29 @@ def _validate_model_roles(
         raise _graph_error()
     if any("nvfp4" in name.lower() for name in names):
         raise DomainError("invalid_request", message="NVFP4 models are not supported on ROCm")
-    required, excluded = ("fl2v", "ref2v") if mode == "fl2va" else ("ref2v", "fl2v")
+    unet_name, clip_name, video_name, audio_name = (name.lower() for name in names[:4])
+    other_mode = "ref2va" if mode == "fl2va" else "fl2va"
     if (
-        required + "a" not in unet.lower()
-        or excluded + "a" in unet.lower()
-        or (lora is not None and (required not in lora.lower() or excluded in lora.lower()))
-        or "video" not in video_vae.lower()
-        or "audio" in video_vae.lower()
-        or "audio" not in audio_vae.lower()
-        or "fp32" not in audio_vae.lower()
+        not all(marker in unet_name for marker in ("minimax_h3", mode, "int8_convrot"))
+        or any(marker in unet_name for marker in (other_mode, "bf16", "fp8"))
+        or not all(marker in clip_name for marker in ("qwen3vl", "minimax_h3", "int8_convrot"))
+        or not all(marker in video_name for marker in ("minimax_h3", "video_vae"))
+        or "audio" in video_name
+        or not all(marker in audio_name for marker in ("minimax_h3", "audio_vae", "fp32"))
     ):
         raise _graph_error()
+    if lora is not None:
+        name = lora.lower()
+        variants = set(re.findall(r"(?<!\d)(\d+)step(?!\d)", name))
+        if (
+            f"minimax_h3_{mode[:-1]}" not in name
+            or other_mode[:-1] in name
+            or (
+                (mode, steps) in {("fl2va", 4), ("fl2va", 8), ("ref2va", 4)}
+                and variants != {str(steps)}
+            )
+        ):
+            raise _graph_error()
 
 
 def graph(
@@ -161,7 +173,7 @@ def graph(
         )
     if mode not in ("fl2va", "ref2va"):
         raise _graph_error()
-    _validate_model_roles(mode, unet, clip, video_vae, audio_vae, lora)
+    _validate_model_roles(mode, steps, unet, clip, video_vae, audio_vae, lora)
     if (
         not all(isinstance(name, str) and name.strip() for name in (sampler_name, scheduler))
         or not _number(lora_strength, -100, 100)
@@ -514,6 +526,15 @@ def _expand_inputs(schema: JSON, inputs: JSON, prefix: str = "") -> JSON:
 
 def preflight(graph: JSON, catalog: JSON, models: list[str]) -> None:
     _validate_workflow(graph, models, unbound_images=False)
+    conditioning = graph["conditioning"]["inputs"]
+    if requires_tiled_vae(conditioning["width"], conditioning["height"], conditioning["length"]):
+        if "VAEDecodeTiled" not in catalog:
+            raise DomainError("capability_unavailable", 501, UNAVAILABLE)
+        if graph["decode_video"]["class_type"] != "VAEDecodeTiled":
+            raise DomainError(
+                "invalid_request",
+                message="MiniMax H3 requires tiled video VAE decoding at this size",
+            )
     flat_catalog: JSON = {}
     try:
         if comfy.supports_bf16_vae(catalog) and graph.get("video_vae_dtype", {}).get("inputs") != {
@@ -540,6 +561,22 @@ def preflight(graph: JSON, catalog: JSON, models: list[str]) -> None:
     if graph["noise"]["inputs"]["noise_seed"] == "$seed":
         graph = {**graph, "noise": {**graph["noise"], "inputs": {"noise_seed": 0}}}
     comfy.preflight(graph, flat_catalog, models, allowed_output_nodes=VIDEO_OUTPUT_NODES)
+
+
+def verify_matches_graph(graph: JSON, inspection: JSON) -> None:
+    conditioning = graph["conditioning"]["inputs"]
+    fps = graph["create_video"]["inputs"]["fps"]
+    if (
+        inspection["dimensions"]
+        != {"width": conditioning["width"], "height": conditioning["height"]}
+        or inspection["frame_count"] != conditioning["length"]
+        or inspection["fps"] != {"numerator": int(round(fps)), "denominator": 1}
+    ):
+        raise DomainError(
+            "corrupt_provider_output",
+            422,
+            "Provider video dimensions, FPS or frame count did not match the admitted graph",
+        )
 
 
 def output_descriptors(history: JSON) -> list[JSON]:

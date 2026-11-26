@@ -405,6 +405,7 @@ export type SequenceMap =
        * @minItems 1
        */
       entries: [SequenceEntry | SequenceClipEntry, ...(SequenceEntry | SequenceClipEntry)[]];
+      preserve_clip_audio?: false;
       /**
        * @maxItems 0
        */
@@ -421,6 +422,7 @@ export type SequenceMap =
        * @minItems 1
        */
       entries: [SequenceEntry | SequenceClipEntry, ...(SequenceEntry | SequenceClipEntry)[]];
+      preserve_clip_audio?: false;
       /**
        * @minItems 1
        */
@@ -438,10 +440,7 @@ export type SequenceMap =
        * @minItems 1
        */
       entries: [SequenceEntry | SequenceClipEntry, ...(SequenceEntry | SequenceClipEntry)[]];
-      /**
-       * @maxItems 0
-       */
-      audio_tracks?: [];
+      audio_tracks?: SequenceAudioTrack[];
     };
 export type SocketControl =
   | {
@@ -1745,7 +1744,7 @@ export interface VideoGenerationPrepare {
   project_id?: Id;
   generation_task_id?: Id;
   target_id?: Id;
-  target_slot?: string;
+  target_slot?: SelectionSlot;
   provider_id?: Id;
   mode?: "fl2va" | "ref2va";
   prompt: string;

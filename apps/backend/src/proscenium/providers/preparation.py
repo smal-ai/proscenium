@@ -11,7 +11,7 @@ import httpx
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
-from proscenium.providers import budget3d, klein, sd_turbo, sd_turbo_fp16, stable_audio
+from proscenium.providers import budget3d, klein, minimax_h3, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import endpoint
 from proscenium.providers.comfy import supports_bf16_vae as supports_bf16_vae
 from proscenium.providers.plugins import plugin
@@ -66,6 +66,7 @@ def validate_recipes(options: dict[str, Any]) -> None:
             raise ValueError("SD-Turbo image recipe must use the pinned checkpoint")
 
     validate_audio_recipes(options)
+    validate_video_recipes(options)
     mesh_profiles = options.get("mesh_profiles", {})
     if not isinstance(mesh_profiles, dict):
         raise ValueError("mesh_profiles must map provider IDs to installed mesh profiles")
@@ -196,6 +197,136 @@ def compatible_audio_recipes(
                 ),
             )
         )
+    return accepted
+
+
+VIDEO_RECIPE_DEFAULTS = dict(
+    profile_revision=minimax_h3.REVISION,
+    fl2va_model=minimax_h3.DEFAULT_FL2VA_MODEL,
+    ref2va_model=minimax_h3.DEFAULT_REF2VA_MODEL,
+    clip=minimax_h3.DEFAULT_CLIP,
+    video_vae=minimax_h3.DEFAULT_VIDEO_VAE,
+    audio_vae=minimax_h3.DEFAULT_AUDIO_VAE,
+    fl2va_lora_4step=minimax_h3.DEFAULT_FL2VA_LORA_4STEP,
+    fl2va_lora_8step=minimax_h3.DEFAULT_FL2VA_LORA_8STEP,
+    ref2va_lora_4step=minimax_h3.DEFAULT_REF2VA_LORA_4STEP,
+    width=minimax_h3.DEFAULT_WIDTH,
+    height=minimax_h3.DEFAULT_HEIGHT,
+    steps=minimax_h3.DEFAULT_STEPS,
+    max_pixels=minimax_h3.MAX_PIXELS,
+    max_duration_seconds=minimax_h3.MAX_DURATION_SECONDS,
+    tiled_vae=False,
+    shift_video=minimax_h3.DEFAULT_SHIFT_VIDEO,
+    shift_audio=minimax_h3.DEFAULT_SHIFT_AUDIO,
+)
+
+
+def video_recipe(options: dict[str, Any], identity: str) -> dict[str, Any]:
+    return {**VIDEO_RECIPE_DEFAULTS, **options.get("video_recipes", {}).get(identity, {})}
+
+
+def validate_video_recipes(options: dict[str, Any]) -> None:
+    recipes = options.get("video_recipes", {})
+    if not isinstance(recipes, dict):
+        raise ValueError("video_recipes must map provider IDs to recipe objects")
+    for identity, overrides in recipes.items():
+        validate("Id", identity)
+        if not isinstance(overrides, dict) or overrides.keys() - VIDEO_RECIPE_DEFAULTS.keys():
+            raise ValueError("Invalid or unknown video recipe fields")
+        recipe = video_recipe(options, identity)
+        if recipe["profile_revision"] != minimax_h3.REVISION:
+            raise ValueError("Video recipe profile_revision must be minimax-h3-1")
+        width, height, maximum = (recipe[k] for k in ("width", "height", "max_pixels"))
+        if (
+            type(width) is not int
+            or type(height) is not int
+            or type(maximum) is not int
+            or not width * height <= maximum <= minimax_h3.MAX_PIXELS
+        ):
+            raise ValueError("Video recipe dimensions exceed the supported pixel limit")
+        duration = recipe["max_duration_seconds"]
+        if (
+            type(duration) not in (int, float)
+            or not 1 <= duration <= minimax_h3.MAX_DURATION_SECONDS
+            or type(recipe["tiled_vae"]) is not bool
+        ):
+            raise ValueError("Invalid video recipe duration or tiled_vae")
+        try:
+            for mode, steps in (
+                ("fl2va", 4),
+                ("fl2va", 8),
+                ("ref2va", 4),
+                ("fl2va", recipe["steps"]),
+            ):
+                workflow, _ = video_workflow(recipe, mode, steps, {})
+                if steps in (4, 8) and "lora" not in workflow:
+                    raise ValueError("Video recipe requires an exact turbo LoRA filename")
+        except DomainError as exc:
+            raise ValueError(exc.message) from exc
+
+
+def video_workflow(
+    recipe: dict[str, Any], mode: str, steps: int, catalog: dict[str, Any], **inputs: Any
+) -> tuple[dict[str, Any], list[str]]:
+    width = inputs.pop("width", recipe["width"])
+    height = inputs.pop("height", recipe["height"])
+    frame_count = inputs.pop(
+        "frame_count",
+        minimax_h3.align_frame_count(
+            min(minimax_h3.DEFAULT_DURATION_SECONDS, recipe["max_duration_seconds"])
+        ),
+    )
+    unet = recipe[f"{mode}_model"]
+    lora = recipe.get(f"{mode}_lora_{steps}step") if type(steps) is int else None
+    needs_tiled = bool(
+        recipe["tiled_vae"] or minimax_h3.requires_tiled_vae(width, height, frame_count)
+    )
+    graph = minimax_h3.graph(
+        mode=mode,
+        unet=unet,
+        clip=recipe["clip"],
+        video_vae=recipe["video_vae"],
+        audio_vae=recipe["audio_vae"],
+        lora=lora,
+        width=width,
+        height=height,
+        frame_count=frame_count,
+        steps=steps,
+        shift_video=recipe["shift_video"],
+        shift_audio=recipe["shift_audio"],
+        video_vae_dtype="bf16" if supports_bf16_vae(catalog) else None,
+        tiled_vae=needs_tiled,
+        **inputs,
+    )
+    return graph, [unet, recipe["clip"], recipe["video_vae"], recipe["audio_vae"]] + (
+        [lora] if lora else []
+    )
+
+
+def compatible_video_recipes(
+    provider: Any, identity: str, catalog: dict[str, Any]
+) -> list[dict[str, Any]]:
+    recipe = video_recipe(provider.options, identity)
+    accepted = []
+    for mode, candidates in (("fl2va", (recipe["steps"], 4, 8)), ("ref2va", (4,))):
+        for steps in dict.fromkeys(candidates):
+            try:
+                graph, model_ids = video_workflow(
+                    recipe,
+                    mode,
+                    steps,
+                    catalog,
+                    **({"reference_artifact_ids": ["reference"]} if mode == "ref2va" else {}),
+                )
+                references = {"reference": "artifact:reference"} if mode == "ref2va" else {}
+                minimax_h3.preflight(
+                    minimax_h3.bind(graph, "Preflight", "0", references, model_ids),
+                    catalog,
+                    model_ids,
+                )
+            except (DomainError, KeyError, TypeError, ValueError, IndexError, AttributeError):
+                continue
+            accepted.append({**recipe, "mode": mode, "steps": steps, "model_ids": model_ids})
     return accepted
 
 
@@ -394,6 +525,8 @@ class Preparation:
             )
         if self.capability == "audio":
             stable_audio.resolve_audio_verifier(self.services.settings.rendering)
+        elif self.capability == "video":
+            minimax_h3.resolve_video_verifier(self.services.settings.rendering)
         provider = self.provider.provider(body.get("provider_id"), self.capability)
         try:
             catalog = bounded_get(self.provider, provider, "/object_info")
@@ -406,7 +539,7 @@ class Preparation:
             (
                 body["operation_id"]
                 if self.capability == "image"
-                else "audio:" + body["operation_id"]
+                else self.capability + ":" + body["operation_id"]
             ).encode()
         )[:24]
         target = context.get("request_target") or {}
@@ -584,3 +717,100 @@ class AudioPreparation(Preparation):
             model_ids,
         )
         return workflow, model_ids, [], revision, dict(mode=mode, duration_seconds=seconds)
+
+
+class VideoPreparation(Preparation):
+    capability = "video"
+    operation = "providers.prepare_video"
+    request_schema = "VideoGenerationPrepare"
+    result_schema = "VideoGenerationPrepared"
+    permission = "prepareVideoGeneration"
+
+    def recipe(
+        self, body: dict[str, Any], provider: dict[str, Any], catalog: dict[str, Any]
+    ) -> tuple[dict[str, Any], list[str], list[str], str, dict[str, Any]]:
+        mode = body.get("mode", "fl2va")
+        recipe = video_recipe(self.provider.options, provider["provider_id"])
+        width, height = (body.get(k, recipe[k]) for k in ("width", "height"))
+        if width * height > recipe["max_pixels"]:
+            raise DomainError(
+                "invalid_request",
+                message="Requested video dimensions exceed the provider pixel limit",
+            )
+        seconds = body.get(
+            "duration_seconds",
+            min(minimax_h3.DEFAULT_DURATION_SECONDS, recipe["max_duration_seconds"]),
+        )
+        if not 1 <= seconds <= recipe["max_duration_seconds"]:
+            raise DomainError(
+                "invalid_request", message="Video duration is outside supported bounds"
+            )
+        count = minimax_h3.align_frame_count(seconds)
+        steps = body.get("steps", recipe["steps"] if mode == "fl2va" else 4)
+        if "steps" not in body and mode == "fl2va":
+            # Use the configured default when installed. If only one turbo variant is
+            # installed, preparation must agree with the available default from discovery.
+            observed = compatible_video_recipes(self.provider, provider["provider_id"], catalog)
+            steps = next(
+                (candidate["steps"] for candidate in observed if candidate["mode"] == mode), steps
+            )
+        if not (steps == 4 or (mode == "fl2va" and (steps in (8, recipe["steps"]) or steps >= 15))):
+            raise DomainError(
+                "invalid_request", message="Unsupported sampling steps for MiniMax H3 mode"
+            )
+        incompatible = (
+            {"reference_artifact_ids", "ref_image_size"}
+            if mode == "fl2va"
+            else {"last_frame_artifact_id", "guide_frames"}
+        )
+        if incompatible & body.keys():
+            raise DomainError(
+                "invalid_request", message="Invalid MiniMax H3 conditioning artefacts"
+            )
+        graph, model_ids = video_workflow(
+            recipe,
+            mode,
+            steps,
+            catalog,
+            width=width,
+            height=height,
+            frame_count=count,
+            **{
+                k: body[k]
+                for k in (
+                    "first_frame_artifact_id",
+                    "last_frame_artifact_id",
+                    "guide_frames",
+                    "reference_artifact_ids",
+                    "ref_image_size",
+                )
+                if k in body
+            },
+        )
+        references = list(
+            dict.fromkeys(
+                node["inputs"]["image"].removeprefix("artifact:")
+                for node in graph.values()
+                if node["class_type"] == "LoadImage"
+            )
+        )
+        bound = minimax_h3.bind(
+            graph, body["prompt"], body["seed"], {k: "artifact:" + k for k in references}, model_ids
+        )
+        minimax_h3.preflight(bound, catalog, model_ids)
+        for identity in references:
+            self.provider.image_bytes(body["project_id"], identity)
+        return (
+            graph,
+            model_ids,
+            references,
+            minimax_h3.REVISION,
+            dict(
+                mode=mode,
+                dimensions={"width": width, "height": height},
+                duration_seconds=round(count / minimax_h3.FPS, 6),
+                frame_count=count,
+                fps={"numerator": minimax_h3.FPS, "denominator": 1},
+                input_artifact_ids=references,
+            ),
+        )
