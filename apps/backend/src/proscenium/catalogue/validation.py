@@ -1,4 +1,4 @@
-"""Relationship checks for authored catalogue documents, using the existing wire schema."""
+"""Relationship checks for catalogue records and authored documents."""
 
 from fractions import Fraction
 from functools import cache
@@ -189,6 +189,28 @@ def interval(value: dict[str, int]) -> int:
     if value["start"] > value["end"]:
         raise DomainError("invalid_frame_mapping", 422, "Frame range start must not exceed end")
     return value["end"] - value["start"] + 1
+
+
+def validate_artifact_source_version(
+    version: dict[str, Any], artifact: dict[str, Any], target: dict[str, Any]
+) -> None:
+    if artifact.get("source_version_id") in (None, target["version_id"]):
+        return
+    # Only the immutable publication counts, not later links or render outputs.
+    origin = target.get("origin")
+    if (
+        artifact.get("kind") == "image"
+        and origin in {"concept", "reference"}
+        and origin == artifact.get("purpose")
+        and artifact["artifact_id"] in version["artifact_ids"]
+    ):
+        return
+    raise DomainError(
+        "source_conflict",
+        409,
+        message="Artifact belongs to a different version. Only concept and reference images "
+        "published on the target version may be reused.",
+    )
 
 
 def version_reference(
