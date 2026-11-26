@@ -8,6 +8,7 @@ from typing import Any
 
 from proscenium.api.errors import DomainError
 from proscenium.catalogue.service import Catalogue
+from proscenium.catalogue.validation import validate_artifact_source_version
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.services import Services
@@ -58,9 +59,8 @@ class References:
         ):
             raise DomainError("source_conflict", 409, message="Displayed image identity mismatch")
         if target["version_id"]:
-            self.version(tx, target)
-            if artifact.get("source_version_id") not in {None, target["version_id"]}:
-                raise DomainError("source_conflict", 409)
+            version = self.version(tx, target)
+            validate_artifact_source_version(version, artifact, target)
         elif target["item_id"]:
             tx.require("items", target["item_id"])
         media_id = target["media_artifact_id"]

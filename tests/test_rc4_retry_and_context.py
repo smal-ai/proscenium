@@ -8,6 +8,7 @@ import sys
 from copy import deepcopy
 from dataclasses import replace
 from fractions import Fraction
+from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
@@ -15,6 +16,7 @@ from copilot.tools import ToolInvocation
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
+from PIL import Image
 from proscenium.api.dependencies import owner
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
@@ -78,7 +80,7 @@ def block_process(*args, **kwargs):
     pytest.fail("Signal Lost regressions must not spawn a native process")
 
 
-def publish(runtime, ref, kind, document=None, dependencies=()):
+def publish(runtime, ref, kind, document=None, dependencies=(), *, artifact_ids=()):
     # Install a real immutable source closure, not a mock of the retry probe's JSON reader.
     data = canonical(document if document is not None else ref)
     digest = sha(data)
@@ -108,7 +110,7 @@ def publish(runtime, ref, kind, document=None, dependencies=()):
         publication_id=f"publication-{ref['version_id']}",
         source_commit="a" * 40,
         source=source,
-        artifact_ids=[],
+        artifact_ids=list(artifact_ids),
         preview_requests=[],
         preview_job_ids=[],
         created_at=STAMP,
@@ -1405,6 +1407,112 @@ def test_adopted_frame_is_valid_until_any_receipt_conflicts(signal_lost, monkeyp
     )
 
 
+def post_context(services, snapshot):
+    app = FastAPI()
+    app.state.services = services
+    app.dependency_overrides[owner] = lambda: Caller("owner", "owner-test")
+    app.add_exception_handler(
+        DomainError, lambda request, exc: JSONResponse(exc.envelope(), status_code=exc.status)
+    )
+    app.include_router(copilot_router)
+    with TestClient(app) as client:
+        return client.post(
+            f"/api/v1/projects/{PROJECT}/contexts",
+            json=snapshot,
+            headers={"Idempotency-Key": snapshot["context_id"]},
+        )
+
+
+@pytest.mark.parametrize(
+    ("origin", "purpose", "kind", "association", "allowed"),
+    [
+        ("concept", "concept", "image", "published", True),
+        ("reference", "reference", "image", "published", True),
+        ("concept", "concept", "image", "unattached", False),
+        ("concept", "concept", "image", "linked", False),
+        ("blender_render", "draft_motion", "image", "published", False),
+        ("proxy_capture", "concept", "image", "published", False),
+        ("concept", "draft_motion", "image", "published", False),
+        ("concept", "reference", "image", "published", False),
+        ("reference", "concept", "image", "published", False),
+        ("concept", "concept", "mask", "published", False),
+        ("sequence_render", "concept", "image", "published", False),
+    ],
+)
+def test_context_and_review_validate_reused_version_artifacts(
+    runtime, origin, purpose, kind, association, allowed
+):
+    v1 = {"item_id": "item", "version_id": "item-v1"}
+    v2 = {"item_id": "item", "version_id": "item-v2"}
+    artifact_id = "item-v1-image"
+    artifacts = runtime.services.extension("artifacts")
+    if kind == "mask":
+        with BytesIO() as png:
+            Image.new("L", (64, 64), 255).save(png, format="PNG")
+            data = png.getvalue()
+    else:
+        data = make_png()
+    artifact = artifacts.promote(
+        PROJECT,
+        artifact_id,
+        data,
+        kind=kind,
+        purpose=purpose,
+        media_type="image/png",
+        metadata={"source_version_id": v1["version_id"]},
+    )
+    with runtime.store.transaction() as tx:
+        artifacts.put(tx, artifact)
+    item_kind = "sequence" if origin == "sequence_render" else "asset"
+    publish(runtime, v1, item_kind, artifact_ids=[artifact_id])
+    publish(
+        runtime, v2, item_kind, artifact_ids=[artifact_id] if association == "published" else []
+    )
+    if association == "linked":
+        with runtime.store.transaction() as tx:
+            tx.put("version_links", v2["version_id"], {"artifact_ids": [artifact_id]})
+
+    target = dict(
+        **v2,
+        origin=origin,
+        artifact_id=artifact_id,
+        displayed_sha256=artifact["sha256"],
+        dimensions=artifact["dimensions"],
+        shot_id=None,
+        render_job_id="v1-render" if origin == "blender_render" else None,
+        source_frame=1 if origin in {"blender_render", "proxy_capture"} else None,
+        media_artifact_id=None,
+    )
+    if origin == "sequence_render":
+        target.update(
+            sequence_version_id=v2["version_id"], sequence_frame=1, frame_map_artifact_id="v2-map"
+        )
+    snapshot = context("reused-image", **v2, view_mode="keyframes", target=target)
+    runtime.services.extensions["copilot"] = SimpleNamespace(contexts=Contexts(runtime.services))
+    response = post_context(runtime.services, snapshot)
+    references = References(runtime.services)
+    with runtime.store.transaction(write=False) as tx:
+        if allowed:
+            assert response.status_code == 201
+            assert response.json() == snapshot
+            references.target(tx, target)
+        else:
+            message = (
+                "Artifact belongs to a different version. Only concept and reference images "
+                "published on the target version may be reused."
+            )
+            assert response.status_code == 409
+            error = response.json()["error"]
+            assert (error["code"], error["message"]) == ("source_conflict", message)
+            with pytest.raises(DomainError) as review:
+                references.target(tx, target)
+            assert (review.value.status, review.value.code, review.value.message) == (
+                409,
+                "source_conflict",
+                "Displayed image identity mismatch" if kind == "mask" else message,
+            )
+
+
 @pytest.mark.parametrize(
     ("selection", "message"),
     [
@@ -1436,20 +1544,7 @@ def test_adopted_frame_is_valid_until_any_receipt_conflicts(signal_lost, monkeyp
     ],
 )
 def test_post_context_reports_the_exact_incompatible_identity(signal_lost, selection, message):
-    app = FastAPI()
-    app.state.services = signal_lost.services
-    app.dependency_overrides[owner] = lambda: Caller("owner", "owner-test")
-    app.add_exception_handler(
-        DomainError, lambda request, exc: JSONResponse(exc.envelope(), status_code=exc.status)
-    )
-    app.include_router(copilot_router)
-    snapshot = context("http-context", **selection)
-    with TestClient(app) as client:
-        result = client.post(
-            f"/api/v1/projects/{PROJECT}/contexts",
-            json=snapshot,
-            headers={"Idempotency-Key": snapshot["context_id"]},
-        )
+    result = post_context(signal_lost.services, context("http-context", **selection))
     assert result.status_code == 409
     error = result.json()["error"]
     assert (error["code"], error["message"]) == ("source_conflict", message)

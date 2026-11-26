@@ -12,6 +12,7 @@ from PIL import Image
 
 from proscenium.api.errors import DomainError
 from proscenium.catalogue.service import Catalogue
+from proscenium.catalogue.validation import validate_artifact_source_version
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.db.paths import project_path
@@ -57,8 +58,7 @@ class Contexts:
             version = tx.require("versions", target["version_id"])
             if version["item_id"] != target["item_id"]:
                 raise DomainError("source_conflict", 409)
-            if artifact.get("source_version_id") not in (None, target["version_id"]):
-                raise DomainError("source_conflict", 409)
+            validate_artifact_source_version(version, artifact, target)
         if target.get("render_job_id"):
             job = tx.require("jobs", target["render_job_id"])
             if (
