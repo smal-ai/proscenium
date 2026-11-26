@@ -1,5 +1,6 @@
 """Offline MiniMax H3 API graphs, wire contracts and real MP4 verification."""
 
+import asyncio
 import io
 import json
 import math
@@ -19,12 +20,16 @@ from proscenium.catalogue.validation import sequence_map
 from proscenium.contracts import canonical, validate
 from proscenium.copilot.capabilities import get_project_capabilities
 from proscenium.db import Transaction
+from proscenium.db.registry import Registry
+from proscenium.db.store import Store
 from proscenium.jobs.resources import Resources
 from proscenium.previews.assembly import require_profile
 from proscenium.providers import minimax_h3 as h3
 from proscenium.providers import register_provider_artifact
 from proscenium.providers.preparation import VideoPreparation, validate_recipes
+from proscenium.sources.common import fingerprint
 from proscenium.sources.resolver import Resolver
+from proscenium.workflows.service import NAMESPACE
 from test_audio_generation import flac
 from test_rc4_retry_and_context import DRAFT
 from test_rc4_retry_and_context import sequence_runtime as sequence_runtime
@@ -1306,6 +1311,252 @@ def published_clip_runtime(sequence_runtime, tmp_path):
     store_clip(sequence_runtime, "clip-a", clip)
     publish_clip_sequence(sequence_runtime, clip_sequence())
     return sequence_runtime
+
+
+@pytest.fixture
+def assembly_registry(sequence_runtime, tmp_path):
+    registry = Registry(Store(tmp_path / "assembly-registry.sqlite3"))
+    registry.register(
+        dict(
+            schema_version="1.0",
+            project_id=PROJECT,
+            repository_id="repository-one",
+            name="Assembly recovery fixture",
+            path=str(sequence_runtime.root),
+            native_session_id=None,
+            state="active",
+            state_revision=0,
+        )
+    )
+    registry.activate(PROJECT)
+    return registry
+
+
+def settle_assembly_fixture_work(runtime):
+    with runtime.store.transaction() as tx:
+        for namespace, field in (("work", "work_id"), ("invocations", "invocation_id")):
+            for record in tx.all(namespace):
+                revision = tx.revision(namespace, record[field])
+                if "state_revision" in record:
+                    record["state_revision"] = revision + 1
+                tx.put(
+                    namespace,
+                    record[field],
+                    {**record, "state": "completed"},
+                    expected_revision=revision,
+                )
+
+
+def assert_assembly_preparation_blocks_switch(registry):
+    with pytest.raises(
+        DomainError, match="Native workflow preparation requires reconciliation"
+    ) as caught:
+        registry.assert_settled(PROJECT)
+    assert (caught.value.status, caught.value.code) == (409, "project_busy")
+
+
+@pytest.mark.parametrize("scenario", ["settled", "exact-retry", "already-committed"])
+def test_assembly_admission_rejection_records_durable_outcome(
+    published_clip_runtime, assembly_registry, monkeypatch, scenario
+):
+    runtime = published_clip_runtime
+    name = "assemble_sequence"
+    body = dict(operation_id="assemble-rejected", job_id="rejected", version=DRAFT)
+    identity = fingerprint(dict(kind="assembly", operation_id=body["operation_id"]))
+    admit = runtime.previews.assembly
+
+    def reject(*args):
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require(NAMESPACE, identity)["phase"] == "prepared"
+        if scenario == "already-committed":
+            admit(*args)
+        raise DomainError("capability_unavailable", 503)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(runtime.previews, "assembly", reject)
+        result, status = invoke(runtime, name, body, "assembly-admission-rejected")
+    assert (status, result["error"]) == ("failure", "capability_unavailable")
+
+    with runtime.store.transaction(write=False) as tx:
+        row = tx.require(NAMESPACE, identity)
+        if scenario == "already-committed":
+            assert row["phase"] == "launched"
+            committed = tx.require("jobs", body["job_id"])
+        else:
+            assert (row["phase"], row["error_code"]) == ("failed", "capability_unavailable")
+            assert tx.get("jobs", body["job_id"], required=False) is None
+            assert tx.get("preview_assemblies", body["job_id"], required=False) is None
+
+    if scenario == "settled":
+        # Settle the fixture's work to isolate the preparation's effect on switching.
+        settle_assembly_fixture_work(runtime)
+        assembly_registry.assert_settled(PROJECT)
+    else:
+        job, status = invoke(runtime, name, body, "assembly-admission-retry")
+        assert (status, job["job_id"], job["state"]) == ("success", body["job_id"], "planned")
+        if scenario == "already-committed":
+            assert job == committed
+
+
+def test_reconcile_stranded_assembly_preparations(sequence_runtime, assembly_registry):
+    runtime = sequence_runtime
+    workflows = runtime.services.extension("workflows")
+    rows = {}
+    for phase in ("prepared", "preparing"):
+        body = dict(
+            operation_id=f"assemble-stranded-{phase}",
+            job_id=f"stranded-{phase}",
+            version=DRAFT,
+            execution_profile_id="local-ffmpeg",
+        )
+        identity = fingerprint(dict(kind="assembly", operation_id=body["operation_id"]))
+        row = dict(
+            kind="assembly",
+            phase=phase,
+            project_id=PROJECT,
+            job_id=body["job_id"],
+            binding=dict(body=body, work_id="work-one"),
+        )
+        if phase == "prepared":
+            row["admission"] = {"input_digest": fingerprint(body)}
+        workflows.save(PROJECT, identity, row)
+        rows[identity] = row
+
+    settle_assembly_fixture_work(runtime)
+    assert_assembly_preparation_blocks_switch(assembly_registry)
+    assert asyncio.run(workflows.reconcile(PROJECT)) == []
+    with runtime.store.transaction(write=False) as tx:
+        for identity, seeded in rows.items():
+            assert tx.require(NAMESPACE, identity) == {
+                **seeded,
+                "phase": "failed",
+                "error_code": "admission_aborted",
+            }
+    assembly_registry.assert_settled(PROJECT)
+
+
+@pytest.mark.parametrize("missing", ["preview_assemblies", "jobs", None])
+def test_reconcile_assembly_with_admitted_state(published_clip_runtime, assembly_registry, missing):
+    runtime = published_clip_runtime
+    workflows = runtime.services.extension("workflows")
+    job_id = "reconcile-reel"
+    job = admit_clip_assembly(runtime, job_id)
+    identity = fingerprint(dict(kind="assembly", operation_id=f"assemble-{job_id}"))
+    with runtime.store.transaction() as tx:
+        row = tx.require(NAMESPACE, identity)
+        row["phase"] = "prepared"
+        tx.put(NAMESPACE, identity, row, expected_revision=tx.revision(NAMESPACE, identity))
+        if missing is not None:
+            tx.connection.execute(
+                "DELETE FROM records WHERE namespace=? AND id=?", (missing, job_id)
+            )
+            if missing == "preview_assemblies":
+                tx.connection.execute(
+                    "DELETE FROM records WHERE namespace='preview_assembly_origins' AND id=?",
+                    (job_id,),
+                )
+
+    results = asyncio.run(workflows.reconcile(PROJECT))
+
+    with runtime.store.transaction(write=False) as tx:
+        observed = tx.require(NAMESPACE, identity)
+    if missing is None:
+        assert results == [job]
+        assert observed == {**row, "phase": "launched"}
+    else:
+        assert results == []
+        assert observed == row
+        assert_assembly_preparation_blocks_switch(assembly_registry)
+
+        name = "assemble_sequence"
+        body = row["binding"]["body"]
+        initial = body["operation_id"]
+        retry = initial if missing == "jobs" else "retry-partial-assembly"
+        caller = runtime.tools.caller(invocation(runtime, name, body, retry), name=name)
+        with runtime.store.transaction(write=False) as tx:
+            receipt = tx.connection.execute(
+                "SELECT result FROM operations WHERE scope='jobs.admit' AND id=?", (initial,)
+            ).fetchone()
+            assert receipt is not None and json.loads(receipt[0]) == job
+            original_invocation = tx.require("job_inputs", job_id)["invocation_id"]
+            assert (caller.invocation_id == original_invocation) == (missing == "jobs")
+            origin = tx.get("preview_assembly_origins", job_id, required=False)
+
+        with pytest.raises(
+            DomainError, match="Partial assembly admission requires reconciliation"
+        ) as caught:
+            asyncio.run(workflows.assembly(caller, body))
+        assert (caught.value.status, caught.value.code) == (409, "project_busy")
+        with runtime.store.transaction(write=False) as tx:
+            assert tx.require(NAMESPACE, identity) == row
+            assert tx.get(missing, job_id, required=False) is None
+            assert tx.get("preview_assembly_origins", job_id, required=False) == origin
+
+
+def test_assembly_requires_durable_commit_after_admission_returns(
+    published_clip_runtime, monkeypatch
+):
+    runtime = published_clip_runtime
+    workflows = runtime.services.extension("workflows")
+    name = "assemble_sequence"
+    body = dict(operation_id="assemble-no-commit", job_id="no-commit", version=DRAFT)
+    identity = fingerprint(dict(kind="assembly", operation_id=body["operation_id"]))
+    caller = runtime.tools.caller(invocation(runtime, name, body), name=name)
+
+    def return_without_commit(caller, row):
+        assert row["phase"] == "prepared"
+        return {"job_id": row["job_id"], "state": "planned"}
+
+    monkeypatch.setattr(workflows, "_admit_assembly", return_without_commit)
+    with pytest.raises(
+        DomainError, match="Assembly admission did not commit durable state"
+    ) as caught:
+        asyncio.run(workflows.assembly(caller, body))
+    assert (caught.value.status, caught.value.code) == (409, "source_conflict")
+    with runtime.store.transaction(write=False) as tx:
+        assert tx.require(NAMESPACE, identity)["phase"] == "prepared"
+        assert tx.get("jobs", body["job_id"], required=False) is None
+        assert tx.get("preview_assemblies", body["job_id"], required=False) is None
+
+
+def test_reconcile_skips_inflight_assembly_and_duplicate_call_is_busy(
+    published_clip_runtime, monkeypatch
+):
+    runtime = published_clip_runtime
+    workflows = runtime.services.extension("workflows")
+    name = "assemble_sequence"
+    body = dict(operation_id="assemble-inflight", job_id="inflight", version=DRAFT)
+    identity = fingerprint(dict(kind="assembly", operation_id=body["operation_id"]))
+    caller = runtime.tools.caller(invocation(runtime, name, body), name=name)
+
+    async def run():
+        prepared, release = asyncio.Event(), asyncio.Event()
+        workflow_io = workflows.io
+
+        async def pause_before_admit(function, *args):
+            if function == workflows._admit_assembly:
+                prepared.set()
+                await release.wait()
+            return await workflow_io(function, *args)
+
+        monkeypatch.setattr(workflows, "io", pause_before_admit)
+        request = asyncio.create_task(workflows.assembly(caller, body))
+        try:
+            await asyncio.wait_for(prepared.wait(), timeout=5)
+            assert identity in workflows._inflight
+            assert await workflows.reconcile(PROJECT) == []
+            with runtime.store.transaction(write=False) as tx:
+                assert tx.require(NAMESPACE, identity)["phase"] == "prepared"
+            with pytest.raises(DomainError) as caught:
+                await workflows.assembly(caller, body)
+            assert (caught.value.status, caught.value.code) == (409, "project_busy")
+        finally:
+            release.set()
+            job = await request
+        assert job["job_id"] == body["job_id"]
+        assert identity not in workflows._inflight
+
+    asyncio.run(run())
 
 
 @pytest.mark.parametrize(
