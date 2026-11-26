@@ -111,7 +111,7 @@ class Workflows:
             raise
 
     @asynccontextmanager
-    async def unity_operation(self, identity: str):
+    async def exclusive_operation(self, identity: str):
         async with self.operation():
             if identity in self._inflight:
                 raise DomainError("project_busy", 409)
@@ -222,14 +222,20 @@ class Workflows:
         )
 
     async def assembly(self, caller: Caller, body: dict) -> dict:
-        async with self.operation():
+        identity = fingerprint(dict(kind="assembly", operation_id=body["operation_id"]))
+        async with self.exclusive_operation(identity):
             identity, row, _ = await self.io(self.begin, caller, body, "assembly")
             if row["phase"] == "launched" or await self.io(self._assembly_committed, row):
                 if row["phase"] != "launched":
                     row["phase"] = "launched"
                     await self.io(self.save, row["project_id"], identity, row)
                 return await self.io(self.existing_job, row)
+            if await self.io(self._assembly_has_admitted_state, row):
+                raise DomainError(
+                    "project_busy", 409, "Partial assembly admission requires reconciliation"
+                )
             await self.io(self.require_effect, caller)
+            # A matching retry can prepare again after a pre-admission failure.
             if row["phase"] != "prepared":
                 try:
                     admission, sequence, frame_map = await self.io(
@@ -243,7 +249,20 @@ class Workflows:
                     phase="prepared", admission=admission, sequence=sequence, frame_map=frame_map
                 )
                 await self.io(self.save, row["project_id"], identity, row)
-            result = await self.io(self._admit_assembly, caller, row)
+            try:
+                result = await self.io(self._admit_assembly, caller, row)
+            except DomainError as error:
+                if await self.io(self._assembly_committed, row):
+                    row["phase"] = "launched"
+                    await self.io(self.save, row["project_id"], identity, row)
+                elif not await self.io(self._assembly_has_admitted_state, row):
+                    row.update(phase="failed", error_code=error.code)
+                    await self.io(self.save, row["project_id"], identity, row)
+                raise
+            if not await self.io(self._assembly_committed, row):
+                raise DomainError(
+                    "source_conflict", 409, "Assembly admission did not commit durable state"
+                )
             row["phase"] = "launched"
             await self.io(self.save, row["project_id"], identity, row)
             return result
@@ -253,17 +272,30 @@ class Workflows:
             caller, row["admission"], row["sequence"], row["frame_map"]
         )[0]
 
+    def _assembly_has_admitted_state(self, row: dict) -> bool:
+        with self.services.registry.project_store(row["project_id"]).transaction(write=False) as tx:
+            return (
+                tx.get("jobs", row["job_id"], required=False) is not None
+                or tx.get("preview_assemblies", row["job_id"], required=False) is not None
+            )
+
     def _assembly_committed(self, row: dict) -> bool:
         if "admission" not in row:
             return False
         with self.services.registry.project_store(row["project_id"]).transaction(write=False) as tx:
             snapshot = tx.get("preview_assemblies", row["job_id"], required=False)
+            if snapshot is None or tx.get("jobs", row["job_id"], required=False) is None:
+                return False
             origin = tx.get("preview_assembly_origins", row["job_id"], required=False)
-        if snapshot is None:
-            return False
-        if fingerprint(snapshot) != row["admission"]["input_digest"] or origin != {
-            key: row["binding"][key] for key in ("work_id", "invocation_id")
-        }:
+            inputs = tx.get("job_inputs", row["job_id"], required=False)
+        # Workflow retries are bound to the work, not the current tool invocation.
+        # The original invocation is frozen alongside the admitted job.
+        invocation_id = row["binding"].get("invocation_id") or (inputs or {}).get("invocation_id")
+        if (
+            not invocation_id
+            or fingerprint(snapshot) != row["admission"]["input_digest"]
+            or origin != {"work_id": row["binding"]["work_id"], "invocation_id": invocation_id}
+        ):
             raise DomainError("idempotency_conflict", 409)
         self.existing_job(row)  # Prove original input/target identity too.
         return True
@@ -491,7 +523,7 @@ class Workflows:
 
     async def unity(self, caller: Caller, body: dict) -> dict:
         identity = fingerprint(dict(kind="unity", operation_id=body["operation_id"]))
-        async with self.unity_operation(identity):
+        async with self.exclusive_operation(identity):
             identity, row, fresh = await self.io(self.begin, caller, body, "unity")
             if row["phase"] == "launched":
                 job = await self.io(self.existing_job, row)
@@ -597,14 +629,11 @@ class Workflows:
                 )
                 if identity in self._inflight:
                     continue
-                if (
-                    row["kind"] == "assembly"
-                    and row["phase"] == "prepared"
-                    and await self.io(self._assembly_committed, row)
-                ):
-                    row["phase"] = "launched"
-                    await self.io(self.save, project_id, identity, row)
-                    results.append(await self.io(self.existing_job, row))
+                if row["kind"] == "assembly" and row["phase"] in {"preparing", "prepared"}:
+                    if (
+                        job := await self.io(self._reconcile_assembly, project_id, identity)
+                    ) is not None:
+                        results.append(job)
                 if row["kind"] == "unity" and row["phase"] in {
                     "preparing",
                     "exporting",
@@ -619,6 +648,22 @@ class Workflows:
                             raise
             await self.io(reap_unity_supervisors)
             return results
+
+    def _reconcile_assembly(self, project_id: str, identity: str) -> dict | None:
+        # Re-read on the single workflow I/O thread: the scan may be stale, and
+        # a new assembly call cannot mutate the row mid-reconciliation on that thread.
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            row = tx.require(NAMESPACE, identity)
+        if row["phase"] not in {"preparing", "prepared"}:
+            return None
+        if self._assembly_committed(row):
+            row["phase"] = "launched"
+            self.save(project_id, identity, row)
+            return self.existing_job(row)
+        if not self._assembly_has_admitted_state(row):
+            row.update(phase="failed", error_code=row.get("error_code") or "admission_aborted")
+            self.save(project_id, identity, row)
+        return None
 
     def _observe_export(self, row: dict) -> None:
         self.row_root(row)
