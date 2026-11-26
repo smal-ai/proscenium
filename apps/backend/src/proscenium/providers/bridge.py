@@ -10,6 +10,8 @@ from proscenium.catalogue.artifacts import Artifacts
 from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.db.paths import read_bounded_regular_file
+from proscenium.providers import minimax_h3
+from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
 from proscenium.services import Services
 from proscenium.sources.common import managed, replay
 
@@ -27,7 +29,13 @@ def _worker(tx: Transaction, caller: Caller) -> JSON:
         or attempt["input_digest"] != caller.input_digest
         or attempt["project_id"] != caller.project_id
         or job["kind"]
-        not in {"image_generation", "mesh_generation", "audio_generation", "vlm_review"}
+        not in {
+            "image_generation",
+            "mesh_generation",
+            "audio_generation",
+            "video_generation",
+            "vlm_review",
+        }
     ):
         raise DomainError("scope_denied", 403)
     return job
@@ -73,16 +81,27 @@ def register_provider_artifact(services: Services, caller: Caller, request: JSON
     if not request["staging_path"].startswith(prefix):
         raise DomainError("scope_denied", 403)
     root = Path(services.registry.get(project_id)["path"])
-    from proscenium.providers.stable_audio import MAX_AUDIO_BYTES
-
     managed(root, request["staging_path"])
     path = root / request["staging_path"]
-    data = read_bounded_regular_file(path, MAX_AUDIO_BYTES, root=root)
+    video = request["kind"] == "video"
+    if video and (job["kind"] != "video_generation" or request["media_type"] != "video/mp4"):
+        raise DomainError("unsupported_media_type", 415)
+    data = read_bounded_regular_file(
+        path, minimax_h3.MAX_VIDEO_BYTES if video else MAX_AUDIO_BYTES, root=root
+    )
     if hashlib.sha256(data).hexdigest() != request["sha256"]:
         raise DomainError("hash_mismatch", 422)
     artifacts = cast(Artifacts, services.extension("artifacts"))
     for identity in derived:
         artifacts.ready_path(project_id, identity)
+    metadata = {"source_version_id": version["version_id"]} if version else {}
+    if video:
+        rendering = services.settings.rendering
+        metadata.update(
+            minimax_h3.verify_video_bytes(
+                data, ffmpeg=rendering.get("ffmpeg"), ffprobe=rendering.get("ffprobe")
+            )
+        )
     artifact = artifacts.promote(
         project_id,
         request["artifact_id"],
@@ -91,7 +110,7 @@ def register_provider_artifact(services: Services, caller: Caller, request: JSON
         purpose=request["purpose"],
         media_type=request["media_type"],
         derived_from=request.get("derived_from"),
-        metadata={"source_version_id": version["version_id"]} if version else None,
+        metadata=metadata,
     )
     with store.transaction() as tx:
 

@@ -134,3 +134,4 @@
 .spatial-fallback-confirm input{width:auto!important;margin:0}
 
 .review-audio{display:grid;place-items:center;flex:1;min-height:0;padding:16px;background:#09090b}.review-audio audio{width:min(100%,520px)}
+.review-video{display:flex;flex:1;min-height:0;background:#000}.review-video video{width:100%;min-height:0;object-fit:contain}

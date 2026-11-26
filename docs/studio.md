@@ -120,3 +120,22 @@ Review to hear the soundtrack. Existing `silent: true` sequences still export wi
 Retained audio accepts FLAC, PCM WAV, MP3, and Ogg with Vorbis, Opus or FLAC.
 Registration requires FFmpeg and FFprobe to verify and measure the decoded audio.
 Offline project import currently accepts only silent sequences.
+
+## Generated video and storyboard proof reels
+
+With MiniMax H3 configured, Copilot can generate short scenes with native stereo
+audio. Request a video pass explicitly after selecting storyboard panels. Use
+FL2VA to guide motion between panels or Ref2VA to hold characters and locations
+consistent across shots. Discussing a storyboard pitch does not generate video.
+
+Play a ready MP4 directly in its Chat card. **Inspect video** opens the retained
+clip in Review with its dimensions, frame rate, duration and audio channels.
+Download it from either surface, or find it in **Navigator → Assets → Retained
+media**. Render-pass streams stay out of Chat cards.
+
+To make a proof reel, ask Copilot to publish a clip-only `SequenceMap` from the
+chosen clips and assemble it. `preserve_clip_audio: true` keeps the native shot
+audio and can mix an optional underscore. `silent: true` exports without sound.
+Open the assembled sequence version in Review to play or download the reel.
+This checks pacing, motion and sound before Blender or Unity production. It is
+not a frame-mapped production render.

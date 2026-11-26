@@ -8,7 +8,7 @@
 | Cloud authoring | Existing supported GitHub Copilot authentication and access to the configured model. The verified login mechanism is GitHub CLI authentication. |
 | Blender authoring and previews | Blender 4.5.16 LTS, build `3f6797307da5`, FFmpeg/FFprobe, and the configured Blender MCP client (`mcp-for-blender==2.3.0`) and installed add-on (2.0, protocol 16) for interactive authoring. |
 | Playable Unity scenes | Unity Editor `6000.3.27f1`, with the packages declared by `tools/unity/workflow.py`. |
-| Image/mesh generation | An independently running ComfyUI service with the selected model and workflow nodes. |
+| Image, mesh, audio and video generation | An independently running ComfyUI service with the selected model and workflow nodes. Audio and video also require FFmpeg and FFprobe for output verification. |
 | Visual critique | An independently running LM Studio vision model, identified by its exact loaded model ID. |
 
 `make bootstrap` installs only the locked Python/Node application dependencies.
@@ -70,6 +70,7 @@ feedback remain accessible when a configured service is unavailable.
 | `budget3d-idol-turbo-1` | `image_to_3d` | Default 5-step Budget3D-Idol-Turbo graph (`budget3d_idol_turbo.safetensors`, `dino_v3_vit_h.safetensors`, `flux2-vae.safetensors`, `idol_vae_decoder_fp32.safetensors`, `birefnet.safetensors`) with `SplatToMesh` → `SaveGLB`. |
 | `budget3d-idol-1` | `image_to_3d` | 50-step guided Budget3D-Idol graph (`budget3d_idol.safetensors` + shared encoders/decoders) with `SplatToMesh` → `SaveGLB`. |
 | `hunyuan3d-native-2.0-1` | `image_to_3d` | Legacy pinned Hunyuan3D 2.0 FP16 checkpoint and untextured `VoxelToMesh` → `SaveGLB`. |
+| `minimax-h3-1` | `video` | MiniMax H3 INT8 FL2VA or Ref2VA graphs for ROCm/Strix Halo. Defaults to 864×480 at 24 fps and a four-step turbo LoRA. |
 
 For example, select explicit FLUX.2 Klein 4B and Budget3D-Idol-Turbo recipes on `local-comfy`, or select an already prepared SD-Turbo FP16 profile:
 
@@ -117,6 +118,77 @@ extracts vertex-coloured `.glb` geometry from the decoded 3D Gaussian splat. New
 requests freeze the profile, endpoint, graph and input hashes. Configuration changes do
 not reinterpret admitted jobs. The default attempt budget is three per human task and
 target.
+
+### MiniMax H3 video on ROCm 10.1 / Strix Halo
+
+Enable `video` in the ComfyUI service's capabilities. The following
+`provider_options` excerpt uses the exact standard filenames and recipe limits
+from `config.example.json`. Replace `local-comfy` only if the service uses a
+different provider ID.
+
+```json
+{
+  "video_recipes": {
+    "local-comfy": {
+      "profile_revision": "minimax-h3-1",
+      "fl2va_model": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+      "ref2va_model": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+      "clip": "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+      "video_vae": "minimax_h3_video_vae_fp16.safetensors",
+      "audio_vae": "minimax_h3_audio_vae_fp32.safetensors",
+      "fl2va_lora_4step": "minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+      "fl2va_lora_8step": "minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors",
+      "ref2va_lora_4step": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+      "width": 864,
+      "height": 480,
+      "steps": 4,
+      "max_pixels": 1032192,
+      "max_duration_seconds": 15.0,
+      "tiled_vae": false,
+      "shift_video": 12.0,
+      "shift_audio": 3.0
+    }
+  }
+}
+```
+
+- On the Radeon 8060S (`gfx1151`), use the AMD-compatible `int8_convrot` denoisers
+  and text encoder, not NVIDIA `nvfp4` weights.
+- The host wraps the video VAE in `VAEComputeDtype` (`bf16`) only when ComfyUI
+  `/object_info` advertises compatible BF16 support. A ready provider can still
+  omit that node. The on-disk video checkpoint is named `fp16`. The separate
+  `minimax_h3_audio_vae_fp32` stays in FP32 and is never wrapped in the BF16 node.
+- The host requires `VAEDecodeTiled` above `864 × 480` pixels or 124 video frames.
+  `tiled_vae: false` does not override this threshold. Setting it to `true` also
+  tiles smaller requests.
+
+For a dedicated Strix Halo ComfyUI instance, start with these operator-managed
+settings. Use the existing ROCm environment and bind address:
+
+```bash
+COMFY_KITCHEN_DISABLE_HIP=1 \
+PYTORCH_HIP_ALLOC_CONF=expandable_segments:True \
+MIOPEN_FIND_MODE=FAST \
+python main.py --bf16-vae --disable-mmap --cache-none
+```
+
+Use `--highvram` only when there is measured memory headroom to keep the model
+resident. It controls residency, while `--cache-none` controls node result caching.
+Proscenium does not apply launch flags or manage ComfyUI. The capability probe
+checks the installed models and node choices, and requires local FFmpeg and
+FFprobe. It does not run inference or prove that a requested canvas fits.
+
+Send the exact `submit_request` returned by `prepare_video_generation` to
+`submit_generation`. FL2VA accepts first, last and indexed guide frames. Ref2VA
+accepts ordered image references and an optional first-frame guide.
+
+Publish a `SequenceMap` with only clip entries and one-based source frame ranges,
+then call `assemble_sequence`. Use `silent: true` for a silent cut,
+`preserve_clip_audio: true` to retain native sound and optionally mix external
+tracks, or `silent: false` with external `audio_tracks` to replace native sound.
+Clip sequences do not use a render `FrameMap`.
+
+### Capability status
 
 **Services & models** shows bounded live provider catalogue/recipe observations,
 configured workstation bridges and a manual **Refresh status** control. These reads

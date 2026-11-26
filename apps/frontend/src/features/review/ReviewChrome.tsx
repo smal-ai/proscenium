@@ -3,6 +3,7 @@ import { ArrowLeft, Box, Download, Film, Image, Layers, Music, X } from "lucide-
 import type { Artifact } from "../../api";
 import type { ReviewSurfaceProps } from "../../api/studio";
 import { isReadyAudio } from "../retainedAudio";
+import { isReadyVideo } from "../retainedVideo";
 import { mediaUrl } from "./media";
 import "./review.css";
 
@@ -35,27 +36,71 @@ export function currentRetainedPreview(
   return observedArtifacts.get(inspected.artifact_id) ?? inspected;
 }
 
+function ReviewVideo({visible, url, label}: {visible: boolean; url: string; label: string}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useLayoutEffect(() => {
+    const video = videoRef.current;
+    if (!visible) video?.pause();
+    return () => { video?.pause(); };
+  }, [visible, url]);
+  return <div className="review-video"><video ref={videoRef} controls preload="metadata" playsInline src={url} aria-label={label}/></div>;
+}
+
+function VideoFrameRate({fps}: Pick<Artifact, "fps">) {
+  return fps ? <span className="toolbar-chip" title={`${fps.numerator}/${fps.denominator} fps`}>{Number((fps.numerator / fps.denominator).toFixed(3))} fps</span> : null;
+}
+
+export function clipSequenceDelivery(artifacts: readonly Artifact[], versionId: string): Artifact | undefined {
+  return artifacts.find(a => a.source_version_id === versionId && a.purpose === "final" && isReadyVideo(a)
+    && a.derived_from.some(t => t.kind === "encode" && "assembly" in t.parameters && t.parameters.assembly === "clip_concat"));
+}
+
+export function SequenceReelReview({visible, projectId, artifact}: {visible: boolean; projectId: string; artifact: Artifact}) {
+  const url = mediaUrl(projectId, artifact.artifact_id);
+  return <section className="review-workspace" aria-label="Review workspace">
+    <div className="review-bar"><Film size={14}/><strong>Assembled clip sequence</strong><div className="toolbar-spacer"/>
+      <a className="toolbar-btn" href={url} download={artifact.artifact_id}><Download size={13}/>Download video</a>
+    </div>
+    <ReviewVideo key={url} visible={visible} url={url} label={`Assembled clip sequence ${artifact.artifact_id}`}/>
+    <footer className="review-bar review-transport-bar"><MediaMetadata artifact={artifact} audio={false} video={true}/></footer>
+  </section>;
+}
+
+function MediaMetadata({artifact, audio, video}: {artifact: Artifact; audio: boolean; video: boolean}) {
+  return <>
+    {artifact.dimensions && <span className="toolbar-chip">{artifact.dimensions.width} × {artifact.dimensions.height}</span>}
+    {video && <VideoFrameRate fps={artifact.fps}/>}
+    {(audio || video) && artifact.duration_seconds !== undefined && <span className="toolbar-chip">{Number(artifact.duration_seconds.toFixed(3))} s</span>}
+    {(audio || video) && artifact.sample_rate_hz !== undefined && <span className="toolbar-chip">{artifact.sample_rate_hz.toLocaleString("en-GB")} Hz</span>}
+    {(audio || video) && artifact.channels !== undefined && <span className="toolbar-chip">{artifact.channels} {artifact.channels === 1 ? "channel" : "channels"}</span>}
+  </>;
+}
+
 export function RetainedReview({visible = true, projectId, version, inspectedArtifact: artifact, inspectedArtifactSummary: summary, onClearArtifact}: Pick<ReviewSurfaceProps, "visible" | "projectId" | "version" | "inspectedArtifact" | "inspectedArtifactSummary" | "onClearArtifact">) {
   const audioRef = useRef<HTMLAudioElement>(null);
   useLayoutEffect(() => { if (!visible) audioRef.current?.pause(); }, [visible]);
   if (!artifact) return null;
   const ready = artifact.state === "ready";
   const audio = isReadyAudio(artifact);
+  const video = isReadyVideo(artifact);
+  const label = artifact.kind === "audio" || artifact.kind === "video" ? artifact.kind : "image";
+  const Icon = label === "video" ? Film : label === "audio" ? Music : Image;
   const url = mediaUrl(projectId, artifact.artifact_id);
   return <section className="review-workspace retained-review" aria-label="Review workspace">
-    <div className="review-bar retained-review-toolbar">{audio ? <Music size={14}/> : <Image size={14}/>}<strong>Retained output preview</strong><span>{audio ? "Retained audio" : "Unpublished retained output · Concept images are not 3D meshes"}</span>
+    <div className="review-bar retained-review-toolbar"><Icon size={14}/><strong>Retained output preview</strong><span>{label === "image" ? "Unpublished retained output · Concept images are not 3D meshes" : `Retained ${label}`}</span>
       <span className="attribution-badge">{summary?.attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</span>
       <div className="toolbar-spacer"/><div className="toolbar-group">
-        {ready && <a className="toolbar-btn" href={url} download={artifact.artifact_id}><Download size={13}/>Download {audio ? "audio" : "image"}</a>}
+        {ready && <a className="toolbar-btn" href={url} download={artifact.artifact_id}><Download size={13}/>Download {label}</a>}
         {onClearArtifact && <button className="toolbar-btn" onClick={onClearArtifact}>{version ? <><ArrowLeft size={13}/>Back to pinned version</> : <><X size={13}/>Clear preview</>}</button>}
       </div>
     </div>
-    {!ready ? <div className="viewer-empty" role="status">Retained output unavailable.</div> : audio ? <div className="review-audio"><audio ref={audioRef} controls preload="metadata" src={url} aria-label={`Retained audio ${artifact.artifact_id}`} /></div> : artifact.kind === "image" && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type) ? <div className="review-image"><img src={url} alt={`Retained ${artifact.purpose} image ${artifact.artifact_id}`}/></div> : <div className="viewer-empty">No safe ready image preview available.</div>}
+    {!ready ? <div className="viewer-empty" role="status">Retained output unavailable.</div>
+      : video ? <ReviewVideo key={url} visible={visible} url={url} label={`Retained video ${artifact.artifact_id}`}/>
+      : audio ? <div className="review-audio"><audio ref={audioRef} controls preload="metadata" src={url} aria-label={`Retained audio ${artifact.artifact_id}`}/></div>
+      : artifact.kind === "image" && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type) ? <div className="review-image"><img src={url} alt={`Retained ${artifact.purpose} image ${artifact.artifact_id}`}/></div>
+      : <div className="viewer-empty">No safe ready {label} preview available.</div>}
     <footer className="review-bar review-transport-bar">
-      {artifact.dimensions && <span className="toolbar-chip">{artifact.dimensions.width} × {artifact.dimensions.height}</span>}
-      {audio && artifact.duration_seconds !== undefined && <span className="toolbar-chip">{Number(artifact.duration_seconds.toFixed(3))} s</span>}
-      {audio && artifact.sample_rate_hz !== undefined && <span className="toolbar-chip">{artifact.sample_rate_hz.toLocaleString("en-GB")} Hz</span>}
-      {audio && artifact.channels !== undefined && <span className="toolbar-chip">{artifact.channels} {artifact.channels === 1 ? "channel" : "channels"}</span>}
+      <MediaMetadata artifact={artifact} audio={audio} video={video}/>
       <span className="toolbar-chip">{artifact.purpose}</span><code className="toolbar-chip">SHA-256 {artifact.sha256.slice(0, 12)}</code><div className="toolbar-spacer"/>
       <span className="toolbar-meta">{summary?.published_versions.length ? `Published to ${summary.published_versions.length} catalogue version(s)` : "Not published to catalogue"}</span>
     </footer>

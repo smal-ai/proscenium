@@ -1,4 +1,5 @@
 import { isReadyAudio } from "../retainedAudio";
+import { isReadyVideo } from "../retainedVideo";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Ellipsis, Plus } from "lucide-react";
 import type { Provenance, RetainedArtifactSummary, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
@@ -228,7 +229,8 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   </div>;
   const retainedList = useMemo(() => (retainedArtifacts ?? retained).filter(({artifact, job_id, published_versions = []}) =>
     artifact.project_id === projectId
-    && (isReadyAudio(artifact) || (artifact.kind === "image" && artifact.state === "ready"
+    && (isReadyAudio(artifact) || (isReadyVideo(artifact) && artifact.purpose !== "inspection"
+      && !artifact.artifact_id.startsWith("attempt-") && !artifact.artifact_id.startsWith("preview-")) || (artifact.kind === "image" && artifact.state === "ready"
       && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type)))
     && artifact.purpose !== "draft_motion"
     && !(Boolean(job_id) && published_versions.length > 0 && artifact.artifact_id.startsWith("preview-"))), [projectId, retainedArtifacts, retained]);
@@ -314,16 +316,16 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
       })}
       <section className="retained-outputs" aria-label="Retained outputs">
         <h3><button className="retained-outputs-toggle" aria-expanded={showRetained} onClick={() => setRetainedExpanded(!showRetained)}>{showRetained ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>} Retained media ({retainedList.length})</button></h3>
-        {showRetained && <><p>Ready images and audio, separate from published catalogue items. Concept images are not 3D meshes.</p>
+        {showRetained && <><p>Ready images, audio and video, listed separately from catalogue versions. Concept images are not 3D meshes.</p>
           {retainedList.map(({artifact, published_versions, attribution_status}) => {
             const url = mediaUrl(projectId, artifact.artifact_id);
             const audio = isReadyAudio(artifact);
-            const label = audio ? "audio" : "image";
-            const preview = !audio && <img src={url} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }}/>;
+            const label = audio ? "audio" : isReadyVideo(artifact) ? "video" : "image";
+            const preview = label === "image" && <img src={url} alt={`Retained ${artifact.purpose} image`} loading="lazy" onError={event => { event.currentTarget.hidden = true; }}/>;
             return <article key={artifact.artifact_id} className="retained-output">
               <strong>{artifact.purpose} {label}</strong>
               <small>{published_versions.length ? `Also published · ${published_versions.length} version(s)` : "Unpublished retained media"} · {attribution_status === "verified" ? "Verified" : "Attribution unrecorded"}</small>
-              {!audio && onInspectArtifact ? <button className="retained-preview" aria-label={`Inspect retained ${artifact.purpose} image ${artifact.artifact_id}`} onClick={() => onInspectArtifact(artifact)}>{preview}</button> : preview}
+              {preview && onInspectArtifact ? <button className="retained-preview" aria-label={`Inspect retained ${artifact.purpose} image ${artifact.artifact_id}`} onClick={() => onInspectArtifact(artifact)}>{preview}</button> : preview}
               <small>{artifact.dimensions ? `${artifact.dimensions.width} × ${artifact.dimensions.height}` : audio ? (artifact.duration_seconds === undefined ? "Duration unrecorded" : `${artifact.duration_seconds} s`) : "Dimensions unrecorded"}</small><code>{artifact.artifact_id}</code>
               <div className="button-row"><a href={url} download={artifact.artifact_id}>Download {label}</a>{onInspectArtifact && <button onClick={() => onInspectArtifact(artifact)}>Inspect {label}</button>}</div>
             </article>;

@@ -28,6 +28,9 @@ from proscenium.sources.common import (
 
 AUDIO_MEDIA_TYPES = frozenset(AUDIO_DEMUXERS)
 AUDIO_METADATA = frozenset({"duration_seconds", "sample_rate_hz", "channels"})
+VIDEO_METADATA = frozenset(
+    {"dimensions", "fps", "frame_count", "duration_seconds", "sample_rate_hz", "channels"}
+)
 
 TYPES = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}
 
@@ -218,6 +221,7 @@ class Artifacts:
         if set(metadata) - (
             {"fps", "frame_count", "source_version_id", "dimensions"}
             | (AUDIO_METADATA if kind == "audio" else frozenset())
+            | (VIDEO_METADATA if kind == "video" and media_type == "video/mp4" else frozenset())
         ):
             raise ValueError("Trusted media metadata cannot replace immutable byte/identity fields")
         if dimensions and (metadata or {}).get("dimensions", dimensions) != dimensions:

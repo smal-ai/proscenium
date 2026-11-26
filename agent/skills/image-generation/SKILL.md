@@ -21,7 +21,7 @@ description: Generate or correct project concept images with the configured, bud
   With a slot, `target_id` is only a caller alias. The host resolves the actual budget key.
   Renaming aliases or publishing a later version does not reset that frame/entry's budget.
   For multiple standalone hero assets, publish each asset first and use its own
-  `item` slot. See [hero assets](../hero-assets/SKILL.md).
+  `item` slot. See the `hero-assets` skill.
 - Discover relevant project references and identify composition, style and identity roles.
   Inspect the actual bytes. Do not copy a previous project's treatment or ask for approval
   of routine creative progression. Missing essential input is reported explicitly.

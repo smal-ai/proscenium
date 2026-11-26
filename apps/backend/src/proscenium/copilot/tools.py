@@ -38,7 +38,9 @@ from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 from .workflows import parameters as workflow_parameters
 
-PREPARATION_TOOLS = frozenset({"prepare_image_generation", "prepare_audio_generation"})
+PREPARATION_TOOLS = frozenset(
+    {"prepare_image_generation", "prepare_audio_generation", "prepare_video_generation"}
+)
 
 # Extension, method, normative input, normative result, capability operation.
 TOOLS = {
@@ -62,6 +64,13 @@ TOOLS = {
         "AudioGenerationPrepare",
         "AudioGenerationPrepared",
         "prepareAudioGeneration",
+    ),
+    "prepare_video_generation": (
+        "video_preparation",
+        "prepare",
+        "VideoGenerationPrepare",
+        "VideoGenerationPrepared",
+        "prepareVideoGeneration",
     ),
     "checkpoint_sources": (
         "sources",
@@ -307,6 +316,18 @@ SAFE_REASONS = frozenset(
         "Audio duration is outside the supported bounds for this mode",
         "Audio generation does not accept reference artefacts",
         "Audio generation requires prepare_audio_generation",
+        "Video generation requires prepare_video_generation",
+        "Video verification requires ffmpeg and ffprobe",
+        "MiniMax H3 recipe nodes or models are unavailable",
+        "Invalid MiniMax H3 canvas, frame count or steps",
+        "Invalid MiniMax H3 conditioning artefacts",
+        "Invalid or duplicate MiniMax H3 guide frame",
+        "Unsupported sampling steps for MiniMax H3 mode",
+        "Requested video dimensions exceed the provider pixel limit",
+        "Video duration is outside supported bounds",
+        "Cannot mix clip and render-frame entries",
+        "Clip range must fit the source and match the sequence length",
+        "Clip entry must reference a ready MP4 with dimensions and frame count",
         "Generation is unavailable while execution_scope is planning_only",
         "Audio verification requires ffmpeg and ffprobe",
         "Audio bytes failed bounded decode verification",
@@ -345,7 +366,7 @@ SAFE_REASONS = frozenset(
     }
 )
 ERROR_GUIDANCE = {
-    "corrupt_provider_output": "The provider returned a corrupted raster image or invalid audio. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
+    "corrupt_provider_output": "The provider returned a corrupted raster image or invalid audio/video. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
     "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
     "scope_denied": "The requested resource or target is outside the active request scope. Check the active project and pinned request target before retrying.",
     "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",

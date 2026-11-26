@@ -17,7 +17,7 @@ import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarg
 import { canNavigateHistory, promptHistory, stepHistory, type HistoryCursor } from "./promptHistory";
 import { busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
 import { SendControl } from "./SendControl";
-import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
+import { canAttributeRetainedOutputToRequest, isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 import { handleSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import "./chat.css";
 
@@ -135,9 +135,10 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     }
     const requestIds = new Set(requests.map(r => r.request_id));
     const workIds = new Set(requests.map(r => r.receipt.work_id).filter(Boolean));
-    for (const { artifact, invocation_id, request_id, work_id, published_versions } of retainedArtifacts) {
+    for (const summary of retainedArtifacts) {
+      const { artifact, invocation_id, request_id, work_id } = summary;
       if (suppressedOutputIds.has(artifact.artifact_id)) continue;
-      if (invocation_id && activityInvocationIds.has(invocation_id) || !invocation_id && published_versions.length === 0 &&
+      if (invocation_id && activityInvocationIds.has(invocation_id) || canAttributeRetainedOutputToRequest(summary) &&
         (request_id && requestIds.has(request_id) || work_id && workIds.has(work_id))) rendered.add(artifact.artifact_id);
     }
     return rendered;

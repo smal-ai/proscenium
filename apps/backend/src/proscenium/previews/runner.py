@@ -8,8 +8,10 @@ from pathlib import Path
 
 from proscenium.api.errors import DomainError
 from proscenium.db.outbox import dispatch_one
+from proscenium.db.paths import read_bounded_regular_file
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage
+from proscenium.providers.minimax_h3 import MAX_VIDEO_BYTES
 from proscenium.sources.common import fingerprint
 
 from .journal import alive, atomic, read, renderer_hashes, sha
@@ -26,6 +28,10 @@ INVALID_RECEIPT_CODES = frozenset(
         "invalid_request",
     }
 )
+INVALID_ASSEMBLY_CODES = INVALID_RECEIPT_CODES | {
+    "corrupt_provider_output",
+    "unsupported_media_type",
+}
 
 
 def resource_for(job: dict) -> str:
@@ -73,7 +79,15 @@ def launch_assembly(service, project_id: str, body: dict) -> dict:
         if sha(data) != row["sha256"]:
             raise DomainError("hash_mismatch", 422)
         atomic_bytes(root / "assembly-inputs" / (row["sha256"] + ".png"), data)
-    from .assembly import audio_path
+    from .assembly import audio_path, clip_path
+
+    project_root = Path(services.registry.get(project_id)["path"])
+    for row in assembly.get("input_clips", []):
+        path = service.artifacts.path(project_id, row["sha256"])
+        data = read_bounded_regular_file(path, MAX_VIDEO_BYTES, root=project_root)
+        if len(data) != row["bytes"] or sha(data) != row["sha256"]:
+            raise DomainError("hash_mismatch", 422)
+        atomic_bytes(clip_path(root, row), data)
 
     for row in assembly.get("input_audio", []):
         identity = row["artifact_id"]
@@ -340,40 +354,87 @@ def publish_proxy(service, job: dict, root: Path) -> list[str]:
 
 
 def publish_assembly(service, job: dict, root: Path) -> list[str]:
-    from .assembly import input_ids
-    from .media import verify_video
+    from .assembly import input_ids, output_dimensions
+    from .media import CLIP_AUDIO_RATE, verify_video
 
     task = read(root / "task.json")
     snapshot = task["assembly"]
-    manifest = read(root / "assembly-manifest.json")
-    mapping = (root / "frame-map.json").read_bytes()
-    data = (root / "delivery.mp4").read_bytes()
+    clip_based = "input_clips" in snapshot
+    try:
+        manifest_bytes = (root / "assembly-manifest.json").read_bytes()
+        data = (root / "delivery.mp4").read_bytes()
+    except FileNotFoundError as exc:
+        raise DomainError(
+            "media_unavailable", 422, "Sealed assembly delivery or manifest is missing"
+        ) from exc
+    try:
+        manifest = json.loads(manifest_bytes)
+        fields: dict[str, type] = {"input_digest": str, "video_sha256": str}
+        if clip_based:
+            fields.update(input_clips=list, sequence=dict)
+        else:
+            fields["frame_map_sha256"] = str
+        if not isinstance(manifest, dict) or any(
+            type(manifest[key]) is not kind for key, kind in fields.items()
+        ):
+            raise TypeError("Invalid assembly manifest shape")
+    except (ValueError, KeyError, TypeError) as exc:
+        raise DomainError(
+            "corrupt_provider_output", 422, "Sealed assembly manifest is malformed"
+        ) from exc
     if (
         fingerprint(snapshot) != job["input_digest"]
         or manifest["input_digest"] != job["input_digest"]
         or manifest["video_sha256"] != sha(data)
-        or manifest["frame_map_sha256"] != sha(mapping)
-        or json.loads(mapping) != snapshot["frame_map"]
     ):
         raise DomainError("hash_mismatch", 422)
-    frame_map = snapshot["frame_map"]
-    dimensions = snapshot["input_frames"][0]["dimensions"]
+    sequence = snapshot["sequence"]
+    timeline = sequence if clip_based else snapshot["frame_map"]
+    mapping = None
+    if clip_based:
+        if manifest["input_clips"] != snapshot["input_clips"] or manifest["sequence"] != sequence:
+            raise DomainError("hash_mismatch", 422)
+        parameters = {"assembly": "clip_concat"}
+    else:
+        mapping = (root / "frame-map.json").read_bytes()
+        if (
+            manifest["frame_map_sha256"] != sha(mapping)
+            or json.loads(mapping) != snapshot["frame_map"]
+        ):
+            raise DomainError("hash_mismatch", 422)
+        parameters = {"frame_map_sha256": sha(mapping), "blend_space": "linear_rgb"}
+    dimensions = output_dimensions(snapshot)
     verify_video(
         root / "delivery.mp4",
-        frame_map["fps"],
-        frame_map["frame_count"],
+        timeline["fps"],
+        timeline["frame_count"],
         dimensions,
         task["config"],
-        expect_audio=not snapshot["sequence"]["silent"],
+        expect_audio=not sequence["silent"],
+        **({"audio_sample_rate": CLIP_AUDIO_RATE} if clip_based else {}),
     )
     lineage = [
         {
             "kind": "encode",
             "input_artifact_ids": input_ids(snapshot),
-            "parameters": {"frame_map_sha256": sha(mapping), "blend_space": "linear_rgb"},
+            "parameters": parameters,
         }
     ]
-    metadata = {"source_version_id": frame_map["sequence_version_id"]}
+    version_id = timeline["sequence_version_id"]
+    metadata = {"source_version_id": version_id}
+    video_metadata = {
+        **metadata,
+        "dimensions": dimensions,
+        "fps": timeline["fps"],
+        "frame_count": timeline["frame_count"],
+    }
+    if clip_based:
+        fps = sequence["fps"]
+        video_metadata["duration_seconds"] = round(
+            sequence["frame_count"] * fps["denominator"] / fps["numerator"], 6
+        )
+        if not sequence["silent"]:
+            video_metadata.update(sample_rate_hz=CLIP_AUDIO_RATE, channels=2)
     artifacts = [
         service.artifacts.promote(
             job["project_id"],
@@ -383,39 +444,38 @@ def publish_assembly(service, job: dict, root: Path) -> list[str]:
             purpose="final",
             media_type="video/mp4",
             derived_from=lineage,
-            metadata={
-                **metadata,
-                "dimensions": dimensions,
-                "fps": frame_map["fps"],
-                "frame_count": frame_map["frame_count"],
-            },
+            metadata=video_metadata,
         ),
-        service.artifacts.promote(
-            job["project_id"],
-            job["job_id"] + "-frame-map",
-            mapping,
-            kind="frame_map",
-            purpose="metadata",
-            media_type="application/json",
-            metadata=metadata,
-        ),
+    ]
+    if mapping is not None:
+        artifacts.append(
+            service.artifacts.promote(
+                job["project_id"],
+                job["job_id"] + "-frame-map",
+                mapping,
+                kind="frame_map",
+                purpose="metadata",
+                media_type="application/json",
+                metadata=metadata,
+            )
+        )
+    artifacts.append(
         service.artifacts.promote(
             job["project_id"],
             job["job_id"] + "-manifest",
-            (root / "assembly-manifest.json").read_bytes(),
+            manifest_bytes,
             kind="document",
             purpose="metadata",
             media_type="application/json",
             metadata=metadata,
-        ),
-    ]
+        )
+    )
     with service.services.registry.project_store(job["project_id"]).transaction() as tx:
         current = tx.require("jobs", job["job_id"])
         if current["attempt_id"] != job["attempt_id"]:
             raise DomainError("scope_denied", 403)
         for artifact in artifacts:
             service.artifacts.put(tx, artifact)
-        version_id = frame_map["sequence_version_id"]
         previous = tx.get("version_links", version_id, required=False)
         links = list(
             dict.fromkeys(
@@ -563,8 +623,29 @@ def reconcile(service, project_id: str) -> list[dict]:
             release_owned(services, project_id, job, "Terminal worker and rejected media verified")
             return job
         extra = publish_proxy(service, job, root) if (root / "proxy-ready.json").exists() else []
-        if (root / "assembly-ready.json").exists():
-            extra = publish_assembly(service, job, root)
+        # A ready marker is only a candidate. Wait for the terminal journal to seal it
+        # before accepting it or releasing the writer on a deterministic rejection.
+        if (
+            terminal is not None
+            and terminal["state"] == "succeeded"
+            and (root / "assembly-ready.json").exists()
+        ):
+            try:
+                extra = publish_assembly(service, job, root)
+            except DomainError as exc:
+                if exc.code not in INVALID_ASSEMBLY_CODES:
+                    raise
+                job = service.state(
+                    job,
+                    "failed",
+                    exit_code=terminal["native_exit_code"],
+                    evidence="Terminal worker observed, assembly publication rejected output",
+                    error_code=exc.code,
+                )
+                release_owned(
+                    services, project_id, job, "Terminal worker and rejected assembly verified"
+                )
+                return job
         if terminal is not None:
             state = terminal["state"]
             evidence = "Owned detached supervisor terminal journal verified"

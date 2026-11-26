@@ -35,6 +35,8 @@ def sequence_contributors(
     document: dict[str, Any], maps: dict[str, dict[str, Any]]
 ) -> Iterator[dict[str, Any]]:
     for entry in document["entries"]:
+        if "clip_artifact_id" in entry:
+            continue
         yield entry
         if entry["transform"] == "transition":
             yield from entry["contributors"]

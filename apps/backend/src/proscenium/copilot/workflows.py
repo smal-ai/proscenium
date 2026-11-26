@@ -13,7 +13,7 @@ WORKFLOW_TOOLS = {
     "assemble_sequence": (
         "assembly",
         "JobRecord",
-        "Assemble an exact published sequence. The host resolves and hashes its registered contributor receipts. Returns an admitted job, not completed media.",
+        "Assemble an exact published sequence. The host resolves and hashes its registered frames or clips, and audio. Returns an admitted job, not completed media.",
     ),
     "run_unity_workflow": (
         "unity",

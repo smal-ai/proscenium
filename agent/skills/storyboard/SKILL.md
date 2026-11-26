@@ -60,6 +60,12 @@ creative direction is not an owner media selection. When the request includes
 authoring or publication, use the workflow below within that scope. Do not impose
 this conversational review loop on an explicit autonomous production request.
 
+## Optional proof-of-concept video pass
+
+- After the owner approves the storyboard and selects generated shot panels, offer a per-shot MiniMax H3 proof pass. Do not start it unless generation is in scope. Approval of the storyboard is not approval to generate video.
+- Load the `video-generation` skill for an authorised pass. Use FL2VA with each shot's start, intermediate and end panels, or Ref2VA with ordered hero or character references for continuity.
+- Assemble reviewed clips as a playable clip-only `SequenceMap` reel to check timing, movement and sound before full Blender or Unity production. A proof reel is not a production render or an owner selection.
+
 ## Author or publish a canonical plan
 
 1. Read the active-project brief, selected treatment, current request, pinned
@@ -163,5 +169,4 @@ through configured budgeted tools. Do not impose approval after every stage. Pau
 only at requested checkpoints, material missing decisions, consequential owner
 actions or exhausted budget. Do not start/stop/install shared services.
 
-Resource origin: [research notice](../research/NOTICE.md). All necessary planning
-templates and helper code are maintained in this package, not the reference checkout.
+The storyboard package contains its planning templates. Resource attribution is recorded in the research skill's notice.

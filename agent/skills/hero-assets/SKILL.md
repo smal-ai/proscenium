@@ -78,7 +78,7 @@ description: Shortlist hero assets from a storyboard, refine one design at a tim
    use `image 1` for the sketch silhouette and `image 2` for shot lighting, patina
    and palette, not the room composition. Respect the single exact 512×512
    reference requirement for either SD-Turbo profile. Follow
-   [image generation](../image-generation/SKILL.md): prepare the standalone
+   the `image-generation` skill: prepare the standalone
    concept and pass the exact `submit_request` to `submit_generation`.
 5. Wait with `get_job(job_id=..., wait_seconds=15)` and inspect the output inline
    with `get_artifact`. If capabilities report a `configured` or `ready` VLM

@@ -17,7 +17,7 @@ from proscenium.previews.journal import (
     UNSUPPORTED_BLENDER_FEATURE_REASON,
     unsupported_blender_features,
 )
-from proscenium.providers import budget3d, hunyuan, stable_audio
+from proscenium.providers import budget3d, hunyuan, minimax_h3, stable_audio
 from proscenium.providers.plugins import plugin
 from proscenium.providers.preparation import (
     AMBIGUOUS,
@@ -25,7 +25,9 @@ from proscenium.providers.preparation import (
     bounded_get,
     compatible_audio_recipes,
     compatible_recipes,
+    compatible_video_recipes,
     models,
+    video_recipe,
 )
 from proscenium.sources.common import git, relative
 from proscenium.sources.read_only import read_authored_json, read_closure_files
@@ -48,6 +50,7 @@ RECOMMENDED_TOOLS = frozenset(
         "validate_authored_document",
         "prepare_image_generation",
         "prepare_audio_generation",
+        "prepare_video_generation",
         "checkpoint_sources",
         "publish_outputs",
         "request_preview",
@@ -102,6 +105,8 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                 if capability == "image_to_3d"
                 else audio_revision(provider.options, service["provider_id"])
                 if capability == "audio"
+                else minimax_h3.REVISION
+                if capability == "video"
                 else None
             )
             row = dict(
@@ -145,6 +150,16 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                 )
                 if isinstance(mesh_recipe, dict):
                     row["default_steps"] = mesh_recipe.get("steps", default_mesh_steps)
+            elif capability == "video":
+                configured = video_recipe(provider.options, service["provider_id"])
+                row.update(
+                    default_dimensions={
+                        "width": configured["width"],
+                        "height": configured["height"],
+                    },
+                    default_steps=configured["steps"],
+                    max_pixels=configured["max_pixels"],
+                )
             rows.append(row)
             if service["available"] is False:
                 row.update(
@@ -162,6 +177,12 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                     stable_audio.resolve_audio_verifier(services.settings.rendering)
                 except DomainError as exc:
                     row.update(reason_code="audio_verifier_missing", summary=exc.message)
+                    continue
+            elif capability == "video":
+                try:
+                    minimax_h3.resolve_video_verifier(services.settings.rendering)
+                except DomainError as exc:
+                    row.update(reason_code="video_verifier_missing", summary=exc.message)
                     continue
             path = "/v1/models" if capability == "vlm" else "/object_info"
             key = (service["provider_id"], service["endpoint"], path)
@@ -253,6 +274,23 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                     else:
                         row.update(
                             reason_code="nodes_or_models_missing", summary=stable_audio.UNAVAILABLE
+                        )
+                elif capability == "video":
+                    recipes = compatible_video_recipes(provider, service["provider_id"], catalog)
+                    if recipes:
+                        modes = ", ".join(dict.fromkeys(recipe["mode"] for recipe in recipes))
+                        row.update(
+                            status="ready",
+                            selected_models=recipes[0]["model_ids"],
+                            compatible_models=sorted(
+                                {model for recipe in recipes for model in recipe["model_ids"]}
+                            ),
+                            default_steps=recipes[0]["steps"],
+                            summary=f"MiniMax H3 preflight passed for {modes}. Inference remains untested",
+                        )
+                    else:
+                        row.update(
+                            reason_code="nodes_or_models_missing", summary=minimax_h3.UNAVAILABLE
                         )
                 else:
                     assert revision is not None

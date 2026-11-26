@@ -81,22 +81,23 @@ Do not install, start or stop independent model services. Preserve unsaved Blend
 Never call bpy.ops.wm.read_factory_settings or disable add-ons in blender-execute_blender_code. A factory reset unloads blender_mcp and closes 127.0.0.1:9876. Clear authorised live scene data in place via bpy.data.
 After compaction re-read the project brief and current plan. Report unavailable capabilities rather than inventing outputs.
 Honour request_target, reference_versions and execution_scope in extension_context and child additionalContext.
-planning_only forbids image and audio generation, preview rendering and scene execution. Use empty publication preview_requests.
+planning_only forbids image, audio and video generation, preview rendering and scene execution. Use empty publication preview_requests.
 Call get_project_capabilities first for tool, skill and provider discovery. Never probe python/proscenium imports or private runtime files.
 Use validate_authored_document for storyboards, sequences and publications before checkpoint_sources and publish_outputs.
 Storyboard source.entry_path MUST be canonical AuthoredShotPlan JSON at storyboards/<plan_id>/plan.json, never HTML, SVG or Markdown.
 Use prepare_image_generation then submit_generation with the returned exact submit_request. Never silently substitute vector/SVG drawings for inference.
 For music or sound effects, load audio-generation and call prepare_audio_generation then submit_generation with the exact returned submit_request.
-For both preparation tools omit project_id and generation_task_id: the host binds them automatically.
+For generated storyboard clips, load video-generation and call prepare_video_generation then submit_generation with the exact returned submit_request. Use clip-only SequenceMaps for generated cuts.
+For generation preparation tools omit project_id and generation_task_id: the host binds them automatically.
 For a soundtrack, set SequenceMap.silent to false and add audio_tracks referencing ready audio artefacts. Use silent: true with no tracks for a silent export.
 Omit width, height and steps to use get_project_capabilities default_dimensions/default_steps unless the user explicitly
-requested valid multiple-of-16 dimensions within the recipe max_pixels. Never guess recipe settings.
+requested valid dimensions within the recipe max_pixels (multiples of 16 for images and 32 for video). Never guess recipe settings.
 Relative workspace links such as storyboards/.../index.html are not browser URLs. Report retained artefact identities instead.
 """
 
 LEAD_INSTRUCTIONS = (
     """You are Proscenium's lead authoring agent. Coordinate bounded native specialists via the task tool.
-Delegate multi-step authoring, storyboard creation, image/mesh/audio generation waves and Blender scene builds to
+Delegate multi-step authoring, storyboard creation, image/mesh/audio/video generation waves and Blender scene builds to
 authoring-specialist, and Unity workflows to unity-specialist. Do not run long authoring or generation loops inline
 in the root turn. Give each specialist an explicit slice, pinned inputs, expected outputs and remaining budget.
 Keep one live scene writer and one Git index owner. Reconcile specialist receipts before progressing dependencies.
@@ -109,7 +110,7 @@ When pitching or refining a storyboard or hero-assets breakdown in Conversation,
 SPECIALIST_INSTRUCTIONS = (
     """You are a bounded authoring specialist invoked by the lead.
 Complete your assigned slice directly with exposed tools without unnecessary nested subagent delegation.
-Load the matching domain skill first (storyboard, hero-assets, image-generation, image-to-3d, audio-generation, blender-authoring,
+Load the matching domain skill first (storyboard, hero-assets, image-generation, image-to-3d, audio-generation, video-generation, blender-authoring,
 sequence-assembly, research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
 """
     + SHARED_INSTRUCTIONS
@@ -196,6 +197,7 @@ class Configuration:
                 "validate_authored_document",
                 "prepare_image_generation",
                 "prepare_audio_generation",
+                "prepare_video_generation",
                 "checkpoint_sources",
                 "publish_outputs",
                 "request_preview",

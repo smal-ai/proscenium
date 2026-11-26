@@ -18,6 +18,7 @@ SILENT_AUDIO_TRACKS = "Silent sequences must not declare audio_tracks"
 MISSING_AUDIO_TRACKS = "Non-silent sequences require at least one audio track"
 DUPLICATE_AUDIO_TRACK = "Duplicate audio track identity"
 INVALID_AUDIO_ARTEFACT = "Audio track must reference a ready audio artefact"
+INVALID_CLIP_ARTEFACT = "Clip entry must reference a ready MP4 with dimensions and frame count"
 INVALID_AUDIO_START = "Audio track starts at or after the end of the sequence"
 INVALID_AUDIO_FADE = "Audio track fade durations exceed the track duration"
 INVALID_AUDIO_TRIM = "Audio track trim leaves no source audio"
@@ -46,6 +47,9 @@ SAFE_VALIDATION_REASONS: frozenset[str] = frozenset(
         INVALID_AUDIO_START,
         INVALID_AUDIO_FADE,
         INVALID_AUDIO_TRIM,
+        INVALID_CLIP_ARTEFACT,
+        "Cannot mix clip and render-frame entries",
+        "Clip range must fit the source and match the sequence length",
         DISTINCT_DISSOLVE_SOURCES,
         EXPLICIT_FRAME_MAP_REQUIRED,
     }
@@ -86,10 +90,10 @@ def safe_schema_guidance(code: str, message: str) -> bool:
 
 
 @cache
-def _issue_validator(name: str, silent: bool | None) -> tuple[Draft202012Validator, frozenset[str]]:
+def _issue_validator(name: str, branch: int | None) -> tuple[Draft202012Validator, frozenset[str]]:
     definition = SCHEMA["$defs"][name]
-    if silent is not None:
-        definition = definition["oneOf"][0 if silent else 1]
+    if branch is not None:
+        definition = definition["oneOf"][branch]
     known = frozenset(
         key
         for schema in (*SCHEMA["$defs"].values(), definition)
@@ -105,15 +109,17 @@ def _issue_validator(name: str, silent: bool | None) -> tuple[Draft202012Validat
 
 def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
     """Bounded host-authored diagnostics. Never interpolate rejected values or keys."""
-    silent = None
+    branch = None
     if (
         name == "SequenceMap"
         and isinstance(document, dict)
         and type(document.get("silent")) is bool
     ):
-        # Diagnose the chosen branch, not the failures from its opposite.
-        silent = document["silent"]
-    validator, known = _issue_validator(name, silent)
+        # Diagnose the selected soundtrack mode, not the other schema branches.
+        branch = (
+            0 if document["silent"] else 2 if document.get("preserve_clip_audio") is True else 1
+        )
+    validator, known = _issue_validator(name, branch)
     issues = []
     seen: set[tuple[str, str]] = set()
     for error in validator.iter_errors(document):
@@ -340,11 +346,19 @@ def sequence_map(
     tracks = document.get("audio_tracks")
     if document.get("silent") is True and isinstance(tracks, list) and tracks:
         raise DomainError("invalid_request", 422, SILENT_AUDIO_TRACKS)
-    if document.get("silent") is False and (tracks is None or tracks == []):
+    if (
+        document.get("preserve_clip_audio") is not True
+        and document.get("silent") is False
+        and (tracks is None or tracks == [])
+    ):
         raise DomainError("invalid_request", 422, MISSING_AUDIO_TRACKS)
     validate("SequenceMap", document)
     if document["project_id"] != tx.project_id or document["sequence_version_id"] != version_id:
         raise DomainError("scope_denied", 403)
+    kinds = {"clip_artifact_id" in entry for entry in document["entries"]}
+    if len(kinds) != 1:
+        raise DomainError("invalid_frame_mapping", 422, "Cannot mix clip and render-frame entries")
+    clip_based = True in kinds
     fps = rational(document["fps"])
     validate_audio_tracks(tx, document, document["frame_count"] / fps)
     next_frame = 1
@@ -356,7 +370,7 @@ def sequence_map(
         return source_job(tx, source, version_cache=version_cache, job_cache=job_cache)
 
     for entry in document["entries"]:
-        interval(entry["source_frames"])
+        source_length = interval(entry["source_frames"])
         length = interval(entry["sequence_frames"])
         if entry["entry_id"] in entries or entry["sequence_frames"]["start"] != next_frame:
             raise DomainError(
@@ -364,11 +378,33 @@ def sequence_map(
             )
         entries.add(entry["entry_id"])
         next_frame = entry["sequence_frames"]["end"] + 1
+        if clip_based:
+            clip = tx.get("artifacts", entry["clip_artifact_id"], required=False)
+            dimensions = (clip or {}).get("dimensions")
+            if (
+                not clip
+                or clip["kind"] != "video"
+                or clip["state"] != "ready"
+                or clip["project_id"] != tx.project_id
+                or clip["media_type"] != "video/mp4"
+                or type(clip.get("frame_count")) is not int
+                or clip["frame_count"] < 1
+                or not isinstance(dimensions, dict)
+                or any(
+                    type(dimensions.get(k)) is not int or dimensions[k] < 1
+                    for k in ("width", "height")
+                )
+            ):
+                raise DomainError("media_unavailable", 422, INVALID_CLIP_ARTEFACT)
+            if source_length != length or entry["source_frames"]["end"] > clip["frame_count"]:
+                raise DomainError(
+                    "invalid_frame_mapping",
+                    422,
+                    "Clip range must fit the source and match the sequence length",
+                )
+            continue
         job = resolve(entry)
-        if (
-            entry["transform"] in {"identity", "trim"}
-            and interval(entry["source_frames"]) != length
-        ):
+        if entry["transform"] in {"identity", "trim"} and source_length != length:
             raise DomainError(
                 "invalid_frame_mapping",
                 422,

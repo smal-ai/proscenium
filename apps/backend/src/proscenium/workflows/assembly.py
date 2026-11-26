@@ -5,12 +5,21 @@ from typing import Any
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import validate
-from proscenium.previews.assembly import expand, input_ids, technical, with_audio
+from proscenium.previews.assembly import (
+    clip_snapshot,
+    expand,
+    input_ids,
+    is_clip_sequence,
+    technical,
+    with_audio,
+)
 from proscenium.services import Services
 from proscenium.sources.common import fingerprint
 
 
-def prepared(services: Services, caller: Caller, body: dict[str, Any]) -> tuple[dict, dict, dict]:
+def prepared(
+    services: Services, caller: Caller, body: dict[str, Any]
+) -> tuple[dict, dict, dict | None]:
     project_id = str(caller.project_id)
     catalogue = services.extension("catalogue")
     version = catalogue.version(project_id, body["version"]["version_id"])
@@ -26,12 +35,34 @@ def prepared(services: Services, caller: Caller, body: dict[str, Any]) -> tuple[
         or sequence["sequence_version_id"] != version["version_id"]
     ):
         raise DomainError("scope_denied", 403)
+    previews = services.extension("previews")
+    if is_clip_sequence(sequence):
+        snapshot = clip_snapshot(previews.artifacts, project_id, technical(sequence))
+    else:
+        snapshot = render_snapshot(services, project_id, sequence, previews, catalogue)
+    admission = dict(
+        schema_version="1.0",
+        operation_id=body["operation_id"],
+        project_id=project_id,
+        job_id=body["job_id"],
+        kind="encode",
+        target=dict(target_id=version["item_id"], version=body["version"], shot_id=None),
+        input_digest=fingerprint(snapshot),
+        input_artifact_ids=input_ids(snapshot),
+        execution_profile_id=body["execution_profile_id"],
+    )
+    validate("JobAdmission", admission)
+    return admission, sequence, snapshot["frame_map"]
+
+
+def render_snapshot(
+    services: Services, project_id: str, sequence: dict, previews: Any, catalogue: Any
+) -> dict:
     maps = catalogue.frame_maps(project_id, sequence)
     full = expand(sequence, next(iter(maps.values())) if maps else None)
     validate("FrameMap", full)
     if any(value != full for value in maps.values()):
         raise DomainError("invalid_frame_mapping", 422)
-    previews = services.extension("previews")
     inputs: dict[str, dict] = {}
     # Read each source job's receipts once, not once for every sequence frame.
     with services.registry.project_store(project_id).transaction(write=False) as tx:
@@ -74,17 +105,4 @@ def prepared(services: Services, caller: Caller, body: dict[str, Any]) -> tuple[
         frame_map=full,
         input_frames=[inputs[key] for key in sorted(inputs)],
     )
-    with_audio(snapshot, previews.artifacts, project_id)
-    admission = dict(
-        schema_version="1.0",
-        operation_id=body["operation_id"],
-        project_id=project_id,
-        job_id=body["job_id"],
-        kind="encode",
-        target=dict(target_id=version["item_id"], version=body["version"], shot_id=None),
-        input_digest=fingerprint(snapshot),
-        input_artifact_ids=input_ids(snapshot),
-        execution_profile_id=body["execution_profile_id"],
-    )
-    validate("JobAdmission", admission)
-    return admission, sequence, full
+    return with_audio(snapshot, previews.artifacts, project_id)

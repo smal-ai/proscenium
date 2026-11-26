@@ -8,13 +8,15 @@ import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from ".
 import { CriticPanel, criticRequestTarget, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
 import { annotationContext } from "../review/context";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "../review/refreshKeys";
+import { CatalogueBrowser } from "../catalogue/CatalogueBrowser";
+import { isReadyVideo } from "../retainedVideo";
 import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, viewedSelectionLabel, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation, reuseOutputIds } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
-import { OutputCards } from "./OutputCards";
+import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 import { awaitResume, heldRequestIds, isIdleAutoReleaseReady, resumableWork } from "./resume";
 import { handleSubmitEnter, isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
@@ -178,7 +180,7 @@ test("queue hold recognises explicit fences, pause codes and legacy idle holds o
 
 test("live tool calls provide readable working steps and reconnecting status", () => {
   const labels = {
-    prepare_image_generation: "Preparing image", prepare_audio_generation: "Preparing audio", submit_generation: "Submitting generation", get_job: "Waiting on job",
+    prepare_image_generation: "Preparing image", prepare_audio_generation: "Preparing audio", prepare_video_generation: "Preparing video", submit_generation: "Submitting generation", get_job: "Waiting on job",
     get_artifact: "Inspecting output", validate_authored_document: "Validating plan", checkpoint_sources: "Checkpointing sources",
     publish_outputs: "Publishing outputs", request_vlm_review: "Requesting VLM critique", get_vlm_review: "Waiting on VLM critique",
     escalate_vlm_review: "Requesting owner review", request_preview: "Requesting preview",
@@ -1016,4 +1018,92 @@ test("ready FLAC output cards provide accessible playback, inspection and downlo
   assert.match(markup, /Download output/);
   assert.doesNotMatch(render({ ...artifact, state: "unavailable" }), /<audio/);
   assert.doesNotMatch(render({ ...artifact, media_type: "text/html" }), /<audio/);
+});
+
+const videoId = "generation-h3-artifact-0";
+const generatedVideo: Artifact = { schema_version: "1.0", artifact_id: videoId, project_id: "project", state: "ready", kind: "video", purpose: "concept", media_type: "video/mp4", sha256: "a".repeat(64), bytes: 1234, derived_from: [] };
+const videoSummary: RetainedArtifactSummary = { schema_version: "1.0", artifact: generatedVideo, attribution_status: "verified", request_id: "video-request", work_id: "video-work", invocation_id: null, job_id: "generation-h3", published_versions: [] };
+const attemptSummary = { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "attempt-h3-seg-1" } };
+const previewSummary = { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "preview-h3" } };
+
+test("generated video is playable in Chat without exposing render streams", () => {
+  assert.equal(isRenderPassStreamArtifact(videoSummary), false);
+  assert.equal(isRenderPassStreamArtifact({ ...videoSummary, published_versions: [{ item_id: "reel", version_id: "reel-v1" }] }), false);
+  assert.equal(isRenderPassStreamArtifact(attemptSummary), true);
+  assert.equal(isRenderPassStreamArtifact(previewSummary), true);
+  for (const purpose of ["draft_motion", "inspection", "keyframe", "final"] as const) {
+    assert.equal(isRenderPassStreamArtifact({ ...videoSummary, artifact: { ...generatedVideo, purpose } }), true);
+  }
+  const req = { ...request("video-request", "2026-11-18T14:20:00Z", "Generate the opening shot"), receipt: { state: "running", work_id: "video-work", state_revision: 1 } } as RequestRecord;
+  const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[req]} events={[]} retainedArtifacts={[videoSummary, attemptSummary, previewSummary]} onInspectArtifact={() => {}} onRefresh={async () => {}} onError={() => {}} />);
+  assert.match(markup, /<video controls="" preload="metadata" playsInline="" src="[^"]+\/generation-h3-artifact-0\/content" aria-label="Retained video generation-h3-artifact-0"/i);
+  assert.match(markup, /Inspect video/);
+  assert.match(markup, /download="generation-h3-artifact-0">Download output/);
+  assert.doesNotMatch(markup, /attempt-h3-seg-1|preview-h3/);
+});
+
+test("Conversation attributes generated concepts targeting a published storyboard without a tool invocation", () => {
+  const req = { ...request("video-request", "2026-11-18T14:20:00Z", "Generate the opening shot"), receipt: { state: "running", work_id: "video-work", state_revision: 1 } } as RequestRecord;
+  const published = { ...videoSummary, invocation_id: null, published_versions: [{ item_id: "storyboard", version_id: "storyboard-v1" }] };
+  const retainedArtifacts: RetainedArtifactSummary[] = [
+    published,
+    { ...published, artifact: { ...generatedVideo, artifact_id: "generation-panel-artifact-0", kind: "image", media_type: "image/png" } },
+    { ...published, artifact: { ...generatedVideo, artifact_id: "generation-underscore-artifact-0", kind: "audio", media_type: "audio/flac" } },
+    { ...published, artifact: { ...generatedVideo, artifact_id: "existing-panel", kind: "image", media_type: "image/png" } },
+  ];
+  const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[req]} events={[]} retainedArtifacts={retainedArtifacts} onInspectArtifact={() => {}} onRefresh={async () => {}} onError={() => {}} />);
+  assert.match(markup, /<video [^>]+aria-label="Retained video generation-h3-artifact-0"/);
+  assert.match(markup, /Inspect video/);
+  assert.match(markup, /<img [^>]+generation-panel-artifact-0\/content/);
+  assert.match(markup, /<audio [^>]+generation-underscore-artifact-0\/content/);
+  assert.doesNotMatch(markup, /existing-panel/);
+});
+
+test("ChatPanel renders one player for a generated clip targeting a published storyboard", () => {
+  const current = snapshot();
+  current.execution!.work_outputs = [{ work_id: "video-work", request_id: "video-request", status: "retained_unpublished", artifact_ids: [videoId], published_versions: [], reason_code: null, summary: null }];
+  const req = { ...request("video-request", "2026-11-18T14:20:00Z", "Generate the opening shot"), receipt: { state: "running", work_id: "video-work", state_revision: 1 } } as RequestRecord;
+  const retained = { ...videoSummary, invocation_id: null, published_versions: [{ item_id: "storyboard", version_id: "storyboard-v1" }] };
+  const markup = chatMarkup([], { snapshot: current, requests: [req], retainedArtifacts: [retained] });
+  assert.equal((markup.match(/<video\b/g) ?? []).length, 1);
+  assert.match(markup, /<video [^>]+aria-label="Retained video generation-h3-artifact-0"/);
+});
+
+test("OutputCards checks resolved video metadata even without retained summaries", () => {
+  const render = (artifact: Artifact) => renderToStaticMarkup(<OutputCards api={api} projectId="project" artifactIds={[artifact.artifact_id]} artifactsById={new Map([[artifact.artifact_id, artifact]])} onInspectArtifact={() => {}} />);
+  const generated = render(generatedVideo);
+  assert.match(generated, /<video [^>]+aria-label="Retained video generation-h3-artifact-0"/);
+  assert.match(generated, /Inspect video/);
+  for (const artifact of [
+    attemptSummary.artifact,
+    previewSummary.artifact,
+    ...(["draft_motion", "inspection", "keyframe", "final"] as const).map(purpose => ({ ...generatedVideo, purpose })),
+  ]) {
+    const markup = render(artifact);
+    assert.ok(markup.includes("Download output"), "card received the resolved ready artefact");
+    assert.doesNotMatch(markup, /<video|Inspect video/);
+  }
+});
+
+test("video playback requires ready MP4 media", () => {
+  assert.equal(isReadyVideo(generatedVideo), true);
+  assert.equal(isReadyVideo(null), false);
+  for (const artifact of [
+    { ...generatedVideo, state: "unavailable" },
+    { ...generatedVideo, state: "corrupt" },
+    { ...generatedVideo, media_type: "video/webm" },
+    { ...generatedVideo, kind: "image" },
+  ] satisfies Artifact[]) {
+    assert.equal(isReadyVideo(artifact), false);
+    const markup = renderToStaticMarkup(<OutputCards api={api} projectId="project" artifactIds={[videoId]} retainedArtifacts={[{ ...videoSummary, artifact }]} onInspectArtifact={() => {}} />);
+    assert.doesNotMatch(markup, /<video|Inspect video/);
+  }
+});
+
+test("Catalogue lists ready generated videos but not attempt and preview streams", () => {
+  const markup = renderToStaticMarkup(<CatalogueBrowser api={api} projectId="project" items={[]} selectedVersionId={null} refreshRevision={0} retainedArtifacts={[videoSummary, attemptSummary, previewSummary, { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "unverified-video", state: "unavailable" } }]} onSelect={() => {}} onInspectArtifact={() => {}} />);
+  assert.match(markup, /Retained media \(1\)/);
+  assert.match(markup, /Inspect video/);
+  assert.match(markup, /download="generation-h3-artifact-0">Download video/);
+  assert.doesNotMatch(markup, /attempt-h3-seg-1|preview-h3|unverified-video/);
 });

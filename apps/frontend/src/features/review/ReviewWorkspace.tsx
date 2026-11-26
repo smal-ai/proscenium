@@ -23,7 +23,7 @@ import { formatPassOptionLabels, orderVersionJobs, selectablePassJobs } from "./
 import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
 import { useReviewSelection } from "./state";
-import { currentRetainedPreview, RetainedReview, ReviewEmpty, ReviewModeSwitcher } from "./ReviewChrome";
+import { clipSequenceDelivery, currentRetainedPreview, RetainedReview, ReviewEmpty, ReviewModeSwitcher, SequenceReelReview } from "./ReviewChrome";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "./refreshKeys";
 import "./review.css";
 
@@ -214,6 +214,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     if (!frameInputEdited.current) setFrameInput(String(activeFrameOrdinal));
   }, [activeFrameOrdinal, mode, draftId]);
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
+  const clipReel = version?.kind === "sequence" ? clipSequenceDelivery(artifacts, version.version_id) : undefined;
   const mappedSequence = mode === "animation" && !!assembly && !!activeFrameMap;
   const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
   const deliveryManifest = deliveryJob ? artifacts.find(a => deliveryJob.artifact_ids.includes(a.artifact_id) && a.kind === "document" && a.purpose === "metadata" && a.state === "ready") : undefined;
@@ -596,7 +597,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const hasServerTarget = !draft?.targetBlob || Boolean(draft.targetUploaded);
   const draftContext = draft ? annotationContext(draft.annotation, version?.kind) : null;
-  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: inspectedUnavailable || liveInspectedArtifact?.kind === "audio" ? [] : [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
+  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: !inspectedUnavailable && liveInspectedArtifact?.kind === "image" ? [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}] : []} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
     // A local capture has no stable artefact ID until the outbox uploads it.
     target: hasServerTarget ? draftContext.target : null,
     attachments: draft.state === "saved" ? draftContext.attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
@@ -836,7 +837,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const keydownRef = useRef<(event: KeyboardEvent) => void>(() => {});
   keydownRef.current = (event: KeyboardEvent) => {
-      if (!visible) return;
+      if (!visible || clipReel && !draft) return;
       if (event.key === "Escape" && pinMode) { event.preventDefault(); setPinMode(false); return; }
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
       const modes: Record<string, Mode> = {"1": "3d_inspection", "2": "keyframes", "3": "animation"};
@@ -1164,6 +1165,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   if (inspectedArtifact) return <RetainedReview visible={surfaceVisible} inspectedArtifact={liveInspectedArtifact} {...{projectId, version, inspectedArtifactSummary, onClearArtifact}}/>;
   if (!version || !merged) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
+  if (clipReel && !draft) return <SequenceReelReview visible={visible} projectId={projectId} artifact={clipReel}/>;
   const activePins: SpatialPinMarker[] = draft && isSpatialDraft
     ? draft.annotation.spatial_hits.map((hit, idx) => ({
       id: `${draft.key}-${idx}`,
