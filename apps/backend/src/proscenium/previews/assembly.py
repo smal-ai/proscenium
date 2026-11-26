@@ -249,6 +249,18 @@ def admit_assembly(
     return job, replayed
 
 
+def require_profile(service, profile_id: str) -> None:
+    configured = service.config.profile_id
+    if configured not in service.services.settings.execution_profiles:
+        raise DomainError("capability_unavailable", 501, "Execution profile is not configured")
+    if profile_id != configured:
+        raise DomainError(
+            "invalid_request",
+            422,
+            f"Unsupported assembly execution_profile_id; omit it or use '{configured}'",
+        )
+
+
 def prepare(
     service, caller: Caller, admission: dict, sequence: dict, frame_map: dict | None
 ) -> dict:
@@ -258,12 +270,7 @@ def prepare(
     active(service.services, caller, "admitToolJob", project_id)
     if admission["kind"] != "encode" or sequence["project_id"] != project_id:
         raise DomainError("scope_denied", 403)
-    if admission["execution_profile_id"] != service.config.profile_id:
-        raise DomainError(
-            "capability_unavailable",
-            501,
-            "Assembly execution profile does not match the installed adapter",
-        )
+    require_profile(service, admission["execution_profile_id"])
     catalogue = service.services.extension("catalogue")
     published = catalogue.sequence_map(project_id, sequence["sequence_version_id"])
 

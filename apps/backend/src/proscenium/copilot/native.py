@@ -66,6 +66,7 @@ Keep queries free of private project content and credentials. Include the exact 
 Mark URL leads as Discovered, not Acquired. Only verified local bytes are Acquired. Record the exact Provenance.source_url when acquiring or publishing references.
 Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
 Use assemble_sequence for an exact already-published sequence (for standalone scene renders with no storyboard shot, set SequenceEntry.shot_id to null to match job.target.shot_id). The host resolves frame receipts and computes admission hashes.
+Omit execution_profile_id on assemble_sequence to use the host's configured assembly profile. Do not invent profile names.
 Never query private SQLite to recover tool results or guess filesystem-latest.
 Inspect registered images with get_artifact(artifact_id=..., include_image=true). NEVER bash cp
 .proscenium/artefacts/.../content just to call view. The host verifies ready bytes and their hash inline without copying.

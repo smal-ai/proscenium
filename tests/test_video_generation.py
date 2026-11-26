@@ -18,7 +18,9 @@ from proscenium.api.errors import DomainError
 from proscenium.catalogue.validation import sequence_map
 from proscenium.contracts import canonical, validate
 from proscenium.copilot.capabilities import get_project_capabilities
+from proscenium.db import Transaction
 from proscenium.jobs.resources import Resources
+from proscenium.previews.assembly import require_profile
 from proscenium.providers import minimax_h3 as h3
 from proscenium.providers import register_provider_artifact
 from proscenium.providers.preparation import VideoPreparation, validate_recipes
@@ -26,7 +28,7 @@ from proscenium.sources.resolver import Resolver
 from test_audio_generation import flac
 from test_rc4_retry_and_context import DRAFT
 from test_rc4_retry_and_context import sequence_runtime as sequence_runtime
-from test_worker_capabilities_and_publication import PROJECT, invoke, publication
+from test_worker_capabilities_and_publication import PROJECT, invocation, invoke, publication
 from test_worker_capabilities_and_publication import offline as offline
 from test_worker_capabilities_and_publication import runtime as runtime
 
@@ -1287,6 +1289,117 @@ def admit_clip_assembly(runtime, job_id):
     job, status = invoke(runtime, "assemble_sequence", body, body["operation_id"])
     assert status == "success" and job["state"] == "planned", job
     return job
+
+
+def test_assembly_tool_advertises_optional_configured_profile(sequence_runtime):
+    tools = {tool.name: tool for tool in sequence_runtime.tools.definitions()}
+    assembly = tools["assemble_sequence"].parameters
+    assert "execution_profile_id" not in assembly["required"]
+    assert assembly["properties"]["execution_profile_id"]["enum"] == ["blender-cpu"]
+    assert "execution_profile_id" in tools["run_unity_workflow"].parameters["required"]
+
+
+@pytest.fixture
+def published_clip_runtime(sequence_runtime, tmp_path):
+    clip = mp4(tmp_path / "clip.mp4", audio=False)
+    store_clip(sequence_runtime, "clip-z", clip)
+    store_clip(sequence_runtime, "clip-a", clip)
+    publish_clip_sequence(sequence_runtime, clip_sequence())
+    return sequence_runtime
+
+
+@pytest.mark.parametrize(
+    "profile_args,profile_configured,expected_error",
+    [
+        ({}, True, None),
+        ({"execution_profile_id": "blender-cpu"}, True, None),
+        ({"execution_profile_id": "local-ffmpeg"}, True, "invalid_request"),
+        ({}, False, "capability_unavailable"),
+        ({"execution_profile_id": "blender-cpu"}, False, "capability_unavailable"),
+        ({"execution_profile_id": "local-ffmpeg"}, False, "capability_unavailable"),
+    ],
+    ids=[
+        "default",
+        "explicit",
+        "mismatch",
+        "unconfigured-default",
+        "unconfigured-explicit",
+        "unconfigured-mismatch",
+    ],
+)
+def test_assemble_sequence_profile(
+    published_clip_runtime, profile_args, profile_configured, expected_error
+):
+    runtime = published_clip_runtime
+    services = runtime.services
+    if not profile_configured:
+        services.settings = services.jobs.settings = replace(
+            services.settings, execution_profiles=frozenset({"other-profile"})
+        )
+
+    body = dict(operation_id="assemble-reel", job_id="reel", version=DRAFT, **profile_args)
+    result, status = invoke(runtime, "assemble_sequence", body, body["operation_id"])
+
+    with runtime.store.transaction(write=False) as tx:
+        if expected_error is None:
+            assert status == "success", result
+            assert (result["kind"], result["state"]) == ("encode", "planned")
+            admission = tx.require("job_inputs", "reel")["admission"]
+            assert runtime.previews.config.profile_id == "blender-cpu"
+            assert admission["execution_profile_id"] == runtime.previews.config.profile_id
+        else:
+            assert (status, result["error"]) == ("failure", expected_error), result
+            assert tx.get("jobs", "reel", required=False) is None
+            if expected_error == "invalid_request":
+                assert result["message"] == (
+                    "Unsupported assembly execution_profile_id; omit it or use 'blender-cpu'"
+                )
+            else:
+                profile_id = profile_args.get(
+                    "execution_profile_id", runtime.previews.config.profile_id
+                )
+                with pytest.raises(DomainError) as caught:
+                    require_profile(runtime.previews, profile_id)
+                assert (caught.value.status, caught.value.code) == (501, "capability_unavailable")
+
+
+@pytest.mark.parametrize("explicit_first", [False, True], ids=["default-first", "explicit-first"])
+def test_assemble_sequence_profile_replays_same_operation(
+    published_clip_runtime, monkeypatch, explicit_first
+):
+    runtime = published_clip_runtime
+    name = "assemble_sequence"
+    omitted = dict(operation_id="assemble-reel", job_id="reel", version=DRAFT)
+    explicit = dict(omitted, execution_profile_id="blender-cpu")
+    initial, replay = (explicit, omitted) if explicit_first else (omitted, explicit)
+    original, status = invoke(runtime, name, initial, "initial-assembly")
+    assert status == "success", original
+
+    def outbox():
+        with runtime.store.transaction(write=False) as tx:
+            return [tuple(row) for row in tx.connection.execute("SELECT * FROM outbox")]
+
+    queued = outbox()
+    assert [(row[0], row[1]) for row in queued] == [(original["attempt_id"], "preview.assemble")]
+
+    def unexpected_enqueue(*args, **kwargs):
+        pytest.fail("Replaying the assembly must not enqueue another attempt")
+
+    monkeypatch.setattr(Transaction, "enqueue", unexpected_enqueue)
+    monkeypatch.setattr(runtime.state, "control", lambda tx: {"fenced": True})
+    repeated, status = invoke(runtime, name, replay, "replayed-assembly")
+    assert status == "success", repeated
+    assert (repeated["job_id"], repeated["attempt_id"]) == ("reel", original["attempt_id"])
+
+    changed = dict(explicit, execution_profile_id="other-profile")
+    error, status = invoke(runtime, name, changed, "different-profile")
+    assert (status, error["error"]) == ("failure", "idempotency_conflict"), error
+    call = invocation(runtime, name, changed, "different-profile")
+    caller = runtime.tools.caller(call, name=name, admit=False)
+    with pytest.raises(DomainError) as caught:
+        runtime.services.extension("workflows").begin(caller, changed, "assembly")
+    assert (caught.value.status, caught.value.code) == (409, "idempotency_conflict")
+    assert outbox() == queued
 
 
 def run_clip_worker(runtime, job, monkeypatch):

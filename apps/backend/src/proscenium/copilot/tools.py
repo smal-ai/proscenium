@@ -398,6 +398,17 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
     )
     details: dict[str, Any] = {}
     if (
+        name == "assemble_sequence"
+        and error.code == "invalid_request"
+        and error.status == 422
+        and re.fullmatch(
+            r"Unsupported assembly execution_profile_id; omit it or use '[A-Za-z0-9][A-Za-z0-9._-]{0,127}'",
+            error.message,
+        )
+    ):
+        # Allow only the host's fixed guidance with a contract-shaped profile ID.
+        message = error.message
+    if (
         name in PREPARATION_TOOLS
         and error.code == "scope_denied"
         and error.message not in SAFE_REASONS
