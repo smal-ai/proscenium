@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import { AlertTriangle, Pause } from "lucide-react";
 import type { AssistantStatusProps } from "../../api/studio";
 import type { ActivityEventData } from "../../api";
@@ -49,7 +49,7 @@ export function assistantState({ snapshot, requests, events, jobs, submitting, s
   }
   return { state: "ready", label: "Ready" };
 }
-export function AssistantStatus(props: AssistantStatusProps) {
+export const AssistantStatus = memo(function AssistantStatus(props: AssistantStatusProps) {
   const last = useRef<ReturnType<typeof assistantState> | null>(null);
   const stale = props.connection !== "Connected" || props.hydrated === false;
   const derived = assistantState(props);
@@ -60,4 +60,4 @@ export function AssistantStatus(props: AssistantStatusProps) {
     {state.state === "recovery" ? <AlertTriangle size={12} /> : state.state === "paused" ? <Pause size={12} /> : <span className="assistant-status-dot" aria-hidden="true" />}
     {!props.compact && <span>{label}</span>}
   </span>;
-}
+});

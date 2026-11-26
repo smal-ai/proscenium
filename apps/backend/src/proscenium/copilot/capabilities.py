@@ -1,6 +1,7 @@
 """Supported host discovery and non-materialising authored-document validation."""
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -71,14 +72,19 @@ KINDS = {
     "sequence_map": "SequenceMap",
     "publication_submit": "PublicationSubmit",
 }
+ProbeKey = tuple[str, str, str]
 
 
 def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
     provider = services.extension("providers")
-    rows = []
+    rows: list[dict[str, Any]] = []
+    unique_fetches: dict[ProbeKey, dict[str, Any]] = {}
+    planned: list[tuple[dict[str, Any], list[tuple[dict[str, Any], ProbeKey]]]] = []
     for service in services.settings.services:
+        pending: list[tuple[dict[str, Any], ProbeKey]] = []
+        planned.append((service, pending))
+        mesh_recipe = provider.options.get("mesh_recipes", {}).get(service["provider_id"])
         for capability in service["capabilities"]:
-            mesh_recipe = provider.options.get("mesh_recipes", {}).get(service["provider_id"])
             revision = (
                 provider.options.get("image_profiles", {}).get(
                     service["provider_id"], "comfy-image-1"
@@ -157,11 +163,29 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                 except DomainError as exc:
                     row.update(reason_code="audio_verifier_missing", summary=exc.message)
                     continue
-            try:
-                catalog = bounded_get(
-                    provider, service, "/v1/models" if capability == "vlm" else "/object_info"
-                )
-            except (httpx.HTTPError, DomainError, ValueError, TypeError):
+            path = "/v1/models" if capability == "vlm" else "/object_info"
+            key = (service["provider_id"], service["endpoint"], path)
+            unique_fetches.setdefault(key, service)
+            pending.append((row, key))
+
+    def fetch(key: ProbeKey) -> dict[str, Any] | None:
+        try:
+            return bounded_get(provider, unique_fetches[key], key[2])
+        except (httpx.HTTPError, DomainError, ValueError, TypeError):
+            return None
+
+    if len(unique_fetches) > 1:
+        with ThreadPoolExecutor(max_workers=min(8, len(unique_fetches))) as pool:
+            catalogues = dict(zip(unique_fetches, pool.map(fetch, unique_fetches), strict=True))
+    else:
+        catalogues = {key: fetch(key) for key in unique_fetches}
+
+    for service, pending in planned:
+        mesh_recipe = provider.options.get("mesh_recipes", {}).get(service["provider_id"])
+        for row, key in pending:
+            capability, revision = row["capability"], row["profile_revision"]
+            catalog = catalogues[key]
+            if catalog is None:
                 row.update(
                     reason_code="provider_unreachable",
                     summary="Provider catalogue could not be read",

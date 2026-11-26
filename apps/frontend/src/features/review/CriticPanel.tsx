@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { memo, useEffect, useState, type KeyboardEvent } from "react";
 import { ArrowLeft, Check, Eye, MessageSquareWarning } from "lucide-react";
 import { ApiError } from "../../api";
 import type {
@@ -80,7 +80,7 @@ function targetLabel(target: FrameTarget): string {
   return parts.join(" · ");
 }
 
-export function CriticPanel({
+export const CriticPanel = memo(function CriticPanel({
   api,
   projectId,
   selection,
@@ -867,4 +867,4 @@ export function CriticPanel({
       </div>
     </section>
   );
-}
+});

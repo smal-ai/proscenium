@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from proscenium.api.dependencies import command, owner, tool, tool_or_worker
 from proscenium.auth import COOKIE_NAME, Caller
-from proscenium.contracts import validate
+from proscenium.contracts import validate_stored_page
 from proscenium.services import get_services
 
 router = APIRouter()
@@ -65,10 +65,15 @@ def list_jobs(
 ) -> dict:
     services = get_services(request)
     with services.registry.project_store(project_id).transaction(write=False) as tx:
-        result = services.cursors.page(
-            f"{project_id}:jobs", tx.all("jobs"), "job_id", cursor=cursor, limit=limit
+        result = services.cursors.stored_page(
+            f"{project_id}:jobs",
+            tx.all_raw("jobs"),
+            "job_id",
+            "JobRecord",
+            cursor=cursor,
+            limit=limit,
         )
-        return validate("JobPage", result)
+        return validate_stored_page("JobPage", result)
 
 
 @router.get("/api/v1/projects/{project_id}/jobs/{job_id}", operation_id="getJob")
@@ -88,11 +93,16 @@ def list_attempts(
     services = get_services(request)
     with services.registry.project_store(project_id).transaction(write=False) as tx:
         tx.require("jobs", job_id)
-        records = [a for a in tx.all("attempts") if a["job_id"] == job_id]
-        result = services.cursors.page(
-            f"{project_id}:attempts:{job_id}", records, "attempt_id", cursor=cursor, limit=limit
+        records = [(raw, a) for raw, a in tx.all_raw("attempts") if a.get("job_id") == job_id]
+        result = services.cursors.stored_page(
+            f"{project_id}:attempts:{job_id}",
+            records,
+            "attempt_id",
+            "JobAttempt",
+            cursor=cursor,
+            limit=limit,
         )
-        return validate("JobAttemptPage", result)
+        return validate_stored_page("JobAttemptPage", result)
 
 
 @router.post(

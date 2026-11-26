@@ -3,8 +3,10 @@ import { test } from "node:test";
 import { Box3, Matrix4, MeshPhysicalMaterial, MeshStandardMaterial, OrthographicCamera, PerspectiveCamera, Texture, Vector3 } from "three";
 import type { Camera } from "../../api/generated/contracts";
 import { cloneInspectionMaterial } from "./inspectionMaterials";
-import { captureCamera, projectBlenderPoint } from "./media";
-import { computeAutoFramePose, computeCanvasFramingGate, computeFramingGate, deriveFramedCamera, formatRenderPresetOption, resolveRenderTargetDimensions } from "./renderFraming";
+import { projectBlenderPoint } from "./media";
+import { captureCamera } from "./proxyCamera";
+import { computeAutoFramePose, deriveFramedCamera } from "./proxyFraming";
+import { computeCanvasFramingGate, computeFramingGate, formatRenderPresetOption, resolveRenderTargetDimensions } from "./renderFraming";
 
 test("auto-frame centres a half-metre proxy from the original three-quarter view", () => {
   const box = new Box3(new Vector3(-0.25, -0.21, -0.06), new Vector3(0.25, 0.21, 0.07));

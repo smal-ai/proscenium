@@ -1,5 +1,5 @@
 import { isReadyAudio } from "../retainedAudio";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Ellipsis, Plus } from "lucide-react";
 import type { Provenance, RetainedArtifactSummary, SelectionRecord, SelectionSave, VersionRecord } from "../../api/generated/contracts";
 import { ApiError } from "../../api/client";
@@ -7,7 +7,7 @@ import type { CatalogueSurfaceProps } from "../../api/studio";
 import { allPages } from "../review/records";
 import { readPendingSelection, writePendingSelection, type PendingSelection } from "./pendingSelection";
 import { mediaUrl } from "../review/media";
-import { disclosureKey, displayItemTitle, formatItemStatusLine, shortVersionLabel, type OpenDisclosure } from "./catalogueHelpers";
+import { catalogueVersionKey, disclosureKey, displayItemTitle, formatItemStatusLine, indexCatalogueSelections, indexCatalogueVersions, shortVersionLabel, type OpenDisclosure } from "./catalogueHelpers";
 import "./catalogue.css";
 
 function ProvenanceDetails({provenance}: {provenance: Provenance | undefined}) {
@@ -24,14 +24,17 @@ function ProvenanceDetails({provenance}: {provenance: Provenance | undefined}) {
 
 type CatalogueProps = CatalogueSurfaceProps & { projectName?: string };
 
-export function CatalogueBrowser(props: CatalogueProps) {
+export const CatalogueBrowser = memo(function CatalogueBrowser(props: CatalogueProps) {
   return <Catalogue key={props.projectId} {...props}/>;
-}
+});
 
-function Catalogue({api, projectId, projectName, items, selectedVersionId, refreshRevision, onSelect, retainedArtifacts, onCreateAsset, onInspectArtifact}: CatalogueProps) {
+function Catalogue({api, projectId, projectName, items, selectedVersionId, refreshRevision, onSelect, retainedArtifacts, onCreateAsset, onInspectArtifact, visible = true}: CatalogueProps) {
   const [retained, setRetained] = useState<RetainedArtifactSummary[]>([]);
   const [retainedError, setRetainedError] = useState("");
   const [versions, setVersions] = useState<VersionRecord[]>([]);
+  const loadedRef = useRef(new Map<string, {fingerprint: string; versions: VersionRecord[]}>());
+  const apiRef = useRef(api);
+  const itemsKey = useMemo(() => catalogueVersionKey(items), [items]);
   const [selections, setSelections] = useState<SelectionRecord[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,20 +52,19 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   // Check after refs and parent visibility are committed, including when the Navigator is hidden.
   useLayoutEffect(() => {
     if (!openKey) return;
-    const trigger = disclosureTriggers.current.get(openKey);
-    if (!trigger?.getClientRects().length) {
-      setOpenDisclosure(null);
-      return;
-    }
-    function dismiss(event: KeyboardEvent) {
+    if (!visible || !disclosureTriggers.current.get(openKey)?.getClientRects().length) setOpenDisclosure(null);
+  });
+  useLayoutEffect(() => {
+    if (!openKey) return;
+    const dismiss = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       event.preventDefault();
       setOpenDisclosure(null);
-      trigger?.focus();
-    }
+      disclosureTriggers.current.get(openKey)?.focus();
+    };
     window.addEventListener("keydown", dismiss);
     return () => window.removeEventListener("keydown", dismiss);
-  });
+  }, [openKey]);
 
   function disclosureTrigger(disclosure: Exclude<OpenDisclosure, null>) {
     const key = disclosureKey(disclosure);
@@ -98,13 +100,36 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   useEffect(() => {
     const controller = new AbortController();
     const {signal} = controller;
-    Promise.all(items.map(item => allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: item.item_id}, query: {cursor, limit: 100}, signal}))))
-      .then(pages => {if (!signal.aborted) setVersions(pages.flat());}).catch(e => {if (!signal.aborted) setError(String(e));});
+    const loaded = loadedRef.current;
+    if (apiRef.current !== api) {
+      loaded.clear();
+      setVersions([]);
+      apiRef.current = api;
+    }
+    const fingerprints = new Map((JSON.parse(itemsKey) as [string, string | null, number][])
+      .map(([itemId, head, state]) => [itemId, JSON.stringify([head, state, refreshRevision])]));
+    const publish = () => setVersions([...fingerprints.keys()].flatMap(id => loaded.get(id)?.versions ?? []));
+    let pruned = false;
+    for (const id of loaded.keys()) if (!fingerprints.has(id)) { loaded.delete(id); pruned = true; }
+    if (pruned) publish();
+    const missing = [...fingerprints].filter(([id, fingerprint]) => loaded.get(id)?.fingerprint !== fingerprint);
+    if (missing.length) void Promise.all(missing.map(async ([item_id, fingerprint]) => ({ item_id, fingerprint, versions: await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id}, query: {cursor, limit: 100}, signal})) })))
+      .then(results => {
+        if (signal.aborted) return;
+        for (const {item_id, fingerprint, versions} of results) loaded.set(item_id, {fingerprint, versions});
+        publish();
+      }).catch(e => {if (!signal.aborted) setError(String(e));});
+    return () => controller.abort();
+  }, [api, projectId, itemsKey, refreshRevision]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const {signal} = controller;
     Promise.all([readPendingSelection(projectId), allPages(cursor => api.call("listSelections", {path: {project_id: projectId}, query: {cursor, limit: 100}, signal}))])
       .then(([command, choices]) => {if (!signal.aborted) {setPending(command); setSelections(choices); setReady(true);}})
       .catch(e => {if (!signal.aborted) {setReady(false); setError(String(e));}});
     return () => controller.abort();
-  }, [api, projectId, items, refreshRevision]);
+  }, [api, projectId, refreshRevision]);
 
   async function select(version: VersionRecord, withdraw = false) {
     if (locked.current || pending || !ready) return;
@@ -180,7 +205,16 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   }
 
   const search = query.trim().toLowerCase();
-  const itemNames = items.map(item => item.name);
+  const itemPresentation = useMemo(() => {
+    const itemNames = items.map(item => item.name);
+    return items.map(item => ({
+      item,
+      title: displayItemTitle(item.name, projectName, itemNames),
+      searchText: [item.name, item.description, ...(item.tags ?? []), item.provenance?.source_url, item.provenance?.creator, item.provenance?.licence, item.provenance?.note].filter(Boolean).join(" ").toLowerCase(),
+    }));
+  }, [items, projectName]);
+  const versionsByItem = useMemo(() => indexCatalogueVersions(versions), [versions]);
+  const selectedByItem = useMemo(() => indexCatalogueSelections(selections), [selections]);
   const pendingSlot = pending?.command.slot;
   const recoveryItemId = pendingSlot?.kind === "item" && items.some(item => item.item_id === pendingSlot.item_id) ? pendingSlot.item_id : null;
   const cannotSelect = busy || !ready || pending !== null;
@@ -192,12 +226,12 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
       {pending && <button disabled={busy} onClick={() => void retry()}>{pending.state === "acknowledged" ? "Reload acknowledged selection" : "Retry original selection"}</button>}
     </div>
   </div>;
-  const retainedList = (retainedArtifacts ?? retained).filter(({artifact, job_id, published_versions = []}) =>
+  const retainedList = useMemo(() => (retainedArtifacts ?? retained).filter(({artifact, job_id, published_versions = []}) =>
     artifact.project_id === projectId
     && (isReadyAudio(artifact) || (artifact.kind === "image" && artifact.state === "ready"
       && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type)))
     && artifact.purpose !== "draft_motion"
-    && !(Boolean(job_id) && published_versions.length > 0 && artifact.artifact_id.startsWith("preview-")));
+    && !(Boolean(job_id) && published_versions.length > 0 && artifact.artifact_id.startsWith("preview-"))), [projectId, retainedArtifacts, retained]);
   const showRetained = retainedExpanded ?? (items.length === 0 || retainedList.length > 0);
 
   return <section className="review-catalogue" aria-label="Version catalogue">
@@ -211,13 +245,13 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
     </div>
     <div className="catalogue-scroll">
       {!recoveryItemId && recoveryBanner}
-      {items.map(item => {
-        const itemVersions = versions.filter(v => v.item_id === item.item_id).sort((a, b) => b.created_at.localeCompare(a.created_at));
+      {itemPresentation.map(({item, title, searchText}) => {
+        const itemVersions = versionsByItem.get(item.item_id) ?? [];
         const versionMatch = !!search && itemVersions.some(v => [v.version_id, v.description].some(value => value?.toLowerCase().includes(search)));
-        const itemMatch = [item.name, item.description, ...(item.tags ?? []), item.provenance?.source_url, item.provenance?.creator, item.provenance?.licence, item.provenance?.note].filter(Boolean).join(" ").toLowerCase().includes(search);
+        const itemMatch = searchText.includes(search);
         if (!itemMatch && !versionMatch && recoveryItemId !== item.item_id) return null;
 
-        const selected = selections.find(s => s.slot.kind === "item" && s.slot.item_id === item.item_id && s.state === "selected");
+        const selected = selectedByItem.get(item.item_id);
         const ownerVersion = selected?.choice?.kind === "version" ? selected.choice.version.version_id : null;
         const activeItemVersion = itemVersions.find(v => v.version_id === ownerVersion)
           ?? itemVersions.find(v => v.version_id === item.current_version_id) ?? itemVersions[0];
@@ -235,7 +269,7 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
               {isExpanded ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>}
             </button>
             <button className="catalogue-item-header" aria-pressed={viewedVersionId !== null} title={item.name} disabled={!activeItemVersion} onClick={() => onSelect(activeItemVersion)}>
-              <span className="catalogue-item-title"><strong>{displayItemTitle(item.name, projectName, itemNames)}</strong><span className="catalogue-version-count">{itemVersions.length} {itemVersions.length === 1 ? "version" : "versions"}</span></span>
+              <span className="catalogue-item-title"><strong>{title}</strong><span className="catalogue-version-count">{itemVersions.length} {itemVersions.length === 1 ? "version" : "versions"}</span></span>
               <span className="catalogue-status-line">{statusLine}</span>
             </button>
             <button type="button" className="catalogue-icon-btn" aria-label={`Details for ${item.name}`} {...itemTrigger}><Ellipsis size={15} aria-hidden="true"/></button>

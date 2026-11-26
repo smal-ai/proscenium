@@ -1,4 +1,3 @@
-import { Matrix4, OrthographicCamera, PerspectiveCamera, Vector3 } from "three";
 import type { Camera, FrameMap, FrameReceipt, FrameTarget, PreviewSegment, VersionRecord } from "../../api/generated/contracts";
 
 export const mediaUrl = (project: string, artifact: string) => `/api/v1/projects/${encodeURIComponent(project)}/artifacts/${encodeURIComponent(artifact)}/content`;
@@ -16,27 +15,58 @@ export function contentRect(box: {left: number; top: number; width: number; heig
   return {left: box.left + (box.width - width * scale) / 2, top: box.top + (box.height - height * scale) / 2, width: width * scale, height: height * scale};
 }
 
-/** World basis only. Camera-local optical axes do not undergo an object conjugation. */
-export function captureCamera(camera: PerspectiveCamera | OrthographicCamera): Camera {
-  camera.updateMatrixWorld();
-  const proxyToBlender = new Matrix4().set(1,0,0,0, 0,0,-1,0, 0,1,0,0, 0,0,0,1);
-  const world = proxyToBlender.multiply(camera.matrixWorld);
-  const rowMajor = (m: Matrix4) => m.clone().transpose().toArray();
-  const projection = rowMajor(camera.projectionMatrix);
-  const common = {space: "blender_world_m" as const, camera_to_world: rowMajor(world), projection,
-    aspect: camera instanceof PerspectiveCamera ? camera.aspect : (camera.right-camera.left)/(camera.top-camera.bottom),
-    near_m: camera.near, far_m: camera.far, source_camera_id: null,
-    shift: (camera instanceof PerspectiveCamera ? [-projection[2] / 2, projection[6] / 2] : [projection[3] / 2, -projection[7] / 2]) as [number, number]};
-  return camera instanceof PerspectiveCamera
-    ? {...common, kind: "perspective", vertical_fov_degrees: camera.getEffectiveFOV()}
-    : {...common, kind: "orthographic", orthographic_height_m: (camera.top-camera.bottom)/camera.zoom};
+type CameraMatrices = Pick<Camera, "camera_to_world" | "projection">;
+
+/** Invert a row-major 4×4 via its adjugate. Preserve Three.js Matrix4's operation order. */
+function invertMatrix4(matrix: readonly number[]): number[] | null {
+  const [n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44] = matrix;
+  const t1 = n11 * n22 - n21 * n12, t2 = n11 * n32 - n31 * n12, t3 = n11 * n42 - n41 * n12;
+  const t4 = n21 * n32 - n31 * n22, t5 = n21 * n42 - n41 * n22, t6 = n31 * n42 - n41 * n32;
+  const t7 = n13 * n24 - n23 * n14, t8 = n13 * n34 - n33 * n14, t9 = n13 * n44 - n43 * n14;
+  const t10 = n23 * n34 - n33 * n24, t11 = n23 * n44 - n43 * n24, t12 = n33 * n44 - n43 * n34;
+  const det = t1 * t12 - t2 * t11 + t3 * t10 + t4 * t9 - t5 * t8 + t6 * t7;
+  if (det === 0 || !Number.isFinite(det)) return null;
+  const inv = 1 / det;
+  return [
+    (n22 * t12 - n32 * t11 + n42 * t10) * inv,
+    (n32 * t9 - n12 * t12 - n42 * t8) * inv,
+    (n12 * t11 - n22 * t9 + n42 * t7) * inv,
+    (n22 * t8 - n12 * t10 - n32 * t7) * inv,
+    (n31 * t11 - n21 * t12 - n41 * t10) * inv,
+    (n11 * t12 - n31 * t9 + n41 * t8) * inv,
+    (n21 * t9 - n11 * t11 - n41 * t7) * inv,
+    (n11 * t10 - n21 * t8 + n31 * t7) * inv,
+    (n24 * t6 - n34 * t5 + n44 * t4) * inv,
+    (n34 * t3 - n14 * t6 - n44 * t2) * inv,
+    (n14 * t5 - n24 * t3 + n44 * t1) * inv,
+    (n24 * t2 - n14 * t4 - n34 * t1) * inv,
+    (n33 * t5 - n23 * t6 - n43 * t4) * inv,
+    (n13 * t6 - n33 * t3 + n43 * t2) * inv,
+    (n23 * t3 - n13 * t5 - n43 * t1) * inv,
+    (n13 * t4 - n23 * t2 + n33 * t1) * inv,
+  ];
 }
 
-export function projectBlenderPoint(camera: Pick<Camera,"camera_to_world" | "projection">, point: number[]): [number, number] {
-  const view = new Matrix4().fromArray(camera.camera_to_world).transpose().invert();
-  const projection = new Matrix4().fromArray(camera.projection).transpose();
-  const clip = new Vector3(point[0],point[1],point[2]).applyMatrix4(projection.multiply(view));
-  return [(clip.x+1)/2,(1-clip.y)/2];
+/** Return homogeneous clip coordinates from the row-major wire matrices. */
+export function blenderPointToClip(camera: CameraMatrices, point: readonly number[]): [number, number, number, number] | null {
+  const view = invertMatrix4(camera.camera_to_world);
+  if (!view) return null;
+  const [x, y, z] = point;
+  const p = camera.projection;
+  const row = (i: number) => {
+    const column = (j: number) => p[i] * view[j] + p[i + 1] * view[j + 4] + p[i + 2] * view[j + 8] + p[i + 3] * view[j + 12];
+    return column(0) * x + column(1) * y + column(2) * z + column(3);
+  };
+  return [row(0), row(4), row(8), row(12)];
+}
+
+export function projectBlenderPoint(camera: CameraMatrices, point: readonly number[]): [number, number] {
+  const clip = blenderPointToClip(camera, point);
+  // A singular Matrix4 inverse is zero in Three.js, giving 0 * Infinity.
+  if (!clip) return [NaN, NaN];
+  // Match Vector3.applyMatrix4: multiply by the reciprocal rather than divide.
+  const w = 1 / clip[3];
+  return [(clip[0] * w + 1) / 2, (1 - clip[1] * w) / 2];
 }
 
 export function frameTarget(frame: FrameReceipt, version: VersionRecord, segment?: PreviewSegment): FrameTarget {

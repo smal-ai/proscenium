@@ -42,6 +42,9 @@ class Caller:
 class Auth:
     """Private machine-store capabilities. Never put these records in project context/events."""
 
+    SESSION_TTL = 43200.0
+    SLIDING_WRITE_INTERVAL = 60.0
+
     def __init__(self, store: Store):
         self.store = store
 
@@ -75,7 +78,7 @@ class Auth:
             session = {
                 "owner_session_id": f"owner-{uuid4()}",
                 "csrf_token": secrets.token_urlsafe(48),
-                "expires": time.time() + 43200,
+                "expires": time.time() + self.SESSION_TTL,
             }
             tx.put("auth.sessions", digest(cookie), session)
             tx.put("auth.pair_operations", body["operation_id"], {"binding": binding})
@@ -127,22 +130,32 @@ class Auth:
     def _owner(self, cookie: str | None, csrf: str, mutation: bool) -> Caller:
         if not cookie:
             raise DomainError("owner_session_required", 401)
-        with self.store.transaction() as tx:
-            identity = digest(cookie)
+        identity = digest(cookie)
+        refresh_threshold = self.SESSION_TTL - self.SLIDING_WRITE_INTERVAL
+        with self.store.transaction(write=False) as tx:
             session = tx.get("auth.sessions", identity, required=False)
-            if not session or session["expires"] <= time.time():
+            current_time = time.time()
+            if not session or session["expires"] <= current_time:
                 raise DomainError("owner_session_required", 401)
-            if mutation:
-                if not secrets.compare_digest(csrf, session["csrf_token"]):
+            if mutation and not secrets.compare_digest(csrf, session["csrf_token"]):
+                raise DomainError("permission_denied", 403)
+        if session["expires"] - current_time < refresh_threshold:
+            with self.store.transaction() as tx:
+                session = tx.get("auth.sessions", identity, required=False)
+                current_time = time.time()
+                if not session or session["expires"] <= current_time:
+                    raise DomainError("owner_session_required", 401)
+                if mutation and not secrets.compare_digest(csrf, session["csrf_token"]):
                     raise DomainError("permission_denied", 403)
-            session["expires"] = time.time() + 43200
-            tx.put(
-                "auth.sessions",
-                identity,
-                session,
-                expected_revision=tx.revision("auth.sessions", identity),
-            )
-            return Caller("owner", session["owner_session_id"])
+                if session["expires"] - current_time < refresh_threshold:
+                    session["expires"] = current_time + self.SESSION_TTL
+                    tx.put(
+                        "auth.sessions",
+                        identity,
+                        session,
+                        expected_revision=tx.revision("auth.sessions", identity),
+                    )
+        return Caller("owner", session["owner_session_id"])
 
     def capability(self, request: Request, channels: set[str]) -> Caller:
         header = request.headers.get("Authorization", "")

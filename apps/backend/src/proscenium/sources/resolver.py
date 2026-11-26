@@ -93,13 +93,13 @@ class Resolver:
             raise DomainError("hash_mismatch", 422)
         return content
 
-    def resolve(
+    def _verify_closure(
         self,
         project_id: str,
         closure: dict[str, Any],
         *,
         batch: dict[str, dict[str, Any]] | None = None,
-    ) -> Path:
+    ) -> tuple[Path, dict[str, bytes]]:
         validate("SourceClosure", closure)
         root = Path(self.services.registry.get(project_id)["path"])
         relative(root, closure["entry_path"])
@@ -159,6 +159,16 @@ class Resolver:
         for name in files:
             if any(other.startswith(name + "/") for other in files):
                 raise DomainError("dependency_collision", 409, destination=name)
+        return root, files
+
+    def resolve(
+        self,
+        project_id: str,
+        closure: dict[str, Any],
+        *,
+        batch: dict[str, dict[str, Any]] | None = None,
+    ) -> Path:
+        root, files = self._verify_closure(project_id, closure, batch=batch)
         base = managed(root, ".proscenium/snapshots/" + closure["digest"])
         mkdir_private(base)
         # A fresh tree per materialisation prevents sharing writable renderer inputs.
@@ -181,8 +191,12 @@ class Resolver:
         return self.resolve(project_id, version["source"])
 
     def authored(self, project_id: str, version: dict[str, Any]) -> dict[str, Any]:
-        root = self.resolve(project_id, version["source"])
+        closure = version["source"]
+        _, files = self._verify_closure(project_id, closure)
         try:
-            return dict(json.loads((root / version["source"]["entry_path"]).read_bytes()))
-        except (ValueError, OSError) as exc:
+            document = json.loads(files[closure["entry_path"]])
+            if not isinstance(document, dict):
+                raise ValueError("Authored source must be an object")
+            return document
+        except ValueError as exc:
             raise DomainError("source_unavailable", 422) from exc

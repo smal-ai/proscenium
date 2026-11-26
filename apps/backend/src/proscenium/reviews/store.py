@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from proscenium.api.errors import DomainError
@@ -54,6 +55,30 @@ def default_review_title(request: dict[str, Any]) -> str:
     else:
         title = clause or prefix or str(request.get("review_id", "Visual review"))
     return title[:160]
+
+
+@dataclass(frozen=True)
+class TicketContext:
+    findings_by_review: dict[str, list[dict[str, Any]]]
+    meta_by_review: dict[str, dict[str, Any]]
+    requests_by_review: dict[str, dict[str, Any]]
+    jobs_by_id: dict[str, dict[str, Any]]
+    diag_by_review: dict[str, dict[str, Any]]
+    review_revisions: dict[str, int]
+    legacy_review_events: dict[str, tuple[int, Any]]
+    legacy_job_events: dict[str, tuple[int, Any]]
+
+    def legacy_created_at(self, review_id: str, job_id: str) -> str | None:
+        matches = [
+            event
+            for event in (
+                self.legacy_review_events.get(review_id),
+                self.legacy_job_events.get(job_id),
+            )
+            if event is not None
+        ]
+        occurred_at = min(matches, key=lambda event: event[0])[1] if matches else None
+        return occurred_at if isinstance(occurred_at, str) else None
 
 
 class ReviewStore:
@@ -162,19 +187,76 @@ class ReviewStore:
                 schema="ReviewDiagnostics",
             )
 
+    @staticmethod
+    def preload_ticket_context(
+        tx: Transaction, *, jobs: list[dict[str, Any]] | None = None
+    ) -> TicketContext:
+        def records(namespace: str) -> dict[str, dict[str, Any]]:
+            return {
+                identity: json.loads(body)
+                for identity, body in tx.connection.execute(
+                    "SELECT id, body FROM records WHERE namespace=?", (namespace,)
+                )
+            }
+
+        findings: dict[str, list[dict[str, Any]]] = {}
+        for finding in tx.all("findings"):
+            findings.setdefault(finding["review_id"], []).append(finding)
+        meta = records("review.meta")
+        legacy = dict(
+            tx.connection.execute(
+                "SELECT r.id, r.revision FROM records r WHERE r.namespace='reviews' "
+                "AND NOT EXISTS (SELECT 1 FROM records m WHERE m.namespace='review.meta' AND m.id=r.id)"
+            )
+        )
+        review_events: dict[str, tuple[int, Any]] = {}
+        job_events: dict[str, tuple[int, Any]] = {}
+        if legacy:
+            # The earliest matching event wins, even if its timestamp is missing.
+            for sequence, event_type, review_id, job_id, occurred_at in tx.connection.execute(
+                "SELECT sequence, json_extract(body, '$.event_type'), "
+                "json_extract(body, '$.payload.review_id'), json_extract(body, '$.payload.job_id'), "
+                "json_extract(body, '$.occurred_at') FROM events WHERE "
+                "json_extract(body, '$.event_type') IN "
+                "('job.state_changed', 'review.ready', 'review.changed') ORDER BY sequence"
+            ):
+                if event_type == "job.state_changed":
+                    job_events.setdefault(job_id, (sequence, occurred_at))
+                elif review_id in legacy:
+                    review_events.setdefault(review_id, (sequence, occurred_at))
+        return TicketContext(
+            findings,
+            meta,
+            records("review.requests"),
+            records("jobs") if jobs is None else {job["job_id"]: job for job in jobs},
+            records("review.diagnostics"),
+            legacy,
+            review_events,
+            job_events,
+        )
+
     def ticket_view(
         self,
         tx: Transaction,
         ticket: dict[str, Any],
         *,
         override_error_code: str | None = None,
+        context: TicketContext | None = None,
+        validate_output: bool = True,
     ) -> dict[str, Any]:
         review_id = ticket["review_id"]
-        meta = tx.get("review.meta", review_id, required=False)
-        request = tx.get("review.requests", review_id, required=False)
-        job = tx.get("jobs", ticket["job_id"], required=False)
-        diag = tx.get("review.diagnostics", review_id, required=False)
-        review_findings = [f for f in tx.all("findings") if f["review_id"] == review_id]
+        if context is None:
+            meta = tx.get("review.meta", review_id, required=False)
+            request = tx.get("review.requests", review_id, required=False)
+            job = tx.get("jobs", ticket["job_id"], required=False)
+            diag = tx.get("review.diagnostics", review_id, required=False)
+            review_findings = [f for f in tx.all("findings") if f["review_id"] == review_id]
+        else:
+            meta = context.meta_by_review.get(review_id)
+            request = context.requests_by_review.get(review_id)
+            job = context.jobs_by_id.get(ticket["job_id"])
+            diag = context.diag_by_review.get(review_id)
+            review_findings = context.findings_by_review.get(review_id, [])
         finding_count = len(review_findings)
         unreviewed_count = sum(1 for f in review_findings if f["state"] == "unreviewed")
 
@@ -209,14 +291,22 @@ class ReviewStore:
             revision = int(meta.get("revision", 1))
         else:
             title = default_review_title(request) if request else review_id[:160]
-            created_at = self._legacy_created_at(tx, review_id, ticket["job_id"])
+            created_at = (
+                self._legacy_created_at(tx, review_id, ticket["job_id"])
+                if context is None
+                else context.legacy_created_at(review_id, ticket["job_id"])
+            )
             question = None
             is_owner = bool((job or {}).get("owner_operation_id"))
             human_requested = is_owner
             resolved = not human_requested or (status == "ready" and unreviewed_count == 0)
             revision = max(
                 1,
-                tx.revision("reviews", review_id)
+                (
+                    tx.revision("reviews", review_id)
+                    if context is None
+                    else context.review_revisions[review_id]
+                )
                 + 1
                 + sum(max(0, f["revision"] - 1) for f in review_findings),
             )
@@ -235,27 +325,27 @@ class ReviewStore:
         human_review_state = (
             "pending" if awaiting_human else ("resolved" if human_requested else "not_requested")
         )
-        return validate(
-            "ReviewTicket",
-            dict(
-                schema_version="1.0",
-                review_id=review_id,
-                job_id=ticket["job_id"],
-                status=status,
-                title=title,
-                created_at=created_at,
-                revision=revision,
-                human_review_state=human_review_state,
-                awaiting_human=awaiting_human,
-                question=question,
-                finding_count=finding_count,
-                unreviewed_count=unreviewed_count,
-                error_code=error_code,
-            ),
+        result = dict(
+            schema_version="1.0",
+            review_id=review_id,
+            job_id=ticket["job_id"],
+            status=status,
+            title=title,
+            created_at=created_at,
+            revision=revision,
+            human_review_state=human_review_state,
+            awaiting_human=awaiting_human,
+            question=question,
+            finding_count=finding_count,
+            unreviewed_count=unreviewed_count,
+            error_code=error_code,
         )
+        if validate_output:
+            validate("ReviewTicket", result)
+        return result
 
     def detail(self, tx: Transaction, review_id: str) -> dict[str, Any]:
-        ticket = self.ticket_view(tx, tx.require("reviews", review_id))
+        ticket = self.ticket_view(tx, tx.require("reviews", review_id), validate_output=False)
         request = tx.require("review.requests", review_id)
         review_findings = sorted(
             (f for f in tx.all("findings") if f["review_id"] == review_id),

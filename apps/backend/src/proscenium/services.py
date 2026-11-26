@@ -1,10 +1,13 @@
 """Dependency container. Feature routers consume this single accepted shared API."""
 
+import asyncio
 import secrets
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import RLock
+from threading import Lock, RLock
 from typing import Any, Protocol
 
 from fastapi import Request
@@ -37,6 +40,33 @@ class RuntimeAdapter(Protocol):
     async def stop(self, project_id: str, work_id: str, operation_id: str) -> None: ...
 
 
+class CommitSignals:
+    """Loop-owned signals, published by SQLite writers in any thread."""
+
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._waiters: dict[tuple[asyncio.AbstractEventLoop, asyncio.Event], str | None] = {}
+
+    @contextmanager
+    def subscribe(self, project_id: str | None = None) -> Iterator[asyncio.Event]:
+        event = asyncio.Event()
+        key = (asyncio.get_running_loop(), event)
+        with self._lock:
+            self._waiters[key] = project_id
+        try:
+            yield event
+        finally:
+            with self._lock:
+                del self._waiters[key]
+
+    def notify(self, project_id: str | None = None) -> None:
+        with self._lock:
+            for (loop, event), subscribed in self._waiters.items():
+                if project_id is None or project_id == subscribed:
+                    with suppress(RuntimeError):  # The subscriber's loop may have closed.
+                        loop.call_soon_threadsafe(event.set)
+
+
 @dataclass
 class Services:
     settings: Settings
@@ -52,6 +82,8 @@ class Services:
     project_ownership: dict[str, Ownership] = field(default_factory=dict)
     activation_lock: Any = field(default_factory=RLock, repr=False)
     projection_running: set[str] = field(default_factory=set, repr=False)
+    event_signals: CommitSignals = field(default_factory=CommitSignals, repr=False)
+    lifecycle_signal: CommitSignals = field(default_factory=CommitSignals, repr=False)
 
     @classmethod
     def create(cls, settings: Settings) -> "Services":
@@ -91,6 +123,8 @@ class Services:
                 activation_lock=barrier,
             )
             registry.project_committed = services.reconcile_project_projection
+            registry.on_project_commit = services._project_commit
+            registry.on_registry_commit = services._registry_commit
             active = registry.active_id()
             if active:
                 services.acquire_project(active)
@@ -102,6 +136,26 @@ class Services:
             else:
                 ownership.close()
             raise
+
+    def _project_commit(self, project_id: str, namespaces: set[str], emitted_events: bool) -> None:
+        if emitted_events:
+            self.event_signals.notify(project_id)
+        if emitted_events or namespaces & {
+            "jobs",
+            "outbox",
+            "work",
+            "decisions",
+            "requests",
+            "native_workflows",
+            "preview_intents",
+            "reviews",
+        }:
+            self.lifecycle_signal.notify()
+
+    def _registry_commit(self, namespaces: set[str]) -> None:
+        self.lifecycle_signal.notify()
+        if namespaces & {"registry", "projects"}:
+            self.event_signals.notify()
 
     def acquire_project(self, project_id: str) -> None:
         if project_id not in self.project_ownership:

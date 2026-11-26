@@ -48,6 +48,8 @@ export interface ReviewSurfaceProps {
   projectId: string;
   version: VersionRecord | null;
   jobs: JobRecord[];
+  items?: ItemRecord[];
+  retainedArtifacts?: RetainedArtifactSummary[];
   refreshRevision: number;
   annotationRevision?: number;
   selection?: TurnSelection;
@@ -58,6 +60,7 @@ export interface ReviewSurfaceProps {
 }
 
 export interface CatalogueSurfaceProps {
+  visible?: boolean;
   retainedArtifacts?: RetainedArtifactSummary[];
   onCreateAsset?: () => void;
   onInspectArtifact?: (artifact: Artifact) => void;

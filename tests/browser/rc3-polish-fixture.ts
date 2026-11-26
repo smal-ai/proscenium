@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { Page } from "@playwright/test";
 import { PerspectiveCamera } from "three";
 import type { AnnotationSnapshot, FrameAvailability, FrameReceipt, JobRecord, SelectionRecord, SelectionSave, ShotPlan } from "../../apps/frontend/src/api";
-import { captureCamera } from "../../apps/frontend/src/features/review/media";
+import { captureCamera } from "../../apps/frontend/src/features/review/proxyCamera";
 import type { MockRoute } from "./fixtures";
 import { base, job, pageOf, projectId, retained, StudioFixture, version } from "./studio-fixture";
 

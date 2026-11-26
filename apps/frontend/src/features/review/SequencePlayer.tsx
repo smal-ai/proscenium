@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PenLine } from "lucide-react";
 import type { Artifact, FrameMap } from "../../api/generated/contracts";
 import { mediaUrl } from "./media";
@@ -11,50 +11,87 @@ export function SequencePlayer({visible = true, projectId, artifact, mapping, re
   onCapture: (blob: Blob, frame: number, width: number, height: number) => Promise<void>;
 }) {
   const video = useRef<HTMLVideoElement>(null);
-  const capture = useRef<{canvas: HTMLCanvasElement; frame: number} | null>(null);
+  const bufferCanvas = useRef<HTMLCanvasElement | null>(null);
+  const bufferContext = useRef<CanvasRenderingContext2D | null>(null);
+  const presentedRef = useRef<number | null>(null);
+  const capturing = useRef(false);
+  const validFrames = useMemo(() => new Set(mapping.frames.map(row => row.sequence_frame)), [mapping.frames]);
+  const {numerator, denominator} = mapping.fps;
   const [presented, setPresented] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   useLayoutEffect(() => {
-    if (!visible) { video.current?.pause(); capture.current = null; setPresented(null); }
+    if (!visible) { video.current?.pause(); presentedRef.current = null; setPresented(null); }
+    return () => {
+      const canvas = bufferCanvas.current;
+      if (canvas) { canvas.width = 0; canvas.height = 0; }
+      bufferCanvas.current = null;
+      bufferContext.current = null;
+    };
   }, [visible]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = video.current; if (!visible || !element) return;
+    presentedRef.current = null; setPresented(null);
     const seek = () => {
-      element.pause(); capture.current = null; setPresented(null);
+      element.pause();
       // Seek inside the frame interval. Rounded MP4 PTS can put its exact
       // mathematical left boundary a fraction before the intended sample.
-      element.currentTime = (Math.min(mapping.frame_count, Math.max(1, requestedFrame)) - 0.5) * mapping.fps.denominator / mapping.fps.numerator;
+      element.currentTime = (Math.min(mapping.frame_count, Math.max(1, requestedFrame)) - 0.5) * denominator / numerator;
     };
     if (element.readyState >= 1) seek();
     else element.addEventListener("loadedmetadata", seek, {once:true});
     return () => element.removeEventListener("loadedmetadata", seek);
-  }, [requestedFrame, artifact.artifact_id, mapping.frame_count, mapping.fps.numerator, mapping.fps.denominator, visible]);
-  useEffect(() => {
+  }, [requestedFrame, artifact.artifact_id, projectId, mapping.frame_count, numerator, denominator, visible]);
+  useLayoutEffect(() => {
     const element = video.current; if (!visible || !element) return;
     if (!element.requestVideoFrameCallback) {setError("Presented-frame provenance is unavailable in this browser"); return;}
+    if (presentedRef.current !== null && !validFrames.has(presentedRef.current)) {
+      presentedRef.current = null; setPresented(null);
+    }
     let callback = 0; let disposed = false;
     const observe: VideoFrameRequestCallback = (_now, metadata) => {
       if (disposed) return;
-      const frame = 1 + Math.floor(metadata.mediaTime * mapping.fps.numerator / mapping.fps.denominator + 1e-4);
-      if (mapping.frames.some(row => row.sequence_frame === frame)) {
-        const canvas = document.createElement("canvas"); canvas.width=element.videoWidth;canvas.height=element.videoHeight;
-        canvas.getContext("2d")!.drawImage(element,0,0);
-        capture.current = {canvas,frame}; setPresented(frame);
+      const frame = 1 + Math.floor(metadata.mediaTime * numerator / denominator + 1e-4);
+      const {videoWidth, videoHeight} = element;
+      if (videoWidth && videoHeight && validFrames.has(frame)) {
+        const canvas = bufferCanvas.current ??= document.createElement("canvas");
+        if (canvas.width !== videoWidth) canvas.width = videoWidth;
+        if (canvas.height !== videoHeight) canvas.height = videoHeight;
+        const context = bufferContext.current ??= canvas.getContext("2d");
+        if (context) {
+          context.drawImage(element, 0, 0);
+          if (presentedRef.current !== frame) { presentedRef.current = frame; setPresented(frame); }
+        }
       }
       callback = element.requestVideoFrameCallback(observe);
     };
     callback = element.requestVideoFrameCallback(observe);
     return () => {disposed=true;element.cancelVideoFrameCallback(callback);};
-  },[mapping, visible]);
+  }, [artifact.artifact_id, projectId, numerator, denominator, validFrames, visible]);
 
   async function annotate() {
-    video.current?.pause(); const actual = capture.current; if (!visible || !actual || busy) return;
+    video.current?.pause();
+    const buffer = bufferCanvas.current;
+    const frame = presentedRef.current;
+    if (!visible || !buffer || frame === null || capturing.current) return;
+    capturing.current = true;
     setBusy(true);setError("");
     try {
-      const blob = await new Promise<Blob>((resolve,reject) => actual.canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Frame capture failed")),"image/png"));
-      await onCapture(blob,actual.frame,actual.canvas.width,actual.canvas.height);
-    } catch (e) {setError(String(e));} finally {setBusy(false);}
+      // Keep the exact presented pixels even if playback resumes or the
+      // reusable buffer is released while PNG encoding is pending.
+      const snapshot = document.createElement("canvas");
+      const {width, height} = buffer;
+      snapshot.width = width; snapshot.height = height;
+      const context = snapshot.getContext("2d");
+      if (!context) throw new Error("Frame capture failed");
+      context.drawImage(buffer, 0, 0);
+      const blob = await new Promise<Blob>((resolve, reject) => snapshot.toBlob(blob => {
+        snapshot.width = 0; snapshot.height = 0;
+        if (blob) resolve(blob);
+        else reject(new Error("Frame capture failed"));
+      }, "image/png"));
+      await onCapture(blob, frame, width, height);
+    } catch (e) {setError(String(e));} finally {capturing.current = false; setBusy(false);}
   }
 
   return <section className="review-player" aria-label="Mapped sequence animation">

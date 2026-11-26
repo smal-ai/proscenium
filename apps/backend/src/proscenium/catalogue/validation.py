@@ -85,24 +85,35 @@ def safe_schema_guidance(code: str, message: str) -> bool:
     )
 
 
+@cache
+def _issue_validator(name: str, silent: bool | None) -> tuple[Draft202012Validator, frozenset[str]]:
+    definition = SCHEMA["$defs"][name]
+    if silent is not None:
+        definition = definition["oneOf"][0 if silent else 1]
+    known = frozenset(
+        key
+        for schema in (*SCHEMA["$defs"].values(), definition)
+        for key in schema.get("properties", {})
+    )
+    return (
+        Draft202012Validator(
+            {**definition, "$defs": SCHEMA["$defs"]}, format_checker=FormatChecker()
+        ),
+        known,
+    )
+
+
 def schema_issues(name: str, document: Any) -> list[dict[str, str]]:
     """Bounded host-authored diagnostics. Never interpolate rejected values or keys."""
-    definition = SCHEMA["$defs"][name]
+    silent = None
     if (
         name == "SequenceMap"
         and isinstance(document, dict)
         and type(document.get("silent")) is bool
     ):
         # Diagnose the chosen branch, not the failures from its opposite.
-        definition = definition["oneOf"][0 if document["silent"] else 1]
-    known = {
-        key
-        for schema in (*SCHEMA["$defs"].values(), definition)
-        for key in schema.get("properties", {})
-    }
-    validator = Draft202012Validator(
-        {**definition, "$defs": SCHEMA["$defs"]}, format_checker=FormatChecker()
-    )
+        silent = document["silent"]
+    validator, known = _issue_validator(name, silent)
     issues = []
     seen: set[tuple[str, str]] = set()
     for error in validator.iter_errors(document):
@@ -228,9 +239,25 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
                 raise DomainError("media_unavailable", 422)
 
 
-def source_job(tx: Transaction, source: dict[str, Any]) -> dict[str, Any]:
-    version = tx.require("versions", source["version_id"])
-    job = tx.require("jobs", source["job_id"])
+def _cached_record(
+    tx: Transaction, namespace: str, identity: str, records: dict[str, dict[str, Any]] | None
+) -> dict[str, Any]:
+    if records is None:
+        return tx.require(namespace, identity)
+    if identity not in records:
+        records[identity] = tx.require(namespace, identity)
+    return records[identity]
+
+
+def source_job(
+    tx: Transaction,
+    source: dict[str, Any],
+    *,
+    version_cache: dict[str, dict[str, Any]] | None = None,
+    job_cache: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    version = _cached_record(tx, "versions", source["version_id"], version_cache)
+    job = _cached_record(tx, "jobs", source["job_id"], job_cache)
     if job["kind"] != "render" or job["render_spec"] is None:
         raise DomainError(
             "invalid_frame_mapping", 422, "Sequence contributor job must be a render job"
@@ -322,6 +349,12 @@ def sequence_map(
     validate_audio_tracks(tx, document, document["frame_count"] / fps)
     next_frame = 1
     entries = set()
+    version_cache: dict[str, dict[str, Any]] = {}
+    job_cache: dict[str, dict[str, Any]] = {}
+
+    def resolve(source: dict[str, Any]) -> dict[str, Any]:
+        return source_job(tx, source, version_cache=version_cache, job_cache=job_cache)
+
     for entry in document["entries"]:
         interval(entry["source_frames"])
         length = interval(entry["sequence_frames"])
@@ -331,7 +364,7 @@ def sequence_map(
             )
         entries.add(entry["entry_id"])
         next_frame = entry["sequence_frames"]["end"] + 1
-        job = source_job(tx, entry)
+        job = resolve(entry)
         if (
             entry["transform"] in {"identity", "trim"}
             and interval(entry["source_frames"]) != length
@@ -351,9 +384,9 @@ def sequence_map(
         for contributor in entry.get("contributors", []):
             interval(contributor["source_frames"])
             if contributor.get("job_id"):
-                source_job(tx, contributor)
+                resolve(contributor)
             else:
-                tx.require("versions", contributor["version_id"])
+                _cached_record(tx, "versions", contributor["version_id"], version_cache)
     if next_frame != document["frame_count"] + 1:
         raise DomainError(
             "invalid_frame_mapping",
@@ -403,7 +436,7 @@ def sequence_map(
             if entry["transform"] == "retime" and len(row["contributors"]) != 1:
                 raise DomainError("invalid_frame_mapping", 422)
             for contributor in row["contributors"]:
-                source_job(tx, contributor)
+                resolve(contributor)
                 matches = [
                     source
                     for source in declared

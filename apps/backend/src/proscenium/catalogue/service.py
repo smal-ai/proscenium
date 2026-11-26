@@ -7,7 +7,7 @@ from typing import Any
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.contracts import validate
+from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.db.store import now
 from proscenium.previews.journal import (
@@ -47,8 +47,7 @@ class Catalogue:
         self.services, self.sources, self.artifacts = services, sources, artifacts
 
     @staticmethod
-    def selected_choice(tx: Transaction, slot: dict[str, Any]) -> dict[str, Any] | None:
-        records = [row for row in tx.all("selections") if row["slot"] == slot]
+    def choice_from_records(records: list[dict[str, Any]]) -> dict[str, Any] | None:
         if len(records) > 1:
             raise DomainError(
                 "source_conflict", 409, "More than one current selection record for a slot"
@@ -58,28 +57,109 @@ class Catalogue:
         return dict(records[0]["choice"])
 
     @classmethod
-    def item_view(cls, tx: Transaction, row: dict[str, Any]) -> dict[str, Any]:
+    def selected_choice(cls, tx: Transaction, slot: dict[str, Any]) -> dict[str, Any] | None:
+        return cls.choice_from_records([row for row in tx.all("selections") if row["slot"] == slot])
+
+    @staticmethod
+    def selections_by_slot(tx: Transaction) -> dict[bytes, list[dict[str, Any]]]:
+        result: dict[bytes, list[dict[str, Any]]] = {}
+        for row in tx.all("selections"):
+            result.setdefault(canonical(row["slot"]), []).append(row)
+        return result
+
+    @classmethod
+    def item_view(
+        cls,
+        tx: Transaction,
+        row: dict[str, Any],
+        *,
+        selections_by_slot: dict[bytes, list[dict[str, Any]]] | None = None,
+        selected_versions: dict[str, dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         result = {**row, "selected_version_id": None}
-        choice = cls.selected_choice(tx, {"kind": "item", "item_id": row["item_id"]})
+        slot = {"kind": "item", "item_id": row["item_id"]}
+        choice = (
+            cls.selected_choice(tx, slot)
+            if selections_by_slot is None
+            else cls.choice_from_records(selections_by_slot.get(canonical(slot), []))
+        )
         if choice:
             if choice["kind"] != "version" or choice["version"]["item_id"] != row["item_id"]:
                 raise DomainError("source_conflict", 409)
-            version = tx.require("versions", choice["version"]["version_id"])
+            identity = choice["version"]["version_id"]
+            version = (
+                tx.require("versions", identity)
+                if selected_versions is None
+                else selected_versions.get(identity)
+            )
+            if version is None:
+                raise DomainError("not_found", 404)
             if version["item_id"] != row["item_id"]:
                 raise DomainError("scope_denied", 403)
             result["selected_version_id"] = version["version_id"]
         return result
 
     @staticmethod
-    def version_view(tx: Transaction, row: dict[str, Any]) -> dict[str, Any]:
-        links = tx.get("version_links", row["version_id"], required=False) or {}
-        reference = {"item_id": row["item_id"], "version_id": row["version_id"]}
-        jobs = [
-            job
-            for job in tx.all("jobs")
-            if job["target"]["version"] == reference and job["kind"] == "render"
-        ]
-        jobs.sort(key=natural_render_job_key)
+    def selected_versions(
+        tx: Transaction, selections: dict[bytes, list[dict[str, Any]]]
+    ) -> dict[str, dict[str, Any]]:
+        identities = {
+            row["choice"]["version"]["version_id"]
+            for bucket in selections.values()
+            for row in bucket
+            if row["slot"]["kind"] == "item"
+            and row["state"] == "selected"
+            and row["choice"]["kind"] == "version"
+        }
+        if not identities:
+            return {}
+        return {
+            identity: json.loads(body)
+            for identity, body in tx.connection.execute(
+                "SELECT id, body FROM records WHERE namespace='versions' "
+                "AND id IN (SELECT value FROM json_each(?))",
+                (json.dumps(sorted(identities)),),
+            )
+        }
+
+    @staticmethod
+    def render_jobs_by_version(tx: Transaction) -> dict[tuple[str, str], list[dict[str, Any]]]:
+        buckets: dict[tuple[str, str], list[dict[str, Any]]] = {}
+        for job in tx.all("jobs"):
+            if job["kind"] == "render" and (ver := job["target"].get("version")) is not None:
+                buckets.setdefault((ver["item_id"], ver["version_id"]), []).append(job)
+        for jobs in buckets.values():
+            jobs.sort(key=natural_render_job_key)
+        return buckets
+
+    @staticmethod
+    def version_view(
+        tx: Transaction,
+        row: dict[str, Any],
+        *,
+        render_jobs_by_version: dict[tuple[str, str], list[dict[str, Any]]] | None = None,
+        version_links: dict[str, dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        identity = row["version_id"]
+        links = (
+            (tx.get("version_links", identity, required=False) or {})
+            if version_links is None
+            else version_links.get(identity, {})
+        )
+        reference = (row["item_id"], identity)
+        if render_jobs_by_version is None:
+            jobs = sorted(
+                (
+                    job
+                    for job in tx.all("jobs")
+                    if job["kind"] == "render"
+                    and job["target"].get("version")
+                    == {"item_id": row["item_id"], "version_id": identity}
+                ),
+                key=natural_render_job_key,
+            )
+        else:
+            jobs = render_jobs_by_version.get(reference, [])
         valid_ids = {job["job_id"] for job in jobs}
         inline_ids = row["preview_job_ids"]
         ordered_override = links.get("ordered_preview_job_ids")
@@ -476,6 +556,7 @@ class Catalogue:
             raise DomainError("scope_denied", 403)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             validation.shot_plan(tx, result, {})
+            selections = self.selections_by_slot(tx)
             for shot in result["shots"]:
                 for frame in shot["frames"]:
                     slot = dict(
@@ -488,7 +569,7 @@ class Catalogue:
                         frame_id=frame["frame_id"],
                     )
                     selected = False
-                    choice = self.selected_choice(tx, slot)
+                    choice = self.choice_from_records(selections.get(canonical(slot), []))
                     if choice:
                         if choice["kind"] == "artifact":
                             chosen = choice["artifact_id"]
@@ -522,18 +603,17 @@ class Catalogue:
         maps = self.frame_maps(project_id, result)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             validation.sequence_map(tx, result, version_id, maps)
+            selections = self.selections_by_slot(tx)
             for entry in result["entries"]:
-                choice = self.selected_choice(
-                    tx,
-                    {
-                        "kind": "assembly_shot",
-                        "sequence_version": {
-                            "item_id": version["item_id"],
-                            "version_id": version_id,
-                        },
-                        "entry_id": entry["entry_id"],
+                slot = {
+                    "kind": "assembly_shot",
+                    "sequence_version": {
+                        "item_id": version["item_id"],
+                        "version_id": version_id,
                     },
-                )
+                    "entry_id": entry["entry_id"],
+                }
+                choice = self.choice_from_records(selections.get(canonical(slot), []))
                 if (
                     choice
                     and choice["kind"] == "version"

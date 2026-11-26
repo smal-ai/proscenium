@@ -1,15 +1,16 @@
-import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, lazy, memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bookmark, Camera as CameraIcon, ChevronLeft, ChevronRight, Download, Info, MapPin, Pause, PenLine, Play, X } from "lucide-react";
 import type { AnnotationSnapshot, Artifact, Camera, FrameAvailability, FrameMap, FrameRange, FrameReceipt, FrameTarget, JobRecord, Markup, PreviewSegment, ProxyMapping, SpatialHit, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type ContextPreparer, type ReviewSurfaceProps, type TurnSelection } from "../../api/studio";
 import { versionRequestTarget } from "../chat/target";
+import { seedReadyArtifacts, useArtifactObservations } from "../readyArtifactIndex";
 import { AnnotationEditor } from "./AnnotationEditor";
 import { AnnotationsDrawer, draftFromSnapshot, mergeHydratedDrafts, mergeItemAnnotations, resolveAnnotationEntry, type AnnotationEntry } from "./AnnotationsDrawer";
 import { frameTarget, mediaUrl, segmentAt, sequenceTarget, stableJson, typingTarget } from "./media";
 import { flushDraft, readDrafts, saveDraft, saveDraftEdit, type Draft } from "./outbox";
 import { ProgressivePlayer } from "./ProgressivePlayer";
 import { SequencePlayer } from "./SequencePlayer";
-import { ProxyView, type FrozenProxyCapture, type ProxyCapture, type ProxyPinPlacement, type SpatialPinMarker } from "./ProxyView";
+import type { FrozenProxyCapture, ProxyCapture, ProxyPinPlacement, SpatialPinMarker } from "./ProxyView";
 import { readProxyCapture, writeProxyCapture, type PendingProxyCapture } from "./proxyCaptureStore";
 import { allPages } from "./records";
 import { formatRenderPresetOption, RENDER_PRESETS, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
@@ -22,9 +23,11 @@ import { formatPassOptionLabels, orderVersionJobs, selectablePassJobs } from "./
 import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
 import { useReviewSelection } from "./state";
-import { RetainedReview, ReviewEmpty, ReviewModeSwitcher } from "./ReviewChrome";
+import { currentRetainedPreview, RetainedReview, ReviewEmpty, ReviewModeSwitcher } from "./ReviewChrome";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "./refreshKeys";
 import "./review.css";
+
+const ProxyView = lazy(() => import("./ProxyView").then(module => ({ default: module.ProxyView })));
 
 type Mode = "3d_inspection" | "keyframes" | "animation";
 type StoryboardPanel = { shot_id: string; frame_id: string; role: string; composition: string; artifact_id: string };
@@ -53,13 +56,14 @@ class MediaBoundary extends Component<{children: ReactNode; onError?: (message: 
   render() { return this.state.error ? <p role="alert">media_unavailable: {this.state.error}</p> : this.props.children; }
 }
 
-export function ReviewWorkspace(props: ReviewSurfaceProps) {
+export const ReviewWorkspace = memo(function ReviewWorkspace(props: ReviewSurfaceProps) {
   // A new explicit version selection resets the surface. Receipt refreshes do not.
   const readyArtifacts = useRef(new Map<string, Artifact>());
-  return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props} readyArtifacts={readyArtifacts.current}/>;
-}
+  const readiness = useArtifactObservations(props.projectId, props.retainedArtifacts, props.inspectedArtifactSummary);
+  return <Workspace key={`${props.projectId}:${props.version?.version_id ?? "none"}`} {...props} readyArtifacts={readyArtifacts.current} readiness={readiness}/>;
+});
 
-function Workspace({visible: surfaceVisible = true, api, projectId, version: suppliedVersion, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, jobs, refreshRevision, annotationRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue, readyArtifacts}: ReviewSurfaceProps & {readyArtifacts: Map<string, Artifact>}) {
+function Workspace({visible: surfaceVisible = true, api, projectId, version: suppliedVersion, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, jobs, retainedArtifacts, refreshRevision, annotationRevision, selection: external, onNavigate, onContextChange, onContextPreparer, onQueue, readyArtifacts, readiness}: ReviewSurfaceProps & {readyArtifacts: Map<string, Artifact>; readiness: ReturnType<typeof useArtifactObservations>}) {
   const visible = surfaceVisible && !inspectedArtifact;
   const [refreshedVersion, setRefreshedVersion] = useState<VersionRecord | null>(null);
   const [itemVersions, setItemVersions] = useState<VersionRecord[]>([]);
@@ -68,8 +72,22 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [drawer, setDrawer] = useState<"annotations" | "details" | null>(null);
   const [frames, setFrames] = useState<FrameReceipt[]>([]);
   const [segments, setSegments] = useState<PreviewSegment[]>([]);
-  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
-  const [storyboardTargets, setStoryboardTargets] = useState<StoryboardTarget[]>([]);
+  const [loadedArtifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [loadedStoryboardTargets, setStoryboardTargets] = useState<StoryboardTarget[]>([]);
+  const { observations, current: readinessRef } = readiness;
+  const unavailableArtifacts = observations.revoked;
+  const liveInspectedArtifact = currentRetainedPreview(projectId, inspectedArtifact, observations.observed);
+  const inspectedUnavailable = !!inspectedArtifact && liveInspectedArtifact?.state !== "ready";
+  const artifacts = useMemo(() => unavailableArtifacts.size ? loadedArtifacts.map(value => unavailableArtifacts.get(value.artifact_id) ?? value) : loadedArtifacts, [unavailableArtifacts, loadedArtifacts]);
+  const storyboardTargets = useMemo(() => unavailableArtifacts.size ? loadedStoryboardTargets.filter(panel => !unavailableArtifacts.has(panel.artifact_id)) : loadedStoryboardTargets, [unavailableArtifacts, loadedStoryboardTargets]);
+  useEffect(() => {
+    if (!unavailableArtifacts.size) return;
+    for (const id of unavailableArtifacts.keys()) readyArtifacts.delete(`${projectId}:${id}`);
+    setArtifacts(previous => previous.some(value => unavailableArtifacts.has(value.artifact_id))
+      ? previous.map(value => unavailableArtifacts.get(value.artifact_id) ?? value) : previous);
+    setStoryboardTargets(previous => previous.some(panel => unavailableArtifacts.has(panel.artifact_id))
+      ? previous.filter(panel => !unavailableArtifacts.has(panel.artifact_id)) : previous);
+  }, [unavailableArtifacts, projectId, readyArtifacts]);
   const [storyboardPanelIndex, setStoryboardPanelIndex] = useState(0);
   const [mapping, setMapping] = useState<ProxyMapping | null>(null);
   const [pinnedMapping, setPinnedMapping] = useState<ProxyMapping | null>(null);
@@ -81,7 +99,13 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [restorePinNonce, setRestorePinNonce] = useState(0);
   const [frameRequest, setFrameRequest] = useState<{nonce: number; proxyId: string; restore: Camera | null; restoreNonce: number} | null>(null);
   const [unmappedCapture, setUnmappedCapture] = useState<UnmappedCapture | null>(null);
-  const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap} | null>(null);
+  const [frameMap, setFrameMap] = useState<{id: string; map: FrameMap; startedSeq: number} | null>(null);
+  const activeFrameMap = frameMap && !unavailableArtifacts.has(frameMap.id) && (observations.lastRevoked.get(frameMap.id) ?? 0) <= frameMap.startedSeq ? frameMap : null;
+  const activeFrameMapRef = useRef(activeFrameMap);
+  activeFrameMapRef.current = activeFrameMap;
+  useEffect(() => {
+    if (frameMap && !activeFrameMap) setFrameMap(null);
+  }, [frameMap, activeFrameMap]);
   const [availabilityByJob, setAvailabilityByJob] = useState<Record<string,FrameAvailability>>({});
   const [sequenceJobId, setSequenceJobId] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -150,8 +174,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const animationPasses = useMemo(() => selectablePassJobs(orderedVersionJobs, "animation", artifacts).filter(job =>
     job.kind === "render" && (job.render_spec?.purpose === "draft_motion" || job.render_spec?.purpose === "final" || (job.expected_frames ?? 0) > 1)), [orderedVersionJobs, artifacts]);
   const jobsKey = reviewJobsFingerprint(versionJobs);
-  const latestInputsRef = useRef({version, versionJobs, jobs});
-  latestInputsRef.current = {version, versionJobs, jobs};
+  const latestInputsRef = useRef({version, versionJobs, jobs, retainedArtifacts});
+  latestInputsRef.current = {version, versionJobs, jobs, retainedArtifacts};
   const refreshRead = useRef<(() => void) | null>(null);
   const proxyJobsKey = proxyJobsFingerprint(jobs, versionId);
   const annotationTrigger = annotationRevision ?? refreshRevision;
@@ -190,10 +214,13 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     if (!frameInputEdited.current) setFrameInput(String(activeFrameOrdinal));
   }, [activeFrameOrdinal, mode, draftId]);
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
-  const mappedSequence = mode === "animation" && !!assembly && !!frameMap;
+  const mappedSequence = mode === "animation" && !!assembly && !!activeFrameMap;
   const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
   const deliveryManifest = deliveryJob ? artifacts.find(a => deliveryJob.artifact_ids.includes(a.artifact_id) && a.kind === "document" && a.purpose === "metadata" && a.state === "ready") : undefined;
-  const readyToCapture = visible && (mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady);
+  const targetUnavailable = !!target && (unavailableArtifacts.has(target.artifact_id) || !!target.media_artifact_id && unavailableArtifacts.has(target.media_artifact_id)
+    || !!target.frame_map_artifact_id && unavailableArtifacts.has(target.frame_map_artifact_id)
+    || artifacts.some(value => value.state !== "ready" && (value.artifact_id === target.artifact_id || value.artifact_id === target.media_artifact_id || value.artifact_id === target.frame_map_artifact_id)));
+  const readyToCapture = visible && !targetUnavailable && (mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady);
   const imageFailure = useCallback((message: string) => setError(message), []);
   const handleProxyError = useCallback((message: string) => setProxyLoadError(message), []);
 
@@ -292,11 +319,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }, [captureKey]);
 
   useEffect(() => {
-    if (version?.kind === "sequence" && frameMap && target && target.origin !== "sequence_render" && target.source_frame) {
-      try {setTarget(sequenceTarget(target.source_frame,target,frameMap.map,frameMap.id));}
+    if (version?.kind === "sequence" && activeFrameMap && target && target.origin !== "sequence_render" && target.source_frame) {
+      try {setTarget(sequenceTarget(target.source_frame,target,activeFrameMap.map,activeFrameMap.id));}
       catch (e) {setCaptureReady(false);setError(String(e));}
     }
-  },[version?.kind,frameMap,target]);
+  },[version?.kind,activeFrameMap,target]);
 
   useEffect(() => {
     if (externalPrimary === emittedPrimary.current) return;
@@ -380,47 +407,58 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       const {version, versionJobs, jobs} = latestInputsRef.current;
       if (!version) return;
       const errors: string[] = [];
-      const captureError = (error: unknown) => { if (!signal.aborted) errors.push(error instanceof Error ? error.message : String(error)); };
+      const versionErrors: string[] = []; const jobErrors: string[] = []; const planErrors: string[] = [];
+      const captureError = (error: unknown, into = errors) => { if (!signal.aborted) into.push(error instanceof Error ? error.message : String(error)); };
       const receipts: FrameReceipt[] = []; const clips: PreviewSegment[] = [];
       const media: Artifact[] = [];
-      let storyboardPanels: StoryboardPanel[] = [];
-      let pinned = version!;
-      try {
-        const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version!.item_id}, query: {cursor, limit: 100}, signal}));
-        if (signal.aborted) return;
-        setItemVersions(versions.filter(v => v.project_id === projectId && v.item_id === version!.item_id).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.version_id.localeCompare(a.version_id, undefined, {numeric: true})));
-        const current = versions.find(v => v.version_id === version!.version_id);
-        if (current) {
-          if (current.project_id !== projectId || current.item_id !== version!.item_id || current.source.digest !== version!.source.digest || current.source_commit !== version!.source_commit) throw new Error("Pinned source version identity changed");
-          pinned = current;
-          setRefreshedVersion(current);
-        }
-      } catch (e) {captureError(e);}
-      if (signal.aborted) return;
-      await Promise.all(versionJobs.filter(job => job.render_spec !== null).map(async job => {
+      const readVersion = async () => {
+        try {
+          const versions = await allPages(cursor => api.call("listItemVersions", {path: {project_id: projectId, item_id: version.item_id}, query: {cursor, limit: 100}, signal}));
+          if (signal.aborted) return version;
+          setItemVersions(versions.filter(v => v.project_id === projectId && v.item_id === version.item_id).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.version_id.localeCompare(a.version_id, undefined, {numeric: true})));
+          const current = versions.find(v => v.version_id === version.version_id);
+          if (current) {
+            if (current.project_id !== projectId || current.item_id !== version.item_id || current.source.digest !== version.source.digest || current.source_commit !== version.source_commit) throw new Error("Pinned source version identity changed");
+            setRefreshedVersion(current);
+            return current;
+          }
+        } catch (e) {captureError(e, versionErrors);}
+        return version;
+      };
+      const readJobs = () => Promise.all(versionJobs.filter(job => job.render_spec !== null).map(async job => {
         await Promise.all([
-          allPages(cursor => api.call("listFrameReceipts", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}, signal})).then(page => receipts.push(...page)).catch(captureError),
-          allPages(cursor => api.call("listPreviewSegments", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}, signal})).then(page => clips.push(...page)).catch(captureError),
-          api.call("getFrameAvailability", {path: {project_id: projectId, job_id: job.job_id}, signal}).then(value => {if (!signal.aborted) setAvailabilityByJob(previous=>({...previous,[job.job_id]:value}));}).catch(captureError),
+          allPages(cursor => api.call("listFrameReceipts", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}, signal})).then(page => receipts.push(...page)).catch(e => captureError(e, jobErrors)),
+          allPages(cursor => api.call("listPreviewSegments", {path: {project_id: projectId, job_id: job.job_id}, query: {cursor, limit: 100}, signal})).then(page => clips.push(...page)).catch(e => captureError(e, jobErrors)),
+          api.call("getFrameAvailability", {path: {project_id: projectId, job_id: job.job_id}, signal}).then(value => {if (!signal.aborted) setAvailabilityByJob(previous=>({...previous,[job.job_id]:value}));}).catch(e => captureError(e, jobErrors)),
         ]);
       }));
-      if (signal.aborted) return;
-      if (pinned.kind === "storyboard") {
+      const readStoryboard = async (): Promise<StoryboardPanel[]> => {
         try {
-          const plan = await api.call("getVersionShotPlan", {path: {project_id: projectId, version_id: pinned.version_id}, signal});
+          const plan = await api.call("getVersionShotPlan", {path: {project_id: projectId, version_id: version.version_id}, signal});
           if (plan.project_id !== projectId) throw new Error("Shot plan does not match active project");
-          storyboardPanels = plan.shots.flatMap(shot => shot.frames.flatMap(frame => frame.artifact_id ? [{shot_id: shot.shot_id, frame_id: frame.frame_id, role: frame.role, composition: frame.composition, artifact_id: frame.artifact_id}] : []));
-        } catch (e) {captureError(e);}
-      }
+          return plan.shots.flatMap(shot => shot.frames.flatMap(frame => frame.artifact_id ? [{shot_id: shot.shot_id, frame_id: frame.frame_id, role: frame.role, composition: frame.composition, artifact_id: frame.artifact_id}] : []));
+        } catch (e) {captureError(e, planErrors);}
+        return [];
+      };
+      const [pinned, , panelsFromPlan] = await Promise.all([
+        readVersion(), readJobs(), version.kind === "storyboard" ? readStoryboard() : [],
+      ]);
       if (signal.aborted) return;
+      const storyboardPanels = pinned.kind !== "storyboard" ? [] : version.kind === "storyboard" ? panelsFromPlan : await readStoryboard();
+      if (signal.aborted) return;
+      errors.push(...versionErrors, ...jobErrors, ...(pinned.kind === "storyboard" ? planErrors : []));
+      const artifactCacheKey = (id: string) => `${projectId}:${id}`;
+      seedReadyArtifacts(readyArtifacts, projectId, latestInputsRef.current.retainedArtifacts);
       const artifactIds = [...new Set([...pinned.artifact_ids, ...storyboardPanels.map(panel => panel.artifact_id), ...versionJobs.flatMap(job => job.artifact_ids)])];
       await Promise.all(artifactIds.map(async artifact_id => {
-        const key = `${projectId}:${artifact_id}`;
+        const key = artifactCacheKey(artifact_id);
         try {
-          const artifact = readyArtifacts.get(key) ?? await api.call("getArtifact", {path: {project_id: projectId, artifact_id}, signal});
+          const observed = readyArtifacts.get(key) ?? await api.call("getArtifact", {path: {project_id: projectId, artifact_id}, signal});
           if (signal.aborted) return;
-          if (artifact.project_id !== projectId || artifact.artifact_id !== artifact_id) throw new Error("Artefact does not match requested identity");
+          if (observed.project_id !== projectId || observed.artifact_id !== artifact_id) throw new Error("Artefact does not match requested identity");
+          const artifact = readinessRef.current.revoked.get(artifact_id) ?? observed;
           if (artifact.state === "ready") readyArtifacts.set(key, artifact);
+          else readyArtifacts.delete(key);
           media.push(artifact);
         } catch (e) {captureError(e);}
       }));
@@ -429,17 +467,21 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       const encodedParameters = completeVideo?.derived_from.find(t => t.kind === "encode")?.parameters;
       const encodedMapHash = encodedParameters && "frame_map_sha256" in encodedParameters && typeof encodedParameters.frame_map_sha256 === "string" ? encodedParameters.frame_map_sha256 : null;
       const mapArtifact = media.find(a => a.kind === "frame_map" && a.state === "ready" && (!encodedMapHash || a.sha256 === encodedMapHash));
-      if (mapArtifact) {
+      if (mapArtifact && !readinessRef.current.revoked.has(mapArtifact.artifact_id)) {
+        const startedSeq = readinessRef.current.sequence;
         try {
           const bytes = await api.call("getArtifactContent", {path: {project_id: projectId, artifact_id: mapArtifact.artifact_id}, signal});
-          const map = JSON.parse(new TextDecoder().decode(bytes)) as FrameMap;
-          if (map.project_id !== projectId || map.sequence_version_id !== version!.version_id || map.frames.length !== map.frame_count) throw new Error("Frame map target mismatch");
-          if (!signal.aborted) setFrameMap({id: mapArtifact.artifact_id, map});
+          const { revoked, lastRevoked } = readinessRef.current;
+          if (!signal.aborted && !revoked.has(mapArtifact.artifact_id) && (lastRevoked.get(mapArtifact.artifact_id) ?? 0) <= startedSeq) {
+            const map = JSON.parse(new TextDecoder().decode(bytes)) as FrameMap;
+            if (map.project_id !== projectId || map.sequence_version_id !== version.version_id || map.frames.length !== map.frame_count) throw new Error("Frame map target mismatch");
+            setFrameMap({id: mapArtifact.artifact_id, map, startedSeq});
+          }
         } catch (e) {captureError(e);}
       }
       if (!signal.aborted) {
         // Keep admission order, not asynchronous HTTP completion order, for initial display.
-        const orderedMedia = artifactIds.flatMap(id => media.filter(a => a.artifact_id === id));
+        const orderedMedia = artifactIds.flatMap(id => media.filter(a => a.artifact_id === id).map(a => readinessRef.current.revoked.get(id) ?? a));
         const panels: StoryboardTarget[] = storyboardPanels.flatMap(panel => {
           const artifact = orderedMedia.find(a => a.artifact_id === panel.artifact_id && a.project_id === projectId && a.state === "ready" && a.kind === "image" && a.dimensions && ["image/png", "image/jpeg", "image/webp"].includes(a.media_type));
           if (!artifact?.dimensions) return [];
@@ -544,17 +586,17 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const present = useCallback((next: FrameTarget) => {
     if (draftId) return;
-    if (frameMap && version?.kind === "sequence") {
-      try {next = sequenceTarget(next.source_frame!, next, frameMap.map, frameMap.id);} catch {setError("Sequence mapping unavailable for presented frame"); return;}
+    if (activeFrameMap && version?.kind === "sequence") {
+      try {next = sequenceTarget(next.source_frame!, next, activeFrameMap.map, activeFrameMap.id);} catch {setError("Sequence mapping unavailable for presented frame"); return;}
     }
     setTarget(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
     setTargetCamera(frameCamera(next,jobs));
     setCaptureReady(true);
-  }, [draftId, frameMap, version?.kind,jobs]);
+  }, [draftId, activeFrameMap, version?.kind,jobs]);
 
   const hasServerTarget = !draft?.targetBlob || Boolean(draft.targetUploaded);
   const draftContext = draft ? annotationContext(draft.annotation, version?.kind) : null;
-  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: inspectedArtifact.kind === "audio" ? [] : [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
+  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: inspectedUnavailable || liveInspectedArtifact?.kind === "audio" ? [] : [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}]} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
     // A local capture has no stable artefact ID until the outbox uploads it.
     target: hasServerTarget ? draftContext.target : null,
     attachments: draft.state === "saved" ? draftContext.attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
@@ -562,7 +604,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     view_mode: mode, target: mode === "3d_inspection" || !readyToCapture ? null : target,
     camera: mode === "3d_inspection" ? camera : targetCamera, selected_objects: selected,
     range: mode === "3d_inspection" && mapping ? {start: mapping.sample_frame, end: mapping.sample_frame} : range,
-    attachments: mode !== "3d_inspection" && target ? [{artifact_id: target.artifact_id, role: cleanTargetRole(target)}] : []};
+    attachments: mode !== "3d_inspection" && target && !targetUnavailable ? [{artifact_id: target.artifact_id, role: cleanTargetRole(target)}] : []};
   const contextKey = JSON.stringify(context);
   const prepareState = useRef({context, draftKey: draft?.key});
   prepareState.current = {context, draftKey: inspectedArtifact ? undefined : draft?.key};
@@ -665,8 +707,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       return;
     }
     if (mode !== "animation") return;
-    if (mappedSequence && frameMap) {
-      setRequestedFrame(Math.min(frameMap.map.frame_count, Math.max(1, requestedFrame + delta)));
+    if (mappedSequence && activeFrameMap) {
+      setRequestedFrame(Math.min(activeFrameMap.map.frame_count, Math.max(1, requestedFrame + delta)));
       setFrameNotice("");
       return;
     }
@@ -721,7 +763,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       setUnmappedCapture(null);
       setFrameNotice("");
       setMode(next);
-      if (next === "animation" && !(assembly && frameMap)) {
+      if (next === "animation" && !(assembly && activeFrameMap)) {
         const passes = selectablePassJobs(orderedVersionJobs, next, artifacts);
         if (!passes.some(job => job.job_id === reviewJobId)) {
           if (passes[0]) chooseJob(passes[0].job_id);
@@ -792,8 +834,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     return true;
   }
 
-  useEffect(() => {
-    function key(event: KeyboardEvent) {
+  const keydownRef = useRef<(event: KeyboardEvent) => void>(() => {});
+  keydownRef.current = (event: KeyboardEvent) => {
       if (!visible) return;
       if (event.key === "Escape" && pinMode) { event.preventDefault(); setPinMode(false); return; }
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
@@ -801,9 +843,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if (modes[event.key]) {event.preventDefault(); changeMode(modes[event.key]);}
       else if (event.code === "Space" && mode === "animation" && !mappedSequence) {event.preventDefault(); togglePlayback();}
       else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {event.preventDefault(); step(event.key === "ArrowLeft" ? -1 : 1, event.shiftKey);}
-    }
+  };
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => keydownRef.current(event);
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
-  });
+  }, []);
 
   function beginPinPlacement(expected: Draft | undefined) {
     const token = ++placementTokenRef.current;
@@ -867,6 +911,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         source_frame: activeMapping.sample_frame,
         media_artifact_id: null,
       };
+      if (!Number.isFinite(placement.pinUv[0]) || !Number.isFinite(placement.pinUv[1])) {
+        throw new Error("Spatial pin projection is unavailable for this camera");
+      }
       const clampedUv: [number, number] = [
         Math.min(1, Math.max(0, placement.pinUv[0])),
         Math.min(1, Math.max(0, placement.pinUv[1])),
@@ -1115,7 +1162,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const merged = useMemo(() => version ? mergeItemAnnotations({itemId: version.item_id, currentVersionId: version.version_id, drafts, saved, itemVersions}) : null,
     [version, drafts, saved, itemVersions]);
 
-  if (inspectedArtifact) return <RetainedReview visible={surfaceVisible} {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  if (inspectedArtifact) return <RetainedReview visible={surfaceVisible} inspectedArtifact={liveInspectedArtifact} {...{projectId, version, inspectedArtifactSummary, onClearArtifact}}/>;
   if (!version || !merged) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
   const activePins: SpatialPinMarker[] = draft && isSpatialDraft
     ? draft.annotation.spatial_hits.map((hit, idx) => ({
@@ -1218,36 +1265,42 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     ) : (mode === "3d_inspection" || (draft && isSpatialDraft)) ? (
       activeMapping ? (
         <MediaBoundary key={activeMapping.proxy_artifact_id} onError={handleProxyError}>
-          <ProxyView
-            visible={visible}
-            url={mediaUrl(projectId, activeMapping.proxy_artifact_id)}
-            mapping={activeMapping}
-            pinMode={pinMode}
-            pins={activePins}
-            onSelect={pairs => choice.select(scope, pairs)}
-            onCamera={setCamera}
-            onCaptureReady={bindCapture}
-            renderPreset={draft && isSpatialDraft ? "viewport" : renderPreset}
-            onViewportPixels={setViewportPixels}
-            onPlacePin={placement => void handlePlacePin(placement)}
-            onPinMiss={handlePinMiss}
-            restoreCamera={frameOverride ? null : effectiveRestoreCamera}
-            restoreCameraNonce={restorePinNonce}
-            frameNonce={frameRequest?.nonce}
-            suppressFramingGate={Boolean(draft && isSpatialDraft)}
-          />
+          <Suspense fallback={<div className="review-proxy" role="status">Loading 3D inspection viewer…</div>}>
+            <ProxyView
+              visible={visible}
+              url={mediaUrl(projectId, activeMapping.proxy_artifact_id)}
+              mapping={activeMapping}
+              pinMode={pinMode}
+              pins={activePins}
+              onSelect={pairs => choice.select(scope, pairs)}
+              onCamera={setCamera}
+              onCaptureReady={bindCapture}
+              renderPreset={draft && isSpatialDraft ? "viewport" : renderPreset}
+              onViewportPixels={setViewportPixels}
+              onPlacePin={placement => void handlePlacePin(placement)}
+              onPinMiss={handlePinMiss}
+              restoreCamera={frameOverride ? null : effectiveRestoreCamera}
+              restoreCameraNonce={restorePinNonce}
+              frameNonce={frameRequest?.nonce}
+              suppressFramingGate={Boolean(draft && isSpatialDraft)}
+            />
+          </Suspense>
         </MediaBoundary>
       ) : pinnedHit ? (
         <div className="viewer-empty">Loading pinned 3D proxy {pinnedHit.mapping_artifact_id}…</div>
       ) : (
         <div className="viewer-empty">Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</div>
       )
-    ) : mode === "animation" ? assembly && frameMap ? <SequencePlayer visible={visible} key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={frameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
+    ) : mode === "animation" ? assembly && activeFrameMap ? <SequencePlayer visible={visible} key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={activeFrameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
+          const mapIsCurrent = () => activeFrameMapRef.current?.id === activeFrameMap.id && !readinessRef.current.revoked.has(activeFrameMap.id)
+            && (readinessRef.current.lastRevoked.get(activeFrameMap.id) ?? 0) <= activeFrameMap.startedSeq;
+          if (!mapIsCurrent()) return;
           const upload_id=crypto.randomUUID();const capture=await api.call("uploadImage",{path:{project_id:projectId,upload_id},body:blob,idempotencyKey:upload_id});
-          const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:frameMap.id};
+          if (!mapIsCurrent()) return;
+          const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:activeFrameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
          }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} expectedEndFrame={availability?.source_range.end ?? activeJob?.render_spec?.frames.end} jobTerminal={jobTerminal} requestedFrame={requestedFrame} seekNonce={seekNonce} nextPassSegment={nextPassSegment} playing={playing} onPlaying={setPlaying} onPresented={present} onUnpresented={clearPresentation} onPlaybackStopped={stopPlayAll} onEndedPass={advancePlayAll} completionMessage={playAll ? "Full animation playback complete" : "Playback complete"}/>
-           : target ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">{activeJob?.render_spec && !jobTerminal ? `Frame ${requestedFrame} pending. No ready review image yet.` : "No ready review image. Rendering is an explicit Queue request."}</div>}
+           : target && !targetUnavailable ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">{activeJob?.render_spec && !jobTerminal ? `Frame ${requestedFrame} pending. No ready review image yet.` : "No ready review image. Rendering is an explicit Queue request."}</div>}
     {show2DEditor ? null : draft && isSpatialDraft ? (
       <SpatialPinDock {...placementProps} draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft} resolveDiscardBaseline={resolveDiscardBaseline}/>
     ) : (

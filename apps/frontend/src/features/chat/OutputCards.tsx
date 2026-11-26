@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ApiClient, Artifact, RetainedArtifactSummary } from "../../api";
 import { describeError } from "../../app/storage";
 import { isReadyAudio } from "../retainedAudio";
@@ -16,13 +16,13 @@ export function isRenderPassStreamArtifact(summary: RetainedArtifactSummary): bo
   return false;
 }
 
-export function OutputCards({ visible = true, api, projectId, artifactIds, retainedArtifacts = [], onInspectArtifact }: {
-  visible?: boolean; api: ApiClient; projectId: string; artifactIds: string[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
+export const OutputCards = memo(function OutputCards({ visible = true, api, projectId, artifactIds, retainedArtifacts = [], artifactsById, onInspectArtifact }: {
+  visible?: boolean; api: ApiClient; projectId: string; artifactIds: string[]; retainedArtifacts?: RetainedArtifactSummary[]; artifactsById?: ReadonlyMap<string, Artifact>; onInspectArtifact?: (artifact: Artifact) => void;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const uniqueIds = [...new Set(artifactIds)];
   if (!uniqueIds.length) return null;
-  const knownById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary.artifact]));
+  const knownById = artifactsById ?? new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary.artifact]));
   const visibleIds = uniqueIds.slice(0, INLINE_CARD_LIMIT);
   const hiddenIds = uniqueIds.slice(INLINE_CARD_LIMIT);
   return <>
@@ -36,7 +36,7 @@ export function OutputCards({ visible = true, api, projectId, artifactIds, retai
       </div>
     </details>}
   </>;
-}
+});
 
 function OutputCard({ visible, api, projectId, artifactId, known, onInspectArtifact }: { visible: boolean; api: ApiClient; projectId: string; artifactId: string; known?: Artifact; onInspectArtifact?: (artifact: Artifact) => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);

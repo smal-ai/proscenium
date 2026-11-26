@@ -96,15 +96,25 @@ def get_tool_outcome(tx: Transaction, invocation_id: str) -> dict[str, Any] | No
     return tx.get(NAMESPACE, invocation_id, required=False)
 
 
-def artifact_attributions(tx: Transaction) -> dict[str, dict[str, Any]]:
+def artifact_attributions(
+    tx: Transaction, *, artifact_ids: set[str] | None = None
+) -> dict[str, dict[str, Any]]:
     """Join recorded associations only. Never infer an owner request from recency.
 
     Singular attribution prefers a trusted tool outcome, then publication, then job,
     each in storage-ID order. Published versions are the sorted union of recorded
-    associations. Unassociated legacy artefacts retain null identities.
+    associations. Unassociated legacy artefacts retain null identities. A page of
+    already-loaded artefacts can supply its IDs to skip the artefact scan.
     """
+    identities = (
+        [artifact["artifact_id"] for artifact in tx.all("artifacts")]
+        if artifact_ids is None
+        else sorted(artifact_ids)
+    )
+    if not identities:
+        return {}
     result: dict[str, dict[str, Any]] = {
-        artifact["artifact_id"]: dict(
+        identity: dict(
             attribution_status="unrecorded",
             request_id=None,
             work_id=None,
@@ -112,7 +122,7 @@ def artifact_attributions(tx: Transaction) -> dict[str, dict[str, Any]]:
             job_id=None,
             published_versions=[],
         )
-        for artifact in tx.all("artifacts")
+        for identity in identities
     }
     versions = {version["version_id"]: version for version in tx.all("versions")}
     publications = tx.all("publications")
@@ -153,6 +163,8 @@ def artifact_attributions(tx: Transaction) -> dict[str, dict[str, Any]]:
         if outcome.get("project_id") != tx.project_id:
             continue
         for artifact_id in outcome.get("artifact_ids", []):
+            if artifact_id not in result:
+                continue
             # A job ID is attributable only when that job records this output.
             job_id = next(
                 (

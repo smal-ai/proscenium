@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
-from proscenium.contracts import canonical, validate
+from proscenium.contracts import canonical, validate, validate_stored_json
 from proscenium.db import Store
 from proscenium.db.outbox import has_unsettled_outbox
 from proscenium.db.ownership import Ownership
@@ -592,7 +592,9 @@ class Projects:
             tx.operation("projects.event", body["operation_id"], body, effect)
 
     def snapshot(self, project_id: str) -> dict[str, Any]:
+        from proscenium.catalogue.service import Catalogue
         from proscenium.copilot.eligibility import execution_status
+        from proscenium.reviews.store import ReviewStore
 
         with self.services.activation_lock:
             self.services.reconcile_project_projection(project_id)
@@ -606,6 +608,32 @@ class Projects:
                 ]
                 if len(active) > 1:
                     raise DomainError("source_conflict", 409, "Multiple active work records")
+                selections = Catalogue.selections_by_slot(tx)
+                selected_versions = Catalogue.selected_versions(tx, selections)
+                jobs = [
+                    validate_stored_json("JobRecord", raw, job) for raw, job in tx.all_raw("jobs")
+                ]
+                items = []
+                for raw, item in tx.all_raw("items"):
+                    validate_stored_json("ItemRecord", raw, item)
+                    view = Catalogue.item_view(
+                        tx, item, selections_by_slot=selections, selected_versions=selected_versions
+                    )
+                    if view["selected_version_id"] != item["selected_version_id"]:
+                        validate("NullableId", view["selected_version_id"])
+                    items.append(view)
+                reviews_ext: ReviewStore | None = self.services.extensions.get("reviews")
+                tickets = [
+                    json.loads(body)
+                    for _, body in tx.connection.execute(
+                        "SELECT id, body FROM records WHERE namespace='reviews' ORDER BY rowid DESC"
+                    )
+                ]
+                context = (
+                    reviews_ext.preload_ticket_context(tx, jobs=jobs)
+                    if reviews_ext is not None and tickets
+                    else None
+                )
                 result = dict(
                     schema_version="1.0",
                     project=record,
@@ -614,26 +642,36 @@ class Projects:
                     execution=execution_status(tx, self.services.ownership.epoch, record),
                     active_work=active[0] if active else None,
                     held_requests=[
-                        r for r in tx.all("requests") if r["receipt"]["state"] == "held"
+                        validate_stored_json("RequestRecord", raw, r)
+                        for raw, r in tx.all_raw("requests")
+                        if isinstance(r.get("receipt"), dict)
+                        and r["receipt"].get("state") == "held"
                     ],
-                    items=[
-                        self.services.extension("catalogue").item_view(tx, item)
-                        for item in tx.all("items")
+                    items=items,
+                    jobs=jobs,
+                    pending_decisions=[
+                        validate_stored_json("Decision", raw, d)
+                        for raw, d in tx.all_raw("decisions")
+                        if d.get("state") == "pending"
                     ],
-                    jobs=tx.all("jobs"),
-                    pending_decisions=[d for d in tx.all("decisions") if d["state"] == "pending"],
                     reviews=[
-                        self.services.extension("reviews").ticket_view(
-                            tx, tx.require("reviews", row[0])
-                        )
-                        if "reviews" in self.services.extensions
-                        else tx.require("reviews", row[0])
-                        for row in tx.connection.execute(
-                            "SELECT id FROM records WHERE namespace='reviews' ORDER BY rowid DESC"
-                        ).fetchall()
+                        reviews_ext.ticket_view(tx, ticket, context=context)
+                        if reviews_ext is not None
+                        else validate("ReviewTicket", ticket)
+                        for ticket in tickets
                     ],
                 )
-        validate("ProjectSnapshot", result)
+        validate(
+            "ProjectSnapshot",
+            {
+                **result,
+                "held_requests": [],
+                "items": [],
+                "jobs": [],
+                "pending_decisions": [],
+                "reviews": [],
+            },
+        )
         return result
 
     def rebind(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:

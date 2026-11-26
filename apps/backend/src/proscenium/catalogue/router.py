@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Annotated
 
@@ -5,6 +6,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 
 from proscenium.api.dependencies import command, owner, tool
+from proscenium.api.entity_tags import if_none_match
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.artifacts import Artifacts
@@ -53,8 +55,12 @@ def items(
         raise DomainError("invalid_request")
     catalogue: Catalogue = services.extension("catalogue")
     with services.registry.project_store(project_id).transaction(write=False) as tx:
+        selections = catalogue.selections_by_slot(tx)
+        selected_versions = catalogue.selected_versions(tx, selections)
         records = [
-            catalogue.item_view(tx, row)
+            catalogue.item_view(
+                tx, row, selections_by_slot=selections, selected_versions=selected_versions
+            )
             for row in tx.all("items")
             if kind is None or row["kind"] == kind
         ]
@@ -76,10 +82,23 @@ def versions(
     catalogue: Catalogue = services.extension("catalogue")
     with services.registry.project_store(project_id).transaction(write=False) as tx:
         tx.require("items", item_id)
+        rows = [row for row in tx.all("versions") if row["item_id"] == item_id]
+        render_jobs = catalogue.render_jobs_by_version(tx) if rows else {}
+        links = (
+            {
+                identity: json.loads(body)
+                for identity, body in tx.connection.execute(
+                    "SELECT id, body FROM records WHERE namespace='version_links' "
+                    "AND id IN (SELECT value FROM json_each(?))",
+                    (json.dumps([row["version_id"] for row in rows]),),
+                )
+            }
+            if len(rows) > 1
+            else None
+        )
         records = [
-            catalogue.version_view(tx, row)
-            for row in tx.all("versions")
-            if row["item_id"] == item_id
+            catalogue.version_view(tx, row, render_jobs_by_version=render_jobs, version_links=links)
+            for row in rows
         ]
     return services.cursors.page(
         f"{project_id}:versions:{item_id}", records, "version_id", cursor=cursor, limit=limit
@@ -139,14 +158,9 @@ def artifact(request: Request, project_id: str, artifact_id: str, caller: Owner)
 @router.get(BASE + "/artifacts/{artifact_id}/content", operation_id="getArtifactContent")
 @router.head(BASE + "/artifacts/{artifact_id}/content", operation_id="headArtifactContent")
 def content(request: Request, project_id: str, artifact_id: str, caller: Owner) -> Response:
-    from proscenium.sources.common import sha
-
     artifacts: Artifacts = get_services(request).extension("artifacts")
-    record = artifacts.get(project_id, artifact_id)
     # Serve this verified byte buffer, not a mutable path re-opened later by FileResponse.
-    data = artifacts.ready_path(project_id, artifact_id).read_bytes()
-    if sha(data) != record["sha256"] or len(data) != record["bytes"]:
-        raise DomainError("hash_mismatch", 422)
+    record, data = artifacts.ready_bytes(project_id, artifact_id)
     size = len(data)
     etag = '"' + record["sha256"] + '"'
     headers = {
@@ -154,9 +168,11 @@ def content(request: Request, project_id: str, artifact_id: str, caller: Owner) 
         "Accept-Ranges": "bytes",
         "Cache-Control": "private, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
-        "Content-Length": str(size),
         "Content-Security-Policy": "default-src 'none'; sandbox",
     }
+    if if_none_match(request.headers.getlist("if-none-match"), etag):
+        return Response(status_code=304, headers=headers)
+    headers["Content-Length"] = str(size)
     if "dimensions" in record:
         headers.update(
             {
