@@ -145,11 +145,18 @@ class Workflows:
             raise DomainError("project_location_conflict", 409)
         return root
 
+    def _operation_binding(self, caller: Caller, body: dict, kind: str) -> dict:
+        if kind == "assembly":
+            previews = self.services.extension("previews")
+            profile_id = body.get("execution_profile_id") or previews.config.profile_id
+            body = {**body, "execution_profile_id": profile_id}
+        return binding(caller, body)
+
     def begin(self, caller: Caller, body: dict, kind: str) -> tuple[str, dict, bool]:
         project_id = str(caller.project_id)
         active(self.services, caller, "admitToolJob", project_id)
         identity = fingerprint(dict(kind=kind, operation_id=body["operation_id"]))
-        immutable = binding(caller, body)
+        immutable = self._operation_binding(caller, body, kind)
         with self.services.registry.project_store(project_id).transaction() as tx:
             old = tx.get(NAMESPACE, identity, required=False)
             if old:
@@ -202,7 +209,7 @@ class Workflows:
             row = tx.get(NAMESPACE, identity, required=False)
             if row is None:
                 return False
-            if row["binding"] != binding(caller, body):
+            if row["binding"] != self._operation_binding(caller, body, kind):
                 raise DomainError("idempotency_conflict", 409)
             job = tx.get("jobs", row["job_id"], required=False)
         if job is None:
@@ -226,7 +233,7 @@ class Workflows:
             if row["phase"] != "prepared":
                 try:
                     admission, sequence, frame_map = await self.io(
-                        assembly.prepared, self.services, caller, body
+                        assembly.prepared, self.services, caller, row["binding"]["body"]
                     )
                 except DomainError as error:
                     row.update(phase="failed", error_code=error.code)

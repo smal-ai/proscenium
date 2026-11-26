@@ -13,7 +13,7 @@ WORKFLOW_TOOLS = {
     "assemble_sequence": (
         "assembly",
         "JobRecord",
-        "Assemble an exact published sequence. The host resolves and hashes its registered frames or clips, and audio. Returns an admitted job, not completed media.",
+        "Assemble an exact published sequence. Omit execution_profile_id to use the host's configured assembly profile. The host resolves and hashes its registered frames or clips, and audio. Returns an admitted job, not completed media.",
     ),
     "run_unity_workflow": (
         "unity",
@@ -40,7 +40,12 @@ def parameters(name: str) -> dict[str, Any]:
         }
         properties["version"] = {"$ref": "#/$defs/VersionRef"}
         required = list(properties)
-        if name == "run_unity_workflow":
+        if name == "assemble_sequence":
+            required.remove("execution_profile_id")
+            properties["execution_profile_id"]["description"] = (
+                "Omit to use the host's configured assembly profile."
+            )
+        elif name == "run_unity_workflow":
             properties.update(
                 project={"$ref": "#/$defs/RelativePath"},
                 spawn={"$ref": "#/$defs/Vector3"},

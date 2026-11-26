@@ -10,6 +10,7 @@ from proscenium.previews.assembly import (
     expand,
     input_ids,
     is_clip_sequence,
+    require_profile,
     technical,
     with_audio,
 )
@@ -36,6 +37,8 @@ def prepared(
     ):
         raise DomainError("scope_denied", 403)
     previews = services.extension("previews")
+    profile_id = body.get("execution_profile_id") or previews.config.profile_id
+    require_profile(previews, profile_id)
     if is_clip_sequence(sequence):
         snapshot = clip_snapshot(previews.artifacts, project_id, technical(sequence))
     else:
@@ -49,7 +52,7 @@ def prepared(
         target=dict(target_id=version["item_id"], version=body["version"], shot_id=None),
         input_digest=fingerprint(snapshot),
         input_artifact_ids=input_ids(snapshot),
-        execution_profile_id=body["execution_profile_id"],
+        execution_profile_id=profile_id,
     )
     validate("JobAdmission", admission)
     return admission, sequence, snapshot["frame_map"]
