@@ -8,6 +8,16 @@ export function cleanTargetRole(target: FrameTarget): Extract<Attachment["role"]
   return "render";
 }
 
+export function unmappedVideoContext(version: Pick<VersionRecord, "item_id" | "version_id" | "kind"> | null): TurnSelection {
+  return {
+    ...emptySelection(),
+    item_id: version?.item_id ?? null,
+    version_id: version?.version_id ?? null,
+    request_target: version ? versionRequestTarget(version, version.kind, null) : undefined,
+    view_mode: "animation",
+  };
+}
+
 export function annotationContext(annotation: AnnotationSnapshot, versionKind?: VersionRecord["kind"]): TurnSelection {
   const target = annotation.target;
   const effectiveKind = versionKind ?? (target.origin === "sequence_render" ? "sequence" : undefined);

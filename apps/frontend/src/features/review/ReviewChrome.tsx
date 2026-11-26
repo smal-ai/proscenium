@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { ArrowLeft, Box, Download, Film, Image, Layers, Music, X } from "lucide-react";
-import type { Artifact } from "../../api";
+import type { Artifact, VersionRecord } from "../../api";
 import type { ReviewSurfaceProps } from "../../api/studio";
 import { isReadyAudio } from "../retainedAudio";
 import { isReadyVideo } from "../retainedVideo";
@@ -36,7 +36,7 @@ export function currentRetainedPreview(
   return observedArtifacts.get(inspected.artifact_id) ?? inspected;
 }
 
-function ReviewVideo({visible, url, label}: {visible: boolean; url: string; label: string}) {
+export function ReviewVideo({visible, url, label}: {visible: boolean; url: string; label: string}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   useLayoutEffect(() => {
     const video = videoRef.current;
@@ -55,18 +55,29 @@ export function clipSequenceDelivery(artifacts: readonly Artifact[], versionId: 
     && a.derived_from.some(t => t.kind === "encode" && "assembly" in t.parameters && t.parameters.assembly === "clip_concat"));
 }
 
-export function SequenceReelReview({visible, projectId, artifact}: {visible: boolean; projectId: string; artifact: Artifact}) {
+export function directPublishedVideo(artifacts: readonly Artifact[], version: Pick<VersionRecord, "version_id" | "artifact_ids" | "kind">): Artifact | undefined {
+  const byId = new Map(artifacts.map(artifact => [artifact.artifact_id, artifact]));
+  for (const id of version.artifact_ids) {
+    const artifact = byId.get(id);
+    if (artifact && isReadyVideo(artifact) && !id.startsWith("attempt-") && !id.startsWith("preview-")
+      && artifact.purpose !== "inspection" && artifact.purpose !== "draft_motion"
+      && !artifact.derived_from.some(t => t.kind === "encode" && "frame_map_sha256" in t.parameters)) return artifact;
+  }
+  return undefined;
+}
+
+export function SequenceReelReview({visible, projectId, artifact, heading = "Assembled clip sequence"}: {visible: boolean; projectId: string; artifact: Artifact; heading?: string}) {
   const url = mediaUrl(projectId, artifact.artifact_id);
   return <section className="review-workspace" aria-label="Review workspace">
-    <div className="review-bar"><Film size={14}/><strong>Assembled clip sequence</strong><div className="toolbar-spacer"/>
+    <div className="review-bar"><Film size={14}/><strong>{heading}</strong><div className="toolbar-spacer"/>
       <a className="toolbar-btn" href={url} download={artifact.artifact_id}><Download size={13}/>Download video</a>
     </div>
-    <ReviewVideo key={url} visible={visible} url={url} label={`Assembled clip sequence ${artifact.artifact_id}`}/>
+    <ReviewVideo key={url} visible={visible} url={url} label={`${heading} ${artifact.artifact_id}`}/>
     <footer className="review-bar review-transport-bar"><MediaMetadata artifact={artifact} audio={false} video={true}/></footer>
   </section>;
 }
 
-function MediaMetadata({artifact, audio, video}: {artifact: Artifact; audio: boolean; video: boolean}) {
+export function MediaMetadata({artifact, audio, video}: {artifact: Artifact; audio: boolean; video: boolean}) {
   return <>
     {artifact.dimensions && <span className="toolbar-chip">{artifact.dimensions.width} × {artifact.dimensions.height}</span>}
     {video && <VideoFrameRate fps={artifact.fps}/>}
