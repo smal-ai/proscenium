@@ -35,6 +35,36 @@ def endpoint(value: str) -> str:
     return value.rstrip("/")
 
 
+def supports_bf16_vae(catalog: dict[str, Any] | None) -> bool:
+    if not catalog or not isinstance(catalog.get("VAEComputeDtype"), dict):
+        return False
+    node = catalog["VAEComputeDtype"]
+    required = node.get("input", {}).get("required", {})
+    outputs = node.get("output", [])
+    if set(required) != {"vae", "dtype"} or not outputs or outputs[0] not in {"VAE", "*"}:
+        return False
+    vae_spec = required.get("vae")
+    if (
+        not isinstance(vae_spec, list)
+        or not vae_spec
+        or not isinstance(vae_spec[0], str)
+        or not (set(vae_spec[0].split(",")) & {"VAE", "*"})
+    ):
+        return False
+    dtype_spec = required.get("dtype")
+    if not isinstance(dtype_spec, list) or not dtype_spec:
+        return False
+    if isinstance(dtype_spec[0], list):
+        return "bf16" in dtype_spec[0]
+    if dtype_spec[0] == "COMBO":
+        return (
+            len(dtype_spec) > 1
+            and isinstance(dtype_spec[1], dict)
+            and "bf16" in dtype_spec[1].get("options", [])
+        )
+    return dtype_spec[0] in {"STRING", "*"}
+
+
 def preflight(
     graph: dict[str, Any],
     catalog: dict[str, Any],

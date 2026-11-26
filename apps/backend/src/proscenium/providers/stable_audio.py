@@ -9,6 +9,7 @@ import shutil
 import signal
 import subprocess
 import time
+from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -185,13 +186,23 @@ def inspect_flac_bytes(data: bytes) -> dict[str, Any]:
 
 
 def _bounded_output(
-    argv: list[str], deadline: float, maximum: int, *, capture: bool = False
+    argv: list[str],
+    deadline: float,
+    maximum: int,
+    *,
+    capture: bool = False,
+    preexec_fn: Callable[[], None] | None = None,
+    corrupt: Callable[[], DomainError] = corrupt_audio,
 ) -> tuple[int, bytes]:
     """Drain both pipes without trusting EOF, stderr size or process duration."""
     if time.monotonic() >= deadline:
         raise subprocess.TimeoutExpired(argv, 0)
     with subprocess.Popen(
-        argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True
+        argv,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+        preexec_fn=preexec_fn,
     ) as process:
         assert process.stdout is not None and process.stderr is not None
         result = bytearray()
@@ -211,7 +222,7 @@ def _bounded_output(
                         elif key.fileobj is process.stdout:
                             count += len(chunk)
                             if count > maximum:
-                                raise corrupt_audio()
+                                raise corrupt()
                             if capture:
                                 result.extend(chunk)
             returncode = process.wait(timeout=max(0, deadline - time.monotonic()))
@@ -223,7 +234,7 @@ def _bounded_output(
             process.wait()
             raise
         if returncode != 0:
-            raise corrupt_audio()
+            raise corrupt()
         return count, bytes(result)
 
 

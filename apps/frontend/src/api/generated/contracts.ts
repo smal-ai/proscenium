@@ -247,7 +247,15 @@ export type JobRecord = {
   target: JobTarget;
   attempt_id: Id;
   attempt_number: number;
-  kind: "render" | "encode" | "image_generation" | "mesh_generation" | "audio_generation" | "unity" | "vlm_review";
+  kind:
+    | "render"
+    | "encode"
+    | "image_generation"
+    | "mesh_generation"
+    | "audio_generation"
+    | "video_generation"
+    | "unity"
+    | "vlm_review";
   state:
     | "planned"
     | "waiting_resource"
@@ -396,7 +404,7 @@ export type SequenceMap =
       /**
        * @minItems 1
        */
-      entries: [SequenceEntry, ...SequenceEntry[]];
+      entries: [SequenceEntry | SequenceClipEntry, ...(SequenceEntry | SequenceClipEntry)[]];
       /**
        * @maxItems 0
        */
@@ -412,11 +420,28 @@ export type SequenceMap =
       /**
        * @minItems 1
        */
-      entries: [SequenceEntry, ...SequenceEntry[]];
+      entries: [SequenceEntry | SequenceClipEntry, ...(SequenceEntry | SequenceClipEntry)[]];
       /**
        * @minItems 1
        */
       audio_tracks: [SequenceAudioTrack, ...SequenceAudioTrack[]];
+    }
+  | {
+      schema_version: "1.0";
+      sequence_version_id: Id;
+      project_id: Id;
+      fps: Fps;
+      frame_count: number;
+      silent: false;
+      preserve_clip_audio: true;
+      /**
+       * @minItems 1
+       */
+      entries: [SequenceEntry | SequenceClipEntry, ...(SequenceEntry | SequenceClipEntry)[]];
+      /**
+       * @maxItems 0
+       */
+      audio_tracks?: [];
     };
 export type SocketControl =
   | {
@@ -588,6 +613,7 @@ export interface ContractDefinitions {
   SelectionSave: SelectionSave;
   SelectionSlot: SelectionSlot;
   SequenceAudioTrack: SequenceAudioTrack;
+  SequenceClipEntry: SequenceClipEntry;
   SequenceContributor: SequenceContributor;
   SequenceEntry: SequenceEntry;
   SequenceMap: SequenceMap;
@@ -611,6 +637,9 @@ export interface ContractDefinitions {
   VersionPage: VersionPage;
   VersionRecord: VersionRecord;
   VersionRef: VersionRef;
+  VideoGenerationPrepare: VideoGenerationPrepare;
+  VideoGenerationPrepared: VideoGenerationPrepared;
+  VideoGuideFrame: VideoGuideFrame;
   WebSearchHit: WebSearchHit;
   WebSearchResult: WebSearchResult;
   Weight: Weight;
@@ -781,7 +810,7 @@ export interface GenerationSubmit {
   generation_task_id: Id;
   target_id: Id;
   provider_id: Id;
-  capability: "image" | "image_to_3d" | "audio";
+  capability: "image" | "image_to_3d" | "audio" | "video";
   workflow_artifact_id: Id;
   prompt_artifact_id: Id;
   input_artifact_ids: Id[];
@@ -939,7 +968,7 @@ export interface ConfigurationStatus {
 }
 export interface ProviderCapabilitySummary {
   provider_id: Id;
-  capability: "image" | "image_to_3d" | "vlm" | "audio";
+  capability: "image" | "image_to_3d" | "vlm" | "audio" | "video";
   status: CapabilityStatus;
   profile_revision: string | null;
   selected_models: string[];
@@ -965,7 +994,7 @@ export interface ConfigurationView {
   services: {
     provider_id: Id;
     endpoint: string;
-    capabilities: ("vlm" | "image" | "image_to_3d" | "audio")[];
+    capabilities: ("vlm" | "image" | "image_to_3d" | "audio" | "video")[];
     model_id: string | null;
     available: boolean | null;
   }[];
@@ -1631,6 +1660,17 @@ export interface SequenceAudioTrack {
   fade_in_seconds?: number;
   fade_out_seconds?: number;
 }
+export interface SequenceClipEntry {
+  entry_id: Id;
+  shot_id: NullableId;
+  clip_artifact_id: Id;
+  source_frames: FrameRange;
+  sequence_frames: FrameRange;
+  transform: "identity" | "trim";
+  mapping_artifact_id: null;
+  include_audio?: boolean;
+  choice?: "agent" | "owner";
+}
 export interface SequenceContributor {
   shot_id: NullableId;
   version_id: Id;
@@ -1698,6 +1738,75 @@ export interface UsageEventData {
   output_tokens: number | null;
   reported_cost: number | null;
   cost_unit: string | null;
+}
+export interface VideoGenerationPrepare {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id?: Id;
+  generation_task_id?: Id;
+  target_id?: Id;
+  target_slot?: string;
+  provider_id?: Id;
+  mode?: "fl2va" | "ref2va";
+  prompt: string;
+  seed: string;
+  width?: number;
+  height?: number;
+  duration_seconds?: number;
+  steps?: number;
+  first_frame_artifact_id?: Id;
+  last_frame_artifact_id?: Id;
+  /**
+   * @maxItems 4
+   */
+  guide_frames?:
+    | []
+    | [VideoGuideFrame]
+    | [VideoGuideFrame, VideoGuideFrame]
+    | [VideoGuideFrame, VideoGuideFrame, VideoGuideFrame]
+    | [VideoGuideFrame, VideoGuideFrame, VideoGuideFrame, VideoGuideFrame];
+  /**
+   * @maxItems 9
+   */
+  reference_artifact_ids?:
+    | []
+    | [Id]
+    | [Id, Id]
+    | [Id, Id, Id]
+    | [Id, Id, Id, Id]
+    | [Id, Id, Id, Id, Id]
+    | [Id, Id, Id, Id, Id, Id]
+    | [Id, Id, Id, Id, Id, Id, Id]
+    | [Id, Id, Id, Id, Id, Id, Id, Id]
+    | [Id, Id, Id, Id, Id, Id, Id, Id, Id];
+  ref_image_size?: "match" | "max";
+}
+export interface VideoGuideFrame {
+  artifact_id: Id;
+  frame_index: number;
+}
+export interface VideoGenerationPrepared {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  replayed: boolean;
+  provider_id: Id;
+  profile_revision: string;
+  mode: "fl2va" | "ref2va";
+  dimensions: Dimensions;
+  duration_seconds: number;
+  frame_count: number;
+  fps: Fps;
+  /**
+   * @minItems 1
+   */
+  model_ids: [string, ...string[]];
+  input_artifact_ids: Id[];
+  workflow_artifact_id: Id;
+  prompt_artifact_id: Id;
+  submit_request: GenerationSubmit & {
+    capability?: "video";
+  };
 }
 export interface WebSearchHit {
   title: string;

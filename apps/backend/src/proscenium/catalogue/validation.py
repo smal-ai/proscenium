@@ -337,14 +337,23 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
 def sequence_map(
     tx: Transaction, document: dict[str, Any], version_id: str, maps: dict[str, dict[str, Any]]
 ) -> None:
+    entries = document.get("entries")
+    clip_based = document.get("preserve_clip_audio") is True or (
+        isinstance(entries, list)
+        and any(isinstance(entry, dict) and "clip_artifact_id" in entry for entry in entries)
+    )
     tracks = document.get("audio_tracks")
     if document.get("silent") is True and isinstance(tracks, list) and tracks:
         raise DomainError("invalid_request", 422, SILENT_AUDIO_TRACKS)
-    if document.get("silent") is False and (tracks is None or tracks == []):
+    if not clip_based and document.get("silent") is False and (tracks is None or tracks == []):
         raise DomainError("invalid_request", 422, MISSING_AUDIO_TRACKS)
     validate("SequenceMap", document)
     if document["project_id"] != tx.project_id or document["sequence_version_id"] != version_id:
         raise DomainError("scope_denied", 403)
+    if clip_based:
+        raise DomainError(
+            "capability_unavailable", 501, "Clip-based sequence assembly is not yet enabled"
+        )
     fps = rational(document["fps"])
     validate_audio_tracks(tx, document, document["frame_count"] / fps)
     next_frame = 1

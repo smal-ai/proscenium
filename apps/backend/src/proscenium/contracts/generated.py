@@ -387,6 +387,9 @@ class SelectionSlot(ContractModel):
 class SequenceAudioTrack(ContractModel):
     definition = "SequenceAudioTrack"
 
+class SequenceClipEntry(ContractModel):
+    definition = "SequenceClipEntry"
+
 class SequenceContributor(ContractModel):
     definition = "SequenceContributor"
 
@@ -455,6 +458,15 @@ class VersionRecord(ContractModel):
 
 class VersionRef(ContractModel):
     definition = "VersionRef"
+
+class VideoGenerationPrepare(ContractModel):
+    definition = "VideoGenerationPrepare"
+
+class VideoGenerationPrepared(ContractModel):
+    definition = "VideoGenerationPrepared"
+
+class VideoGuideFrame(ContractModel):
+    definition = "VideoGuideFrame"
 
 class WebSearchHit(ContractModel):
     definition = "WebSearchHit"

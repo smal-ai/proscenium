@@ -152,6 +152,12 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                     summary="Provider is configured unavailable",
                 )
                 continue
+            if capability == "video":
+                row.update(
+                    reason_code="capability_unavailable",
+                    summary="Video generation is not wired into the runtime",
+                )
+                continue
             if capability == "vlm" and not service["model_id"]:
                 row.update(
                     reason_code="model_not_configured", summary="Configure a vision model ID"

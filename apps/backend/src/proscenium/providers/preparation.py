@@ -13,6 +13,7 @@ from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
 from proscenium.providers import budget3d, klein, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import endpoint
+from proscenium.providers.comfy import supports_bf16_vae as supports_bf16_vae
 from proscenium.providers.plugins import plugin
 from proscenium.providers.targets import _request_context, resolve_target
 from proscenium.sources.common import active, admitted, binding, replay, sha
@@ -22,36 +23,6 @@ UNAVAILABLE = "Image recipe nodes or models are unavailable"
 MAX_CATALOG_BYTES = 16 * 1024**2
 TILE_THRESHOLD_PIXELS = 1_048_576
 SD_TURBO_REFERENCE = "Selected image profile requires one exact 512x512 reference"
-
-
-def supports_bf16_vae(catalog: dict[str, Any] | None) -> bool:
-    if not catalog or not isinstance(catalog.get("VAEComputeDtype"), dict):
-        return False
-    node = catalog["VAEComputeDtype"]
-    required = node.get("input", {}).get("required", {})
-    outputs = node.get("output", [])
-    if set(required) != {"vae", "dtype"} or not outputs or outputs[0] not in {"VAE", "*"}:
-        return False
-    vae_spec = required.get("vae")
-    if (
-        not isinstance(vae_spec, list)
-        or not vae_spec
-        or not isinstance(vae_spec[0], str)
-        or not (set(vae_spec[0].split(",")) & {"VAE", "*"})
-    ):
-        return False
-    dtype_spec = required.get("dtype")
-    if not isinstance(dtype_spec, list) or not dtype_spec:
-        return False
-    if isinstance(dtype_spec[0], list):
-        return "bf16" in dtype_spec[0]
-    if dtype_spec[0] == "COMBO":
-        return (
-            len(dtype_spec) > 1
-            and isinstance(dtype_spec[1], dict)
-            and "bf16" in dtype_spec[1].get("options", [])
-        )
-    return dtype_spec[0] in {"STRING", "*"}
 
 
 def validate_recipes(options: dict[str, Any]) -> None:
