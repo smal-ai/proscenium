@@ -43,3 +43,27 @@ export function formatItemStatusLine({kind, viewedVersionId, latestVersionId, ow
   if (ownerVersionId) parts.push(`Owner selected ${shortVersionLabel(ownerVersionId)}`);
   return parts.join(" · ");
 }
+import type { ItemRecord, SelectionRecord, VersionRecord } from "../../api";
+
+export function catalogueVersionKey(items: readonly ItemRecord[]): string {
+  return JSON.stringify(items.map(i => [i.item_id, i.current_version_id, i.state_revision]));
+}
+
+export function indexCatalogueVersions(versions: readonly VersionRecord[]): Map<string, VersionRecord[]> {
+  const grouped = new Map<string, VersionRecord[]>();
+  for (const version of versions) {
+    const values = grouped.get(version.item_id);
+    if (values) values.push(version);
+    else grouped.set(version.item_id, [version]);
+  }
+  for (const values of grouped.values()) values.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return grouped;
+}
+
+export function indexCatalogueSelections(selections: readonly SelectionRecord[]): Map<string, SelectionRecord> {
+  const grouped = new Map<string, SelectionRecord>();
+  for (const choice of selections) {
+    if (choice.slot.kind === "item" && choice.state === "selected" && !grouped.has(choice.slot.item_id)) grouped.set(choice.slot.item_id, choice);
+  }
+  return grouped;
+}

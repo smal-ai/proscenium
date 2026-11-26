@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, Paperclip, Square, X, MessageSquare } from "lucide-react";
-import type { ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, VersionRef } from "../../api";
+import type { ActivityEventData, ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, VersionRef } from "../../api";
 import type { ComposerSeedIntent, ContextPreparer, TurnSelection } from "../../api/studio";
 import { describeError, durableCommand, id, readPrivate, writePrivate } from "../../app/storage";
 import { DecisionCard } from "./DecisionCard";
@@ -25,6 +25,8 @@ export { AssistantStatus } from "./AssistantStatus";
 export { AUTO_RELEASE_VISIBILITY_TIMEOUT_MS } from "./useAutoRelease";
 
 const pendingExistingError = "Choose a published item for Existing… or switch target mode before sending.";
+const EMPTY_ITEMS: ItemRecord[] = [];
+const EMPTY_SUMMARIES: RetainedArtifactSummary[] = [];
 
 export function shouldShowQueueHold(snapshot: ProjectSnapshot | null, mode: "queue" | "steer", requests: RequestRecord[] = [], events: Event[] = [], autoReleasingRequestId: string | null = null): boolean {
   if (mode !== "queue" || !snapshot || isIdleAutoReleaseReady(snapshot, requests, events, autoReleasingRequestId)) return false;
@@ -71,8 +73,9 @@ export function shouldShowPendingStopCard(composer: Pick<ChatPanelProps["compose
   return Boolean(composer.pendingStop && (composer.pendingStopNeedsConfirmation ?? !composer.stopping));
 }
 
-export function ChatPanel({ visible = true, api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = [], seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact }: ChatPanelProps) {
+export function ChatPanel({ visible = true, api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = EMPTY_SUMMARIES, seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact }: ChatPanelProps) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
+  const draftRef = useRef(draft); draftRef.current = draft;
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [mode, setMode] = useState<"queue" | "steer">("queue");
@@ -103,28 +106,47 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   const work = snapshot?.active_work;
   const canSteerWorkId = steerWorkId(snapshot);
   const canStopWorkId = stopWorkId(snapshot);
-  const uncertainStop = requests.some(record => record.submission.type === "stop" && record.receipt.state === "outcome_uncertain") || snapshot?.execution?.hold_reason_code === "uncertain_stop";
+  const hasUncertainStop = useMemo(() => requests.some(record => record.submission.type === "stop" && record.receipt.state === "outcome_uncertain"), [requests]);
+  const uncertainStop = hasUncertainStop || snapshot?.execution?.hold_reason_code === "uncertain_stop";
   const stale = connection !== "Connected" || !hydrated;
-  const jobsBadge = jobsBadgeState(jobs, stale);
-  const agents = nativeAgents(snapshot, events, agentsRef.current);
+  const jobsBadge = useMemo(() => jobsBadgeState(jobs, stale), [jobs, stale]);
+  const agents = useMemo(() => nativeAgents(snapshot, events, agentsRef.current), [snapshot, events]);
   agentsRef.current = agents;
-  const history = promptHistory(projectId, requests);
-  const catalogue = items ?? snapshot?.items ?? [];
-  const summaryById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary]));
-  const renderedOutputIds = new Set(
-    events
-      .filter(event => event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent."))
-      .flatMap(event => (event.payload as unknown as { artifact_ids: string[] }).artifact_ids ?? [])
-      .filter(artifactId => {
-        const summary = summaryById.get(artifactId);
-        return !summary || !isRenderPassStreamArtifact(summary);
-      }),
-  );
-  for (const summary of retainedArtifacts) {
-    if (!isRenderPassStreamArtifact(summary) && (events.some(event => (event.event_type.startsWith("tool.") || event.event_type.startsWith("subagent.")) && (event.payload as unknown as { invocation_id: string }).invocation_id === summary.invocation_id) || (!summary.invocation_id && summary.published_versions.length === 0 && requests.some(record => record.request_id === summary.request_id || (record.receipt.work_id && record.receipt.work_id === summary.work_id))))) renderedOutputIds.add(summary.artifact.artifact_id);
-  }
-  const resumable = resumableWork(snapshot, events);
+  const history = useMemo(() => promptHistory(projectId, requests), [projectId, requests]);
+  const catalogue = items ?? snapshot?.items ?? EMPTY_ITEMS;
+  const { artifactsById, suppressedOutputIds } = useMemo(() => {
+    const summariesById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary]));
+    const artifactsById = new Map<string, Artifact>();
+    const suppressedOutputIds = new Set<string>();
+    for (const [id, summary] of summariesById) {
+      artifactsById.set(id, summary.artifact);
+      if (isRenderPassStreamArtifact(summary)) suppressedOutputIds.add(id);
+    }
+    return { artifactsById, suppressedOutputIds };
+  }, [retainedArtifacts]);
+  const renderedOutputIds = useMemo(() => {
+    const rendered = new Set<string>();
+    const activityInvocationIds = new Set<string>();
+    for (const event of events) {
+      if (!event.event_type.startsWith("tool.") && !event.event_type.startsWith("subagent.")) continue;
+      const { invocation_id, artifact_ids } = event.payload as unknown as ActivityEventData;
+      activityInvocationIds.add(invocation_id);
+      for (const id of artifact_ids ?? []) if (!suppressedOutputIds.has(id)) rendered.add(id);
+    }
+    const requestIds = new Set(requests.map(r => r.request_id));
+    const workIds = new Set(requests.map(r => r.receipt.work_id).filter(Boolean));
+    for (const { artifact, invocation_id, request_id, work_id, published_versions } of retainedArtifacts) {
+      if (suppressedOutputIds.has(artifact.artifact_id)) continue;
+      if (invocation_id && activityInvocationIds.has(invocation_id) || !invocation_id && published_versions.length === 0 &&
+        (request_id && requestIds.has(request_id) || work_id && workIds.has(work_id))) rendered.add(artifact.artifact_id);
+    }
+    return rendered;
+  }, [events, requests, retainedArtifacts, suppressedOutputIds]);
+  const resumable = useMemo(() => resumableWork(snapshot, events), [snapshot, events]);
+  const onConversationError = useCallback((e: unknown) => setError(describeError(e)), []);
   const autoReleasingRequestId = activeAutoRelease.requestId;
+  const showResumeCard = useMemo(() => shouldShowResumeCard(snapshot, requests, resumable.length, uncertainStop, autoReleasingRequestId), [snapshot, requests, resumable.length, uncertainStop, autoReleasingRequestId]);
+  const showQueueHold = useMemo(() => shouldShowQueueHold(snapshot, mode, requests, events, autoReleasingRequestId), [snapshot, mode, requests, events, autoReleasingRequestId]);
   const statusProps = { snapshot, requests, events, jobs, hydrated, connection, submitting: composer.busy || preparing, stopping: composer.stopping, autoReleasingRequestId };
   const chosenResumeWork = resumable.length === 1 ? resumable[0] : resumable.find(record => record.work_id === (resumeWorkId || work?.work_id));
   const canReleaseQueue = !uncertainStop && (!work || ["completed", "failed", "stopped"].includes(work.state));
@@ -142,24 +164,24 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     : draftTarget === "current_view" && (selection.version_id || selection.annotations.length || selection.attachments.length)
       ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] }
       : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
-  function changeDraft(value: string) { setDraft(value); writePrivate(`draft.${projectId}`, value); }
-  function changeTarget(target: DraftTarget) {
+  const changeDraft = useCallback((value: string) => { setDraft(value); writePrivate(`draft.${projectId}`, value); }, [projectId]);
+  const changeTarget = useCallback((target: DraftTarget) => {
     setPendingExisting(false);
     setError(previous => previous === pendingExistingError ? "" : previous);
     setDraftTarget(target);
     writePrivate(`target.${projectId}`, target);
-  }
+  }, [projectId]);
   function changeReferences(versions: VersionRef[]) { setReferences(versions); writePrivate(`ref_versions.${projectId}`, versions); }
   function changeIncludeView(include: boolean) { setIncludeCurrentViewAsReference(include); writePrivate(`include_current_view_ref.${projectId}`, include); }
-  function restoreMessageCaret(focus: boolean) {
+  const restoreMessageCaret = useCallback((focus: boolean) => {
     requestAnimationFrame(() => {
       const input = messageRef.current;
       if (!input) return;
       if (focus) input.focus();
       input.setSelectionRange(caret.current.start, caret.current.end);
     });
-  }
-  function focusMessage() { restoreMessageCaret(true); }
+  }, []);
+  const focusMessage = useCallback(() => restoreMessageCaret(true), [restoreMessageCaret]);
   function rememberCaret() {
     if (messageRef.current) caret.current = { start: messageRef.current.selectionStart, end: messageRef.current.selectionEnd };
   }
@@ -174,14 +196,14 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     setTargetOpen(false);
     focusMessage();
   }
-  function starter(kind: "asset" | "scene" | "storyboard") {
+  const starter = useCallback((kind: "asset" | "scene" | "storyboard") => {
     changeTarget({ kind: "new_item", item_kind: kind, intent_id: id() });
-    if (!draft.trim()) {
+    if (!draftRef.current.trim()) {
       const text = kind === "storyboard" ? "Plan a storyboard for " : kind === "asset" ? "Create an asset: " : "Build a scene: ";
       changeDraft(text); caret.current = { start: text.length, end: text.length };
     }
     setTargetOpen(false); setComposerPanel("message"); focusMessage();
-  }
+  }, [changeTarget, changeDraft, focusMessage]);
   useEffect(() => {
     if (!seedIntent || seenSeeds.current.has(seedIntent.nonce)) return;
     seenSeeds.current.add(seedIntent.nonce);
@@ -257,24 +279,23 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     } catch (e) { setError(describeError(e)); await onRefresh(); }
     finally { setPendingResume(readPrivate(`command.resume.${projectId}`)); setResuming(false); }
   }
-  return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
-    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus {...statusProps} />}</div>
-    {snapshot?.execution?.work_outputs.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => {
-      const unrenderedIds = output.artifact_ids.filter(id => {
-        const summary = summaryById.get(id);
-        return !renderedOutputIds.has(id) && (!summary || !isRenderPassStreamArtifact(summary));
-      });
-      const cards = <OutputCards visible={visible} api={api} projectId={projectId} artifactIds={unrenderedIds} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />;
+  const workOutputs = snapshot?.execution?.work_outputs;
+  const fallbackOutputs = useMemo(() => workOutputs?.filter(output => ["publication_blocked", "retained_unpublished"].includes(output.status)).map(output => {
+      const unrenderedIds = output.artifact_ids.filter(id => !renderedOutputIds.has(id) && !suppressedOutputIds.has(id));
+      const cards = <OutputCards visible={visible} api={api} projectId={projectId} artifactIds={unrenderedIds} artifactsById={artifactsById} onInspectArtifact={onInspectArtifact} />;
       if (output.status === "publication_blocked") return <section className="publication-status" key={output.work_id} role="status"><strong>Finished · publication blocked</strong><p>{output.summary || output.reason_code || "Retained outputs remain accessible. No catalogue publication is confirmed."}</p>{cards}</section>;
       return unrenderedIds.length > 0 ? <div className="retained-turn-outputs" key={output.work_id}>{cards}</div> : null;
-    })}
+    }), [api, projectId, workOutputs, artifactsById, renderedOutputIds, suppressedOutputIds, visible, onInspectArtifact]);
+  return <div className="chat-panel"><div className="chat-scroll" ref={scrollRef} onScroll={onScroll}><div className="chat-scroll-content" ref={contentRef}>
+    <div className="copilot-identity"><span className="copilot-mark"><MessageSquare size={16} /></span><div><strong>Project Copilot</strong><small title={work?.work_id}>{work ? work.state.replaceAll("_", " ") : "No active work"}</small></div>{showHeaderStatus && <AssistantStatus {...statusProps} />}</div>
+    {fallbackOutputs}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
-    <Conversation visible={visible} api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={e => setError(describeError(e))} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
+    <Conversation visible={visible} api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={onConversationError} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
   </div></div>
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="chat-recovery">
       {snapshot?.pending_decisions.map(decision => <DecisionCard key={`${decision.decision_id}.${decision.state_revision}`} api={api} decision={decision} onRefresh={onRefresh} />)}
-      {shouldShowResumeCard(snapshot, requests, resumable.length, uncertainStop, autoReleasingRequestId) && <section className="resume-card" aria-label="Resume Copilot">
+      {showResumeCard && <section className="resume-card" aria-label="Resume Copilot">
         <h3>Resume Copilot</h3>
         <p>Choose how to continue. Reconcile only checks known outcomes without sending a prompt.</p>
         <div className="resume-controls"><select aria-label="Resume mode" value={resumeMode} disabled={resuming || !!pendingResume} onChange={e => setResumeMode(e.target.value as ResumeCommand["mode"])}><option value="reconcile_only">Reconcile only</option><option value="continue_work" disabled={!resumable.length || uncertainStop}>Continue original work</option><option value="release_held_queue" disabled={!canReleaseQueue}>Release held queue</option></select><button disabled={resuming || !!pendingResume || (resumeMode === "continue_work" && !chosenResumeWork) || (resumeMode === "release_held_queue" && !canReleaseQueue)} onClick={() => void resume()}>Resume</button></div>
@@ -289,7 +310,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
       {shouldShowPendingRequestCard(composer) && <div className="retry-card"><strong>Request awaiting confirmation</strong><code>{composer.pending?.submission.request_id}</code><p>Its original text and context are frozen. Your draft is retained.</p><button disabled={composer.busy} onClick={() => void composer.retry(false)}>Reconcile original request / retry same ID</button></div>}
       {shouldShowPendingStopCard(composer) && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
       {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
-      {shouldShowQueueHold(snapshot, mode, requests, events, autoReleasingRequestId) && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
+      {showQueueHold && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
       <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {

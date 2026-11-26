@@ -10,6 +10,23 @@ const REFRESH_EVENTS = new Set<Event["event_type"]>(["publication.created", "pre
 const BASE_REFRESH_EVENTS = new Set<Event["event_type"]>(["publication.created", "annotation.saved", "selection.changed", "review.ready", "review.changed"]);
 const JOURNAL_GAP = "Event journal has a gap. Metadata remains available. Reconnect to recover.";
 
+export function orderedEventBuffer<T extends { sequence: number }>() {
+  const events: T[] = [];
+  let needsSort = false;
+  return {
+    append(event: T) {
+      if (events.length && event.sequence < events[events.length - 1].sequence) needsSort = true;
+      events.push(event);
+    },
+    publish() {
+      if (needsSort) events.sort((a, b) => a.sequence - b.sequence);
+      needsSort = false;
+      return events.slice();
+    },
+    clear() { events.length = 0; needsSort = false; },
+  };
+}
+
 export function backfillWindows(endSequence: number, floorSequence = 0, pageSize = 100, batchSize = 4): Array<{ after: number; end: number; limit: number }> {
   const windows = [];
   for (let end = endSequence; end > floorSequence && windows.length < batchSize && pageSize > 0;) {
@@ -89,6 +106,23 @@ export async function allPages<T>(load: (cursor?: string) => Promise<{ items: T[
   return items;
 }
 
+export async function readProjectHydration(api: ApiClient, path: { project_id: string }) {
+  const snapshotRead = api.call("getProjectSnapshot", { path });
+  const jobFallback = () => allPages(cursor => api.call("listJobs", { path, query: { cursor, limit: 100 } }));
+  const results = await Promise.allSettled([
+    snapshotRead,
+    allPages(cursor => api.call("listRequests", { path, query: { cursor, limit: 100 } })),
+    allPages(cursor => api.call("listItems", { path, query: { cursor, limit: 100 } })),
+    snapshotRead.then(snapshot => Array.isArray(snapshot.jobs) ? snapshot.jobs : jobFallback(), jobFallback),
+  ]);
+  const [snapshot, requests, items, jobs] = results;
+  // The jobs read resolves from either a valid snapshot field or a completed fallback crawl.
+  const jobsReady = jobs.status === "fulfilled";
+  const ready = snapshot.status === "fulfilled" && requests.status === "fulfilled" && items.status === "fulfilled" && jobsReady;
+  const errors = results.flatMap(result => result.status === "rejected" ? [result.reason as unknown] : []);
+  return { snapshot, requests, items, jobs, ready, errors };
+}
+
 export function sortRequests(records: RequestRecord[]): RequestRecord[] {
   return [...records].sort((a, b) => Date.parse(a.accepted_at) - Date.parse(b.accepted_at) || a.request_id.localeCompare(b.request_id));
 }
@@ -150,10 +184,13 @@ export function mergeReviews(current: ReviewTicket[], incoming: ReviewTicket[]):
 
 export function mergeSnapshot(
   current: ProjectSnapshot | null,
-  incoming: ProjectSnapshot,
+  incomingRead: Omit<ProjectSnapshot, "jobs"> & { jobs?: unknown },
   cursor: number,
   knownWork: ReadonlyMap<string, WorkRecord>,
 ): ProjectSnapshot {
+  const hasIncomingJobs = Array.isArray(incomingRead.jobs);
+  const currentJobs = Array.isArray(current?.jobs) ? current.jobs : [];
+  const incoming = hasIncomingJobs ? incomingRead as ProjectSnapshot : { ...incomingRead, jobs: currentJobs };
   if (!current) {
     const incomingWork = incoming.active_work;
     if (incomingWork) {
@@ -193,7 +230,7 @@ export function mergeSnapshot(
     settings,
     active_work,
     items: mergeItems(current.items, incoming.items),
-    jobs: mergeJobs(current.jobs, incoming.jobs),
+    jobs: hasIncomingJobs ? mergeJobs(currentJobs, incoming.jobs) : currentJobs,
     reviews: incoming.reviews || current.reviews ? mergeReviews(current.reviews ?? [], incoming.reviews ?? []) : undefined,
     held_requests: mergeRequests(current.held_requests, incoming.held_requests).filter(r => r.receipt.state === "held"),
     pending_decisions: [...decisionMap.values()].filter(d => d.state === "pending"),
@@ -240,9 +277,11 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     let failedBackfillEpoch: number | null = null;
     let resyncing: Promise<void> | null = null;
     let retainedLoad: { epoch: number; queued: boolean } | null = null;
+    let snapshotRefresh: { epoch: number; queued: boolean } | null = null;
     const path = { project_id: projectId };
     const seenNative = new Set<string>();
     const journal = new Map<number, Event>();
+    const orderedEvents = orderedEventBuffer<Event>();
     const knownWork = new Map<string, WorkRecord>();
     const knownJobs = new Map<string, JobRecord>();
     const decisionSequences = new Map<string, number>();
@@ -292,47 +331,41 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     async function hydrate(replace = false) {
       const myEpoch = ++hydrateEpoch;
       const myLoad = loadEpoch;
-      const results = await Promise.allSettled([
-        api.call("getProjectSnapshot", { path }),
-        allPages(c => api.call("listRequests", { path, query: { cursor: c, limit: 100 } })),
-        allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })),
-        allPages(c => api.call("listJobs", { path, query: { cursor: c, limit: 100 } })),
-      ]);
+      const { snapshot: s, requests: r, items: i, jobs: j, ready, errors } = await readProjectHydration(api, path);
       if (!currentLoad(myLoad) || myEpoch < appliedHydrateEpoch) return;
       void loadRetainedArtifacts(replace);
       appliedHydrateEpoch = myEpoch;
-      const [s, r, i, j] = results;
-      if (s.status === "fulfilled") {
-        hydratedWatermark = s.value.event_sequence;
-        authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, s.value.event_sequence);
-        if (s.value.active_work) {
-          const prev = knownWork.get(s.value.active_work.work_id);
-          if (!prev || s.value.active_work.state_revision >= prev.state_revision) knownWork.set(s.value.active_work.work_id, s.value.active_work);
+      const hydratedSnapshot = s.status === "fulfilled"
+        ? !Array.isArray(s.value.jobs) && j.status === "fulfilled" ? { ...s.value, jobs: j.value } : s.value
+        : null;
+      if (hydratedSnapshot) {
+        hydratedWatermark = hydratedSnapshot.event_sequence;
+        authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, hydratedSnapshot.event_sequence);
+        if (hydratedSnapshot.active_work) {
+          const prev = knownWork.get(hydratedSnapshot.active_work.work_id);
+          if (!prev || hydratedSnapshot.active_work.state_revision >= prev.state_revision) knownWork.set(hydratedSnapshot.active_work.work_id, hydratedSnapshot.active_work);
         }
-        recordJobs(s.value.jobs);
         if (!replace) {
-          setSnapshot(prev => mergeSnapshot(prev, s.value, cursor, knownWork));
-          setItems(prev => mergeItems(prev, s.value.items));
-          setJobs(prev => mergeJobs(prev, s.value.jobs));
-          if (s.value.reviews) setReviews(prev => mergeReviews(prev, s.value.reviews!));
+          setSnapshot(prev => mergeSnapshot(prev, hydratedSnapshot, cursor, knownWork));
+          setItems(prev => mergeItems(prev, hydratedSnapshot.items));
+          const {reviews} = hydratedSnapshot;
+          if (reviews) setReviews(prev => mergeReviews(prev, reviews));
         }
       }
       if (j.status === "fulfilled") recordJobs(j.value);
       if (replace) {
-        setSnapshot(s.status === "fulfilled" ? s.value : null);
+        setSnapshot(hydratedSnapshot ? mergeSnapshot(null, hydratedSnapshot, cursor, knownWork) : null);
         setRequests(r.status === "fulfilled" ? r.value : []);
         setItems(i.status === "fulfilled" ? i.value : s.status === "fulfilled" ? s.value.items : []);
-        setJobs(j.status === "fulfilled" ? j.value : s.status === "fulfilled" ? s.value.jobs : []);
+        if (j.status === "fulfilled") setJobs(j.value);
         setReviews(s.status === "fulfilled" ? s.value.reviews ?? [] : []);
       } else {
         if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
         if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
         if (j.status === "fulfilled") setJobs(prev => mergeJobs(prev, j.value));
       }
-      if (s.status === "fulfilled" && r.status === "fulfilled" && i.status === "fulfilled" && j.status === "fulfilled") {
-        setHydrated(true);
-      }
-      for (const result of results) if (result.status === "rejected") report(result.reason);
+      if (ready) setHydrated(true);
+      for (const error of errors) report(error);
       setRevision(n => n + 1);
       setCatalogueRevision(n => n + 1);
       setBaseRevision(n => n + 1);
@@ -349,6 +382,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       if (nativeKey && seenNative.has(nativeKey)) return false;
       if (nativeKey) seenNative.add(nativeKey);
       journal.set(event.sequence, event);
+      orderedEvents.append(event);
       return true;
     }
     function recordHistoricalEvents(incoming: Event[]) {
@@ -366,16 +400,30 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       }
     }
     function publishEvents() {
-      if (!disposed) setEvents([...journal.values()].sort((a, b) => a.sequence - b.sequence));
+      if (!disposed) setEvents(orderedEvents.publish());
     }
-    function refreshSnapshot() {
-      const myEpoch = loadEpoch;
-      void api.call("getProjectSnapshot", { path }).then(fresh => {
-        if (currentLoad(myEpoch)) {
-          authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, fresh.event_sequence);
-          setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
-        }
-      }).catch(() => { /* Event state remains authoritative offline. */ });
+    async function refreshSnapshot() {
+      if (disposed) return;
+      if (snapshotRefresh?.epoch === loadEpoch) {
+        snapshotRefresh.queued = true;
+        return;
+      }
+      const flight = { epoch: loadEpoch, queued: false };
+      snapshotRefresh = flight;
+      try {
+        do {
+          flight.queued = false;
+          try {
+            const fresh = await api.call("getProjectSnapshot", { path });
+            if (currentLoad(flight.epoch)) {
+              authoritativeSnapshotSequence = Math.max(authoritativeSnapshotSequence, fresh.event_sequence);
+              setSnapshot(prev => mergeSnapshot(prev, fresh, cursor, knownWork));
+            }
+          } catch { /* Event state remains authoritative offline. */ }
+        } while (flight.queued && currentLoad(flight.epoch));
+      } finally {
+        if (snapshotRefresh === flight) snapshotRefresh = null;
+      }
     }
     function apply(event: Event) {
       if (disposed || event.project_id !== projectId || event.sequence <= cursor) return;
@@ -404,12 +452,12 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
             };
           });
         }
-        refreshSnapshot();
+        void refreshSnapshot();
       }
       if (event.event_type === "project.state_changed") {
         const project = event.payload as unknown as ProjectSnapshot["project"];
         setSnapshot(s => s && project.state_revision >= s.project.state_revision ? { ...s, event_sequence: Math.max(s.event_sequence, event.sequence), project } : s);
-        refreshSnapshot(); // The project projection does not carry the execution gate.
+        void refreshSnapshot(); // The project projection does not carry the execution gate.
       }
       if (event.event_type === "decision.requested" || event.event_type === "decision.resolved") {
         const decision = event.payload as unknown as ProjectSnapshot["pending_decisions"][number];
@@ -450,7 +498,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         const activity = event.payload as unknown as ActivityEventData;
         if (activity.artifact_ids?.length) void loadRetainedArtifacts();
         if (event.event_type.startsWith("subagent.") || activity.artifact_ids?.length || activity.output_status) {
-          refreshSnapshot();
+          void refreshSnapshot();
         }
       }
       if (event.event_type === "publication.created") {
@@ -565,7 +613,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         hydratedWatermark = 0;
         latestWorkSequence = 0; authoritativeSnapshotSequence = 0;
         pendingBackfill = null; backfilling = null; setBackfillError("");
-        rememberCursor(0); journal.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); decisionSequences.clear(); receiptArtifacts.clear(); setEvents([]);
+        rememberCursor(0); journal.clear(); orderedEvents.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); decisionSequences.clear(); receiptArtifacts.clear(); setEvents([]);
         setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]);
         setHydrated(false); setError(""); setVersionRevisions({});
       }

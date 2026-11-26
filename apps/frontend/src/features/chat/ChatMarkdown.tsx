@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, memo, type ReactNode } from "react";
 import "./chatMarkdown.css";
 
 type Inline =
@@ -358,6 +358,6 @@ function renderBlocks(blocks: Block[], tight = false): ReactNode[] {
 }
 
 /** Chat's GFM subset renders only the elements enumerated above. */
-export function ChatMarkdown({ text }: { text: string }) {
+export const ChatMarkdown = memo(function ChatMarkdown({ text }: { text: string }) {
   return <div className="chat-markdown">{renderBlocks(parseBlocks(text.split(/\r\n?|\n/)))}</div>;
-}
+});

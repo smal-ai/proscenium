@@ -1,12 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import type { Artifact, FrameReceipt, ItemRecord, SelectionRecord, SelectionSave, ShotPlan, VersionRecord } from "../../api/generated/contracts";
 import type { ReviewSurfaceProps, TurnSelection } from "../../api/studio";
 import { handleSubmitEnter } from "../chat/controls";
-import { dependencyStatus, frameContext, selectionCommand, selectionFor, type PlanFrame, type PlanShot } from "./model";
+import { useArtifactObservations } from "../readyArtifactIndex";
+import { dependencyStatus, frameContext, readStoryboardCatalogue, selectionCommand, selectionFor, shotPlanArtifactIds, storyboardHeads, type PlanFrame, type PlanShot } from "./model";
 import "./storyboards.css";
 
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
+const EMPTY_ITEMS: ItemRecord[] = [];
+type ArtifactRead = { artifact: Artifact; startedSeq: number };
+
+function applyArtifactUpdates(previous: Record<string, Artifact>, updates: ReadonlyMap<string, Artifact>): Record<string, Artifact> {
+  let next = previous;
+  for (const [id, artifact] of updates) {
+    if (!Object.hasOwn(previous, id) || previous[id] === artifact) continue;
+    if (next === previous) next = Object.assign(Object.create(null), previous);
+    next[id] = artifact;
+  }
+  return next;
+}
 
 async function pages<T>(read: (cursor?: string) => Promise<{ items: T[]; next_cursor: string | null }>): Promise<T[]> {
   const result: T[] = [];
@@ -22,27 +35,41 @@ async function pages<T>(read: (cursor?: string) => Promise<{ items: T[]; next_cu
   return result;
 }
 
-export function StoryboardBrowser(props: ReviewSurfaceProps) {
+export const StoryboardBrowser = memo(function StoryboardBrowser(props: ReviewSurfaceProps) {
   // Unmounting on a project change fences old requests and pending mutation identities.
   return <ProjectStoryboardBrowser key={props.projectId} {...props} />;
-}
+});
 
-function ProjectStoryboardBrowser({ api, projectId, version, selection: external, jobs, refreshRevision, onContextChange, onNavigate, onQueue }: ReviewSurfaceProps) {
-  const [items, setItems] = useState<ItemRecord[]>([]);
+function ProjectStoryboardBrowser({ api, projectId, version, selection: external, jobs, items: suppliedItems, retainedArtifacts, refreshRevision, onContextChange, onNavigate, onQueue }: ReviewSurfaceProps) {
+  const [localCatalogue, setLocalCatalogue] = useState<{ supplied: ItemRecord[] | undefined; items: ItemRecord[] }>();
+  // The explicit read wins until the parent supplies a different catalogue projection.
+  const items = localCatalogue && localCatalogue.supplied === suppliedItems ? localCatalogue.items : suppliedItems ?? EMPTY_ITEMS;
+  const latestCatalogue = useRef({ suppliedItems, items });
+  latestCatalogue.current = { suppliedItems, items };
+  const suppliedBoardsKey = useMemo(() => suppliedItems === undefined ? null : JSON.stringify(storyboardHeads(suppliedItems)), [suppliedItems]);
   const [versions, setVersions] = useState<VersionRecord[]>([]);
   const [versionId, setVersionId] = useState<string>(version?.kind === "storyboard" ? version.version_id : "");
-  const [plan, setPlan] = useState<ShotPlan | null>(null);
   const [records, setRecords] = useState<SelectionRecord[]>([]);
   const [artifacts, setArtifacts] = useState<Record<string, Artifact>>({});
+  const readyArtifacts = useRef(new Map<string, Artifact>());
+  const { observations, current: readinessRef } = useArtifactObservations(projectId, retainedArtifacts);
+  const metadataRead = useRef<{ signal: AbortSignal; pending: Map<string, Promise<ArtifactRead>> } | null>(null);
   const [artifactErrors, setArtifactErrors] = useState<Record<string, string>>({});
+  const [imageErrors, setImageErrors] = useState<Record<string, string>>({});
   const [active, setActive] = useState<{ shotId: string; frameId: string } | null>(null);
   const [candidateId, setCandidateId] = useState("");
   const [candidate, setCandidate] = useState<Artifact | undefined>();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [planLoading, setPlanLoading] = useState(false);
+  const [artifactLoading, setArtifactLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reload, setReload] = useState(0);
+  const [catalogueReload, setCatalogueReload] = useState(0);
+  const lastReloadRef = useRef(catalogueReload);
+  const planKey = useMemo(() => ({ api, projectId, versionId, refreshRevision, reload }), [api, projectId, versionId, refreshRevision, reload]);
+  const [loadedPlan, setPlan] = useState<{ key: typeof planKey; value: ShotPlan } | null>(null);
+  const plan = loadedPlan?.key === planKey ? loadedPlan.value : null;
   const [pending, setPending] = useState<SelectionSave | null>(null);
   const [receipts, setReceipts] = useState<FrameReceipt[]>([]);
   const [receiptError, setReceiptError] = useState("");
@@ -62,6 +89,10 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
   const receiptJobsKey = JSON.stringify(jobs.filter(job => job.project_id === projectId && job.kind === "render" &&
     (job.target.version?.version_id === versionId || job.artifact_ids.some(id => storyboardArtifacts.has(id))))
     .map(job => [job.job_id, job.artifact_ids.filter(id => storyboardArtifacts.has(id))]));
+
+  useEffect(() => {
+    setLocalCatalogue(previous => previous && previous.supplied !== suppliedItems ? undefined : previous);
+  }, [suppliedItems]);
 
   useEffect(() => {
     if (version?.kind === "storyboard") setVersionId(version.version_id);
@@ -106,58 +137,111 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
     setLoading(true);
     void (async () => {
       const path = { project_id: projectId };
-      const [catalogue, selections] = await Promise.all([
-        pages(cursor => api.call("listItems", { path, query: { cursor, limit: 100 }, signal: controller.signal })),
+      const input = latestCatalogue.current;
+      const [{ catalogue, boards, versions: allVersions }, selections] = await Promise.all([
+        readStoryboardCatalogue(input.suppliedItems === undefined ? null : storyboardHeads(input.items), catalogueReload, lastReloadRef.current,
+          () => pages(cursor => api.call("listItems", { path, query: { cursor, limit: 100 }, signal: controller.signal })),
+          item_id => pages(cursor => api.call("listItemVersions", { path: { ...path, item_id }, query: { cursor, limit: 100 }, signal: controller.signal })),
+        ),
         pages(cursor => api.call("listSelections", { path, query: { cursor, limit: 100 }, signal: controller.signal })),
       ]);
-      const storyboardItems = catalogue.filter(item => item.kind === "storyboard");
-      const allVersions = (await Promise.all(storyboardItems.map(item => pages(cursor => api.call("listItemVersions", {
-        path: { ...path, item_id: item.item_id }, query: { cursor, limit: 100 }, signal: controller.signal,
-      }))))).flat();
       if (controller.signal.aborted) return;
-      setItems(catalogue);
+      lastReloadRef.current = catalogueReload;
+      if (catalogue) setLocalCatalogue({ supplied: input.suppliedItems, items: catalogue });
       setVersions(allVersions);
       setRecords(selections);
       setVersionId(previous => allVersions.some(value => value.version_id === previous) ? previous
-        : storyboardItems.find(item => item.current_version_id)?.current_version_id ?? allVersions[0]?.version_id ?? "");
+        : boards.find(([, head]) => head)?.[1] ?? allVersions[0]?.version_id ?? "");
     })().catch(cause => { if (!controller.signal.aborted) setError(message(cause)); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [api, projectId, refreshRevision, reload]);
+  }, [api, projectId, refreshRevision, reload, catalogueReload, suppliedBoardsKey]);
 
   useEffect(() => {
+    const { api, projectId, versionId } = planKey;
     const controller = new AbortController();
     const epoch = ++loadEpoch.current;
-    setPlan(null);
-    setArtifacts({});
     setArtifactErrors({});
-    if (!versionId) return () => controller.abort();
+    setImageErrors({});
+    if (!versionId) { setPlanLoading(false); return; }
+    metadataRead.current = { signal: controller.signal, pending: new Map() };
     setPlanLoading(true);
     void api.call("getVersionShotPlan", { path: { project_id: projectId, version_id: versionId }, signal: controller.signal })
-      .then(async next => {
-        if (controller.signal.aborted) return;
-        setPlan(next);
-        const ids = new Set(next.shots.flatMap(value => value.frames.flatMap(value => value.artifact_id ? [value.artifact_id] : [])));
-        for (const selection of records) {
-          if (selection.slot.kind === "storyboard_frame" && selection.slot.storyboard_version.version_id === versionId && selection.state === "selected" && selection.choice?.kind === "artifact") ids.add(selection.choice.artifact_id);
-        }
-        await Promise.all([...ids].map(async artifact_id => {
-          try {
-            const artifact = await api.call("getArtifact", { path: { project_id: projectId, artifact_id }, signal: controller.signal });
-            if (!controller.signal.aborted) setArtifacts(previous => ({ ...previous, [artifact_id]: artifact }));
-          } catch (cause) {
-            if (!controller.signal.aborted) setArtifactErrors(previous => ({ ...previous, [artifact_id]: message(cause) }));
-          }
-        }));
-      }).catch(cause => { if (!controller.signal.aborted) setError(message(cause)); })
+      .then(value => { if (!controller.signal.aborted) setPlan({ key: planKey, value }); })
+      .catch(cause => { if (!controller.signal.aborted) { setPlan(null); setError(message(cause)); } })
       .finally(() => { if (!controller.signal.aborted && epoch === loadEpoch.current) setPlanLoading(false); });
-    return () => controller.abort();
-  }, [api, projectId, versionId, refreshRevision, records]);
+    return () => { controller.abort(); metadataRead.current = null; };
+  }, [planKey]);
+
+  useEffect(() => {
+    // Apply explicit revocations even if the plan is absent or other metadata reads are slow.
+    const ready = readyArtifacts.current;
+    for (const id of observations.revoked.keys()) ready.delete(`${projectId}:${id}`);
+    if (!observations.revoked.size) return;
+    setArtifacts(previous => applyArtifactUpdates(previous, observations.revoked));
+  }, [observations.revoked, projectId]);
+
+  useEffect(() => {
+    const read = metadataRead.current;
+    if (!plan || !read) { setArtifacts({}); setArtifactLoading(false); return; }
+    let current = true;
+    const ids = shotPlanArtifactIds(plan, versionId, records);
+    const ready = readyArtifacts.current;
+    const resolved: Record<string, Artifact> = Object.create(null);
+    for (const id of ids) {
+      const artifact = observations.observed.get(id) ?? ready.get(`${projectId}:${id}`);
+      if (artifact?.project_id === projectId) resolved[id] = artifact;
+    }
+    const errors: Record<string, string> = Object.create(null);
+    const missing = [...ids].filter(id => !Object.hasOwn(resolved, id));
+    const fetchArtifact = (artifact_id: string) => {
+      const pending = read.pending.get(artifact_id);
+      if (pending) return pending;
+      // Later metadata batches can share this request, but not reset its start sequence.
+      const startedSeq = readinessRef.current.sequence;
+      const promise = api.call("getArtifact", { path: { project_id: projectId, artifact_id }, signal: read.signal }).then(artifact => {
+        if (artifact.project_id !== projectId || artifact.artifact_id !== artifact_id) throw new Error("Artefact does not match requested identity");
+        return { artifact, startedSeq };
+      }).finally(() => read.pending.delete(artifact_id));
+      read.pending.set(artifact_id, promise);
+      return promise;
+    };
+    const publish = () => {
+      if (!current || read.signal.aborted) return;
+      setArtifacts(resolved);
+      setArtifactErrors(errors);
+      setArtifactLoading(false);
+    };
+    if (!missing.length) publish();
+    else {
+      setArtifactLoading(true);
+      void Promise.allSettled(missing.map(fetchArtifact)).then(results => {
+        if (!current || read.signal.aborted) return;
+        const { observed, revoked, lastRevoked } = readinessRef.current;
+        results.forEach((result, i) => {
+          const id = missing[i];
+          if (result.status === "rejected") { errors[id] = message(result.reason); return; }
+          const { artifact, startedSeq } = result.value;
+          if (revoked.has(id) || (lastRevoked.get(id) ?? 0) > startedSeq) {
+            const latest = observed.get(id);
+            if (latest) resolved[id] = latest;
+            return;
+          }
+          const key = `${projectId}:${id}`;
+          if (artifact.state === "ready") ready.set(key, artifact);
+          else ready.delete(key);
+          resolved[id] = artifact;
+        });
+        publish();
+      });
+    }
+    return () => { current = false; };
+  }, [api, projectId, versionId, plan, records, observations, readinessRef]);
 
   function displayArtifact(planFrame: PlanFrame, planShot: PlanShot): Artifact | undefined {
     const selected = currentVersion && selectionFor(records, currentVersion, planShot.shot_id, planFrame.frame_id);
     const id = selected?.state === "selected" && selected.choice?.kind === "artifact" ? selected.choice.artifact_id : planFrame.artifact_id;
-    return id ? artifacts[id] : undefined;
+    return id ? observations.revoked.get(id) ?? artifacts[id] : undefined;
   }
 
   function context(planShot: PlanShot, planFrame: PlanFrame, artifact?: Artifact): TurnSelection {
@@ -183,12 +267,22 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
     const epoch = loadEpoch.current;
     setBusy(true);
     setError("");
+    setCandidate(undefined);
     try {
-      const result = await api.call("getArtifact", { path: { project_id: projectId, artifact_id: candidateId.trim() } });
+      const artifact_id = candidateId.trim();
+      const startedSeq = readinessRef.current.sequence;
+      const result = await api.call("getArtifact", { path: { project_id: projectId, artifact_id } });
       if (epoch !== loadEpoch.current) return;
-      if (result.project_id !== projectId || result.state !== "ready" || result.kind !== "image" || !result.dimensions) throw new Error("Choice must be a ready image from the active project with dimensions");
+      if (result.project_id !== projectId || result.artifact_id !== artifact_id) throw new Error("Artefact does not match requested identity");
+      const { revoked, lastRevoked } = readinessRef.current;
+      if (revoked.has(artifact_id) || (lastRevoked.get(artifact_id) ?? 0) > startedSeq) throw new Error("Candidate image is unavailable. Inspect it again once it is ready.");
+      if (result.state !== "ready") {
+        readyArtifacts.current.delete(`${projectId}:${artifact_id}`);
+        setArtifacts(previous => applyArtifactUpdates(previous, new Map([[artifact_id, result]])));
+      }
+      if (result.state !== "ready" || result.kind !== "image" || !result.dimensions) throw new Error("Choice must be a ready image from the active project with dimensions");
       setCandidate(result);
-      setArtifacts(previous => ({ ...previous, [result.artifact_id]: result }));
+      readyArtifacts.current.set(`${projectId}:${result.artifact_id}`, result);
     } catch (cause) { setError(message(cause)); }
     finally { setBusy(false); }
   }
@@ -225,13 +319,14 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
     finally { setBusy(false); }
   }
 
-  const chosenArtifact = shot && frame ? candidate ?? displayArtifact(frame, shot) : undefined;
+  const currentCandidate = candidate ? observations.observed.get(candidate.artifact_id) ?? candidate : undefined;
+  const chosenArtifact = shot && frame ? currentCandidate ?? displayArtifact(frame, shot) : undefined;
   const currentImage = shot && frame ? displayArtifact(frame, shot) : undefined;
   const catalogueVersionIds = new Set(items.flatMap(item => item.current_version_id ? [item.current_version_id] : []));
   const canSave = Boolean(chosenArtifact?.state === "ready" && chosenArtifact.kind === "image");
 
   return <section className="sb-browser" aria-label="Storyboard browser">
-    <header className="sb-header"><h2>Storyboards</h2><button onClick={() => { setError(""); setReload(value => value + 1); }} disabled={busy}>Refresh</button></header>
+    <header className="sb-header"><h2>Storyboards</h2><button onClick={() => { setError(""); setCatalogueReload(value => value + 1); setReload(value => value + 1); }} disabled={busy}>Refresh</button></header>
     {error && <div role="alert" className="sb-error">{error}</div>}
     {receiptError && <p className="sb-notice">Render receipt context unavailable: {receiptError}</p>}
     {pending && <div className="sb-notice">Selection operation unresolved. <button disabled={busy} onClick={() => void save(pending)}>Retry exact operation</button></div>}
@@ -244,7 +339,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
       </select>
     </label>
     {currentVersion && <p className="sb-meta">{currentVersion.item_id}<br />Version {currentVersion.version_id}<br />Source {currentVersion.source_commit.slice(0, 12)}</p>}
-    {planLoading && <p role="status">Loading plan and image metadata…</p>}
+    {(planLoading || artifactLoading) && <p role="status">Loading plan and image metadata…</p>}
     <div className="sb-scroll">
       {plan && <>
         <h3>Plan {plan.plan_id}</h3>
@@ -269,15 +364,15 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
             return <li key={planFrame.frame_id}>
               <button className="sb-frame" aria-pressed={active?.frameId === planFrame.frame_id && active.shotId === planShot.shot_id} disabled={busy || Boolean(pending)} onClick={() => selectFrame(planShot, planFrame)}>
                 <strong>{planFrame.role} · {planFrame.frame_id}</strong>
-                {image?.state === "ready" && image.kind === "image" ? <img alt={`${planFrame.role}: ${planFrame.composition}`} src={`/api/v1/projects/${encodeURIComponent(projectId)}/artifacts/${encodeURIComponent(image.artifact_id)}/content`} onError={event => { event.currentTarget.hidden = true; setArtifactErrors(previous => ({ ...previous, [image.artifact_id]: "Image bytes could not be displayed" })); }} /> : <span className="sb-placeholder">{planFrame.state === "proposed" ? "Proposed · image unavailable" : "Image missing / unbuilt"}</span>}
+                {image?.state === "ready" && image.kind === "image" ? <img alt={`${planFrame.role}: ${planFrame.composition}`} src={`/api/v1/projects/${encodeURIComponent(projectId)}/artifacts/${encodeURIComponent(image.artifact_id)}/content`} onError={event => { event.currentTarget.hidden = true; setImageErrors(previous => ({ ...previous, [image.artifact_id]: "Image bytes could not be displayed" })); }} /> : <span className="sb-placeholder">{planFrame.state === "proposed" ? "Proposed · image unavailable" : "Image missing / unbuilt"}</span>}
                 <span>{planFrame.composition}</span>
                 <span className="sb-meta">Authored: {planFrame.state} · Image: {image?.state ?? "missing"}</span>
                 <span className="sb-meta">owner_selected: {ownerSelected ? "yes" : "no"}{owner?.state === "withdrawn" ? " (withdrawn)" : ""}</span>
                 {owner?.state === "selected" && owner.choice?.kind === "artifact" && owner.choice.artifact_id !== planFrame.artifact_id && <span className="sb-meta">Owner choice: {owner.choice.artifact_id}. Authored image remains {planFrame.artifact_id ?? "missing"}.</span>}
               </button>
               {image && <p className="sb-meta">{dependencyStatus(image, planShot, catalogueVersionIds)}</p>}
-              {planFrame.artifact_id && artifactErrors[planFrame.artifact_id] && <p className="sb-error">{artifactErrors[planFrame.artifact_id]}</p>}
-              {image && artifactErrors[image.artifact_id] && image.artifact_id !== planFrame.artifact_id && <p className="sb-error">{artifactErrors[image.artifact_id]}</p>}
+              {planFrame.artifact_id && (artifactErrors[planFrame.artifact_id] || imageErrors[planFrame.artifact_id]) && <p className="sb-error">{artifactErrors[planFrame.artifact_id] || imageErrors[planFrame.artifact_id]}</p>}
+              {image && (artifactErrors[image.artifact_id] || imageErrors[image.artifact_id]) && image.artifact_id !== planFrame.artifact_id && <p className="sb-error">{artifactErrors[image.artifact_id] || imageErrors[image.artifact_id]}</p>}
             </li>;
           })}</ol>
         </li>)}</ol>
@@ -288,7 +383,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
       {currentImage && !context(shot, frame, currentImage).target && <p className="sb-notice">Exact render-frame context unavailable. No invented source frame will be sent to review.</p>}
       <label className="sb-label">Alternative image artefact ID<input value={candidateId} disabled={busy || Boolean(pending)} onChange={event => { setCandidateId(event.target.value); setCandidate(undefined); }} /></label>
       <button disabled={busy || Boolean(pending) || !candidateId.trim()} onClick={() => void inspectCandidate()}>Inspect candidate</button>
-      {candidate && <p className="sb-meta">Ready {candidate.purpose}: {candidate.artifact_id}</p>}
+      {currentCandidate && <p className="sb-meta">{currentCandidate.state === "ready" ? "Ready" : "Unavailable"} {currentCandidate.purpose}: {currentCandidate.artifact_id}</p>}
       <div className="sb-buttons"><button disabled={busy || Boolean(pending) || !canSave} onClick={() => void save(selectionCommand(projectId, currentVersion, shot.shot_id, frame.frame_id, chosenArtifact!.artifact_id, record))}>{record?.state === "selected" ? "Supersede selection" : "Select image"}</button>
         <button disabled={busy || Boolean(pending) || record?.state !== "selected"} onClick={() => void save(selectionCommand(projectId, currentVersion, shot.shot_id, frame.frame_id, null, record))}>Withdraw</button></div>
       <label className="sb-label">Planning edit instructions<textarea value={planningEdit} disabled={busy || Boolean(pending)} onChange={event => setPlanningEdit(event.target.value)} placeholder="Describe this shot's planning-only change" onKeyDown={e => handleSubmitEnter(e, () => {

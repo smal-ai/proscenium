@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
-import { backfillWindows, mergeReviews, revisionScope, validateWindowEvents, versionRefreshBuffer } from "../../app/useProjectData";
+import { backfillWindows, mergeReviews, mergeSnapshot, orderedEventBuffer, readProjectHydration, revisionScope, validateWindowEvents, versionRefreshBuffer } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
 import { CriticPanel, criticRequestTarget, formatReviewTimeSast, isPendingReview, reviewDisplayName } from "../review/CriticPanel";
 import { annotationContext } from "../review/context";
@@ -12,7 +12,7 @@ import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarg
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { busyAgent, nativeAgents } from "./agents";
-import { compareConversationEntries, Conversation } from "./Conversation";
+import { compareConversationEntries, Conversation, reuseOutputIds } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { OutputCards } from "./OutputCards";
 import { awaitResume, heldRequestIds, isIdleAutoReleaseReady, resumableWork } from "./resume";
@@ -536,6 +536,114 @@ test("Conversation renders retained media once across duplicate tool and special
   const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[]} events={events} retainedArtifacts={retainedArtifacts} onRefresh={async () => {}} onError={() => {}} />);
   assert.equal((markup.match(/<img/g) ?? []).length, 1);
   assert.match(markup, /Finished · publication blocked/); assert.match(markup, /Storyboard document validation failed/);
+});
+
+test("Conversation keeps output ownership and order across invocation, request and shared work matches", () => {
+  const retained = (id: string, fields: Partial<RetainedArtifactSummary> = {}): RetainedArtifactSummary => ({
+    schema_version: "1.0", attribution_status: "verified", invocation_id: null, request_id: null, work_id: null,
+    job_id: null, published_versions: [],
+    artifact: { schema_version: "1.0", artifact_id: id, project_id: "project", state: "ready", kind: "image", purpose: "concept", media_type: "image/png", sha256: "a".repeat(64), bytes: 1024, derived_from: [] },
+    ...fields,
+  });
+  const stream = retained("draft-pass", { request_id: "queue", invocation_id: "invocation" });
+  stream.artifact.purpose = "draft_motion";
+  const summaries = [
+    retained("work-first", { work_id: "shared" }),
+    retained("both", { request_id: "queue", work_id: "shared" }),
+    retained("explicit", { request_id: "queue", work_id: "shared" }),
+    retained("queue-only", { request_id: "queue" }),
+    retained("from-invocation", { invocation_id: "invocation", request_id: "queue", work_id: "shared" }),
+    retained("steer-only", { request_id: "steer" }),
+    stream,
+  ];
+  const queue = request("queue", "2026-11-15T10:00:01Z", "Queue");
+  const first = { ...queue, receipt: { ...queue.receipt, work_id: "shared" } };
+  const second = { ...request("steer", "2026-11-15T10:00:02Z", "Steer", "steer"), receipt: first.receipt };
+  const events = [
+    event(2, "subagent.completed", { ...activity, invocation_id: "child", state: "completed", artifact_ids: ["explicit", "from-invocation"] }),
+    event(1, "tool.completed", { ...activity, state: "completed", artifact_ids: ["explicit", "explicit", "draft-pass"] }),
+  ];
+  const markup = renderToStaticMarkup(<Conversation api={api} projectId="project" requests={[first, second]} events={events} retainedArtifacts={summaries} onRefresh={async () => {}} onError={() => {}} />);
+  const cards = (html: string) => [...html.matchAll(/<code title="([^"]+)">/g)].map(match => match[1]);
+  assert.deepEqual(cards(markup), ["explicit", "from-invocation", "work-first", "both", "queue-only", "steer-only"]);
+  assert.doesNotMatch(markup, /draft-pass/);
+  assert.match(markup, /data-entry-key="request\.outputs\.queue"[\s\S]*work-first[\s\S]*data-entry-key="request\.steer"/);
+});
+
+test("ordered event buffer publishes immutable ascending snapshots through live and backfill waves", () => {
+  const journal = orderedEventBuffer<Event>();
+  for (const sequence of [8, 9, 10]) journal.append(event(sequence, "assistant.completed", {}));
+  const live = journal.publish();
+  for (const sequence of [4, 5, 6, 7, 11, 12]) journal.append(event(sequence, "assistant.completed", {}));
+  const middle = journal.publish();
+  for (const sequence of [2, 1, 3, 13]) journal.append(event(sequence, "assistant.completed", {}));
+  assert.deepEqual(live.map(e => e.sequence), [8, 9, 10]);
+  assert.deepEqual(middle.map(e => e.sequence), [4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  assert.deepEqual(journal.publish().map(e => e.sequence), Array.from({ length: 13 }, (_, i) => i + 1));
+  journal.clear();
+  assert.deepEqual(journal.publish(), []);
+  journal.append(event(1, "assistant.completed", {}));
+  assert.deepEqual(journal.publish().map(e => e.sequence), [1]);
+});
+
+test("an omitted snapshot jobs field requires a successful fallback before initial hydration", async () => {
+  const fallbackError = new Error("Jobs unavailable");
+  const calls: string[] = [];
+  let rejectJobs = true;
+  let snapshotJobs: JobRecord[] | undefined = undefined;
+  const hydrationApi = { call: async (operation: string) => {
+    calls.push(operation);
+    if (operation === "getProjectSnapshot") return snapshotJobs === undefined ? snapshot() : { ...snapshot(), jobs: snapshotJobs };
+    if (operation === "listJobs" && rejectJobs) throw fallbackError;
+    return { items: [], next_cursor: null };
+  } } as unknown as ApiClient;
+  const path = { project_id: "project" };
+  const failed = await readProjectHydration(hydrationApi, path);
+  assert.deepEqual(calls, ["getProjectSnapshot", "listRequests", "listItems", "listJobs"]);
+  assert.equal(failed.snapshot.status, "fulfilled");
+  assert.equal(failed.jobs.status, "rejected");
+  assert.equal(failed.ready, false);
+  assert.deepEqual(failed.errors, [fallbackError]);
+
+  rejectJobs = false;
+  const recovered = await readProjectHydration(hydrationApi, path);
+  assert.equal(recovered.ready, true);
+  assert.deepEqual(recovered.jobs, { status: "fulfilled", value: [] });
+  assert.deepEqual(recovered.errors, []);
+
+  calls.length = 0;
+  snapshotJobs = [];
+  assert.equal((await readProjectHydration(hydrationApi, path)).ready, true);
+  assert.deepEqual(calls, ["getProjectSnapshot", "listRequests", "listItems"]);
+});
+
+test("snapshot refresh preserves jobs when current or overtaken responses omit the jobs field", () => {
+  const jobs = [job("running")];
+  const current = { ...snapshot(), jobs, held_requests: [], settings: { state_revision: 1, generation_attempt_limit: 3, default_profile_id: null }, event_sequence: 5 } satisfies ProjectSnapshot;
+  const { jobs: omitted, ...wire } = current;
+  assert.equal(omitted, jobs);
+  const fresh = { ...wire, event_sequence: 6 };
+  const overtaken = { ...wire, event_sequence: 4 };
+  assert.deepEqual(mergeSnapshot(null, fresh, 0, new Map()).jobs, []);
+  assert.equal(mergeSnapshot(current, fresh, 6, new Map()).jobs, jobs);
+  const afterEvent = mergeSnapshot(current, overtaken, 7, new Map());
+  assert.equal(afterEvent.jobs, jobs);
+  assert.equal(afterEvent.event_sequence, 7);
+});
+
+test("memoised activity and output components receive stable IDs after an unrelated event", () => {
+  const memoType = Symbol.for("react.memo");
+  assert.equal(Reflect.get(ActivityEntry, "$$typeof"), memoType);
+  assert.equal(Reflect.get(OutputCards, "$$typeof"), memoType);
+  const events = [event(1, "tool.completed", { ...activity, artifact_ids: ["image", "audio"] })];
+  const withUnrelatedEvent = [...events, event(2, "assistant.delta", { message_id: "reply", text: "Next" })];
+  const outputIds = (entries: Event[]) => entries.filter(entry => entry.event_type === "tool.completed")
+    .flatMap(entry => (entry.payload as ActivityEventData).artifact_ids);
+  const first = reuseOutputIds(undefined, outputIds(events));
+  assert.equal(withUnrelatedEvent[0], events[0]);
+  assert.equal(reuseOutputIds(first, outputIds(withUnrelatedEvent)), first);
+  assert.equal(reuseOutputIds(undefined, []), reuseOutputIds(first, []));
+  assert.notEqual(reuseOutputIds(first, ["audio", "image"]), first);
 });
 
 test("Chat and standalone activity warn only when publication is blocked", () => {

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, type ReactNode } from "react";
 import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Event, ItemRecord, RequestRecord, RetainedArtifactSummary, RevisionCommand } from "../../api";
 import { durableCommand, id } from "../../app/storage";
 import { StoredContext } from "./ContextPreview";
@@ -6,8 +6,9 @@ import { ActivityEntry } from "./ActivityEntry";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 
-export function compareConversationEntries(a: { time: string; sequence?: number; key: string }, b: { time: string; sequence?: number; key: string }): number {
-  return Date.parse(a.time) - Date.parse(b.time) || (a.sequence ?? 0) - (b.sequence ?? 0) || a.key.localeCompare(b.key);
+type EntryOrder = { time: string; timeMs?: number; sequence?: number; key: string };
+export function compareConversationEntries(a: EntryOrder, b: EntryOrder): number {
+  return (a.timeMs ?? Date.parse(a.time)) - (b.timeMs ?? Date.parse(b.time)) || (a.sequence ?? 0) - (b.sequence ?? 0) || a.key.localeCompare(b.key);
 }
 
 interface TimelineEntry {
@@ -21,7 +22,17 @@ interface TimelineEntry {
   node: ReactNode;
 }
 
-export function Conversation({ visible = true, api, projectId, requests, events, onRefresh, onError, onStarter, items = [], retainedArtifacts = [], onInspectArtifact }: {
+type RankedArtifact = { id: string; index: number };
+const EMPTY_ITEMS: ItemRecord[] = [];
+const EMPTY_SUMMARIES: RetainedArtifactSummary[] = [];
+const EMPTY_IDS: string[] = [];
+
+export function reuseOutputIds(previous: string[] | undefined, ids: string[]): string[] {
+  if (!ids.length) return EMPTY_IDS;
+  return previous?.length === ids.length && previous.every((id, i) => id === ids[i]) ? previous : ids;
+}
+
+export const Conversation = memo(function Conversation({ visible = true, api, projectId, requests, events, onRefresh, onError, onStarter, items = EMPTY_ITEMS, retainedArtifacts = EMPTY_SUMMARIES, onInspectArtifact }: {
   visible?: boolean; api: ApiClient; projectId: string; requests: RequestRecord[]; events: Event[]; onRefresh: () => Promise<void>; onError: (e: unknown) => void;
   onStarter?: (kind: "asset" | "scene" | "storyboard") => void; items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
 }) {
@@ -30,7 +41,9 @@ export function Conversation({ visible = true, api, projectId, requests, events,
     const activities = new Map<string, { start: Event; latest: Event }>();
     const agentLabels = new Map<string, string>();
     let hasSubagents = false;
-    for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
+    const ordered = events.some((event, i) => i > 0 && event.sequence < events[i - 1].sequence)
+      ? [...events].sort((a, b) => a.sequence - b.sequence) : events;
+    for (const event of ordered) {
       if (event.event_type.startsWith("assistant.")) {
         const payload = event.payload as unknown as ConversationEventData;
         const key = `${event.native_session_id ?? "app"}:${payload.native_agent_id ?? event.actor.id}:${payload.message_id}`;
@@ -49,31 +62,74 @@ export function Conversation({ visible = true, api, projectId, requests, events,
     }
     return { messages, activities, agentLabels, hasSubagents };
   }, [events]);
-  const assigned = new Set<string>();
-  const summaryById = new Map(retainedArtifacts.map(summary => [summary.artifact.artifact_id, summary]));
-  const activityOutputs = new Map<string, string[]>();
-  for (const [key, { latest: event }] of activities) {
-    const activity = event.payload as unknown as ActivityEventData;
-    const explicitIds = activity.artifact_ids.filter(artifactId => {
-      const summary = summaryById.get(artifactId);
-      return !summary || !isRenderPassStreamArtifact(summary);
+  const { artifactsById, suppressed, byInvocation, byRequest, byWork } = useMemo(() => {
+    const artifactsById = new Map<string, Artifact>();
+    const suppressed = new Set<string>();
+    const byInvocation = new Map<string, string[]>();
+    const byRequest = new Map<string, RankedArtifact[]>();
+    const byWork = new Map<string, RankedArtifact[]>();
+    function add<T>(lookup: Map<string, T[]>, key: string, value: T) {
+      const bucket = lookup.get(key);
+      if (bucket) bucket.push(value);
+      else lookup.set(key, [value]);
+    }
+    retainedArtifacts.forEach((summary, index) => {
+      const id = summary.artifact.artifact_id;
+      artifactsById.set(id, summary.artifact);
+      if (isRenderPassStreamArtifact(summary)) { suppressed.add(id); return; }
+      suppressed.delete(id);
+      if (summary.invocation_id) add(byInvocation, summary.invocation_id, id);
+      else if (summary.published_versions.length === 0) {
+        if (summary.request_id) add(byRequest, summary.request_id, { id, index });
+        if (summary.work_id) add(byWork, summary.work_id, { id, index });
+      }
     });
-    const correlatedIds = retainedArtifacts
-      .filter(summary => summary.invocation_id === activity.invocation_id && !isRenderPassStreamArtifact(summary))
-      .map(summary => summary.artifact.artifact_id);
-    const ids = [...explicitIds, ...correlatedIds].filter(id => !assigned.has(id));
-    ids.forEach(id => assigned.add(id)); activityOutputs.set(key, [...new Set(ids)]);
-  }
-  const requestOutputs = new Map<string, string[]>();
-  for (const record of requests) {
-    const ids = retainedArtifacts
-      .filter(summary => !assigned.has(summary.artifact.artifact_id) && !summary.invocation_id && summary.published_versions.length === 0 && !isRenderPassStreamArtifact(summary) && (summary.request_id === record.request_id || (record.receipt.work_id && summary.work_id === record.receipt.work_id)))
-      .map(summary => summary.artifact.artifact_id);
-    ids.forEach(id => assigned.add(id)); requestOutputs.set(record.request_id, ids);
-  }
-  const rawEntries: TimelineEntry[] = [
+    return { artifactsById, suppressed, byInvocation, byRequest, byWork };
+  }, [retainedArtifacts]);
+  const previousOutputs = useRef<{ projectId: string; activityOutputs: Map<string, string[]>; requestOutputs: Map<string, string[]> } | null>(null);
+  const { activityOutputs, requestOutputs } = useMemo(() => {
+    const previous = previousOutputs.current?.projectId === projectId ? previousOutputs.current : null;
+    const assigned = new Set<string>();
+    const consumedInvocations = new Set<string>();
+    const consumedWork = new Set<string>();
+    const activityOutputs = new Map<string, string[]>();
+    const requestOutputs = new Map<string, string[]>();
+    function assign(id: string, to: string[]) {
+      if (assigned.has(id)) return;
+      assigned.add(id);
+      to.push(id);
+    }
+    for (const [key, { latest: event }] of activities) {
+      const { artifact_ids, invocation_id } = event.payload as unknown as ActivityEventData;
+      const ids: string[] = [];
+      for (const id of artifact_ids) if (!suppressed.has(id)) assign(id, ids);
+      if (!consumedInvocations.has(invocation_id)) {
+        consumedInvocations.add(invocation_id);
+        for (const id of byInvocation.get(invocation_id) ?? []) assign(id, ids);
+      }
+      activityOutputs.set(key, reuseOutputIds(previous?.activityOutputs.get(key), ids));
+    }
+    for (const record of requests) {
+      const requestIds = byRequest.get(record.request_id) ?? [];
+      const workId = record.receipt.work_id;
+      const workIds = workId && !consumedWork.has(workId) ? byWork.get(workId) ?? [] : [];
+      if (workId) consumedWork.add(workId);
+      const ids: string[] = [];
+      // Merge the two matching buckets in retained order. First matching request wins.
+      for (let r = 0, w = 0; r < requestIds.length || w < workIds.length;) {
+        const next = w === workIds.length || (r < requestIds.length && requestIds[r].index < workIds[w].index) ? requestIds[r++] : workIds[w++];
+        assign(next.id, ids);
+      }
+      requestOutputs.set(record.request_id, reuseOutputIds(previous?.requestOutputs.get(record.request_id), ids));
+    }
+    return { activityOutputs, requestOutputs };
+  }, [projectId, activities, requests, suppressed, byInvocation, byRequest, byWork]);
+  useEffect(() => {
+    previousOutputs.current = { projectId, activityOutputs, requestOutputs };
+  }, [projectId, activityOutputs, requestOutputs]);
+  const rawEntries = ([
     ...requests.flatMap(record => {
-      const standaloneOutputs = requestOutputs.get(record.request_id) ?? [];
+      const standaloneOutputs = requestOutputs.get(record.request_id) ?? EMPTY_IDS;
       return [
         { key: `request.${record.request_id}`, time: record.accepted_at, sequence: -1, node: <article className="message user-message" key={record.request_id} data-request-id={record.request_id}><div className="message-heading"><strong>You</strong><span>{record.submission.type} · {record.receipt.state}</span></div><p>{record.submission.type === "stop" ? `Stop work ${record.submission.target_work_id}${record.submission.reason ? `: ${record.submission.reason}` : ""}` : record.submission.text}</p>
           {record.submission.type === "steer" && <small>Target work: {record.submission.target_work_id}. Already executed actions are not undone.</small>}
@@ -84,7 +140,7 @@ export function Conversation({ visible = true, api, projectId, requests, events,
           key: `request.outputs.${record.request_id}`,
           time: record.accepted_at,
           sequence: 0,
-          node: <div className="retained-turn-outputs"><OutputCards visible={visible} api={api} projectId={projectId} artifactIds={standaloneOutputs} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} /></div>,
+          node: <div className="retained-turn-outputs"><OutputCards visible={visible} api={api} projectId={projectId} artifactIds={standaloneOutputs} artifactsById={artifactsById} onInspectArtifact={onInspectArtifact} /></div>,
         }] : []),
       ];
     }),
@@ -94,7 +150,7 @@ export function Conversation({ visible = true, api, projectId, requests, events,
     }),
     ...[...activities.entries()].flatMap(([key, { start, latest: event }]) => {
       const activity = event.payload as unknown as ActivityEventData;
-      const outputs = activityOutputs.get(key) ?? [];
+      const outputs = activityOutputs.get(key) ?? EMPTY_IDS;
       if (hasSubagents && event.event_type.startsWith("tool.") && activity.name === "task" && activity.state !== "failed" && activity.state !== "outcome_uncertain" && !outputs.length && !activity.output_status) {
         return [];
       }
@@ -108,10 +164,10 @@ export function Conversation({ visible = true, api, projectId, requests, events,
         routineTool,
         toolRunning,
         toolLabel: activity.display_name || activity.name,
-        node: <ActivityEntry visible={visible} key={key} event={event} api={api} projectId={projectId} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} artifactIds={outputs} />,
+        node: <ActivityEntry visible={visible} key={key} event={event} api={api} projectId={projectId} artifactsById={artifactsById} onInspectArtifact={onInspectArtifact} artifactIds={outputs} />,
       }];
     }),
-  ].sort(compareConversationEntries);
+  ] satisfies TimelineEntry[]).map((entry): TimelineEntry & { timeMs: number } => ({ ...entry, timeMs: Date.parse(entry.time) })).sort(compareConversationEntries);
 
   const entries: TimelineEntry[] = [];
   for (let i = 0; i < rawEntries.length;) {
@@ -145,4 +201,4 @@ export function Conversation({ visible = true, api, projectId, requests, events,
   }
 
   return <div className="conversation" aria-label="Project conversation" aria-live="polite">{entries.map(entry => <div key={entry.key} data-entry-key={entry.key} data-member-keys={entry.memberKeys?.join("\n")}>{entry.node}</div>)}{!requests.length && !entries.length && <div className="conversation-empty"><h3>What would you like to make?</h3><p>Choose a starting point, or type any idea directly.</p>{onStarter && <div className="starter-actions"><button onClick={() => onStarter("storyboard")}>Plan a storyboard</button><button onClick={() => onStarter("asset")}>Create an asset</button><button onClick={() => onStarter("scene")}>Build a scene</button></div>}<small>These options prepare a draft. Nothing is sent until you choose Queue or Steer.</small></div>}</div>;
-}
+});

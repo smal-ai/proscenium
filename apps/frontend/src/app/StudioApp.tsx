@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Film, Image, Layers, PanelLeft, PanelRight, Maximize2 as Maximise2, Minimize2 as Minimise2, RefreshCw, Sparkles, X } from "lucide-react";
 import { ApiClient, ApiError } from "../api";
 import type { Artifact, ConfigurationView, ItemRecord, ProjectRecord, VersionRecord } from "../api";
-import { RetainedReview, ReviewEmpty } from "../features/review/ReviewChrome";
+import { currentRetainedPreview, RetainedReview, ReviewEmpty } from "../features/review/ReviewChrome";
+import { useArtifactObservations } from "../features/readyArtifactIndex";
 import { typingTarget } from "../features/review/media";
 import { readDrafts } from "../features/review/outbox";
 import type { ComposerSeedIntent, ContextPreparer, ReviewSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
@@ -70,6 +71,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const [leftTab, setLeftTab] = useState<"Shots" | "Outliner" | "Assets">("Assets");
   const [rightTab, setRightTab] = useState<"Copilot" | "Critic">("Copilot");
   const [version, setVersion] = useState<VersionRecord | null>(() => projectId ? readPrivate(`view.version.${projectId}`) : null);
+  const versionRef = useRef(version); versionRef.current = version;
   const [inspectedArtifact, setInspectedArtifact] = useState<Artifact | null>(null);
   const [keptDraftNotice, setKeptDraftNotice] = useState("");
   const [latestError, setLatestError] = useState("");
@@ -84,29 +86,32 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       && readPrivate(`view.version.${projectId}`) === null
       && readPrivate(`created.${projectId}`) !== true;
   }
-  const cancelFirstOpen = () => {
+  const cancelFirstOpen = useCallback(() => {
     firstOpenRef.current = false;
     firstOpenRequest.current?.abort();
-  };
+  }, []);
   useEffect(() => () => latestRequest.current?.abort(), []);
   const currentItem = version ? data.items.find(item => item.item_id === version.item_id) : undefined;
   const latestId = currentItem?.current_version_id ?? version?.version_id;
   const latestShort = latestId ? shortVersionLabel(latestId) : "";
-  const inspectedArtifactSummary = inspectedArtifact ? data.retainedArtifacts.find(r => r.artifact.artifact_id === inspectedArtifact.artifact_id) ?? null : null;
+  const inspectedArtifactSummary = inspectedArtifact ? data.retainedArtifacts.find(r => r.artifact.project_id === projectId && r.artifact.artifact_id === inspectedArtifact.artifact_id) ?? null : null;
   const onClearArtifact = useCallback(() => setInspectedArtifact(null), []);
   const [selection, setSelection] = useState<TurnSelection>(() => projectId ? readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection() : emptySelection());
   const contextPreparer = useRef<ContextPreparer | null>(null);
   const onContextPreparer = useCallback((prepare: ContextPreparer | null) => { contextPreparer.current = prepare; }, []);
   const selectionRef = useRef(selection); selectionRef.current = selection;
   const prepareContext = useCallback(async () => contextPreparer.current ? contextPreparer.current() : structuredClone(selectionRef.current), []);
-  const composer = useRequestComposer(api, projectId ?? "none", () => { void data.refresh(); });
+  const refreshAfterSubmission = useCallback(() => { void data.refresh(); }, [data.refresh]);
+  const composer = useRequestComposer(api, projectId ?? "none", refreshAfterSubmission);
   const autoRelease = useAutoRelease(projectId, data.snapshot, data.requests);
-  function seedNewItem(itemKind: "asset" | "scene" | "storyboard") {
+  const seedNewItem = useCallback((itemKind: "asset" | "scene" | "storyboard") => {
     setRightTab("Copilot");
-    setLayout(previous => ({ ...previous, assistantCollapsed: false, mode: version ? previous.mode : "chat_focus" }));
+    const hasVersion = !!versionRef.current;
+    setLayout(previous => ({ ...previous, assistantCollapsed: false, mode: hasVersion ? previous.mode : "chat_focus" }));
     const templates = { asset: "Create an asset. Describe its purpose, appearance and preferred authoring or import approach.", scene: "Build a scene. Describe the setting, subjects and intended camera or motion.", storyboard: "Plan a storyboard. Describe the story, audience and shot intentions before choosing production steps." };
     setSeedIntent({ nonce: id(), target: { kind: "new_item", item_kind: itemKind, intent_id: id() }, templateText: templates[itemKind], focusChat: true });
-  }
+  }, [setLayout]);
+  const onCreateAsset = useCallback(() => seedNewItem("asset"), [seedNewItem]);
   function toggleChatFocus() {
     setLayout(previous => ({ ...previous, mode: previous.mode === "split" ? "chat_focus" : "split", assistantCollapsed: false }));
   }
@@ -145,14 +150,15 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     });
     return () => controller.abort();
   }, [api, projectId, data.hydrated, boardId, boardVersionId, onContextChange, onUnauthorised]);
-  function resetPublicationStatus() {
+  const resetPublicationStatus = useCallback(() => {
     latestRequest.current?.abort();
     latestRequest.current = null;
     setKeptDraftNotice("");
     setLatestError("");
     setLoadingLatest(false);
-  }
-  function onSelect(next: VersionRecord) {
+  }, []);
+  const onSelect = useCallback((next: VersionRecord) => {
+    const version = versionRef.current;
     cancelFirstOpen();
     resetPublicationStatus();
     setInspectedArtifact(null);
@@ -161,7 +167,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     writePrivate(`view.version.${projectId}`, next);
     if (version && next.project_id === version.project_id && next.item_id === version.item_id && next.version_id === version.version_id) return;
     onContextChange({ ...emptySelection(), item_id: next.item_id, version_id: next.version_id, view_mode: "keyframes" });
-  }
+  }, [cancelFirstOpen, resetPublicationStatus, setLayout, projectId, onContextChange]);
   async function viewLatestVersion(item: ItemRecord, previousVersion: VersionRecord, targetVersionId: string) {
     if (!projectId || latestRequest.current) return;
     const controller = new AbortController();
@@ -195,7 +201,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       }
     }
   }
-  function onNavigate(next: VersionRecord, context: TurnSelection) {
+  const onNavigate = useCallback((next: VersionRecord, context: TurnSelection) => {
     cancelFirstOpen();
     resetPublicationStatus();
     setInspectedArtifact(null);
@@ -203,47 +209,52 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     setVersion(next);
     writePrivate(`view.version.${projectId}`, next);
     onContextChange(context);
-  }
-  function onInspectArtifact(artifact: Artifact) {
+  }, [cancelFirstOpen, resetPublicationStatus, setLayout, projectId, onContextChange]);
+  const onInspectArtifact = useCallback((artifact: Artifact) => {
     cancelFirstOpen();
     resetPublicationStatus();
     setInspectedArtifact(artifact);
     setLayout(previous => previous.mode === "chat_focus" ? { ...previous, mode: "split" } : previous);
-    if (!version) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: artifact.kind === "audio" ? [] : [{ artifact_id: artifact.artifact_id, role: "reference" }] });
-  }
-  async function onQueue(text: string, context: TurnSelection) {
+    if (!versionRef.current) onContextChange({ ...emptySelection(), request_target: { kind: "project" }, attachments: artifact.kind === "audio" ? [] : [{ artifact_id: artifact.artifact_id, role: "reference" }] });
+  }, [cancelFirstOpen, resetPublicationStatus, setLayout, onContextChange]);
+  const requestInputs = { composer, autoRelease, snapshot: data.snapshot, requests: data.requests, events: data.events };
+  const requestInputsRef = useRef(requestInputs); requestInputsRef.current = requestInputs;
+  const onQueue = useCallback(async (text: string, context: TurnSelection) => {
+    const { composer, autoRelease, snapshot, requests, events } = requestInputsRef.current;
     setRightTab("Copilot");
     const requestId = id();
     try {
       if (!projectId || composer.busy || composer.pending) throw new Error("A Queue submission is unavailable. Inspect Copilot before retrying.");
-      if (isIdleAutoReleaseReady(data.snapshot, data.requests, data.events)) autoRelease.start(requestId);
-      const submitted = await composer.submit(text, context, "queue", null, data.snapshot?.settings.default_profile_id ?? null, requestId);
+      if (isIdleAutoReleaseReady(snapshot, requests, events)) autoRelease.start(requestId);
+      const submitted = await composer.submit(text, context, "queue", null, snapshot?.settings.default_profile_id ?? null, requestId);
       autoRelease.settle(requestId, submitted);
       if (!submitted) throw new Error("Submission is not confirmed. Inspect the retained request in Copilot before retrying.");
     } catch (error) {
       autoRelease.settle(requestId, null);
       throw error;
     }
-  }
+  }, [projectId]);
   const activeWork = data.snapshot?.active_work;
   const unsettledStop = !!composer.pendingStop || data.requests.some(request => request.submission.type === "stop" && request.submission.target_work_id === activeWork?.work_id && ["accepted", "dispatching", "acknowledged", "stop_requested", "outcome_uncertain"].includes(request.receipt.state));
   const canSteer = !composer.stopping && !unsettledStop && (data.snapshot?.execution ? data.snapshot.execution.can_steer_work_id === activeWork?.work_id : (!!activeWork && ["running", "awaiting_user"].includes(activeWork.state) && data.snapshot?.project.state === "active"));
-  async function onSteer(text: string, context: TurnSelection) {
+  const onSteer = useCallback(async (text: string, context: TurnSelection) => {
+    const { composer, snapshot } = requestInputsRef.current;
     setRightTab("Copilot");
-    if (!projectId || !canSteer || !await composer.submit(text, context, "steer", activeWork!.work_id, data.snapshot?.settings.default_profile_id ?? null)) {
+    if (!projectId || !canSteer || !await composer.submit(text, context, "steer", activeWork!.work_id, snapshot?.settings.default_profile_id ?? null)) {
       throw new Error("Steer is not confirmed. Inspect the retained request in Copilot before retrying.");
     }
-  }
+  }, [projectId, canSteer, activeWork?.work_id]);
   const activeVersionRevision = data.baseRevision + (version && Object.hasOwn(data.versionRevisions, version.version_id) ? data.versionRevisions[version.version_id] : 0);
-  const reviewProps: ReviewSurfaceProps = { visible: !chatFocus, api, projectId: projectId ?? "", version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, selection, jobs: data.jobs, refreshRevision: activeVersionRevision, annotationRevision: data.baseRevision, onContextChange, onContextPreparer, onNavigate, onQueue };
+  const reviewProps = useMemo<ReviewSurfaceProps>(() => ({ visible: !chatFocus, api, projectId: projectId ?? "", version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, selection, jobs: data.jobs, items: data.items, retainedArtifacts: data.retainedArtifacts, refreshRevision: activeVersionRevision, annotationRevision: data.baseRevision, onContextChange, onContextPreparer, onNavigate, onQueue }),
+    [chatFocus, api, projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, selection, data.jobs, data.items, data.retainedArtifacts, activeVersionRevision, data.baseRevision, onContextChange, onContextPreparer, onNavigate, onQueue]);
   const Review = components.review;
   const Outliner = components.outliner;
   const Catalogue = components.catalogue ?? CatalogueFallback;
-  const catalogueIdentity = { projectName: projects.find(project => project.project_id === projectId)?.name };
+  const catalogueIdentity = useMemo(() => ({ projectName: projects.find(project => project.project_id === projectId)?.name }), [projects, projectId]);
   const Storyboards = components.storyboards;
   const Critic = components.critic;
   const AssistantStatus = components.assistantStatus;
-  const pendingReviewCount = data.reviews.filter(ticket => ticket.awaiting_human === true).length;
+  const pendingReviewCount = useMemo(() => data.reviews.filter(ticket => ticket.awaiting_human === true).length, [data.reviews]);
   const uncertain = activeWork?.state === "outcome_uncertain" || (!!composer.pendingStop && !composer.stopping) || data.requests.some(request => request.receipt.state === "outcome_uncertain");
   const stopping = composer.stopping || unsettledStop || activeWork?.state === "stop_requested" || data.requests.some(request => request.receipt.state === "stop_requested");
   const fallbackStatus = !data.hydrated ? "Loading" : uncertain ? "Needs recovery" : stopping ? "Stopping" : composer.busy ? "Sending" : data.snapshot?.execution?.fenced || data.snapshot?.project.state === "awaiting_resume" ? `Paused${data.snapshot?.execution?.hold_reason ? `: ${data.snapshot.execution.hold_reason}` : ""}` : data.snapshot?.pending_decisions.length || activeWork?.state === "awaiting_user" ? "Needs your input" : activeWork?.state === "running" ? "Working" : "Ready";
@@ -257,7 +268,7 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
       <aside className={`left-panel${layout.navigatorCollapsed ? " collapsed" : ""}`} aria-label="Navigator">
         {layout.navigatorCollapsed && <div className="panel-rail"><button aria-label="Expand Navigator" title="Expand Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: false }))}><PanelLeft size={17} /></button>{(["Shots", "Outliner", "Assets"] as const).map(tab => { const Icon = tab === "Shots" ? Film : tab === "Outliner" ? Layers : Box; return <button key={tab} aria-label={tab} title={tab} onClick={() => { setLeftTab(tab); setLayout(previous => ({ ...previous, navigatorCollapsed: false })); }}><Icon size={17} /></button>; })}</div>}
         <div className="panel-expanded" hidden={layout.navigatorCollapsed}><nav className="panel-tabs" aria-label="Navigator tabs">{(["Shots", "Outliner", "Assets"] as const).map(tab => <button key={tab} aria-selected={leftTab === tab} onClick={() => setLeftTab(tab)}>{tab}</button>)}<button className="panel-control" aria-label="Collapse Navigator" title="Collapse Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: true }))}><PanelLeft size={15} /></button></nav>
-        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} {...catalogueIdentity} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.catalogueRevision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={() => seedNewItem("asset")} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} refreshRevision={data.catalogueRevision} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
+        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} {...catalogueIdentity} visible={!layout.navigatorCollapsed} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.catalogueRevision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={onCreateAsset} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} refreshRevision={data.catalogueRevision} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>
@@ -291,9 +302,11 @@ function Empty({ icon, title, text }: { icon: React.ReactNode; title: string; te
   return <div className="empty-panel">{icon}<h3>{title}</h3><p>{text}</p></div>;
 }
 
-function ReviewFallback({ visible = true, version, projectId, hasProject, inspectedArtifact, inspectedArtifactSummary, onClearArtifact, onContextChange, onContextPreparer }: ReviewSurfaceProps & { hasProject: boolean }) {
+function ReviewFallback({ visible = true, version, projectId, hasProject, inspectedArtifact, inspectedArtifactSummary, retainedArtifacts, onClearArtifact, onContextChange, onContextPreparer }: ReviewSurfaceProps & { hasProject: boolean }) {
   const [mode, setMode] = useState<"3d_inspection" | "keyframes" | "animation">("keyframes");
   const pinnedContext = useRef(readPrivate<TurnSelection>(`view.context.${projectId}`) ?? emptySelection());
+  const { observations } = useArtifactObservations(projectId, retainedArtifacts, inspectedArtifactSummary);
+  const liveInspectedArtifact = currentRetainedPreview(projectId, inspectedArtifact, observations.observed);
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
       if (!visible || inspectedArtifact) return;
@@ -306,7 +319,7 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, inspec
   }, [visible, inspectedArtifact]);
   useEffect(() => {
     if (inspectedArtifact) {
-      const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: inspectedArtifact.kind === "audio" ? [] : [{ artifact_id: inspectedArtifact.artifact_id, role: "reference" }] };
+      const context: TurnSelection = { ...emptySelection(), request_target: { kind: "project" }, attachments: liveInspectedArtifact?.state === "ready" && liveInspectedArtifact.kind !== "audio" ? [{ artifact_id: liveInspectedArtifact.artifact_id, role: "reference" }] : [] };
       onContextChange(context);
       onContextPreparer?.(async () => structuredClone(context));
       return () => onContextPreparer?.(null);
@@ -315,7 +328,7 @@ function ReviewFallback({ visible = true, version, projectId, hasProject, inspec
     const context = { ...previous, item_id: version?.item_id ?? null, version_id: version?.version_id ?? null, view_mode: mode };
     pinnedContext.current = context;
     onContextChange(context);
-  }, [mode, version, projectId, inspectedArtifact, onContextChange, onContextPreparer]);
-  if (inspectedArtifact) return <RetainedReview visible={visible} {...{projectId, version, inspectedArtifact, inspectedArtifactSummary, onClearArtifact}}/>;
+  }, [mode, version, projectId, inspectedArtifact, liveInspectedArtifact, onContextChange, onContextPreparer]);
+  if (inspectedArtifact) return <RetainedReview visible={visible} inspectedArtifact={liveInspectedArtifact} {...{projectId, version, inspectedArtifactSummary, onClearArtifact}}/>;
   return <ReviewEmpty {...{mode, hasProject, version}} onChange={setMode}/>;
 }

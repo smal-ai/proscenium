@@ -30,7 +30,7 @@ export default defineConfig({
     },
     {
       name: "chromium-dpr2",
-      testMatch: ["*dpr2*.spec.ts", "uat-rc3-polish.spec.ts", "uat-rc4-current-view.spec.ts", "uat-rc4-animation-play-all.spec.ts"],
+      testMatch: ["*dpr2*.spec.ts", "uat-rc3-polish.spec.ts", "uat-rc4-current-view.spec.ts", "uat-rc4-animation-play-all.spec.ts", "review-revocation.spec.ts"],
       use: { browserName: "chromium", deviceScaleFactor: 2, launchOptions: { args: softwareWebGL } },
     },
   ],

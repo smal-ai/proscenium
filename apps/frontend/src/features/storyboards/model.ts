@@ -1,8 +1,30 @@
-import type { Artifact, FrameReceipt, JobRecord, SelectionRecord, SelectionSave, SelectionSlot, ShotPlan, VersionRecord } from "../../api/generated/contracts";
+import type { Artifact, FrameReceipt, ItemRecord, JobRecord, SelectionRecord, SelectionSave, SelectionSlot, ShotPlan, VersionRecord } from "../../api/generated/contracts";
 import { emptySelection, type TurnSelection } from "../../api/studio";
 
 export type PlanShot = ShotPlan["shots"][number];
 export type PlanFrame = PlanShot["frames"][number];
+
+export function storyboardHeads(items: readonly ItemRecord[]): [itemId: string, versionId: string | null][] {
+  return items.filter(item => item.kind === "storyboard").map(item => [item.item_id, item.current_version_id]);
+}
+
+export async function readStoryboardCatalogue(
+  suppliedHeads: ReturnType<typeof storyboardHeads> | null, reload: number, lastReload: number,
+  readItems: () => Promise<ItemRecord[]>, readVersions: (itemId: string) => Promise<VersionRecord[]>,
+) {
+  const catalogue = suppliedHeads === null || reload !== lastReload ? await readItems() : null;
+  const boards = catalogue === null ? suppliedHeads ?? [] : storyboardHeads(catalogue);
+  const versions = (await Promise.all(boards.map(([itemId]) => readVersions(itemId)))).flat();
+  return { catalogue, boards, versions };
+}
+
+export function shotPlanArtifactIds(plan: ShotPlan, versionId: string, records: readonly SelectionRecord[]): Set<string> {
+  const ids = new Set(plan.shots.flatMap(shot => shot.frames.flatMap(frame => frame.artifact_id ? [frame.artifact_id] : [])));
+  for (const {slot, project_id, state, choice} of records) {
+    if (project_id === plan.project_id && slot.kind === "storyboard_frame" && slot.storyboard_version.version_id === versionId && state === "selected" && choice?.kind === "artifact") ids.add(choice.artifact_id);
+  }
+  return ids;
+}
 
 export function frameSlot(version: VersionRecord, shotId: string, frameId: string): SelectionSlot {
   return { kind: "storyboard_frame", storyboard_version: { item_id: version.item_id, version_id: version.version_id }, shot_id: shotId, frame_id: frameId };
