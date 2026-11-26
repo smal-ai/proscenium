@@ -647,6 +647,7 @@ def test_configuration_resolves_bundled_native_assets():
     for path in (
         "tools/unity/export_blender.py",
         "tools/unity/Editor/UnityWorkflow.cs",
+        "tools/unity/Runtime/PauseMenu.cs",
         "tools/unity/Runtime/WalkthroughPlayer.cs",
         "tools/unity/Tests/PlayableTests.cs",
     ):
