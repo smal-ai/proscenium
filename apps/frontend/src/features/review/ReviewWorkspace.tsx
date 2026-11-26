@@ -14,7 +14,7 @@ import type { FrozenProxyCapture, ProxyCapture, ProxyPinPlacement, SpatialPinMar
 import { readProxyCapture, writeProxyCapture, type PendingProxyCapture } from "./proxyCaptureStore";
 import { allPages } from "./records";
 import { formatRenderPresetOption, RENDER_PRESETS, resolveRenderTargetDimensions, type RenderPresetId } from "./renderFraming";
-import { annotationContext, cleanTargetRole } from "./context";
+import { annotationContext, cleanTargetRole, unmappedVideoContext } from "./context";
 import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
 import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
@@ -23,7 +23,7 @@ import { formatPassOptionLabels, orderVersionJobs, selectablePassJobs } from "./
 import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
 import { useReviewSelection } from "./state";
-import { clipSequenceDelivery, currentRetainedPreview, RetainedReview, ReviewEmpty, ReviewModeSwitcher, SequenceReelReview } from "./ReviewChrome";
+import { clipSequenceDelivery, currentRetainedPreview, directPublishedVideo, MediaMetadata, RetainedReview, ReviewEmpty, ReviewModeSwitcher, ReviewVideo, SequenceReelReview } from "./ReviewChrome";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "./refreshKeys";
 import "./review.css";
 
@@ -215,7 +215,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }, [activeFrameOrdinal, mode, draftId]);
   const assembly = version?.kind === "sequence" ? artifacts.find(a => a.kind === "video" && a.state === "ready") : undefined;
   const clipReel = version?.kind === "sequence" ? clipSequenceDelivery(artifacts, version.version_id) : undefined;
+  const directVideo = version && !clipReel && !activeFrameMap && !frames.length && !segments.length ? directPublishedVideo(artifacts, version) : undefined;
+  const videoOnlyVersion = !!directVideo && !storyboardTargets.length && !mapping && !target && !orderedVersionJobs.some(job => job.kind === "render");
   const mappedSequence = mode === "animation" && !!assembly && !!activeFrameMap;
+  const animationVideo = mode === "animation" && !mappedSequence ? directVideo : undefined;
+  const unmappedVideoPlayback = Boolean(clipReel || videoOnlyVersion || animationVideo);
   const deliveryJob = versionJobs.find(job => job.kind === "encode" && job.state === "succeeded" && job.availability === "complete" && job.artifact_ids.includes(assembly?.artifact_id ?? ""));
   const deliveryManifest = deliveryJob ? artifacts.find(a => deliveryJob.artifact_ids.includes(a.artifact_id) && a.kind === "document" && a.purpose === "metadata" && a.state === "ready") : undefined;
   const targetUnavailable = !!target && (unavailableArtifacts.has(target.artifact_id) || !!target.media_artifact_id && unavailableArtifacts.has(target.media_artifact_id)
@@ -600,7 +604,9 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: !inspectedUnavailable && liveInspectedArtifact?.kind === "image" ? [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}] : []} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
     // A local capture has no stable artefact ID until the outbox uploads it.
     target: hasServerTarget ? draftContext.target : null,
-    attachments: draft.state === "saved" ? draftContext.attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []} : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
+    attachments: draft.state === "saved" ? draftContext.attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []}
+    : unmappedVideoPlayback ? unmappedVideoContext(version)
+    : {...emptySelection(), item_id: version?.item_id ?? null, version_id: version?.version_id ?? null,
     request_target: version ? versionRequestTarget(version, version.kind, mode === "3d_inspection" ? null : target?.shot_id) : undefined,
     view_mode: mode, target: mode === "3d_inspection" || !readyToCapture ? null : target,
     camera: mode === "3d_inspection" ? camera : targetCamera, selected_objects: selected,
@@ -837,11 +843,13 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const keydownRef = useRef<(event: KeyboardEvent) => void>(() => {});
   keydownRef.current = (event: KeyboardEvent) => {
-      if (!visible || clipReel && !draft) return;
+      if (!visible || (clipReel || videoOnlyVersion) && !draft) return;
+      if (animationVideo && event.target instanceof Element && event.target.closest("video")) return;
       if (event.key === "Escape" && pinMode) { event.preventDefault(); setPinMode(false); return; }
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
       const modes: Record<string, Mode> = {"1": "3d_inspection", "2": "keyframes", "3": "animation"};
       if (modes[event.key]) {event.preventDefault(); changeMode(modes[event.key]);}
+      else if (animationVideo) return; // Leave transport keys to the native video controls.
       else if (event.code === "Space" && mode === "animation" && !mappedSequence) {event.preventDefault(); togglePlayback();}
       else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {event.preventDefault(); step(event.key === "ArrowLeft" ? -1 : 1, event.shiftKey);}
   };
@@ -1166,6 +1174,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   if (inspectedArtifact) return <RetainedReview visible={surfaceVisible} inspectedArtifact={liveInspectedArtifact} {...{projectId, version, inspectedArtifactSummary, onClearArtifact}}/>;
   if (!version || !merged) return <ReviewEmpty mode={mode} onChange={changeMode}/>;
   if (clipReel && !draft) return <SequenceReelReview visible={visible} projectId={projectId} artifact={clipReel}/>;
+  if (videoOnlyVersion && !draft) return <SequenceReelReview visible={visible} projectId={projectId} artifact={directVideo} heading="Published video"/>;
   const activePins: SpatialPinMarker[] = draft && isSpatialDraft
     ? draft.annotation.spatial_hits.map((hit, idx) => ({
       id: `${draft.key}-${idx}`,
@@ -1236,7 +1245,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
               </label>
               <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || (!pendingCapture && !proxyReady) || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? `Retry captured view upload (${pendingCapture.dimensions.width} × ${pendingCapture.dimensions.height})` : "Render this view"}</button>
             </div>
-          </> : !mappedSequence && <button className="toolbar-btn toolbar-btn-accent" aria-label="Annotate presented frame" disabled={!visible || !target || !readyToCapture} onClick={() => void annotate()}><PenLine size={14}/>Annotate</button>}
+          </> : !mappedSequence && !animationVideo && <button className="toolbar-btn toolbar-btn-accent" aria-label="Annotate presented frame" disabled={!visible || !target || !readyToCapture} onClick={() => void annotate()}><PenLine size={14}/>Annotate</button>}
         </div>
       </nav>
     )}
@@ -1301,7 +1310,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           if (!mapIsCurrent()) return;
           const pinned:FrameTarget={origin:"sequence_render",artifact_id:capture.artifact_id,displayed_sha256:capture.sha256,dimensions:{width,height},item_id:version.item_id,version_id:version.version_id,shot_id:null,render_job_id:null,source_frame:null,media_artifact_id:assembly.artifact_id,sequence_version_id:version.version_id,sequence_frame:frame,frame_map_artifact_id:activeFrameMap.id};
           setTarget(pinned);setCaptureReady(true);await startDraft(pinned);
-         }}/> : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} expectedEndFrame={availability?.source_range.end ?? activeJob?.render_spec?.frames.end} jobTerminal={jobTerminal} requestedFrame={requestedFrame} seekNonce={seekNonce} nextPassSegment={nextPassSegment} playing={playing} onPlaying={setPlaying} onPresented={present} onUnpresented={clearPresentation} onPlaybackStopped={stopPlayAll} onEndedPass={advancePlayAll} completionMessage={playAll ? "Full animation playback complete" : "Playback complete"}/>
+         }}/> : directVideo ? <ReviewVideo key={directVideo.artifact_id} visible={visible} url={mediaUrl(projectId, directVideo.artifact_id)} label={`Published video ${directVideo.artifact_id}`}/>
+           : <ProgressivePlayer visible={visible} key={reviewJobId} projectId={projectId} version={version} frames={currentFrames} segments={currentSegments} availability={availability} expectedEndFrame={availability?.source_range.end ?? activeJob?.render_spec?.frames.end} jobTerminal={jobTerminal} requestedFrame={requestedFrame} seekNonce={seekNonce} nextPassSegment={nextPassSegment} playing={playing} onPlaying={setPlaying} onPresented={present} onUnpresented={clearPresentation} onPlaybackStopped={stopPlayAll} onEndedPass={advancePlayAll} completionMessage={playAll ? "Full animation playback complete" : "Playback complete"}/>
            : target && !targetUnavailable ? <div className="review-image"><DecodedReviewImage visible={visible} projectId={projectId} target={target} onReadiness={setDecodedImage} onFailure={imageFailure}/></div> : <div className="viewer-empty">{activeJob?.render_spec && !jobTerminal ? `Frame ${requestedFrame} pending. No ready review image yet.` : "No ready review image. Rendering is an explicit Queue request."}</div>}
     {show2DEditor ? null : draft && isSpatialDraft ? (
       <SpatialPinDock {...placementProps} draft={draft} proxyUnavailableReason={proxyUnavailableReason} controller={spatialController} onClose={closeDraft} onDiscard={discardActiveDraft} resolveDiscardBaseline={resolveDiscardBaseline}/>
@@ -1318,6 +1328,10 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
           <span className="toolbar-meta">
             {pinMode ? "Pin note active · click mesh surface to place pin · drag to orbit" : "Static inspection proxy · orbit / click to select"}
           </span>
+        </> : animationVideo ? <>
+          <MediaMetadata artifact={animationVideo} audio={false} video={true}/>
+          <div className="toolbar-spacer"/>
+          <a className="toolbar-btn" href={mediaUrl(projectId, animationVideo.artifact_id)} download={animationVideo.artifact_id}><Download size={13}/>Download video</a>
         </> : <>
           <div className="toolbar-group">
             {mode === "animation" && !mappedSequence && <button className="toolbar-btn toolbar-icon-btn" aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"} disabled={!visible} onClick={togglePlayback}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button>}
