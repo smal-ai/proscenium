@@ -11,6 +11,14 @@ from proscenium.contracts import validate
 APP_ROOT = Path(__file__).resolve().parents[5]
 
 
+def config_home() -> Path:
+    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+
+
+def default_config_path() -> Path:
+    return config_home() / "proscenium/config.json"
+
+
 def _read_dotenv(path: Path) -> dict[str, str]:
     """Read bounded private values without exporting or logging them."""
     try:
@@ -61,21 +69,22 @@ class Settings:
 
     @classmethod
     def load(cls, path: Path | None = None) -> "Settings":
-        path = Path(path) if path is not None else None
-        path = (
-            path
-            or Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config")))
-            / "proscenium/config.json"
-        )
+        path = Path(path) if path is not None else default_config_path()
         if not path.exists():
             return cls()
-        body = json.loads(path.read_text())
+        return cls._from_json_text(
+            path.read_text(encoding="utf-8"), config_dir=path.resolve().parent
+        )
+
+    @classmethod
+    def _from_json_text(cls, text: str, *, config_dir: Path) -> "Settings":
+        body = json.loads(text)
         allowed_fields = {f.name for f in fields(cls) if not f.name.startswith("_")}
         if not isinstance(body, dict) or set(body) - allowed_fields:
             raise ValueError("Unknown configuration fields")
         substitutions = {
             "HOME": str(Path.home()),
-            "CONFIG_DIR": str(path.resolve().parent),
+            "CONFIG_DIR": str(config_dir),
             "APP_ROOT": str(APP_ROOT),
         }
 
@@ -94,14 +103,26 @@ class Settings:
 
         body = expand(body)
         for key in ("data_directory", "frontend_directory"):
-            if body.get(key) is not None:
-                body[key] = Path(body[key]).expanduser()
+            if key not in body or (key == "frontend_directory" and body[key] is None):
+                continue
+            value = body[key]
+            if not isinstance(value, str) or not value or "\0" in value:
+                raise ValueError(f"{key} must be a non-empty path string")
+            body[key] = Path(value).expanduser()
         if "execution_profiles" in body:
+            if not isinstance(body["execution_profiles"], list) or not all(
+                isinstance(profile, str) for profile in body["execution_profiles"]
+            ):
+                raise ValueError("execution_profiles must be an array of strings")
             body["execution_profiles"] = frozenset(body["execution_profiles"])
         for key in ("profiles", "services"):
             if key in body:
+                if not isinstance(body[key], list) or not all(
+                    isinstance(item, dict) for item in body[key]
+                ):
+                    raise ValueError(f"{key} must be an array of objects")
                 body[key] = tuple(body[key])
-        return cls(**body, _config_dir=path.resolve().parent)
+        return cls(**body, _config_dir=config_dir)
 
     def secret_env(self, name: str) -> str | None:
         if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", name):
@@ -117,6 +138,14 @@ class Settings:
         return None
 
     def __post_init__(self) -> None:
+        if not isinstance(self.data_directory, Path) or "\0" in str(self.data_directory):
+            raise ValueError("data_directory must be a path")
+        if self.frontend_directory is not None and (
+            not isinstance(self.frontend_directory, Path) or "\0" in str(self.frontend_directory)
+        ):
+            raise ValueError("frontend_directory must be a path or null")
+        if not isinstance(self.origin, str) or any(c.isspace() or ord(c) < 32 for c in self.origin):
+            raise ValueError("An exact loopback origin is required")
         url = urlsplit(self.origin)
         if (
             url.scheme not in {"http", "https"}
@@ -124,20 +153,22 @@ class Settings:
             or url.path
             or url.query
             or url.fragment
-            or url.username
-            or url.password
+            or url.username is not None
+            or url.password is not None
+            or url.port == 0
         ):
             raise ValueError("An exact loopback origin is required")
-        if (
-            self.generation_attempt_limit < 1
-            or self.free_space_reserve_bytes < 0
-            or self.revision < 0
-            or self.upload_max_bytes < 1
-            or self.upload_max_pixels < 1
-            or self.attachment_max_count < 1
-            or self.attachment_max_bytes < 1
+        for value, lower in (
+            (self.generation_attempt_limit, 1),
+            (self.free_space_reserve_bytes, 0),
+            (self.revision, 0),
+            (self.upload_max_bytes, 1),
+            (self.upload_max_pixels, 1),
+            (self.attachment_max_count, 1),
+            (self.attachment_max_bytes, 1),
         ):
-            raise ValueError("Invalid configured limit")
+            if type(value) is not int or value < lower:
+                raise ValueError("Invalid configured limit")
         if not all(
             isinstance(value, dict)
             for value in (self.runtime, self.rendering, self.provider_options)
@@ -146,6 +177,8 @@ class Settings:
                 "Private runtime, rendering and provider configuration must be objects"
             )
         for service in self.services:
+            if not isinstance(service, dict) or not isinstance(service.get("endpoint"), str):
+                raise ValueError("Each service requires a string endpoint")
             endpoint = urlsplit(service["endpoint"])
             if endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
                 raise ValueError("Service views must not contain credentials or query tokens")

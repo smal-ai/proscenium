@@ -43,24 +43,112 @@ JSON path strings expand `${HOME}`, `${CONFIG_DIR}` and `${APP_ROOT}`. Credentia
 stay in the existing supported authentication stores. Do not paste tokens into
 the configuration.
 
+`make bootstrap` installs `proscenium` into the checkout's `.venv/bin`. Use the
+commands below with that virtual environment on `PATH`, or prefix them with
+`uv run` from the checkout. For a custom config path, pass `--config PATH` to
+`serve`, `pair`, `status`, `doctor` and `service install` as applicable.
+
+### Systemd user service
+
 ```bash
-make run CONFIG="$HOME/.config/proscenium/config.json" ARGS=--pair
+make build-frontend
+proscenium doctor
+proscenium service install --enable --start
+proscenium pair
 ```
 
-Open the private pairing URL printed in the terminal. It expires after 15 minutes.
+Install renders the [shipped user unit template](../deployment/proscenium.service.in)
+using the checkout and private configuration paths. The unit runs one backend,
+without automatic pairing output or Resume. Use `--checkout PATH` to choose a
+different checkout and `--force` to replace an existing Proscenium unit without
+an external-unit confirmation.
+Paths used in the unit must not contain whitespace, quotes or systemd specifiers.
+`--enable` configures startup with the user service manager and `--start` starts it now.
+
+```bash
+proscenium service start
+proscenium service stop
+proscenium service restart
+proscenium service status
+proscenium service logs --lines 50 --follow
+proscenium service uninstall
+```
+
+Use `--unit NAME` if you installed under a custom unit name. By default, service
+commands act only on verified Proscenium units. For local lifecycle actions,
+systemd must report the same unit file. If an installed unit is not loaded, run
+`systemctl --user daemon-reload` first. Uninstall stops and disables the selected
+local user unit and removes only its unit file, not configuration, registry or
+project data.
+
+The human operator can explicitly inspect or manage external user units such as
+`comfyui-local` or `lmstudio` with `--force`. The CLI identifies the unit, path and
+action and requires an interactive `y` or `yes`. For a deliberate non-interactive
+operation, supply both `--force` and `--yes`:
+
+```bash
+proscenium service status --unit lmstudio --force
+proscenium service restart --unit comfyui-local --force --yes
+```
+
+The same confirmation applies to overwriting or shadowing an external unit on
+install and to uninstalling an external local unit. `--force` does not bypass
+path, ownership or loaded-unit checks. Units with aliases or drop-ins are still
+refused.
+
+### Pairing and diagnostics
+
+```bash
+proscenium pair              # Private URL from the running backend
+proscenium pair --url-only   # Bare URL for a trusted local consumer
+proscenium status            # Runtime, user unit and independent service status
+proscenium doctor            # Workstation and configuration checks
+```
+
+Pairing does not restart the backend. Open the private URL in your browser within
+15 minutes. Do not put it in a log, chat or shared file. `pair`, `status` and
+`doctor` accept `--json`. `status` is read-only and can report a stopped runtime.
+`doctor` exits with `1` if a required check fails. Warnings, including optional
+services being offline or a data directory not yet created, do not fail it.
+Provider probes only check HTTP availability. They do not run inference or verify
+that a model is loaded.
+
+### Foreground execution
+
+Run exactly one backend. Stop the user service first if it is running. With the
+frontend already built, pass its output directory unless set in the configuration:
+
+```bash
+proscenium serve --frontend-dir apps/frontend/dist
+```
+
+Run `proscenium pair` in another terminal. Alternatively, request startup pairing
+output with `--pair` in a trusted foreground terminal only. `make run` builds the
+frontend before launch. The original module command still works:
+
+```bash
+make run CONFIG="$HOME/.config/proscenium/config.json" ARGS=--pair
+uv run python -m proscenium --config "$HOME/.config/proscenium/config.json" \
+  --frontend-dir apps/frontend/dist --pair
+```
+
 The default address is `http://127.0.0.1:8765`. Create or activate a project through
 the Projects menu. The application is designed for a 1920 × 1080 desktop browser.
 
-Run exactly one backend process. The command builds the frontend and serves it
-with the API, WebSocket and media from the same origin. `--origin` and
+Studio serves the frontend, API, WebSocket and media from the same origin. `--origin` and
 `--frontend-dir` can override their JSON values. `--config` selects an explicit file.
 Without it, the loader reads `${XDG_CONFIG_HOME:-$HOME/.config}/proscenium/config.json`.
+The CLI refuses configuration symlinks, including symlinked parent directories.
+An implicit missing configuration file uses defaults only if its parent directories
+already exist and pass the safety check.
 
 ## Independent services
 
-ComfyUI and LM Studio remain independently installed and operated. Proscenium
-does not start, stop, upgrade, unload or clear their queues. Existing media and
-feedback remain accessible when a configured service is unavailable.
+ComfyUI and LM Studio remain independently installed and operated. The Proscenium
+backend and its agents never automatically start or stop these services, change
+their installation, unload models or clear queues. Explicit operator CLI actions
+are separate. Existing media and feedback remain accessible when a configured
+service is unavailable.
 
 | Profile | Capability | Inputs |
 | --- | --- | --- |
@@ -229,20 +317,29 @@ Browser/tunnel disconnection leaves admitted work running.
 ## Backup and restore
 
 To register an existing Git/LFS project and verified external media, stop the relevant
-backend and use the [owner import CLI](project-import.md) before reopening Studio.
+backend and use the [owner import CLI](project-import.md) before reopening Studio:
+
+```bash
+proscenium import --config /absolute/private/config.json \
+  --project-root /absolute/workspace --manifest /absolute/import-manifest.json
+```
 
 First settle/stop the relevant work through its normal controls, then stop that
 Proscenium backend. Preserve unrelated native sessions. Backup requires quiescent
 source and native-history stores and a fresh destination outside them.
 
 ```bash
-uv run python -m tools.operations.recovery backup \
+proscenium backup \
   --config "$HOME/.config/proscenium/config.json" \
   --project-id PROJECT_ID --target /absolute/private/backup
-uv run python -m tools.operations.recovery verify /absolute/private/backup
-uv run python -m tools.operations.recovery restore /absolute/private/backup \
+proscenium verify /absolute/private/backup
+proscenium restore /absolute/private/backup \
   --target /absolute/private/restored --rebind-fresh-registry
 ```
+
+From the checkout, `uv run python -m tools.operations.recovery backup|verify|restore`
+and `uv run python -m tools.operations.import_project` remain equivalent with the
+same arguments.
 
 Use the generated restore configuration to inspect the restored project before
 explicit Resume. Do not run both locations with the same project/native-session
@@ -258,7 +355,3 @@ The runtime identity manifest at `docs/implementation/runtime-lock.json` is reta
 because the backup tool reads it. The verified native relocation used the same
 workstation with the old source directory present. Arbitrary old opaque attachment
 paths on another machine remain untested.
-
-An optional [user-service template](../deployment/proscenium.service.in) is provided.
-Install it only with reviewed absolute checkout/configuration paths. It starts one
-backend, without automatic pairing output or Resume.

@@ -3,6 +3,7 @@
 import argparse
 import json
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 
 from proscenium.api.errors import DomainError
@@ -12,14 +13,14 @@ from proscenium.projects.importer import import_project
 from proscenium.services import Services
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv: Sequence[str] | None = None, *, prog: str | None = None) -> None:
+    parser = argparse.ArgumentParser(prog=prog, description=__doc__)
     location = parser.add_mutually_exclusive_group(required=True)
     location.add_argument("--config", type=Path)
     location.add_argument("--data-dir", type=Path)
     parser.add_argument("--project-root", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         if args.config:
             settings = Settings.load(args.config.resolve(strict=True))
