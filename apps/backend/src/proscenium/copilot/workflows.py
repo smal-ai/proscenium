@@ -1,13 +1,19 @@
 """Native-only argument envelopes, composed from the existing normative components."""
 
-from copy import deepcopy
 from typing import Any
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 from proscenium.api.errors import DomainError
-from proscenium.contracts import SCHEMA, canonical, validate
+from proscenium.catalogue.validation import (
+    canonical_json_issues,
+    schema_issues,
+    schema_issues_for_schema,
+)
+from proscenium.contracts import canonical, validate
+
+from .tool_schemas import inline_tool_schema
 
 WORKFLOW_TOOLS = {
     "assemble_sequence": (
@@ -29,6 +35,10 @@ WORKFLOW_TOOLS = {
 
 
 def parameters(name: str) -> dict[str, Any]:
+    return inline_tool_schema(_parameter_schema(name))
+
+
+def _parameter_schema(name: str) -> dict[str, Any]:
     properties: dict[str, Any]
     if name == "get_unity_result":
         properties = {"job_id": {"$ref": "#/$defs/Id"}}
@@ -55,27 +65,41 @@ def parameters(name: str) -> dict[str, Any]:
                 scene_path={"$ref": "#/$defs/RelativePath"},
             )
             required += ["project", "spawn", "camera", "pipeline", "action"]
-    names = {"Id", "VersionRef", "RelativePath", "Vector3"}
     return dict(
         type="object",
         properties=properties,
         required=required,
         additionalProperties=False,
-        **{"$defs": {key: deepcopy(SCHEMA["$defs"][key]) for key in names}},
     )
 
 
 def arguments(name: str, value: Any) -> dict[str, Any]:
+    schema = parameters(name)
     try:
-        Draft202012Validator(parameters(name)).validate(value)
+        Draft202012Validator(schema).validate(value)
+    except ValidationError as error:
+        raise DomainError(
+            "invalid_request", issues=schema_issues_for_schema(schema, value)
+        ) from error
+    try:
         canonical(value)
-        for field in ("operation_id", "job_id", "execution_profile_id"):
-            if field in value:
-                validate("Id", value[field])
-        if "version" in value:
-            validate("VersionRef", value["version"])
-        if "spawn" in value:
-            validate("Vector3", value["spawn"])
-    except (ValidationError, ValueError) as error:
-        raise DomainError("invalid_request") from error
+    except ValueError as error:
+        raise DomainError("invalid_request", issues=canonical_json_issues(schema, value)) from error
+    components = dict.fromkeys(("operation_id", "job_id", "execution_profile_id"), "Id")
+    components.update(version="VersionRef", spawn="Vector3")
+    for field, component in components.items():
+        if field not in value:
+            continue
+        try:
+            validate(component, value[field])
+        except DomainError as error:
+            issues = schema_issues(component, value[field])
+            if not issues:
+                raise
+            for issue in issues:
+                path = issue["path"]
+                issue["path"] = (
+                    field if path == "$" else field + (path if path.startswith("[") else f".{path}")
+                )
+            raise DomainError(error.code, error.status, error.message, issues=issues) from error
     return value

@@ -10,16 +10,20 @@ import inspect
 import json
 import re
 import time
+from functools import cache
 from typing import Any
 
 from copilot.tools import Tool, ToolBinaryResult, ToolInvocation, ToolResult
 
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
+from proscenium.catalogue.schema_paths import SchemaPathScope
 from proscenium.catalogue.validation import (
     SAFE_VALIDATION_REASONS,
     safe_schema_guidance,
+    safe_schema_path,
     schema_issues,
+    schema_issues_for_schema,
 )
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.previews.journal import UNSUPPORTED_BLENDER_FEATURE_REASON
@@ -27,6 +31,7 @@ from proscenium.services import Services
 
 from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
+from .tool_schemas import inline_tool_schema
 from .web_search import (
     AUTH_UNAVAILABLE,
     INVALID_QUERY,
@@ -169,6 +174,10 @@ DISCOVERY_READS = {
 
 
 def read_parameters(name: str) -> dict[str, Any]:
+    return inline_tool_schema(_read_schema(name))
+
+
+def _read_schema(name: str) -> dict[str, Any]:
     if name == "search_web":
         return dict(
             type="object",
@@ -182,7 +191,7 @@ def read_parameters(name: str) -> dict[str, Any]:
     if name == "get_project_capabilities":
         return dict(
             type="object",
-            properties={"project_id": copy.deepcopy(SCHEMA["$defs"]["Id"])},
+            properties={"project_id": {"$ref": "#/$defs/Id"}},
             additionalProperties=False,
         )
     if name == "list_items":
@@ -197,7 +206,7 @@ def read_parameters(name: str) -> dict[str, Any]:
         )
     identity, _, _ = READ_TOOLS[name]
     assert identity is not None
-    properties = {identity: copy.deepcopy(SCHEMA["$defs"]["Id"])}
+    properties: dict[str, Any] = {identity: {"$ref": "#/$defs/Id"}}
     if name == "get_artifact":
         properties["include_image"] = {"type": "boolean", "default": False}
     elif name in {"get_job", "get_vlm_review"}:
@@ -216,56 +225,24 @@ def read_parameters(name: str) -> dict[str, Any]:
 
 
 def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
-    if name == "search_web":
-        if not isinstance(arguments, dict) or set(arguments) - {"query", "limit"}:
-            raise DomainError("invalid_request")
-        query = clean_search_query(arguments.get("query"))
-        limit = arguments.get("limit", 8)
-        if type(limit) is not int or not 1 <= limit <= 15:
-            raise DomainError("invalid_request")
-        return {"query": query, "limit": limit}
-    if name == "get_project_capabilities":
-        if not isinstance(arguments, dict) or set(arguments) - {"project_id"}:
-            raise DomainError("invalid_request")
-        if "project_id" in arguments:
-            validate("Id", arguments["project_id"])
-        return arguments
-    if name == "list_items":
-        if not isinstance(arguments, dict) or set(arguments) - {"query", "cursor", "limit"}:
-            raise DomainError("invalid_request")
-        if not isinstance(arguments.get("query", ""), str) or len(arguments.get("query", "")) > 512:
-            raise DomainError("invalid_request")
+    issues = schema_issues_for_schema(read_parameters(name), arguments, exact_integers=True)
+    if issues:
+        code = "invalid_request"
         if (
-            type(arguments.get("limit", 50)) is not int
-            or not 1 <= arguments.get("limit", 50) <= 100
+            name in {"list_items", "list_job_frames"}
+            and len(issues) == 1
+            and issues[0]["path"] == "cursor"
+            and issues[0]["code"] == "type"
         ):
-            raise DomainError("invalid_request")
-        if arguments.get("cursor") is not None and not isinstance(arguments["cursor"], str):
-            raise DomainError("invalid_cursor")
-        return arguments
-    identity, _, _ = READ_TOOLS[name]
-    assert identity is not None
-    allowed = {identity, "cursor", "limit"} if name == "list_job_frames" else {identity}
-    if name == "get_artifact":
-        allowed.add("include_image")
-    elif name in {"get_job", "get_vlm_review"}:
-        allowed.add("wait_seconds")
-    if not isinstance(arguments, dict) or identity not in arguments or set(arguments) - allowed:
-        raise DomainError("invalid_request")
-    validate("Id", arguments[identity])
-    if name == "get_artifact" and type(arguments.get("include_image", False)) is not bool:
-        raise DomainError("invalid_request")
-    if name in {"get_job", "get_vlm_review"}:
-        wait_seconds = arguments.get("wait_seconds", 0)
-        if type(wait_seconds) is not int or not 0 <= wait_seconds <= 30:
-            raise DomainError("invalid_request")
-    if name == "list_job_frames":
-        limit = arguments.get("limit", 50)
-        cursor = arguments.get("cursor")
-        if type(limit) is not int or not 1 <= limit <= 100:
-            raise DomainError("invalid_request")
-        if cursor is not None and not isinstance(cursor, str):
-            raise DomainError("invalid_cursor")
+            code = "invalid_cursor"
+        raise DomainError(code, issues=issues)
+    if name == "search_web":
+        try:
+            query = clean_search_query(arguments["query"])
+        except DomainError as error:
+            issue = dict(phase="schema", code="format", path="query", message=INVALID_QUERY)
+            raise DomainError(error.code, error.status, error.message, issues=[issue]) from error
+        return {"query": query, "limit": arguments.get("limit", 8)}
     return arguments
 
 
@@ -387,6 +364,24 @@ ERROR_GUIDANCE = {
 }
 
 
+@cache
+def _tool_issue_schemas(name: str) -> tuple[tuple[dict[str, Any], ...], SchemaPathScope]:
+    schemas: tuple[dict[str, Any], ...] = ()
+    if name in TOOLS:
+        definition = TOOLS[name][2]
+        schemas = (SCHEMA["$defs"][definition], tool_schema(definition))
+    elif name in WORKFLOW_TOOLS:
+        schemas = (workflow_parameters(name),)
+    elif name in READ_TOOLS or name in DISCOVERY_READS:
+        schemas = (read_parameters(name),)
+    if name in {"validate_authored_document", "publish_outputs"}:
+        schemas += tuple(
+            SCHEMA["$defs"][definition]
+            for definition in ("AuthoredShotPlan", "SequenceMap", "PublicationSubmit")
+        )
+    return schemas, SchemaPathScope(schemas)
+
+
 def tool_failure(error: DomainError, name: str) -> ToolResult:
     message = (
         error.message
@@ -425,7 +420,9 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
         )
     issues = error.details.get("issues", [])
     if isinstance(issues, list) and issues:
-        # Accept only canonical host-validator diagnostics, never upstream strings.
+        # Share the validator's code/message allow-list (including contains),
+        # then restrict the issue paths to this tool's schema family.
+        schemas, scope = _tool_issue_schemas(name)
         safe = []
         for issue in issues[:25]:
             try:
@@ -433,32 +430,9 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
             except DomainError:
                 continue
             if (
-                issue["code"]
-                in {
-                    "required",
-                    "type",
-                    "enum",
-                    "const",
-                    "additionalProperties",
-                    "oneOf",
-                    "anyOf",
-                    "not",
-                    "minItems",
-                    "maxItems",
-                    "minLength",
-                    "maxLength",
-                    "minimum",
-                    "maximum",
-                    "pattern",
-                    "uniqueItems",
-                    "format",
-                }
+                issue["phase"] == "schema"
                 and safe_schema_guidance(issue["code"], issue["message"])
-                and len(issue["path"]) <= 512
-                and re.fullmatch(
-                    r"\$|[A-Za-z_][A-Za-z_0-9]*(?:\[[0-9]+\]|\.[A-Za-z_][A-Za-z_0-9]*)*",
-                    issue["path"],
-                )
+                and safe_schema_path(issue["path"], schemas, scope=scope)
             ):
                 safe.append(issue)
         if safe:
@@ -527,31 +501,8 @@ def result_text(name: str, result: dict[str, Any]) -> str:
 
 
 def tool_schema(name: str) -> dict[str, Any]:
-    """The normative definition and its transitive local refs, not 119 defs per tool."""
-    definitions: dict[str, Any] = {}
-
-    def visit(value: Any) -> None:
-        if isinstance(value, dict):
-            reference = value.get("$ref")
-            if reference:
-                prefix = "#/$defs/"
-                if not reference.startswith(prefix):
-                    raise ValueError("Unsupported non-local normative tool reference")
-                dependency = reference[len(prefix) :]
-                if dependency not in definitions:
-                    definitions[dependency] = copy.deepcopy(SCHEMA["$defs"][dependency])
-                    visit(definitions[dependency])
-            for child in value.values():
-                visit(child)
-        elif isinstance(value, list):
-            for child in value:
-                visit(child)
-
-    root = copy.deepcopy(SCHEMA["$defs"][name])
-    visit(root)
-    if definitions:
-        root["$defs"] = definitions
-    return root
+    """Project a normative definition into self-contained model parameters."""
+    return inline_tool_schema(SCHEMA["$defs"][name])
 
 
 def _matches_invocation(record: dict[str, Any], invocation: ToolInvocation, name: str) -> bool:
