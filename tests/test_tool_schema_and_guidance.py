@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from functools import partial
 from types import SimpleNamespace
 
 import pytest
@@ -13,17 +14,18 @@ from proscenium.catalogue.validation import (
     schema_issues,
     schema_issues_for_schema,
 )
-from proscenium.contracts import SCHEMA
-from proscenium.copilot.tool_schemas import inline_tool_schema
+from proscenium.contracts import SCHEMA, validate
+from proscenium.copilot.tool_schemas import inline_tool_schema, portable_tool_schema
 from proscenium.copilot.tools import (
     TOOLS,
     Tools,
-    _read_schema,
     read_arguments,
+    read_validation_parameters,
     tool_failure,
     tool_schema,
 )
-from proscenium.copilot.workflows import WORKFLOW_TOOLS, _parameter_schema
+from proscenium.copilot.workflows import WORKFLOW_TOOLS, validation_parameters
+from proscenium.copilot.workflows import arguments as workflow_arguments
 
 
 @pytest.fixture
@@ -66,11 +68,13 @@ def test_mesh_multiple_guidance_uses_installed_divisors_only(field, valid, inval
         seed="1",
     )
     parameters = tool_schema(schema)
-    assert parameters["properties"][field]["multipleOf"] == multiple
+    assert f"Multiple of {multiple}." in parameters["properties"][field]["description"]
     assert schema_issues(schema, {**request, field: valid}) == []
     assert schema_issues_for_schema(parameters, {**request, field: valid}) == []
+    with pytest.raises(DomainError):
+        validate(schema, {**request, field: invalid})
     issues = schema_issues(schema, {**request, field: invalid})
-    assert issues == schema_issues_for_schema(parameters, {**request, field: invalid})
+    assert schema_issues_for_schema(parameters, {**request, field: invalid}) == []
     message = f"Must be a multiple of {multiple}"
     assert safe_schema_guidance("multipleOf", message)
     forged = {**issues[0], "message": f"Must be a multiple of {invalid}"}
@@ -84,33 +88,92 @@ def test_mesh_multiple_guidance_uses_installed_divisors_only(field, valid, inval
     assert result["details"]["issues"] == issues
 
 
-def test_all_tool_definitions_are_self_contained(tools):
-    def assert_inline(node):
-        if isinstance(node, dict):
-            assert not node.keys() & {"$ref", "$defs", "const", "$comment"}
-            for value in node.values():
-                assert_inline(value)
-        elif isinstance(node, list):
-            for value in node:
-                assert_inline(value)
+def test_all_tool_definitions_use_portable_schema_subset(tools):
+    allowed = {
+        "type",
+        "properties",
+        "required",
+        "items",
+        "enum",
+        "description",
+        "anyOf",
+        "minimum",
+        "maximum",
+        "minItems",
+        "maxItems",
+        "minLength",
+        "maxLength",
+        "pattern",
+    }
+
+    def assert_portable(node, *, inside_any_of: bool = False):
+        assert node.keys() <= allowed
+        if inside_any_of:
+            assert "anyOf" not in node
+        if "type" in node or "enum" in node:
+            assert isinstance(node.get("type"), str)
+        assert len(node.get("pattern", "")) <= 100
+        for child in node.get("properties", {}).values():
+            assert_portable(child, inside_any_of=inside_any_of)
+        if "items" in node:
+            assert_portable(node["items"], inside_any_of=inside_any_of)
+        for branch in node.get("anyOf", ()):
+            assert_portable(branch, inside_any_of=True)
 
     definitions = {tool.name: tool.parameters for tool in tools.definitions()}
     assert len(definitions) == 27
     for schema in definitions.values():
-        assert_inline(schema)
+        Draft202012Validator.check_schema(schema)
+        assert schema["type"] == "object" and "anyOf" not in schema
+        assert_portable(schema)
     preview = definitions["request_preview"]["properties"]
     spec = preview["spec"]["properties"]
-    assert spec["colour_management"]["properties"]["gamma"]["exclusiveMinimum"] == 0
+    assert spec["colour_management"]["properties"]["gamma"]["description"] == "Must be > 0."
     assert spec["fps"]["properties"]["numerator"]["type"] == "integer"
+    publication_spec = definitions["publish_outputs"]["properties"]["items"]["items"]["properties"][
+        "preview_requests"
+    ]["items"]["properties"]
+    for fields in (spec, publication_spec):
+        cameras = fields["camera"]["anyOf"]
+        assert len(cameras) == 3 and {"type": "null"} in cameras
+        assert {
+            arm["properties"]["source_camera_id"]["type"]
+            for arm in cameras
+            if arm["type"] == "object"
+        } == {"string", "null"}
     assert preview["schema_version"] == {"type": "string", "enum": ["1.0"]}
     review = definitions["request_vlm_review"]["properties"]
-    assert set(review["targets"]["items"]["properties"]["origin"]["enum"]) == {
+    origin = review["targets"]["items"]["properties"]["origin"]
+    assert origin["type"] == "string"
+    assert set(origin["enum"]) == {
         "concept",
         "reference",
         "blender_render",
         "sequence_render",
         "proxy_capture",
     }
+    for kind in ("image", "audio", "mesh", "video"):
+        properties = definitions[f"prepare_{kind}_generation"]["properties"]
+        branches = properties["target_slot"]["anyOf"]
+        assert len(branches) == (3 if kind == "video" else 4)
+        assert {
+            tuple(branch["properties"]["kind"]["enum"])
+            for branch in branches
+            if branch["type"] == "object"
+        } == {("item",), ("storyboard_frame",), ("assembly_shot",)}
+        if kind in {"mesh", "video"}:
+            assert properties["seed"]["pattern"] == "^[0-9]{1,16}$"
+            assert (
+                properties["seed"]["description"] == "Decimal integer seed (0..9007199254740991)."
+            )
+    authored = definitions["validate_authored_document"]
+    assert authored["description"] == "Supply either path or document, not both."
+    for field in (
+        authored["properties"]["document"],
+        definitions["submit_generation"]["properties"]["settings"],
+    ):
+        assert field.keys() == {"type", "description"}
+        assert field["type"] == "object" and field["description"]
     unity = definitions["run_unity_workflow"]["properties"]
     assert unity["version"]["properties"]["version_id"] == SCHEMA["$defs"]["Id"]
     assembly = definitions["assemble_sequence"]["properties"]
@@ -144,7 +207,8 @@ def test_const_inlining_preserves_type_siblings_and_literals(value, expected_typ
 def test_inline_refs_preserve_constraints_and_reject_cycles(monkeypatch):
     root = {"$ref": "#/$defs/Id", "pattern": "^example", "description": "Example"}
     assert inline_tool_schema(root) == {
-        "allOf": [SCHEMA["$defs"]["Id"], {"pattern": "^example"}],
+        "type": "string",
+        "pattern": "^example",
         "description": "Example",
     }
     monkeypatch.setitem(SCHEMA["$defs"], "TestA", {"$ref": "#/$defs/TestB"})
@@ -153,43 +217,55 @@ def test_inline_refs_preserve_constraints_and_reject_cycles(monkeypatch):
         inline_tool_schema({"$ref": "#/$defs/TestA"})
 
 
-def test_ref_sibling_additional_properties_remains_independent():
-    raw = {"$ref": "#/$defs/VersionRef", "additionalProperties": False}
-    baseline = Draft202012Validator({**raw, "$defs": SCHEMA["$defs"]})
-    projected = Draft202012Validator(inline_tool_schema(raw))
-    instance = {"item_id": "item-one", "version_id": "version-one"}
-    assert not baseline.is_valid(instance)
-    assert not projected.is_valid(instance)
-
-
-def test_ref_sibling_unevaluated_properties_sees_enclosing_all_of():
-    raw = {"$ref": "#/$defs/VersionRef", "unevaluatedProperties": False}
-    baseline = Draft202012Validator({**raw, "$defs": SCHEMA["$defs"]})
-    schema = inline_tool_schema(raw)
-    assert schema["unevaluatedProperties"] is False
-    assert len(schema["allOf"]) == 1
-    projected = Draft202012Validator(schema)
-    valid = {"item_id": "item-one", "version_id": "version-one"}
-    invalid = {**valid, "extra": True}
-    for instance, expected in ((valid, True), (invalid, False)):
-        assert baseline.is_valid(instance) == projected.is_valid(instance) == expected
-
-
-def test_ref_sibling_unevaluated_items_sees_enclosing_all_of(monkeypatch):
-    monkeypatch.setitem(SCHEMA["$defs"], "TestTuple", {"prefixItems": [{"type": "string"}]})
-    raw = {"$ref": "#/$defs/TestTuple", "minItems": 1, "unevaluatedItems": False}
-    baseline = Draft202012Validator({**raw, "$defs": SCHEMA["$defs"]})
-    schema = inline_tool_schema(raw)
-    assert schema == {
-        "allOf": [SCHEMA["$defs"]["TestTuple"], {"minItems": 1}],
-        "unevaluatedItems": False,
+def test_projection_merges_plain_all_of_but_drops_conditional_branches():
+    source = {
+        "type": "object",
+        "properties": {"name": {"type": "string"}},
+        "required": ["name"],
+        "allOf": [
+            {
+                "properties": {"name": {"minLength": 2}, "limit": {"type": "integer"}},
+                "required": ["name", "limit"],
+            },
+            {"if": {"required": ["limit"]}, "then": {"required": ["other"]}},
+        ],
     }
-    projected = Draft202012Validator(schema)
-    for instance, expected in ((["value"], True), (["value", "extra"], False), ([], False)):
-        assert baseline.is_valid(instance) == projected.is_valid(instance) == expected
+    assert portable_tool_schema(source) == {
+        "type": "object",
+        "properties": {"name": {"type": "string", "minLength": 2}, "limit": {"type": "integer"}},
+        "required": ["name", "limit"],
+    }
+    assert "allOf" in source and source["properties"]["name"] == {"type": "string"}
 
 
-def test_all_tool_validators_agree_with_unprojected_sources(tools, preview):
+def test_projection_flattens_deduplicates_and_preserves_nullable_constraints():
+    assert portable_tool_schema(
+        {
+            "type": "object",
+            "properties": {
+                "limit": {"anyOf": [{"type": ["integer", "null"], "minimum": 1}, {"type": "null"}]},
+                "name": {
+                    "anyOf": [
+                        {"oneOf": [{"enum": ["fixed"]}, {"type": "null"}]},
+                        {"type": ["string", "null"], "pattern": "^abc"},
+                    ]
+                },
+            },
+        }
+    )["properties"] == {
+        "limit": {"anyOf": [{"type": "integer", "minimum": 1}, {"type": "null"}]},
+        "name": {
+            "anyOf": [
+                {"type": "string", "enum": ["fixed"]},
+                {"type": "null"},
+                {"type": "string", "pattern": "^abc"},
+            ]
+        },
+    }
+
+
+@pytest.fixture
+def tool_samples(preview):
     version = preview["version"]
     wire = dict(schema_version="1.0", project_id="project-one")
     operation = {**wire, "operation_id": "operation-one"}
@@ -208,7 +284,7 @@ def test_all_tool_validators_agree_with_unprojected_sources(tools, preview):
         media_artifact_id=None,
     )
     workflow = dict(operation_id="operation-one", job_id="job-one", version=version)
-    samples = dict(
+    return dict(
         validate_authored_document=dict(**wire, document_kind="sequence_map", path="map.json"),
         prepare_image_generation=prep,
         prepare_audio_generation=dict(**prep, duration_seconds=2),
@@ -302,25 +378,149 @@ def test_all_tool_validators_agree_with_unprojected_sources(tools, preview):
         ),
         get_unity_result=dict(job_id="job-one"),
     )
+
+
+def test_all_strict_valid_tool_fixtures_pass_portable_validation(tools, tool_samples):
     definitions = tools.definitions()
-    assert samples.keys() == {tool.name for tool in definitions}
+    assert tool_samples.keys() == {tool.name for tool in definitions}
     for tool in definitions:
         name = tool.name
         if name in TOOLS:
             raw = SCHEMA["$defs"][TOOLS[name][2]]
+            check = partial(validate, TOOLS[name][2])
         elif name in WORKFLOW_TOOLS:
-            raw = _parameter_schema(name)
+            raw = validation_parameters(name)
+            check = partial(workflow_arguments, name)
         else:
-            raw = _read_schema(name)
+            raw = read_validation_parameters(name)
+            check = partial(read_arguments, name)
         baseline = Draft202012Validator({**raw, "$defs": SCHEMA["$defs"]})
         projected = Draft202012Validator(tool.parameters)
-        sample = samples[name]
+        sample = tool_samples[name]
+        check(sample)
         assert baseline.is_valid(sample) and projected.is_valid(sample), name
-        assert not baseline.is_valid({**sample, "unexpected_key": True}), name
-        assert not projected.is_valid({**sample, "unexpected_key": True}), name
-        for key in sample:
-            malformed = {**sample, key: {"__malformed": True}}
-            assert baseline.is_valid(malformed) == projected.is_valid(malformed), (name, key)
+        invalid = {**sample, "unexpected_key": True}
+        assert not baseline.is_valid(invalid) and projected.is_valid(invalid), name
+        with pytest.raises(DomainError) as error:
+            check(invalid)
+        assert error.value.code == "invalid_request"
+        _, response = failure(tools, name, invalid)
+        assert_issue(
+            response,
+            "additionalProperties",
+            "$",
+            "Unexpected property. Allowed keys: " + ", ".join(sorted(raw["properties"])),
+        )
+
+
+@pytest.mark.parametrize("kind", ["image", "audio", "mesh", "video"])
+def test_generation_slot_variants_remain_available(tools, tool_samples, kind):
+    name = f"prepare_{kind}_generation"
+    sample = tool_samples[name]
+    parameters = next(tool.parameters for tool in tools.definitions() if tool.name == name)
+    version = tool_samples["request_preview"]["version"]
+    slots = [
+        dict(kind="item", item_id="item-one"),
+        dict(
+            kind="storyboard_frame",
+            storyboard_version=version,
+            shot_id="shot-one",
+            frame_id="frame-one",
+        ),
+        dict(kind="assembly_shot", sequence_version=version, entry_id="entry-one"),
+    ]
+    if kind != "video":
+        slots.append(None)
+    for slot in slots:
+        value = {**sample, "target_slot": slot, "seed": "9007199254740991"}
+        validate(TOOLS[name][2], value)
+        Draft202012Validator(parameters).validate(value)
+
+
+@pytest.mark.parametrize("name", ["request_preview", "publish_outputs"])
+@pytest.mark.parametrize("camera_source", [False, "cam-1", None], ids=["no-camera", "id", "no-id"])
+def test_camera_forms_remain_valid_after_lifting_unions(tools, tool_samples, name, camera_source):
+    camera = (
+        None
+        if camera_source is False
+        else dict(
+            space="blender_world_m",
+            kind="perspective",
+            camera_to_world=[1] * 16,
+            projection=[1] * 16,
+            aspect=1,
+            near_m=1,
+            far_m=100,
+            source_camera_id=camera_source,
+            vertical_fov_degrees=90,
+        )
+    )
+    payload = tool_samples[name]
+    spec = {**tool_samples["request_preview"]["spec"], "camera": camera}
+    if name == "request_preview":
+        payload["spec"] = spec
+    else:
+        payload["items"][0]["preview_requests"] = [spec]
+    validate(TOOLS[name][2], payload)
+    parameters = next(tool.parameters for tool in tools.definitions() if tool.name == name)
+    Draft202012Validator(parameters).validate(payload)
+
+
+def test_lifting_unions_under_items_does_not_require_homogeneous_arrays():
+    schema = portable_tool_schema(
+        {
+            "type": "object",
+            "properties": {
+                "values": {
+                    "anyOf": [
+                        {"type": "array", "items": {"type": ["integer", "string"]}},
+                        {"type": "null"},
+                    ]
+                }
+            },
+        }
+    )
+    assert schema["properties"]["values"]["anyOf"] == [
+        {"type": "array", "items": {}},
+        {"type": "null"},
+    ]
+    Draft202012Validator(schema).validate({"values": [1, "two"]})
+
+
+@pytest.mark.parametrize("kind", ["mesh", "video"])
+@pytest.mark.parametrize(
+    "seed,code", [("1\n", "not"), ("9007199254740992", "pattern")], ids=["non-digit", "overflow"]
+)
+def test_prepare_seed_projected_but_validated_strictly(tools, tool_samples, kind, seed, code):
+    name = f"prepare_{kind}_generation"
+    definition = TOOLS[name][2]
+    payload = {**tool_samples[name], "seed": seed}
+    with pytest.raises(DomainError) as error:
+        validate(definition, payload)
+    assert error.value.code == "invalid_request"
+    assert Draft202012Validator(tool_schema(definition)).is_valid(payload)
+    _, result = failure(tools, name, payload)
+    message = (
+        "Must not match pattern [^0-9]"
+        if code == "not"
+        else f"Must match pattern {SCHEMA['$defs'][definition]['properties']['seed']['pattern']}"
+    )
+    assert_issue(result, code, "seed", message)
+
+
+def test_review_origin_conditional_fields_remain_strict(tools, tool_samples):
+    name = "request_vlm_review"
+    sample = tool_samples[name]
+    sample["targets"][0].update(
+        origin="sequence_render", item_id="item-one", version_id="version-one"
+    )
+    definition = TOOLS[name][2]
+    with pytest.raises(DomainError):
+        validate(definition, sample)
+    assert Draft202012Validator(tool_schema(definition)).is_valid(sample)
+    _, result = failure(tools, name, sample)
+    for field in ("sequence_version_id", "sequence_frame", "frame_map_artifact_id"):
+        assert_issue(result, "required", f"targets[0].{field}", f"Missing required field {field}")
 
 
 def test_review_origin_guidance_does_not_echo_rejected_value(tools):
@@ -415,6 +615,9 @@ def test_preview_guidance_follows_union_refs(tools, preview):
 
 def test_preview_guidance_keeps_exclusive_limits(tools, preview):
     preview["spec"]["colour_management"]["gamma"] = 0
+    with pytest.raises(DomainError):
+        validate("PreviewRequest", preview)
+    assert Draft202012Validator(tool_schema("PreviewRequest")).is_valid(preview)
     preview["spec"]["camera"] = dict(
         space="blender_world_m",
         kind="perspective",
@@ -481,6 +684,19 @@ def test_authored_document_guidance_names_required_union_branches(tools):
             document_kind="sequence_map",
         ),
     )
+    assert_issue(
+        result, "oneOf", "$", "Expected one of: object requiring: path | object requiring: document"
+    )
+
+
+def test_authored_document_choice_still_rejects_both_sources(tools, tool_samples):
+    name = "validate_authored_document"
+    definition = TOOLS[name][2]
+    payload = {**tool_samples[name], "document": {}}
+    with pytest.raises(DomainError):
+        validate(definition, payload)
+    assert Draft202012Validator(tool_schema(definition)).is_valid(payload)
+    _, result = failure(tools, name, payload)
     assert_issue(
         result, "oneOf", "$", "Expected one of: object requiring: path | object requiring: document"
     )
@@ -635,19 +851,22 @@ def test_unity_canonicalisation_identifies_vector_member(tools, value):
 
 
 def test_checkpoint_dependent_required_round_trip(tools):
-    _, result = failure(
-        tools,
-        "checkpoint_sources",
-        dict(
-            schema_version="1.0",
-            operation_id="operation-one",
-            project_id="project-one",
-            paths=["scene.blend"],
-            message="Save",
-            expected_head=None,
-            exclude_paths=["old.blend"],
-        ),
+    payload = dict(
+        schema_version="1.0",
+        operation_id="operation-one",
+        project_id="project-one",
+        paths=["scene.blend"],
+        message="Save",
+        expected_head=None,
+        exclude_paths=["old.blend"],
     )
+    with pytest.raises(DomainError):
+        validate("CheckpointRequest", payload)
+    projected = tool_schema("CheckpointRequest")
+    assert Draft202012Validator(projected).is_valid(payload)
+    assert "'exclude_paths' requires base_version, entry_path." in projected["description"]
+    assert projected["properties"]["exclude_paths"]["description"] == "Items must be unique."
+    _, result = failure(tools, "checkpoint_sources", payload)
     assert_issue(
         result,
         "dependentRequired",
@@ -656,16 +875,10 @@ def test_checkpoint_dependent_required_round_trip(tools):
     )
 
 
-def test_projected_const_enum_guidance_round_trip(preview):
+def test_normative_const_guidance_round_trip(tools, preview):
     preview["schema_version"] = "rejected-version"
-    schema = tool_schema("PreviewRequest")
-    issues = schema_issues_for_schema(schema, preview)
-    message = 'Invalid value. Allowed values: "1.0"'
-    assert safe_schema_guidance("enum", message)
-    text = tool_failure(
-        DomainError("invalid_request", issues=issues), "request_preview"
-    ).text_result_for_llm
-    assert_issue(json.loads(text), "enum", "schema_version", message)
+    text, result = failure(tools, "request_preview", preview)
+    assert_issue(result, "const", "schema_version", 'Expected exact value "1.0"')
     assert "rejected-version" not in text
 
 
@@ -724,6 +937,8 @@ def sequence_without_clip():
 
 
 def test_sequence_clip_audio_contains_issue_round_trip(tools, tmp_path, sequence_without_clip):
+    with pytest.raises(DomainError):
+        validate("SequenceMap", sequence_without_clip)
     tools.services.registry = SimpleNamespace(get=lambda _project_id: {"path": tmp_path})
     invocation = ToolInvocation(
         session_id="session-one",

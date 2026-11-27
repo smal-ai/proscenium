@@ -159,6 +159,8 @@ def _schema_message(
         return "Unexpected property. No additional keys are allowed."
     if code == "pattern":
         return f"Must match pattern {value}"
+    if code == "not" and isinstance(value, dict) and value.keys() == {"pattern"}:
+        return f"Must not match pattern {value['pattern']}"
     if code in _LIMIT_GUIDANCE:
         return _LIMIT_GUIDANCE[code].format(value)
     if code == "uniqueItems":
@@ -206,18 +208,15 @@ def schema_guidance_messages() -> dict[str, frozenset[str]]:
     from proscenium.copilot.tools import (
         DISCOVERY_READS,
         READ_TOOLS,
-        TOOLS,
-        read_parameters,
-        tool_schema,
+        read_validation_parameters,
     )
     from proscenium.copilot.web_search import INVALID_QUERY
-    from proscenium.copilot.workflows import WORKFLOW_TOOLS, parameters
+    from proscenium.copilot.workflows import WORKFLOW_TOOLS, validation_parameters
 
     schemas = (
         SCHEMA,
-        *(tool_schema(tool[2]) for tool in TOOLS.values()),
-        *(parameters(name) for name in WORKFLOW_TOOLS),
-        *(read_parameters(name) for name in (*READ_TOOLS, *DISCOVERY_READS)),
+        *(validation_parameters(name) for name in WORKFLOW_TOOLS),
+        *(read_validation_parameters(name) for name in (*READ_TOOLS, *DISCOVERY_READS)),
     )
     messages: dict[str, set[str]] = {code: set() for code in _SAFE_SCHEMA_CODES}
     messages["format"].update((INVALID_QUERY, _CANONICAL_JSON_GUIDANCE))

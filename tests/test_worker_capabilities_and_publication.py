@@ -1960,17 +1960,23 @@ def test_read_arguments_reject_inexact_optional_types(name, field, value):
 
 
 def test_read_parameter_defaults_and_boundaries():
-    from proscenium.copilot.tools import read_arguments, read_parameters
+    from proscenium.copilot.tools import read_arguments, read_parameters, read_validation_parameters
 
-    assert read_parameters("get_artifact")["properties"]["include_image"] == {
+    assert read_validation_parameters("get_artifact")["properties"]["include_image"] == {
         "type": "boolean",
         "default": False,
     }
-    assert read_parameters("get_job")["properties"]["wait_seconds"] == {
+    assert read_validation_parameters("get_job")["properties"]["wait_seconds"] == {
         "type": "integer",
         "minimum": 0,
         "maximum": 30,
         "default": 0,
+    }
+    assert read_parameters("get_artifact")["properties"]["include_image"] == {"type": "boolean"}
+    assert read_parameters("get_job")["properties"]["wait_seconds"] == {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 30,
     }
     for seconds in (0, 30):
         assert (
