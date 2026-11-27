@@ -19,6 +19,7 @@ from proscenium.api.errors import DomainError
 from proscenium.api.lifecycle import FeatureLifecycle
 from proscenium.api.router import router
 from proscenium.configuration import Settings
+from proscenium.control import ControlServer, validate_control_directory
 from proscenium.services import Services
 
 
@@ -321,26 +322,39 @@ def create_app(
     routers: Sequence[APIRouter] = (),
     services: Services | None = None,
     manage_features: bool | None = None,
+    enable_control_socket: bool | None = None,
 ) -> FastAPI:
     settings = settings or (services.settings if services is not None else Settings())
     manage = services is None if manage_features is None else manage_features
+    control_enabled = manage if enable_control_socket is None else enable_control_socket
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        if services is None:
+            await asyncio.to_thread(
+                validate_control_directory, settings.data_directory, create=True
+            )
         app.state.services = services or Services.create(settings)
         lifecycle = FeatureLifecycle(app.state.services) if manage else None
+        control = ControlServer(app.state.services) if control_enabled else None
         try:
             configure_services(app.state.services)
             if lifecycle is not None:
                 await lifecycle.start()
+            if control is not None:
+                await control.start()
             yield
         finally:
             try:
-                if lifecycle is not None:
-                    await lifecycle.close()
+                if control is not None:
+                    await control.close()
             finally:
-                if services is None:
-                    app.state.services.close()
+                try:
+                    if lifecycle is not None:
+                        await lifecycle.close()
+                finally:
+                    if services is None:
+                        app.state.services.close()
 
     app = FastAPI(
         title="Proscenium", version="0.1.0", lifespan=lifespan, docs_url=None, redoc_url=None

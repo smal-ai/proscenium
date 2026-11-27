@@ -7,6 +7,7 @@ import uvicorn
 
 from proscenium.app import create_app
 from proscenium.configuration import Settings
+from proscenium.control import validate_control_directory
 from proscenium.services import Services
 
 
@@ -28,6 +29,7 @@ def main() -> None:
         settings = replace(settings, origin=arguments.origin)
     if arguments.frontend_dir:
         settings = replace(settings, frontend_directory=arguments.frontend_dir.resolve())
+    validate_control_directory(settings.data_directory, create=True)
     services = Services.create(settings)
     try:
         if arguments.pair:
