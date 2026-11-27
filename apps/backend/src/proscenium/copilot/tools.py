@@ -30,11 +30,12 @@ from proscenium.services import Services
 
 from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
-from .tool_schemas import inline_tool_schema
+from .tool_schemas import inline_tool_schema, portable_tool_schema
 from .web_search import INVALID_QUERY, clean_search_query, search_web
 from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 from .workflows import parameters as workflow_parameters
+from .workflows import validation_parameters as workflow_validation_parameters
 
 PREPARATION_TOOLS = frozenset(
     {
@@ -179,10 +180,10 @@ DISCOVERY_READS = {
 
 
 def read_parameters(name: str) -> dict[str, Any]:
-    return inline_tool_schema(_read_schema(name))
+    return portable_tool_schema(read_validation_parameters(name))
 
 
-def _read_schema(name: str) -> dict[str, Any]:
+def read_validation_parameters(name: str) -> dict[str, Any]:
     if name == "search_web":
         return dict(
             type="object",
@@ -230,7 +231,9 @@ def _read_schema(name: str) -> dict[str, Any]:
 
 
 def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
-    issues = schema_issues_for_schema(read_parameters(name), arguments, exact_integers=True)
+    issues = schema_issues_for_schema(
+        read_validation_parameters(name), arguments, exact_integers=True
+    )
     if issues:
         code = "invalid_request"
         if (
@@ -278,11 +281,11 @@ def _tool_issue_schemas(name: str) -> tuple[tuple[dict[str, Any], ...], SchemaPa
     schemas: tuple[dict[str, Any], ...] = ()
     if name in TOOLS:
         definition = TOOLS[name][2]
-        schemas = (SCHEMA["$defs"][definition], tool_schema(definition))
+        schemas = (SCHEMA["$defs"][definition],)
     elif name in WORKFLOW_TOOLS:
-        schemas = (workflow_parameters(name),)
+        schemas = (workflow_validation_parameters(name),)
     elif name in READ_TOOLS or name in DISCOVERY_READS:
-        schemas = (read_parameters(name),)
+        schemas = (read_validation_parameters(name),)
     if name in {"validate_authored_document", "publish_outputs"}:
         schemas += tuple(
             SCHEMA["$defs"][definition]

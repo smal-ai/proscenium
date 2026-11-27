@@ -11,9 +11,9 @@ from proscenium.catalogue.validation import (
     schema_issues,
     schema_issues_for_schema,
 )
-from proscenium.contracts import canonical, validate
+from proscenium.contracts import SCHEMA, canonical, validate
 
-from .tool_schemas import inline_tool_schema
+from .tool_schemas import portable_tool_schema
 
 WORKFLOW_TOOLS = {
     "assemble_sequence": (
@@ -35,10 +35,10 @@ WORKFLOW_TOOLS = {
 
 
 def parameters(name: str) -> dict[str, Any]:
-    return inline_tool_schema(_parameter_schema(name))
+    return portable_tool_schema(validation_parameters(name))
 
 
-def _parameter_schema(name: str) -> dict[str, Any]:
+def validation_parameters(name: str) -> dict[str, Any]:
     properties: dict[str, Any]
     if name == "get_unity_result":
         properties = {"job_id": {"$ref": "#/$defs/Id"}}
@@ -74,9 +74,9 @@ def _parameter_schema(name: str) -> dict[str, Any]:
 
 
 def arguments(name: str, value: Any) -> dict[str, Any]:
-    schema = parameters(name)
+    schema = validation_parameters(name)
     try:
-        Draft202012Validator(schema).validate(value)
+        Draft202012Validator({**schema, "$defs": SCHEMA["$defs"]}).validate(value)
     except ValidationError as error:
         raise DomainError(
             "invalid_request", issues=schema_issues_for_schema(schema, value)
