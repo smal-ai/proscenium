@@ -5,6 +5,9 @@ description: Author and inspect Blender content inside the active Proscenium pro
 
 # Blender authoring
 
+For Mixamo characters and animations, load the `mixamo` skill. Use `fbx7_2019`,
+`automatic_bone_orientation=True`, and check `0.01` armature scale and Action/NLA ranges.
+
 1. Read the host's structured context, project brief and current plan. Child
    additionalContext is host JSON rendered in the native `<system_reminder>`.
    Preserve every annotation's own frame target, camera, range and object instance.

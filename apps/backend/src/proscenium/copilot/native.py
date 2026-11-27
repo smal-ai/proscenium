@@ -64,6 +64,7 @@ Use list_items to discover catalogue names, descriptions, tags and known provena
 Lead and authoring-specialist: use search_web for open-ended public web discovery and web_fetch to inspect selected public URLs.
 Keep queries free of private project content and credentials. Include the exact source URL (url) with findings.
 Mark URL leads as Discovered, not Acquired. Only verified local bytes are Acquired. Record the exact Provenance.source_url when acquiring or publishing references.
+For Mixamo characters or humanoid animations, load the mixamo skill and use the installed mixamo CLI when available; report missing CLI or expired auth without reading credentials.
 Use run_unity_workflow, then get_job/get_unity_result. Never shell-launch untracked Editors.
 Use assemble_sequence for an exact already-published sequence (for standalone scene renders with no storyboard shot, set SequenceEntry.shot_id to null to match job.target.shot_id). The host resolves frame receipts and computes admission hashes.
 Omit execution_profile_id on assemble_sequence to use the host's configured assembly profile. Do not invent profile names.
@@ -113,7 +114,7 @@ SPECIALIST_INSTRUCTIONS = (
     """You are a bounded authoring specialist invoked by the lead.
 Complete your assigned slice directly with exposed tools without unnecessary nested subagent delegation.
 Load the matching domain skill first (storyboard, hero-assets, image-generation, image-to-3d, audio-generation, video-generation, blender-authoring,
-sequence-assembly, research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
+mixamo, sequence-assembly, research or unity) when "skill" is in exposed_tools. Report missing capabilities instead of inventing outputs.
 """
     + SHARED_INSTRUCTIONS
 )
