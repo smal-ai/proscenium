@@ -28,7 +28,7 @@ from proscenium.jobs.resources import check_storage, reserve_generation, settle_
 from proscenium.providers import klein, minimax_h3, sd_turbo, sd_turbo_fp16, stable_audio
 from proscenium.providers.comfy import ComfyClient, endpoint
 from proscenium.providers.plugins import IMAGE, METADATA, ArtifactFormat, plugin
-from proscenium.providers.preparation import validate_recipes
+from proscenium.providers.preparation import mesh_revision, validate_recipes
 from proscenium.providers.targets import admit_target, resolve_target
 from proscenium.providers.vlm import (
     DEFAULT_VLM_MAX_TOKENS,
@@ -324,12 +324,7 @@ class ProviderService:
         revision = (
             self.options.get("image_profiles", {}).get(request["provider_id"])
             if request["capability"] == "image"
-            else (
-                self.options.get("mesh_profiles", {}).get(request["provider_id"])
-                or (self.options.get("mesh_recipes", {}).get(request["provider_id"]) or {}).get(
-                    "profile_revision"
-                )
-            )
+            else mesh_revision(self.options, request["provider_id"])
             if request["capability"] == "image_to_3d"
             else None
         )

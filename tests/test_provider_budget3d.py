@@ -2,7 +2,6 @@
 
 import io
 import json
-import re
 import struct
 from dataclasses import replace
 
@@ -123,12 +122,16 @@ def make_vertex_colored_glb() -> bytes:
     )
 
 
-def test_skill_template_matches_canonical_budget3d_graph():
+def test_skill_uses_host_preparation_and_preserves_manual_compatibility():
     text = (ROOT / "agent/skills/image-to-3d/SKILL.md").read_text()
-    match = re.search(r"```json\n(\{.*?\})\n```", text, re.DOTALL)
-    assert match is not None
-    parsed = json.loads(match.group(1))
-    assert parsed == budget3d.graph("REFERENCE_ID", turbo=True)
+    assert text.index("`prepare_mesh_generation`") < text.index("`submit_generation`")
+    assert "exact returned `submit_request`" in text
+    assert "`settings: {}`" in text and f'"{budget3d.FILENAME_PREFIX}"' in text
+    assert (
+        "`selected_models` from `get_project_capabilities` into `submit_generation`'s `model_ids`"
+        in text
+    )
+    assert "```json" not in text
 
 
 @pytest.mark.parametrize(

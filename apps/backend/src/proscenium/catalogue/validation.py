@@ -68,6 +68,7 @@ _LIMIT_GUIDANCE = {
     "maximum": "Must be <= {}",
     "exclusiveMinimum": "Must be > {}",
     "exclusiveMaximum": "Must be < {}",
+    "multipleOf": "Must be a multiple of {}",
     "minLength": "Length must be >= {}",
     "maxLength": "Length must be <= {}",
     "minItems": "Must contain at least {} item(s)",

@@ -82,13 +82,14 @@ Do not install, start or stop independent model services. Preserve unsaved Blend
 Never call bpy.ops.wm.read_factory_settings or disable add-ons in blender-execute_blender_code. A factory reset unloads blender_mcp and closes 127.0.0.1:9876. Clear authorised live scene data in place via bpy.data.
 After compaction re-read the project brief and current plan. Report unavailable capabilities rather than inventing outputs.
 Honour request_target, reference_versions and execution_scope in extension_context and child additionalContext.
-planning_only forbids image, audio and video generation, preview rendering and scene execution. Use empty publication preview_requests.
+planning_only forbids image, mesh, audio and video generation, preview rendering and scene execution. Use empty publication preview_requests.
 Call get_project_capabilities first for tool, skill and provider discovery. Never probe python/proscenium imports or private runtime files.
 Use validate_authored_document for storyboards, sequences and publications before checkpoint_sources and publish_outputs.
 Storyboard source.entry_path MUST be canonical AuthoredShotPlan JSON at storyboards/<plan_id>/plan.json, never HTML, SVG or Markdown.
 Use prepare_image_generation then submit_generation with the returned exact submit_request. Never silently substitute vector/SVG drawings for inference.
 For music or sound effects, load audio-generation and call prepare_audio_generation then submit_generation with the exact returned submit_request.
 For generated storyboard clips, load video-generation and call prepare_video_generation then submit_generation with the exact returned submit_request. Use clip-only SequenceMaps for generated cuts.
+For image-conditioned meshes, load image-to-3d and call prepare_mesh_generation then submit_generation with the exact returned submit_request.
 For generation preparation tools omit project_id and generation_task_id: the host binds them automatically.
 For a soundtrack, set SequenceMap.silent to false and add audio_tracks referencing ready audio artefacts. Use silent: true with no tracks for a silent export.
 Omit width, height and steps to use get_project_capabilities default_dimensions/default_steps unless the user explicitly
@@ -199,6 +200,7 @@ class Configuration:
                 "prepare_image_generation",
                 "prepare_audio_generation",
                 "prepare_video_generation",
+                "prepare_mesh_generation",
                 "checkpoint_sources",
                 "publish_outputs",
                 "request_preview",

@@ -1,4 +1,4 @@
-"""Local image input preparation and bounded read-only recipe discovery. No inference."""
+"""Local generation preparation and bounded read-only recipe discovery. No inference."""
 
 import itertools
 import math
@@ -11,7 +11,15 @@ import httpx
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
-from proscenium.providers import budget3d, klein, minimax_h3, sd_turbo, sd_turbo_fp16, stable_audio
+from proscenium.providers import (
+    budget3d,
+    hunyuan,
+    klein,
+    minimax_h3,
+    sd_turbo,
+    sd_turbo_fp16,
+    stable_audio,
+)
 from proscenium.providers.comfy import endpoint
 from proscenium.providers.comfy import supports_bf16_vae as supports_bf16_vae
 from proscenium.providers.plugins import plugin
@@ -23,6 +31,15 @@ UNAVAILABLE = "Image recipe nodes or models are unavailable"
 MAX_CATALOG_BYTES = 16 * 1024**2
 TILE_THRESHOLD_PIXELS = 1_048_576
 SD_TURBO_REFERENCE = "Selected image profile requires one exact 512x512 reference"
+BUDGET3D_OVERRIDES = frozenset({"mode", "budget", "steps", "num_gaussians", "mesh_resolution"})
+HUNYUAN_REVISION = "hunyuan3d-native-2.0-1"
+
+
+def mesh_revision(options: dict[str, Any], identity: str) -> str:
+    recipe = options.get("mesh_recipes", {}).get(identity, {})
+    return options.get("mesh_profiles", {}).get(
+        identity, recipe.get("profile_revision", budget3d.TURBO_REVISION)
+    )
 
 
 def validate_recipes(options: dict[str, Any]) -> None:
@@ -86,19 +103,11 @@ def validate_recipes(options: dict[str, Any]) -> None:
         if not isinstance(revision, str) or revision != mesh_profiles.get(identity, revision):
             raise ValueError("Mesh recipe profile_revision must agree with mesh_profiles")
         plugin("image_to_3d", revision)
-        if revision == "hunyuan3d-native-2.0-1":
+        if revision == HUNYUAN_REVISION:
             if set(recipe) != {"profile_revision"}:
                 raise ValueError("Hunyuan mesh recipe accepts profile_revision only")
             continue
-        allowed_mesh = {
-            "profile_revision",
-            "budget",
-            "mode",
-            "steps",
-            "num_gaussians",
-            "mesh_resolution",
-        }
-        if set(recipe) - allowed_mesh:
+        if recipe.keys() - BUDGET3D_OVERRIDES - {"profile_revision"}:
             raise ValueError("Unknown mesh recipe fields")
         budget3d.recipe_graph("reference", revision, recipe)
 
@@ -513,6 +522,16 @@ class Preparation:
                 "generation_task_id": body.get("generation_task_id") or work["generation_task_id"],
             }
             context = _request_context(tx, caller, work) or {}
+            if (
+                self.capability == "image_to_3d"
+                and context.get("execution_scope") == "planning_only"
+            ):
+                raise DomainError(
+                    "scope_denied",
+                    403,
+                    "Generation is unavailable while execution_scope is planning_only",
+                    safe_for_model=True,
+                )
             explicit_target = body.get("target_id")
             policy = tx.get("providers.tasks", work["generation_task_id"], required=False)
             bound_explicit_target = bool(
@@ -609,6 +628,8 @@ class Preparation:
             submit_request=request,
             **metadata,
         )
+        if self.capability == "image_to_3d":
+            result["input_artifact_ids"] = references
         validate(self.result_schema, result)
         with store.transaction() as tx:
 
@@ -847,3 +868,50 @@ class VideoPreparation(Preparation):
                 input_artifact_ids=references,
             ),
         )
+
+
+class MeshPreparation(Preparation):
+    capability = "image_to_3d"
+    operation = "providers.prepare_mesh"
+    request_schema = "MeshGenerationPrepare"
+    result_schema = "MeshGenerationPrepared"
+    permission = "prepareMeshGeneration"
+
+    def recipe(
+        self, body: dict[str, Any], provider: dict[str, Any], catalog: dict[str, Any]
+    ) -> tuple[dict[str, Any], list[str], list[str], str, dict[str, Any]]:
+        identity = provider["provider_id"]
+        options = self.provider.options
+        revision = mesh_revision(options, identity)
+        adapter = plugin(self.capability, revision)
+        reference = body["reference_artifact_id"]
+        overrides = {key: body[key] for key in BUDGET3D_OVERRIDES & body.keys()}
+        if revision == HUNYUAN_REVISION:
+            if overrides:
+                raise DomainError(
+                    "invalid_request",
+                    message="Hunyuan3D uses a pinned recipe; omit mode, budget, steps, num_gaussians and mesh_resolution",
+                    safe_for_model=True,
+                )
+            workflow = hunyuan.graph(reference)
+            model_ids = [hunyuan.FILENAME]
+        else:
+            configured = options.get("mesh_recipes", {}).get(identity, {})
+            # JSON Schema accepts integral numbers such as 5.0 as integers.
+            for key in {"steps", "num_gaussians", "mesh_resolution"} & overrides.keys():
+                overrides[key] = int(overrides[key])
+            workflow = budget3d.recipe_graph(reference, revision, {**configured, **overrides})
+            model_ids = budget3d.models(turbo=revision == budget3d.TURBO_REVISION)
+        self.provider.image_bytes(body["project_id"], reference)
+        adapter.preflight(
+            adapter.bind_graph(
+                workflow,
+                body["prompt"],
+                body["seed"],
+                {reference: "artifact:" + reference},
+                model_ids,
+            ),
+            catalog,
+            model_ids,
+        )
+        return workflow, model_ids, [reference], revision, {}

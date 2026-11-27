@@ -37,7 +37,12 @@ from .workflows import arguments as workflow_arguments
 from .workflows import parameters as workflow_parameters
 
 PREPARATION_TOOLS = frozenset(
-    {"prepare_image_generation", "prepare_audio_generation", "prepare_video_generation"}
+    {
+        "prepare_image_generation",
+        "prepare_audio_generation",
+        "prepare_video_generation",
+        "prepare_mesh_generation",
+    }
 )
 
 # Extension, method, normative input, normative result, capability operation.
@@ -69,6 +74,13 @@ TOOLS = {
         "VideoGenerationPrepare",
         "VideoGenerationPrepared",
         "prepareVideoGeneration",
+    ),
+    "prepare_mesh_generation": (
+        "mesh_preparation",
+        "prepare",
+        "MeshGenerationPrepare",
+        "MeshGenerationPrepared",
+        "prepareMeshGeneration",
     ),
     "checkpoint_sources": (
         "sources",
@@ -310,7 +322,7 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
         )
     issues = error.details.get("issues", [])
     if isinstance(issues, list) and issues:
-        # Share the validator's code/message allow-list (including contains),
+        # Share the validator's code/message allow-list, including contains and multipleOf,
         # then restrict the issue paths to this tool's schema family.
         schemas, scope = _tool_issue_schemas(name)
         safe = []

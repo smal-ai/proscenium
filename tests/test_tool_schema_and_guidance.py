@@ -51,6 +51,39 @@ def assert_issue(result, code, path, message):
     )
 
 
+@pytest.mark.parametrize(
+    "field,valid,invalid,multiple",
+    [("num_gaussians", 32768, 32769, 32), ("mesh_resolution", 768, 767, 16)],
+)
+def test_mesh_multiple_guidance_uses_installed_divisors_only(field, valid, invalid, multiple):
+    name = "prepare_mesh_generation"
+    schema = "MeshGenerationPrepare"
+    request = dict(
+        schema_version="1.0",
+        operation_id="prepare",
+        reference_artifact_id="ref",
+        prompt="Prop",
+        seed="1",
+    )
+    parameters = tool_schema(schema)
+    assert parameters["properties"][field]["multipleOf"] == multiple
+    assert schema_issues(schema, {**request, field: valid}) == []
+    assert schema_issues_for_schema(parameters, {**request, field: valid}) == []
+    issues = schema_issues(schema, {**request, field: invalid})
+    assert issues == schema_issues_for_schema(parameters, {**request, field: invalid})
+    message = f"Must be a multiple of {multiple}"
+    assert safe_schema_guidance("multipleOf", message)
+    forged = {**issues[0], "message": f"Must be a multiple of {invalid}"}
+    assert not safe_schema_guidance("multipleOf", forged["message"])
+    result = json.loads(
+        tool_failure(
+            DomainError("invalid_request", issues=[*issues, forged]), name
+        ).text_result_for_llm
+    )
+    assert_issue(result, "multipleOf", field, message)
+    assert result["details"]["issues"] == issues
+
+
 def test_all_tool_definitions_are_self_contained(tools):
     def assert_inline(node):
         if isinstance(node, dict):
@@ -62,7 +95,7 @@ def test_all_tool_definitions_are_self_contained(tools):
                 assert_inline(value)
 
     definitions = {tool.name: tool.parameters for tool in tools.definitions()}
-    assert len(definitions) == 26
+    assert len(definitions) == 27
     for schema in definitions.values():
         assert_inline(schema)
     preview = definitions["request_preview"]["properties"]
@@ -180,6 +213,7 @@ def test_all_tool_validators_agree_with_unprojected_sources(tools, preview):
         prepare_image_generation=prep,
         prepare_audio_generation=dict(**prep, duration_seconds=2),
         prepare_video_generation=prep,
+        prepare_mesh_generation=dict(**prep, reference_artifact_id="reference-one"),
         checkpoint_sources=dict(
             **operation, paths=["scene.blend"], message="Save", expected_head=None
         ),

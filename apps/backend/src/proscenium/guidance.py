@@ -111,6 +111,7 @@ _OPTED_IN_SAFE_REASONS: Final[frozenset[str]] = frozenset(
         "Graph output node does not match capability",
         "Graph/request seed mismatch",
         "H.264 motion requires even dimensions",
+        "Hunyuan3D uses a pinned recipe; omit mode, budget, steps, num_gaussians and mesh_resolution",
         "Identity and trim sequence entries must have equal source_frames and sequence_frames lengths",
         "Image preparation accepts at most four references",
         "Image recipe nodes or models are unavailable",

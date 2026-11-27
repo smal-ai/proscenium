@@ -207,6 +207,12 @@ class MaskEncoding(ContractModel):
 class Matrix4(ContractModel):
     definition = "Matrix4"
 
+class MeshGenerationPrepare(ContractModel):
+    definition = "MeshGenerationPrepare"
+
+class MeshGenerationPrepared(ContractModel):
+    definition = "MeshGenerationPrepared"
+
 class MessageSubmit(ContractModel):
     definition = "MessageSubmit"
 

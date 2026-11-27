@@ -553,6 +553,8 @@ export interface ContractDefinitions {
   Markup: Markup;
   MaskEncoding: MaskEncoding;
   Matrix4: Matrix4;
+  MeshGenerationPrepare: MeshGenerationPrepare;
+  MeshGenerationPrepared: MeshGenerationPrepared;
   MessageSubmit: MessageSubmit;
   NativeAgentActivity: NativeAgentActivity;
   NullableId: NullableId;
@@ -1297,6 +1299,45 @@ export interface JobStateUpdate {
   artifact_ids?: Id[];
   native_exit_code?: number | null;
   error_code?: string | null;
+}
+export interface MeshGenerationPrepare {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id?: Id;
+  generation_task_id?: Id;
+  provider_id?: NullableId;
+  target_id?: NullableId;
+  target_slot?: SelectionSlot | null;
+  reference_artifact_id: Id;
+  prompt: string;
+  seed: string;
+  mode?: "synthetic" | "real";
+  budget?: number;
+  steps?: number;
+  num_gaussians?: number;
+  mesh_resolution?: number;
+}
+export interface MeshGenerationPrepared {
+  schema_version: "1.0";
+  operation_id: Id;
+  project_id: Id;
+  replayed: boolean;
+  provider_id: Id;
+  profile_revision: string;
+  /**
+   * @minItems 1
+   */
+  model_ids: [string, ...string[]];
+  /**
+   * @minItems 1
+   * @maxItems 1
+   */
+  input_artifact_ids: [Id];
+  workflow_artifact_id: Id;
+  prompt_artifact_id: Id;
+  submit_request: GenerationSubmit & {
+    capability?: "image_to_3d";
+  };
 }
 export interface QueueRequest {
   schema_version: "1.0";
