@@ -12,6 +12,7 @@ import os
 import re
 import sqlite3
 import subprocess
+from collections.abc import Sequence
 from contextlib import closing
 from dataclasses import replace
 from importlib.metadata import version
@@ -96,7 +97,9 @@ class BackupSource(Store):
         self.path, self.project_id = path, project_id
         self.write_barrier = self.write_guard = self.before_commit = self.after_commit = None
 
-    def connect(self) -> sqlite3.Connection:
+    def connect(self, *, set_wal: bool = False) -> sqlite3.Connection:
+        if set_wal:
+            raise RecoveryError("backup_source_is_read_only")
         wal_name = self.path.name + "-wal"
         try:
             wal_bytes = safe_file(self.path.parent, wal_name).stat().st_size
@@ -639,8 +642,8 @@ def restore(bundle: Path, target: Path, *, rebind: bool, allow_incomplete=False)
     return report
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv: Sequence[str] | None = None, *, prog: str | None = None) -> None:
+    parser = argparse.ArgumentParser(prog=prog, description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
     save = sub.add_parser("backup")
     save.add_argument("--config", type=Path)
@@ -655,7 +658,7 @@ def main() -> None:
     load.add_argument("--target", type=Path, required=True)
     load.add_argument("--rebind-fresh-registry", action="store_true")
     load.add_argument("--allow-incomplete", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         if args.action == "backup":
             settings = Settings.load(args.config)

@@ -17,3 +17,6 @@ dependencies = [
     "websockets>=15,<17",
     "github-copilot-sdk==1.0.34",
 ]
+
+[project.scripts]
+proscenium = "proscenium.cli:main"

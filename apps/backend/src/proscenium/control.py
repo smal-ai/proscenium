@@ -8,9 +8,11 @@ the OS user's discretionary filesystem authority and need not honour locks.
 import asyncio
 import errno
 import fcntl
+import grp
 import inspect
 import json
 import os
+import pwd
 import socket
 import sqlite3
 import stat
@@ -60,22 +62,53 @@ def _trusted_sticky(info: os.stat_result) -> bool:
     return bool(info.st_mode & stat.S_ISVTX) and info.st_uid in (0, os.getuid())
 
 
-def _check_directory(fd: int, *, leaf: bool) -> None:
+def _is_exclusive_user_group(uid: int, gid: int) -> bool:
+    if uid != os.getuid() or gid != os.getgid():
+        return False
+    try:
+        user = pwd.getpwuid(uid)
+        group = grp.getgrgid(gid)
+        return (
+            group.gr_name == user.pw_name
+            and set(group.gr_mem) <= {user.pw_name}
+            and not any(entry.pw_gid == gid and entry.pw_uid != uid for entry in pwd.getpwall())
+        )
+    except (KeyError, OSError):
+        return False
+
+
+def _check_directory(fd: int, *, leaf: bool, allow_private_group: bool) -> None:
     info = os.fstat(fd)
     trusted_uids = (os.getuid(),) if leaf else (0, os.getuid())
-    if info.st_uid in trusted_uids and not info.st_mode & 0o022:
+    if (
+        info.st_uid in trusted_uids
+        and not info.st_mode & 0o002
+        and (
+            not info.st_mode & 0o020
+            or (allow_private_group and _is_exclusive_user_group(info.st_uid, info.st_gid))
+        )
+    ):
         return
     if not leaf and _trusted_sticky(info):
         return
     raise PermissionError("Refusing control directory with unexpected owner or permissions")
 
 
-def _open_validated_directory(path: Path, *, create: bool = False) -> int:
+def _open_validated_directory(
+    path: Path,
+    *,
+    create: bool = False,
+    trusted_leaf: bool = False,
+    allow_private_group: bool = False,
+) -> int:
+    """Open a pinned directory, optionally treating its leaf as a trusted ancestor."""
     parts = path.absolute().parts[1:]
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
     fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
     try:
-        _check_directory(fd, leaf=not parts)
+        _check_directory(
+            fd, leaf=not parts and not trusted_leaf, allow_private_group=allow_private_group
+        )
         for idx, part in enumerate(parts):
             created = False
             try:
@@ -97,7 +130,11 @@ def _open_validated_directory(path: Path, *, create: bool = False) -> int:
                 raise
             os.close(fd)
             fd = next_fd
-            _check_directory(fd, leaf=created or idx == len(parts) - 1)
+            _check_directory(
+                fd,
+                leaf=created or (idx == len(parts) - 1 and not trusted_leaf),
+                allow_private_group=allow_private_group,
+            )
         return fd
     except BaseException:
         os.close(fd)
