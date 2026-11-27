@@ -7,6 +7,8 @@ description: Author and inspect Blender content inside the active Proscenium pro
 
 For Mixamo characters and animations, load the `mixamo` skill. Use `fbx7_2019`,
 `automatic_bone_orientation=True`, and check `0.01` armature scale and Action/NLA ranges.
+For parametric humanoid characters, load `mpfb2` and add the rig before clothes.
+Use `bpy.ops.file.pack_all()` for `--factory-startup` previews. Never put `"mpfb"` in `required_runtime.features`.
 
 1. Read the host's structured context, project brief and current plan. Child
    additionalContext is host JSON rendered in the native `<system_reminder>`.

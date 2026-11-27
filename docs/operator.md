@@ -24,6 +24,14 @@ installed `mixamo` CLI when it is on `PATH`. Keep its private authentication
 outside Proscenium (for example `~/.config/mixamo/`). Proscenium adds no runtime
 dependency and does not read the CLI's credentials.
 
+For parametric humanoid authoring, MPFB2 is the `mpfb` Blender Extension for
+Blender >= 4.2, verified with `v2.0.18` on Blender `4.5.16 LTS`. Use installed
+MakeHuman Community packs: `makehuman_system_assets`, starter skins, hair, eyebrows,
+eyelashes, clothes, shoes and eye materials, and optional `faceunits01`, `visemes01`
+and `visemes02`. Proscenium adds no runtime dependency and agents never install
+extensions or asset packs automatically. Saved `.blend` files with packed textures
+render in Proscenium's `--factory-startup` Cycles CPU worker without MPFB2 loaded.
+
 ## Configure and start
 
 ```bash

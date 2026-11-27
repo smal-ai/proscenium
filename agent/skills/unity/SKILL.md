@@ -9,6 +9,10 @@ description: Create a minimal playable Unity scene from an explicitly pinned Ble
 
 - For Mixamo animations, use the `mixamo` skill or ask the lead for an acquisition handoff if `skill` is unavailable.
   Use `fbx7_unity`, `--inplace` for supported locomotion clips and a Humanoid Avatar for retargeting.
+- For parametric humanoids built in Blender, load `mpfb2` or request a lead handoff.
+  Prefer the `mixamo_unity` rig with `GAMEENGINE` or `MAKESKIN` materials. Ensure every
+  renderable mesh has a stable `proscenium_object_id`, shared across instances of the
+  same object, and a persistent `proscenium_instance_id` that is unique per instance.
 - Call `get_project_capabilities` first. Honour host `request_target`,
   `reference_versions` and `execution_scope`. `planning_only` forbids scene
   execution, previews and inference. Validate plans, sequences and publications
