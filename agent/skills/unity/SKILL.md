@@ -7,6 +7,8 @@ description: Create a minimal playable Unity scene from an explicitly pinned Ble
 
 ## Scope, workflow admission and publication boundaries
 
+- For Mixamo animations, use the `mixamo` skill or ask the lead for an acquisition handoff if `skill` is unavailable.
+  Use `fbx7_unity`, `--inplace` for supported locomotion clips and a Humanoid Avatar for retargeting.
 - Call `get_project_capabilities` first. Honour host `request_target`,
   `reference_versions` and `execution_scope`. `planning_only` forbids scene
   execution, previews and inference. Validate plans, sequences and publications

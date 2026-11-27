@@ -22,6 +22,8 @@ and use `escalate_vlm_review` when human judgement is needed. Only owner-approve
 findings carry owner instruction authority.
 Acquire/import and publish a standalone `asset` without requiring a storyboard.
 Dependent scenes/storyboards remain pinned until an explicit adoption edit.
+For humanoid character and animation sourcing from Mixamo, use the `mixamo`
+skill when the optional `mixamo` CLI is installed.
 
 1. Read the active project's instructions, canonical brief and selected treatment,
    current request, pinned catalogue versions and owner selections. Check Git status

@@ -17,6 +17,13 @@ It launches the direct native binary in `node_modules/@github/copilot-linux-x64/
 Native applications, add-ons, model weights and independent services are configured
 by the operator.
 
+### Optional external workstation tools
+
+For Mixamo requests, the `mixamo` skill automatically uses the independently
+installed `mixamo` CLI when it is on `PATH`. Keep its private authentication
+outside Proscenium (for example `~/.config/mixamo/`). Proscenium adds no runtime
+dependency and does not read the CLI's credentials.
+
 ## Configure and start
 
 ```bash
