@@ -48,6 +48,9 @@ description: Shortlist hero assets from a storyboard, refine one design at a tim
 
 ## 3. Generate only on explicit instruction
 
+On explicit instruction and within `execution_scope`, author parametric humanoid
+heroes in Blender with `mpfb2` or source existing humanoids with `mixamo`.
+
 1. Proceed only on explicit director instruction to generate and when
    `execution_scope` is not `planning_only`. Verify each conditioning image has
    `state == "ready"` with `get_artifact(artifact_id=..., include_image=true)`.

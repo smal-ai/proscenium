@@ -66,6 +66,10 @@ settings so a skipped file is not mistaken for a new export.
   Check armature scale (`0.01` for Mixamo's centimetre-to-metre convention), rest
   pose, mesh deformation and vertex groups, materials and texture packing,
   Action/NLA strip frame ranges, and root motion versus `--inplace`.
+- **Custom humanoids:** load `mpfb2` for `mixamo` or `mixamo_unity` rigs. Use
+  `bpy.ops.mpfb.reduced_doll()` with `call_fbx=False`, then obtain recorded owner
+  approval for the exact FBX and Adobe Mixamo destination before `mixamo upload`.
+  Retarget the imported clips with `bpy.ops.mpfb.map_mixamo()`.
 - **Unity:** use `--format fbx7_unity`, `--fps 30` or `60`, and `--inplace` for
   locomotion clips that support it. Retarget via a Humanoid Avatar in the active
   project's `unity/` subtree and use `run_unity_workflow` for admitted jobs. The
