@@ -278,6 +278,7 @@ export type JobRecord = {
   render_spec: RenderSpec | null;
   native_exit_code?: number | null;
   error_code?: string | null;
+  error_reason?: string | null;
 };
 export type RenderSpec = {
   [k: string]: unknown;

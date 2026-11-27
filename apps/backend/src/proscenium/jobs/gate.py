@@ -9,7 +9,9 @@ class ExecutionGate:
 
     def require(self, project_id: str) -> None:
         if project_id not in self._open:
-            raise DomainError("project_busy", 409, "Execution awaits explicit Resume")
+            raise DomainError(
+                "project_busy", 409, "Execution awaits explicit Resume", safe_for_model=True
+            )
 
     def resume(self, project_id: str, *, reconciliation_evidence: str) -> None:
         if not reconciliation_evidence:

@@ -76,6 +76,7 @@ def bind(workflow, prompt, seed, references, models):
         raise DomainError(
             "invalid_request",
             message="SD-Turbo profile requires one reference, exact checkpoint and JSON-safe seed",
+            safe_for_model=True,
         )
     identity = next(iter(references))
     expected = graph(identity)
@@ -88,11 +89,15 @@ def bind(workflow, prompt, seed, references, models):
         ("reference", "image", "artifact:" + identity, references[identity]),
     ):
         if candidate[node]["inputs"][field] not in (token, value):
-            raise DomainError("invalid_request", message="Unbound SD-Turbo input")
+            raise DomainError(
+                "invalid_request", message="Unbound SD-Turbo input", safe_for_model=True
+            )
         candidate[node]["inputs"][field] = expected[node]["inputs"][field]
     if candidate != expected:
         raise DomainError(
-            "invalid_request", message="Graph differs from host-selected SD-Turbo img2img revision"
+            "invalid_request",
+            message="Graph differs from host-selected SD-Turbo img2img revision",
+            safe_for_model=True,
         )
     expected["text"]["inputs"]["text"] = prompt
     expected["noise"]["inputs"]["noise_seed"] = int(seed)

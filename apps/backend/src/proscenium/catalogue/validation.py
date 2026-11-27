@@ -355,13 +355,23 @@ def canonical_json_issues(schema: dict[str, Any], document: Any) -> list[dict[st
 def rational(value: dict[str, int]) -> Fraction:
     result = Fraction(value["numerator"], value["denominator"])
     if result.numerator != value["numerator"] or result.denominator != value["denominator"]:
-        raise DomainError("invalid_frame_mapping", 422, "Frame rates and weights must be reduced")
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Frame rates and weights must be reduced",
+            safe_for_model=True,
+        )
     return result
 
 
 def interval(value: dict[str, int]) -> int:
     if value["start"] > value["end"]:
-        raise DomainError("invalid_frame_mapping", 422, "Frame range start must not exceed end")
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Frame range start must not exceed end",
+            safe_for_model=True,
+        )
     return value["end"] - value["start"] + 1
 
 
@@ -384,6 +394,7 @@ def validate_artifact_source_version(
         409,
         message="Artifact belongs to a different version. Only concept and reference images "
         "published on the target version may be reused.",
+        safe_for_model=True,
     )
 
 
@@ -413,7 +424,9 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
     frames = set()
     for shot in document["shots"]:
         if shot["shot_id"] in shots:
-            raise DomainError("source_conflict", 409, "Duplicate shot identity")
+            raise DomainError(
+                "source_conflict", 409, "Duplicate shot identity", safe_for_model=True
+            )
         shots.add(shot["shot_id"])
         if shot["scene_version"] is not None:
             if version_reference(tx, shot["scene_version"], batch)["kind"] != "scene":
@@ -425,11 +438,16 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
         roles = [{"start": 0, "intermediate": 1, "end": 2}[f["role"]] for f in shot["frames"]]
         if roles != sorted(roles):
             raise DomainError(
-                "source_conflict", 409, "Frame roles must be ordered start, intermediate, end"
+                "source_conflict",
+                409,
+                "Frame roles must be ordered start, intermediate, end",
+                safe_for_model=True,
             )
         for frame in shot["frames"]:
             if frame["frame_id"] in frames:
-                raise DomainError("source_conflict", 409, "Duplicate shot-frame identity")
+                raise DomainError(
+                    "source_conflict", 409, "Duplicate shot-frame identity", safe_for_model=True
+                )
             frames.add(frame["frame_id"])
             if frame["artifact_id"] is not None:
                 artifact = tx.require("artifacts", frame["artifact_id"])
@@ -462,7 +480,10 @@ def source_job(
     job = _cached_record(tx, "jobs", source["job_id"], job_cache)
     if job["kind"] != "render" or job["render_spec"] is None:
         raise DomainError(
-            "invalid_frame_mapping", 422, "Sequence contributor job must be a render job"
+            "invalid_frame_mapping",
+            422,
+            "Sequence contributor job must be a render job",
+            safe_for_model=True,
         )
     if job["target"]["version"] != {
         "item_id": version["item_id"],
@@ -472,12 +493,14 @@ def source_job(
             "invalid_frame_mapping",
             422,
             "Sequence contributor job does not match the referenced version",
+            safe_for_model=True,
         )
     if job["target"]["shot_id"] != source["shot_id"]:
         raise DomainError(
             "invalid_frame_mapping",
             422,
             "Sequence contributor shot_id must match the source render job's shot_id (use null for standalone scene renders)",
+            safe_for_model=True,
         )
     frames = source.get("source_frames") or {
         "start": source["source_frame"],
@@ -490,6 +513,7 @@ def source_job(
             "invalid_frame_mapping",
             422,
             "Sequence source_frames exceed the source render job's admitted frame range",
+            safe_for_model=True,
         )
     return job
 
@@ -507,7 +531,7 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
     for track in document.get("audio_tracks", []):
         identity = track["track_id"]
         if identity in ids:
-            raise DomainError("invalid_request", 422, DUPLICATE_AUDIO_TRACK)
+            raise DomainError("invalid_request", 422, DUPLICATE_AUDIO_TRACK, safe_for_model=True)
         ids.add(identity)
         artifact = tx.get("artifacts", track["artifact_id"], required=False)
         if (
@@ -518,10 +542,10 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
             or artifact["media_type"] not in AUDIO_DEMUXERS
             or not artifact.get("duration_seconds")
         ):
-            raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT)
+            raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT, safe_for_model=True)
         start = Fraction(str(track["start_seconds"]))
         if start >= duration:
-            raise DomainError("invalid_request", 422, INVALID_AUDIO_START)
+            raise DomainError("invalid_request", 422, INVALID_AUDIO_START, safe_for_model=True)
         effective = duration - start
         if "duration_seconds" in track:
             effective = min(effective, Fraction(str(track["duration_seconds"])))
@@ -529,11 +553,11 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
             str(track.get("trim_start_seconds", 0))
         )
         if source <= 0:
-            raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM)
+            raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM, safe_for_model=True)
         effective = min(effective, source)
         fades = sum(Fraction(str(track.get(k, 0))) for k in ("fade_in_seconds", "fade_out_seconds"))
         if fades > effective:
-            raise DomainError("invalid_request", 422, INVALID_AUDIO_FADE)
+            raise DomainError("invalid_request", 422, INVALID_AUDIO_FADE, safe_for_model=True)
 
 
 def sequence_map(
@@ -541,19 +565,24 @@ def sequence_map(
 ) -> None:
     tracks = document.get("audio_tracks")
     if document.get("silent") is True and isinstance(tracks, list) and tracks:
-        raise DomainError("invalid_request", 422, SILENT_AUDIO_TRACKS)
+        raise DomainError("invalid_request", 422, SILENT_AUDIO_TRACKS, safe_for_model=True)
     if (
         document.get("preserve_clip_audio") is not True
         and document.get("silent") is False
         and (tracks is None or tracks == [])
     ):
-        raise DomainError("invalid_request", 422, MISSING_AUDIO_TRACKS)
+        raise DomainError("invalid_request", 422, MISSING_AUDIO_TRACKS, safe_for_model=True)
     validate("SequenceMap", document)
     if document["project_id"] != tx.project_id or document["sequence_version_id"] != version_id:
         raise DomainError("scope_denied", 403)
     kinds = {"clip_artifact_id" in entry for entry in document["entries"]}
     if len(kinds) != 1:
-        raise DomainError("invalid_frame_mapping", 422, "Cannot mix clip and render-frame entries")
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Cannot mix clip and render-frame entries",
+            safe_for_model=True,
+        )
     clip_based = True in kinds
     fps = rational(document["fps"])
     validate_audio_tracks(tx, document, document["frame_count"] / fps)
@@ -570,7 +599,10 @@ def sequence_map(
         length = interval(entry["sequence_frames"])
         if entry["entry_id"] in entries or entry["sequence_frames"]["start"] != next_frame:
             raise DomainError(
-                "invalid_frame_mapping", 422, "Sequence entries must partition destination frames"
+                "invalid_frame_mapping",
+                422,
+                "Sequence entries must partition destination frames",
+                safe_for_model=True,
             )
         entries.add(entry["entry_id"])
         next_frame = entry["sequence_frames"]["end"] + 1
@@ -591,12 +623,15 @@ def sequence_map(
                     for k in ("width", "height")
                 )
             ):
-                raise DomainError("media_unavailable", 422, INVALID_CLIP_ARTEFACT)
+                raise DomainError(
+                    "media_unavailable", 422, INVALID_CLIP_ARTEFACT, safe_for_model=True
+                )
             if source_length != length or entry["source_frames"]["end"] > clip["frame_count"]:
                 raise DomainError(
                     "invalid_frame_mapping",
                     422,
                     "Clip range must fit the source and match the sequence length",
+                    safe_for_model=True,
                 )
             continue
         job = resolve(entry)
@@ -605,13 +640,17 @@ def sequence_map(
                 "invalid_frame_mapping",
                 422,
                 "Identity and trim sequence entries must have equal source_frames and sequence_frames lengths",
+                safe_for_model=True,
             )
         if (
             entry["transform"] in {"identity", "trim"}
             and job["render_spec"]["fps"] != document["fps"]
         ):
             raise DomainError(
-                "invalid_frame_mapping", 422, "Frame-rate changes require an explicit retime map"
+                "invalid_frame_mapping",
+                422,
+                "Frame-rate changes require an explicit retime map",
+                safe_for_model=True,
             )
         for contributor in entry.get("contributors", []):
             interval(contributor["source_frames"])
@@ -624,6 +663,7 @@ def sequence_map(
             "invalid_frame_mapping",
             422,
             "Sequence entries must cover frames 1 through frame_count contiguously",
+            safe_for_model=True,
         )
     for identity in {
         entry["mapping_artifact_id"]
@@ -664,7 +704,9 @@ def sequence_map(
                 entry["transform"] == "transition"
                 and len({distinct_transition_source(c) for c in row["contributors"]}) < 2
             ):
-                raise DomainError("invalid_frame_mapping", 422, DISTINCT_DISSOLVE_SOURCES)
+                raise DomainError(
+                    "invalid_frame_mapping", 422, DISTINCT_DISSOLVE_SOURCES, safe_for_model=True
+                )
             if entry["transform"] == "retime" and len(row["contributors"]) != 1:
                 raise DomainError("invalid_frame_mapping", 422)
             for contributor in row["contributors"]:

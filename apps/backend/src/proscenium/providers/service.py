@@ -22,6 +22,7 @@ from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
 from proscenium.db.outbox import settled_uncertain_vlm_review
 from proscenium.db.paths import project_path, read_bounded_regular_file
+from proscenium.guidance import reviewed_reason
 from proscenium.jobs import TERMINAL
 from proscenium.jobs.resources import check_storage, reserve_generation, settle_generation
 from proscenium.providers import klein, minimax_h3, sd_turbo, sd_turbo_fp16, stable_audio
@@ -234,7 +235,12 @@ class ProviderService:
             and (identity is None or s["provider_id"] == identity)
         ]
         if len(candidates) != 1:
-            raise DomainError("capability_unavailable", 501, "Configure one explicit provider")
+            raise DomainError(
+                "capability_unavailable",
+                501,
+                "Configure one explicit provider",
+                safe_for_model=True,
+            )
         result = dict(candidates[0])
         result["endpoint"] = endpoint(result["endpoint"])
         if result["available"] is False:
@@ -254,7 +260,10 @@ class ProviderService:
             if sha(data) == artifact["sha256"] and len(data) == artifact["bytes"]:
                 return artifact, data
         raise DomainError(
-            "hash_mismatch", 422, "Stored artefact bytes do not match their recorded SHA-256 digest"
+            "hash_mismatch",
+            422,
+            "Stored artefact bytes do not match their recorded SHA-256 digest",
+            safe_for_model=True,
         )
 
     def image_bytes(self, project_id: str, artifact_id: str) -> tuple[JSON, bytes]:
@@ -268,6 +277,7 @@ class ProviderService:
                 "unsupported_media_type",
                 415,
                 "Visual review targets must be ready PNG, JPEG or WebP still images",
+                safe_for_model=True,
             )
         with Image.open(io.BytesIO(data)) as image:
             if image.width * image.height > self.services.settings.upload_max_pixels:
@@ -300,9 +310,16 @@ class ProviderService:
                 return tx.require("jobs", request["job_id"]), True
             prepared = tx.get("providers.prepared", request["workflow_artifact_id"], required=False)
         if request["capability"] in {"audio", "video"} and prepared is None:
+            if request["capability"] == "audio":
+                raise DomainError(
+                    "invalid_request",
+                    message="Audio generation requires prepare_audio_generation",
+                    safe_for_model=True,
+                )
             raise DomainError(
                 "invalid_request",
-                message=f"{request['capability'].capitalize()} generation requires prepare_{request['capability']}_generation",
+                message="Video generation requires prepare_video_generation",
+                safe_for_model=True,
             )
         revision = (
             self.options.get("image_profiles", {}).get(request["provider_id"])
@@ -327,6 +344,7 @@ class ProviderService:
                 "scope_denied",
                 403,
                 "Generation is unavailable while execution_scope is planning_only",
+                safe_for_model=True,
             )
         if capability.capability == "audio":
             stable_audio.resolve_audio_verifier(self.services.settings.rendering)
@@ -338,23 +356,44 @@ class ProviderService:
             project_id, request["prompt_artifact_id"]
         )
         try:
-            graph = json.loads(data)
-            prompt = prompt_bytes.decode("utf-8")
-        except (ValueError, UnicodeError) as exc:
-            raise DomainError("invalid_request") from exc
+            graph = json.loads(data.decode("utf-8-sig"))
+        except ValueError as exc:
+            raise DomainError(
+                "invalid_request",
+                message="Workflow artefact must be a valid UTF-8 JSON object",
+                safe_for_model=True,
+            ) from exc
         if not isinstance(graph, dict):
-            raise DomainError("invalid_request")
+            raise DomainError(
+                "invalid_request",
+                message="Workflow artefact must be a valid UTF-8 JSON object",
+                safe_for_model=True,
+            )
+        try:
+            prompt = prompt_bytes.decode("utf-8")
+        except UnicodeError as exc:
+            raise DomainError(
+                "invalid_request",
+                message="Prompt artefact must be valid UTF-8",
+                safe_for_model=True,
+            ) from exc
         references: dict[str, JSON] = {}
         reference_ids = request["input_artifact_ids"]
         if capability.capability == "audio" and reference_ids:
-            raise DomainError("invalid_request", message=stable_audio.NO_REFERENCES)
+            raise DomainError(
+                "invalid_request", message=stable_audio.NO_REFERENCES, safe_for_model=True
+            )
         if len(set(reference_ids)) != len(reference_ids):
-            raise DomainError("invalid_request", message="Duplicate conditioning image")
+            raise DomainError(
+                "invalid_request", message="Duplicate conditioning image", safe_for_model=True
+            )
         if (
             capability.revision == "comfy-image-1"
             and len(reference_ids) > klein.MAX_REFERENCE_IMAGES
         ):
-            raise DomainError("invalid_request", message=klein.REFERENCE_LIMIT_MESSAGE)
+            raise DomainError(
+                "invalid_request", message=klein.REFERENCE_LIMIT_MESSAGE, safe_for_model=True
+            )
         if (
             capability.revision in {sd_turbo.REVISION, sd_turbo_fp16.REVISION}
             and len(reference_ids) != 1
@@ -362,6 +401,7 @@ class ProviderService:
             raise DomainError(
                 "invalid_request",
                 message="Selected image profile requires one exact 512x512 reference",
+                safe_for_model=True,
             )
         for artifact_id in reference_ids:
             artifact, clean = self.image_bytes(project_id, artifact_id)
@@ -370,6 +410,7 @@ class ProviderService:
                 raise DomainError(
                     "invalid_request",
                     message="Selected image profile requires exact 512x512 reference pixels; no implicit resize",
+                    safe_for_model=True,
                 )
             references[artifact_id] = {
                 "sha256": artifact["sha256"],
@@ -385,7 +426,10 @@ class ProviderService:
                 request["model_ids"],
             )
         except (KeyError, TypeError, AttributeError, ValueError) as exc:
-            raise DomainError("invalid_request", message="Malformed API graph") from exc
+            # DomainError is deliberately not caught: the plugin owns that diagnostic.
+            raise DomainError(
+                "invalid_request", message="Malformed API graph", safe_for_model=True
+            ) from exc
         inputs = {
             "request": request,
             "plugin": {
@@ -467,7 +511,9 @@ class ProviderService:
                 return tx.require("providers.tickets", identity), True
         provider = self.provider(self.options.get("review_provider_id"), "vlm")
         if not provider["model_id"]:
-            raise DomainError("capability_unavailable", 501, "Configure a vision model ID")
+            raise DomainError(
+                "capability_unavailable", 501, "Configure a vision model ID", safe_for_model=True
+            )
         hashes = {}
         image_hashes = {}
         target_purposes = {}
@@ -478,18 +524,21 @@ class ProviderService:
                     "hash_mismatch",
                     422,
                     "Target displayed_sha256 does not match the registered image artefact",
+                    safe_for_model=True,
                 )
             if artifact.get("dimensions") != target["dimensions"]:
                 raise DomainError(
                     "frame_conflict",
                     422,
                     "Target dimensions do not match the registered image artefact",
+                    safe_for_model=True,
                 )
             if artifact["purpose"] not in REVIEWABLE_IMAGE_PURPOSES:
                 raise DomainError(
                     "invalid_request",
                     422,
                     "Artefact purpose is not eligible for visual review; supply concept, reference, keyframe, draft_motion, inspection or final still images",
+                    safe_for_model=True,
                 )
             if artifact["purpose"] == "draft_motion" and target["origin"] not in {
                 "blender_render",
@@ -499,6 +548,7 @@ class ProviderService:
                     "invalid_request",
                     422,
                     DRAFT_MOTION_RECEIPT_REQUIRED,
+                    safe_for_model=True,
                 )
             hashes[target["artifact_id"]] = artifact["sha256"]
             image_hashes[target["artifact_id"]] = sha(clean)
@@ -515,7 +565,9 @@ class ProviderService:
                     and frame["dimensions"] == target["dimensions"]
                     for frame in frames
                 ):
-                    raise DomainError("invalid_request", 422, DRAFT_MOTION_RECEIPT_REQUIRED)
+                    raise DomainError(
+                        "invalid_request", 422, DRAFT_MOTION_RECEIPT_REQUIRED, safe_for_model=True
+                    )
         for identity in request["telemetry_artifact_ids"]:
             artifact, data = self.artifact_bytes(project_id, identity)
             if artifact["media_type"] != "application/json" or len(data) > 1024 * 1024:
@@ -583,7 +635,13 @@ class ProviderService:
         )
 
     def update(
-        self, job: JSON, state: str, *, tx: Transaction | None = None, **fields: Any
+        self,
+        job: JSON,
+        state: str,
+        *,
+        tx: Transaction | None = None,
+        error_reason: str | None = None,
+        **fields: Any,
     ) -> JSON:
         if state in {"running", "succeeded"}:
             fields.setdefault("error_code", None)
@@ -601,9 +659,15 @@ class ProviderService:
         jobs = self.services.jobs
         if tx is not None:
             return jobs.update_in_transaction(
-                tx, self.worker(job), body, evidence="provider observation"
+                tx,
+                self.worker(job),
+                body,
+                evidence="provider observation",
+                error_reason=error_reason,
             )[0]
-        return jobs.update(self.worker(job), body, evidence="provider observation")[0]
+        return jobs.update(
+            self.worker(job), body, evidence="provider observation", error_reason=error_reason
+        )[0]
 
     def owns_review_cancellation(self, tx: Transaction, job: JSON) -> bool:
         with self._review_claim_lock:
@@ -673,7 +737,9 @@ class ProviderService:
         project_id, job_id, attempt_id = job["project_id"], job["job_id"], job["attempt_id"]
         with self._review_claim_lock:
             if job_id in self._inflight_reviews:
-                raise DomainError("project_busy", 409, "VLM review is still in flight")
+                raise DomainError(
+                    "project_busy", 409, "VLM review is still in flight", safe_for_model=True
+                )
             job = tx.require("jobs", job_id)
             if (
                 tx.project_id != project_id
@@ -973,7 +1039,9 @@ class ProviderService:
             except DomainError as exc:
                 execution["phase"] = "failed"
                 self.execution(job["project_id"], job["job_id"], execution)
-                return self.update(job, "failed", error_code=exc.code)
+                return self.update(
+                    job, "failed", error_code=exc.code, error_reason=reviewed_reason(exc.message)
+                )
             except (AttributeError, KeyError, TypeError, ValueError):
                 # Invalid output metadata does not make a completed inference uncertain.
                 items = []
@@ -1009,7 +1077,9 @@ class ProviderService:
                     raise
                 execution["phase"] = "failed"
                 self.execution(job["project_id"], job["job_id"], execution)
-                return self.update(job, "failed", error_code=exc.code)
+                return self.update(
+                    job, "failed", error_code=exc.code, error_reason=reviewed_reason(exc.message)
+                )
             artifacts.append(
                 self._register(
                     job,
@@ -1401,6 +1471,7 @@ class ProviderService:
                 except (
                     httpx.HTTPError,
                     DomainError,
+                    RuntimeError,
                     ValueError,
                     KeyError,
                     OSError,
@@ -1424,7 +1495,12 @@ class ProviderService:
                         if phase == "preparing":
                             self._release(job)
                     result = self.update(
-                        job, "outcome_uncertain" if uncertain else "failed", error_code=code
+                        job,
+                        "outcome_uncertain" if uncertain else "failed",
+                        error_code=code,
+                        error_reason=reviewed_reason(exc.message)
+                        if isinstance(exc, DomainError)
+                        else None,
                     )
                 with store.transaction() as tx:
                     row = tx.connection.execute(

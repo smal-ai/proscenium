@@ -32,6 +32,7 @@ def run(argv: list[str], timeout: int = 60) -> bytes:
                 422,
                 "Bounded media command failed",
                 native_exit_code=process.returncode,
+                safe_for_model=True,
             )
         return stdout
 
@@ -177,7 +178,10 @@ def clip_canvas(dimensions: dict) -> dict:
 def tempo_filters(ratio: Fraction) -> list[str]:
     if not Fraction(1, 240) <= ratio <= 240:
         raise DomainError(
-            "invalid_frame_mapping", 422, "Clip frame rates diverge beyond supported bounds"
+            "invalid_frame_mapping",
+            422,
+            "Clip frame rates diverge beyond supported bounds",
+            safe_for_model=True,
         )
     chain = []
     while ratio > 2:
@@ -275,7 +279,10 @@ def assemble_clips(
     else:
         if not keep_audio and not audio_tracks:
             raise DomainError(
-                "invalid_request", 422, "Non-silent sequences require an audio source"
+                "invalid_request",
+                422,
+                "Non-silent sequences require an audio source",
+                safe_for_model=True,
             )
         argv.extend(audio_inputs(audio_tracks))
         chains.append(
@@ -392,13 +399,20 @@ def _verify_video(
     if "mp4" not in container.get("format_name", "").split(",") or container.get("tags", {}).get(
         "major_brand"
     ) in {None, "qt  "}:
-        raise DomainError("media_unavailable", 422, "Expected an MP4 container")
+        raise DomainError(
+            "media_unavailable", 422, "Expected an MP4 container", safe_for_model=True
+        )
     frames = probe.get("frames", [])
     if expect_audio:
         video = [stream for stream in streams if stream.get("codec_type") == "video"]
         audio = [stream for stream in streams if stream.get("codec_type") == "audio"]
         if len(streams) != 2 or len(video) != 1 or len(audio) != 1:
-            raise DomainError("media_unavailable", 422, "Expected one video and one audio stream")
+            raise DomainError(
+                "media_unavailable",
+                422,
+                "Expected one video and one audio stream",
+                safe_for_model=True,
+            )
         stream = video[0]
         frames = [frame for frame in frames if frame.get("media_type") == "video"]
         audio_stream = audio[0]
@@ -414,7 +428,10 @@ def _verify_video(
                 raise ValueError
         except (KeyError, ValueError, TypeError, OverflowError) as exc:
             raise DomainError(
-                "media_unavailable", 422, "Incomplete MP4 audio stream metadata"
+                "media_unavailable",
+                422,
+                "Incomplete MP4 audio stream metadata",
+                safe_for_model=True,
             ) from exc
         try:
             sample_rate = int(audio_stream["sample_rate"])
@@ -433,7 +450,7 @@ def _verify_video(
             ) from exc
     else:
         if len(streams) != 1:
-            raise DomainError("media_unavailable", 422, "Video must be silent")
+            raise DomainError("media_unavailable", 422, "Video must be silent", safe_for_model=True)
         stream = streams[0]
     try:
         fps = Fraction(stream["avg_frame_rate"])
@@ -443,7 +460,9 @@ def _verify_video(
         container_count = int(stream["nb_frames"]) if require_container_count else count
         time_base = Fraction(stream["time_base"])
     except (KeyError, ValueError, TypeError, ZeroDivisionError) as exc:
-        raise DomainError("media_unavailable", 422, "Incomplete MP4 stream metadata") from exc
+        raise DomainError(
+            "media_unavailable", 422, "Incomplete MP4 stream metadata", safe_for_model=True
+        ) from exc
     metadata = {
         "dimensions": {"width": width, "height": height},
         "fps": {"numerator": fps.numerator, "denominator": fps.denominator},
@@ -463,13 +482,23 @@ def _verify_video(
         or frames[0].get("key_frame") != 1
         or any(metadata[key] != value for key, value in expected.items())
     ):
-        raise DomainError("media_unavailable", 422, "Encoded video does not match admitted profile")
+        raise DomainError(
+            "media_unavailable",
+            422,
+            "Encoded video does not match admitted profile",
+            safe_for_model=True,
+        )
     if expect_audio:
         tolerance = 2 * (1024 / sample_rate)
         video_duration = float(Fraction(count, 1) / fps)
         audio_end = audio_start + audio_duration
         if abs(audio_start) > tolerance or abs(audio_end - video_duration) > tolerance:
-            raise DomainError("media_unavailable", 422, "Audio timeline does not match the video")
+            raise DomainError(
+                "media_unavailable",
+                422,
+                "Audio timeline does not match the video",
+                safe_for_model=True,
+            )
     try:
         pts = [Fraction(frame["best_effort_timestamp"]) * time_base for frame in frames]
     except (KeyError, ValueError, TypeError, ZeroDivisionError) as exc:

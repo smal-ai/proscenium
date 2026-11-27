@@ -96,9 +96,13 @@ def read_authored_json(
             raise ValueError("Authored source must be an object")
         return document
     except (ValueError, UnicodeError) as exc:
-        message = (
-            "Storyboard source must be AuthoredShotPlan JSON"
-            if version.get("kind") == "storyboard"
-            else "Authored catalogue source is not JSON"
-        )
-        raise DomainError("source_unavailable", 422, message) from exc
+        if version.get("kind") == "storyboard":
+            raise DomainError(
+                "source_unavailable",
+                422,
+                "Storyboard source must be AuthoredShotPlan JSON",
+                safe_for_model=True,
+            ) from exc
+        raise DomainError(
+            "source_unavailable", 422, "Authored catalogue source is not JSON", safe_for_model=True
+        ) from exc

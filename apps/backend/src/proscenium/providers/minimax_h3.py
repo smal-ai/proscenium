@@ -70,7 +70,11 @@ JSON = dict[str, Any]
 
 def align_frame_count(duration_seconds: float) -> int:
     if not _number(duration_seconds, 0.2, MAX_DURATION_SECONDS):
-        raise DomainError("invalid_request", message="Video duration is outside supported bounds")
+        raise DomainError(
+            "invalid_request",
+            message="Video duration is outside supported bounds",
+            safe_for_model=True,
+        )
     count = max(MIN_FRAMES, round(duration_seconds * FPS))
     return min(MAX_FRAMES, count + (5 - count) % 17)
 
@@ -95,7 +99,7 @@ def _artifact_id(value: Any) -> bool:
 
 
 def _graph_error() -> DomainError:
-    return DomainError("invalid_request", message=INVALID_GRAPH)
+    return DomainError("invalid_request", message=INVALID_GRAPH, safe_for_model=True)
 
 
 def _validate_model_roles(
@@ -107,7 +111,9 @@ def _validate_model_roles(
     ):
         raise _graph_error()
     if any("nvfp4" in name.lower() for name in names):
-        raise DomainError("invalid_request", message="NVFP4 models are not supported on ROCm")
+        raise DomainError(
+            "invalid_request", message="NVFP4 models are not supported on ROCm", safe_for_model=True
+        )
     unet_name, clip_name, video_name, audio_name = (name.lower() for name in names[:4])
     other_mode = "ref2va" if mode == "fl2va" else "fl2va"
     if (
@@ -169,7 +175,9 @@ def graph(
         and _exact_int(steps, 1, 30)
     ):
         raise DomainError(
-            "invalid_request", message="Invalid MiniMax H3 canvas, frame count or steps"
+            "invalid_request",
+            message="Invalid MiniMax H3 canvas, frame count or steps",
+            safe_for_model=True,
         )
     if mode not in ("fl2va", "ref2va"):
         raise _graph_error()
@@ -197,7 +205,11 @@ def graph(
             for value in (first_frame_artifact_id, last_frame_artifact_id)
         )
     ):
-        raise DomainError("invalid_request", message="Invalid MiniMax H3 conditioning artefacts")
+        raise DomainError(
+            "invalid_request",
+            message="Invalid MiniMax H3 conditioning artefacts",
+            safe_for_model=True,
+        )
     indices: set[int] = set()
     for guide in guide_frames:
         if (
@@ -208,7 +220,9 @@ def graph(
             or guide["frame_index"] in indices
         ):
             raise DomainError(
-                "invalid_request", message="Invalid or duplicate MiniMax H3 guide frame"
+                "invalid_request",
+                message="Invalid or duplicate MiniMax H3 guide frame",
+                safe_for_model=True,
             )
         indices.add(guide["frame_index"])
 
@@ -455,10 +469,10 @@ def bind(
     workflow: JSON, prompt: str, seed: str | None, references: dict[str, str], models: list[str]
 ) -> JSON:
     if not isinstance(seed, str) or re.fullmatch(r"[0-9]+", seed) is None:
-        raise DomainError("invalid_request", message=INVALID_SEED)
+        raise DomainError("invalid_request", message=INVALID_SEED, safe_for_model=True)
     significant = seed.lstrip("0") or "0"
     if len(significant) > 16 or int(significant) > 2**53 - 1:
-        raise DomainError("invalid_request", message=INVALID_SEED)
+        raise DomainError("invalid_request", message=INVALID_SEED, safe_for_model=True)
     bound_seed = int(significant)
     images = _validate_workflow(workflow, models, unbound_images=True)
     paths = {identity: value.removeprefix(ARTEFACT_PREFIX) for identity, value in images.items()}
@@ -474,7 +488,9 @@ def bind(
         )
     ):
         raise DomainError(
-            "invalid_request", message="MiniMax H3 prompt, seed or conditioning binding mismatch"
+            "invalid_request",
+            message="MiniMax H3 prompt, seed or conditioning binding mismatch",
+            safe_for_model=True,
         )
     result = deepcopy(workflow)
     result["conditioning"]["inputs"]["prompt"] = prompt
@@ -504,7 +520,9 @@ def _expand_inputs(schema: JSON, inputs: JSON, prefix: str = "") -> JSON:
                 specs[key] = [list(options)]
                 if key in inputs:
                     if inputs[key] not in options:
-                        raise DomainError("capability_unavailable", 501, UNAVAILABLE)
+                        raise DomainError(
+                            "capability_unavailable", 501, UNAVAILABLE, safe_for_model=True
+                        )
                     nested = _expand_inputs(options[inputs[key]], inputs, key + ".")
                     for child_group, children in nested.items():
                         flat[child_group].update(children)
@@ -529,11 +547,12 @@ def preflight(graph: JSON, catalog: JSON, models: list[str]) -> None:
     conditioning = graph["conditioning"]["inputs"]
     if requires_tiled_vae(conditioning["width"], conditioning["height"], conditioning["length"]):
         if "VAEDecodeTiled" not in catalog:
-            raise DomainError("capability_unavailable", 501, UNAVAILABLE)
+            raise DomainError("capability_unavailable", 501, UNAVAILABLE, safe_for_model=True)
         if graph["decode_video"]["class_type"] != "VAEDecodeTiled":
             raise DomainError(
                 "invalid_request",
                 message="MiniMax H3 requires tiled video VAE decoding at this size",
+                safe_for_model=True,
             )
     flat_catalog: JSON = {}
     try:
@@ -544,20 +563,25 @@ def preflight(graph: JSON, catalog: JSON, models: list[str]) -> None:
             raise DomainError(
                 "invalid_request",
                 message="MiniMax H3 requires BF16 video VAE compute on this provider",
+                safe_for_model=True,
             )
         for identity, node in graph.items():
             kind = node["class_type"]
             schema = catalog[kind]
             if bool(schema.get("output_node")) != (identity == "save"):
-                raise DomainError("invalid_request", message=comfy.OUTPUT_CAPABILITY_MISMATCH)
+                raise DomainError(
+                    "invalid_request", message=comfy.OUTPUT_CAPABILITY_MISMATCH, safe_for_model=True
+                )
             flat = _expand_inputs(schema["input"], node["inputs"])
             if (model_key := MODEL_INPUTS.get(identity)) is not None:
                 model_spec = flat["required"].get(model_key) or flat["optional"][model_key]
                 if node["inputs"][model_key] not in _choices(model_spec):
-                    raise DomainError("capability_unavailable", 501, UNAVAILABLE)
+                    raise DomainError(
+                        "capability_unavailable", 501, UNAVAILABLE, safe_for_model=True
+                    )
             flat_catalog[kind] = {**schema, "input": flat}
     except (AttributeError, IndexError, KeyError, TypeError, ValueError) as exc:
-        raise DomainError("capability_unavailable", 501, UNAVAILABLE) from exc
+        raise DomainError("capability_unavailable", 501, UNAVAILABLE, safe_for_model=True) from exc
     if graph["noise"]["inputs"]["noise_seed"] == "$seed":
         graph = {**graph, "noise": {**graph["noise"], "inputs": {"noise_seed": 0}}}
     comfy.preflight(graph, flat_catalog, models, allowed_output_nodes=VIDEO_OUTPUT_NODES)
@@ -576,6 +600,7 @@ def verify_matches_graph(graph: JSON, inspection: JSON) -> None:
             "corrupt_provider_output",
             422,
             "Provider video dimensions, FPS or frame count did not match the admitted graph",
+            safe_for_model=True,
         )
 
 
@@ -613,11 +638,18 @@ def resolve_video_verifier(rendering: JSON | None = None) -> tuple[str, str]:
     try:
         return resolve_audio_verifier(rendering)
     except DomainError as exc:
-        raise DomainError("capability_unavailable", 501, VIDEO_VERIFY_UNAVAILABLE) from exc
+        raise DomainError(
+            "capability_unavailable", 501, VIDEO_VERIFY_UNAVAILABLE, safe_for_model=True
+        ) from exc
 
 
 def _corrupt_video() -> DomainError:
-    return DomainError("corrupt_provider_output", 422, "Provider returned empty or corrupted video")
+    return DomainError(
+        "corrupt_provider_output",
+        422,
+        "Provider returned empty or corrupted video",
+        safe_for_model=True,
+    )
 
 
 def _ftyp_brands(data: bytes) -> tuple[bytes, set[bytes]]:
@@ -793,11 +825,17 @@ def _verify_staged_video(
 
     if duration_diverges(container_duration):
         raise DomainError(
-            "corrupt_provider_output", 422, "Video stream and container durations diverge"
+            "corrupt_provider_output",
+            422,
+            "Video stream and container durations diverge",
+            safe_for_model=True,
         )
     if duration_diverges(audio_duration):
         raise DomainError(
-            "corrupt_provider_output", 422, "Video and audio stream durations diverge"
+            "corrupt_provider_output",
+            422,
+            "Video and audio stream durations diverge",
+            safe_for_model=True,
         )
     return {
         "dimensions": {"width": width, "height": height},
@@ -838,13 +876,20 @@ def verify_video_bytes(
     except OSError as exc:
         if exc.errno == errno.ENOMEM:
             raise _corrupt_video() from exc
-        raise DomainError("media_unavailable", 503, "Local video verification unavailable") from exc
+        raise DomainError(
+            "media_unavailable", 503, "Local video verification unavailable", safe_for_model=True
+        ) from exc
     except subprocess.TimeoutExpired as exc:
         raise DomainError(
-            "media_unavailable", 503, "Video verification exceeded its deadline"
+            "media_unavailable",
+            503,
+            "Video verification exceeded its deadline",
+            safe_for_model=True,
         ) from exc
     except subprocess.SubprocessError as exc:
-        raise DomainError("media_unavailable", 503, "Local video verification unavailable") from exc
+        raise DomainError(
+            "media_unavailable", 503, "Local video verification unavailable", safe_for_model=True
+        ) from exc
     except (
         AttributeError,
         KeyError,

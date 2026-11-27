@@ -94,7 +94,10 @@ def inspect_blender(
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise DomainError(
-            "source_unavailable", 422, "Allocated Blender inspection did not complete"
+            "source_unavailable",
+            422,
+            "Allocated Blender inspection did not complete",
+            safe_for_model=True,
         ) from exc
     lines = process.stdout.decode(errors="replace").splitlines()
     payloads = [
@@ -104,7 +107,10 @@ def inspect_blender(
     ]
     if len(payloads) != 1:
         raise DomainError(
-            "source_unavailable", 422, "Blender did not return a source inspection receipt"
+            "source_unavailable",
+            422,
+            "Blender did not return a source inspection receipt",
+            safe_for_model=True,
         )
     result = dict(json.loads(payloads[0]))
     if result["missing"]:
@@ -112,7 +118,12 @@ def inspect_blender(
     if process.returncode:
         raise DomainError("source_unavailable", 422)
     if result["version"] != receipt["closure"]["required_runtime"]["version"]:
-        raise DomainError("capability_unavailable", 501, "Pinned Blender version is not available")
+        raise DomainError(
+            "capability_unavailable",
+            501,
+            "Pinned Blender version is not available",
+            safe_for_model=True,
+        )
     result.update(
         source_closure_digest=receipt["closure"]["digest"],
         threads=allocation.threads,

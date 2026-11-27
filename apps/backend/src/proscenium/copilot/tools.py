@@ -19,26 +19,19 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.schema_paths import SchemaPathScope
 from proscenium.catalogue.validation import (
-    SAFE_VALIDATION_REASONS,
     safe_schema_guidance,
     safe_schema_path,
     schema_issues,
     schema_issues_for_schema,
 )
 from proscenium.contracts import SCHEMA, canonical, validate
-from proscenium.previews.journal import UNSUPPORTED_BLENDER_FEATURE_REASON
+from proscenium.guidance import reviewed_reason
 from proscenium.services import Services
 
 from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
 from .tool_schemas import inline_tool_schema
-from .web_search import (
-    AUTH_UNAVAILABLE,
-    INVALID_QUERY,
-    SERVICE_UNAVAILABLE,
-    clean_search_query,
-    search_web,
-)
+from .web_search import INVALID_QUERY, clean_search_query, search_web
 from .workflows import WORKFLOW_TOOLS
 from .workflows import arguments as workflow_arguments
 from .workflows import parameters as workflow_parameters
@@ -246,102 +239,6 @@ def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
     return arguments
 
 
-# Only fixed application-authored reasons cross this boundary. DomainError messages
-# can otherwise contain paths, provider bodies or an upstream exception repr.
-SAFE_REASONS = frozenset(
-    {
-        AUTH_UNAVAILABLE,
-        SERVICE_UNAVAILABLE,
-        INVALID_QUERY,
-        UNSUPPORTED_BLENDER_FEATURE_REASON,
-        *SAFE_VALIDATION_REASONS,
-        "This installed profile is Cycles CPU. No GPU fallback is permitted",
-        "Render exceeds configured profile bounds",
-        "Rendering profile is not enabled",
-        "Execution profile is not configured",
-        "A proxy is a single static sample",
-        "Storyboard shot targets cannot reorder scene preview passes",
-        "New-item requests cannot reorder an existing item's preview passes",
-        "Target version is outside the active pinned item scope",
-        "Pin the target version before reordering its preview passes",
-        "Preview passes cannot be reordered in planning-only work",
-        "All ordered preview jobs must be render passes on the target version",
-        "Extra outputs are not configured",
-        "Original rendering configuration is unavailable",
-        "Original launch must be reconciled",
-        "This job belongs to an earlier request. No render was started.",
-        "This job belongs to an earlier request. No job was started.",
-        "Retry is unavailable while execution_scope is planning_only. No render was started.",
-        "Binary authoring files require Git LFS tracking",
-        "Invalid Git LFS pointer",
-        "Local Git LFS object missing",
-        "Authored version references must be pinned in the source closure",
-        "Dependency cycle",
-        "Displayed image identity mismatch",
-        "No exact frame receipt",
-        "Conflicting frame receipts across attempts",
-        "Draft motion visual review targets must reference receipt-backed render or sequence frames",
-        "Spatial mapping mismatch",
-        "Storyboard source must be AuthoredShotPlan JSON",
-        "Authored catalogue source is not JSON",
-        "Storyboard source failed AuthoredShotPlan validation",
-        "Sequence source failed SequenceMap validation",
-        "Multiple compatible image model tuples exist; configure provider_options.image_recipes",
-        "Configure one explicit provider",
-        "Image recipe nodes or models are unavailable",
-        "Stable Audio recipe nodes or models are unavailable",
-        "Audio duration is outside the supported bounds for this mode",
-        "Audio generation does not accept reference artefacts",
-        "Audio generation requires prepare_audio_generation",
-        "Video generation requires prepare_video_generation",
-        "Video verification requires ffmpeg and ffprobe",
-        "MiniMax H3 recipe nodes or models are unavailable",
-        "Invalid MiniMax H3 canvas, frame count or steps",
-        "Invalid MiniMax H3 conditioning artefacts",
-        "Invalid or duplicate MiniMax H3 guide frame",
-        "Unsupported sampling steps for MiniMax H3 mode",
-        "Requested video dimensions exceed the provider pixel limit",
-        "Video duration is outside supported bounds",
-        "Cannot mix clip and render-frame entries",
-        "Clip range must fit the source and match the sequence length",
-        "Clip entry must reference a ready MP4 with dimensions and frame count",
-        "Generation is unavailable while execution_scope is planning_only",
-        "Audio verification requires ffmpeg and ffprobe",
-        "Audio bytes failed bounded decode verification",
-        "Invalid Stable Audio graph or model manifest",
-        "Provider returned empty or corrupted audio",
-        "Provider catalogue could not be read",
-        "Selected image profile requires one exact 512x512 reference",
-        "SD-Turbo image recipes require 512x512 and four steps",
-        "Image preparation accepts at most one reference",
-        "Image preparation accepts at most four references",
-        "Duplicate conditioning image",
-        "Unbound conditioning image",
-        "Reference is not conditioning",
-        "Graph node is not installed",
-        "Graph output node does not match capability",
-        "Local storage unavailable for audio verification",
-        "Model/choice is unavailable",
-        "An exact JSON-safe decimal seed is required",
-        "Image width and height must be multiples of 16 between 64 and 4096",
-        "Requested image dimensions exceed the configured provider pixel limit",
-        "generation_task_id does not match the active work; omit generation_task_id to use the active task",
-        "entry_path is required when building a source closure",
-        "exclude_paths requires base_version",
-        "Inherited entry_path does not match HEAD; include entry_path in paths",
-        "Checkpoint receipt is unavailable or does not match source_commit",
-        "Provider returned a corrupted scanline or noise image",
-        "Image artefact is not ready for inline inspection",
-        "Inline image inspection supports ready PNG, JPEG or WebP artefacts only",
-        "Image artefact exceeds inline inspection bounds",
-        "Visual review targets must be ready PNG, JPEG or WebP still images",
-        "Stored artefact bytes do not match their recorded SHA-256 digest",
-        "Target displayed_sha256 does not match the registered image artefact",
-        "Target dimensions do not match the registered image artefact",
-        "Artefact purpose is not eligible for visual review; supply concept, reference, keyframe, draft_motion, inspection or final still images",
-        "Unstructured target must name its task",
-    }
-)
 ERROR_GUIDANCE = {
     "corrupt_provider_output": "The provider returned a corrupted raster image or invalid audio/video. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
     "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
@@ -383,36 +280,29 @@ def _tool_issue_schemas(name: str) -> tuple[tuple[dict[str, Any], ...], SchemaPa
 
 
 def tool_failure(error: DomainError, name: str) -> ToolResult:
-    message = (
-        error.message
-        if error.message in SAFE_REASONS
-        else ERROR_GUIDANCE.get(
-            error.code,
-            "The operation could not complete. Inspect its original durable receipt before retrying; the external outcome may be uncertain.",
-        )
+    reviewed = reviewed_reason(error.message)
+    safe_message = reviewed is not None
+    message = reviewed or ERROR_GUIDANCE.get(
+        error.code,
+        "The operation could not complete. Inspect its original durable receipt before retrying; the external outcome may be uncertain.",
     )
     details: dict[str, Any] = {}
+    profile = error.details.get("configured_assembly_profile_id")
     if (
         name == "assemble_sequence"
         and error.code == "invalid_request"
         and error.status == 422
-        and re.fullmatch(
-            r"Unsupported assembly execution_profile_id; omit it or use '[A-Za-z0-9][A-Za-z0-9._-]{0,127}'",
-            error.message,
-        )
+        and type(profile) is str
+        and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", profile)
     ):
-        # Allow only the host's fixed guidance with a contract-shaped profile ID.
-        message = error.message
-    if (
-        name in PREPARATION_TOOLS
-        and error.code == "scope_denied"
-        and error.message not in SAFE_REASONS
-    ):
+        # Render the host's fixed guidance from the contract-shaped profile ID only.
+        message = f"Unsupported assembly execution_profile_id; omit it or use '{profile}'"
+    if name in PREPARATION_TOOLS and error.code == "scope_denied" and not safe_message:
         message = f"The target or project is outside the active request scope. Omit project_id, generation_task_id and unpublished target_id on {name}, or use an existing published item/slot."
     if (
         name in (PREPARATION_TOOLS | {"validate_authored_document"})
         and error.code == "invalid_request"
-        and error.message not in SAFE_REASONS
+        and not safe_message
     ):
         message = (
             "Preflight validation rejected the request before any external job or inference was submitted. "
@@ -437,7 +327,7 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
                 safe.append(issue)
         if safe:
             details["issues"] = safe
-    if name == "get_unity_result" and error.code == "project_busy":
+    if name == "get_unity_result" and error.code == "project_busy" and not safe_message:
         message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
     revision = error.details.get("current_revision")
     if type(revision) is int and revision >= 0:

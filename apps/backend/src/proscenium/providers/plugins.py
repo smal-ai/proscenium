@@ -96,7 +96,8 @@ class ImagePlugin:
                     raise DomainError(
                         "corrupt_provider_output",
                         422,
-                        "Provider returned a corrupted scanline or noise image",
+                        "Provider returned a corrupted all-zero or NaN image",
+                        safe_for_model=True,
                     )
                 stride = width * 3
                 mid_x, mid_y = width // 2, height // 2
@@ -128,7 +129,8 @@ class ImagePlugin:
                     raise DomainError(
                         "corrupt_provider_output",
                         422,
-                        "Provider returned a corrupted scanline or noise image",
+                        "Provider returned a corrupted image with two or more dead black quadrants",
+                        safe_for_model=True,
                     )
                 if count:
                     mean_h, mean_v = h_diff / count, v_diff / count
@@ -137,6 +139,7 @@ class ImagePlugin:
                             "corrupt_provider_output",
                             422,
                             "Provider returned a corrupted scanline or noise image",
+                            safe_for_model=True,
                         )
         return {"sha256_verified_during_registration": True}
 
@@ -207,23 +210,36 @@ class Budget3DPlugin:
     expected_model_hashes = budget3d.TURBO_HASHES
 
     def bind_graph(self, workflow, prompt, seed, references, models):
+        if seed is None:
+            raise DomainError("invalid_request", message=budget3d.INVALID_SEED, safe_for_model=True)
         expected = budget3d.models(turbo=self.turbo)
-        if (
-            len(references) != 1
-            or len(models) != len(expected)
-            or set(models) != set(expected)
-            or seed is None
-        ):
+        if len(references) != 1 or len(models) != len(expected) or set(models) != set(expected):
             raise DomainError(
                 "invalid_request",
                 message="One conditioning image and exact Budget3D models required",
+                safe_for_model=True,
             )
         identity = next(iter(references))
         # Prompt text is provenance; Budget3D conditions on the segmented object image.
         try:
             return budget3d.bind(workflow, identity, references[identity], seed, turbo=self.turbo)
         except ValueError as exc:
-            raise DomainError("invalid_request", message=str(exc)) from exc
+            # Compare the exception to fixed diagnostics, never forward its text.
+            if exc.args == (budget3d.INVALID_FILENAME_PREFIX,):
+                raise DomainError(
+                    "invalid_request", message=budget3d.INVALID_FILENAME_PREFIX, safe_for_model=True
+                ) from exc
+            if exc.args == (budget3d.INVALID_SEED,):
+                raise DomainError(
+                    "invalid_request", message=budget3d.INVALID_SEED, safe_for_model=True
+                ) from exc
+            if exc.args == (budget3d.UNSAFE_UPLOADED_IMAGE,):
+                raise DomainError(
+                    "invalid_request", message=budget3d.UNSAFE_UPLOADED_IMAGE, safe_for_model=True
+                ) from exc
+            raise DomainError(
+                "invalid_request", message=budget3d.INVALID_GRAPH, safe_for_model=True
+            ) from exc
 
     def preflight(self, graph, catalog, models):
         preflight(graph, catalog, models)
@@ -252,9 +268,17 @@ class HunyuanPlugin:
     }
 
     def bind_graph(self, workflow, prompt, seed, references, models):
-        if len(references) != 1 or models != [hunyuan.FILENAME] or seed is None:
+        if seed is None:
             raise DomainError(
-                "invalid_request", message="One Hunyuan image and exact model required"
+                "invalid_request",
+                message="An exact JSON-safe decimal seed is required",
+                safe_for_model=True,
+            )
+        if len(references) != 1 or models != [hunyuan.FILENAME]:
+            raise DomainError(
+                "invalid_request",
+                message="One Hunyuan image and exact model required",
+                safe_for_model=True,
             )
         identity = next(iter(references))
         # Text is deliberately not a conditioning input to this shape model.
@@ -347,5 +371,10 @@ def plugin(capability: str, revision: str | None = None) -> GenerationCapability
         else REGISTRY.get(capability)
     )
     if result is None or (revision is not None and revision != result.revision):
-        raise DomainError("capability_unavailable", 501, "Frozen capability plugin is unavailable")
+        raise DomainError(
+            "capability_unavailable",
+            501,
+            "Frozen capability plugin is unavailable",
+            safe_for_model=True,
+        )
     return result
