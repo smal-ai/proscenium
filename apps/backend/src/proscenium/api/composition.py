@@ -13,7 +13,12 @@ from proscenium.previews import router as previews_router
 from proscenium.providers import install as install_providers
 from proscenium.providers import register_provider_artifact
 from proscenium.providers import router as providers_router
-from proscenium.providers.preparation import AudioPreparation, Preparation, VideoPreparation
+from proscenium.providers.preparation import (
+    AudioPreparation,
+    MeshPreparation,
+    Preparation,
+    VideoPreparation,
+)
 from proscenium.reviews import install as install_reviews
 from proscenium.reviews import router as reviews_router
 from proscenium.services import Services
@@ -85,3 +90,4 @@ def configure_services(services: Services) -> None:
     services.extensions.setdefault("image_preparation", Preparation(services, providers))
     services.extensions.setdefault("audio_preparation", AudioPreparation(services, providers))
     services.extensions.setdefault("video_preparation", VideoPreparation(services, providers))
+    services.extensions.setdefault("mesh_preparation", MeshPreparation(services, providers))

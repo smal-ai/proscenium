@@ -21,39 +21,23 @@ description: Prepare an image-conditioned Budget3D mesh workflow and use the acc
   `image_to_3d` only with its exact trusted graph and `selected_models`. If unavailable,
   report the exact blocker. Do not call ComfyUI `/prompt` through shell, Python or a
   diagnostic CLI to bypass the budgeted adapter.
-- Register the actual conditioning image (`kind: "image"`, `purpose: "reference"`), the
-  trusted Budget3D API workflow JSON (`kind: "document"`, `purpose: "metadata"`,
-  `media_type: "application/json"`) and prompt provenance (`kind: "document"`,
-  `purpose: "metadata"`, `media_type: "text/plain; charset=utf-8"`) as project artefacts.
-  Submit via `submit_generation` with `capability: "image_to_3d"`, the exact
-  `selected_models` from `get_project_capabilities`, one `input_artifact_ids` entry
-  (`[REFERENCE_ID]`) and a decimal `seed`.
-- Trusted Budget3D API workflow template (`REFERENCE_ID` matches the registered
-  conditioning artefact ID; for `budget3d-idol-turbo-1` use
-  `unet_name: "budget3d_idol_turbo.safetensors"`, `steps: 5`, `cfg: 0.0`; for
-  `budget3d-idol-1` use `unet_name: "budget3d_idol.safetensors"`, `steps: 50`, `cfg: 3.0`;
-  `mode` is `"synthetic"` for renders/illustrations or `"real"` for photographs; `budget`
-  is `0.0625..1.0`):
-
-```json
-{
-  "1": {"class_type": "LoadImage", "inputs": {"image": "artifact:REFERENCE_ID"}},
-  "2": {"class_type": "LoadBackgroundRemovalModel", "inputs": {"bg_removal_name": "birefnet.safetensors"}},
-  "3": {"class_type": "RemoveBackground", "inputs": {"bg_removal_model": ["2", 0], "image": ["1", 0]}},
-  "4": {"class_type": "Budget3DPreprocessImage", "inputs": {"image": ["1", 0], "mask": ["3", 0], "mode": "synthetic"}},
-  "5": {"class_type": "CLIPVisionLoader", "inputs": {"clip_name": "dino_v3_vit_h.safetensors"}},
-  "6": {"class_type": "VAELoader", "inputs": {"vae_name": "flux2-vae.safetensors"}},
-  "7": {"class_type": "VAEComputeDtype", "inputs": {"vae": ["6", 0], "dtype": "bf16"}},
-  "8": {"class_type": "TripoSplatConditioning", "inputs": {"clip_vision": ["5", 0], "vae": ["7", 0], "image": ["4", 0]}},
-  "9": {"class_type": "Budget3DLoader", "inputs": {"unet_name": "budget3d_idol_turbo.safetensors"}},
-  "10": {"class_type": "Budget3DSampler", "inputs": {"budget3d_model": ["9", 0], "positive": ["8", 0], "negative": ["8", 1], "latent_image": ["8", 2], "seed": "$seed", "steps": 5, "cfg": 0.0, "budget": 1.0, "rescale_t": 3.0, "warmup_steps": 0}},
-  "11": {"class_type": "VAELoader", "inputs": {"vae_name": "idol_vae_decoder_fp32.safetensors"}},
-  "12": {"class_type": "VAEComputeDtype", "inputs": {"vae": ["11", 0], "dtype": "fp32"}},
-  "13": {"class_type": "VAEDecodeTripoSplat", "inputs": {"samples": ["10", 0], "vae": ["12", 0], "num_gaussians": 262144, "seed": "$seed"}},
-  "14": {"class_type": "SplatToMesh", "inputs": {"splat": ["13", 0], "resolution": 384, "kernel": 5, "smooth": 3, "level": 0.4, "min_component": 500, "min_opacity": 0.02, "color_sharpen": 2.0, "solid": true, "fill": 20.0}},
-  "15": {"class_type": "SaveGLB", "inputs": {"mesh": ["14", 0], "filename_prefix": "mesh/proscenium-budget3d"}}
-}
-```
+- Register the conditioning image (`kind: "image"`, `purpose: "reference"`). Call
+  `prepare_mesh_generation` with `schema_version: "1.0"`, a stable `operation_id`, the
+  registered `reference_artifact_id`, `prompt` and a JSON-safe decimal `seed` string.
+  Omit `project_id` and `generation_task_id` so the host binds them to active work.
+- Use the configured recipe defaults unless a different setting is requested. Budget3D
+  accepts `mode` (`"synthetic"` for renders or `"real"` for photographs), `budget`
+  (0.0625–1.0), `steps` (1–50), `num_gaussians` (32768–1048576 in multiples of 32)
+  and `mesh_resolution` (64–768 in multiples of 16). Hunyuan3D accepts none of these overrides.
+- Preparation preflights the installed nodes and models and registers the trusted workflow
+  and prompt provenance without running inference. Call `submit_generation` with the
+  **exact returned `submit_request`**. Do not write a workflow graph in shell or Python.
+- Manual compatibility: existing callers can submit an already registered, pinned workflow
+  and prompt with `capability: "image_to_3d"` and the exact `provider_id`. Copy
+  `selected_models` from `get_project_capabilities` into `submit_generation`'s `model_ids`
+  field. Send one `input_artifact_ids` entry and `settings: {}` when there is no target slot. For an
+  unpublished asset use `target_id == generation_task_id`, or the active new-item intent ID.
+  In a Budget3D graph `SaveGLB.filename_prefix` must be the literal `"mesh/proscenium-budget3d"`.
 
 - Budget3D is image-conditioned (`BiRefNet` foreground segmentation + `DINOv3 ViT-H+/16` +
   `FLUX.2 VAE`). Prompt text is provenance, not text conditioning. New inferred geometry

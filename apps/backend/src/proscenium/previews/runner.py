@@ -125,7 +125,9 @@ def launch(service, project_id: str, body: dict) -> dict:
         return {"terminal": job["state"], "launched": False}
     root = service.root(job)
     if (root / "launch.claim").exists():
-        raise DomainError("outcome_uncertain", 409, "Original launch must be reconciled")
+        raise DomainError(
+            "outcome_uncertain", 409, "Original launch must be reconciled", safe_for_model=True
+        )
     service.config.validate(job["render_spec"])
     config = service.runtime(project_id, job)
     if config["profile_id"] not in services.settings.execution_profiles:

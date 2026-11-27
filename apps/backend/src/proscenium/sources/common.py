@@ -94,7 +94,9 @@ def git(
         env=git_environment(env),
     )
     if process.returncode and required:
-        raise DomainError("source_unavailable", 422, "Local Git operation failed")
+        raise DomainError(
+            "source_unavailable", 422, "Local Git operation failed", safe_for_model=True
+        )
     return process.stdout if not process.returncode else b""
 
 

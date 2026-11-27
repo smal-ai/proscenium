@@ -156,7 +156,9 @@ class Artifacts:
             or "srgb" in image.info
         ):
             raise DomainError(
-                "invalid_request", message="Mask must be untagged 8-bit greyscale PNG"
+                "invalid_request",
+                message="Mask must be untagged 8-bit greyscale PNG",
+                safe_for_model=True,
             )
         return image
 
@@ -386,13 +388,19 @@ class Artifacts:
             or semantics not in {"binary", "soft"}
         ):
             raise DomainError(
-                "invalid_request", message="Mask encoding/target dimensions do not match"
+                "invalid_request",
+                message="Mask encoding/target dimensions do not match",
+                safe_for_model=True,
             )
         image = self.decode(
             self.ready_path(project_id, artifact_id).read_bytes(), "image/png", mask=True
         )
         if semantics == "binary" and any(value not in {0, 255} for value in image.tobytes()):
-            raise DomainError("invalid_request", message="Binary masks contain only 0 and 255")
+            raise DomainError(
+                "invalid_request",
+                message="Binary masks contain only 0 and 255",
+                safe_for_model=True,
+            )
         return artifact
 
     def retain(self, caller: Caller, project_id: str, artifact_id: str, *, reason: str) -> None:

@@ -1,4 +1,4 @@
-"""Local image input preparation and bounded read-only recipe discovery. No inference."""
+"""Local generation preparation and bounded read-only recipe discovery. No inference."""
 
 import itertools
 import math
@@ -11,7 +11,15 @@ import httpx
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.contracts import canonical, validate
-from proscenium.providers import budget3d, klein, minimax_h3, sd_turbo, sd_turbo_fp16, stable_audio
+from proscenium.providers import (
+    budget3d,
+    hunyuan,
+    klein,
+    minimax_h3,
+    sd_turbo,
+    sd_turbo_fp16,
+    stable_audio,
+)
 from proscenium.providers.comfy import endpoint
 from proscenium.providers.comfy import supports_bf16_vae as supports_bf16_vae
 from proscenium.providers.plugins import plugin
@@ -23,6 +31,15 @@ UNAVAILABLE = "Image recipe nodes or models are unavailable"
 MAX_CATALOG_BYTES = 16 * 1024**2
 TILE_THRESHOLD_PIXELS = 1_048_576
 SD_TURBO_REFERENCE = "Selected image profile requires one exact 512x512 reference"
+BUDGET3D_OVERRIDES = frozenset({"mode", "budget", "steps", "num_gaussians", "mesh_resolution"})
+HUNYUAN_REVISION = "hunyuan3d-native-2.0-1"
+
+
+def mesh_revision(options: dict[str, Any], identity: str) -> str:
+    recipe = options.get("mesh_recipes", {}).get(identity, {})
+    return options.get("mesh_profiles", {}).get(
+        identity, recipe.get("profile_revision", budget3d.TURBO_REVISION)
+    )
 
 
 def validate_recipes(options: dict[str, Any]) -> None:
@@ -86,19 +103,11 @@ def validate_recipes(options: dict[str, Any]) -> None:
         if not isinstance(revision, str) or revision != mesh_profiles.get(identity, revision):
             raise ValueError("Mesh recipe profile_revision must agree with mesh_profiles")
         plugin("image_to_3d", revision)
-        if revision == "hunyuan3d-native-2.0-1":
+        if revision == HUNYUAN_REVISION:
             if set(recipe) != {"profile_revision"}:
                 raise ValueError("Hunyuan mesh recipe accepts profile_revision only")
             continue
-        allowed_mesh = {
-            "profile_revision",
-            "budget",
-            "mode",
-            "steps",
-            "num_gaussians",
-            "mesh_resolution",
-        }
-        if set(recipe) - allowed_mesh:
+        if recipe.keys() - BUDGET3D_OVERRIDES - {"profile_revision"}:
             raise ValueError("Unknown mesh recipe fields")
         budget3d.recipe_graph("reference", revision, recipe)
 
@@ -340,13 +349,13 @@ def bounded_get(provider: Any, service: dict[str, Any], path: str) -> dict[str, 
         data = bytearray()
         for chunk in response.iter_bytes():
             if time.monotonic() > deadline or len(data) + len(chunk) > MAX_CATALOG_BYTES:
-                raise DomainError("capability_unavailable", 501, UNAVAILABLE)
+                raise DomainError("capability_unavailable", 501, UNAVAILABLE, safe_for_model=True)
             data.extend(chunk)
     import json
 
     body = json.loads(data)
     if not isinstance(body, dict):
-        raise DomainError("capability_unavailable", 501, UNAVAILABLE)
+        raise DomainError("capability_unavailable", 501, UNAVAILABLE, safe_for_model=True)
     return body
 
 
@@ -360,9 +369,11 @@ def workflow(
     refs = [reference] if isinstance(reference, str) else list(reference or ())
     if revision != "comfy-image-1":
         if not refs:
-            raise DomainError("capability_unavailable", 501, SD_TURBO_REFERENCE)
+            raise DomainError(
+                "capability_unavailable", 501, SD_TURBO_REFERENCE, safe_for_model=True
+            )
         if len(refs) > 1:
-            raise DomainError("invalid_request", message=SD_TURBO_REFERENCE)
+            raise DomainError("invalid_request", message=SD_TURBO_REFERENCE, safe_for_model=True)
         return (sd_turbo if revision == sd_turbo.REVISION else sd_turbo_fp16).graph(refs[0])
     width = recipe.get("width", 512)
     height = recipe.get("height", 512)
@@ -428,7 +439,7 @@ def compatible_recipes(
             truncated = truncated or len(names) > 32
             choices.append(names[:32])
         if all(choices) and (truncated or math.prod(map(len, choices)) > 256):
-            raise DomainError("capability_unavailable", 501, AMBIGUOUS)
+            raise DomainError("capability_unavailable", 501, AMBIGUOUS, safe_for_model=True)
         candidates = [
             dict(profile_revision=revision, unet=u, clip=c, vae=v)
             for u, c, v in itertools.islice(itertools.product(*choices), 256)
@@ -490,7 +501,9 @@ class Preparation:
         store = self.services.registry.project_store(body["project_id"])
         if self.capability == "image" and (len(body["seed"]) > 16 or int(body["seed"]) > 2**53 - 1):
             raise DomainError(
-                "invalid_request", message="An exact JSON-safe decimal seed is required"
+                "invalid_request",
+                message="An exact JSON-safe decimal seed is required",
+                safe_for_model=True,
             )
         with store.transaction(write=False) as tx:
             work = admitted(self.services, tx, caller)
@@ -502,12 +515,23 @@ class Preparation:
                     "scope_denied",
                     403,
                     "generation_task_id does not match the active work; omit generation_task_id to use the active task",
+                    safe_for_model=True,
                 )
             body = {
                 **body,
                 "generation_task_id": body.get("generation_task_id") or work["generation_task_id"],
             }
             context = _request_context(tx, caller, work) or {}
+            if (
+                self.capability == "image_to_3d"
+                and context.get("execution_scope") == "planning_only"
+            ):
+                raise DomainError(
+                    "scope_denied",
+                    403,
+                    "Generation is unavailable while execution_scope is planning_only",
+                    safe_for_model=True,
+                )
             explicit_target = body.get("target_id")
             policy = tx.get("providers.tasks", work["generation_task_id"], required=False)
             bound_explicit_target = bool(
@@ -532,7 +556,10 @@ class Preparation:
             catalog = bounded_get(self.provider, provider, "/object_info")
         except (httpx.HTTPError, ValueError, TypeError) as exc:
             raise DomainError(
-                "capability_unavailable", 501, "Provider catalogue could not be read"
+                "capability_unavailable",
+                501,
+                "Provider catalogue could not be read",
+                safe_for_model=True,
             ) from exc
         graph, model_ids, references, revision, metadata = self.recipe(body, provider, catalog)
         digest = sha(
@@ -601,6 +628,8 @@ class Preparation:
             submit_request=request,
             **metadata,
         )
+        if self.capability == "image_to_3d":
+            result["input_artifact_ids"] = references
         validate(self.result_schema, result)
         with store.transaction() as tx:
 
@@ -622,9 +651,13 @@ class Preparation:
         try:
             recipes = compatible_recipes(self.provider, provider["provider_id"], catalog)
         except (KeyError, TypeError, ValueError, IndexError, AttributeError) as exc:
-            raise DomainError("capability_unavailable", 501, UNAVAILABLE) from exc
-        if len(recipes) != 1:
-            raise DomainError("capability_unavailable", 501, AMBIGUOUS if recipes else UNAVAILABLE)
+            raise DomainError(
+                "capability_unavailable", 501, UNAVAILABLE, safe_for_model=True
+            ) from exc
+        if not recipes:
+            raise DomainError("capability_unavailable", 501, UNAVAILABLE, safe_for_model=True)
+        if len(recipes) > 1:
+            raise DomainError("capability_unavailable", 501, AMBIGUOUS, safe_for_model=True)
         recipe = {**recipes[0], **{k: body[k] for k in ("width", "height", "steps") if k in body}}
         revision = recipe["profile_revision"]
         width, height = recipe.get("width", 512), recipe.get("height", 512)
@@ -636,6 +669,7 @@ class Preparation:
             raise DomainError(
                 "invalid_request",
                 message="Image width and height must be multiples of 16 between 64 and 4096",
+                safe_for_model=True,
             )
         max_pixels = recipe.get(
             "max_pixels", 1_048_576 if revision == "comfy-image-1" else 512 * 512
@@ -644,20 +678,27 @@ class Preparation:
             raise DomainError(
                 "invalid_request",
                 message="Requested image dimensions exceed the configured provider pixel limit",
+                safe_for_model=True,
             )
         if revision != "comfy-image-1" and any(
             recipe.get(k, v) != v for k, v in (("width", 512), ("height", 512), ("steps", 4))
         ):
             raise DomainError(
-                "invalid_request", message="SD-Turbo image recipes require 512x512 and four steps"
+                "invalid_request",
+                message="SD-Turbo image recipes require 512x512 and four steps",
+                safe_for_model=True,
             )
         references = list(body.get("reference_artifact_ids", []))
         if len(set(references)) != len(references):
-            raise DomainError("invalid_request", message="Duplicate conditioning image")
+            raise DomainError(
+                "invalid_request", message="Duplicate conditioning image", safe_for_model=True
+            )
         if revision != "comfy-image-1" and len(references) > 1:
-            raise DomainError("invalid_request", message=SD_TURBO_REFERENCE)
+            raise DomainError("invalid_request", message=SD_TURBO_REFERENCE, safe_for_model=True)
         if revision == "comfy-image-1" and len(references) > klein.MAX_REFERENCE_IMAGES:
-            raise DomainError("invalid_request", message=klein.REFERENCE_LIMIT_MESSAGE)
+            raise DomainError(
+                "invalid_request", message=klein.REFERENCE_LIMIT_MESSAGE, safe_for_model=True
+            )
         capability = plugin("image", revision)
         for identity in references:
             artifact, _ = self.provider.image_bytes(body["project_id"], identity)
@@ -665,7 +706,9 @@ class Preparation:
                 "width": 512,
                 "height": 512,
             }:
-                raise DomainError("invalid_request", message=SD_TURBO_REFERENCE)
+                raise DomainError(
+                    "invalid_request", message=SD_TURBO_REFERENCE, safe_for_model=True
+                )
         graph = workflow(recipe, references, catalog=catalog)
         model_ids = models(recipe)
         bound = capability.bind_graph(
@@ -698,10 +741,14 @@ class AudioPreparation(Preparation):
         recipes = compatible_audio_recipes(self.provider, provider["provider_id"], catalog)
         recipe = next((candidate for candidate in recipes if candidate["mode"] == mode), None)
         if recipe is None:
-            raise DomainError("capability_unavailable", 501, stable_audio.UNAVAILABLE)
+            raise DomainError(
+                "capability_unavailable", 501, stable_audio.UNAVAILABLE, safe_for_model=True
+            )
         seconds = body["duration_seconds"]
         if not 1 <= seconds <= recipe["max_duration_seconds"]:
-            raise DomainError("invalid_request", message=stable_audio.INVALID_DURATION)
+            raise DomainError(
+                "invalid_request", message=stable_audio.INVALID_DURATION, safe_for_model=True
+            )
         checkpoint, clip = model_ids = recipe["model_ids"]
         revision = recipe["profile_revision"]
         adapter = plugin("audio", revision)
@@ -736,6 +783,7 @@ class VideoPreparation(Preparation):
             raise DomainError(
                 "invalid_request",
                 message="Requested video dimensions exceed the provider pixel limit",
+                safe_for_model=True,
             )
         seconds = body.get(
             "duration_seconds",
@@ -743,7 +791,9 @@ class VideoPreparation(Preparation):
         )
         if not 1 <= seconds <= recipe["max_duration_seconds"]:
             raise DomainError(
-                "invalid_request", message="Video duration is outside supported bounds"
+                "invalid_request",
+                message="Video duration is outside supported bounds",
+                safe_for_model=True,
             )
         count = minimax_h3.align_frame_count(seconds)
         steps = body.get("steps", recipe["steps"] if mode == "fl2va" else 4)
@@ -756,7 +806,9 @@ class VideoPreparation(Preparation):
             )
         if not (steps == 4 or (mode == "fl2va" and (steps in (8, recipe["steps"]) or steps >= 15))):
             raise DomainError(
-                "invalid_request", message="Unsupported sampling steps for MiniMax H3 mode"
+                "invalid_request",
+                message="Unsupported sampling steps for MiniMax H3 mode",
+                safe_for_model=True,
             )
         incompatible = (
             {"reference_artifact_ids", "ref_image_size"}
@@ -765,7 +817,9 @@ class VideoPreparation(Preparation):
         )
         if incompatible & body.keys():
             raise DomainError(
-                "invalid_request", message="Invalid MiniMax H3 conditioning artefacts"
+                "invalid_request",
+                message="Invalid MiniMax H3 conditioning artefacts",
+                safe_for_model=True,
             )
         graph, model_ids = video_workflow(
             recipe,
@@ -814,3 +868,50 @@ class VideoPreparation(Preparation):
                 input_artifact_ids=references,
             ),
         )
+
+
+class MeshPreparation(Preparation):
+    capability = "image_to_3d"
+    operation = "providers.prepare_mesh"
+    request_schema = "MeshGenerationPrepare"
+    result_schema = "MeshGenerationPrepared"
+    permission = "prepareMeshGeneration"
+
+    def recipe(
+        self, body: dict[str, Any], provider: dict[str, Any], catalog: dict[str, Any]
+    ) -> tuple[dict[str, Any], list[str], list[str], str, dict[str, Any]]:
+        identity = provider["provider_id"]
+        options = self.provider.options
+        revision = mesh_revision(options, identity)
+        adapter = plugin(self.capability, revision)
+        reference = body["reference_artifact_id"]
+        overrides = {key: body[key] for key in BUDGET3D_OVERRIDES & body.keys()}
+        if revision == HUNYUAN_REVISION:
+            if overrides:
+                raise DomainError(
+                    "invalid_request",
+                    message="Hunyuan3D uses a pinned recipe; omit mode, budget, steps, num_gaussians and mesh_resolution",
+                    safe_for_model=True,
+                )
+            workflow = hunyuan.graph(reference)
+            model_ids = [hunyuan.FILENAME]
+        else:
+            configured = options.get("mesh_recipes", {}).get(identity, {})
+            # JSON Schema accepts integral numbers such as 5.0 as integers.
+            for key in {"steps", "num_gaussians", "mesh_resolution"} & overrides.keys():
+                overrides[key] = int(overrides[key])
+            workflow = budget3d.recipe_graph(reference, revision, {**configured, **overrides})
+            model_ids = budget3d.models(turbo=revision == budget3d.TURBO_REVISION)
+        self.provider.image_bytes(body["project_id"], reference)
+        adapter.preflight(
+            adapter.bind_graph(
+                workflow,
+                body["prompt"],
+                body["seed"],
+                {reference: "artifact:" + reference},
+                model_ids,
+            ),
+            catalog,
+            model_ids,
+        )
+        return workflow, model_ids, [reference], revision, {}

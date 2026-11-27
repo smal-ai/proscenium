@@ -31,7 +31,11 @@ def endpoint(value: str) -> str:
         or url.query
         or url.fragment
     ):
-        raise DomainError("invalid_request", message="A credential-free service URL is required")
+        raise DomainError(
+            "invalid_request",
+            message="A credential-free service URL is required",
+            safe_for_model=True,
+        )
     return value.rstrip("/")
 
 
@@ -73,14 +77,18 @@ def preflight(
     allowed_output_nodes: frozenset[str] | None = None,
 ) -> None:
     if not graph or "nodes" in graph:
-        raise DomainError("invalid_request", message="Expected a non-empty API graph")
+        raise DomainError(
+            "invalid_request", message="Expected a non-empty API graph", safe_for_model=True
+        )
     schemas: dict[str, Any] = {}
     for identity, node in graph.items():
         if not isinstance(node, dict) or not isinstance(node.get("inputs"), dict):
-            raise DomainError("invalid_request", message="Invalid graph node")
+            raise DomainError("invalid_request", message="Invalid graph node", safe_for_model=True)
         kind = node.get("class_type")
         if kind not in catalog:
-            raise DomainError("capability_unavailable", 501, "Graph node is not installed")
+            raise DomainError(
+                "capability_unavailable", 501, "Graph node is not installed", safe_for_model=True
+            )
         schemas[identity] = catalog[kind]
     output_nodes = {
         graph[nid]["class_type"] for nid, schema in schemas.items() if schema.get("output_node")
@@ -88,33 +96,46 @@ def preflight(
     if not output_nodes or (
         allowed_output_nodes is not None and not output_nodes <= allowed_output_nodes
     ):
-        raise DomainError("invalid_request", message=OUTPUT_CAPABILITY_MISMATCH)
+        raise DomainError(
+            "invalid_request", message=OUTPUT_CAPABILITY_MISMATCH, safe_for_model=True
+        )
     selected_models: set[str] = set()
     for identity, schema in schemas.items():
         inputs = graph[identity]["inputs"]
         required = schema.get("input", {}).get("required", {})
         optional = schema.get("input", {}).get("optional", {})
         if set(required) - set(inputs):
-            raise DomainError("invalid_request", message="Missing graph input")
+            raise DomainError("invalid_request", message="Missing graph input", safe_for_model=True)
         for name, value in inputs.items():
             spec = required.get(name, optional.get(name))
             if not spec:
-                raise DomainError("invalid_request", message="Unknown graph input")
+                raise DomainError(
+                    "invalid_request", message="Unknown graph input", safe_for_model=True
+                )
             if isinstance(value, list) and len(value) == 2 and isinstance(value[0], str):
                 source, slot = value
                 outputs = schemas.get(source, {}).get("output", [])
                 if type(slot) is not int or not 0 <= slot < len(outputs):
-                    raise DomainError("invalid_request", message="Invalid graph link")
+                    raise DomainError(
+                        "invalid_request", message="Invalid graph link", safe_for_model=True
+                    )
                 if (
                     isinstance(spec[0], str)
                     and outputs[slot] != "*"
                     and not (set(spec[0].split(",")) & {outputs[slot], "*"})
                 ):
-                    raise DomainError("invalid_request", message="Graph link type mismatch")
+                    raise DomainError(
+                        "invalid_request", message="Graph link type mismatch", safe_for_model=True
+                    )
             elif isinstance(spec[0], list) and value not in spec[0]:
                 # LoadImage choices are populated only after the admitted upload.
                 if not (graph[identity]["class_type"] == "LoadImage" and name == "image"):
-                    raise DomainError("capability_unavailable", 501, "Model/choice is unavailable")
+                    raise DomainError(
+                        "capability_unavailable",
+                        501,
+                        "Model/choice is unavailable",
+                        safe_for_model=True,
+                    )
             elif isinstance(spec[0], str):
                 kind = spec[0]
                 valid = (
@@ -130,12 +151,18 @@ def preflight(
                     )
                 )
                 if not valid:
-                    raise DomainError("invalid_request", message="Invalid graph input type")
+                    raise DomainError(
+                        "invalid_request", message="Invalid graph input type", safe_for_model=True
+                    )
                 bounds = spec[1] if len(spec) > 1 and isinstance(spec[1], dict) else {}
                 if kind in {"INT", "FLOAT"} and (
                     value < bounds.get("min", value) or value > bounds.get("max", value)
                 ):
-                    raise DomainError("invalid_request", message="Graph input outside node bounds")
+                    raise DomainError(
+                        "invalid_request",
+                        message="Graph input outside node bounds",
+                        safe_for_model=True,
+                    )
             if name in {
                 "unet_name",
                 "ckpt_name",
@@ -146,7 +173,9 @@ def preflight(
             }:
                 selected_models.add(value)
     if set(models) != selected_models:
-        raise DomainError("invalid_request", message="Model manifest/output graph mismatch")
+        raise DomainError(
+            "invalid_request", message="Model manifest/output graph mismatch", safe_for_model=True
+        )
 
 
 def bind_graph(
@@ -154,24 +183,44 @@ def bind_graph(
 ) -> dict[str, Any]:
     """Bind declared artefacts only, in the exact order used by both conditioning chains."""
     graph = copy.deepcopy(graph)
-    if seed is None or not 0 <= int(seed) <= 2**53 - 1:
-        raise DomainError("invalid_request", message="An exact JSON-safe decimal seed is required")
+    digits = (seed.lstrip("0") or "0") if seed is not None else ""
+    if (
+        seed is None
+        or not seed.isascii()
+        or not seed.isdecimal()
+        or len(digits) > 16
+        or int(digits) > 2**53 - 1
+    ):
+        raise DomainError(
+            "invalid_request",
+            message="An exact JSON-safe decimal seed is required",
+            safe_for_model=True,
+        )
+    seed_int = int(digits)
     load_ids: dict[str, str] = {}
     used: set[str] = set()
     for identity, node in graph.items():
         if node.get("class_type") in AUDIO_OUTPUT_NODES:
-            raise DomainError("invalid_request", message=OUTPUT_CAPABILITY_MISMATCH)
+            raise DomainError(
+                "invalid_request", message=OUTPUT_CAPABILITY_MISMATCH, safe_for_model=True
+            )
         if node.get("class_type") != "LoadImage":
             continue
         inputs = node.get("inputs")
         image = inputs.get("image") if isinstance(inputs, dict) else None
         if not isinstance(image, str) or not image.startswith("artifact:"):
-            raise DomainError("invalid_request", message="Unbound conditioning image")
+            raise DomainError(
+                "invalid_request", message="Unbound conditioning image", safe_for_model=True
+            )
         artifact_id = image.removeprefix("artifact:")
         if artifact_id not in references:
-            raise DomainError("invalid_request", message="Unbound conditioning image")
+            raise DomainError(
+                "invalid_request", message="Unbound conditioning image", safe_for_model=True
+            )
         if artifact_id in used:
-            raise DomainError("invalid_request", message="Duplicate conditioning image")
+            raise DomainError(
+                "invalid_request", message="Duplicate conditioning image", safe_for_model=True
+            )
         used.add(artifact_id)
         load_ids[identity] = artifact_id
 
@@ -187,7 +236,7 @@ def bind_graph(
 
     def visit(identity: str) -> None:
         if identity in visiting:
-            raise DomainError("invalid_request", message="Invalid graph link")
+            raise DomainError("invalid_request", message="Invalid graph link", safe_for_model=True)
         if identity in reachable:
             return
         visiting.add(identity)
@@ -206,7 +255,9 @@ def bind_graph(
         if node["class_type"] in IMAGE_OUTPUT_NODES:
             visit(identity)
     if not reachable:
-        raise DomainError("invalid_request", message=OUTPUT_CAPABILITY_MISMATCH)
+        raise DomainError(
+            "invalid_request", message=OUTPUT_CAPABILITY_MISMATCH, safe_for_model=True
+        )
 
     def output_zero(link: Any) -> str | None:
         if (
@@ -247,7 +298,9 @@ def bind_graph(
     if (expected_order and not guiders) or (
         not expected_order and any(graph[k]["class_type"] == "ReferenceLatent" for k in reachable)
     ):
-        raise DomainError("invalid_request", message="Reference is not conditioning")
+        raise DomainError(
+            "invalid_request", message="Reference is not conditioning", safe_for_model=True
+        )
     for guider in guiders:
         pos_base, positive = conditioning_chain(guider["inputs"].get("positive"))
         neg_base, negative = conditioning_chain(guider["inputs"].get("negative"))
@@ -260,13 +313,19 @@ def bind_graph(
             or [conditioning_artifact(k) for k in positive] != expected_order
             or [conditioning_artifact(k) for k in negative] != expected_order
         ):
-            raise DomainError("invalid_request", message="Reference is not conditioning")
+            raise DomainError(
+                "invalid_request", message="Reference is not conditioning", safe_for_model=True
+            )
 
     for identity, node in graph.items():
         for key, value in node["inputs"].items():
             if key in {"seed", "noise_seed"}:
-                if value not in {"$seed", int(seed)}:
-                    raise DomainError("invalid_request", message="Graph/request seed mismatch")
+                if value not in {"$seed", seed_int}:
+                    raise DomainError(
+                        "invalid_request",
+                        message="Graph/request seed mismatch",
+                        safe_for_model=True,
+                    )
                 has_seed = True
             if value == "$prompt":
                 if node["class_type"] != "CLIPTextEncode" or key != "text":
@@ -276,18 +335,26 @@ def bind_graph(
             elif value == "$seed":
                 if seed is None or key not in {"noise_seed", "seed"}:
                     raise DomainError("invalid_request")
-                node["inputs"][key] = int(seed)
+                node["inputs"][key] = seed_int
             elif isinstance(value, str) and value.startswith("artifact:"):
                 if key != "image" or identity not in load_ids:
-                    raise DomainError("invalid_request", message="Unbound conditioning image")
+                    raise DomainError(
+                        "invalid_request", message="Unbound conditioning image", safe_for_model=True
+                    )
                 node["inputs"][key] = references[load_ids[identity]]
     if used != set(references) or not has_prompt or not has_seed:
-        raise DomainError("invalid_request", message="Unused input image or missing prompt binding")
+        raise DomainError(
+            "invalid_request",
+            message="Unused input image or missing prompt binding",
+            safe_for_model=True,
+        )
     if references and not any(
         n["class_type"] == "CLIPLoader" and n["inputs"].get("type") == "flux2"
         for n in graph.values()
     ):
-        raise DomainError("capability_unavailable", 501, "Reference workflow requires FLUX.2")
+        raise DomainError(
+            "capability_unavailable", 501, "Reference workflow requires FLUX.2", safe_for_model=True
+        )
     return graph
 
 
@@ -310,7 +377,12 @@ class ComfyClient:
         stats = self.get("/system_stats")
         devices = stats.get("devices", [])
         if minimum_free_bytes and not devices:
-            raise DomainError("capability_unavailable", 501, "GPU memory telemetry unavailable")
+            raise DomainError(
+                "capability_unavailable",
+                501,
+                "GPU memory telemetry unavailable",
+                safe_for_model=True,
+            )
         return bool(
             minimum_free_bytes and all(d.get("vram_free", 0) < minimum_free_bytes for d in devices)
         )
@@ -332,7 +404,12 @@ class ComfyClient:
         response.raise_for_status()
         body = response.json()
         if not isinstance(body.get("prompt_id"), str):
-            raise DomainError("provider_unavailable", 503, "Provider did not acknowledge a prompt")
+            raise DomainError(
+                "provider_unavailable",
+                503,
+                "Provider did not acknowledge a prompt",
+                safe_for_model=True,
+            )
         return str(body["prompt_id"])
 
     def status(self, prompt_id: str) -> dict[str, Any] | None:
@@ -368,10 +445,20 @@ class ComfyClient:
         ) as response:
             response.raise_for_status()
             if int(response.headers.get("content-length", 0)) > maximum_bytes:
-                raise DomainError("unsupported_media_type", 413, "Provider output is too large")
+                raise DomainError(
+                    "unsupported_media_type",
+                    413,
+                    "Provider output is too large",
+                    safe_for_model=True,
+                )
             data = bytearray()
             for block in response.iter_bytes(chunk_size=1024**2):
                 if len(data) + len(block) > maximum_bytes:
-                    raise DomainError("unsupported_media_type", 413, "Provider output is too large")
+                    raise DomainError(
+                        "unsupported_media_type",
+                        413,
+                        "Provider output is too large",
+                        safe_for_model=True,
+                    )
                 data.extend(block)
             return bytes(data)

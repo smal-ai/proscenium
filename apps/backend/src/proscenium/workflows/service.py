@@ -232,7 +232,10 @@ class Workflows:
                 return await self.io(self.existing_job, row)
             if await self.io(self._assembly_has_admitted_state, row):
                 raise DomainError(
-                    "project_busy", 409, "Partial assembly admission requires reconciliation"
+                    "project_busy",
+                    409,
+                    "Partial assembly admission requires reconciliation",
+                    safe_for_model=True,
                 )
             await self.io(self.require_effect, caller)
             # A matching retry can prepare again after a pre-admission failure.
@@ -261,7 +264,10 @@ class Workflows:
                 raise
             if not await self.io(self._assembly_committed, row):
                 raise DomainError(
-                    "source_conflict", 409, "Assembly admission did not commit durable state"
+                    "source_conflict",
+                    409,
+                    "Assembly admission did not commit durable state",
+                    safe_for_model=True,
                 )
             row["phase"] = "launched"
             await self.io(self.save, row["project_id"], identity, row)

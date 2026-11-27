@@ -87,7 +87,7 @@ def input_audio(artifacts: Any, project_id: str, sequence: dict) -> list[dict]:
             or record["media_type"] not in AUDIO_EXTENSIONS
             or not record.get("duration_seconds")
         ):
-            raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT)
+            raise DomainError("media_unavailable", 422, INVALID_AUDIO_ARTEFACT, safe_for_model=True)
         artifacts.ready_path(project_id, identity)
         result.append(
             {
@@ -137,7 +137,9 @@ def expand(sequence: dict, frame_map: dict | None) -> dict:
     rows = []
     for entry in sequence["entries"]:
         if entry["transform"] not in {"identity", "trim"}:
-            raise DomainError("invalid_frame_mapping", 422, EXPLICIT_FRAME_MAP_REQUIRED)
+            raise DomainError(
+                "invalid_frame_mapping", 422, EXPLICIT_FRAME_MAP_REQUIRED, safe_for_model=True
+            )
         for destination in range(
             entry["sequence_frames"]["start"], entry["sequence_frames"]["end"] + 1
         ):
@@ -252,12 +254,18 @@ def admit_assembly(
 def require_profile(service, profile_id: str) -> None:
     configured = service.config.profile_id
     if configured not in service.services.settings.execution_profiles:
-        raise DomainError("capability_unavailable", 501, "Execution profile is not configured")
+        raise DomainError(
+            "capability_unavailable",
+            501,
+            "Execution profile is not configured",
+            safe_for_model=True,
+        )
     if profile_id != configured:
         raise DomainError(
             "invalid_request",
             422,
             f"Unsupported assembly execution_profile_id; omit it or use '{configured}'",
+            configured_assembly_profile_id=configured,
         )
 
 
@@ -278,11 +286,19 @@ def prepare(
     sequence = technical(sequence)
     if sequence != technical(published):
         raise DomainError(
-            "source_conflict", 409, "Assembly must use its pinned published SequenceMap"
+            "source_conflict",
+            409,
+            "Assembly must use its pinned published SequenceMap",
+            safe_for_model=True,
         )
     if is_clip_sequence(sequence):
         if frame_map is not None:
-            raise DomainError("invalid_frame_mapping", 422, "Clip sequences do not use a FrameMap")
+            raise DomainError(
+                "invalid_frame_mapping",
+                422,
+                "Clip sequences do not use a FrameMap",
+                safe_for_model=True,
+            )
         with service.services.registry.project_store(project_id).transaction(write=False) as tx:
             admitted(service.services, tx, caller)
             check_target(tx, admission, sequence)
@@ -322,7 +338,10 @@ def prepare(
                 receipt = receipts.get(key)
                 if receipt is None:
                     raise DomainError(
-                        "media_unavailable", 422, "A pinned contributor frame is unavailable"
+                        "media_unavailable",
+                        422,
+                        "A pinned contributor frame is unavailable",
+                        safe_for_model=True,
                     )
                 inputs[receipt["artifact_id"]] = receipt
     ordered = [inputs[key] for key in sorted(inputs)]
@@ -334,7 +353,12 @@ def prepare(
     check_snapshot(admission, snapshot)
     dimensions = {tuple(sorted(row["dimensions"].items())) for row in ordered}
     if len(dimensions) != 1:
-        raise DomainError("invalid_frame_mapping", 422, "Assembly input dimensions must agree")
+        raise DomainError(
+            "invalid_frame_mapping",
+            422,
+            "Assembly input dimensions must agree",
+            safe_for_model=True,
+        )
     for row in ordered:
         service.artifacts.ready_path(project_id, row["artifact_id"])
     return snapshot
@@ -351,7 +375,12 @@ def check_snapshot(admission: dict, snapshot: dict) -> None:
     if sorted(admission["input_artifact_ids"]) != input_ids(snapshot):
         raise DomainError("invalid_frame_mapping", 422)
     if admission["input_digest"] != fingerprint(snapshot):
-        raise DomainError("hash_mismatch", 422, "Assembly digest does not bind exact contributors")
+        raise DomainError(
+            "hash_mismatch",
+            422,
+            "Assembly digest does not bind exact contributors",
+            safe_for_model=True,
+        )
 
 
 def render_frames(root: Path, snapshot: dict) -> None:
@@ -424,7 +453,10 @@ def execute(root: Path, task: dict) -> None:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise DomainError(
-                    "media_unavailable", 422, "Clip verification exceeded its deadline"
+                    "media_unavailable",
+                    422,
+                    "Clip verification exceeded its deadline",
+                    safe_for_model=True,
                 )
             metadata = verify_video_bytes(
                 data, ffmpeg=config["ffmpeg"], ffprobe=config["ffprobe"], timeout=min(remaining, 30)
@@ -435,7 +467,10 @@ def execute(root: Path, task: dict) -> None:
                 if key in row
             ):
                 raise DomainError(
-                    "hash_mismatch", 422, "Pinned clip metadata does not match the MP4"
+                    "hash_mismatch",
+                    422,
+                    "Pinned clip metadata does not match the MP4",
+                    safe_for_model=True,
                 )
             clips[row["artifact_id"]] = {**metadata, "path": path}
         command = assemble_clips(

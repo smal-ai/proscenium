@@ -60,17 +60,30 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
     """Read immutable authored documents outside the admission transaction; retain CAS inputs."""
     settings = request["settings"]
     if set(settings) - {"target_slot"}:
-        raise DomainError("invalid_request", message="Only target_slot is supported")
+        raise DomainError(
+            "invalid_request",
+            message="settings accepts only target_slot; pass {} when no target_slot is needed",
+            safe_for_model=True,
+        )
     slot = settings.get("target_slot")
     if slot is not None:
         validate("SelectionSlot", slot)
     elif "target_slot" in settings:
-        raise DomainError("invalid_request")
+        raise DomainError(
+            "invalid_request",
+            message="Omit target_slot instead of passing null",
+            safe_for_model=True,
+        )
     store = services.registry.project_store(request["project_id"])
     with store.transaction(write=False) as tx:
         work = tx.require("work", str(caller.work_id))
         if work["generation_task_id"] != request["generation_task_id"]:
-            raise DomainError("scope_denied", 403)
+            raise DomainError(
+                "scope_denied",
+                403,
+                "generation_task_id does not match the active work",
+                safe_for_model=True,
+            )
         context = _request_context(tx, caller, work)
         policy = tx.get("providers.tasks", work["generation_task_id"], required=False)
         item_id = (
@@ -106,7 +119,12 @@ def resolve_target(services: Services, caller: Caller, request: JSON) -> JSON:
                     or item_id == work["generation_task_id"]
                     or (target and target["kind"] == "new_item" and item_id == target["intent_id"])
                 ):
-                    raise DomainError("scope_denied", 403, "Unstructured target must name its task")
+                    raise DomainError(
+                        "scope_denied",
+                        403,
+                        "Unstructured target must name its task: set target_id to generation_task_id (or the active new_item intent_id) when no published item exists yet",
+                        safe_for_model=True,
+                    )
             if item and item["project_id"] != request["project_id"]:
                 raise DomainError("scope_denied", 403)
             return {
@@ -198,7 +216,10 @@ def admit_target(tx: Transaction, work: JSON, resolved: JSON) -> JSON:
         limit = effective.get("generation_attempt_limit") if effective else None
         if type(limit) is not int or limit < 1:
             raise DomainError(
-                "capability_unavailable", 501, "Frozen Queue allowance is unavailable"
+                "capability_unavailable",
+                501,
+                "Frozen Queue allowance is unavailable",
+                safe_for_model=True,
             )
         policy = {"task_id": task_id, "limit": limit, "targets": [canonical_id]}
         tx.put("providers.tasks", task_id, policy)

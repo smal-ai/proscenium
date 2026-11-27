@@ -11,6 +11,7 @@ from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.db.outbox import dispatch_one
 from proscenium.db.registry import Registry
+from proscenium.guidance import reviewed_reason
 from proscenium.jobs.gate import ExecutionGate
 from proscenium.jobs.resources import check_storage
 
@@ -42,7 +43,7 @@ def retry_context(
             or invocation.get("owner_epoch") != owner_epoch
             or invocation.get("state") not in {"admitted", "running"}
         ):
-            raise DomainError("scope_denied", 403, EARLIER_RENDER_RETRY_DENIED)
+            raise DomainError("scope_denied", 403, EARLIER_RENDER_RETRY_DENIED, safe_for_model=True)
         request_id = invocation.get("context_request_id") or invocation["request_id"]
     request = tx.get("requests", request_id, required=False)
     context_id = request["submission"].get("context_id") if request else None
@@ -57,13 +58,19 @@ def transition(
     if new not in TRANSITIONS[family].get(old, []):
         raise DomainError("invalid_state_transition")
     if old == "outcome_uncertain" and not evidence:
-        raise DomainError("invalid_state_transition", message="Reconciliation requires evidence")
+        raise DomainError(
+            "invalid_state_transition",
+            message="Reconciliation requires evidence",
+            safe_for_model=True,
+        )
     if (
         family == "work"
         and [old, new] in TRANSITIONS["resume_only_work_edges"]
         and not explicit_resume
     ):
-        raise DomainError("invalid_state_transition", message="Explicit Resume required")
+        raise DomainError(
+            "invalid_state_transition", message="Explicit Resume required", safe_for_model=True
+        )
 
 
 class JobService:
@@ -129,7 +136,10 @@ class JobService:
                 self.gate.require(project_id)
                 if body["execution_profile_id"] not in self.settings.execution_profiles:
                     raise DomainError(
-                        "capability_unavailable", 501, "Execution profile is not configured"
+                        "capability_unavailable",
+                        501,
+                        "Execution profile is not configured",
+                        safe_for_model=True,
                     )
                 check_storage(store.path.parent, self.settings.free_space_reserve_bytes)
                 work = tx.require("work", str(caller.work_id))
@@ -380,7 +390,10 @@ class JobService:
                 canceller = self.cancellers.get(job["kind"])
                 if canceller is None:
                     raise DomainError(
-                        "capability_unavailable", 501, "Cancellation adapter unavailable"
+                        "capability_unavailable",
+                        501,
+                        "Cancellation adapter unavailable",
+                        safe_for_model=True,
                     )
             canceller(job)
             with store.transaction(write=False) as tx:
@@ -433,6 +446,7 @@ class JobService:
                         "scope_denied",
                         403,
                         "Retry is unavailable while execution_scope is planning_only. No render was started.",
+                        safe_for_model=True,
                     )
                 authorising_request_id = None
                 if cross_work:
@@ -441,8 +455,8 @@ class JobService:
                             "scope_denied",
                             403,
                             "This job belongs to an earlier request. No job was started.",
+                            safe_for_model=True,
                         )
-                    denied = EARLIER_RENDER_RETRY_DENIED
                     origin = (
                         tx.get("work", job["work_id"], required=False) if job["work_id"] else None
                     )
@@ -451,10 +465,14 @@ class JobService:
                         or origin.get("project_id") != body["project_id"]
                         or origin.get("state") not in {"completed", "failed", "stopped"}
                     ):
-                        raise DomainError("scope_denied", 403, denied)
+                        raise DomainError(
+                            "scope_denied", 403, EARLIER_RENDER_RETRY_DENIED, safe_for_model=True
+                        )
                     probe = self.retry_eligibility.get("render")
                     if probe is None or (authorising_request_id := probe(tx, caller, job)) is None:
-                        raise DomainError("scope_denied", 403, denied)
+                        raise DomainError(
+                            "scope_denied", 403, EARLIER_RENDER_RETRY_DENIED, safe_for_model=True
+                        )
                 self.cas(job, body)
                 if job["kind"] not in {"render", "encode", "unity"} or job["state"] not in {
                     "failed",
@@ -464,7 +482,9 @@ class JobService:
                 evidence = tx.get("job_evidence", job["attempt_id"], required=False)
                 if not evidence or not evidence.get("terminal"):
                     raise DomainError(
-                        "invalid_state_transition", message="Terminal proof is required"
+                        "invalid_state_transition",
+                        message="Terminal proof is required",
+                        safe_for_model=True,
                     )
                 job.update(
                     attempt_id=f"attempt-{uuid4()}",
@@ -476,6 +496,7 @@ class JobService:
                 )
                 job.pop("native_exit_code", None)
                 job.pop("error_code", None)
+                job.pop("error_reason", None)
                 tx.put(
                     "jobs",
                     job["job_id"],
@@ -517,14 +538,27 @@ class JobService:
             raise DomainError("revision_conflict", 409, current_revision=job["state_revision"])
 
     def update(
-        self, caller: Caller, body: dict[str, Any], *, evidence: str | None = None
+        self,
+        caller: Caller,
+        body: dict[str, Any],
+        *,
+        evidence: str | None = None,
+        error_reason: str | None = None,
     ) -> tuple[dict[str, Any], bool]:
         validate("JobStateUpdate", body)
         with self.registry.project_store(body["project_id"]).transaction() as tx:
-            return self.update_in_transaction(tx, caller, body, evidence=evidence)
+            return self.update_in_transaction(
+                tx, caller, body, evidence=evidence, error_reason=error_reason
+            )
 
     def update_in_transaction(
-        self, tx: Transaction, caller: Caller, body: dict[str, Any], *, evidence: str | None = None
+        self,
+        tx: Transaction,
+        caller: Caller,
+        body: dict[str, Any],
+        *,
+        evidence: str | None = None,
+        error_reason: str | None = None,
     ) -> tuple[dict[str, Any], bool]:
         """Apply the identical guarded update in the caller's atomic receipt transaction.
 
@@ -535,6 +569,9 @@ class JobService:
         self.check_caller(caller, "updateJobState", body["project_id"])
         if tx.project_id != body["project_id"]:
             raise DomainError("scope_denied", 403)
+        # A host-only reason describes this observation's code, not a previous attempt.
+        reason = reviewed_reason(error_reason) if body.get("error_code") is not None else None
+        operation = body if reason is None else {**body, "error_reason": reason}
         with tx.savepoint():
             admitted = tx.require("attempts", body["attempt_id"])
             if admitted["job_id"] != body["job_id"]:
@@ -575,7 +612,9 @@ class JobService:
                 transition("job_attempt", job["state"], body["state"], evidence=proof)
                 if body["state"] in TERMINAL and not proof:
                     raise DomainError(
-                        "invalid_state_transition", message="Terminal proof is required"
+                        "invalid_state_transition",
+                        message="Terminal proof is required",
+                        safe_for_model=True,
                     )
                 if ["pending", "partial", "complete"].index(body["availability"]) < [
                     "pending",
@@ -589,7 +628,10 @@ class JobService:
                 for field in ("external_job_id", "native_exit_code"):
                     if field in body and job.get(field) is not None and body[field] != job[field]:
                         raise DomainError(
-                            "source_conflict", 409, "Observed job identity/evidence is immutable"
+                            "source_conflict",
+                            409,
+                            "Observed job identity/evidence is immutable",
+                            safe_for_model=True,
                         )
                 if "artifact_ids" in body and not set(job["artifact_ids"]).issubset(
                     body["artifact_ids"]
@@ -612,6 +654,11 @@ class JobService:
                 ):
                     if key in body:
                         job[key] = body[key]
+                if "error_code" in body:
+                    if body["error_code"] is None:
+                        job.pop("error_reason", None)
+                    else:
+                        job["error_reason"] = reason
                 if (
                     job["completed_frames"] is not None
                     and job["expected_frames"] is not None
@@ -640,7 +687,7 @@ class JobService:
                 self.emit(tx, job, caller)
                 return job
 
-            return tx.operation("jobs.update", body["operation_id"], body, effect)
+            return tx.operation("jobs.update", body["operation_id"], operation, effect)
 
     def cancel(
         self, caller: Caller, job_id: str, body: dict[str, Any]

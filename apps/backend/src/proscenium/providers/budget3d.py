@@ -8,6 +8,14 @@ from typing import Any
 TURBO_REVISION = "budget3d-idol-turbo-1"
 IDOL_REVISION = "budget3d-idol-1"
 
+FILENAME_PREFIX = "mesh/proscenium-budget3d"
+INVALID_FILENAME_PREFIX = (
+    "Budget3D SaveGLB node 15 filename_prefix must be 'mesh/proscenium-budget3d'"
+)
+INVALID_GRAPH = "Budget3D workflow graph must match the pinned trusted template"
+INVALID_SEED = "Budget3D seed must be an exact JSON-safe decimal integer"
+UNSAFE_UPLOADED_IMAGE = "Budget3D uploaded reference image filename is invalid"
+
 TURBO_UNET = "budget3d_idol_turbo.safetensors"
 IDOL_UNET = "budget3d_idol.safetensors"
 CLIP_VISION = "dino_v3_vit_h.safetensors"
@@ -133,7 +141,7 @@ def graph(
             solid=True,
             fill=20.0,
         ),
-        "15": node("SaveGLB", mesh=["14", 0], filename_prefix="mesh/proscenium-budget3d"),
+        "15": node("SaveGLB", mesh=["14", 0], filename_prefix=FILENAME_PREFIX),
     }
 
 
@@ -164,7 +172,13 @@ def bind(
     turbo: bool = True,
 ) -> dict[str, Any]:
     if not isinstance(template, dict):
-        raise ValueError("only the pinned trusted Budget3D image-to-mesh graph is supported")
+        raise ValueError(INVALID_GRAPH)
+    output = template.get("15")
+    output_inputs = output.get("inputs") if isinstance(output, dict) else None
+    if not isinstance(output_inputs, dict):
+        raise ValueError(INVALID_GRAPH)
+    if output_inputs.get("filename_prefix") != FILENAME_PREFIX:
+        raise ValueError(INVALID_FILENAME_PREFIX)
     try:
         mode = template["4"]["inputs"]["mode"]
         sample_inputs = template["10"]["inputs"]
@@ -173,9 +187,7 @@ def bind(
         num_gaussians = template["13"]["inputs"]["num_gaussians"]
         mesh_resolution = template["14"]["inputs"]["resolution"]
     except (KeyError, TypeError) as exc:
-        raise ValueError(
-            "only the pinned trusted Budget3D image-to-mesh graph is supported"
-        ) from exc
+        raise ValueError(INVALID_GRAPH) from exc
 
     expected = graph(
         reference_artifact_id,
@@ -187,13 +199,13 @@ def bind(
         mesh_resolution=mesh_resolution,
     )
     if not seed.isascii() or not seed.isdecimal() or len(seed) > 16 or int(seed) > 2**53 - 1:
-        raise ValueError("seed must be an exact JSON-safe decimal integer")
+        raise ValueError(INVALID_SEED)
     seed_int = int(seed)
     with_seed = copy.deepcopy(expected)
     with_seed["10"]["inputs"]["seed"] = seed_int
     with_seed["13"]["inputs"]["seed"] = seed_int
     if template != expected and template != with_seed:
-        raise ValueError("only the pinned trusted Budget3D image-to-mesh graph is supported")
+        raise ValueError(INVALID_GRAPH)
 
     path = PurePosixPath(uploaded_filename)
     if (
@@ -203,7 +215,7 @@ def bind(
         or "\\" in uploaded_filename
         or "\x00" in uploaded_filename
     ):
-        raise ValueError("unsafe uploaded image filename")
+        raise ValueError(UNSAFE_UPLOADED_IMAGE)
     with_seed["1"]["inputs"]["image"] = uploaded_filename
     return with_seed
 

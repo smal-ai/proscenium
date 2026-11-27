@@ -50,7 +50,10 @@ class Catalogue:
     def choice_from_records(records: list[dict[str, Any]]) -> dict[str, Any] | None:
         if len(records) > 1:
             raise DomainError(
-                "source_conflict", 409, "More than one current selection record for a slot"
+                "source_conflict",
+                409,
+                "More than one current selection record for a slot",
+                safe_for_model=True,
             )
         if not records or records[0]["state"] != "selected":
             return None
@@ -200,7 +203,9 @@ class Catalogue:
                 or not isinstance(receipt.get("source_closure"), dict)
                 or row["source_commit"] != receipt.get("source_commit")
             ):
-                raise DomainError("source_conflict", 409, CHECKPOINT_SOURCE_CONFLICT)
+                raise DomainError(
+                    "source_conflict", 409, CHECKPOINT_SOURCE_CONFLICT, safe_for_model=True
+                )
             items.append(
                 {
                     **{k: v for k, v in row.items() if k != "checkpoint_operation_id"},
@@ -213,7 +218,11 @@ class Catalogue:
         items = body["items"]
         batch = {row["version_id"]: row for row in items}
         if len(batch) != len(items) or len({row["item_id"] for row in items}) != len(items):
-            raise DomainError("invalid_request")
+            raise DomainError(
+                "invalid_request",
+                message="Publication must use unique item_id and version_id values",
+                safe_for_model=True,
+            )
         visiting: set[str] = set()
         visited: set[str] = set()
 
@@ -230,7 +239,7 @@ class Catalogue:
         def visit(row: dict[str, Any]) -> None:
             identity = row["version_id"]
             if identity in visiting:
-                raise DomainError("source_conflict", 409, "Dependency cycle")
+                raise DomainError("source_conflict", 409, "Dependency cycle", safe_for_model=True)
             if identity in visited:
                 return
             visiting.add(identity)
@@ -244,12 +253,22 @@ class Catalogue:
         intents: set[str] = set()
         for row in items:
             if tx.get("versions", row["version_id"], required=False):
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "version_id already identifies a published version",
+                    safe_for_model=True,
+                )
             item = tx.get("items", row["item_id"], required=False)
             if (item["current_version_id"] if item else None) != row["expected_current_version_id"]:
                 raise DomainError("publication_head_conflict", 409, item_id=row["item_id"])
             if item and item["kind"] != row["kind"]:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "Publication kind must match the existing item kind",
+                    safe_for_model=True,
+                )
             visit(row)
             for identity in row["artifact_ids"]:
                 if tx.require("artifacts", identity)["state"] != "ready":
@@ -260,7 +279,12 @@ class Catalogue:
                 and runtime["application"].strip().lower() == "blender"
                 and unsupported_blender_features(runtime["features"])
             ):
-                raise DomainError("capability_unavailable", 501, UNSUPPORTED_BLENDER_FEATURE_REASON)
+                raise DomainError(
+                    "capability_unavailable",
+                    501,
+                    UNSUPPORTED_BLENDER_FEATURE_REASON,
+                    safe_for_model=True,
+                )
             for spec in row["preview_requests"]:
                 if spec["intent_id"] in intents or tx.get(
                     "preview_intents", spec["intent_id"], required=False
@@ -270,14 +294,20 @@ class Catalogue:
                 if spec["source_closure_digest"] != row["source"]["digest"]:
                     raise DomainError("hash_mismatch", 422)
                 if spec["frames"]["start"] > spec["frames"]["end"]:
-                    raise DomainError("invalid_request")
+                    raise DomainError(
+                        "invalid_request",
+                        message="Preview frame range start must not exceed end",
+                        safe_for_model=True,
+                    )
                 fps = spec["fps"]
                 reduced = Fraction(fps["numerator"], fps["denominator"])
                 if (reduced.numerator, reduced.denominator) != (
                     fps["numerator"],
                     fps["denominator"],
                 ):
-                    raise DomainError("invalid_request", message="FPS must be reduced")
+                    raise DomainError(
+                        "invalid_request", message="FPS must be reduced", safe_for_model=True
+                    )
 
     def frame_maps(self, project_id: str, document: dict[str, Any]) -> dict[str, dict[str, Any]]:
         result = {}
@@ -351,6 +381,7 @@ class Catalogue:
                     "dependency_missing",
                     422,
                     "Authored version references must be pinned in the source closure",
+                    safe_for_model=True,
                 )
 
     def publish(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
@@ -386,24 +417,37 @@ class Catalogue:
                     if not isinstance(document, dict):
                         raise ValueError("Authored source must be an object")
                 except (ValueError, UnicodeError) as exc:
+                    if row["kind"] == "storyboard":
+                        raise DomainError(
+                            "source_unavailable",
+                            422,
+                            "Storyboard source must be AuthoredShotPlan JSON",
+                            safe_for_model=True,
+                        ) from exc
                     raise DomainError(
                         "source_unavailable",
                         422,
-                        "Storyboard source must be AuthoredShotPlan JSON"
-                        if row["kind"] == "storyboard"
-                        else "Authored catalogue source is not JSON",
+                        "Authored catalogue source is not JSON",
+                        safe_for_model=True,
                     ) from exc
                 issues = validation.schema_issues(
                     "AuthoredShotPlan" if row["kind"] == "storyboard" else "SequenceMap", document
                 )
                 if issues:
+                    if row["kind"] == "storyboard":
+                        raise DomainError(
+                            "invalid_request",
+                            422,
+                            "Storyboard source failed AuthoredShotPlan validation",
+                            issues=issues,
+                            safe_for_model=True,
+                        )
                     raise DomainError(
                         "invalid_request",
                         422,
-                        "Storyboard source failed AuthoredShotPlan validation"
-                        if row["kind"] == "storyboard"
-                        else "Sequence source failed SequenceMap validation",
+                        "Sequence source failed SequenceMap validation",
                         issues=issues,
+                        safe_for_model=True,
                     )
                 documents[row["version_id"]] = document
                 if row["kind"] == "storyboard":
@@ -423,7 +467,12 @@ class Catalogue:
                 entry[0]["origin"]["kind"] == "git"
                 and entry[0]["origin"]["commit"] != row["source_commit"]
             ):
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "Source closure must contain its entry_path, pinned to source_commit for a Git entry",
+                    safe_for_model=True,
+                )
             for identity in row["artifact_ids"]:
                 self.artifacts.ready_path(project_id, identity)
         with store.transaction() as tx:
@@ -431,7 +480,9 @@ class Catalogue:
             def effect() -> dict[str, Any]:
                 work = admitted(self.services, tx, caller)
                 if self.resolve_checkpoint_sources(tx, submission) != body:
-                    raise DomainError("source_conflict", 409, CHECKPOINT_SOURCE_CONFLICT)
+                    raise DomainError(
+                        "source_conflict", 409, CHECKPOINT_SOURCE_CONFLICT, safe_for_model=True
+                    )
                 self.validate_batch(tx, body)
                 self.validate_documents(tx, body, documents, maps)
                 job_ids = []
@@ -551,7 +602,11 @@ class Catalogue:
     def shot_plan(self, project_id: str, version_id: str) -> dict[str, Any]:
         version = self.version(project_id, version_id)
         if version["kind"] != "storyboard":
-            raise DomainError("invalid_request")
+            raise DomainError(
+                "invalid_request",
+                message="Request a shot plan from a published storyboard version",
+                safe_for_model=True,
+            )
         result = self.sources.authored(project_id, version)
         validate("AuthoredShotPlan", result)
         if result["project_id"] != project_id:
@@ -599,7 +654,11 @@ class Catalogue:
     def sequence_map(self, project_id: str, version_id: str) -> dict[str, Any]:
         version = self.version(project_id, version_id)
         if version["kind"] != "sequence":
-            raise DomainError("invalid_request")
+            raise DomainError(
+                "invalid_request",
+                message="Request a sequence map from a published sequence version",
+                safe_for_model=True,
+            )
         result = self.sources.authored(project_id, version)
         validate("SequenceMap", result)
         maps = self.frame_maps(project_id, result)
@@ -644,7 +703,11 @@ class Catalogue:
         if mapping_artifact_id is not None and not re.fullmatch(
             r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", mapping_artifact_id
         ):
-            raise DomainError("invalid_request")
+            raise DomainError(
+                "invalid_request",
+                message="mapping_artifact_id must be a valid artefact ID",
+                safe_for_model=True,
+            )
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
             version = self.version_view(tx, tx.require("versions", version_id))
             ids = version["artifact_ids"]
@@ -657,12 +720,20 @@ class Catalogue:
                 artifact = tx.require("artifacts", mapping_artifact_id)
                 if artifact["kind"] != "proxy_map" or mapping_artifact_id not in maps:
                     raise DomainError(
-                        "source_conflict", 409, "Proxy mapping does not belong to version"
+                        "source_conflict",
+                        409,
+                        "Proxy mapping does not belong to version",
+                        safe_for_model=True,
                     )
                 chosen_id = mapping_artifact_id
             else:
                 if not maps:
-                    raise DomainError("media_unavailable", 422, "No pinned proxy mapping available")
+                    raise DomainError(
+                        "media_unavailable",
+                        422,
+                        "No pinned proxy mapping available",
+                        safe_for_model=True,
+                    )
                 ready_maps = [
                     identity
                     for identity in maps

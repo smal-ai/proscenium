@@ -32,6 +32,7 @@ def graph(
         raise DomainError(
             "invalid_request",
             message="Image width and height must be multiples of 16 between 64 and 4096",
+            safe_for_model=True,
         )
     if (
         not 1 <= steps <= 50
@@ -47,9 +48,11 @@ def graph(
     if any(not isinstance(ref, str) or not ref or any(c in ref for c in "/\\\0") for ref in refs):
         raise DomainError("invalid_request")
     if len(set(refs)) != len(refs):
-        raise DomainError("invalid_request", message="Duplicate conditioning image")
+        raise DomainError(
+            "invalid_request", message="Duplicate conditioning image", safe_for_model=True
+        )
     if len(refs) > MAX_REFERENCE_IMAGES:
-        raise DomainError("invalid_request", message=REFERENCE_LIMIT_MESSAGE)
+        raise DomainError("invalid_request", message=REFERENCE_LIMIT_MESSAGE, safe_for_model=True)
     tiles = {"tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
     vae_source = ["vae_dtype", 0] if vae_dtype else ["vae", 0]
     result: dict[str, Any] = {

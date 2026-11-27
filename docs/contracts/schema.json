@@ -319,7 +319,7 @@
     },
     "JobRecord": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "job_id", "project_id", "work_id", "owner_operation_id", "target", "attempt_id", "attempt_number", "kind", "state", "state_revision", "availability", "input_digest", "external_job_id", "provider_id", "owner_epoch", "completed_frames", "expected_frames", "artifact_ids", "render_spec"],
-      "properties": {"schema_version": {"const": "1.0"}, "job_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "work_id": {"$ref": "#/$defs/NullableId"}, "owner_operation_id": {"$ref": "#/$defs/NullableId"}, "target": {"$ref": "#/$defs/JobTarget"}, "attempt_id": {"$ref": "#/$defs/Id"}, "attempt_number": {"type": "integer", "minimum": 1}, "kind": {"enum": ["render", "encode", "image_generation", "mesh_generation", "audio_generation", "video_generation", "unity", "vlm_review"]}, "state": {"enum": ["planned", "waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "state_revision": {"$ref": "#/$defs/Revision"}, "availability": {"enum": ["pending", "partial", "complete"]}, "input_digest": {"$ref": "#/$defs/Sha256"}, "external_job_id": {"type": ["string", "null"]}, "provider_id": {"$ref": "#/$defs/NullableId"}, "owner_epoch": {"$ref": "#/$defs/Id"}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "expected_frames": {"type": ["integer", "null"], "minimum": 1}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "render_spec": {"anyOf": [{"$ref": "#/$defs/RenderSpec"}, {"type": "null"}]}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}},
+      "properties": {"schema_version": {"const": "1.0"}, "job_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "work_id": {"$ref": "#/$defs/NullableId"}, "owner_operation_id": {"$ref": "#/$defs/NullableId"}, "target": {"$ref": "#/$defs/JobTarget"}, "attempt_id": {"$ref": "#/$defs/Id"}, "attempt_number": {"type": "integer", "minimum": 1}, "kind": {"enum": ["render", "encode", "image_generation", "mesh_generation", "audio_generation", "video_generation", "unity", "vlm_review"]}, "state": {"enum": ["planned", "waiting_resource", "starting", "running", "succeeded", "failed", "cancel_requested", "cancelled", "outcome_uncertain"]}, "state_revision": {"$ref": "#/$defs/Revision"}, "availability": {"enum": ["pending", "partial", "complete"]}, "input_digest": {"$ref": "#/$defs/Sha256"}, "external_job_id": {"type": ["string", "null"]}, "provider_id": {"$ref": "#/$defs/NullableId"}, "owner_epoch": {"$ref": "#/$defs/Id"}, "completed_frames": {"type": ["integer", "null"], "minimum": 0}, "expected_frames": {"type": ["integer", "null"], "minimum": 1}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "render_spec": {"anyOf": [{"$ref": "#/$defs/RenderSpec"}, {"type": "null"}]}, "native_exit_code": {"type": ["integer", "null"]}, "error_code": {"type": ["string", "null"]}, "error_reason": {"type": ["string", "null"]}},
       "allOf": [{"if": {"properties": {"work_id": {"type": "null"}}}, "then": {"properties": {"owner_operation_id": {"$ref": "#/$defs/Id"}}}}]
     },
     "JobTarget": {
@@ -713,6 +713,27 @@
         "duration_seconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 15.5}, "frame_count": {"type": "integer", "minimum": 5, "maximum": 362}, "fps": {"$ref": "#/$defs/Fps"},
         "model_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}}, "input_artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}},
         "workflow_artifact_id": {"$ref": "#/$defs/Id"}, "prompt_artifact_id": {"$ref": "#/$defs/Id"}, "submit_request": {"allOf": [{"$ref": "#/$defs/GenerationSubmit"}, {"properties": {"capability": {"const": "video"}}}]}
+      }
+    },
+    "MeshGenerationPrepare": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "prompt", "seed", "reference_artifact_id"],
+      "properties": {
+        "schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "generation_task_id": {"$ref": "#/$defs/Id"},
+        "provider_id": {"$ref": "#/$defs/NullableId"}, "target_id": {"$ref": "#/$defs/NullableId"}, "target_slot": {"anyOf": [{"$ref": "#/$defs/SelectionSlot"}, {"type": "null"}]},
+        "reference_artifact_id": {"$ref": "#/$defs/Id"}, "prompt": {"type": "string", "minLength": 1, "maxLength": 8000},
+        "seed": {"type": "string", "minLength": 1, "maxLength": 16, "not": {"pattern": "[^0-9]"}, "$comment": "Allow leading zeroes, but cap the value at 9007199254740991, the largest JSON-safe integer.", "pattern": "^(?:[0-9]{1,15}|[0-8][0-9]{15}|900[0-6][0-9]{12}|90070[0-9]{11}|90071[0-8][0-9]{10}|900719[0-8][0-9]{9}|9007199[0-1][0-9]{8}|90071992[0-4][0-9]{7}|900719925[0-3][0-9]{6}|9007199254[0-6][0-9]{5}|90071992547[0-3][0-9]{4}|9007199254740[0-8][0-9]{2}|90071992547409[0-8][0-9]|900719925474099[01])$"},
+        "mode": {"enum": ["synthetic", "real"]}, "budget": {"type": "number", "minimum": 0.0625, "maximum": 1.0},
+        "steps": {"type": "integer", "minimum": 1, "maximum": 50}, "num_gaussians": {"type": "integer", "minimum": 32768, "maximum": 1048576, "multipleOf": 32},
+        "mesh_resolution": {"type": "integer", "minimum": 64, "maximum": 768, "multipleOf": 16}
+      }
+    },
+    "MeshGenerationPrepared": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "operation_id", "project_id", "replayed", "provider_id", "profile_revision", "model_ids", "input_artifact_ids", "workflow_artifact_id", "prompt_artifact_id", "submit_request"],
+      "properties": {
+        "schema_version": {"const": "1.0"}, "operation_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "replayed": {"type": "boolean"},
+        "provider_id": {"$ref": "#/$defs/Id"}, "profile_revision": {"type": "string"}, "model_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "input_artifact_ids": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/Id"}},
+        "workflow_artifact_id": {"$ref": "#/$defs/Id"}, "prompt_artifact_id": {"$ref": "#/$defs/Id"}, "submit_request": {"allOf": [{"$ref": "#/$defs/GenerationSubmit"}, {"properties": {"capability": {"const": "image_to_3d"}}}]}
       }
     },
     "Subscription": {

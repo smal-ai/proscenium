@@ -63,6 +63,7 @@ def bind(workflow, prompt, seed, references, models):
         raise DomainError(
             "invalid_request",
             message="The host-selected FP16 profile requires its exact owned derivative filename",
+            safe_for_model=True,
         )
     translated = copy.deepcopy(workflow)
     translated["checkpoint"]["inputs"]["ckpt_name"] = sd_turbo.FILENAME

@@ -58,6 +58,7 @@ class Rendering:
                 "capability_unavailable",
                 501,
                 "This installed profile is Cycles CPU. No GPU fallback is permitted",
+                safe_for_model=True,
             )
         if (
             count > self.max_frames
@@ -65,12 +66,27 @@ class Rendering:
             or spec["samples"] is None
             or spec["samples"] > self.max_samples
         ):
-            raise DomainError("invalid_request", message="Render exceeds configured profile bounds")
+            raise DomainError(
+                "invalid_request",
+                message="Render exceeds configured profile bounds",
+                safe_for_model=True,
+            )
         if spec["purpose"] in {"draft_motion", "final"} and (
             dimensions["width"] % 2 or dimensions["height"] % 2
         ):
-            raise DomainError("invalid_request", message="H.264 motion requires even dimensions")
+            raise DomainError(
+                "invalid_request",
+                message="H.264 motion requires even dimensions",
+                safe_for_model=True,
+            )
         if spec["purpose"] == "proxy" and count != 1:
-            raise DomainError("invalid_request", message="A proxy is a single static sample")
+            raise DomainError(
+                "invalid_request", message="A proxy is a single static sample", safe_for_model=True
+            )
         if spec.get("extra_outputs"):
-            raise DomainError("capability_unavailable", 501, "Extra outputs are not configured")
+            raise DomainError(
+                "capability_unavailable",
+                501,
+                "Extra outputs are not configured",
+                safe_for_model=True,
+            )

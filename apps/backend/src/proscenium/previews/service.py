@@ -226,9 +226,19 @@ class PreviewService:
             if runtime["application"].strip().lower() == "blender" and unsupported_blender_features(
                 runtime["features"]
             ):
-                raise DomainError("capability_unavailable", 501, UNSUPPORTED_BLENDER_FEATURE_REASON)
+                raise DomainError(
+                    "capability_unavailable",
+                    501,
+                    UNSUPPORTED_BLENDER_FEATURE_REASON,
+                    safe_for_model=True,
+                )
             if self.config.profile_id not in self.services.settings.execution_profiles:
-                raise DomainError("capability_unavailable", 501, "Rendering profile is not enabled")
+                raise DomainError(
+                    "capability_unavailable",
+                    501,
+                    "Rendering profile is not enabled",
+                    safe_for_model=True,
+                )
             check_storage(store.path.parent, self.services.settings.free_space_reserve_bytes)
 
             reused_intent = False
@@ -314,18 +324,21 @@ class PreviewService:
                         "scope_denied",
                         403,
                         "Storyboard shot targets cannot reorder scene preview passes",
+                        safe_for_model=True,
                     )
                 case "new_item" if not same_work:
                     raise DomainError(
                         "scope_denied",
                         403,
                         "New-item requests cannot reorder an existing item's preview passes",
+                        safe_for_model=True,
                     )
                 case "item" if target["version"] != reference:
                     raise DomainError(
                         "scope_denied",
                         403,
                         "Target version is outside the active pinned item scope",
+                        safe_for_model=True,
                     )
             return
 
@@ -341,7 +354,10 @@ class PreviewService:
             ):
                 return
         raise DomainError(
-            "scope_denied", 403, "Pin the target version before reordering its preview passes"
+            "scope_denied",
+            403,
+            "Pin the target version before reordering its preview passes",
+            safe_for_model=True,
         )
 
     def set_order(self, caller: Caller, request: Any) -> tuple[dict[str, Any], bool]:
@@ -377,6 +393,7 @@ class PreviewService:
                         "scope_denied",
                         403,
                         "Preview passes cannot be reordered in planning-only work",
+                        safe_for_model=True,
                     )
                 version_id = body["version"]["version_id"]
                 version = tx.require("versions", version_id)
@@ -398,6 +415,7 @@ class PreviewService:
                             "source_conflict",
                             409,
                             "All ordered preview jobs must be render passes on the target version",
+                            safe_for_model=True,
                         )
                 catalogue = self.services.extension("catalogue")
                 current_ids = catalogue.version_view(tx, version)["preview_job_ids"]
@@ -435,7 +453,10 @@ class PreviewService:
         # Never silently bind a changed revision to an older publication intent.
         if inputs["configuration"] != self.services.settings.view():
             raise DomainError(
-                "source_conflict", 409, "Original rendering configuration is unavailable"
+                "source_conflict",
+                409,
+                "Original rendering configuration is unavailable",
+                safe_for_model=True,
             )
         config = self.config.snapshot()
         with self.services.registry.project_store(project_id).transaction() as tx:

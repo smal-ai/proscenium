@@ -58,7 +58,9 @@ class Resolver:
         if content.startswith(b"version https://git-lfs.github.com/spec/v1"):
             match = LFS.fullmatch(content)
             if not match:
-                raise DomainError("source_unavailable", 422, "Invalid Git LFS pointer")
+                raise DomainError(
+                    "source_unavailable", 422, "Invalid Git LFS pointer", safe_for_model=True
+                )
             digest = match[1].decode()
             # Ask local Git LFS for its configured object store. No implicit network operation.
             environment = git(root, "lfs", "env").decode()
@@ -76,7 +78,10 @@ class Resolver:
             common = common if common.is_absolute() else root / common
             if not Path(media).resolve().is_relative_to(common.resolve()):
                 raise DomainError(
-                    "scope_denied", 403, "Git LFS storage is outside registered repository storage"
+                    "scope_denied",
+                    403,
+                    "Git LFS storage is outside registered repository storage",
+                    safe_for_model=True,
                 )
             obj = Path(media) / digest[:2] / digest[2:4] / digest
             try:
@@ -85,7 +90,11 @@ class Resolver:
                 content = obj.read_bytes()
             except OSError as exc:
                 raise DomainError(
-                    "source_unavailable", 422, "Local Git LFS object missing", sha256=digest
+                    "source_unavailable",
+                    422,
+                    "Local Git LFS object missing",
+                    sha256=digest,
+                    safe_for_model=True,
                 ) from exc
             if sha(content) != digest or len(content) != int(match[2]):
                 raise DomainError("hash_mismatch", 422)

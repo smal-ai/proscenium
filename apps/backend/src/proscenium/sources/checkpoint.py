@@ -282,11 +282,16 @@ class Checkpoints:
                 raise DomainError(
                     "invalid_request",
                     message="entry_path is required when building a source closure",
+                    safe_for_model=True,
                 )
             return {}
         self.closure_path(root, request["entry_path"])
         if "exclude_paths" in request and "base_version" not in request:
-            raise DomainError("invalid_request", message="exclude_paths requires base_version")
+            raise DomainError(
+                "invalid_request",
+                message="exclude_paths requires base_version",
+                safe_for_model=True,
+            )
         excluded = set(request.get("exclude_paths", []))
         for name in sorted(excluded):
             self.closure_path(root, name)
@@ -370,12 +375,14 @@ class Checkpoints:
         self, project_id: str, entry: dict[str, Any], commit: str | None
     ) -> dict[str, Any]:
         if commit is None:
-            raise DomainError("source_conflict", 409, INHERITED_ENTRY_CONFLICT)
+            raise DomainError("source_conflict", 409, INHERITED_ENTRY_CONFLICT, safe_for_model=True)
         origin = {**entry["origin"], "commit": commit}
         try:
             self.resolver.git_bytes(project_id, origin)
         except DomainError as exc:
-            raise DomainError("source_conflict", 409, INHERITED_ENTRY_CONFLICT) from exc
+            raise DomainError(
+                "source_conflict", 409, INHERITED_ENTRY_CONFLICT, safe_for_model=True
+            ) from exc
         return {**entry, "origin": origin}
 
     def source_closure(
@@ -615,6 +622,7 @@ class Checkpoints:
                             "source_conflict",
                             409,
                             "Binary authoring files require Git LFS tracking",
+                            safe_for_model=True,
                         )
                 git(root, "update-index", "--add", "--cacheinfo", mode, oid, row["path"], env=env)
             tree = git(root, "write-tree", env=env).decode().strip()

@@ -43,7 +43,11 @@ class References:
         try:
             result = json.loads(raw)
         except (ValueError, UnicodeDecodeError) as exc:
-            raise DomainError("invalid_request") from exc
+            raise DomainError(
+                "invalid_request",
+                message="Referenced artefact must contain valid JSON",
+                safe_for_model=True,
+            ) from exc
         validate(schema, result)
         if result.get("project_id") != tx.project_id:
             raise DomainError("scope_denied", 403)
@@ -57,7 +61,12 @@ class References:
             or artifact["sha256"] != target["displayed_sha256"]
             or artifact.get("dimensions") != target["dimensions"]
         ):
-            raise DomainError("source_conflict", 409, message="Displayed image identity mismatch")
+            raise DomainError(
+                "source_conflict",
+                409,
+                message="Displayed image identity mismatch",
+                safe_for_model=True,
+            )
         if target["version_id"]:
             version = self.version(tx, target)
             validate_artifact_source_version(version, artifact, target)
@@ -67,7 +76,12 @@ class References:
         if media_id:
             media = self.artifact(tx, media_id, ready=ready)
             if media["kind"] != "video":
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "media_artifact_id must refer to a video artefact",
+                    safe_for_model=True,
+                )
         if target["origin"] == "blender_render":
             job = tx.require("jobs", target["render_job_id"] or "")
             version_ref = job["target"]["version"]
@@ -75,7 +89,12 @@ class References:
                 "item_id": target["item_id"],
                 "version_id": target["version_id"],
             }:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "Target item_id and version_id must match the source render job",
+                    safe_for_model=True,
+                )
             slot_receipts = [
                 f
                 for f in tx.all("frames")
@@ -83,7 +102,9 @@ class References:
                 and f["source_frame"] == target["source_frame"]
             ]
             if not slot_receipts:
-                raise DomainError("source_conflict", 409, message="No exact frame receipt")
+                raise DomainError(
+                    "source_conflict", 409, message="No exact frame receipt", safe_for_model=True
+                )
             if any(
                 any(
                     f[key] != target[key]
@@ -94,7 +115,10 @@ class References:
                 for f in slot_receipts
             ):
                 raise DomainError(
-                    "source_conflict", 409, message="Conflicting frame receipts across attempts"
+                    "source_conflict",
+                    409,
+                    message="Conflicting frame receipts across attempts",
+                    safe_for_model=True,
                 )
             if media_id and not any(
                 s["artifact_id"] == media_id
@@ -106,18 +130,36 @@ class References:
                 <= s["source_frames"]["end"]
                 for s in tx.all("segments")
             ):
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "media_artifact_id must identify a render segment containing the target frame",
+                    safe_for_model=True,
+                )
         if target["origin"] == "sequence_render":
             if target["sequence_version_id"] != target["version_id"]:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "sequence_version_id must match the target version_id",
+                    safe_for_model=True,
+                )
             mapping = self.payload(tx, target["frame_map_artifact_id"], "FrameMap")
             if mapping["sequence_version_id"] != target["version_id"]:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "FrameMap sequence_version_id must match the target version_id",
+                    safe_for_model=True,
+                )
             if [r["sequence_frame"] for r in mapping["frames"]] != list(
                 range(1, mapping["frame_count"] + 1)
             ):
                 raise DomainError(
-                    "source_conflict", 409, message="Frame map is not a complete ordered partition"
+                    "source_conflict",
+                    409,
+                    message="Frame map is not a complete ordered partition",
+                    safe_for_model=True,
                 )
             for mapped in mapping["frames"]:
                 if (
@@ -131,14 +173,22 @@ class References:
                     != 1
                 ):
                     raise DomainError(
-                        "source_conflict", 409, message="Frame weights do not sum to one"
+                        "source_conflict",
+                        409,
+                        message="Frame weights do not sum to one",
+                        safe_for_model=True,
                     )
             row = next(
                 (r for r in mapping["frames"] if r["sequence_frame"] == target["sequence_frame"]),
                 None,
             )
             if not row:
-                raise DomainError("source_conflict", 409)
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    "The pinned FrameMap does not contain the target sequence_frame",
+                    safe_for_model=True,
+                )
             for contributor in row["contributors"]:
                 matching = [
                     f
@@ -165,7 +215,10 @@ class References:
         )
         if temporal and (anchor is None or not temporal["start"] <= anchor <= temporal["end"]):
             raise DomainError(
-                "source_conflict", 409, message="Range must contain its captured anchor"
+                "source_conflict",
+                409,
+                message="Range must contain its captured anchor",
+                safe_for_model=True,
             )
         if temporal and target["render_job_id"]:
             spec = tx.require("jobs", target["render_job_id"]).get("render_spec")
@@ -175,7 +228,12 @@ class References:
                 <= temporal["end"]
                 <= spec["frames"]["end"]
             ):
-                raise DomainError("source_conflict", 409, message="Range exceeds its render job")
+                raise DomainError(
+                    "source_conflict",
+                    409,
+                    message="Range exceeds its render job",
+                    safe_for_model=True,
+                )
         camera = annotation["camera"]
         if camera:
             matrix = camera["camera_to_world"]
@@ -200,7 +258,10 @@ class References:
                 )
             ):
                 raise DomainError(
-                    "source_conflict", 409, message="Camera is not a rigid, matching image capture"
+                    "source_conflict",
+                    409,
+                    message="Camera is not a rigid, matching image capture",
+                    safe_for_model=True,
                 )
         if annotation.get("derived_from"):
             tx.require("annotations", annotation["derived_from"])
@@ -252,7 +313,9 @@ class References:
                     for n in mapping["nodes"]
                 )
             ):
-                raise DomainError("source_conflict", 409, message="Spatial mapping mismatch")
+                raise DomainError(
+                    "source_conflict", 409, message="Spatial mapping mismatch", safe_for_model=True
+                )
 
     def selection(
         self,
@@ -286,9 +349,16 @@ class References:
                     None,
                 )
                 if frame is None:
-                    raise DomainError("source_conflict", 409, message="Selection slot missing")
+                    raise DomainError(
+                        "source_conflict",
+                        409,
+                        message="Selection slot missing",
+                        safe_for_model=True,
+                    )
             elif not any(e["entry_id"] == slot["entry_id"] for e in data["entries"]):
-                raise DomainError("source_conflict", 409, message="Selection slot missing")
+                raise DomainError(
+                    "source_conflict", 409, message="Selection slot missing", safe_for_model=True
+                )
         if choice is None:
             return
         if choice["kind"] == "artifact":
@@ -307,7 +377,10 @@ class References:
                 ]
                 if len(images) != 1:
                     raise DomainError(
-                        "source_conflict", 409, message="Choice does not resolve to one image"
+                        "source_conflict",
+                        409,
+                        message="Choice does not resolve to one image",
+                        safe_for_model=True,
                     )
 
     def selection_document(

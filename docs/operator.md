@@ -29,7 +29,7 @@ chmod 600 "$HOME/.config/proscenium/config.json"
 Edit the private configuration to match this workstation:
 
 - `runtime.lead_model`, `worker_model` and `unity_worker_model` select available Copilot models.
-- `runtime.worker_tools` lists the native and host tools exposed to `authoring-specialist`. Include `skill`, `get_project_capabilities`, `search_web`, `web_fetch`, `validate_authored_document` and `prepare_image_generation` when overriding the default list. `get_project_capabilities` reports omitted recommended names under `missing_worker_tools` without silently widening your override.
+- `runtime.worker_tools` lists the native and host tools exposed to `authoring-specialist`. Include `skill`, `get_project_capabilities`, `search_web`, `web_fetch`, `validate_authored_document`, `prepare_image_generation`, `prepare_audio_generation`, `prepare_video_generation` and `prepare_mesh_generation` when overriding the default list. `get_project_capabilities` reports omitted recommended names under `missing_worker_tools` without silently widening your override.
 - `search_web` sends public research queries to GitHub Copilot's read-only MCP endpoint during active work. It uses `GH_TOKEN`, then `GITHUB_TOKEN`, then `gh auth token`. `web_fetch` reads selected public URLs. Neither tool acquires files into the workspace.
 - `runtime.unity_editor` must be the installed Editor executable's absolute path when using Unity.
 - `runtime.mcp_servers.blender` configures the existing stdio integration with `uvx --python 3.11 mcp-for-blender==2.3.0 --host 127.0.0.1 --port 9876` and `DISABLE_TELEMETRY=1`. The [Blender bridge guide](../tools/blender/README.md) shows the installed add-on and socket setup. Do not reinstall or overwrite the add-on.
@@ -207,6 +207,10 @@ requests freeze the profile, endpoint, graph and input hashes. Configuration cha
 not reinterpret admitted jobs. The default attempt budget is three per human task and
 target.
 
+For image-to-mesh generation, pass a registered conditioning image to
+`prepare_mesh_generation`, then send its exact `submit_request` to `submit_generation`.
+Preparation checks the installed recipe and registers provenance without running inference.
+
 ### MiniMax H3 video on ROCm 10.1 / Strix Halo
 
 Enable `video` in the ComfyUI service's capabilities. The following
@@ -257,11 +261,12 @@ settings. Use the existing ROCm environment and bind address:
 COMFY_KITCHEN_DISABLE_HIP=1 \
 PYTORCH_HIP_ALLOC_CONF=expandable_segments:True \
 MIOPEN_FIND_MODE=FAST \
-python main.py --bf16-vae --disable-mmap --cache-none
+python main.py --bf16-vae --disable-mmap --cache-none --disable-dynamic-vram
 ```
 
-Use `--highvram` only when there is measured memory headroom to keep the model
-resident. It controls residency, while `--cache-none` controls node result caching.
+Leave `--highvram` off. `NORMAL_VRAM` lets ComfyUI unload models between MiniMax H3
+stages. `--disable-dynamic-vram` disables `comfy-aimdo` DynamicVRAM to prevent NaN
+outputs on FLUX.2 Klein 4B. `--cache-none` disables node result caching.
 Proscenium does not apply launch flags or manage ComfyUI. The capability probe
 checks the installed models and node choices, and requires local FFmpeg and
 FFprobe. It does not run inference or prove that a requested canvas fits.

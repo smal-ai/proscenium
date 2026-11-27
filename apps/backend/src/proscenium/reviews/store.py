@@ -381,7 +381,10 @@ class ReviewStore:
                     raise DomainError("revision_conflict", 409, current_revision=revision)
                 if old and canonical(old["target"]) != canonical(incoming["target"]):
                     raise DomainError(
-                        "source_conflict", 409, message="Annotation target is immutable"
+                        "source_conflict",
+                        409,
+                        message="Annotation target is immutable",
+                        safe_for_model=True,
                     )
                 if old and old.get("derived_from") != incoming.get("derived_from"):
                     raise DomainError("source_conflict", 409)
@@ -639,6 +642,7 @@ class ReviewStore:
                                 "source_conflict",
                                 409,
                                 message="Measurement lacks supplied telemetry",
+                                safe_for_model=True,
                             )
                     tx.put("findings", finding["finding_id"], finding, schema="ReviewFinding")
                     tx.put(

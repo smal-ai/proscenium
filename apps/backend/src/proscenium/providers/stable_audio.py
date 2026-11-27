@@ -77,12 +77,12 @@ def bind(
     models: list[str],
 ) -> dict[str, Any]:
     if references:
-        raise DomainError("invalid_request", message=NO_REFERENCES)
+        raise DomainError("invalid_request", message=NO_REFERENCES, safe_for_model=True)
     if not isinstance(seed, str) or re.fullmatch(r"[0-9]+", seed) is None:
-        raise DomainError("invalid_request", message=INVALID_SEED)
+        raise DomainError("invalid_request", message=INVALID_SEED, safe_for_model=True)
     significant_seed = seed.lstrip("0") or "0"
     if len(significant_seed) > 16 or int(significant_seed) > 2**53 - 1:
-        raise DomainError("invalid_request", message=INVALID_SEED)
+        raise DomainError("invalid_request", message=INVALID_SEED, safe_for_model=True)
 
     bound_seed = int(significant_seed)
 
@@ -103,7 +103,7 @@ def bind(
         seconds, steps = inputs(latent)["seconds"], sample_inputs["steps"]
         checkpoint, clip = inputs(checkpoint_node)["ckpt_name"], inputs(clip_node)["clip_name"]
         if type(seconds) not in (int, float) or not 1 <= seconds <= MAX_MUSIC_SECONDS:
-            raise DomainError("invalid_request", message=INVALID_DURATION)
+            raise DomainError("invalid_request", message=INVALID_DURATION, safe_for_model=True)
         if (
             type(steps) is not int
             or not 1 <= steps <= 50
@@ -139,7 +139,7 @@ def bind(
             if actual["class_type"] != node["class_type"] or actual["inputs"] != node["inputs"]:
                 raise ValueError
     except (AttributeError, IndexError, KeyError, TypeError, ValueError) as exc:
-        raise DomainError("invalid_request", message=INVALID_GRAPH) from exc
+        raise DomainError("invalid_request", message=INVALID_GRAPH, safe_for_model=True) from exc
     bound = deepcopy(workflow)
     bound[pos]["inputs"]["text"] = prompt
     bound[sampler]["inputs"]["seed"] = bound_seed
@@ -147,7 +147,12 @@ def bind(
 
 
 def corrupt_audio() -> DomainError:
-    return DomainError("corrupt_provider_output", 422, "Provider returned empty or corrupted audio")
+    return DomainError(
+        "corrupt_provider_output",
+        422,
+        "Provider returned empty or corrupted audio",
+        safe_for_model=True,
+    )
 
 
 def inspect_flac_bytes(data: bytes) -> dict[str, Any]:
@@ -247,7 +252,9 @@ def resolve_audio_verifier(rendering: dict[str, Any] | None = None) -> tuple[str
         or not probe
         or not all(Path(path).is_file() and os.access(path, os.X_OK) for path in (decoder, probe))
     ):
-        raise DomainError("capability_unavailable", 501, AUDIO_VERIFY_UNAVAILABLE)
+        raise DomainError(
+            "capability_unavailable", 501, AUDIO_VERIFY_UNAVAILABLE, safe_for_model=True
+        )
     return decoder, probe
 
 
@@ -310,11 +317,17 @@ def _verify_staged_audio(
         )
     except OSError as exc:
         raise DomainError(
-            "media_unavailable", 503, "Local audio verification process unavailable"
+            "media_unavailable",
+            503,
+            "Local audio verification process unavailable",
+            safe_for_model=True,
         ) from exc
     except subprocess.TimeoutExpired as exc:
         raise DomainError(
-            "media_unavailable", 503, "Audio verification exceeded its deadline"
+            "media_unavailable",
+            503,
+            "Audio verification exceeded its deadline",
+            safe_for_model=True,
         ) from exc
     except (ValueError, TypeError, KeyError, AttributeError) as exc:
         raise corrupt_audio() from exc
@@ -357,9 +370,14 @@ def verify_audio_bytes(
                 return _verify_staged_audio(path, media_type, declared, decoder, probe, deadline)
         except OSError as exc:
             raise DomainError(
-                "media_unavailable", 503, "Local storage unavailable for audio verification"
+                "media_unavailable",
+                503,
+                "Local storage unavailable for audio verification",
+                safe_for_model=True,
             ) from exc
     except DomainError as exc:
         if provider_output or exc.code != "corrupt_provider_output":
             raise
-        raise DomainError("media_unavailable", 422, INVALID_AUDIO_BYTES) from exc
+        raise DomainError(
+            "media_unavailable", 422, INVALID_AUDIO_BYTES, safe_for_model=True
+        ) from exc

@@ -154,7 +154,9 @@ def result_schema(request: dict[str, Any]) -> dict[str, Any]:
 
 def findings(request: dict[str, Any], result: Any) -> list[dict[str, Any]]:
     if not Draft202012Validator(RESULT_SCHEMA).is_valid(result):
-        raise DomainError("invalid_request", message="Malformed structured review")
+        raise DomainError(
+            "invalid_request", message="Malformed structured review", safe_for_model=True
+        )
     output = []
     allowed_indices = set(candidate_target_indices(request["targets"]))
     permitted_visual = {t["artifact_id"] for t in request["targets"]}
@@ -174,11 +176,20 @@ def findings(request: dict[str, Any], result: Any) -> list[dict[str, Any]]:
             "no action required",
             "no action required.",
         }:
-            raise DomainError("invalid_request", message="Non-actionable pass/placeholder finding")
+            raise DomainError(
+                "invalid_request",
+                message="Non-actionable pass/placeholder finding",
+                safe_for_model=True,
+            )
         for evidence in value["evidence"]:
             permitted = permitted_visual if evidence["kind"] == "visual" else telemetry
             if evidence["artifact_id"] not in permitted:
-                raise DomainError("scope_denied", 403, "Evidence was not supplied for this review")
+                raise DomainError(
+                    "scope_denied",
+                    403,
+                    "Evidence was not supplied for this review",
+                    safe_for_model=True,
+                )
         finding = dict(
             schema_version="1.0",
             finding_id=f"{request['review_id']}-finding-{index}",
@@ -261,7 +272,10 @@ class VLMClient:
         ]
         if len(suitable) != 1:
             raise DomainError(
-                "capability_unavailable", 501, "Configured vision model is not loaded"
+                "capability_unavailable",
+                501,
+                "Configured vision model is not loaded",
+                safe_for_model=True,
             )
         execution, applied_reasoning = select_reasoning(
             suitable[0].get("capabilities") or {}, preferred=reasoning_effort
@@ -337,6 +351,7 @@ class VLMClient:
                 "invalid_request",
                 message="Incomplete structured review",
                 diagnostics=diag,
+                safe_for_model=True,
             )
         try:
             parsed = findings(request, json.loads(choice["message"]["content"]))
@@ -347,7 +362,10 @@ class VLMClient:
                 exc.details["diagnostics"] = diag
                 raise
             raise DomainError(
-                "invalid_request", message="Malformed structured review", diagnostics=diag
+                "invalid_request",
+                message="Malformed structured review",
+                diagnostics=diag,
+                safe_for_model=True,
             ) from exc
         diag = _extract_diagnostics(body, applied_reasoning=applied_reasoning)
         return parsed, diag

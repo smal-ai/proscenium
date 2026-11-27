@@ -21,11 +21,13 @@ from proscenium.providers import budget3d, hunyuan, minimax_h3, stable_audio
 from proscenium.providers.plugins import plugin
 from proscenium.providers.preparation import (
     AMBIGUOUS,
+    HUNYUAN_REVISION,
     audio_revision,
     bounded_get,
     compatible_audio_recipes,
     compatible_recipes,
     compatible_video_recipes,
+    mesh_revision,
     models,
     video_recipe,
 )
@@ -51,6 +53,7 @@ RECOMMENDED_TOOLS = frozenset(
         "prepare_image_generation",
         "prepare_audio_generation",
         "prepare_video_generation",
+        "prepare_mesh_generation",
         "checkpoint_sources",
         "publish_outputs",
         "request_preview",
@@ -93,15 +96,7 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                     service["provider_id"], "comfy-image-1"
                 )
                 if capability == "image"
-                else (
-                    provider.options.get("mesh_profiles", {}).get(service["provider_id"])
-                    or (
-                        mesh_recipe.get("profile_revision")
-                        if isinstance(mesh_recipe, dict)
-                        else None
-                    )
-                    or plugin("image_to_3d").revision
-                )
+                else mesh_revision(provider.options, service["provider_id"])
                 if capability == "image_to_3d"
                 else audio_revision(provider.options, service["provider_id"])
                 if capability == "audio"
@@ -143,7 +138,7 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
             elif capability == "image_to_3d":
                 default_mesh_steps = (
                     20
-                    if revision == "hunyuan3d-native-2.0-1"
+                    if revision == HUNYUAN_REVISION
                     else 5
                     if revision == budget3d.TURBO_REVISION
                     else 50
@@ -295,7 +290,7 @@ def probe_provider_capabilities(services: Any) -> list[dict[str, Any]]:
                 else:
                     assert revision is not None
                     adapter = plugin("image_to_3d", revision)
-                    if revision == "hunyuan3d-native-2.0-1":
+                    if revision == HUNYUAN_REVISION:
                         graph = hunyuan.graph("reference")
                         mesh_models = [hunyuan.FILENAME]
                         steps = 20

@@ -29,7 +29,8 @@ from test_worker_capabilities_and_publication import (
 
 DIMENSIONS = "Image width and height must be multiples of 16 between 64 and 4096"
 PIXELS = "Requested image dimensions exceed the configured provider pixel limit"
-CORRUPT = "Provider returned a corrupted scanline or noise image"
+SCANLINE_OR_NOISE = "Provider returned a corrupted scanline or noise image"
+DEAD_QUADRANTS = "Provider returned a corrupted image with two or more dead black quadrants"
 ORDERED_REFS = ("z-form", "a-colour", "m-detail", "b-context")
 SD_TURBO_REFERENCE = "Selected image profile requires one exact 512x512 reference"
 
@@ -811,11 +812,21 @@ def test_small_rasters_skip_noise_guard(size):
     assert ImagePlugin().inspect_output(raster("noise", size), 16384)
 
 
-@pytest.mark.parametrize("kind", ["scanline", "noise", "black", "quadrant_wipeout", "half_wipeout"])
-def test_corrupt_rasters_are_rejected(kind):
-    with pytest.raises(DomainError, match=CORRUPT) as error:
+@pytest.mark.parametrize(
+    ("kind", "diagnostic"),
+    [
+        ("scanline", SCANLINE_OR_NOISE),
+        ("noise", SCANLINE_OR_NOISE),
+        ("black", "Provider returned a corrupted all-zero or NaN image"),
+        ("quadrant_wipeout", DEAD_QUADRANTS),
+        ("half_wipeout", DEAD_QUADRANTS),
+    ],
+)
+def test_corrupt_rasters_are_rejected(kind, diagnostic):
+    with pytest.raises(DomainError) as error:
         ImagePlugin().inspect_output(raster(kind), 16384)
     assert error.value.code == "corrupt_provider_output" and error.value.status == 422
+    assert error.value.message == diagnostic
 
 
 def test_raster_format_and_pixel_guards_remain():
