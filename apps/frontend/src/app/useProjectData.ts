@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiClient, ApiError } from "../api";
 import type { ActivityEventData, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, ReviewTicket, SocketControl, WorkRecord } from "../api";
 import { routes } from "../api/generated/operations";
+import { nextArtifactReadOrder } from "../features/readyArtifactIndex";
 import { describeError, writePrivate } from "./storage";
 
 const TERMINAL_WORK = new Set(["completed", "failed", "stopped"]);
@@ -244,20 +245,23 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const [items, setItems] = useState<ItemRecord[]>([]);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [reviews, setReviews] = useState<ReviewTicket[]>([]);
-  const [retainedArtifacts, setRetainedArtifacts] = useState<RetainedArtifactSummary[]>([]);
+  const [retainedRead, setRetainedRead] = useState<{ items: RetainedArtifactSummary[]; order: number }>({ items: [], order: 0 });
   const [events, setEvents] = useState<Event[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [connection, setConnection] = useState("Disconnected");
   const [error, setError] = useState("");
   const [backfillError, setBackfillError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [catalogueMetadataRevision, setCatalogueMetadataRevision] = useState(0);
+  // Relationship topology follows publication, not media/status or owner selection overlays.
   const [catalogueRevision, setCatalogueRevision] = useState(0);
+  const [selectionRevision, setSelectionRevision] = useState(0);
   const [baseRevision, setBaseRevision] = useState(0);
   const [versionRevisions, setVersionRevisions] = useState<Record<string, number>>({});
   const refreshRef = useRef<() => Promise<void>>(async () => {});
   const refresh = useCallback(() => refreshRef.current(), []);
   useEffect(() => {
-    setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]); setEvents([]); setHydrated(false); setError("");
+    setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedRead({ items: [], order: 0 }); setEvents([]); setHydrated(false); setError("");
     setVersionRevisions({});
     setBackfillError("");
     if (!projectId) { setConnection("No active project"); return; }
@@ -271,6 +275,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     let authoritativeSnapshotSequence = 0;
     let hydrateEpoch = 0;
     let appliedHydrateEpoch = 0;
+    let catalogueRead = 0;
     let replaying: { epoch: number; promise: Promise<void> } | null = null;
     let pendingBackfill: { end: number; floor: number; liveAbove: number } | null = null;
     let backfilling: { epoch: number; promise: Promise<void> } | null = null;
@@ -313,13 +318,14 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       }
       const crawl = { epoch: loadEpoch, queued: false };
       retainedLoad = crawl;
-      if (replace) setRetainedArtifacts([]);
+      if (replace) setRetainedRead({ items: [], order: 0 });
       try {
         do {
           crawl.queued = false;
           try {
+            const order = nextArtifactReadOrder();
             const summaries = await allPages(c => api.call("listRetainedArtifacts", { path, query: { cursor: c, limit: 100 } }));
-            if (currentLoad(crawl.epoch)) setRetainedArtifacts(summaries);
+            if (currentLoad(crawl.epoch)) setRetainedRead({ items: summaries, order });
           } catch (e) {
             if (currentLoad(crawl.epoch) && e instanceof ApiError && (e.status === 401 || e.status >= 500)) report(e);
           }
@@ -367,7 +373,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       if (ready) setHydrated(true);
       for (const error of errors) report(error);
       setRevision(n => n + 1);
-      setCatalogueRevision(n => n + 1);
+      setCatalogueMetadataRevision(n => n + 1);
       setBaseRevision(n => n + 1);
     }
     refreshRef.current = async () => {
@@ -501,17 +507,21 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
           void refreshSnapshot();
         }
       }
-      if (event.event_type === "publication.created") {
+      if (event.event_type === "publication.created" || event.event_type === "selection.changed") {
+        if (event.event_type === "publication.created") {
+          setCatalogueRevision(n => n + 1);
+          void loadRetainedArtifacts();
+        } else setSelectionRevision(n => n + 1);
         const myEpoch = loadEpoch;
-        void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (currentLoad(myEpoch)) setItems(prev => mergeItems(prev, value)); }).catch(e => { if (currentLoad(myEpoch)) report(e); });
-        void loadRetainedArtifacts();
+        const read = ++catalogueRead;
+        void allPages(c => api.call("listItems", { path, query: { cursor: c, limit: 100 } })).then(value => { if (currentLoad(myEpoch) && read === catalogueRead) setItems(prev => mergeItems(prev, value)); }).catch(e => { if (currentLoad(myEpoch) && read === catalogueRead) report(e); });
       }
       if (event.event_type === "review.ready" || event.event_type === "review.changed") {
         const ticket = event.payload as unknown as ReviewTicket;
         setReviews(prev => mergeReviews(prev, [ticket]));
       }
       if (scope.legacy) setRevision(n => n + 1);
-      if (scope.catalogue) setCatalogueRevision(n => n + 1);
+      if (scope.catalogue) setCatalogueMetadataRevision(n => n + 1);
       if (scope.base) setBaseRevision(n => n + 1);
       if (scope.versionId) versionRefresh.bump(scope.versionId, scope.immediate);
     }
@@ -614,7 +624,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         latestWorkSequence = 0; authoritativeSnapshotSequence = 0;
         pendingBackfill = null; backfilling = null; setBackfillError("");
         rememberCursor(0); journal.clear(); orderedEvents.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); decisionSequences.clear(); receiptArtifacts.clear(); setEvents([]);
-        setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedArtifacts([]);
+        setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedRead({ items: [], order: 0 });
         setHydrated(false); setError(""); setVersionRevisions({});
       }
       resyncing = (async () => {
@@ -693,5 +703,5 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     void hydrate().then(() => initialLoad(firstEpoch)).catch(handleReplayError).finally(connect);
     return () => { disposed = true; loadEpoch++; pendingBackfill = null; backfilling = null; latestWorkSequence = 0; authoritativeSnapshotSequence = 0; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
   }, [api, projectId, onUnauthorised]);
-  return { snapshot, requests, items, jobs, reviews, retainedArtifacts, events, hydrated, connection, error: error || backfillError, revision, catalogueRevision, baseRevision, versionRevisions, refresh };
+  return { snapshot, requests, items, jobs, reviews, retainedArtifacts: retainedRead.items, retainedArtifactReadOrder: retainedRead.order, events, hydrated, connection, error: error || backfillError, revision, catalogueRevision, selectionRevision, catalogueMetadataRevision, baseRevision, versionRevisions, refresh };
 }

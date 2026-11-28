@@ -1,0 +1,18 @@
+.relationship-outliner{padding:12px;overflow-wrap:anywhere}
+.relationship-outliner button{text-align:left}
+.relationship-outliner button[aria-pressed=true]{border-color:#818cf8;background:#27273c}
+.relationship-outliner [aria-disabled=true]{opacity:.5;cursor:default}
+.relationship-actions{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.relationship-picker{display:grid;gap:8px;margin:8px 0}
+.relationship-root-identity{padding:8px 0;border-bottom:1px solid var(--border)}
+.relationship-root-identity h3{font-size:15px}
+.relationship-group-label{font-size:11px;color:#c5c5ce;font-weight:600;margin:8px 0 4px}
+.relationship-node{border-left:1px solid #32323a;margin:5px 0;padding-left:7px}
+.relationship-row{padding:4px 0}
+.relationship-toggle{justify-content:flex-start;width:100%;overflow-wrap:anywhere}
+.relationship-row strong:focus-visible,.relationship-root h3:focus-visible{outline:2px solid #818cf8;outline-offset:2px}
+.relationship-branch{margin-left:4px}
+.relationship-meta{margin-top:3px}
+.relationship-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.relationship-badges span{font-size:10px;border:1px solid #52525b;border-radius:4px;padding:1px 4px}
+.relationship-notice{border-left:2px solid #f59e0b;padding:4px 8px}

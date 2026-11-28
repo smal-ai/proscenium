@@ -90,6 +90,9 @@ test("storyboard playback drops the open shot and keeps mode shortcuts out of fo
   // The same shortcut still changes modes outside the native player.
   await animation.focus();
   await page.keyboard.press("2");
+  await expect(animation).toHaveAttribute("aria-pressed", "true");
+  await page.locator(".brand").click();
+  await page.keyboard.press("2");
   await expect(workspace.getByRole("button", { name: "Keyframes" })).toHaveAttribute("aria-pressed", "true");
   await animation.click();
 

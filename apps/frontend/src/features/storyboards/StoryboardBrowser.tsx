@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import type { Artifact, FrameReceipt, ItemRecord, SelectionRecord, SelectionSave, ShotPlan, VersionRecord } from "../../api/generated/contracts";
-import type { ReviewSurfaceProps, TurnSelection } from "../../api/studio";
+import type { StoryboardSurfaceProps, TurnSelection } from "../../api/studio";
 import { handleSubmitEnter } from "../chat/controls";
 import { useArtifactObservations } from "../readyArtifactIndex";
 import { dependencyStatus, frameContext, readStoryboardCatalogue, selectionCommand, selectionFor, shotPlanArtifactIds, storyboardHeads, type PlanFrame, type PlanShot } from "./model";
@@ -35,12 +35,12 @@ async function pages<T>(read: (cursor?: string) => Promise<{ items: T[]; next_cu
   return result;
 }
 
-export const StoryboardBrowser = memo(function StoryboardBrowser(props: ReviewSurfaceProps) {
+export const StoryboardBrowser = memo(function StoryboardBrowser(props: StoryboardSurfaceProps) {
   // Unmounting on a project change fences old requests and pending mutation identities.
   return <ProjectStoryboardBrowser key={props.projectId} {...props} />;
 });
 
-function ProjectStoryboardBrowser({ api, projectId, version, selection: external, jobs, items: suppliedItems, retainedArtifacts, refreshRevision, onContextChange, onNavigate, onQueue }: ReviewSurfaceProps) {
+function ProjectStoryboardBrowser({ api, projectId, version, selection: external, jobs, items: suppliedItems, retainedArtifacts, refreshRevision, onContextChange, onNavigate, onQueue, externalTarget }: StoryboardSurfaceProps) {
   const [localCatalogue, setLocalCatalogue] = useState<{ supplied: ItemRecord[] | undefined; items: ItemRecord[] }>();
   // The explicit read wins until the parent supplies a different catalogue projection.
   const items = localCatalogue && localCatalogue.supplied === suppliedItems ? localCatalogue.items : suppliedItems ?? EMPTY_ITEMS;
@@ -48,7 +48,9 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
   latestCatalogue.current = { suppliedItems, items };
   const suppliedBoardsKey = useMemo(() => suppliedItems === undefined ? null : JSON.stringify(storyboardHeads(suppliedItems)), [suppliedItems]);
   const [versions, setVersions] = useState<VersionRecord[]>([]);
-  const [versionId, setVersionId] = useState<string>(version?.kind === "storyboard" ? version.version_id : "");
+  const [versionId, setVersionId] = useState<string>(externalTarget?.versionId ?? (version?.kind === "storyboard" ? version.version_id : ""));
+  const shotHeading = useRef<HTMLHeadingElement>(null);
+  const focusedNonce = useRef<string>(null);
   const [records, setRecords] = useState<SelectionRecord[]>([]);
   const [artifacts, setArtifacts] = useState<Record<string, Artifact>>({});
   const readyArtifacts = useRef(new Map<string, Artifact>());
@@ -97,6 +99,20 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
   useEffect(() => {
     if (version?.kind === "storyboard") setVersionId(version.version_id);
   }, [version?.kind, version?.version_id]);
+
+  useEffect(() => {
+    if (externalTarget) setVersionId(externalTarget.versionId);
+  }, [externalTarget]);
+
+  useEffect(() => {
+    if (!plan || !externalTarget || externalTarget.versionId !== versionId || focusedNonce.current === externalTarget.nonce) return;
+    if (!shotHeading.current) {
+      setError(`Shot ${externalTarget.shotId} is unavailable in ${versionId}.`);
+    } else {
+      shotHeading.current.focus();
+    }
+    focusedNonce.current = externalTarget.nonce;
+  }, [externalTarget, plan, versionId]);
 
   useEffect(() => {
     setActive(null);
@@ -150,12 +166,12 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
       if (catalogue) setLocalCatalogue({ supplied: input.suppliedItems, items: catalogue });
       setVersions(allVersions);
       setRecords(selections);
-      setVersionId(previous => allVersions.some(value => value.version_id === previous) ? previous
+      setVersionId(previous => previous === externalTarget?.versionId || allVersions.some(value => value.version_id === previous) ? previous
         : boards.find(([, head]) => head)?.[1] ?? allVersions[0]?.version_id ?? "");
     })().catch(cause => { if (!controller.signal.aborted) setError(message(cause)); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [api, projectId, refreshRevision, reload, catalogueReload, suppliedBoardsKey]);
+  }, [api, projectId, refreshRevision, reload, catalogueReload, suppliedBoardsKey, externalTarget?.versionId]);
 
   useEffect(() => {
     const { api, projectId, versionId } = planKey;
@@ -350,7 +366,7 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
         </details>
         {plan.unresolved.length > 0 && <details open><summary>Unresolved inputs ({plan.unresolved.length})</summary><ul>{plan.unresolved.map((value, index) => <li key={index}>{value}</li>)}</ul></details>}
         <ol className="sb-shots">{plan.shots.map((planShot, index) => <li key={planShot.shot_id} className="sb-shot">
-          <h3>{index + 1}. {planShot.shot_id}</h3><p>{planShot.intent}</p>
+          <h3 ref={externalTarget?.versionId === versionId && externalTarget.shotId === planShot.shot_id ? shotHeading : null} tabIndex={-1}>{index + 1}. {planShot.shot_id}</h3><p>{planShot.intent}</p>
           <details open><summary>Camera, motion and timing</summary>
             <p>{planShot.camera_intent || "Camera intent unresolved"}</p>
             <ul>{planShot.motion_beats.map((beat, beatIndex) => <li key={beatIndex}>{beat}</li>)}</ul>

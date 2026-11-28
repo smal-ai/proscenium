@@ -17,12 +17,13 @@ import { formatRenderPresetOption, RENDER_PRESETS, resolveRenderTargetDimensions
 import { annotationContext, cleanTargetRole, unmappedVideoContext } from "./context";
 import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
+import { InspectionObjects } from "./InspectionObjects";
 import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
 import { canStepKeyframePass, describeKeyframePassStatus, isFrameRendering, resolveDirectKeyframeJump, sortedReadyFrames, stepKeyframePass } from "./keyframeStepping";
 import { formatPassOptionLabels, orderVersionJobs, selectablePassJobs } from "./passOrder";
 import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
-import { useReviewSelection } from "./state";
+import { compatibleObjects, useReviewSelection } from "./state";
 import { clipSequenceDelivery, currentRetainedPreview, directPublishedVideo, MediaMetadata, RetainedReview, ReviewEmpty, ReviewModeSwitcher, ReviewVideo, SequenceReelReview } from "./ReviewChrome";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "./refreshKeys";
 import "./review.css";
@@ -33,6 +34,7 @@ type Mode = "3d_inspection" | "keyframes" | "animation";
 type StoryboardPanel = { shot_id: string; frame_id: string; role: string; composition: string; artifact_id: string };
 type StoryboardTarget = StoryboardPanel & { target: FrameTarget };
 type UnmappedCapture = FrozenProxyCapture & { clickUv: [number, number] };
+const NO_OBJECTS: TurnSelection["selected_objects"] = [];
 
 function formatTargetOrigin(origin: FrameTarget["origin"]): string {
   if (origin === "proxy_capture") return "3D capture";
@@ -165,7 +167,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const externalPrimary = JSON.stringify({target: external?.target ?? null, annotation: external?.annotations.map(a => [a.annotation_id,a.saved_revision]) ?? []});
   const choice = useReviewSelection();
   const scope = `${projectId}:${version?.version_id}`;
-  const selected = choice.scope === scope ? choice.selected : [];
+  const scopedSelection = choice.scope === scope ? choice.selected : NO_OBJECTS;
   const versionId = version?.version_id;
   const versionJobs = useMemo(() => jobs.filter(j => j.target.version?.version_id === versionId), [jobs, versionId]);
   const orderedVersionJobs = useMemo(() => orderVersionJobs(versionJobs, version?.preview_job_ids), [versionJobs, version?.preview_job_ids]);
@@ -240,9 +242,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   // Resolve exact pinned ProxyMapping by mapping_artifact_id when a spatial annotation is active.
   const matchingCurrentMap = useMemo(() => {
     if (!pinnedHit || !version || !mapping) return null;
-    if (mapping.mapping_artifact_id !== pinnedHit.mapping_artifact_id) return null;
+    if (mapping.project_id !== projectId || mapping.mapping_artifact_id !== pinnedHit.mapping_artifact_id) return null;
     return verifySpatialMapping(mapping, pinnedHit, version.source.digest) === null ? mapping : null;
-  }, [mapping, pinnedHit, version]);
+  }, [mapping, pinnedHit, projectId, version]);
+
+  const pinnedMappingId = pinnedHit?.mapping_artifact_id;
 
   useEffect(() => {
     setPinnedMapping(null);
@@ -265,7 +269,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       signal,
     }).then(result => {
       if (signal.aborted) return;
-      const mismatch = verifySpatialMapping(result, pinnedHit, version.source.digest);
+      const mismatch = result.project_id !== projectId || result.mapping_artifact_id !== pinnedHit.mapping_artifact_id
+        ? "Historical mapping does not match the pinned identity" : verifySpatialMapping(result, pinnedHit, version.source.digest);
       if (mismatch) setPinnedMappingError(mismatch);
       else setPinnedMapping(result);
     }).catch(e => {
@@ -286,8 +291,17 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     version?.version_id,
   ]);
 
-  const activeMapping = pinnedHit ? (matchingCurrentMap ?? pinnedMapping) : mapping;
-  const proxyUnavailableReason = pinnedHit ? (pinnedMappingError ?? proxyLoadError) : null;
+  const exactPinnedMapping = pinnedHit && version && pinnedMapping && pinnedMapping.mapping_artifact_id === pinnedMappingId
+    && pinnedMapping.project_id === projectId && !verifySpatialMapping(pinnedMapping, pinnedHit, version.source.digest) ? pinnedMapping : null;
+  const resolvedMapping = pinnedHit ? (matchingCurrentMap ?? exactPinnedMapping) : mapping;
+  const revokedMapping = pinnedHit && (unavailableArtifacts.has(pinnedHit.mapping_artifact_id) || unavailableArtifacts.has(pinnedHit.proxy_artifact_id));
+  const proxyUnavailableReason = pinnedHit ? (revokedMapping ? "The pinned mapping or proxy artefact is no longer available." : pinnedMappingError ?? proxyLoadError) : null;
+  const activeMapping = proxyUnavailableReason ? null : resolvedMapping;
+  const selected = useMemo(() => activeMapping ? compatibleObjects(scopedSelection, activeMapping)
+    : proxyUnavailableReason ? NO_OBJECTS : scopedSelection, [activeMapping, proxyUnavailableReason, scopedSelection]);
+  useLayoutEffect(() => {
+    if (scopedSelection !== selected || (activeMapping && choice.scope !== scope && choice.selected.length)) choice.select(scope, selected);
+  }, [activeMapping, choice.scope, choice.select, choice.selected.length, scope, scopedSelection, selected]);
 
   const resolveDiscardBaseline = useCallback(async (current: Draft): Promise<AnnotationSnapshot | null> => {
     const matches = (annotation: AnnotationSnapshot) => annotation.annotation_id === current.annotation.annotation_id
@@ -563,17 +577,19 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   useEffect(() => {
     const digest = version?.source.digest;
-    if (!versionId || !digest) return;
+    // A standalone published video omits the mode switcher only once known proxy
+    // support has been checked. Other versions read the proxy on entering 3D.
+    if (!visible || (mode !== "3d_inspection" && !directVideo) || pinnedMappingId || !versionId || !digest) return;
     const controller = new AbortController();
     const {signal} = controller;
     api.call("getVersionProxyMapping", {path: {project_id: projectId, version_id: versionId}, signal}).then(result => {
       if (result.version_id !== versionId || result.project_id !== projectId || result.source_closure_digest !== digest) throw new Error("Proxy mapping does not match pinned source");
       // The visible static proxy/sample is pinned too. A refresh must not replace
       // its GLB, reset orbit, or erase a working view because a read went offline.
-      if (!signal.aborted) setMapping(previous => previous ?? result);
+      if (!signal.aborted) setMapping(previous => previous?.source_closure_digest === digest ? previous : result);
     }).catch(() => { /* Keep an already validated mapping available offline. */ });
     return () => controller.abort();
-  }, [api, projectId, versionId, version?.source.digest, proxyJobsKey]);
+  }, [api, projectId, versionId, version?.source.digest, proxyJobsKey, mode, visible, pinnedMappingId, directVideo?.artifact_id]);
 
   useEffect(() => {
     const itemId = version?.item_id;
@@ -843,7 +859,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const keydownRef = useRef<(event: KeyboardEvent) => void>(() => {});
   keydownRef.current = (event: KeyboardEvent) => {
-      if (!visible || (clipReel || videoOnlyVersion) && !draft) return;
+      if (event.defaultPrevented || !visible || (clipReel || videoOnlyVersion) && !draft) return;
+      if (event.target instanceof Element && event.target.closest("aside.left-panel, [aria-label='Navigator'], button, [role=button], [role=tab], [role=treeitem], a, [role=link], summary, select")) return;
       if (animationVideo && event.target instanceof Element && event.target.closest("video")) return;
       if (event.key === "Escape" && pinMode) { event.preventDefault(); setPinMode(false); return; }
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
@@ -1257,6 +1274,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       <p>{version.name} · {version.artifact_ids.length} version artefacts</p>
       <div className="review-drawer-items"><strong>Published image artefacts</strong>{artifacts.filter(a => a.kind === "image").map(a => <span className="toolbar-chip" key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose}</span>)}</div>
     </section>}
+    {!show2DEditor && (mode === "3d_inspection" || isSpatialDraft) && <InspectionObjects mapping={activeMapping} unavailable={proxyUnavailableReason}
+      loading={Boolean(pinnedHit && !activeMapping && !proxyUnavailableReason)} selected={selected} onSelect={pairs => choice.select(scope, pairs)} />}
     {draft && show2DEditor ? (
       <AnnotationEditor
         key={draft.key}
@@ -1318,7 +1337,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     ) : (
       <div className={`review-bar review-transport-bar${mode === "3d_inspection" ? "" : " review-playback-transport"}`} aria-label="Review transport">
         {mode === "3d_inspection" ? <>
-          <span className="toolbar-chip">Sample frame {mapping?.sample_frame ?? 1}</span>
+          {activeMapping && <span className="toolbar-chip">Sample frame {activeMapping.sample_frame}</span>}
           <button className="toolbar-btn" disabled={!visible || !proxyReady || !activeMapping} onClick={() => {
             if (activeMapping) setFrameRequest(previous => ({nonce: (previous?.nonce ?? 0) + 1,
               proxyId: activeMapping.proxy_artifact_id, restore: effectiveRestoreCamera, restoreNonce: restorePinNonce}));
