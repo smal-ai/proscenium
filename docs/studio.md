@@ -56,6 +56,10 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
   pins. Board-wide asset dependencies remain separate.
 - **Outliner** is read-only. Choose an exact published version, then switch between
   **Uses** and **Used by**. Expand one node at a time to read its direct relationships.
+  **Used by** defaults to **Latest per item** (`latest_per_item`): it prefers the
+  current version if it uses the pin, otherwise showing the newest matching
+  historical version. Choose **All versions** for the full history. **Uses** always
+  shows the exact pinned inputs.
   **Structure** shows local occurrences such as shots and panels. **Inputs & bindings**
   distinguishes planned assets, declared dependencies, scene bindings and verified
   source inclusions. **Origins / Derivatives** shows provenance between versions.

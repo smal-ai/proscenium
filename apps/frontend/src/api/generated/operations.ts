@@ -22,7 +22,7 @@ export interface Operations {
   updateProjectSettings: { body: C.ProjectSettings; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
   listItems: { body: never; response: C.ItemPage; path: { project_id: string }; query: { cursor?: string; limit?: number; kind?: "asset" | "scene" | "storyboard" | "sequence" | "unity_result" } };
   listItemVersions: { body: never; response: C.VersionPage; path: { project_id: string; item_id: string }; query: { cursor?: string; limit?: number } };
-  getVersionRelationships: { body: never; response: C.RelationshipPage; path: { project_id: string; version_id: string }; query: { direction?: "uses" | "used_by"; shot_id?: string; cursor?: string; limit?: number } };
+  getVersionRelationships: { body: never; response: C.RelationshipPage; path: { project_id: string; version_id: string }; query: { direction?: "uses" | "used_by"; latest_per_item?: boolean; shot_id?: string; cursor?: string; limit?: number } };
   getVersionShotPlan: { body: never; response: C.ShotPlan; path: { project_id: string; version_id: string }; query: Record<string, never> };
   getVersionSequenceMap: { body: never; response: C.SequenceMap; path: { project_id: string; version_id: string }; query: Record<string, never> };
   getVersionProxyMapping: { body: never; response: C.ProxyMapping; path: { project_id: string; version_id: string }; query: { mapping_artifact_id?: string } };

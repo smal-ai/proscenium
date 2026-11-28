@@ -10,6 +10,7 @@ type FocusedRoot = { endpoint: RelationshipRoot; summary?: RelationshipNodeSumma
 type NavigationProps = Pick<OutlinerSurfaceProps, "api" | "projectId" | "visible" | "onOpenVersion" | "onOpenShot" | "onInspectArtifact">;
 type BranchProps = NavigationProps & {
   direction: RelationshipDirection;
+  latestPerItem: boolean;
   readKey: string;
   restart: () => void;
   focusRoot: (root: FocusedRoot) => void;
@@ -174,7 +175,7 @@ function RelationshipRow({ endpoint, summary: recorded, board, path, evidence, n
   </div>;
 }
 
-function usePage({ api, projectId, visible, direction, readKey }: BranchProps, root: RelationshipRoot) {
+function usePage({ api, projectId, visible, direction, latestPerItem, readKey }: BranchProps, root: RelationshipRoot) {
   const [read, setRead] = useState<{ page: RelationshipPage; nodeOrders: ReadonlyMap<string, number> }>();
   const page = read?.page;
   const [failure, setFailure] = useState<ReturnType<typeof readFailure>>();
@@ -195,7 +196,7 @@ function usePage({ api, projectId, visible, direction, readKey }: BranchProps, r
       busyRef.current = true;
       setFailure(undefined);
       const order = nextArtifactReadOrder();
-      void readRelationships(api, projectId, exact, direction, boundedSignal(controller.signal))
+      void readRelationships(api, projectId, exact, direction, boundedSignal(controller.signal), undefined, latestPerItem)
         .then(value => { if (!controller.signal.aborted) setRead({ page: value, nodeOrders: stampNodes(value, order) }); })
         .catch(error => { if (!controller.signal.aborted) setFailure(readFailure(error)); })
         .finally(() => {
@@ -210,7 +211,7 @@ function usePage({ api, projectId, visible, direction, readKey }: BranchProps, r
       lane.current = null;
       busyRef.current = false;
     };
-  }, [api, projectId, direction, item_id, version_id, shot_id, visible, readKey]);
+  }, [api, projectId, direction, latestPerItem, item_id, version_id, shot_id, visible, readKey]);
 
   async function loadMore() {
     const controller = lane.current;
@@ -220,7 +221,7 @@ function usePage({ api, projectId, visible, direction, readKey }: BranchProps, r
     setFailure(undefined);
     try {
       const order = nextArtifactReadOrder();
-      const next = await readRelationships(api, projectId, root, direction, boundedSignal(controller.signal), page.next_cursor);
+      const next = await readRelationships(api, projectId, root, direction, boundedSignal(controller.signal), page.next_cursor, latestPerItem);
       if (!controller.signal.aborted) setRead({ page: appendPage(page, next), nodeOrders: stampNodes(next, order, read.nodeOrders) });
     } catch (error) {
       if (!controller.signal.aborted) setFailure(readFailure(error));
@@ -351,6 +352,7 @@ function ProjectOutliner(props: OutlinerSurfaceProps) {
 function OutlinerRoot({ overlays, selectionError, reconnections, ...props }: OutlinerSurfaceProps & { overlays: NodeOverlays; selectionError: boolean; reconnections: number }) {
   const { version, topologyRevision, visible } = props;
   const [direction, setDirection] = useState<RelationshipDirection>("uses");
+  const [latestPerItem, setLatestPerItem] = useState(true);
   const [history, setHistory] = useState<FocusedRoot[]>([]);
   const [revision, setRevision] = useState(0);
   const panel = useRef<HTMLElement>(null);
@@ -374,11 +376,17 @@ function OutlinerRoot({ overlays, selectionError, reconnections, ...props }: Out
       <button type="button" onClick={restart}>Refresh relationships</button>
     </div>
     {focused && <>
-      <div className="relationship-actions" role="group" aria-label="Relationship direction">
-        <button type="button" aria-pressed={direction === "uses"} onClick={() => setDirection("uses")}>Uses</button>
-        <button type="button" aria-pressed={direction === "used_by"} onClick={() => setDirection("used_by")}>Used by</button>
+      <div className="relationship-controls">
+        <div className="relationship-actions" role="group" aria-label="Relationship direction">
+          <button type="button" aria-pressed={direction === "uses"} onClick={() => setDirection("uses")}>Uses</button>
+          <button type="button" aria-pressed={direction === "used_by"} onClick={() => setDirection("used_by")}>Used by</button>
+        </div>
+        {direction === "used_by" && <div className="relationship-actions" role="group" aria-label="Used by version scope">
+          <button type="button" aria-pressed={latestPerItem} onClick={() => setLatestPerItem(true)}>Latest per item</button>
+          <button type="button" aria-pressed={!latestPerItem} onClick={() => setLatestPerItem(false)}>All versions</button>
+        </div>}
       </div>
-      <RelationshipTree key={JSON.stringify([endpointKey(focused.endpoint), direction])} {...props} overlays={overlays} focused={focused} viewing={viewing} home={history.length <= Number(!version)} direction={direction} readKey={readKey} restart={restart} focusRoot={next => {
+      <RelationshipTree key={JSON.stringify([endpointKey(focused.endpoint), direction, latestPerItem])} {...props} overlays={overlays} focused={focused} viewing={viewing} home={history.length <= Number(!version)} direction={direction} latestPerItem={latestPerItem} readKey={readKey} restart={restart} focusRoot={next => {
         focusHeading.current = true;
         setHistory(previous => [...previous, next]);
       }} />

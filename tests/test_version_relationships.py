@@ -230,6 +230,224 @@ def url(version, project=P):
     return f"/api/v1/projects/{project}/versions/{version}/relationships"
 
 
+def seed_consumer_versions(services, item_id, kind, pins_by_version, *, documents=None):
+    template = get_version(services, "hero-v3")
+    documents = documents or {}
+    refs = [pin(item_id, f"{item_id}-v{i + 1}") for i in range(len(pins_by_version))]
+    with services.registry.project_store(P).transaction() as tx:
+        tx.put(
+            "items",
+            item_id,
+            dict(project_id=P, item_id=item_id, current_version_id=refs[-1]["version_id"]),
+            expected_revision=tx.revision("items", item_id)
+            if tx.get("items", item_id, required=False) is not None
+            else None,
+        )
+        for i, (ref, pins) in enumerate(zip(refs, pins_by_version, strict=True)):
+            version = dict(
+                template,
+                **ref,
+                kind=kind,
+                derived_from=[],
+                source=dict(template["source"], dependencies=pins),
+                # All revisions have the same timestamp; rowid reflects insertion order.
+                created_at="2026-11-28T07:00:00" + ("+00:00" if i % 2 == 0 else "Z"),
+            )
+            tx.put("versions", ref["version_id"], version, schema="VersionRecord")
+            apply_version_projection(tx, project_version_relationships(version, documents.get(i)))
+    return refs
+
+
+def consumer_versions(response):
+    return {edge["from"]["ref"]["version_id"] for edge in response["items"]}
+
+
+@pytest.mark.parametrize("count", [3, 55])
+def test_latest_per_item_prefers_current_and_paginates_after_deduplication(graph, count):
+    services = graph.services
+    hero, _ = seed_consumer_versions(services, "hero", "asset", [[], []])
+    scenes = seed_consumer_versions(services, "scene-a", "scene", [[hero]] * count)
+    seed_consumer_versions(services, "scene-b", "scene", [[hero]])
+    params = dict(direction="used_by", limit=50)
+    result = page(services, "hero-v1", latest_per_item=True, **params)
+    assert consumer_versions(result) == {scenes[-1]["version_id"], "scene-b-v1"}
+    assert len(result["items"]) == 2 and result["next_cursor"] is None
+    assert all(
+        node["is_current"]
+        for node in result["nodes"]
+        if node["ref"] in [scenes[-1], pin("scene-b")]
+    )
+    history = page(services, "hero-v1", latest_per_item=False, **params)
+    if count == 3:
+        assert len(history["items"]) == 4
+        assert consumer_versions(history) == {
+            row["version_id"] for row in [*scenes, pin("scene-b")]
+        }
+    else:
+        assert len(history["items"]) == 50 and history["next_cursor"] is not None
+        assert "scene-b-v1" not in consumer_versions(history)
+
+
+@pytest.mark.parametrize("count", [2, 12])
+def test_latest_per_item_falls_back_to_newest_matching_historical_version(graph, count):
+    services = graph.services
+    first, second = seed_consumer_versions(services, "hero", "asset", [[], []])
+    # In the longer history, v12 beats v9 by rowid despite the version ID sort order.
+    refs = seed_consumer_versions(services, "scene-a", "scene", [[first]] * count + [[second]])
+    response = page(services, "hero-v1", direction="used_by", latest_per_item=True)
+    assert [edge["from"]["ref"] for edge in response["items"]] == [refs[-2]]
+    assert (
+        next(node for node in response["nodes"] if node["ref"] == refs[-2])["is_current"] is False
+    )
+    assert consumer_versions(
+        page(services, "hero-v2", direction="used_by", latest_per_item=True)
+    ) == {refs[-1]["version_id"]}
+
+
+@pytest.mark.parametrize(
+    "namespace, field, wrong_value",
+    [
+        ("items", "project_id", "other-project"),
+        ("items", "item_id", "other-item"),
+        ("versions", "project_id", "other-project"),
+        ("versions", "item_id", "other-item"),
+        ("versions", "version_id", "other-version"),
+        ("versions", None, ["not", "an", "object"]),
+    ],
+)
+def test_latest_per_item_ignores_invalid_record_identity(graph, namespace, field, wrong_value):
+    services = graph.services
+    hero, _ = seed_consumer_versions(services, "hero", "asset", [[], []])
+    older, newer = seed_consumer_versions(services, "scene-a", "scene", [[hero], [hero]])
+    with services.registry.project_store(P).transaction() as tx:
+        item = dict(tx.require("items", "scene-a"), current_version_id=older["version_id"])
+        version = dict(
+            tx.require("versions", older["version_id"]), created_at="2026-11-29T07:00:00Z"
+        )
+        if namespace == "items":
+            item[field] = wrong_value
+            # A foreign item cannot make an otherwise valid, older publication current.
+            version = tx.require("versions", older["version_id"])
+        elif field is None:
+            version = wrong_value
+        else:
+            version[field] = wrong_value
+        # Simulate damaged records without going through the writer's project guard.
+        tx.connection.executemany(
+            "UPDATE records SET body=? WHERE namespace=? AND id=?",
+            [
+                (encoded(item), "items", "scene-a"),
+                (encoded(version), "versions", older["version_id"]),
+            ],
+        )
+    response = page(services, "hero-v1", direction="used_by", latest_per_item=True)
+    assert [edge["from"]["ref"] for edge in response["items"]] == [newer]
+    assert next(node for node in response["nodes"] if node["ref"] == newer)["is_current"] is False
+
+
+@pytest.mark.parametrize(
+    "second_stamp, winner",
+    [
+        ("2026-11-28T07:00:00.123499Z", "scene-a-v2"),
+        ("2026-11-28T07:00:00.123401+00:00", "scene-a-v1"),
+        ("invalid timestamp", "scene-a-v1"),
+    ],
+)
+def test_latest_per_item_ranks_utc_microseconds_before_rowid(graph, second_stamp, winner):
+    services = graph.services
+    hero, next_hero = seed_consumer_versions(services, "hero", "asset", [[], []])
+    first, second, _ = seed_consumer_versions(
+        services, "scene-a", "scene", [[hero], [hero], [next_hero]]
+    )
+    with services.registry.project_store(P).transaction() as tx:
+        for ref, stamp in [(first, "2026-11-28T09:00:00.123499+02:00"), (second, second_stamp)]:
+            version_id = ref["version_id"]
+            tx.put(
+                "versions",
+                version_id,
+                dict(tx.require("versions", version_id), created_at=stamp),
+                expected_revision=tx.revision("versions", version_id),
+            )
+    response = page(services, "hero-v1", direction="used_by", latest_per_item=True)
+    assert consumer_versions(response) == {winner}
+
+
+def test_latest_per_item_keeps_multiple_sequence_entries_from_winner(graph):
+    services = graph.services
+    frames = {"start": 1, "end": 24}
+    scene = pin("landing")
+    document = {
+        "entries": [
+            dict(
+                entry_id=entry_id,
+                version_id=scene["version_id"],
+                shot_id=None,
+                job_id="job-1",
+                source_frames=frames,
+                sequence_frames=frames,
+            )
+            for entry_id in ["clip-a", "clip-b"]
+        ]
+    }
+    seed_consumer_versions(
+        services, "edit", "sequence", [[scene], [scene]], documents={0: document, 1: document}
+    )
+    response = page(services, "landing-v1", direction="used_by", latest_per_item=True)
+    entries = [edge for edge in response["items"] if edge["relation"] == "sequence_input"]
+    assert {edge["from"]["ref"]["version_id"] for edge in entries} == {"edit-v2"}
+    assert [edge["details"]["entry_id"] for edge in entries] == ["clip-a", "clip-b"]
+
+
+def test_latest_per_item_keeps_latest_matching_shot_on_board(graph):
+    services = graph.services
+    (hero,) = seed_consumer_versions(services, "hero", "asset", [[]])
+    document = plan("board")
+    document["shots"][0].update(shot_id="shot-1", planned_assets=[hero])
+    document["shots"][1]["planned_assets"] = [hero]
+    _, latest = seed_consumer_versions(
+        services, "board", "storyboard", [[hero], [hero]], documents={0: document, 1: document}
+    )
+    response = page(services, "hero-v1", direction="used_by", latest_per_item=True)
+    assert [edge["from"] for edge in response["items"]] == [
+        {"kind": "shot", "board": latest, "shot_id": shot_id} for shot_id in ["a-next", "shot-1"]
+    ]
+
+
+def test_latest_per_item_http_cursors_are_isolated_but_uses_is_unchanged(graph):
+    services = graph.services
+    with browser_for(services) as browser:
+        pair(services, browser)
+
+        def get(version, **params):
+            response = browser.get(url(version), params=params)
+            assert response.status_code == 200, response.text
+            return validate("RelationshipPage", response.json())
+
+        for scoped in [True, False]:
+            first = get("hero-v3", direction="used_by", latest_per_item=scoped, limit=1)
+            cursor = first["next_cursor"]
+            assert cursor
+            second = get(
+                "hero-v3", direction="used_by", latest_per_item=scoped, limit=1, cursor=cursor
+            )
+            assert second["items"] != first["items"]
+            rejected = browser.get(
+                url("hero-v3"),
+                params=dict(direction="used_by", latest_per_item=not scoped, cursor=cursor),
+            )
+            assert rejected.status_code == 400
+            assert rejected.json()["error"]["code"] == "invalid_cursor"
+
+        ordinary = get("first-v1", limit=1)
+        assert get("first-v1", direction="uses", latest_per_item=True, limit=1) == ordinary
+        assert get(
+            "first-v1", direction="uses", latest_per_item=True, cursor=ordinary["next_cursor"]
+        ) == get("first-v1", cursor=ordinary["next_cursor"])
+        assert (
+            get("landing-v1", direction="uses", latest_per_item=True)["items"][0]["to"]["ref"] == V3
+        )
+
+
 def test_e1_ordered_structural_read_never_touches_sources_or_writes(graph, monkeypatch):
     services = graph.services
     with browser_for(services) as browser:
@@ -1132,7 +1350,7 @@ def measured_relationship_pages(data, monkeypatch):
             db.row_factory = measure
             return db
 
-        def request(root, direction, cursor=None):
+        def request(root, direction, cursor=None, *, latest_per_item):
             sql.clear()
             payloads.clear()
             opens.clear()
@@ -1141,6 +1359,7 @@ def measured_relationship_pages(data, monkeypatch):
                 url(root),
                 params={
                     "direction": direction,
+                    "latest_per_item": latest_per_item,
                     "limit": 50,
                     **({"cursor": cursor} if cursor else {}),
                 },
@@ -1149,8 +1368,9 @@ def measured_relationship_pages(data, monkeypatch):
             assert response.status_code == 200, response.text
             queries = [stmt for stmt in sql if stmt.startswith("SELECT")]
             assert len(queries) <= 16 and len(opens) <= 4 and len(payloads) <= 220
-            assert sum("FROM relationship_edges" in stmt for stmt in queries) == 1
-            assert any("LIMIT 51" in stmt for stmt in queries)
+            edges = [stmt for stmt in queries if "FROM relationship_edges" in stmt]
+            assert len(edges) == 1 and edges[0].count("FROM relationship_edges") == 1
+            assert edges[0].endswith("LIMIT 51")
             return response.json(), {
                 "ms": round(ms, 3),
                 "selects": len(queries),
@@ -1182,7 +1402,8 @@ def open_performance_project(services, root):
     services.registry.activate(P)
 
 
-def test_studio_shaped_relationship_performance(graph, tmp_path, monkeypatch):
+@pytest.mark.parametrize("latest_per_item", [False, True])
+def test_studio_shaped_relationship_performance(graph, tmp_path, monkeypatch, latest_per_item):
     original = get_version(graph.services, "hero-v3")
     data = tmp_path / "studio-registry"
     with services_at(data) as services:
@@ -1215,19 +1436,23 @@ def test_studio_shaped_relationship_performance(graph, tmp_path, monkeypatch):
                     apply_version_projection(tx, project_version_relationships(version, doc))
             assert len(tx.all("items")) == 40 and len(tx.all("versions")) == 80
     with measured_relationship_pages(data, monkeypatch) as request:
-        cold, cold_stats = request("studio-29-v1", "used_by")
-        warm, warm_stats = request("studio-29-v1", "used_by")
-        assert cold == warm and len(cold["items"]) == 2 and cold["next_cursor"] is None
+        cold, cold_stats = request("studio-29-v1", "used_by", latest_per_item=latest_per_item)
+        warm, warm_stats = request("studio-29-v1", "used_by", latest_per_item=latest_per_item)
+        assert cold == warm and cold["next_cursor"] is None
+        assert [edge["from"]["board"]["version_id"] for edge in cold["items"]] == (
+            ["studio-39-v2"] if latest_per_item else ["studio-39-v1", "studio-39-v2"]
+        )
         assert {n["item_kind"] for n in cold["nodes"] if n["kind"] == "version"} == {
             "storyboard",
             "scene",
         }
         print(
-            f"Studio 40 items / 80 versions, one reverse page: cold={cold_stats}, warm={warm_stats}"
+            f"Studio 40 items / 80 versions ({latest_per_item=}), one reverse page: cold={cold_stats}, warm={warm_stats}"
         )
 
 
-def test_relationship_keyset_performance(graph, tmp_path, monkeypatch):
+@pytest.mark.parametrize("latest_per_item", [False, True])
+def test_relationship_keyset_performance(graph, tmp_path, monkeypatch, latest_per_item):
     original = get_version(graph.services, "hero-v3")
     data = tmp_path / "synthetic-registry"
     refs = [pin(f"perf-{i:04d}") for i in range(1000)]
@@ -1236,8 +1461,8 @@ def test_relationship_keyset_performance(graph, tmp_path, monkeypatch):
         seed_keyset_performance(services, original, refs)
     with measured_relationship_pages(data, monkeypatch) as request:
         root = refs[0]["version_id"]
-        cold, cold_stats = request(root, "used_by")
-        warm, warm_stats = request(root, "used_by")
+        cold, cold_stats = request(root, "used_by", latest_per_item=latest_per_item)
+        warm, warm_stats = request(root, "used_by", latest_per_item=latest_per_item)
         assert cold == warm
         seen = []
         response = cold
@@ -1250,12 +1475,14 @@ def test_relationship_keyset_performance(graph, tmp_path, monkeypatch):
             if not response["next_cursor"]:
                 break
             requests += 1
-            response, _ = request(root, "used_by", response["next_cursor"])
+            response, _ = request(
+                root, "used_by", response["next_cursor"], latest_per_item=latest_per_item
+            )
         expected = {ref["version_id"] for ref in refs[1:286]}
         assert len(seen) == len(set(seen)) == len(expected) and set(seen) == expected
         assert requests == 6
         print(
-            f"Synthetic 1,000 versions / 10,000 edges, {requests} reverse pages: cold={cold_stats}, warm={warm_stats}"
+            f"Synthetic 1,000 versions / 10,000 edges ({latest_per_item=}), {requests} reverse pages: cold={cold_stats}, warm={warm_stats}"
         )
 
 

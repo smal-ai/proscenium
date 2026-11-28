@@ -241,6 +241,49 @@ test("Assets item header exits Chat focus and opens the current published versio
   studio.assertHermetic();
 });
 
+for (const catalogue of [false, true]) {
+  test(`Navigator retained media starts collapsed ${catalogue ? "with" : "without"} published items`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    await studio.install({ catalogue, savedLayout: true }); await studio.open(); await studio.ready();
+    const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
+    const toggle = navigator.getByRole("button", { name: "Retained media (2)", exact: true });
+    const outputs = navigator.locator(".retained-output");
+    if (catalogue) await expect(navigator.locator(".catalogue-item-header").first()).toBeVisible();
+    else await expect(navigator.locator(".catalogue-item-header")).toHaveCount(0);
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(outputs).toHaveCount(0);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(outputs).toHaveCount(2);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(outputs).toHaveCount(0);
+    studio.assertHermetic();
+  });
+}
+
+test("Navigator expanding retained video exposes inspection and its named download", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const id = "generation-video-artifact-0";
+  const video = retained(id, "verified", "video/mp4");
+  studio.retained = [{ ...video, artifact: { ...video.artifact, kind: "video" } }];
+  await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
+  const outputs = page.getByRole("complementary", { name: "Navigator", exact: true }).getByRole("region", { name: "Retained outputs", exact: true });
+  const toggle = outputs.getByRole("button", { name: "Retained media (1)", exact: true });
+  const inspect = outputs.getByRole("button", { name: "Inspect video", exact: true });
+  const download = outputs.getByRole("link", { name: "Download video", exact: true });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(inspect).toHaveCount(0);
+  await expect(download).toHaveCount(0);
+  await toggle.click();
+  await expect(inspect).toBeVisible();
+  await expect(inspect).toBeEnabled();
+  await expect(download).toBeVisible();
+  await expect(download).toHaveAttribute("download", id);
+  await expect(download).toHaveAttribute("href", `${base}/artifacts/${id}/content`);
+  studio.assertHermetic();
+});
+
 for (const surface of ["Navigator", "Conversation"] as const) {
   for (const control of ["preview", "Inspect image"] as const) {
     test(`${surface} retained ${control} exits Chat focus and captures standalone Current view without a fake version`, async ({ page, baseURL }) => {
@@ -253,6 +296,7 @@ for (const surface of ["Navigator", "Conversation"] as const) {
       }
       await page.getByRole("button", { name: "Chat focus", exact: true }).click();
       await expect(page.locator("main.review-panel")).toBeHidden();
+      if (surface === "Navigator") await page.getByRole("button", { name: /^Retained media \(\d+\)$/ }).click();
       const card = surface === "Navigator" ? page.locator(".retained-output").filter({ has: page.locator("code", { hasText: "verified" }) }) : page.locator(".retained-output-card").filter({ hasText: "legacy" });
       await expect(card).toBeVisible();
       if (control === "preview") await card.locator("img").click();
@@ -305,6 +349,7 @@ for (const surface of ["Navigator", "Conversation"] as const) {
       await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
       if (surface === "Conversation") studio.emit("tool.completed", { invocation_id: "retained", name: "register_artifact", state: "completed", summary: "Retained concept", artifact_ids: ["verified"], model_id: null });
       await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+      if (surface === "Navigator") await page.getByRole("button", { name: /^Retained media \(\d+\)$/ }).click();
       const card = surface === "Navigator" ? page.locator(".retained-output").filter({ has: page.locator("code", { hasText: "verified" }) }) : page.locator(".retained-output-card");
       if (control === "preview") await card.locator("img").click();
       else await card.getByRole("button", { name: "Inspect image" }).click();
@@ -1040,6 +1085,7 @@ test("retained FLAC plays in Chat and Review and the sequence player is unmuted"
   await expectHiddenPause(player);
   await page.getByRole("button", { name: "Restore split view", exact: true }).click();
   const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
+  await navigator.getByRole("button", { name: /^Retained media \(\d+\)$/ }).click();
   await expect(navigator.locator(".retained-output").filter({ hasText: "audio-tone" }).getByRole("button", { name: "Inspect audio" })).toBeVisible();
   await navigator.locator(".catalogue-item-header").filter({ hasText: seq.name }).click();
   await review.getByRole("button", { name: "Animation", exact: true }).click();

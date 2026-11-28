@@ -1447,10 +1447,11 @@ test("video playback requires ready MP4 media", () => {
   }
 });
 
-test("Catalogue lists ready generated videos but not attempt and preview streams", () => {
-  const markup = renderToStaticMarkup(<CatalogueBrowser api={api} projectId="project" items={[]} selectedVersionId={null} refreshRevision={0} retainedArtifacts={[videoSummary, attemptSummary, previewSummary, { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "unverified-video", state: "unavailable" } }]} onSelect={() => {}} onInspectArtifact={() => {}} />);
-  assert.match(markup, /Retained media \(1\)/);
-  assert.match(markup, /Inspect video/);
-  assert.match(markup, /download="generation-h3-artifact-0">Download video/);
-  assert.doesNotMatch(markup, /attempt-h3-seg-1|preview-h3|unverified-video/);
+test("Catalogue counts ready generated videos but not attempt and preview streams in the collapsed disclosure", () => {
+  const excluded = [attemptSummary, previewSummary, { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "unverified-video", state: "unavailable" as const } }];
+  const render = (retainedArtifacts: RetainedArtifactSummary[]) => renderToStaticMarkup(<CatalogueBrowser api={api} projectId="project" items={[]} selectedVersionId={null} refreshRevision={0} retainedArtifacts={retainedArtifacts} onSelect={() => {}} onInspectArtifact={() => {}} />);
+  const markup = render([videoSummary, ...excluded]);
+  assert.match(markup, /aria-expanded="false".*Retained media \(1\)/);
+  assert.match(render(excluded), /aria-expanded="false".*Retained media \(0\)/);
+  assert.doesNotMatch(markup, /class="retained-output"|Inspect video|Download video/);
 });

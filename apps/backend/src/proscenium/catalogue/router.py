@@ -128,6 +128,7 @@ def version_relationships(
     shot_id: str | None = None,
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    latest_per_item: bool = False,
 ) -> dict:
     return read_relationships(
         get_services(request),
@@ -137,6 +138,7 @@ def version_relationships(
         shot_id=shot_id,
         cursor=cursor,
         limit=limit,
+        latest_per_item=latest_per_item,
     )
 
 

@@ -302,6 +302,10 @@ paths:
       description: Owner-only read for the active project. Inverse rows keep their canonical orientation. On relationship_revision_changed, restart at page one.
       parameters:
         - {name: direction, in: query, schema: {type: string, enum: [uses, used_by], default: uses}}
+        - name: latest_per_item
+          in: query
+          description: When direction is used_by, keep only the newest matching version per consuming item (preferring current). Ignored for uses.
+          schema: {type: boolean, default: false}
         - {name: shot_id, in: query, description: Shot in the given storyboard version., schema: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'}}
         - {$ref: '#/components/parameters/Cursor'}
         - {$ref: '#/components/parameters/Limit'}

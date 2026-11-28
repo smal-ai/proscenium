@@ -88,6 +88,7 @@ test("Navigator asset-first creation and retained verified versus legacy PNGs", 
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   const outputs = page.getByRole("region", { name: "Retained outputs" });
+  await outputs.getByRole("button", { name: "Retained media (2)", exact: true }).click();
   await expect(outputs.getByText(/Attribution unrecorded/)).toBeVisible();
   await expect(outputs.getByText(/Verified/)).toBeVisible();
   await expect(outputs.getByText(/Concept images are not 3D meshes/)).toBeVisible();

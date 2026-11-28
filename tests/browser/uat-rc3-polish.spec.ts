@@ -1220,6 +1220,7 @@ test("Target sends a draft with an uploaded image and scopes standalone Review i
     await route.fulfill({ status: 201, json: response });
   } }] });
   await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: /^Retained media \(\d+\)$/ }).click();
   await page.getByRole("button", { name: "Inspect retained concept image verified", exact: true }).click();
   const bar = targetBar(page);
   const panel = page.getByRole("region", { name: "Request target", exact: true });
