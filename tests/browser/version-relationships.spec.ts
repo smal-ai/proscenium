@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { Camera, ItemRecord, ProjectRecord, RelationshipDirection, RelationshipEdge, RelationshipEndpoint, RelationshipNodeSummary, RelationshipPage, RelationshipRoot, SelectionRecord, VersionRecord } from "../../apps/frontend/src/api";
+import type { Camera, ItemRecord, ProjectRecord, RelationshipDirection, RelationshipEdge, RelationshipEndpoint, RelationshipNodeSummary, RelationshipPage, RelationshipRoot, SelectionRecord, ShotPlan, VersionRecord } from "../../apps/frontend/src/api";
 import type { MockRoute } from "./fixtures";
 import { base, deferred, pageOf, project, projectId, retained, snapshot, StudioFixture, version } from "./studio-fixture";
 
@@ -196,6 +196,73 @@ test("E2: historical pins, duplicate shot IDs and repeated paths stay distinct",
   await expect(navigator(page).getByRole("heading", { name: "1. shot-1" })).toBeFocused();
   await expect(review(page).getByRole("heading", { name: board.name })).toBeVisible();
   expect(studio.submissions).toEqual([]);
+  studio.assertHermetic();
+});
+
+test("E3: shot intent stays separate from binding, board references and owner panel choices", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const board = studio.versionRecords.find(record => record.version_id === "b-v1")!;
+  const newer = version(board.item_id, "b-v2", "Revised storyboard", "storyboard");
+  const hero = { ...version("hero", "hero-v3", "Hero v3"), artifact_ids: [] };
+  const scene = { ...version("landing", "landing-v1", "Landing", "scene"), artifact_ids: [] };
+  studio.versionRecords.push(newer, hero, scene);
+  const boardRef = versionEndpoint(board), heroRef = versionEndpoint(hero), sceneRef = versionEndpoint(scene);
+  const shot = { kind: "shot" as const, board: boardRef.ref, shot_id: "stairs", label: "Descend the stairs", intent: "Descend the stairs", binding_status: "bound" as const };
+  const panel = { kind: "panel" as const, board: boardRef.ref, shot_id: shot.shot_id, frame_id: "start", label: "Opening panel",
+    role: "start" as const, authored_state: "available" as const, artifact_id: "verified", artifact_state: "ready" as const, owner_selected: true };
+  const projected: ShotPlan = { schema_version: "1.0", project_id: projectId, plan_id: "stairs-plan", source_commit: board.source_commit,
+    brief_artifact_ids: [], asset_dependencies: [heroRef.ref], unresolved: [], shots: [
+      { shot_id: shot.shot_id, intent: shot.intent, camera_intent: "Static", motion_beats: ["Run"], planned_assets: [heroRef.ref],
+        scene_version: sceneRef.ref, source_range: null, fps: null, frames: [{ frame_id: panel.frame_id, role: panel.role, composition: panel.label, artifact_id: panel.artifact_id, state: "available", owner_selected: true }] },
+      { shot_id: "legacy", intent: "Old shot", camera_intent: "", motion_beats: ["Bring the coat"], scene_version: null, source_range: null, fps: null, frames: [] },
+      { shot_id: "empty", intent: "No pins", camera_intent: "", motion_beats: [], planned_assets: [], scene_version: null, source_range: null, fps: null, frames: [] },
+    ] };
+  const selection: SelectionRecord = { schema_version: "1.0", project_id: projectId, selection_id: "board-v1-panel", state_revision: 1, state: "selected",
+    actor: { kind: "user", id: "owner" }, choice: { kind: "artifact", artifact_id: panel.artifact_id },
+    slot: { kind: "storyboard_frame", storyboard_version: boardRef.ref, frame_id: panel.frame_id, shot_id: shot.shot_id } };
+  await studio.install({ catalogue: true, savedLayout: true, shotPlan: projected, routes: [
+    { path: `${base}/selections`, body: pageOf([selection]) },
+    { path: `${base}/versions/b-v2/shot-plan`, body: { ...projected, shots: projected.shots.map(row => ({ ...row, frames: row.frames.map(frame => ({ ...frame, owner_selected: false })) })) } },
+    graph(studio, [shot, panel], [
+      { relation: "contains_shot", from: boardRef, to: shot, details: { ordinal: 0 } },
+      { relation: "contains_panel", from: shot, to: panel, details: { ordinal: 0, role: panel.role, composition: panel.label, state: "available", artifact_id: panel.artifact_id } },
+      { relation: "planned_asset", from: shot, to: heroRef, details: {} },
+      { relation: "bound_scene", from: shot, to: sceneRef, details: { source_range: null, fps: null } },
+      { relation: "board_reference", from: boardRef, to: heroRef, details: {} },
+    ]),
+  ] });
+  studio.snapshot.items = [item(newer, board.version_id), item(hero), item(scene)];
+  await saveViewing(page, board);
+  await studio.open(); await studio.ready();
+  const pane = navigator(page);
+  await pane.getByRole("button", { name: "Shots", exact: true }).click();
+  const shots = pane.getByRole("region", { name: "Storyboard browser" });
+  const versions = shots.getByRole("combobox", { name: "Storyboard version" });
+  await expect(versions).toHaveValue(board.version_id);
+  await expect(shots.getByText("Dependencies (1)", { exact: true })).toBeVisible();
+  await expect(shots.getByText("Planned assets: hero / hero-v3", { exact: true })).toBeVisible();
+  await expect(shots.getByText("Scene: landing / landing-v1", { exact: true })).toBeVisible();
+  await expect(shots.getByText("Planned assets: Not recorded", { exact: true })).toBeVisible();
+  await expect(shots.getByText("Planned assets: None declared", { exact: true })).toBeVisible();
+  await expect(shots.getByText("owner_selected: yes", { exact: true })).toBeVisible();
+  await versions.selectOption(newer.version_id);
+  await expect(shots.getByText("owner_selected: no", { exact: true })).toBeVisible();
+  await expect(shots.getByText("owner_selected: yes", { exact: true })).toHaveCount(0);
+
+  await pane.getByRole("button", { name: "Outliner", exact: true }).click();
+  const graphPane = outliner(page);
+  await graphPane.getByRole("button", { name: shot.label, exact: true }).click();
+  const shotRow = graphPane.getByRole("treeitem", { name: shot.label, exact: true });
+  const inputs = shotRow.getByRole("group", { name: "Inputs & bindings", exact: true });
+  const heroRow = inputs.getByRole("treeitem", { name: hero.name, exact: true });
+  await expect(heroRow).toContainText("Planned asset");
+  await expect(inputs.getByRole("treeitem", { name: scene.name, exact: true })).toContainText("Bound scene");
+  await expect(shotRow.getByRole("group", { name: "Structure", exact: true }).getByRole("treeitem", { name: panel.label })).toContainText("Owner-selected image");
+  await heroRow.getByRole("button", { name: "Focus in Outliner" }).click();
+  await graphPane.getByRole("button", { name: "Used by", exact: true }).click();
+  await expect(shotRow).toContainText(/Planned asset.*Shot stairs.*b-v1.*Historical.*Selected/);
+  await expect(graphPane.getByRole("treeitem", { name: board.name, exact: true })).toContainText("Board reference");
+  expect(studio.guard!.calls.every(call => call.method === "GET")).toBe(true);
   studio.assertHermetic();
 });
 

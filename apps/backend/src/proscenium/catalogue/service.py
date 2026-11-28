@@ -337,15 +337,9 @@ class Catalogue:
         batch = {row["version_id"]: row for row in body["items"]}
         for row in body["items"]:
             document = documents.get(row["version_id"])
-            required_refs: list[dict[str, Any]] = []
             if row["kind"] == "storyboard":
                 assert document is not None
-                validation.shot_plan(tx, document, batch)
-                required_refs = document["asset_dependencies"] + [
-                    shot["scene_version"]
-                    for shot in document["shots"]
-                    if shot["scene_version"] is not None
-                ]
+                validation.shot_plan(tx, document, batch, version=row)
                 identities = document["brief_artifact_ids"] + [
                     frame["artifact_id"]
                     for shot in document["shots"]
@@ -359,25 +353,13 @@ class Catalogue:
             elif row["kind"] == "sequence":
                 assert document is not None
                 validation.sequence_map(tx, document, row["version_id"], maps)
-                ids = {
-                    entry["version_id"] for entry in document["entries"] if "version_id" in entry
-                }
-                ids.update(
-                    source["version_id"]
-                    for entry in document["entries"]
-                    for source in entry.get("contributors", [])
-                )
-                required_refs = [
-                    {"item_id": tx.require("versions", identity)["item_id"], "version_id": identity}
-                    for identity in ids
-                ]
+                validation.sequence_dependencies(tx, document, row)
             elif row["kind"] == "unity_result":
                 paths = {file["destination"] for file in row["source"]["files"]}
                 if row["unity"]["scene_path"] not in paths or (
                     "player_script" in row["unity"] and row["unity"]["player_script"] not in paths
                 ):
                     raise DomainError("dependency_missing", 422)
-            validation.required_dependencies(row, required_refs)
 
     def publish(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         validate("PublicationSubmit", body)
@@ -598,7 +580,7 @@ class Catalogue:
         if result["project_id"] != project_id:
             raise DomainError("scope_denied", 403)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
-            validation.shot_plan(tx, result, {})
+            validation.shot_plan(tx, result, {}, version=version)
             selections = self.selections_by_slot(tx)
             for shot in result["shots"]:
                 for frame in shot["frames"]:

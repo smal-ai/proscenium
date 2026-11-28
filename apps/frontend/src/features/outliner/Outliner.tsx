@@ -16,7 +16,7 @@ type BranchProps = NavigationProps & {
   overlays: NodeOverlays;
 };
 const names: Record<RelationshipRelation, string> = {
-  contains_shot: "Shot", contains_panel: "Panel", board_reference: "Board reference", bound_scene: "Bound scene",
+  contains_shot: "Shot", contains_panel: "Panel", board_reference: "Board reference", planned_asset: "Planned asset", bound_scene: "Bound scene",
   sequence_input: "Sequence input", declared_dependency: "Declared dependency", derived_from: "Derived from",
 };
 const groupNames = { structure: "Structure", inputs: "Inputs & bindings", provenance: "Origins / Derivatives" } as const;

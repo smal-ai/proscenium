@@ -1,7 +1,7 @@
 """Relationship checks for catalogue records and authored documents."""
 
 import json
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from fractions import Fraction
 from functools import cache
 from itertools import islice
@@ -30,10 +30,50 @@ INVALID_AUDIO_START = "Audio track starts at or after the end of the sequence"
 INVALID_AUDIO_FADE = "Audio track fade durations exceed the track duration"
 INVALID_AUDIO_TRIM = "Audio track trim leaves no source audio"
 
+PLANNED_ASSET_KIND = "planned_assets must reference published versions of kind asset"
+PLANNED_ASSET_DUPLICATE = "Remove the duplicate VersionRef from planned_assets"
+PLANNED_ASSET_MISSING = "Choose an existing asset version in this project for planned_assets"
+PLANNED_ASSET_IDENTITY = "Use the exact item_id and version_id of an asset in this project"
+AUTHORED_PIN_MISSING = "Authored version references must be pinned in the source closure"
+PIN_DIAGNOSTIC_REASONS = frozenset(
+    {
+        PLANNED_ASSET_KIND,
+        PLANNED_ASSET_DUPLICATE,
+        PLANNED_ASSET_MISSING,
+        PLANNED_ASSET_IDENTITY,
+        AUTHORED_PIN_MISSING,
+    }
+)
+
+
+def safe_pin_diagnostics(
+    error: DomainError,
+    schemas: Sequence[dict[str, Any]],
+    *,
+    scope: SchemaPathScope | None = None,
+) -> dict[str, Any]:
+    """Project only typed IDs and schema locations, never arbitrary error details."""
+    details = {}
+    for key, definition in (
+        ("consuming_version", "VersionRef"),
+        ("reference", "VersionRef"),
+        ("shot_id", "Id"),
+    ):
+        if (value := error.details.get(key)) is not None:
+            try:
+                details[key] = validate(definition, value)
+            except DomainError:
+                pass
+    path = error.details.get("path")
+    if isinstance(path, str) and safe_schema_path(path, schemas, scope=scope):
+        details["path"] = path
+    return details
+
 
 # Only fixed, host-authored text may be returned to Copilot as a semantic reason.
 SAFE_VALIDATION_REASONS: frozenset[str] = frozenset(
     {
+        *PIN_DIAGNOSTIC_REASONS,
         "Frame rates and weights must be reduced",
         "Frame range start must not exceed end",
         "Duplicate shot identity",
@@ -425,14 +465,46 @@ def publication_entry(version: dict[str, Any]) -> None:
         )
 
 
-def required_dependencies(version: dict[str, Any], references: list[dict[str, Any]]) -> None:
-    if any(reference not in version["source"]["dependencies"] for reference in references):
-        raise DomainError(
-            "dependency_missing",
-            422,
-            "Authored version references must be pinned in the source closure",
-            safe_for_model=True,
-        )
+PinLocations = dict[tuple[str, str], tuple[str, str | None]]
+
+
+def required_dependencies(version: dict[str, Any], references: PinLocations) -> None:
+    sealed = {version_ref_key(ref) for ref in version["source"]["dependencies"]}
+    for (item_id, version_id), (path, shot_id) in references.items():
+        if (item_id, version_id) not in sealed:
+            raise DomainError(
+                "dependency_missing",
+                422,
+                AUTHORED_PIN_MISSING,
+                safe_for_model=True,
+                path=path,
+                reference={"item_id": item_id, "version_id": version_id},
+                consuming_version=exact_ref(version),
+                shot_id=shot_id,
+            )
+
+
+def sequence_dependencies(
+    tx: Transaction, document: dict[str, Any], version: dict[str, Any]
+) -> None:
+    """Require every entry or contributor's exact version after sequence validation."""
+    records: dict[str, dict[str, Any]] = {}
+    refs: PinLocations = {}
+    for index, entry in enumerate(document["entries"]):
+        path = f"entries[{index}]"
+        if "version_id" in entry:
+            version_id = entry["version_id"]
+            item_id = _cached_record(tx, "versions", version_id, records)["item_id"]
+            refs.setdefault((item_id, version_id), (f"{path}.version_id", entry["shot_id"]))
+        for offset, contributor in enumerate(entry.get("contributors", [])):
+            if "version_id" in contributor:
+                version_id = contributor["version_id"]
+                item_id = _cached_record(tx, "versions", version_id, records)["item_id"]
+                refs.setdefault(
+                    (item_id, version_id),
+                    (f"{path}.contributors[{offset}].version_id", contributor["shot_id"]),
+                )
+    required_dependencies(version, refs)
 
 
 def shot_plan(
@@ -441,6 +513,7 @@ def shot_plan(
     batch: dict[str, dict[str, Any]],
     *,
     historical: bool = False,
+    version: dict[str, Any] | None = None,
 ) -> None:
     validate("AuthoredShotPlan", document)
     if document["project_id"] != tx.project_id:
@@ -449,19 +522,51 @@ def shot_plan(
         for identity in document["brief_artifact_ids"]:
             if tx.require("artifacts", identity)["state"] != "ready":
                 raise DomainError("media_unavailable", 422)
-    for reference in document["asset_dependencies"]:
+    refs: PinLocations = {}
+    consuming_version = exact_ref(version) if version is not None else None
+    for index, reference in enumerate(document["asset_dependencies"]):
         version_reference(tx, reference, batch)
+        refs.setdefault(version_ref_key(reference), (f"asset_dependencies[{index}]", None))
     shots = set()
     frames = set()
-    for shot in document["shots"]:
+    for index, shot in enumerate(document["shots"]):
         if shot["shot_id"] in shots:
             raise DomainError(
                 "source_conflict", 409, "Duplicate shot identity", safe_for_model=True
             )
         shots.add(shot["shot_id"])
+        planned = set()
+        for pin_index, reference in enumerate(shot.get("planned_assets", [])):
+            key = version_ref_key(reference)
+            path = f"shots[{index}].planned_assets[{pin_index}]"
+            if key in planned:
+                raise DomainError(
+                    "invalid_request",
+                    422,
+                    PLANNED_ASSET_DUPLICATE,
+                    safe_for_model=True,
+                    path=path,
+                    reference=reference,
+                    consuming_version=consuming_version,
+                    shot_id=shot["shot_id"],
+                )
+            planned.add(key)
+            planned_asset_reference(
+                tx,
+                reference,
+                batch,
+                path=path,
+                shot_id=shot["shot_id"],
+                consuming_version=consuming_version,
+            )
+            refs.setdefault(key, (path, shot["shot_id"]))
         if shot["scene_version"] is not None:
             if version_reference(tx, shot["scene_version"], batch)["kind"] != "scene":
                 raise DomainError("source_conflict", 409)
+            refs.setdefault(
+                version_ref_key(shot["scene_version"]),
+                (f"shots[{index}].scene_version", shot["shot_id"]),
+            )
         if shot["source_range"] is not None:
             interval(shot["source_range"])
         if shot["fps"] is not None:
@@ -488,6 +593,70 @@ def shot_plan(
                     raise DomainError("media_unavailable", 422)
             elif frame["state"] in {"available", "selected"}:
                 raise DomainError("media_unavailable", 422)
+    if version is not None:
+        required_dependencies(version, refs)
+
+
+def version_ref_key(reference: dict[str, str]) -> tuple[str, str]:
+    return reference["item_id"], reference["version_id"]
+
+
+def exact_ref(version: dict[str, Any]) -> dict[str, str]:
+    return {key: version[key] for key in ("item_id", "version_id")}
+
+
+def planned_asset_reference(
+    tx: Transaction,
+    reference: dict[str, str],
+    batch: dict[str, dict[str, Any]],
+    *,
+    path: str,
+    shot_id: str,
+    consuming_version: dict[str, str] | None,
+) -> None:
+    version_id = reference["version_id"]
+    record = batch.get(version_id)
+    # Inline batch items inherit the enclosing publication's project.
+    if record is None:
+        record = tx.get("versions", version_id, required=False)
+        project_id = record.get("project_id") if record else None
+    else:
+        project_id = record.get("project_id", tx.project_id)
+    if record is None:
+        raise DomainError(
+            "dependency_missing",
+            422,
+            PLANNED_ASSET_MISSING,
+            safe_for_model=True,
+            path=path,
+            reference=reference,
+            consuming_version=consuming_version,
+            shot_id=shot_id,
+        )
+    if project_id != tx.project_id or any(
+        record.get(key) != value for key, value in reference.items()
+    ):
+        raise DomainError(
+            "scope_denied",
+            403,
+            PLANNED_ASSET_IDENTITY,
+            safe_for_model=True,
+            path=path,
+            reference=reference,
+            consuming_version=consuming_version,
+            shot_id=shot_id,
+        )
+    if record["kind"] != "asset":
+        raise DomainError(
+            "invalid_request",
+            422,
+            PLANNED_ASSET_KIND,
+            safe_for_model=True,
+            path=path,
+            reference=reference,
+            consuming_version=consuming_version,
+            shot_id=shot_id,
+        )
 
 
 def _cached_record(

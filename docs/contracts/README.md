@@ -54,6 +54,10 @@ same-ID capture receipts. Consumers must accept historical records without them.
   return structured issues rather than rejecting those fields at transport admission.
   Schema, semantic and preflight results are distinct. Preparation does not submit
   inference or consume an attempt.
+- `ValidationIssue` optionally identifies a pin diagnostic with exact
+  `consuming_version` and `reference` pairs and, for shot-local fields, `shot_id`.
+  In a publication batch, `path` is relative to the authored document identified
+  by `consuming_version`. These details are separate from the static message.
 - Native `search_web` accepts a non-blank `query` (up to 512 characters) and an
   optional result `limit` (1–15, default 8). It returns a project-bound
   `WebSearchResult` with ranked `WebSearchHit` records: `title`, exact source
@@ -108,6 +112,15 @@ same-ID capture receipts. Consumers must accept historical records without them.
   is local to the recorded sequence input, not a storyboard pin. This route is
   strictly read-only: it does not extend sliding owner sessions (`refresh=False`).
   An expired owner session returns `401`.
+- Authored `Shot` and projected `ShotPlan.shots[]` optionally carry `planned_assets`,
+  a unique list of exact `VersionRef` pairs for assets in the active project.
+  Omitted means not recorded and remains omitted on reads. `[]` means no pins
+  declared for that shot. Neither is evidence of what appears on screen. The
+  storyboard closure must pin the union of board-wide `asset_dependencies`, all
+  planned assets and all bound scenes. Shot pins do not become board references
+  or cause asset bytes to be loaded. A `planned_asset` relationship links the
+  exact shot and its owning board version to the pinned asset version. It records
+  intent, not scene binding, source inclusion or owner selection.
 
 JSON HTTP bodies and successful JSON responses reference named normative definitions.
 Query parameters use explicit string/integer schemas, with string enums preserved in

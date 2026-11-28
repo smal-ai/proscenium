@@ -19,6 +19,7 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.schema_paths import SchemaPathScope
 from proscenium.catalogue.validation import (
+    safe_pin_diagnostics,
     safe_schema_guidance,
     safe_schema_path,
     schema_issues,
@@ -339,13 +340,21 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
                 and safe_schema_guidance(issue["code"], issue["message"])
                 and safe_schema_path(issue["path"], schemas, scope=scope)
             ):
-                safe.append(issue)
+                safe.append({key: issue[key] for key in ("phase", "code", "path", "message")})
         if safe:
             details["issues"] = safe
+    pin_diagnostic = (
+        name in {"publish_outputs", "validate_authored_document"}
+        and safe_message
+        and error.code in {"dependency_missing", "invalid_request"}
+    )
+    if pin_diagnostic:
+        schemas, scope = _tool_issue_schemas(name)
+        details.update(safe_pin_diagnostics(error, schemas, scope=scope))
     if name == "get_unity_result" and error.code == "project_busy" and not safe_message:
         message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
     revision = error.details.get("current_revision")
-    if type(revision) is int and revision >= 0:
+    if not pin_diagnostic and type(revision) is int and revision >= 0:
         details["current_revision"] = revision
     if name == "request_preview" and error.code in {"capability_unavailable", "invalid_request"}:
         # Public supported recipe, not private executable paths/configuration/MCP data.

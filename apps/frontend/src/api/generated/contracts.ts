@@ -373,6 +373,12 @@ export type RelationshipEdge =
       details: {};
     }
   | {
+      relation: "planned_asset";
+      from: RelationshipShotEndpoint;
+      to: RelationshipVersionEndpoint;
+      details: {};
+    }
+  | {
       relation: "bound_scene";
       from: RelationshipShotEndpoint;
       to: RelationshipVersionEndpoint;
@@ -452,7 +458,8 @@ export type RelationshipRelation =
   | "bound_scene"
   | "declared_dependency"
   | "derived_from"
-  | "sequence_input";
+  | "sequence_input"
+  | "planned_asset";
 export type RelationshipSequenceInput =
   | {
       role: "entry";
@@ -988,6 +995,9 @@ export interface ValidationIssue {
   code: string;
   path: string;
   message: string;
+  consuming_version?: VersionRef;
+  reference?: VersionRef;
+  shot_id?: Id;
 }
 export interface ShotPlanImpact {
   changed_shot_ids: Id[];
@@ -1018,6 +1028,7 @@ export interface Shot {
   intent: string;
   camera_intent: string;
   motion_beats: string[];
+  planned_assets?: VersionRef[];
   scene_version: VersionRef | null;
   source_range: FrameRange | null;
   fps: Fps | null;
@@ -1919,6 +1930,7 @@ export interface ShotPlan {
       intent: string;
       camera_intent: string;
       motion_beats: string[];
+      planned_assets?: VersionRef[];
       scene_version: VersionRef | null;
       source_range: FrameRange | null;
       fps: Fps | null;
@@ -1936,6 +1948,7 @@ export interface ShotPlan {
       intent: string;
       camera_intent: string;
       motion_beats: string[];
+      planned_assets?: VersionRef[];
       scene_version: VersionRef | null;
       source_range: FrameRange | null;
       fps: Fps | null;

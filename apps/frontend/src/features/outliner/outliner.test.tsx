@@ -49,6 +49,23 @@ test("grouped rows preserve wire ordinals, occurrence identity and separate prov
   assert.deepEqual(groupEdges(rows, "used_by").inputs.map(row => row.node), [shot, otherShot]);
 });
 
+test("planned asset rows preserve exact shot occurrences and coexist with board references", () => {
+  const planned: RelationshipEdge = { relation: "planned_asset", from: shot, to: hero, details: {} };
+  const uses = groupEdges([
+    planned,
+    { relation: "bound_scene", from: shot, to: scene, details: { source_range: null, fps: null } },
+    { relation: "contains_panel", from: shot, to: { ...shot, kind: "panel", frame_id: "start" }, details: { ordinal: 0, role: "start", composition: "", state: "missing", artifact_id: null } },
+  ], "uses");
+  assert.deepEqual(uses.inputs.map(row => [row.edge.relation, row.node]), [["planned_asset", hero], ["bound_scene", scene]]);
+  assert.deepEqual(uses.structure.map(row => row.edge.relation), ["contains_panel"]);
+  const reverse = groupEdges([planned, planned, { ...planned, from: otherShot },
+    { relation: "board_reference", from: board, to: hero, details: {} },
+    { relation: "derived_from", from: scene, to: hero, details: {} },
+  ], "used_by");
+  assert.deepEqual(reverse.inputs.map(row => row.node), [shot, otherShot, board]);
+  assert.deepEqual(reverse.provenance.map(row => row.node), [scene]);
+});
+
 test("coverage, empty pages, cursor drift, HTTP and transport errors are distinct", () => {
   const page = emptyPage();
   assert.equal(coverageMessage(page)?.text, "No published uses of this version");

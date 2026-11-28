@@ -45,12 +45,18 @@ def _retryable(exc: Exception) -> bool:
 def _evidence_reason(exc: DomainError) -> str:
     if _retryable(exc):
         raise exc
-    if exc.code in {
-        "invalid_request",
-        "source_conflict",
-        "scope_denied",
-        "dependency_collision",
-    } or isinstance(exc.__cause__, ValueError):
+    if (
+        exc.code
+        in {
+            "invalid_request",
+            "source_conflict",
+            "scope_denied",
+            "dependency_collision",
+        }
+        or exc.message == validation.PLANNED_ASSET_MISSING
+        or exc.message == validation.AUTHORED_PIN_MISSING
+        or isinstance(exc.__cause__, ValueError)
+    ):
         return "invalid_historical_record"
     if exc.code in {
         "source_unavailable",
@@ -64,23 +70,10 @@ def _evidence_reason(exc: DomainError) -> str:
 
 def _validate_document(version: dict, document: dict, tx: Transaction) -> None:
     if version["kind"] == "storyboard":
-        validation.shot_plan(tx, document, {}, historical=True)
-        refs = document["asset_dependencies"] + [
-            shot["scene_version"] for shot in document["shots"] if shot["scene_version"] is not None
-        ]
-    else:
-        validation.sequence_map(tx, document, version["version_id"], None)
-        ids = {
-            source["version_id"]
-            for entry in document["entries"]
-            for source in [entry, *entry.get("contributors", [])]
-            if "version_id" in source
-        }
-        refs = [
-            {"item_id": tx.require("versions", identity)["item_id"], "version_id": identity}
-            for identity in ids
-        ]
-    validation.required_dependencies(version, refs)
+        validation.shot_plan(tx, document, {}, historical=True, version=version)
+        return
+    validation.sequence_map(tx, document, version["version_id"], None)
+    validation.sequence_dependencies(tx, document, version)
 
 
 def _historical_projection(

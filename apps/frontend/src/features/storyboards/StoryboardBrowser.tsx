@@ -367,6 +367,8 @@ function ProjectStoryboardBrowser({ api, projectId, version, selection: external
         {plan.unresolved.length > 0 && <details open><summary>Unresolved inputs ({plan.unresolved.length})</summary><ul>{plan.unresolved.map((value, index) => <li key={index}>{value}</li>)}</ul></details>}
         <ol className="sb-shots">{plan.shots.map((planShot, index) => <li key={planShot.shot_id} className="sb-shot">
           <h3 ref={externalTarget?.versionId === versionId && externalTarget.shotId === planShot.shot_id ? shotHeading : null} tabIndex={-1}>{index + 1}. {planShot.shot_id}</h3><p>{planShot.intent}</p>
+          <p className="sb-meta">Planned assets: {planShot.planned_assets === undefined ? "Not recorded" :
+            planShot.planned_assets.map(pin => `${pin.item_id} / ${pin.version_id}`).join(", ") || "None declared"}</p>
           <details open><summary>Camera, motion and timing</summary>
             <p>{planShot.camera_intent || "Camera intent unresolved"}</p>
             <ul>{planShot.motion_beats.map((beat, beatIndex) => <li key={beatIndex}>{beat}</li>)}</ul>

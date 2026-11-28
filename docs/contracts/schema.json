@@ -411,7 +411,7 @@
     },
     "Shot": {
       "type": "object", "additionalProperties": false, "required": ["shot_id", "intent", "camera_intent", "motion_beats", "frames", "scene_version", "source_range", "fps"],
-      "properties": {"shot_id": {"$ref": "#/$defs/Id"}, "intent": {"type": "string"}, "camera_intent": {"type": "string"}, "motion_beats": {"type": "array", "items": {"type": "string"}}, "scene_version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "source_range": {"anyOf": [{"$ref": "#/$defs/FrameRange"}, {"type": "null"}]}, "fps": {"anyOf": [{"$ref": "#/$defs/Fps"}, {"type": "null"}]}, "frames": {"type": "array", "items": {"$ref": "#/$defs/ShotFrame"}}}
+      "properties": {"shot_id": {"$ref": "#/$defs/Id"}, "intent": {"type": "string"}, "camera_intent": {"type": "string"}, "motion_beats": {"type": "array", "items": {"type": "string"}}, "planned_assets": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/VersionRef"}}, "scene_version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "source_range": {"anyOf": [{"$ref": "#/$defs/FrameRange"}, {"type": "null"}]}, "fps": {"anyOf": [{"$ref": "#/$defs/Fps"}, {"type": "null"}]}, "frames": {"type": "array", "items": {"$ref": "#/$defs/ShotFrame"}}}
     },
     "AuthoredShotPlan": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "plan_id", "project_id", "brief_artifact_ids", "asset_dependencies", "shots", "unresolved"],
@@ -425,7 +425,7 @@
       "properties": {
         "schema_version": {"const": "1.0"}, "plan_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "source_commit": {"$ref": "#/$defs/Commit"}, "treatment": {"type": "string"}, "brief_artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "asset_dependencies": {"type": "array", "items": {"$ref": "#/$defs/VersionRef"}},
         "shots": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["shot_id", "intent", "camera_intent", "motion_beats", "frames", "scene_version", "source_range", "fps"], "properties": {
-          "shot_id": {"$ref": "#/$defs/Id"}, "intent": {"type": "string"}, "camera_intent": {"type": "string"}, "motion_beats": {"type": "array", "items": {"type": "string"}}, "scene_version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "source_range": {"anyOf": [{"$ref": "#/$defs/FrameRange"}, {"type": "null"}]}, "fps": {"anyOf": [{"$ref": "#/$defs/Fps"}, {"type": "null"}]},
+          "shot_id": {"$ref": "#/$defs/Id"}, "intent": {"type": "string"}, "camera_intent": {"type": "string"}, "motion_beats": {"type": "array", "items": {"type": "string"}}, "planned_assets": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/VersionRef"}}, "scene_version": {"anyOf": [{"$ref": "#/$defs/VersionRef"}, {"type": "null"}]}, "source_range": {"anyOf": [{"$ref": "#/$defs/FrameRange"}, {"type": "null"}]}, "fps": {"anyOf": [{"$ref": "#/$defs/Fps"}, {"type": "null"}]},
           "frames": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["frame_id", "role", "composition", "artifact_id", "state", "owner_selected"], "properties": {"frame_id": {"$ref": "#/$defs/Id"}, "role": {"enum": ["start", "intermediate", "end"]}, "composition": {"type": "string"}, "artifact_id": {"$ref": "#/$defs/NullableId"}, "state": {"enum": ["missing", "proposed", "available", "selected"]}, "owner_selected": {"type": "boolean"}}}}
         }}}, "unresolved": {"type": "array", "items": {"type": "string"}}
       }
@@ -522,7 +522,7 @@
       "allOf": [{"if": {"properties": {"kind": {"const": "unity_result"}}}, "then": {"required": ["unity"]}}]
     },
     "RelationshipDirection": {"enum": ["uses", "used_by"]},
-    "RelationshipRelation": {"enum": ["contains_shot", "contains_panel", "board_reference", "bound_scene", "declared_dependency", "derived_from", "sequence_input"]},
+    "RelationshipRelation": {"enum": ["contains_shot", "contains_panel", "board_reference", "bound_scene", "declared_dependency", "derived_from", "sequence_input", "planned_asset"]},
     "RelationshipVersionEndpoint": {
       "type": "object", "additionalProperties": false, "required": ["kind", "ref"],
       "properties": {"kind": {"const": "version"}, "ref": {"$ref": "#/$defs/VersionRef"}}
@@ -558,6 +558,7 @@
         {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "contains_shot"}, "from": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "to": {"$ref": "#/$defs/RelationshipShotEndpoint"}, "details": {"type": "object", "additionalProperties": false, "required": ["ordinal"], "properties": {"ordinal": {"type": "integer", "minimum": 0}}}}},
         {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "contains_panel"}, "from": {"$ref": "#/$defs/RelationshipShotEndpoint"}, "to": {"$ref": "#/$defs/RelationshipPanelEndpoint"}, "details": {"type": "object", "additionalProperties": false, "required": ["ordinal", "role", "composition", "state", "artifact_id"], "properties": {"ordinal": {"type": "integer", "minimum": 0}, "role": {"enum": ["start", "intermediate", "end"]}, "composition": {"type": "string"}, "state": {"enum": ["missing", "proposed", "available", "selected"]}, "artifact_id": {"$ref": "#/$defs/NullableId"}}}}},
         {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"enum": ["board_reference", "declared_dependency", "derived_from"]}, "from": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "to": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "details": {"type": "object", "additionalProperties": false}}},
+        {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "planned_asset"}, "from": {"$ref": "#/$defs/RelationshipShotEndpoint"}, "to": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "details": {"type": "object", "additionalProperties": false}}},
         {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "bound_scene"}, "from": {"$ref": "#/$defs/RelationshipShotEndpoint"}, "to": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "details": {"type": "object", "additionalProperties": false, "required": ["source_range", "fps"], "properties": {"source_range": {"anyOf": [{"$ref": "#/$defs/FrameRange"}, {"type": "null"}]}, "fps": {"anyOf": [{"$ref": "#/$defs/Fps"}, {"type": "null"}]}}}}},
         {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "sequence_input"}, "from": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "to": {"oneOf": [{"$ref": "#/$defs/RelationshipVersionEndpoint"}, {"$ref": "#/$defs/RelationshipArtifactEndpoint"}]}, "details": {"$ref": "#/$defs/RelationshipSequenceInput"}}, "allOf": [{"if": {"properties": {"to": {"properties": {"kind": {"const": "version"}}}}}, "then": {"properties": {"details": {"properties": {"role": {"enum": ["entry", "contributor"]}}}}}, "else": {"properties": {"details": {"properties": {"role": {"enum": ["clip", "audio"]}}}}}}]}
       ]
@@ -713,7 +714,7 @@
     },
     "ValidationIssue": {
       "type": "object", "additionalProperties": false, "required": ["phase", "code", "path", "message"],
-      "properties": {"phase": {"enum": ["source", "json", "schema", "semantic", "preflight"]}, "code": {"type": "string"}, "path": {"type": "string"}, "message": {"type": "string"}}
+      "properties": {"phase": {"enum": ["source", "json", "schema", "semantic", "preflight"]}, "code": {"type": "string"}, "path": {"type": "string"}, "message": {"type": "string"}, "consuming_version": {"$ref": "#/$defs/VersionRef"}, "reference": {"$ref": "#/$defs/VersionRef"}, "shot_id": {"$ref": "#/$defs/Id"}}
     },
     "ShotPlanImpact": {
       "type": "object", "additionalProperties": false, "required": ["changed_shot_ids", "removed_shot_ids", "removed_frame_ids", "shot_order_changed", "stable_plan_id", "affected_shot_ids", "affected_frame_ids", "downstream_artifact_ids", "downstream_scene_version_ids"],

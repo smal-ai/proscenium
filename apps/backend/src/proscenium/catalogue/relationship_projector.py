@@ -21,6 +21,8 @@ GROUPS = {
         )
     )
 }
+# Shot-local inputs share a group. Keep existing on-disk sort groups stable.
+GROUPS["planned_asset"] = GROUPS["bound_scene"]
 DOCUMENTS = {"storyboard": "AuthoredShotPlan", "sequence": "SequenceMap"}
 
 
@@ -109,6 +111,7 @@ def project_version_relationships(
         if target["kind"] == "version" and relation in {
             "bound_scene",
             "board_reference",
+            "planned_asset",
             "sequence_input",
         }:
             ref = target["ref"]
@@ -134,6 +137,8 @@ def project_version_relationships(
                 )
             )
             add("contains_shot", root, source, {"ordinal": ordinal}, ordinal=ordinal)
+            for ref in shot.get("planned_assets", []):
+                add("planned_asset", source, version_endpoint(ref), ordinal=1)
             if scene is not None:
                 add(
                     "bound_scene",
