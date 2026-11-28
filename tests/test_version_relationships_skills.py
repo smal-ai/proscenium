@@ -113,3 +113,11 @@ def test_native_routes_via_existing_host_tools():
     )
     assert "not model-side closure flattening" in SHARED_INSTRUCTIONS
     assert "owner GET via borrowed credentials or a new always-on graph tool" in SHARED_INSTRUCTIONS
+
+
+def test_native_replies_cite_exact_project_ids_in_backticks():
+    assert (
+        "When citing project items, published versions, media artefacts or VLM reviews "
+        "in owner-facing replies, wrap their exact ID in backticks "
+        "(item_id, version_id, artifact_id or review_id) so Studio can link them."
+    ) in SHARED_INSTRUCTIONS.splitlines()

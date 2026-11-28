@@ -1,9 +1,11 @@
-import { memo, useEffect, useMemo, useRef, type ReactNode } from "react";
-import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Event, ItemRecord, RequestRecord, RetainedArtifactSummary, RevisionCommand } from "../../api";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, ReviewTicket, RevisionCommand, VersionRecord } from "../../api";
 import { durableCommand, id } from "../../app/storage";
+import { boundedSignal, readVersions } from "../outliner/model";
 import { StoredContext } from "./ContextPreview";
 import { ActivityEntry } from "./ActivityEntry";
 import { ChatMarkdown } from "./ChatMarkdown";
+import { buildEntityIndex, isReadyChatMedia, type ChatEntityLink } from "./entityLinks";
 import { canAttributeRetainedOutputToRequest, isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 
 type EntryOrder = { time: string; timeMs?: number; sequence?: number; key: string };
@@ -26,16 +28,97 @@ type RankedArtifact = { id: string; index: number };
 const EMPTY_ITEMS: ItemRecord[] = [];
 const EMPTY_SUMMARIES: RetainedArtifactSummary[] = [];
 const EMPTY_IDS: string[] = [];
+const artefactUnavailable = "The exact artefact is no longer available to inspect.";
+
+type RetainedEvidence = { readOrder?: number; readyIds: ReadonlySet<string> };
+type ArtefactClick = { id: string; evidence: RetainedEvidence };
+type EntityClick = { controller: AbortController; artefact?: ArtefactClick };
+
+function lostRetainedReadiness(click: ArtefactClick, latest: RetainedEvidence) {
+  // Compare committed snapshots, including a reset or omission. A new read can
+  // commit after this click even if it was dispatched before the click.
+  return latest !== click.evidence && !latest.readyIds.has(click.id);
+}
 
 export function reuseOutputIds(previous: string[] | undefined, ids: string[]): string[] {
   if (!ids.length) return EMPTY_IDS;
   return previous?.length === ids.length && previous.every((id, i) => id === ids[i]) ? previous : ids;
 }
 
-export const Conversation = memo(function Conversation({ visible = true, api, projectId, requests, events, onRefresh, onError, onStarter, items = EMPTY_ITEMS, retainedArtifacts = EMPTY_SUMMARIES, onInspectArtifact }: {
+export const Conversation = memo(function Conversation({ visible = true, api, projectId, snapshot, requests, events, publicationEvents = events, jobs, reviews, onRefresh, onError, onStarter, items = EMPTY_ITEMS, retainedArtifacts = EMPTY_SUMMARIES, retainedArtifactReadOrder, onInspectArtifact, onOpenVersion, onOpenReview }: {
   visible?: boolean; api: ApiClient; projectId: string; requests: RequestRecord[]; events: Event[]; onRefresh: () => Promise<void>; onError: (e: unknown) => void;
   onStarter?: (kind: "asset" | "scene" | "storyboard") => void; items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
+  snapshot?: ProjectSnapshot | null; jobs?: JobRecord[]; reviews?: ReviewTicket[]; publicationEvents?: Event[]; retainedArtifactReadOrder?: number;
+  onOpenVersion?: (version: VersionRecord) => void; onOpenReview?: (reviewId: string) => void;
 }) {
+  const canOpenVersion = Boolean(onOpenVersion);
+  const canInspect = Boolean(onInspectArtifact);
+  const canOpenReview = Boolean(onOpenReview);
+  const entities = useMemo(() => {
+    const index = buildEntityIndex({ projectId, items, retainedArtifacts, jobs, snapshot, events: publicationEvents, reviews });
+    if (canOpenVersion && canInspect && canOpenReview) return index;
+    return new Map([...index].filter(([, entity]) => entity.kind === "artifact" ? canInspect : entity.kind === "review" ? canOpenReview : canOpenVersion));
+  }, [projectId, items, retainedArtifacts, jobs, snapshot, publicationEvents, reviews, canOpenVersion, canInspect, canOpenReview]);
+  const retainedEvidence = useMemo<RetainedEvidence>(() => {
+    const readyIds = new Set<string>();
+    for (const { artifact } of retainedArtifacts) {
+      if (artifact.project_id !== projectId) continue;
+      if (isReadyChatMedia(artifact)) readyIds.add(artifact.artifact_id);
+      else readyIds.delete(artifact.artifact_id);
+    }
+    return { readOrder: retainedArtifactReadOrder, readyIds };
+  }, [projectId, retainedArtifacts, retainedArtifactReadOrder]);
+  const committedRetained = useRef(retainedEvidence);
+  const opening = useRef<EntityClick | null>(null);
+  useLayoutEffect(() => () => {
+    opening.current?.controller.abort();
+    opening.current = null;
+  }, [api, projectId, visible]);
+  useLayoutEffect(() => {
+    committedRetained.current = retainedEvidence;
+    const pending = opening.current;
+    if (pending?.artefact && lostRetainedReadiness(pending.artefact, retainedEvidence)) {
+      opening.current = null;
+      pending.controller.abort();
+      onError(new Error(artefactUnavailable));
+    }
+  }, [retainedEvidence, onError]);
+  const openEntity = useCallback(async (entity: ChatEntityLink) => {
+    opening.current?.controller.abort();
+    opening.current = null;
+    if (!visible) return;
+    if (entity.kind === "review") {
+      onOpenReview?.(entity.reviewId);
+      return;
+    }
+    const controller = new AbortController();
+    const artefact = entity.kind === "artifact" ? { id: entity.id, evidence: committedRetained.current } : undefined;
+    const click = { controller, artefact };
+    opening.current = click;
+    const signal = boundedSignal(controller.signal);
+    const unavailable = entity.kind === "artifact" ? artefactUnavailable
+      : `Exact publication ${entity.versionId} is unavailable. No other version was opened.`;
+    try {
+      if (entity.kind === "artifact") {
+        const fresh = await api.call("getArtifact", { path: { project_id: projectId, artifact_id: entity.id }, signal });
+        if (opening.current !== click) return;
+        signal.throwIfAborted();
+        if ((artefact && lostRetainedReadiness(artefact, committedRetained.current))
+          || fresh.project_id !== projectId || fresh.artifact_id !== entity.id || !isReadyChatMedia(fresh)) throw new Error(unavailable);
+        onInspectArtifact?.(fresh);
+      } else {
+        const [record] = await readVersions(api, projectId, entity.itemId, signal, entity.versionId);
+        if (opening.current !== click) return;
+        signal.throwIfAborted();
+        if (!record || record.project_id !== projectId || record.item_id !== entity.itemId || record.version_id !== entity.versionId) throw new Error(unavailable);
+        onOpenVersion?.(record);
+      }
+    } catch {
+      if (opening.current === click && !controller.signal.aborted) onError(new Error(unavailable));
+    } finally {
+      if (opening.current === click) opening.current = null;
+    }
+  }, [api, onError, onInspectArtifact, onOpenReview, onOpenVersion, projectId, visible]);
   const { messages, activities, agentLabels, hasSubagents } = useMemo(() => {
     const messages = new Map<string, { event: Event; text: string }>();
     const activities = new Map<string, { start: Event; latest: Event }>();
@@ -44,6 +127,7 @@ export const Conversation = memo(function Conversation({ visible = true, api, pr
     const ordered = events.some((event, i) => i > 0 && event.sequence < events[i - 1].sequence)
       ? [...events].sort((a, b) => a.sequence - b.sequence) : events;
     for (const event of ordered) {
+      if (event.project_id !== projectId) continue;
       if (event.event_type.startsWith("assistant.")) {
         const payload = event.payload as unknown as ConversationEventData;
         const key = `${event.native_session_id ?? "app"}:${payload.native_agent_id ?? event.actor.id}:${payload.message_id}`;
@@ -61,7 +145,7 @@ export const Conversation = memo(function Conversation({ visible = true, api, pr
       }
     }
     return { messages, activities, agentLabels, hasSubagents };
-  }, [events]);
+  }, [events, projectId]);
   const { artifactsById, suppressed, byInvocation, byRequest, byWork } = useMemo(() => {
     const artifactsById = new Map<string, Artifact>();
     const suppressed = new Set<string>();
@@ -146,7 +230,7 @@ export const Conversation = memo(function Conversation({ visible = true, api, pr
     }),
     ...[...messages.entries()].filter(([, message]) => message.text.trim()).map(([key, { event, text }]) => {
       const specialist = event.actor.kind === "subagent" ? (agentLabels.get(event.actor.id) ?? "authoring-specialist") : null;
-      return { key, time: event.occurred_at, sequence: event.sequence, node: <article className="message assistant-message" key={key}><div className="message-heading"><strong>{specialist ? "Specialist" : "Copilot"}</strong>{specialist && <span>{specialist}</span>}</div><ChatMarkdown text={text} /></article> };
+      return { key, time: event.occurred_at, sequence: event.sequence, node: <article className="message assistant-message" key={key}><div className="message-heading"><strong>{specialist ? "Specialist" : "Copilot"}</strong>{specialist && <span>{specialist}</span>}</div><ChatMarkdown text={text} entities={entities} onOpenEntity={openEntity} /></article> };
     }),
     ...[...activities.entries()].flatMap(([key, { start, latest: event }]) => {
       const activity = event.payload as unknown as ActivityEventData;

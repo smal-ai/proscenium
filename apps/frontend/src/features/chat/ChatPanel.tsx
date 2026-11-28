@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, Paperclip, RotateCcw, Square, MessageSquare } from "lucide-react";
-import type { ActivityEventData, ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, VersionRef } from "../../api";
+import type { ActivityEventData, ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, ReviewTicket, VersionRecord, VersionRef } from "../../api";
 import type { ComposerSeedIntent, ContextPreparer, TurnSelection } from "../../api/studio";
 import { describeError, id, readPrivate, writePrivate } from "../../app/storage";
 import { DecisionCard } from "./DecisionCard";
@@ -62,7 +62,8 @@ export interface ChatPanelProps {
   composer: ReturnType<typeof useRequestComposer>; onRefresh: () => Promise<void>;
   autoRelease?: AutoReleaseController;
   prepareContext?: ContextPreparer;
-  items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; seedIntent?: ComposerSeedIntent | null;
+  items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; retainedArtifactReadOrder?: number; reviews?: ReviewTicket[]; publicationEvents?: Event[]; seedIntent?: ComposerSeedIntent | null;
+  onOpenVersion?: (version: VersionRecord) => void; onOpenReview?: (reviewId: string) => void;
   visible?: boolean; hydrated?: boolean; connection?: string; showHeaderStatus?: boolean; onInspectArtifact?: (artifact: Artifact) => void;
 }
 
@@ -74,7 +75,7 @@ export function shouldShowPendingStopCard(composer: Pick<ChatPanelProps["compose
   return Boolean(composer.pendingStop && (composer.pendingStopNeedsConfirmation ?? !composer.stopping));
 }
 
-export function ChatPanel({ visible = true, api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = EMPTY_SUMMARIES, seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact }: ChatPanelProps) {
+export function ChatPanel({ visible = true, api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = EMPTY_SUMMARIES, retainedArtifactReadOrder, reviews, publicationEvents, seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact, onOpenVersion, onOpenReview }: ChatPanelProps) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
   const draftRef = useRef(draft); draftRef.current = draft;
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
@@ -302,7 +303,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     </div>
     {fallbackOutputs}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
-    <Conversation visible={visible} api={api} projectId={projectId} requests={requests} events={events} onRefresh={onRefresh} onError={onConversationError} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} onInspectArtifact={onInspectArtifact} />
+    <Conversation visible={visible} api={api} projectId={projectId} snapshot={snapshot} requests={requests} events={events} publicationEvents={publicationEvents} jobs={jobs} reviews={reviews} onRefresh={onRefresh} onError={onConversationError} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} retainedArtifactReadOrder={retainedArtifactReadOrder} onInspectArtifact={onInspectArtifact} onOpenVersion={onOpenVersion} onOpenReview={onOpenReview} />
   </div></div>
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="chat-recovery">

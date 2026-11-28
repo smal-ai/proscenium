@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ApiClient, Event, RequestRecord } from "../../api";
+import type { ApiClient, Artifact, Event, ItemRecord, RequestRecord, RetainedArtifactSummary } from "../../api";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { Conversation } from "./Conversation";
+import { buildEntityIndex } from "./entityLinks";
 
 const report = `Resumed without repeating renders or rebuilding source.
 
@@ -28,6 +29,85 @@ Full receipts and continuation state saved under \`assets/signal-lost-animation/
 Target remains 18 seconds, 24fps, 640×360, silent. Glass/transmission, sampling noise, nonphysical flare and separate title-stage cut limitations remain. **No completed final movie yet.**`;
 
 const markdown = (text: string) => renderToStaticMarkup(<ChatMarkdown text={text} />);
+
+const board = "scene-boardroom";
+const founder = "asset-founder-portrait-2";
+const founderVersion = `${founder}-v2`;
+const generation = "generation-eed081ad00b22ddeca37d74d";
+const image = `${generation}-artifact-0`;
+const secondImage = `${generation}-artifact-1`;
+const anotherBatch = "generation-da9c12345678-artifact-0";
+const provenance = `${generation}-provenance`;
+const review = "review-founder-portrait";
+const item = (item_id: string, name: string, current_version_id: string | null, project_id = "project"): ItemRecord => ({ schema_version: "1.0", project_id, item_id, name, current_version_id, selected_version_id: null, kind: "asset", state_revision: 1 });
+const retained = (artifact_id: string, fields: Partial<Artifact> = {}): RetainedArtifactSummary => ({
+  schema_version: "1.0", artifact: { schema_version: "1.0", project_id: "project", artifact_id, kind: "image", state: "ready", purpose: "concept", media_type: "image/png", bytes: 1, sha256: "a".repeat(64), derived_from: [], ...fields },
+  attribution_status: "unrecorded", request_id: null, work_id: null, invocation_id: null, job_id: null, published_versions: [],
+});
+const entities = buildEntityIndex({ projectId: "project", items: [item(board, "Boardroom", `${board}-v1`), item(founder, "Founder Portrait 2", founderVersion), item("draft", "Draft", null), item("external", "External", "external-v1", "other")],
+  retainedArtifacts: [retained(image), retained(secondImage), retained(anotherBatch), retained(provenance, { kind: "document", purpose: "metadata", media_type: "application/json" }), retained("soundtrack", { kind: "audio", purpose: "audio" as Artifact["purpose"], media_type: "audio/wav" }), retained("boardroom-motion", { kind: "video", purpose: "draft_motion", media_type: "video/mp4" }), retained("bad-image", { state: "corrupt" })],
+  reviews: [{ schema_version: "1.0", project_id: "project", review_id: review, job_id: "job-vlm", status: "ready", title: "  Check likeness  " }],
+});
+const linked = (text: string) => renderToStaticMarkup(<ChatMarkdown text={text} entities={entities} onOpenEntity={() => {}} />);
+
+test("exact project citations in bare text and code use friendly labels and full ID tooltips", () => {
+  const text = `Generated job \`${generation}\`: (${image}), provenance \`${provenance}\`. Review: "${review}". Published ${founderVersion}. Item (${board}); audio: soundtrack, draft: boardroom-motion.
+
+\`${board}\` \`${founderVersion}\` \`${image}\` \`${review}\` \`soundtrack\` \`boardroom-motion\``;
+  const markup = linked(text);
+  const links = [...markup.matchAll(/data-entity-kind="([^"]+)" title="([^"]+)">([^<]+)<\/button>/g)].map(([, kind, title, label]) => [kind, title, label]);
+  const expected = [
+    ["item", board, "Boardroom"], ["version", founderVersion, "Founder Portrait 2 · v2"], ["artifact", image, "Concept image"],
+    ["artifact", "soundtrack", "Audio"], ["artifact", "boardroom-motion", "Draft motion video"], ["review", review, "Check likeness"],
+  ];
+  assert.deepEqual(links.sort(), [...expected, ...expected].sort());
+  assert.match(markup, /Published <button[^>]+>Founder Portrait 2 · v2<\/button>\. Item \(<button[^>]+>Boardroom<\/button>\);/);
+  assert.ok(markup.includes(`<code>${generation}</code>`));
+  assert.ok(markup.includes(`<code>${provenance}</code>`));
+});
+
+test("media disambiguation is per message and only counts distinct clickable artefacts", () => {
+  const fenced = `\`\`\`text\n${secondImage}\n\`\`\``;
+  const link = `[\`${secondImage}\`](https://example.com)`;
+  const single = linked(`${image} \`${image}\` ${link}\n\n${fenced}`);
+  assert.equal((single.match(/>Concept image<\/button>/g) ?? []).length, 2);
+  assert.ok(single.includes(`<code>${secondImage}</code></a>`));
+  assert.ok(single.includes(`<pre class="md-code-block"><code data-lang="text">${secondImage}\n</code></pre>`));
+  const multiple = linked(`### ${image}\n\n| Reference |\n| --- |\n| \`${secondImage}\` |`);
+  assert.match(multiple, /Concept image · #0<\/button>/);
+  assert.match(multiple, /Concept image · #1<\/button>/);
+  const repeatedTail = linked(`${image}, ${anotherBatch}`);
+  assert.ok(repeatedTail.includes(`Concept image · #0 (${image.slice(-16)})</button>`));
+  assert.ok(repeatedTail.includes(`Concept image · #0 (${anotherBatch.slice(-16)})</button>`));
+});
+
+test("strict token boundaries and exact code values leave unrelated text untouched", () => {
+  const unrelated = `prefix-${image} -${image} .${image} _${image} ${image}-extra ${image}_more ${image}.jpg ${image}...jpg \`open ${image}\` \`  ${image}  \` \`${image}.\` ${generation} ${provenance} draft external external-v1 bad-image`;
+  assert.equal(linked(unrelated), markdown(unrelated));
+  assert.match(linked(`${image}...`), /Concept image<\/button>\.\.\.<\/p>/);
+  assert.equal(renderToStaticMarkup(<ChatMarkdown text={`\`${image}\` ${image}`} entities={entities} />), markdown(`\`${image}\` ${image}`));
+});
+
+test("a whole bare citation wins before Markdown interprets underscores as emphasis", () => {
+  const exact = "asset-_x_-v1";
+  const entities = buildEntityIndex({ projectId: "project", items: [item("asset-", "Prefix", exact)] });
+  for (const citation of [exact, `**${exact}**`]) {
+    const markup = renderToStaticMarkup(<ChatMarkdown text={`Compare ${citation}.`} entities={entities} onOpenEntity={() => {}} />);
+    assert.equal((markup.match(/<button\b/g) ?? []).length, 1);
+    assert.ok(markup.includes(`title="${exact}"`));
+    assert.doesNotMatch(markup, /<em>|title="asset-"/);
+    if (citation.startsWith("**")) assert.match(markup, /<strong><button[^>]+>[^<]+<\/button><\/strong>\./);
+  }
+  const prose = "Compare foo_bar_baz and _word_.";
+  assert.equal(renderToStaticMarkup(<ChatMarkdown text={prose} entities={entities} onOpenEntity={() => {}} />), markdown(prose));
+});
+
+test("sentence punctuation leaves the longest indexed ID ending in a period intact", () => {
+  const entities = buildEntityIndex({ projectId: "project", retainedArtifacts: [retained("clip."), retained("clip")] });
+  const markup = renderToStaticMarkup(<ChatMarkdown text="See clip.." entities={entities} onOpenEntity={() => {}} />);
+  assert.match(markup, /<p>See <button[^>]+title="clip\.">Concept image<\/button>\.<\/p>/);
+  assert.equal((markup.match(/<button\b/g) ?? []).length, 1);
+});
 
 test("the exact UAT reply renders its report table, list, status and code", () => {
   const markup = markdown(report);

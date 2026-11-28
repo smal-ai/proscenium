@@ -24,6 +24,7 @@ import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowPendingRequestCard, shouldShowPendingStopCard, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
 import { isUnfinishedJob, JobList, jobsBadgeState, jobsForTurn } from "./ComposerPanel";
 import { TargetPicker } from "./TargetPicker";
+import { buildEntityIndex } from "./entityLinks";
 
 const api = { call: () => { throw new Error("Unconfigured API operation in offline test"); } } as unknown as ApiClient;
 const ref = { item_id: "asset-a", version_id: "version-old" };
@@ -1372,6 +1373,48 @@ const generatedVideo: Artifact = { schema_version: "1.0", artifact_id: videoId, 
 const videoSummary: RetainedArtifactSummary = { schema_version: "1.0", artifact: generatedVideo, attribution_status: "verified", request_id: "video-request", work_id: "video-work", invocation_id: null, job_id: "generation-h3", published_versions: [] };
 const attemptSummary = { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "attempt-h3-seg-1" } };
 const previewSummary = { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "preview-h3" } };
+
+test("entity index uses five scoped publication sources and deterministic kind precedence", () => {
+  const pin = (version_id: string, item_id = asset.item_id) => ({ item_id, version_id });
+  const active = snapshot();
+  active.execution!.work_outputs = [{ work_id: "cite", request_id: null, status: "published", artifact_ids: [], published_versions: [pin("from-work-v4")], summary: null, reason_code: null }];
+  const review = (review_id: string, project_id = "project") => ({ schema_version: "1.0" as const, review_id, project_id, job_id: "vlm", status: "ready" as const });
+  const items = [{ ...asset, selected_version_id: ref.version_id },
+    { ...asset, item_id: "unpublished", current_version_id: null },
+    { ...asset, item_id: "foreign-item", current_version_id: "foreign-item-v1", project_id: "other" }];
+  const index = buildEntityIndex({ projectId: "project", items, snapshot: active,
+    retainedArtifacts: [{ ...videoSummary, published_versions: [pin("from-retained-v2", "unknown-item")] },
+      { ...videoSummary, artifact: { ...generatedVideo, artifact_id: asset.item_id }, published_versions: [pin("foreign-looking-v9", "foreign-item")] },
+      { ...videoSummary, artifact: { ...generatedVideo, artifact_id: "foreign-media", project_id: "other" }, published_versions: [pin("foreign-retained-v1")] }],
+    jobs: [{ ...job("succeeded", "job-only"), target: { target_id: "job-only", shot_id: null, version: pin("from-job-v3") } },
+      { ...job("succeeded"), project_id: "other", target: { target_id: "other", shot_id: null, version: pin("foreign-job-v1") } }],
+    events: [event(1, "publication.created", { published_versions: [pin("from-event-v5"), pin("no-suffix", "unknown-item"), pin(videoId)] }),
+      event(2, "publication.created", { project_id: "project", versions: [pin("wire-receipt-v6")] }),
+      { ...event(3, "publication.created", { published_versions: [pin("foreign-event-v1")] }), project_id: "other" },
+      event(4, "publication.created", { project_id: "other", published_versions: [pin("mismatched-event-v1")] }),
+      event(5, "assistant.completed", { published_versions: [pin("not-a-publication-v1")] })],
+    reviews: [review("review-no-title"), review("foreign-review", "other"), review(asset.item_id), review(videoId)],
+  });
+  assert.deepEqual(index.get(asset.item_id), { kind: "item", id: asset.item_id, itemId: asset.item_id, versionId: ref.version_id, label: asset.name });
+  assert.equal(index.get(videoId)?.kind, "version");
+  for (const id of [asset.current_version_id!, ref.version_id]) assert.equal(index.get(id)?.kind, "version");
+  for (const [id, label] of [["from-retained-v2", "v2"], ["from-job-v3", "Relay dish · v3"], ["from-work-v4", "Relay dish · v4"], ["from-event-v5", "Relay dish · v5"], ["wire-receipt-v6", "Relay dish · v6"], ["foreign-looking-v9", "v9"], ["no-suffix", "no-suffix"], ["review-no-title", "review-no-title"]]) {
+    assert.equal(index.get(id)?.label, label);
+  }
+  for (const id of ["unpublished", "foreign-item", "foreign-item-v1", "foreign-media", "foreign-retained-v1", "foreign-job-v1", "foreign-event-v1", "mismatched-event-v1", "foreign-review", "not-a-publication-v1", "job-only"]) assert.equal(index.has(id), false, id);
+  assert.equal(buildEntityIndex({ projectId: "other", snapshot: active }).has("from-work-v4"), false);
+});
+
+test("ChatPanel linkifies specialist and Copilot replies from in-memory metadata, not owner messages", () => {
+  const text = `Compare \`${asset.item_id}\` with ${asset.current_version_id}.`;
+  const lead = event(2, "assistant.completed", { message_id: "lead", text });
+  const specialist = { ...event(3, "assistant.completed", { message_id: "child", text }), actor: { kind: "subagent" as const, id: "child" } };
+  const markup = chatMarkup([], { items: [asset], onOpenVersion: () => {}, requests: [request("user", "2026-11-15T09:00:00Z", text)], events: [lead, specialist] });
+  assert.equal((markup.match(/class="chat-entity-link"/g) ?? []).length, 4);
+  const user = markup.match(/<article class="message user-message"[\s\S]*?<\/article>/)?.[0] ?? "";
+  assert.ok(user.includes(`<p>${text}</p>`));
+  assert.doesNotMatch(user, /chat-entity-link/);
+});
 
 test("generated video is playable in Chat without exposing render streams", () => {
   assert.equal(isRenderPassStreamArtifact(videoSummary), false);

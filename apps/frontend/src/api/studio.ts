@@ -99,6 +99,7 @@ export interface CriticSurfaceProps {
   selection: TurnSelection;
   refreshRevision: number;
   reviews?: ReviewTicket[];
+  externalTarget?: { reviewId: string; nonce: string };
   items?: ItemRecord[];
   retainedArtifacts?: RetainedArtifactSummary[];
   pendingDecisions?: Decision[];

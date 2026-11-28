@@ -30,6 +30,24 @@
 .chat-markdown .md-h6 { font-size: 12px; }
 
 .chat-markdown a { color: #c7c7ff; text-underline-offset: 2px; }
+.chat-markdown .chat-entity-link {
+  display: inline;
+  vertical-align: baseline;
+  min-height: 0;
+  max-width: 100%;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #c7c7ff;
+  font: inherit;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.chat-markdown .chat-entity-link:hover:not(:disabled) { background: #353550; color: #ededff; }
+.chat-markdown .chat-entity-link:focus-visible { outline: 2px solid #a5a6ff; outline-offset: 2px; }
 .chat-markdown :is(ul, ol) { padding-inline-start: 22px; }
 .chat-markdown li + li { margin-top: 3px; }
 .chat-markdown li > :is(ul, ol) { margin: 3px 0 0; }

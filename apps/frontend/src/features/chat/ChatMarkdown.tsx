@@ -1,8 +1,10 @@
-import { Fragment, memo, type ReactNode } from "react";
+import { Fragment, memo, useMemo, type ReactNode } from "react";
+import { disambiguateArtifactLabels, matchChatEntity, type ChatEntityIndex, type ChatEntityLink } from "./entityLinks";
 import "./chatMarkdown.css";
 
 type Inline =
   | { kind: "text" | "code"; value: string }
+  | { kind: "entity"; entity: ChatEntityLink }
   | { kind: "break" }
   | { kind: "strong" | "em" | "strongEm" | "del"; children: Inline[] }
   | { kind: "link"; href: string; children: Inline[] };
@@ -97,7 +99,7 @@ function safeHref(raw: string, image: boolean): string | undefined {
 
 interface Delimiter { marker: string; width: number; children: Inline[] }
 
-function parseInline(source: string, allowLinks = true): Inline[] {
+function parseInline(source: string, entities?: ChatEntityIndex, allowLinks = true): Inline[] {
   const nodes: Inline[] = [];
   const stack: Delimiter[] = [];
   const codeAt = codeSpans(source);
@@ -114,7 +116,10 @@ function parseInline(source: string, allowLinks = true): Inline[] {
   function unwrap() {
     const open = stack.pop()!;
     text(open.marker.repeat(open.width));
-    for (const child of open.children) current().push(child);
+    for (const child of open.children) {
+      if (child.kind === "text") text(child.value);
+      else current().push(child);
+    }
   }
 
   for (let index = 0; index < source.length;) {
@@ -126,7 +131,8 @@ function parseInline(source: string, allowLinks = true): Inline[] {
       else {
         const code = source.slice(openEnd, close).replaceAll("\n", " ");
         const value = code.startsWith(" ") && code.endsWith(" ") && /[^ ]/.test(code) ? code.slice(1, -1) : code;
-        current().push({ kind: "code", value });
+        const entity = allowLinks ? entities?.get(value) : undefined;
+        current().push(entity ? { kind: "entity", entity } : { kind: "code", value });
       }
       index = end;
       continue;
@@ -148,11 +154,18 @@ function parseInline(source: string, allowLinks = true): Inline[] {
         const href = safeHref(target, image);
         if (image && !href) text(`[Image: ${label}]`);
         else if (image && href) current().push({ kind: "link", href, children: [{ kind: "text", value: `[Image: ${label}]` }] });
-        else if (href) current().push({ kind: "link", href, children: parseInline(label, false) });
-        else current().push(...parseInline(label, false));
+        else if (href) current().push({ kind: "link", href, children: parseInline(label, undefined, false) });
+        else current().push(...parseInline(label, undefined, false));
         index = end + 1;
         continue;
       }
+    }
+    // An indexed ID owns its underscores before Markdown can split them into emphasis.
+    const citation = allowLinks && entities?.size ? matchChatEntity(source, index, entities) : undefined;
+    if (citation) {
+      current().push({ kind: "entity", entity: citation.entity });
+      index = citation.end;
+      continue;
     }
     if (char === "*" || char === "_" || char === "~") {
       let end = index + 1;
@@ -234,7 +247,7 @@ function listMarker(line: string) {
   return { indent: match[1].length, marker: match[2], ordered: match[2].length > 1, text: match[3] ?? "" };
 }
 
-function parseBlocks(lines: string[], depth = 0): Block[] {
+function parseBlocks(lines: string[], entities?: ChatEntityIndex, depth = 0): Block[] {
   const blocks: Block[] = [];
   for (let index = 0; index < lines.length;) {
     const line = lines[index];
@@ -253,7 +266,7 @@ function parseBlocks(lines: string[], depth = 0): Block[] {
       if (index < lines.length) index++;
     } else if (heading) {
       const title = (heading[2] ?? "").replace(/(?:^|[ \t]+)#+[ \t]*$/, "").trim();
-      blocks.push({ kind: "heading", level: heading[1].length, children: parseInline(title) });
+      blocks.push({ kind: "heading", level: heading[1].length, children: parseInline(title, entities) });
       index++;
     } else if (rulePattern.test(line)) {
       blocks.push({ kind: "rule" });
@@ -261,7 +274,7 @@ function parseBlocks(lines: string[], depth = 0): Block[] {
     } else if (depth < MAX_NESTING && quotePattern.test(line)) {
       const quoted: string[] = [];
       while (index < lines.length && quotePattern.test(lines[index])) quoted.push(lines[index++].replace(quotePattern, ""));
-      blocks.push({ kind: "quote", children: parseBlocks(quoted, depth + 1) });
+      blocks.push({ kind: "quote", children: parseBlocks(quoted, entities, depth + 1) });
     } else if (depth < MAX_NESTING && list && list.indent <= 3) {
       const items: ListItem[] = [];
       const isSibling = (candidate: string) => {
@@ -287,7 +300,7 @@ function parseBlocks(lines: string[], depth = 0): Block[] {
         }
         while (index < bodyEnd) body.push(lines[index++].slice(contentIndent));
         if (next < lines.length && isSibling(lines[next])) index = next;
-        items.push({ checked: task ? task[1] !== " " : undefined, children: parseBlocks(body, depth + 1) });
+        items.push({ checked: task ? task[1] !== " " : undefined, children: parseBlocks(body, entities, depth + 1) });
       }
       blocks.push({ kind: "list", start: list.ordered ? Number.parseInt(list.marker, 10) : undefined, items });
     } else {
@@ -297,30 +310,69 @@ function parseBlocks(lines: string[], depth = 0): Block[] {
         index += 2;
         while (index < lines.length && lines[index].trim() && !startsBlock(lines[index])) {
           const { cells } = splitRow(lines[index++]);
-          rows.push(table.header.map((_, column) => parseInline(cells[column] ?? "")));
+          rows.push(table.header.map((_, column) => parseInline(cells[column] ?? "", entities)));
         }
-        blocks.push({ kind: "table", alignments: table.alignments, header: table.header.map(cell => parseInline(cell)), rows });
+        blocks.push({ kind: "table", alignments: table.alignments, header: table.header.map(cell => parseInline(cell, entities)), rows });
       } else {
         const paragraph = [line];
         index++;
         while (index < lines.length && lines[index].trim() && !startsBlock(lines[index]) && !tableHeader(lines[index], lines[index + 1])) paragraph.push(lines[index++]);
-        blocks.push({ kind: "paragraph", children: parseInline(paragraph.join("\n")) });
+        blocks.push({ kind: "paragraph", children: parseInline(paragraph.join("\n"), entities) });
       }
     }
   }
   return blocks;
 }
 
-function renderInline(nodes: Inline[]): ReactNode[] {
+function artifactLabels(blocks: Block[]) {
+  const artifacts = new Map<string, Set<string>>();
+  function inline(nodes: Inline[]) {
+    for (const node of nodes) {
+      switch (node.kind) {
+        case "entity": {
+          const { entity } = node;
+          if (entity.kind === "artifact") {
+            let ids = artifacts.get(entity.baseLabel);
+            if (!ids) artifacts.set(entity.baseLabel, ids = new Set());
+            ids.add(entity.id);
+          }
+          break;
+        }
+        case "strong": case "em": case "strongEm": case "del": inline(node.children); break;
+      }
+    }
+  }
+  function visit(blocks: Block[]) {
+    for (const block of blocks) {
+      switch (block.kind) {
+        case "paragraph": case "heading": inline(block.children); break;
+        case "quote": visit(block.children); break;
+        case "list": for (const item of block.items) visit(item.children); break;
+        case "table": block.header.forEach(inline); for (const row of block.rows) row.forEach(inline); break;
+      }
+    }
+  }
+  visit(blocks);
+  return disambiguateArtifactLabels(artifacts);
+}
+
+type OpenEntity = (entity: ChatEntityLink) => void;
+type EntityRenderer = { open: OpenEntity; labels: ReadonlyMap<string, string> };
+
+function renderInline(nodes: Inline[], renderer?: EntityRenderer): ReactNode[] {
   return nodes.map((node, key) => {
     switch (node.kind) {
       case "text": return node.value;
       case "break": return <br key={key} />;
       case "code": return <code key={key}>{node.value}</code>;
-      case "strong": return <strong key={key}>{renderInline(node.children)}</strong>;
-      case "em": return <em key={key}>{renderInline(node.children)}</em>;
-      case "strongEm": return <strong key={key}><em>{renderInline(node.children)}</em></strong>;
-      case "del": return <del key={key}>{renderInline(node.children)}</del>;
+      case "entity": {
+        const { entity } = node;
+        return <button key={key} type="button" className="chat-entity-link" data-entity-kind={entity.kind} title={entity.id} onClick={() => renderer?.open(entity)}>{renderer?.labels.get(entity.id) ?? entity.label}</button>;
+      }
+      case "strong": return <strong key={key}>{renderInline(node.children, renderer)}</strong>;
+      case "em": return <em key={key}>{renderInline(node.children, renderer)}</em>;
+      case "strongEm": return <strong key={key}><em>{renderInline(node.children, renderer)}</em></strong>;
+      case "del": return <del key={key}>{renderInline(node.children, renderer)}</del>;
       case "link": return <a key={key} href={node.href} target="_blank" rel="noopener noreferrer">{renderInline(node.children)}</a>;
     }
   });
@@ -328,29 +380,29 @@ function renderInline(nodes: Inline[]): ReactNode[] {
 
 const headingTags = ["h3", "h4", "h5", "h6", "h6", "h6"] as const;
 
-function renderBlocks(blocks: Block[], tight = false): ReactNode[] {
+function renderBlocks(blocks: Block[], renderer?: EntityRenderer, tight = false): ReactNode[] {
   return blocks.map((block, key) => {
     switch (block.kind) {
-      case "paragraph": return tight && key === 0 ? <Fragment key={key}>{renderInline(block.children)}</Fragment> : <p key={key}>{renderInline(block.children)}</p>;
+      case "paragraph": return tight && key === 0 ? <Fragment key={key}>{renderInline(block.children, renderer)}</Fragment> : <p key={key}>{renderInline(block.children, renderer)}</p>;
       case "heading": {
         const Heading = headingTags[block.level - 1];
-        return <Heading key={key} className={`md-h${block.level}`}>{renderInline(block.children)}</Heading>;
+        return <Heading key={key} className={`md-h${block.level}`}>{renderInline(block.children, renderer)}</Heading>;
       }
       case "fence": return <pre key={key} className="md-code-block"><code data-lang={block.lang || undefined}>{block.value}</code></pre>;
       case "rule": return <hr key={key} />;
-      case "quote": return <blockquote key={key}>{renderBlocks(block.children)}</blockquote>;
+      case "quote": return <blockquote key={key}>{renderBlocks(block.children, renderer)}</blockquote>;
       case "list": {
         const items = block.items.map(({ checked, children }, item) => <li key={item} className={checked === undefined ? undefined : "md-task"}>
           {checked !== undefined && <input type="checkbox" disabled checked={checked} aria-label={checked ? "Completed task" : "Incomplete task"} />}
-          {renderBlocks(children, true)}
+          {renderBlocks(children, renderer, true)}
         </li>);
         return block.start === undefined ? <ul key={key}>{items}</ul> : <ol key={key} start={block.start === 1 ? undefined : block.start}>{items}</ol>;
       }
       case "table": return <div key={key} className="md-table-wrap"><table>
-        <thead><tr>{block.header.map((cell, column) => <th key={column} scope="col" style={{ textAlign: block.alignments[column] }}>{renderInline(cell)}</th>)}</tr></thead>
+        <thead><tr>{block.header.map((cell, column) => <th key={column} scope="col" style={{ textAlign: block.alignments[column] }}>{renderInline(cell, renderer)}</th>)}</tr></thead>
         <tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, column) => {
           const textAlign = block.alignments[column];
-          return <td key={column} style={{ textAlign }} className={textAlign === "right" ? "md-numeric" : undefined}>{renderInline(cell)}</td>;
+          return <td key={column} style={{ textAlign }} className={textAlign === "right" ? "md-numeric" : undefined}>{renderInline(cell, renderer)}</td>;
         })}</tr>)}</tbody>
       </table></div>;
     }
@@ -358,6 +410,11 @@ function renderBlocks(blocks: Block[], tight = false): ReactNode[] {
 }
 
 /** Chat's GFM subset renders only the elements enumerated above. */
-export const ChatMarkdown = memo(function ChatMarkdown({ text }: { text: string }) {
-  return <div className="chat-markdown">{renderBlocks(parseBlocks(text.split(/\r\n?|\n/)))}</div>;
+export const ChatMarkdown = memo(function ChatMarkdown({ text, entities, onOpenEntity }: { text: string; entities?: ChatEntityIndex; onOpenEntity?: OpenEntity }) {
+  const activeEntities = onOpenEntity && entities?.size ? entities : undefined;
+  const { blocks, labels } = useMemo(() => {
+    const blocks = parseBlocks(text.split(/\r\n?|\n/), activeEntities);
+    return { blocks, labels: activeEntities ? artifactLabels(blocks) : undefined };
+  }, [text, activeEntities]);
+  return <div className="chat-markdown">{renderBlocks(blocks, labels && onOpenEntity ? { open: onOpenEntity, labels } : undefined)}</div>;
 });

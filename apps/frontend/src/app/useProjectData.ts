@@ -158,7 +158,7 @@ export function mergeJobs(current: JobRecord[], incoming: JobRecord[]): JobRecor
   return [...byId.values()];
 }
 
-export function mergeReviews(current: ReviewTicket[], incoming: ReviewTicket[]): ReviewTicket[] {
+export function mergeReviews<T extends ReviewTicket>(current: T[], incoming: T[]): T[] {
   const order: string[] = [];
   const seen = new Set<string>();
   for (const ticket of [...incoming, ...current]) {
@@ -167,7 +167,7 @@ export function mergeReviews(current: ReviewTicket[], incoming: ReviewTicket[]):
       order.push(ticket.review_id);
     }
   }
-  const byId = new Map<string, ReviewTicket>();
+  const byId = new Map<string, T>();
   for (const ticket of current) byId.set(ticket.review_id, ticket);
   for (const ticket of incoming) {
     const prev = byId.get(ticket.review_id);
@@ -181,6 +181,13 @@ export function mergeReviews(current: ReviewTicket[], incoming: ReviewTicket[]):
     if (!Number.isNaN(ta) && !Number.isNaN(tb) && tb !== ta) return tb - ta;
     return order.indexOf(a.review_id) - order.indexOf(b.review_id);
   });
+}
+
+type ScopedReview = ReviewTicket & { project_id: string };
+
+function scopeReviews(projectId: string, tickets: (ReviewTicket & { project_id?: string })[]): ScopedReview[] {
+  return tickets.flatMap(ticket => ticket.project_id === undefined || ticket.project_id === projectId
+    ? [{ ...ticket, project_id: projectId }] : []);
 }
 
 export function mergeSnapshot(
@@ -244,9 +251,11 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const [requests, setRequests] = useState<RequestRecord[]>([]);
   const [items, setItems] = useState<ItemRecord[]>([]);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
-  const [reviews, setReviews] = useState<ReviewTicket[]>([]);
+  // ReviewTicket has no project_id on the wire. Retain the verified enclosing scope.
+  const [reviews, setReviews] = useState<ScopedReview[]>([]);
   const [retainedRead, setRetainedRead] = useState<{ items: RetainedArtifactSummary[]; order: number }>({ items: [], order: 0 });
   const [events, setEvents] = useState<Event[]>([]);
+  const [publicationEvents, setPublicationEvents] = useState<Event[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [connection, setConnection] = useState("Disconnected");
   const [error, setError] = useState("");
@@ -261,7 +270,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
   const refreshRef = useRef<() => Promise<void>>(async () => {});
   const refresh = useCallback(() => refreshRef.current(), []);
   useEffect(() => {
-    setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedRead({ items: [], order: 0 }); setEvents([]); setHydrated(false); setError("");
+    setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedRead({ items: [], order: 0 }); setEvents([]); setPublicationEvents([]); setHydrated(false); setError("");
     setVersionRevisions({});
     setBackfillError("");
     if (!projectId) { setConnection("No active project"); return; }
@@ -287,6 +296,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     const seenNative = new Set<string>();
     const journal = new Map<number, Event>();
     const orderedEvents = orderedEventBuffer<Event>();
+    const orderedPublications = orderedEventBuffer<Event>();
+    let publicationsChanged = false;
     const knownWork = new Map<string, WorkRecord>();
     const knownJobs = new Map<string, JobRecord>();
     const decisionSequences = new Map<string, number>();
@@ -354,8 +365,10 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         if (!replace) {
           setSnapshot(prev => mergeSnapshot(prev, hydratedSnapshot, cursor, knownWork));
           setItems(prev => mergeItems(prev, hydratedSnapshot.items));
-          const {reviews} = hydratedSnapshot;
-          if (reviews) setReviews(prev => mergeReviews(prev, reviews));
+          if (hydratedSnapshot.project.project_id === projectId && hydratedSnapshot.reviews) {
+            const scoped = scopeReviews(projectId, hydratedSnapshot.reviews);
+            setReviews(prev => mergeReviews(prev, scoped));
+          }
         }
       }
       if (j.status === "fulfilled") recordJobs(j.value);
@@ -364,7 +377,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         setRequests(r.status === "fulfilled" ? r.value : []);
         setItems(i.status === "fulfilled" ? i.value : s.status === "fulfilled" ? s.value.items : []);
         if (j.status === "fulfilled") setJobs(j.value);
-        setReviews(s.status === "fulfilled" ? s.value.reviews ?? [] : []);
+        setReviews(hydratedSnapshot?.project.project_id === projectId
+          ? scopeReviews(projectId, hydratedSnapshot.reviews ?? []) : []);
       } else {
         if (r.status === "fulfilled") setRequests(prev => mergeRequests(prev, r.value));
         if (i.status === "fulfilled") setItems(prev => mergeItems(prev, i.value));
@@ -389,6 +403,10 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       if (nativeKey) seenNative.add(nativeKey);
       journal.set(event.sequence, event);
       orderedEvents.append(event);
+      if (event.event_type === "publication.created") {
+        orderedPublications.append(event);
+        publicationsChanged = true;
+      }
       return true;
     }
     function recordHistoricalEvents(incoming: Event[]) {
@@ -406,7 +424,12 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       }
     }
     function publishEvents() {
-      if (!disposed) setEvents(orderedEvents.publish());
+      if (disposed) return;
+      setEvents(orderedEvents.publish());
+      if (publicationsChanged) {
+        setPublicationEvents(orderedPublications.publish());
+        publicationsChanged = false;
+      }
     }
     async function refreshSnapshot() {
       if (disposed) return;
@@ -518,7 +541,8 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
       }
       if (event.event_type === "review.ready" || event.event_type === "review.changed") {
         const ticket = event.payload as unknown as ReviewTicket;
-        setReviews(prev => mergeReviews(prev, [ticket]));
+        const scoped = scopeReviews(event.project_id, [ticket]);
+        if (scoped.length) setReviews(prev => mergeReviews(prev, scoped));
       }
       if (scope.legacy) setRevision(n => n + 1);
       if (scope.catalogue) setCatalogueMetadataRevision(n => n + 1);
@@ -624,6 +648,7 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
         latestWorkSequence = 0; authoritativeSnapshotSequence = 0;
         pendingBackfill = null; backfilling = null; setBackfillError("");
         rememberCursor(0); journal.clear(); orderedEvents.clear(); seenNative.clear(); knownWork.clear(); knownJobs.clear(); decisionSequences.clear(); receiptArtifacts.clear(); setEvents([]);
+        orderedPublications.clear(); publicationsChanged = false; setPublicationEvents([]);
         setSnapshot(null); setRequests([]); setItems([]); setJobs([]); setReviews([]); setRetainedRead({ items: [], order: 0 });
         setHydrated(false); setError(""); setVersionRevisions({});
       }
@@ -703,5 +728,5 @@ export function useProjectData(api: ApiClient, projectId: string | null, onUnaut
     void hydrate().then(() => initialLoad(firstEpoch)).catch(handleReplayError).finally(connect);
     return () => { disposed = true; loadEpoch++; pendingBackfill = null; backfilling = null; latestWorkSequence = 0; authoritativeSnapshotSequence = 0; versionRefresh.cancel(); clearTimeout(timer); socket?.close(); refreshRef.current = async () => {}; };
   }, [api, projectId, onUnauthorised]);
-  return { snapshot, requests, items, jobs, reviews, retainedArtifacts: retainedRead.items, retainedArtifactReadOrder: retainedRead.order, events, hydrated, connection, error: error || backfillError, revision, catalogueRevision, selectionRevision, catalogueMetadataRevision, baseRevision, versionRevisions, refresh };
+  return { snapshot, requests, items, jobs, reviews, retainedArtifacts: retainedRead.items, retainedArtifactReadOrder: retainedRead.order, events, publicationEvents, hydrated, connection, error: error || backfillError, revision, catalogueRevision, selectionRevision, catalogueMetadataRevision, baseRevision, versionRevisions, refresh };
 }
