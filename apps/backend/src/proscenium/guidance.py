@@ -1,11 +1,13 @@
 """Reviewed diagnostics allowed to reach models or durable job records.
 
-Keep these as literals, not imports from the sites that raise errors. The audit
+Keep the allow-list as literals, not imports from the sites that raise errors. The audit
 requires an exact match between opted-in sites and the reviewed reason set.
 """
 
 from typing import Final
 
+INCLUDED_RETAINED_SOURCE_MISSING: Final = "Included source retained bytes are missing or corrupt; restore the verified local object and reconcile the original operation before retrying"
+RETAINED_SOURCE_RECOVERY: Final = "Retained source bytes are missing or corrupt; restore the verified local object and reconcile the original operation before retrying"
 # Previously reviewed tool messages without an opted-in constructor site.
 LEGACY_SAFE_REASONS: Final[frozenset[str]] = frozenset(
     {
@@ -21,6 +23,8 @@ LEGACY_SAFE_REASONS: Final[frozenset[str]] = frozenset(
 
 _OPTED_IN_SAFE_REASONS: Final[frozenset[str]] = frozenset(
     {
+        "Included source retained bytes are missing or corrupt; restore the verified local object and reconcile the original operation before retrying",
+        "Retained source bytes are missing or corrupt; restore the verified local object and reconcile the original operation before retrying",
         "A credential-free service URL is required",
         "A dissolve requires distinct shots",
         "A pinned contributor frame is unavailable",

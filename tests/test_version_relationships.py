@@ -36,8 +36,10 @@ from proscenium.projects.importer import import_project
 from proscenium.projects.service import Projects
 from proscenium.services import Services
 from proscenium.sources import closure_digest, composition
+from proscenium.sources.checkpoint import Checkpoints
 from proscenium.sources.common import fingerprint, git, sha
 from proscenium.sources.read_only import read_closure_files
+from proscenium.sources.resolver import Resolver
 from test_project_importer import FPS, IDENTITY, OWNER, P, admitted_tool, item, pin, source, write
 from test_source_composition import (
     COAT3,
@@ -1407,6 +1409,18 @@ def test_offline_import_cannot_pin_refs_before_full_admission(
     else:
         # Both individual files fit. The sealed composition does not.
         monkeypatch.setattr(composition, "MAX_BYTES", 8)
+        read_bytes = Path.read_bytes
+
+        def guarded_read(path):
+            if path.is_relative_to(root):
+                pytest.fail(f"Composed admission must precede whole-file reads: {path.name}")
+            return read_bytes(path)
+
+        def no_prepare(*args, **kwargs):
+            pytest.fail("Composed admission must precede Git object writes")
+
+        monkeypatch.setattr(Path, "read_bytes", guarded_read)
+        monkeypatch.setattr(Checkpoints, "prepare", no_prepare)
     scene = {
         **item(
             "landing",
@@ -1426,6 +1440,59 @@ def test_offline_import_cannot_pin_refs_before_full_admission(
         assert git(root, "for-each-ref") == refs
         with services.registry.project_store(P, active=False).transaction(write=False) as tx:
             assert tx.all("versions") == []
+
+
+def test_offline_import_checks_declared_git_lfs_size_before_any_new_checkpoint(
+    tmp_path, monkeypatch
+):
+    root = tmp_path / "project"
+    root.mkdir()
+    git(root, "init", "-b", "main")
+    git(root, "config", "user.name", "Offline fixture")
+    git(root, "config", "user.email", "fixture@proscenium.invalid")
+    payload_hash = sha(b"Hero payload")
+    # Deliberately omit the LFS object. Aggregate admission must fail from
+    # declared sizes before it attempts to hydrate or hash anything.
+    producer_file = write(
+        root,
+        "hero.txt",
+        (
+            f"version https://git-lfs.github.com/spec/v1\noid sha256:{payload_hash}\nsize 12\n"
+        ).encode(),
+    )
+    producer_file["sha256"] = payload_hash
+    scene_file = write(root, "landing.txt", b"Landing")
+    git(root, "add", "--", "hero.txt", "landing.txt")
+    git(root, "commit", "-m", "Pinned Git and LFS metadata")
+    commit = git(root, "rev-parse", "HEAD").decode().strip()
+    body = manifest(
+        {**item("hero", "asset", source(producer_file, commit=commit)), **V3},
+        {
+            **item(
+                "landing",
+                "scene",
+                {
+                    **source(scene_file, producer_file, deps=[V3], commit=commit),
+                    "included_sources": [V3],
+                },
+            ),
+            **LANDING,
+        },
+        item("unrelated", "asset", source(write(root, "unrelated.txt", b"Working changes"))),
+    )
+    monkeypatch.setattr(composition, "MAX_BYTES", 16)
+
+    def no_io(*args, **kwargs):
+        pytest.fail("Composed admission must precede hydration and writes")
+
+    monkeypatch.setattr(Resolver, "lfs_object", no_io)
+    monkeypatch.setattr(Checkpoints, "prepare", no_io)
+    refs = git(root, "for-each-ref")
+    with services_at(tmp_path / "registry") as services:
+        with pytest.raises(DomainError, match="exceeds 512 MiB") as error:
+            import_project(services, OWNER, root, body)
+    assert error.value.code == "invalid_request"
+    assert git(root, "for-each-ref") == refs
 
 
 def wardrobe_sequence(services, store, version):

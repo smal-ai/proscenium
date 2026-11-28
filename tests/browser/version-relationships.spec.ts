@@ -3,7 +3,7 @@ import { chmod, mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { expect, test, type Page } from "@playwright/test";
-import type { Camera, ItemRecord, ProjectRecord, RelationshipDirection, RelationshipEdge, RelationshipEndpoint, RelationshipNodeSummary, RelationshipPage, RelationshipRoot, SelectionRecord, ShotPlan, VersionRecord } from "../../apps/frontend/src/api";
+import type { AnnotationSnapshot, Camera, ItemRecord, ProjectRecord, RelationshipDirection, RelationshipEdge, RelationshipEndpoint, RelationshipNodeSummary, RelationshipPage, RelationshipRoot, SelectionRecord, SelectionSave, ShotPlan, VersionRecord } from "../../apps/frontend/src/api";
 import type { MockRoute } from "./fixtures";
 import { base, deferred, pageOf, project, projectId, retained, snapshot, StudioFixture, version } from "./studio-fixture";
 
@@ -639,6 +639,72 @@ test("Live item and panel choices and artefact revocations do not reread topolog
   studio.assertHermetic();
 });
 
+test("Outliner resolves version choices once per board without selecting later preview images", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const [, chosenVersion, board] = studio.versionRecords;
+  const publishedImage = "publication-image-a", laterPreview = "later-preview-b";
+  // listItemVersions exposes this merged view, not the immutable publication (image A only).
+  chosenVersion.artifact_ids = [publishedImage, laterPreview];
+  studio.retained = [retained(publishedImage, "verified"), retained(laterPreview, "verified")];
+  const boardRoot = versionEndpoint(board);
+  const shot = { kind: "shot" as const, board: boardRoot.ref, shot_id: "shot-1", label: "Opening shot", intent: "Opening", binding_status: "unbound" as const };
+  const panels = [publishedImage, laterPreview].map((artifact_id, index) => ({ kind: "panel" as const, board: boardRoot.ref, shot_id: shot.shot_id,
+    frame_id: `frame-${index}`, label: index === 0 ? "Published image A" : "Preview image B", role: index === 0 ? "start" as const : "end" as const,
+    authored_state: "available" as const, artifact_id, artifact_state: "ready" as const, owner_selected: false }));
+  const records = panels.map((panel): SelectionRecord => ({ schema_version: "1.0", project_id: projectId, selection_id: panel.frame_id,
+    state_revision: 1, state: "selected", actor: { kind: "user", id: "owner" }, choice: { kind: "version", version: versionEndpoint(chosenVersion).ref },
+    slot: { kind: "storyboard_frame", storyboard_version: boardRoot.ref, shot_id: shot.shot_id, frame_id: panel.frame_id } }));
+  // Both slots can name the same version, but only the exact published image matches.
+  const selections = [records[1]];
+  const planPath = `${base}/versions/${board.version_id}/shot-plan`;
+  await studio.install({ catalogue: true, savedLayout: true, routes: [
+    { method: "POST", path: `${base}/selections`, handler: async route => {
+      const body = route.request().postDataJSON() as SelectionSave;
+      expect(body).toMatchObject({ slot: records[0].slot, choice: records[0].choice });
+      const receipt = { schema_version: "1.0", operation_id: body.operation_id, resource_id: body.selection_id, state: "selected", state_revision: 1, replayed: false };
+      selections.push(records[0]);
+      await route.fulfill({ json: receipt });
+      studio.emit("selection.changed", receipt);
+    } },
+    { method: "GET", path: `${base}/selections`, handler: route => route.fulfill({ json: pageOf(selections) }) },
+    { path: planPath, handler: route => {
+      const plan: ShotPlan = { schema_version: "1.0", project_id: projectId, plan_id: "plan", source_commit: board.source_commit,
+        brief_artifact_ids: [], asset_dependencies: [], unresolved: [], shots: [{ shot_id: shot.shot_id, intent: shot.intent, camera_intent: "Static",
+          motion_beats: [], scene_version: null, source_range: null, fps: null, frames: panels.map(panel => ({ frame_id: panel.frame_id, role: panel.role,
+            artifact_id: panel.artifact_id, composition: panel.label, state: "available", owner_selected: panel.artifact_id === publishedImage && selections.includes(records[0]) })) }] };
+      return route.fulfill({ json: plan });
+    } },
+    graph(studio, [shot, ...panels], [
+      { relation: "contains_shot", from: boardRoot, to: shot, details: { ordinal: 0 } },
+      ...panels.map((panel, ordinal) => ({ relation: "contains_panel" as const, from: shot, to: panel, details: { ordinal, role: panel.role, composition: panel.label, state: "available", artifact_id: panel.artifact_id } })),
+    ]),
+  ] });
+  studio.snapshot.items = [item(board), item(chosenVersion)];
+  await studio.open(); await studio.ready();
+  await navigator(page).getByRole("button", { name: "Outliner", exact: true }).click();
+  const graphPane = outliner(page);
+  await graphPane.getByRole("combobox", { name: "Published item", exact: true }).selectOption(board.item_id);
+  await graphPane.getByRole("combobox", { name: "Exact published version", exact: true }).selectOption(board.version_id);
+  await graphPane.getByRole("button", { name: shot.label, exact: true }).click();
+  const row = (index: number) => graphPane.getByRole("treeitem", { name: panels[index].label, exact: true });
+  await expect(row(1)).toBeVisible();
+  await expect(row(0)).not.toContainText("Owner-selected image");
+  await expect(row(1)).not.toContainText("Owner-selected image");
+  const before = studio.guard!.calls.length;
+  // Studio's image picker writes artefact choices. Save a version choice through
+  // the owner route to exercise the other supported wire variant.
+  const command: SelectionSave = { schema_version: "1.0", project_id: projectId, operation_id: "choose-version", selection_id: records[0].selection_id,
+    expected_revision: 0, slot: records[0].slot, choice: records[0].choice, action: "select" };
+  expect(await page.evaluate(async ({ path, command }) => (await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(command) })).ok,
+    { path: `${base}/selections`, command })).toBe(true);
+  await expect(row(0)).toContainText("Owner-selected image");
+  await expect(row(1)).not.toContainText("Owner-selected image");
+  const reads = studio.guard!.calls.slice(before).filter(call => call.method === "GET");
+  expect(reads.filter(call => /\/items\/[^/]+\/versions(?:\?|$)/.test(call.url) || graphPath.test(call.url.split("?")[0]))).toEqual([]);
+  expect(reads.filter(call => call.url === planPath)).toHaveLength(1);
+  studio.assertHermetic();
+});
+
 test("Retained-media inspection has no viewed catalogue root until Review returns to the pinned version", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   const viewed = studio.versionRecords[1];
@@ -869,6 +935,114 @@ test("Successful pagination and publication/reconnect invalidation respect Navig
   expect(new URL(graphCalls(studio).at(-1)!.url, baseURL).searchParams.has("cursor")).toBe(false);
   studio.assertHermetic();
 });
+
+for (const fault of ["mapping revoked", "proxy revoked", "GLB load failed"] as const) {
+  test(`E6: ordinary Objects clears selection when ${fault}`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    const mapping = studio.installProxyFixture("a-v2", { sampleFrame: 24 });
+    const owner = studio.versionRecords.find(record => record.version_id === "a-v2")!;
+    const glb = deferred();
+    const content = `${base}/artifacts/${mapping.proxy_artifact_id}/content`;
+    await studio.install({ catalogue: true, savedLayout: true, routes: fault === "GLB load failed" ? [{ path: content, handler: async route => {
+      await glb.promise;
+      return route.fulfill({ status: 422, json: { error: { code: "media_unavailable", message: "Fixture GLB failed" } } });
+    } }] : [] });
+    await saveViewing(page, owner);
+    await studio.open(); await studio.ready();
+    const region = review(page);
+    await region.getByRole("button", { name: "3D Inspection", exact: true }).click();
+    await region.getByRole("button", { name: "Objects at frame 24", exact: true }).click();
+    const list = region.getByRole("region", { name: "Objects at frame 24", exact: true });
+    const housing = list.getByRole("button", { name: "Housing housing-1" });
+    await housing.click();
+    await expect(housing).toHaveAttribute("aria-pressed", "true");
+    const currentContext = () => page.evaluate(id => JSON.parse(localStorage.getItem(`proscenium.owner.view.context.${id}`)!), projectId);
+    await expect.poll(currentContext).toMatchObject({ selected_objects: [{ object_id: "housing", instance_id: "housing-1" }] });
+
+    if (fault === "GLB load failed") {
+      await expect.poll(() => studio.guard!.calls.some(call => call.url === content)).toBe(true);
+      glb.release();
+    } else {
+      const id = fault === "mapping revoked" ? mapping.mapping_artifact_id! : mapping.proxy_artifact_id;
+      studio.retained = studio.retained.map(row => row.artifact.artifact_id === id ? { ...row, artifact: { ...row.artifact, state: "unavailable" } } : row);
+      studio.emit("tool.completed", { invocation_id: "revocation", name: "get_artifact", state: "completed", summary: "Artefact revoked", artifact_ids: [id], model_id: null });
+    }
+    await expect(list.getByRole("status")).toContainText(fault === "GLB load failed" ? "Could not load the inspection proxy" : "The mapping or proxy artefact is no longer available");
+    await expect(list.getByRole("button")).toHaveCount(0);
+    await expect.poll(currentContext).toMatchObject({ selected_objects: [] });
+    await page.getByRole("textbox", { name: "Message Copilot" }).fill("Review without the unavailable proxy.");
+    await page.getByRole("button", { name: "Queue message", exact: true }).click();
+    await expect.poll(() => studio.contexts.at(-1)).toMatchObject({ selected_objects: [] });
+    studio.assertHermetic();
+  });
+}
+
+for (const revoked of ["mapping", "proxy"] as const) {
+  test(`E6: both 2D markup send paths require image-only confirmation after pinned ${revoked} revocation`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    const mapping = studio.installProxyFixture("a-v2");
+    const owner = studio.versionRecords.find(record => record.version_id === "a-v2")!;
+    const camera: Camera = { space: "blender_world_m", kind: "perspective", camera_to_world: [1, 0, 0, 0, 0, 1, 0, -6, 0, 0, 1, 3, 0, 0, 0, 1],
+      projection: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, -0.2, 0, 0, -1, 0], aspect: 1, near_m: 0.1, far_m: 100, source_camera_id: null, vertical_fov_degrees: 50 };
+    studio.retained.push(retained("marked-2d-pin", "verified"));
+    const original: AnnotationSnapshot = { annotation_id: "saved-2d-pin", saved_revision: 1, text: "Saved collar pin", camera,
+      markup_artifact_id: "marked-2d-pin", markups: [{ id: "pin-mark", kind: "pin", points: [[0.5, 0.5]], text: "Saved collar pin", width_px: 4 }],
+      target: { origin: "proxy_capture", artifact_id: "verified", displayed_sha256: "a".repeat(64), dimensions: { width: 1, height: 1 }, item_id: owner.item_id,
+        version_id: owner.version_id, shot_id: null, render_job_id: null, source_frame: 1, media_artifact_id: null },
+      range: { start: 1, end: 1 }, spatial_status: "valid", spatial_hits: [{ proxy_artifact_id: mapping.proxy_artifact_id, mapping_artifact_id: mapping.mapping_artifact_id!,
+        version_id: owner.version_id, sample_frame: 1, object_id: "collar", instance_id: "collar-1", space: "blender_world_m", position: [1, 1, 1], normal: [0, 0, 1], camera }] };
+    studio.annotations.push(structuredClone(original));
+    await studio.install({ catalogue: true, savedLayout: true });
+    await saveViewing(page, owner);
+    await studio.open(); await studio.ready();
+    const region = review(page);
+    await region.getByRole("button", { name: /Annotations/ }).click();
+    await region.getByRole("button", { name: /Saved collar pin/ }).click();
+    await region.getByRole("button", { name: "Edit 2D markup", exact: true }).click();
+    const editor = region.getByRole("region", { name: "Pinned annotation", exact: true });
+    await expect(editor.getByRole("img", { name: "Pinned clean annotation target" })).toHaveJSProperty("naturalWidth", 1);
+    await expect(editor.getByRole("button", { name: "Queue feedback", exact: true })).toBeEnabled();
+
+    const id = revoked === "mapping" ? mapping.mapping_artifact_id! : mapping.proxy_artifact_id;
+    studio.retained = studio.retained.map(row => row.artifact.artifact_id === id ? { ...row, artifact: { ...row.artifact, state: "unavailable" } } : row);
+    studio.emit("tool.completed", { invocation_id: "revocation", name: "get_artifact", state: "completed", summary: "Pinned artefact revoked", artifact_ids: [id], model_id: null });
+    await expect(editor.getByRole("alert")).toContainText("Original 3D proxy is unavailable");
+    await expect(editor.getByRole("button", { name: "Save annotation", exact: true })).toHaveCount(0);
+    const confirm = editor.getByRole("checkbox", { name: "Send image-only snapshot without 3D spatial hit" });
+    const feedback = editor.getByRole("button", { name: "Queue image-only feedback", exact: true });
+    await expect(confirm).not.toBeChecked();
+    await expect(feedback).toBeDisabled();
+    await expect.poll(() => page.evaluate(project => JSON.parse(localStorage.getItem(`proscenium.owner.view.context.${project}`)!), projectId))
+      .toMatchObject({ selected_objects: [], annotations: [] });
+
+    const composer = page.getByRole("textbox", { name: "Message Copilot" });
+    const send = page.getByRole("button", { name: "Queue message", exact: true });
+    await composer.fill("Apply the image-only feedback from Current view.");
+    await send.click();
+    await expect(page.getByText("Original 3D proxy is unavailable. Confirm image-only fallback in Review before sending.", { exact: true })).toBeVisible();
+    expect(studio.contexts).toEqual([]);
+    expect(studio.submissions).toEqual([]);
+    expect(studio.saveAnnotationCalls).toEqual([]);
+
+    await confirm.check();
+    await expect(feedback).toBeEnabled();
+    // Exercise both as the first sender across the mapping and proxy cases.
+    const actions = revoked === "mapping" ? [feedback, send] : [send, feedback];
+    for (const [index, action] of actions.entries()) {
+      await action.click();
+      await expect.poll(() => studio.submissions.length).toBe(index + 1);
+      expect(studio.contexts[index]).toMatchObject({ version_id: owner.version_id, view_mode: "keyframes", selected_objects: [],
+        annotations: [{ spatial_status: "unavailable", spatial_hits: [], derived_from: original.annotation_id, target: original.target, markups: original.markups }],
+        attachments: [{ artifact_id: "verified", role: "reference" }, { artifact_id: "marked-2d-pin", role: "markup" }] });
+    }
+    expect(studio.saveAnnotationCalls).toHaveLength(1);
+    const derived = studio.annotations.find(annotation => annotation.derived_from === original.annotation_id)!;
+    expect(derived.annotation_id).not.toBe(original.annotation_id);
+    expect(studio.contexts.map(context => context.annotations)).toEqual([[derived], [derived]]);
+    expect(studio.annotations.find(annotation => annotation.annotation_id === original.annotation_id)).toEqual(original);
+    studio.assertHermetic();
+  });
+}
 
 test("E6: Objects uses the old pinned map, retains compatible pairs and never substitutes an unavailable map", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);

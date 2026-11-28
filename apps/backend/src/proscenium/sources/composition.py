@@ -71,6 +71,7 @@ def included_rows(
     repository_id: str,
     *,
     consuming_version: dict | None = None,
+    producers: dict[str, dict] | None = None,
 ) -> dict[str, dict]:
     if len(refs) > MAX_INCLUDES:
         raise DomainError(
@@ -80,7 +81,8 @@ def included_rows(
             safe_for_model=True,
         )
     rows: dict[str, dict] = {}
-    producers: dict[str, dict] = {}
+    if producers is None:
+        producers = {}
     for ref in sorted(refs, key=ref_key):
         version = lookup(ref)
         if version is None:
@@ -157,6 +159,7 @@ def verify_included_sources(
     *,
     consuming_version: dict | None = None,
     source_commit: str | None = None,
+    producers: dict[str, dict] | None = None,
 ) -> dict[str, dict]:
     """Return verified included destinations, not files from ordinary pins or lineage."""
     if "included_sources" not in closure:
@@ -184,7 +187,12 @@ def verify_included_sources(
                 consuming_version=consuming_version,
             )
     included = included_rows(
-        refs, lookup, project_id, repository_id, consuming_version=consuming_version
+        refs,
+        lookup,
+        project_id,
+        repository_id,
+        consuming_version=consuming_version,
+        producers=producers,
     )
     own: dict[str, dict] = {}
     for row in closure["files"]:

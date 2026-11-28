@@ -188,7 +188,7 @@ tree. No generated sources, renders, private configuration or databases are reta
 
 ## Branch verification
 
-- `make check` passed: 2,184 Python tests passed, 1 skipped, 220 frontend unit
+- `make check` passed: 2,184 Python tests passed, 1 skipped, 224 frontend unit
   tests passed, and lint, type and generated-binding checks passed.
 - Focused Chromium DPR 1 relationships and storyboard first-open suites: 21 passed.
 - Offline skill, routing and worker capability suites: 142 passed. Checked 68 local

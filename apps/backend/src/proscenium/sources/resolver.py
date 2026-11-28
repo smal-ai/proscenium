@@ -9,13 +9,14 @@ import subprocess
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
-from typing import IO, Any, BinaryIO, Protocol
+from typing import IO, Any, Protocol
 from uuid import uuid4
 
 from proscenium.api.errors import DomainError
 from proscenium.contracts import canonical, validate
 from proscenium.db import Store
 from proscenium.db.registry import Registry
+from proscenium.guidance import INCLUDED_RETAINED_SOURCE_MISSING, RETAINED_SOURCE_RECOVERY
 from proscenium.sources import composition
 from proscenium.sources.common import (
     atomic_bytes,
@@ -40,7 +41,7 @@ def checked_stream(
     expected_sha: str | None,
     *,
     collect: bool = False,
-    sink: BinaryIO | None = None,
+    sink: IO[bytes] | None = None,
     reject_pointer: bool = False,
 ) -> tuple[int, bytes]:
     composition.byte_bound(expected_size, remaining)
@@ -81,7 +82,8 @@ def checked_file(
     *,
     expected_size: int | None = None,
     collect: bool = False,
-    sink: BinaryIO | None = None,
+    sink: IO[bytes] | None = None,
+    reject_pointer: bool = False,
 ) -> tuple[int, bytes]:
     with os.fdopen(os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW), "rb") as stream:
         info = os.fstat(stream.fileno())
@@ -90,7 +92,13 @@ def checked_file(
         if expected_size is not None and info.st_size != expected_size:
             raise DomainError("hash_mismatch", 422)
         return checked_stream(
-            stream, remaining, info.st_size, expected_sha, collect=collect, sink=sink
+            stream,
+            remaining,
+            info.st_size,
+            expected_sha,
+            collect=collect,
+            sink=sink,
+            reject_pointer=reject_pointer,
         )
 
 
@@ -178,22 +186,98 @@ class Resolver:
         *,
         retained: dict | None = None,
         collect: bool = False,
-        sink: BinaryIO | None = None,
+        sink: IO[bytes] | None = None,
         commits: set[str] | None = None,
+        destination: str | None = None,
+        reference: dict | None = None,
     ) -> tuple[int, bytes]:
         """Check object size before hydration; stream the exact bytes and hash in chunks."""
         digest = origin["sha256"]
         if origin["kind"] == "retained":
-            if not retained or retained["sha256"] != digest:
-                raise DomainError("retained_source_missing", 422, artifact_id=origin["artifact_id"])
-            path = managed(root, f".proscenium/retained/{digest}/content")
             try:
+                if not retained or retained["sha256"] != digest:
+                    raise DomainError("retained_source_missing", 422)
+                path = managed(root, f".proscenium/retained/{digest}/content")
                 return checked_file(path, remaining, digest, collect=collect, sink=sink)
-            except OSError as exc:
+            except (OSError, DomainError) as exc:
+                if isinstance(exc, DomainError) and exc.code not in {
+                    "retained_source_missing",
+                    "hash_mismatch",
+                    "scope_denied",
+                }:
+                    raise
+                if reference is not None:
+                    raise DomainError(
+                        "retained_source_missing",
+                        422,
+                        INCLUDED_RETAINED_SOURCE_MISSING,
+                        safe_for_model=True,
+                        destination=destination,
+                        reference=reference,
+                    ) from exc
                 raise DomainError(
-                    "retained_source_missing", 422, artifact_id=origin["artifact_id"]
+                    "retained_source_missing",
+                    422,
+                    RETAINED_SOURCE_RECOVERY,
+                    safe_for_model=True,
+                    destination=destination,
                 ) from exc
 
+        object_id, size, data, lfs_digest = self.git_source_metadata(
+            project_id, root, origin, commits
+        )
+        composition.byte_bound(size, remaining)
+        if lfs_digest is not None:
+            if lfs_digest != digest:
+                raise DomainError("hash_mismatch", 422)
+            try:
+                return checked_file(
+                    self.lfs_object(root, digest),
+                    remaining,
+                    digest,
+                    expected_size=size,
+                    collect=collect,
+                    sink=sink,
+                )
+            except OSError as exc:
+                raise DomainError(
+                    "source_unavailable",
+                    422,
+                    "Local Git LFS object missing",
+                    sha256=digest,
+                    safe_for_model=True,
+                ) from exc
+        if data is not None:
+            return checked_stream(
+                BytesIO(data), remaining, size, digest, collect=collect, sink=sink
+            )
+        with subprocess.Popen(
+            ["git", "-C", str(root), "cat-file", "blob", object_id],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            env=git_environment(),
+        ) as process:
+            assert process.stdout is not None
+            try:
+                result = checked_stream(
+                    process.stdout,
+                    remaining,
+                    size,
+                    digest,
+                    collect=collect,
+                    sink=sink,
+                    reject_pointer=True,
+                )
+            finally:
+                process.stdout.close()
+            if process.wait(timeout=60):
+                raise DomainError("source_unavailable", 422)
+        return result
+
+    def git_source_metadata(
+        self, project_id: str, root: Path, origin: dict, commits: set[str] | None = None
+    ) -> tuple[str, int, bytes | None, str | None]:
+        """Return the blob ID and declared hydrated size without reading bulk content."""
         if origin["repository_id"] != self.services.registry.get(project_id)["repository_id"]:
             raise DomainError("scope_denied", 403)
         composition.closure_path(origin["path"])
@@ -226,53 +310,9 @@ class Resolver:
                     raise DomainError(
                         "source_unavailable", 422, "Invalid Git LFS pointer", safe_for_model=True
                     )
-                lfs_size = int(match[2])
-                composition.byte_bound(lfs_size, remaining)
-                if match[1].decode() != digest:
-                    raise DomainError("hash_mismatch", 422)
-                try:
-                    return checked_file(
-                        self.lfs_object(root, digest),
-                        remaining,
-                        digest,
-                        expected_size=lfs_size,
-                        collect=collect,
-                        sink=sink,
-                    )
-                except OSError as exc:
-                    raise DomainError(
-                        "source_unavailable",
-                        422,
-                        "Local Git LFS object missing",
-                        sha256=digest,
-                        safe_for_model=True,
-                    ) from exc
-            return checked_stream(
-                BytesIO(data), remaining, size, digest, collect=collect, sink=sink
-            )
-        composition.byte_bound(size, remaining)
-        with subprocess.Popen(
-            ["git", "-C", str(root), "cat-file", "blob", object_id],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            env=git_environment(),
-        ) as process:
-            assert process.stdout is not None
-            try:
-                result = checked_stream(
-                    process.stdout,
-                    remaining,
-                    size,
-                    digest,
-                    collect=collect,
-                    sink=sink,
-                    reject_pointer=True,
-                )
-            finally:
-                process.stdout.close()
-            if process.wait(timeout=60):
-                raise DomainError("source_unavailable", 422)
-        return result
+                return object_id, int(match[2]), None, match[1].decode()
+            return object_id, size, data, None
+        return object_id, size, None, None
 
     def _verify_closure(
         self,
@@ -369,12 +409,14 @@ class Resolver:
                     "versions", ref["version_id"], required=False
                 )
 
+            producers: dict[str, dict] = {}
             composition.verify_included_sources(
                 closure,
                 lookup,
                 project_id,
                 record["repository_id"],
                 source_commit=source_commit,
+                producers=producers,
             )
             for ref in closure["dependencies"]:
                 dependency = lookup(ref)
@@ -407,6 +449,8 @@ class Resolver:
                     retained=retained_record,
                     collect=keep,
                     commits=commits,
+                    destination=name,
+                    reference=producers.get(name),
                 )
                 if keep:
                     files[name] = data
@@ -422,6 +466,8 @@ class Resolver:
                         retained=retained_record,
                         sink=stream,
                         commits=commits,
+                        destination=name,
+                        reference=producers.get(name),
                     )
                     stream.flush()
                     os.fsync(stream.fileno())

@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import time
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +18,7 @@ from proscenium.auth import Caller
 from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.db.store import now
+from proscenium.guidance import RETAINED_SOURCE_RECOVERY
 from proscenium.services import Services
 from proscenium.sources import composition
 from proscenium.sources.common import (
@@ -220,14 +221,21 @@ class Checkpoints:
                     )
                     if head != request["expected_head"] or not branch.startswith("refs/heads/"):
                         raise DomainError("source_conflict", 409)
+                    producers: dict[str, dict] = {}
                     inherited, includes = self.validate_closure_inputs(
-                        project_id, root, request, head
+                        project_id,
+                        root,
+                        request,
+                        head,
+                        producers=producers,
                     )
                     if len(set(paths)) != len(paths):
                         raise DomainError("invalid_request")
                     require_lfs_tracking(root, paths, head)
                     files = (
-                        self.composed_input_files(project_id, root, request, inherited, head)
+                        self.composed_input_files(
+                            project_id, root, request, inherited, head, producers
+                        )
                         if includes
                         else [
                             {"path": p, "sha256": sha(relative(root, p, exists=True).read_bytes())}
@@ -362,7 +370,14 @@ class Checkpoints:
         relative(root, path)
 
     def validate_closure_inputs(
-        self, project_id: str, root: Path, request: dict[str, Any], parent: str | None
+        self,
+        project_id: str,
+        root: Path,
+        request: dict[str, Any],
+        parent: str | None,
+        *,
+        producers: dict[str, dict] | None = None,
+        verifying: bool = False,
     ) -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
         if "entry_path" not in request:
             if any(
@@ -439,7 +454,9 @@ class Checkpoints:
             retired_owned = inherited.keys() & excluded
             inherited = {name: row for name, row in inherited.items() if name not in excluded}
             imported = (
-                composition.included_rows(includes, lookup, project_id, repository_id)
+                composition.included_rows(
+                    includes, lookup, project_id, repository_id, producers=producers
+                )
                 if includes
                 else {}
             )
@@ -475,6 +492,14 @@ class Checkpoints:
                 except OSError:
                     valid = False
                 if not valid:
+                    if verifying:
+                        raise DomainError(
+                            "retained_source_missing",
+                            422,
+                            RETAINED_SOURCE_RECOVERY,
+                            safe_for_model=True,
+                            destination=row["destination"],
+                        )
                     raise DomainError(
                         "retained_source_missing",
                         422,
@@ -507,6 +532,7 @@ class Checkpoints:
         request: dict,
         inherited: dict,
         parent: str | None,
+        producers: dict[str, dict],
     ) -> list[dict]:
         replacement = set(request["paths"]) | {
             r["destination"] for r in request.get("retained_files", [])
@@ -529,7 +555,13 @@ class Checkpoints:
                 )
                 try:
                     size, _ = self.resolver.bounded_origin(
-                        project_id, root, origin, remaining, retained=retained
+                        project_id,
+                        root,
+                        origin,
+                        remaining,
+                        retained=retained,
+                        destination=row["destination"],
+                        reference=producers.get(row["destination"]),
                     )
                 except DomainError as exc:
                     if row is entry and exc.code != "invalid_request":
@@ -586,7 +618,9 @@ class Checkpoints:
         intent: dict[str, Any],
         commit: str,
     ) -> dict[str, Any] | None:
-        files, includes = self.validate_closure_inputs(project_id, root, request, intent["parent"])
+        files, includes = self.validate_closure_inputs(
+            project_id, root, request, intent["parent"], verifying=True
+        )
         if "entry_path" not in request:
             return None
         if includes and intent.get("composition") != self.composition_fingerprint(files, includes):
@@ -767,34 +801,49 @@ class Checkpoints:
     def prepare(
         self, root: Path, request: dict[str, Any], intent: dict[str, Any]
     ) -> tuple[str, str]:
+        stream_limits: dict[str, int] | None = intent.get("stream_limits")
         with checkpoint_index(root, intent["parent"]) as env:
             for row in intent["files"]:
                 path = relative(root, row["path"], exists=True)
-                if "composition" in intent:
-                    checked_file(path, composition.MAX_BYTES, row["sha256"])
-                    hash_args = ["--path=" + row["path"], "--", str(path)]
-                    data = None
-                else:
-                    data = path.read_bytes()
-                    if sha(data) != row["sha256"]:
-                        raise DomainError("source_conflict", 409)
-                    hash_args = ["--stdin", "--path=" + row["path"]]
-                oid = (
-                    git(
-                        root,
-                        "hash-object",
-                        "-w",
-                        *hash_args,
-                        data=data,
-                        env=env,
+                with ExitStack() as scratch:
+                    filter_path = "--path=" + row["path"]
+                    if stream_limits is not None:
+                        # Git must clean the same bounded bytes that were verified,
+                        # not reopen a working file that may have changed or grown.
+                        frozen = scratch.enter_context(
+                            tempfile.NamedTemporaryFile(
+                                prefix="import-source-", dir=root / ".proscenium"
+                            )
+                        )
+                        checked_file(
+                            path,
+                            stream_limits[row["path"]],
+                            row["sha256"],
+                            reject_pointer=True,
+                            sink=frozen.file,
+                        )
+                        frozen.flush()
+                        hash_args = [filter_path, "--", frozen.name]
+                        data = None
+                    elif "composition" in intent:
+                        checked_file(path, composition.MAX_BYTES, row["sha256"])
+                        hash_args = [filter_path, "--", str(path)]
+                        data = None
+                    else:
+                        data = path.read_bytes()
+                        if sha(data) != row["sha256"]:
+                            raise DomainError("source_conflict", 409)
+                        hash_args = ["--stdin", filter_path]
+                    oid = (
+                        git(root, "hash-object", "-w", *hash_args, data=data, env=env)
+                        .decode()
+                        .strip()
                     )
-                    .decode()
-                    .strip()
-                )
                 mode = intent["modes"][row["path"]]
                 if path.suffix.lower() in BINARY_SUFFIXES:
                     if (
-                        "composition" in intent and int(git(root, "cat-file", "-s", oid)) > 1024
+                        ("composition" in intent or stream_limits is not None)
+                        and int(git(root, "cat-file", "-s", oid)) > 1024
                     ) or not git(root, "cat-file", "blob", oid).startswith(
                         b"version https://git-lfs.github.com/spec/v1\n"
                     ):
@@ -900,7 +949,9 @@ class Checkpoints:
     ) -> dict[str, Any] | None:
         root = Path(self.services.registry.get(project_id)["path"])
         if "composition" not in intent:
-            inherited, _ = self.validate_closure_inputs(project_id, root, request, intent["parent"])
+            inherited, _ = self.validate_closure_inputs(
+                project_id, root, request, intent["parent"], verifying=True
+            )
             entry = self.inherited_git_entry(request, inherited)
             if entry is not None:
                 self.pin_entry(project_id, entry, commit)
@@ -924,14 +975,17 @@ class Checkpoints:
             return closure
         repository_id = self.services.registry.get(project_id)["repository_id"]
         for row in intent["files"]:
-            self.resolver.git_bytes(
-                project_id,
-                dict(
-                    kind="git",
-                    repository_id=repository_id,
-                    commit=commit,
-                    path=row["path"],
-                    sha256=row["sha256"],
-                ),
+            origin = dict(
+                kind="git",
+                repository_id=repository_id,
+                commit=commit,
+                path=row["path"],
+                sha256=row["sha256"],
             )
+            if "stream_limits" in intent:
+                self.resolver.bounded_origin(
+                    project_id, root, origin, intent["stream_limits"][row["path"]]
+                )
+            else:
+                self.resolver.git_bytes(project_id, origin)
         return None

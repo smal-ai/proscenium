@@ -1,15 +1,20 @@
 """Wave 4: pinned composition against disposable Git, LFS and retained stores."""
 
+import asyncio
 import copy
 import json
 import os
 import tracemalloc
 from time import perf_counter
+from types import SimpleNamespace
 
 import pytest
+from copilot.tools import ToolInvocation
 from proscenium.api.errors import DomainError
 from proscenium.contracts import canonical
-from proscenium.copilot.tools import result_text, tool_failure
+from proscenium.copilot.state import key as native_key
+from proscenium.copilot.tools import Tools, result_text, tool_failure
+from proscenium.guidance import INCLUDED_RETAINED_SOURCE_MISSING
 from proscenium.sources import checkpoint as checkpoint_module
 from proscenium.sources import closure_digest, composition
 from proscenium.sources.common import git, sha
@@ -185,7 +190,7 @@ def test_transitive_whole_manifest_shared_rows_retained_and_large_receipt(runtim
         ("exclusion", "dependency_collision"),
         ("wrong_repo", "scope_denied"),
         ("reserved", "scope_denied"),
-        ("damaged_retained", "hash_mismatch"),
+        ("damaged_retained", "retained_source_missing"),
         ("missing_lfs", "source_unavailable"),
         ("stale_head", "source_conflict"),
         ("include_limit", "invalid_request"),
@@ -519,6 +524,89 @@ def test_collision_diagnostics_do_not_forward_unsafe_paths_or_refs():
     assert fail("assets/.env.private", {"item_id": "/secret", "version_id": "bad"}) == {
         "consuming_version": LANDING
     }
+
+
+@pytest.mark.parametrize("phase", ["admission", "completed_replay"])
+@pytest.mark.parametrize("damage", ["missing", "corrupt"])
+def test_missing_included_retained_source_tool_guidance(runtime, phase, damage):
+    r = runtime
+    origin = retain(r)
+    destination = "motion/retained.txt"
+    producer(
+        r,
+        HERO,
+        {"hero.txt": b"Hero"},
+        retained_files=[dict(destination=destination, origin=origin)],
+    )
+    write(r.root, "scene.txt", b"Scene")
+    body = checkpoint_request(r, "retained-compose", ["scene.txt"], include_sources=[HERO])
+    tool = Tools(r.services, SimpleNamespace(), r.caller.project_id)
+    invocation = ToolInvocation(
+        session_id="session-one",
+        tool_call_id="retained-compose",
+        tool_name="checkpoint_sources",
+        arguments=body,
+        agent_id=None,
+    )
+    invocation_id = native_key(invocation.session_id, "tool", invocation.tool_call_id)
+    with r.store.transaction() as tx:
+        tx.put(
+            "invocations",
+            invocation_id,
+            dict(
+                invocation_id=invocation_id,
+                session_id=invocation.session_id,
+                agent_id=None,
+                name=invocation.tool_name,
+                arguments_sha256=sha(canonical(body)),
+                work_id="work-one",
+                request_id="request-one",
+                owner_epoch="epoch",
+                state="running",
+            ),
+        )
+
+    if phase == "completed_replay":
+        first = asyncio.run(tool.invoke("checkpoint_sources", invocation))
+        assert json.loads(first.text_result_for_llm)["state"] == "completed"
+    refs = git(r.root, "show-ref")
+    path = r.root / f".proscenium/retained/{origin['sha256']}/content"
+    if damage == "missing":
+        path.unlink()
+    else:
+        path.write_bytes(b"corrupt")
+    result = asyncio.run(tool.invoke("checkpoint_sources", invocation))
+    assert result.result_type == "failure"
+    assert json.loads(result.text_result_for_llm) == dict(
+        error="retained_source_missing",
+        message=INCLUDED_RETAINED_SOURCE_MISSING,
+        details=dict(destination=destination, reference=HERO),
+    )
+    assert not any(
+        text in result.text_result_for_llm
+        for text in (
+            "no commit was created",
+            "Omit retained_files",
+            "fresh operation_id",
+        )
+    )
+    assert git(r.root, "show-ref") == refs
+
+
+def test_retained_source_tool_guidance_filters_private_details():
+    error = DomainError(
+        "retained_source_missing",
+        422,
+        INCLUDED_RETAINED_SOURCE_MISSING,
+        safe_for_model=True,
+        destination="assets/.env.private",
+        reference={"item_id": "/secret", "version_id": "bad"},
+        artifact_id="/private/retained",
+        current_revision=1,
+    )
+    assert (
+        json.loads(tool_failure(error, "checkpoint_sources").text_result_for_llm)["details"] == {}
+    )
 
 
 def test_same_batch_inclusion_is_verified_and_cycle_rejected_atomically(runtime):

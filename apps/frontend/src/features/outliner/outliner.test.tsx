@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ApiError, type ApiClient } from "../../api/client";
-import type { Artifact, ItemRecord, ProxyMapping, RelationshipEdge, RelationshipNodeSummary, RelationshipPage, SelectionRecord, VersionRecord } from "../../api/generated/contracts";
+import type { Artifact, ItemRecord, ProxyMapping, RelationshipEdge, RelationshipNodeSummary, RelationshipPage, SelectionRecord, ShotPlan } from "../../api/generated/contracts";
 import { InspectionObjects } from "../review/InspectionObjects";
 import { recordArtifactObservation, type ArtifactObservation } from "../readyArtifactIndex";
 import { compatibleObjects, toggleObject } from "../review/state";
 import { Outliner } from "./Outliner";
 import { appendPage, coverageMessage, endpointKey, extendPath, groupEdges, readFailure, readRelationships, versionRoot } from "./model";
-import { overlayNode, panelSelections } from "./overlays";
+import { overlayNode, panelPlanReads, panelSelections } from "./overlays";
 
 const board = { kind: "version" as const, ref: { item_id: "board", version_id: "board-v1" } };
 const shot = { kind: "shot" as const, board: board.ref, shot_id: "same-id" };
@@ -122,10 +122,10 @@ test("the object drawer retains exact pairs on mapping changes and multi-select 
   assert.equal(compatibleObjects(selected, old), selected);
   assert.deepEqual(compatibleObjects(selected, newer), [second]);
   assert.deepEqual(toggleObject(selected, second, true), [pair]);
-  const markup = renderToStaticMarkup(<InspectionObjects mapping={old} selected={selected} unavailable={null} loading={false} onSelect={() => assert.fail()} />);
+  const markup = renderToStaticMarkup(<InspectionObjects mapping={old} selected={selected} unavailableReason={null} loading={false} onSelect={() => assert.fail()} />);
   assert.match(markup, /Objects at frame 1/);
   assert.equal(markup.match(/aria-pressed="true"/g)?.length, 2);
-  const unavailable = renderToStaticMarkup(<InspectionObjects mapping={null} selected={[]} unavailable="Offline" loading={false} onSelect={() => assert.fail()} />);
+  const unavailable = renderToStaticMarkup(<InspectionObjects mapping={null} selected={[]} unavailableReason="Offline" pinned loading={false} onSelect={() => assert.fail()} />);
   assert.match(unavailable, /Pinned 3D proxy unavailable: Offline/);
   assert.doesNotMatch(unavailable, /aria-pressed|Objects at frame 24/);
 });
@@ -151,9 +151,31 @@ test("live choices and non-ready evidence overlay immutable graph nodes without 
   const newer = { ...overlay, artefacts: new Map([["image", { artefact: { state: "ready" } as Artifact, readOrder: 3 }]]),
     panels: panelSelections("project", [{ ...stored, choice: { kind: "version", version: hero.ref } }]) };
   assert.deepEqual(overlayNode({ ...artefact, state: "corrupt" }, newer, 4), { ...artefact, state: "corrupt" });
-  assert.deepEqual(overlayNode(panel, newer, 2, { ...hero.ref, artifact_ids: ["image"] } as VersionRecord), panel);
-  assert.deepEqual(overlayNode({ ...panel, board: otherShot.board }, newer, 2, { ...hero.ref, artifact_ids: ["image"] } as VersionRecord),
+  assert.deepEqual(overlayNode(panel, newer, 2), panel);
+  assert.deepEqual(overlayNode({ ...panel, board: otherShot.board }, newer, 2),
     { ...panel, board: otherShot.board, owner_selected: false });
+});
+
+test("version panel choices share one authoritative board read and never select a later render preview", async () => {
+  // The merged version view includes the preview, but the publication only owns image A.
+  const versionView = { ...hero.ref, artifact_ids: ["image-A", "preview-B"] };
+  const panels = versionView.artifact_ids.map((artifact_id, index) => ({ kind: "panel", board: shot.board, shot_id: shot.shot_id,
+    label: artifact_id, frame_id: `frame-${index}`, artifact_id, role: "start", authored_state: "available", artifact_state: "ready", owner_selected: false } as const));
+  const records = panels.map((panel): SelectionRecord => ({ schema_version: "1.0", selection_id: panel.frame_id, project_id: "project", state: "selected", state_revision: 2,
+    choice: { kind: "version", version: hero.ref }, slot: { kind: "storyboard_frame", storyboard_version: shot.board, shot_id: shot.shot_id, frame_id: panel.frame_id }, actor: { kind: "user", id: "owner" } }));
+  const plan: ShotPlan = { schema_version: "1.0", project_id: "project", plan_id: "plan", source_commit: "a".repeat(40), brief_artifact_ids: [], asset_dependencies: [], unresolved: [],
+    shots: [{ shot_id: shot.shot_id, intent: "", camera_intent: "", motion_beats: [], scene_version: null, source_range: null, fps: null,
+      frames: panels.map(({ frame_id, role, artifact_id }) => ({ frame_id, role, artifact_id, composition: "", state: "available", owner_selected: artifact_id === "image-A" })) }] };
+  const calls: unknown[] = [];
+  const reads = panelPlanReads({ call: async (name: string, args: { path: unknown }) => { calls.push([name, args.path]); return plan; } } as unknown as ApiClient, "project");
+  const pending = reads.read(panels[0].board);
+  assert.equal(reads.read(panels[1].board), undefined);
+  assert.equal(await pending, plan);
+  assert.equal(reads.read(panels[0].board), undefined);
+  const overlays = { items: new Map(), artefacts: new Map(), panels: panelSelections("project", records), shotPlans: new Map([[board.ref.version_id, plan]]) };
+  assert.deepEqual(panels.map(panel => overlayNode(panel, overlays, 0)).map(node => node.kind === "panel" && node.owner_selected), [true, false]);
+  assert.deepEqual(calls, [["getVersionShotPlan", { project_id: "project", version_id: board.ref.version_id }]]);
+  reads.abort();
 });
 
 test("panel and standalone readiness follows newer evidence, not response delivery order", () => {

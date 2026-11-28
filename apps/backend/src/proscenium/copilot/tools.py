@@ -26,7 +26,11 @@ from proscenium.catalogue.validation import (
     schema_issues_for_schema,
 )
 from proscenium.contracts import SCHEMA, canonical, validate
-from proscenium.guidance import reviewed_reason
+from proscenium.guidance import (
+    INCLUDED_RETAINED_SOURCE_MISSING,
+    RETAINED_SOURCE_RECOVERY,
+    reviewed_reason,
+)
 from proscenium.services import Services
 from proscenium.sources.composition import closure_path
 
@@ -258,7 +262,7 @@ def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
 
 ERROR_GUIDANCE = {
     "corrupt_provider_output": "The provider returned a corrupted raster image or invalid audio/video. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
-    "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
+    "retained_source_missing": RETAINED_SOURCE_RECOVERY,
     "scope_denied": "The requested resource or target is outside the active request scope. Check the active project and pinned request target before retrying.",
     "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
@@ -394,6 +398,19 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
             dimensions="positive exact PNG dimensions for keyframes; even width and height for H.264 motion",
             samples="explicit positive sample count",
         )
+    if error.code == "retained_source_missing" and reviewed in {
+        INCLUDED_RETAINED_SOURCE_MISSING,
+        RETAINED_SOURCE_RECOVERY,
+    }:
+        details = {}
+        for key, schema in (("destination", "RelativePath"), ("reference", "VersionRef")):
+            try:
+                value = validate(schema, error.details.get(key))
+                if key == "destination":
+                    closure_path(value)
+                details[key] = value
+            except DomainError:
+                pass
     return ToolResult(
         text_result_for_llm=canonical(
             {

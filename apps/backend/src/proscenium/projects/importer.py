@@ -2,6 +2,7 @@
 
 import io
 import json
+import stat
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
@@ -30,9 +31,10 @@ from proscenium.previews.media import encode, inspect_video, verify_video
 from proscenium.previews.service import PreviewService
 from proscenium.reviews.references import References
 from proscenium.services import Services
-from proscenium.sources import Sources, closure_digest
+from proscenium.sources import Sources, closure_digest, composition
 from proscenium.sources.common import atomic_bytes, fingerprint, git, managed, relative, replay, sha
 from proscenium.sources.composition import ref_key, verify_included_sources
+from proscenium.sources.resolver import checked_file
 
 from .service import Projects, owner_only
 
@@ -145,7 +147,9 @@ class Import:
         closure["digest"] = closure_digest(closure)
         return closure
 
-    def prepare_checkpoint(self, files: dict[str, str]) -> tuple[str, PendingSourceRefs]:
+    def prepare_checkpoint(
+        self, files: dict[str, str], *, stream_limits: dict[str, int] | None
+    ) -> tuple[str, PendingSourceRefs]:
         """Prepare verified objects and defer ref installation until admission passes."""
         key = identity("import-checkpoint", self.operation)
         reference = f"refs/proscenium/checkpoints/{key}"
@@ -163,8 +167,13 @@ class Import:
             modes={},
         )
         if not current:
+            if stream_limits is not None:
+                for name in files.keys() - stream_limits.keys():
+                    stream_limits[name] = self.working_size(name)
+                intent["stream_limits"] = stream_limits
             for entry in rows:
-                self.read_verified(entry)
+                if stream_limits is None:
+                    self.read_verified(entry)
                 path = relative(self.root, entry["path"], exists=True)
                 if git(
                     self.root, "check-ignore", "--no-index", "--", entry["path"], required=False
@@ -215,7 +224,7 @@ class Import:
                 names.add(path)
             if source["entry_path"] not in names:
                 raise DomainError("dependency_missing", 422, "Source entry must be listed in files")
-        self.check_inclusion_representation(items)
+        stream_limits = self.check_inclusion_representation(items)
         for item in items:
             if "source_commit" not in item["source"]:
                 for entry in item["source"]["files"]:
@@ -227,10 +236,19 @@ class Import:
             or not git(self.root, "rev-parse", "--verify", "HEAD", required=False).strip()
         ):
             for name in ("project.json", ".gitignore", ".gitattributes"):
-                digest = sha(relative(self.root, name, exists=True).read_bytes())
+                path = relative(self.root, name, exists=True)
+                if stream_limits is None:
+                    digest = sha(path.read_bytes())
+                else:
+                    if name not in stream_limits:
+                        stream_limits[name] = self.working_size(name)
+                    limit = stream_limits[name]
+                    digest = checked_file(path, limit, None)[1].decode()
                 if checkpoint_files.setdefault(name, digest) != digest:
                     raise DomainError("hash_mismatch", 422, path=name)
-            checkpoint, pending = self.prepare_checkpoint(checkpoint_files)
+            checkpoint, pending = self.prepare_checkpoint(
+                checkpoint_files, stream_limits=stream_limits
+            )
         else:
             checkpoint = None
             pending = PendingSourceRefs()
@@ -253,7 +271,19 @@ class Import:
                 is_document = path == source["entry_path"] and kind in {"storyboard", "sequence"}
                 key = (commit, path, origin["sha256"])
                 if "included_sources" not in source and (key not in verified or is_document):
-                    data = self.sources.git_bytes(self.project_id, origin)
+                    if stream_limits is not None:
+                        _, limit, _, _ = self.sources.git_source_metadata(
+                            self.project_id, self.root, origin
+                        )
+                        _, data = self.sources.bounded_origin(
+                            self.project_id,
+                            self.root,
+                            origin,
+                            limit,
+                            collect=is_document,
+                        )
+                    else:
+                        data = self.sources.git_bytes(self.project_id, origin)
                     verified.add(key)
                     if is_document:
                         self.authored_source(item, data)
@@ -315,10 +345,16 @@ class Import:
             self.validate_sequence_bounds(document)
         self.documents[item["version_id"]] = document
 
-    def check_inclusion_representation(self, items: list[dict]) -> None:
-        """The offline format has one commit and Git path=destination for each item."""
+    def working_size(self, path: str) -> int:
+        info = relative(self.root, path, exists=True).stat()
+        if not stat.S_ISREG(info.st_mode):
+            raise DomainError("source_unavailable", 422)
+        return info.st_size
+
+    def check_inclusion_representation(self, items: list[dict]) -> dict[str, int] | None:
+        """Admit each composed closure before hydration and freeze its working-file sizes."""
         if not any("included_sources" in item["source"] for item in items):
-            return
+            return None
         batch = {item["version_id"]: item for item in items}
         if len(batch) != len(items):
             raise DomainError("invalid_request", 422, "Import must use unique version IDs")
@@ -326,19 +362,28 @@ class Import:
         # checkpoint. A symbolic placeholder lets the shared verifier compare
         # full rows before that checkpoint or any source ref exists.
         pending_commit = "0" * 40
+        checkpoint_ref = (
+            f"refs/proscenium/checkpoints/{identity('import-checkpoint', self.operation)}"
+        )
+        existing_commit = (
+            git(self.root, "rev-parse", "--verify", checkpoint_ref, required=False).decode().strip()
+        )
         prepared = {}
-        for identity, item in batch.items():
+        for version_id, item in batch.items():
             validate("VersionRef", ref(item))
             commit = item["source"].get("source_commit", pending_commit)
             validate("Commit", commit)
             if "source_commit" in item["source"] and commit == pending_commit:
                 raise DomainError("source_unavailable", 422)
-            prepared[identity] = dict(
+            prepared[version_id] = dict(
                 **ref(item),
                 project_id=self.project_id,
                 source_commit=commit,
                 source=self.sealed_closure(item["source"], commit),
             )
+        size_cache: dict[tuple[str, str], int] = {}
+        working_sizes: dict[str, int] = {}
+        commits: set[str] = set()
         with self.store.transaction(write=False) as tx:
 
             def lookup(pin: dict) -> dict | None:
@@ -387,6 +432,28 @@ class Import:
                     consuming_version=ref(item),
                     source_commit=consumer["source_commit"],
                 )
+                # The representation check excludes retained origins and mandates one
+                # commit and Git path=destination, so each row is one hydrated charge.
+                remaining = composition.MAX_BYTES
+                for row in consumer["source"]["files"]:
+                    origin = row["origin"]
+                    path = origin["path"]
+                    commit = origin["commit"]
+                    if commit == pending_commit and existing_commit:
+                        commit = existing_commit
+                    key = (commit, path)
+                    if key not in size_cache:
+                        if commit == pending_commit:
+                            size = working_sizes[path] = self.working_size(path)
+                        else:
+                            _, size, _, _ = self.sources.git_source_metadata(
+                                self.project_id, self.root, {**origin, "commit": commit}, commits
+                            )
+                        size_cache[key] = size
+                    size = size_cache[key]
+                    composition.byte_bound(size, remaining)
+                    remaining -= size
+        return working_sizes
 
     def promote(self, artifact_id: str, data: bytes, **description: Any) -> dict:
         if artifact_id in self.media:

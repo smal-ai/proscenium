@@ -3,7 +3,7 @@ import type { RelationshipDirection, RelationshipEndpoint, RelationshipNodeSumma
 import type { OutlinerSurfaceProps } from "../../api/studio";
 import { nextArtifactReadOrder } from "../readyArtifactIndex";
 import { appendPage, boundedSignal, coverageMessage, endpointKey, extendPath, groupEdges, readFailure, readRelationships, readVersions, rootRef, versionRoot } from "./model";
-import { overlayNode, useNodeOverlays, usePanelChoiceVersion, type NodeOverlays } from "./overlays";
+import { overlayNode, useNodeOverlays, type NodeOverlays } from "./overlays";
 import "./outliner.css";
 
 type FocusedRoot = { endpoint: RelationshipRoot; summary?: RelationshipNodeSummary; board?: RelationshipNodeSummary };
@@ -140,8 +140,13 @@ function RelationshipRow({ endpoint, summary: recorded, board, path, evidence, n
   const labelId = useId();
   const descriptionId = useId();
   const [expanded, setExpanded] = useState(false);
-  const chosenVersion = usePanelChoiceVersion(props, recorded?.kind === "panel" && recorded.artifact_id ? recorded : null, props.overlays);
-  const summary = recorded && overlayNode(recorded, props.overlays, nodeReadOrder, chosenVersion);
+  const { panels, readShotPlan } = props.overlays;
+  const selection = endpoint.kind === "panel" ? panels?.get(endpointKey(endpoint)) : undefined;
+  const panelBoard = endpoint.kind === "panel" ? endpoint.board : undefined;
+  useLayoutEffect(() => {
+    if (panelBoard && selection?.state === "selected" && selection.choice?.kind === "version") readShotPlan?.(panelBoard);
+  }, [panelBoard, readShotPlan, selection]);
+  const summary = recorded && overlayNode(recorded, props.overlays, nodeReadOrder);
   const childPath = extendPath(path, endpoint);
   const root = endpoint.kind === "version" || endpoint.kind === "shot" ? endpoint : null;
   const canExpand = Boolean(root && childPath);

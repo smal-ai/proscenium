@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
 import { Canvas, useFrame, useThree, type RootState, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Box3, Matrix4, Mesh, OrthographicCamera, PerspectiveCamera, Raycaster, Sphere, Vector2, Vector3, type Camera as ThreeCamera, type Material, type Object3D, type Scene, type WebGLRenderer } from "three";
@@ -154,21 +154,22 @@ function CameraObserver({onCamera}: {onCamera: (camera: Camera) => void}) {
 
 function Model({
   url,
+  sourceScene,
   mapping,
   pinMode,
   onSelect,
   onSceneReady,
 }: {
   url: string;
+  sourceScene: Object3D;
   mapping: ProxyMapping;
   pinMode: boolean;
   onSelect: (selection: ObjectSelection[]) => void;
   onSceneReady: (value: {scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null) => void;
 }) {
-  const gltf = useGLTF(url);
   const invalidate = useThree(state => state.invalidate);
   const {scene, materials} = useMemo(() => {
-    const scene = gltf.scene.clone(true);
+    const scene = sourceScene.clone(true);
     const materials = new Map<Material, Material>();
     const clone = (source: Material) => {
       const existing = materials.get(source);
@@ -183,7 +184,7 @@ function Model({
       }
     });
     return {scene, materials};
-  }, [gltf.scene]);
+  }, [sourceScene]);
   useEffect(() => () => materials.forEach(material => material.dispose()), [materials]);
   const nodes = useMemo(() => indexProxyScene(scene, mapping), [mapping, scene]);
   useLayoutEffect(() => {
@@ -533,6 +534,9 @@ export function ProxyView({
   restoreCameraNonce?: number;
   frameNonce?: number;
 }) {
+  // Resolve the GLB in the DOM tree so a loader failure reaches Review's media
+  // boundary directly instead of also escaping the separate Canvas renderer.
+  const gltf = useGLTF(url);
   const [modelState, setModelState] = useState<{scene: Object3D; nodes: ReadonlyMap<Object3D, ProxyNode>} | null>(null);
   const ready = modelState !== null;
   const model = modelState?.scene;
@@ -632,7 +636,7 @@ export function ProxyView({
       <directionalLight position={[5,8,6]} intensity={2}/>
       <directionalLight position={[-6,4,-5]} intensity={1.1} color="#c7d2fe"/>
       <directionalLight position={[0,1.5,7]} intensity={0.75}/>
-      <Suspense fallback={null}><Model url={url} mapping={mapping} pinMode={pinMode} onSelect={onSelect} onSceneReady={setModelState}/></Suspense>
+      <Model url={url} sourceScene={gltf.scene} mapping={mapping} pinMode={pinMode} onSelect={onSelect} onSceneReady={setModelState}/>
       <OrbitControls ref={controls} makeDefault enableDamping={false} onChange={onOrbitChange} onEnd={onOrbitEnd}/>
       <ProxyDepthNavigationController enabled={visible && ready && (Boolean(restoreCamera) || autoFramed)} pinMode={pinMode} model={modelState} sceneRadius={sceneRadius} controls={controls} onCamera={handleCamera}/>
       <RestoreCamera record={restoreCamera} nonce={restoreCameraNonce} controls={controls} onCamera={handleCamera}/><CameraObserver onCamera={observeCamera}/>
