@@ -18,9 +18,11 @@ from dataclasses import replace
 from importlib.metadata import version
 from itertools import chain
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from proscenium.api.errors import DomainError
+from proscenium.catalogue.relationship_backfill import rebuild_relationships
 from proscenium.configuration import Settings
 from proscenium.contracts import validate
 from proscenium.db import Store
@@ -135,17 +137,28 @@ class BackupRegistry(Registry):
         return self.project_source
 
 
-def existing_store(path: Path, project_id: str | None = None, *, read_only=False) -> Store:
+def existing_store(
+    path: Path,
+    project_id: str | None = None,
+    *,
+    read_only=False,
+    expected_revision: int | None = None,
+) -> Store:
     safe_file(path.parent, path.name)
-    source = BackupSource(path, project_id) if read_only else None
-    with closing(
-        source.connect() if source else sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
-    ) as db:
-        revision = db.execute("PRAGMA user_version").fetchone()[0]
-        if revision != len(MIGRATIONS) or db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
-            raise RecoveryError("unsupported_or_corrupt_database")
-    # Exact current revision, so F00 does not migrate the source.
-    return source if source else Store(path, project_id)
+    source = BackupSource(path, project_id)
+    try:
+        with closing(source.connect()) as db:
+            revision = db.execute("PRAGMA user_version").fetchone()[0]
+            if (
+                not 1 <= revision <= len(MIGRATIONS)
+                or db.execute("PRAGMA quick_check").fetchone()[0] != "ok"
+            ):
+                raise RecoveryError("unsupported_or_corrupt_database")
+            if expected_revision is not None and revision != expected_revision:
+                raise RecoveryError("backup_database_revision_mismatch")
+    except sqlite3.DatabaseError as exc:
+        raise RecoveryError("unsupported_or_corrupt_database") from exc
+    return source if read_only else Store(path, project_id)
 
 
 def private_modes(root: Path) -> None:
@@ -362,6 +375,7 @@ def backup(settings: Settings, project_id: str, target: Path, *, allow_incomplet
             # other projects in a recoverable registry. Keep only the selected binding
             # and its authoritative non-secret preferences/profile definitions.
             with closing(sqlite3.connect(target / "machine/registry.sqlite3")) as db:
+                registry_revision = db.execute("PRAGMA user_version").fetchone()[0]
                 db.execute(
                     "DELETE FROM records WHERE NOT ((namespace='projects' AND id=?) OR "
                     "(namespace='private' AND id IN (?, 'configuration.profiles')))",
@@ -379,6 +393,7 @@ def backup(settings: Settings, project_id: str, target: Path, *, allow_incomplet
                 db.execute("VACUUM")
                 db.execute("PRAGMA journal_mode=DELETE")
             with closing(sqlite3.connect(target / "project/.proscenium/state.sqlite3")) as db:
+                project_revision = db.execute("PRAGMA user_version").fetchone()[0]
                 db.execute("DELETE FROM records WHERE namespace LIKE 'auth.%'")
                 db.commit()
                 db.execute("VACUUM")
@@ -432,7 +447,7 @@ def backup(settings: Settings, project_id: str, target: Path, *, allow_incomplet
                 "native_session_ids": ids,
                 "native_directories": sorted(native_directories),
                 "source": source_manifest,
-                "database_revisions": {"registry": len(MIGRATIONS), "project": len(MIGRATIONS)},
+                "database_revisions": {"registry": registry_revision, "project": project_revision},
                 "versions": {
                     "sdk": sdk_version,
                     "cli_locked": locked["released_cli"]["version"],
@@ -535,6 +550,19 @@ def verify(bundle: Path) -> dict:
     for path in chain([bundle], bundle.rglob("*")):
         if path.stat().st_mode & 0o077:
             raise RecoveryError("private_backup_permissions_required")
+    revisions = manifest.get("database_revisions")
+    if not isinstance(revisions, dict) or any(
+        type(revisions.get(key)) is not int for key in ("registry", "project")
+    ):
+        raise RecoveryError("backup_database_revision_mismatch")
+    existing_store(
+        bundle / "machine/registry.sqlite3", read_only=True, expected_revision=revisions["registry"]
+    )
+    existing_store(
+        bundle / "project/.proscenium/state.sqlite3",
+        read_only=True,
+        expected_revision=revisions["project"],
+    )
     return manifest
 
 
@@ -594,8 +622,9 @@ def restore(bundle: Path, target: Path, *, rebind: bool, allow_incomplete=False)
     machine = target / "machine"
     machine.mkdir(exist_ok=True, mode=0o700)
     copy_file(bundle / "machine/registry.sqlite3", machine / "registry.sqlite3")
-    registry = Registry(existing_store(machine / "registry.sqlite3"))
     project_id = manifest["project"]["project_id"]
+    registry = Registry(Store(machine / "registry.sqlite3"))
+    Store(root / ".proscenium/state.sqlite3", project_id)
     record = registry.get(project_id)
     if record != manifest["project"]:
         raise RecoveryError("project_manifest_identity_mismatch")
@@ -621,6 +650,7 @@ def restore(bundle: Path, target: Path, *, rebind: bool, allow_incomplete=False)
             schema="ProjectRecord",
         )
         tx.put("registry", "active", {"project_id": project_id})
+    rebuild_relationships(SimpleNamespace(registry=registry), project_id)
     # Gate lives in memory and is closed on every Services.create. No callbacks,
     # session creation, epoch rewriting, pending-work continuation or job pumping.
     report = {

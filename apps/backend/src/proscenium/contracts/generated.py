@@ -297,6 +297,45 @@ class QueueRequest(ContractModel):
 class RecordPage(ContractModel):
     definition = "RecordPage"
 
+class RelationshipArtifactEndpoint(ContractModel):
+    definition = "RelationshipArtifactEndpoint"
+
+class RelationshipCoverage(ContractModel):
+    definition = "RelationshipCoverage"
+
+class RelationshipDirection(ContractModel):
+    definition = "RelationshipDirection"
+
+class RelationshipEdge(ContractModel):
+    definition = "RelationshipEdge"
+
+class RelationshipEndpoint(ContractModel):
+    definition = "RelationshipEndpoint"
+
+class RelationshipNodeSummary(ContractModel):
+    definition = "RelationshipNodeSummary"
+
+class RelationshipPage(ContractModel):
+    definition = "RelationshipPage"
+
+class RelationshipPanelEndpoint(ContractModel):
+    definition = "RelationshipPanelEndpoint"
+
+class RelationshipRelation(ContractModel):
+    definition = "RelationshipRelation"
+
+class RelationshipRoot(ContractModel):
+    definition = "RelationshipRoot"
+
+class RelationshipSequenceInput(ContractModel):
+    definition = "RelationshipSequenceInput"
+
+class RelationshipShotEndpoint(ContractModel):
+    definition = "RelationshipShotEndpoint"
+
+class RelationshipVersionEndpoint(ContractModel):
+    definition = "RelationshipVersionEndpoint"
+
 class RelativePath(ContractModel):
     definition = "RelativePath"
 

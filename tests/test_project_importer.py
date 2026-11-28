@@ -13,6 +13,8 @@ from PIL import Image
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue import install as catalogue_install
+from proscenium.catalogue.relationship_backfill import rebuild_relationships
+from proscenium.catalogue.relationship_read import read_relationships
 from proscenium.configuration import Settings
 from proscenium.previews import install as previews_install
 from proscenium.previews.assembly import execute
@@ -430,6 +432,56 @@ def test_import_split_replay_reassembly_rebind_and_recovery(film):
         assert catalogue.version(P, "walk-v1")["derived_from"] == [pin("portrait")]
         shot_plan = catalogue.shot_plan(P, "story-v1")
         assert len(shot_plan["shots"]) == 8 and shot_plan["shots"][0]["frames"][0]["owner_selected"]
+        shot = read_relationships(services, P, "story-v1", shot_id=shot_plan["shots"][0]["shot_id"])
+        assert any(
+            node["kind"] == "panel" and node["owner_selected"] and node["artifact_state"] == "ready"
+            for node in shot["nodes"]
+        )
+        sequence = read_relationships(services, P, "cut-v1")
+        assert len(sequence["items"]) == 8
+        assert all(
+            edge["relation"] == "sequence_input" and edge["details"]["role"] == "entry"
+            for edge in sequence["items"]
+        )
+        rebuild_relationships(services, P)
+        assert read_relationships(services, P, "cut-v1") == sequence
+        assert (
+            read_relationships(services, P, "story-v1", shot_id=shot_plan["shots"][0]["shot_id"])
+            == shot
+        )
+        selected_panel = next(node for node in shot["nodes"] if node.get("owner_selected"))
+        artifact_id = selected_panel["artifact_id"]
+        store = services.registry.project_store(P)
+        with store.transaction() as tx:
+            artifact = tx.require("artifacts", artifact_id)
+            tx.put(
+                "artifacts",
+                artifact_id,
+                dict(artifact, state="unavailable"),
+                expected_revision=tx.revision("artifacts", artifact_id),
+            )
+        try:
+            rebuild_relationships(services, P)
+            unavailable = read_relationships(
+                services, P, "story-v1", shot_id=shot_plan["shots"][0]["shot_id"]
+            )
+            assert unavailable["coverage"] == shot["coverage"]
+            assert unavailable["relationship_revision"] == shot["relationship_revision"]
+            assert unavailable["items"] == shot["items"]
+            assert (
+                next(node for node in unavailable["nodes"] if node.get("owner_selected"))[
+                    "artifact_state"
+                ]
+                == "unavailable"
+            )
+        finally:
+            with store.transaction() as tx:
+                tx.put(
+                    "artifacts",
+                    artifact_id,
+                    artifact,
+                    expected_revision=tx.revision("artifacts", artifact_id),
+                )
         request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(services=services)))
         for job, first, last in [("render-1", 1, 336), ("render-2", 337, 768)]:
             ready = previews.availability(P, job)

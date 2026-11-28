@@ -8,6 +8,10 @@ from functools import partial
 from typing import Any
 
 from proscenium.api.errors import DomainError
+from proscenium.catalogue.relationship_backfill import (
+    backfill_relationships,
+    has_pending_relationships,
+)
 from proscenium.db.outbox import has_unsettled_outbox, settled_uncertain_vlm_review
 from proscenium.services import Services
 
@@ -27,6 +31,8 @@ class FeatureLifecycle:
         self.errors: dict[str, str] = {}
         self._ticks: list[asyncio.Event] = []
         self._project_id: str | None = None
+        self._relationship_pending = False
+        self._relationship_tick = asyncio.Event()
 
     async def start(self) -> None:
         runtime = self.services.extensions.get("copilot")
@@ -43,6 +49,16 @@ class FeatureLifecycle:
         self.services.extensions["lifecycle"] = self
         workflows = self.services.extension("workflows")
         self._watch("workflow-receipts", workflows.reconcile)
+        self.tasks.append(
+            asyncio.create_task(
+                self._run(
+                    "relationships",
+                    partial(self._run_sync, partial(backfill_relationships, self.services), False),
+                    self._relationship_tick,
+                ),
+                name="proscenium-relationships",
+            )
+        )
         self.tasks.append(
             asyncio.create_task(self._coordinate(), name="proscenium-feature-coordinator")
         )
@@ -84,6 +100,7 @@ class FeatureLifecycle:
 
     def _activity(self) -> tuple[str | None, bool]:
         registry = self.services.registry
+        self._relationship_pending = False
         with registry.store.transaction(write=False) as tx:
             state = tx.get("registry", "active", required=False)
             if state is None:
@@ -96,6 +113,7 @@ class FeatureLifecycle:
             ).fetchone()[0]
         store = registry.project_store(project_id)
         with store.transaction(write=False) as tx:
+            self._relationship_pending = has_pending_relationships(tx)
             # Held Copilot sends are not jobs to dispatch. Uncertain intents
             # use the same settlement predicates as project switches.
             pending = tx.connection.execute(
@@ -145,11 +163,13 @@ class FeatureLifecycle:
                     for tick in self._ticks:
                         tick.set()
                 self._project_id = project_id
+                if project_id and self._relationship_pending:
+                    self._relationship_tick.set()
                 was_active = active
                 if self.stop.is_set():
                     break
                 with suppress(TimeoutError):
-                    if active:
+                    if active or (project_id and self._relationship_pending):
                         # Coalesce commit bursts during active work to preserve cadence.
                         await asyncio.wait_for(self.stop.wait(), self.interval)
                     else:
@@ -172,6 +192,7 @@ class FeatureLifecycle:
         self.services.lifecycle_signal.notify()
         for tick in self._ticks:
             tick.set()
+        self._relationship_tick.set()
         runtime = self.services.extensions.get("copilot")
         try:
             # Fence and reap only the owned Copilot runtime, never detached workers.

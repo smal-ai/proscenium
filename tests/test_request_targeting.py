@@ -765,7 +765,7 @@ def test_admission_rechecks_exact_resolved_records(runtime, namespace):
     [
         ("digest", "hash_mismatch"),
         ("missing_entry", "dependency_missing"),
-        ("duplicate", "dependency_collision"),
+        ("conflicting_destination", "dependency_collision"),
         ("prefix_collision", "dependency_collision"),
         ("secret", "scope_denied"),
         ("symlink", "scope_denied"),
@@ -784,10 +784,13 @@ def test_closure_verification_rejects_unsafe_sources(runtime, problem, code):
         closure["digest"] = "f" * 64
     elif problem == "missing_entry":
         closure["entry_path"] = "absent.json"
-    elif problem in {"duplicate", "prefix_collision"}:
+    elif problem in {"conflicting_destination", "prefix_collision"}:
         row = copy.deepcopy(closure["files"][0])
         if problem == "prefix_collision":
             row["destination"] += "/nested.json"
+        else:
+            other = add_version(runtime, version_id="version-other", document={"other": True})
+            row["origin"] = other["source"]["files"][0]["origin"]
         closure["files"].append(row)
     elif problem == "secret":
         closure["entry_path"] = closure["files"][0]["destination"] = ".env"
@@ -814,6 +817,15 @@ def test_closure_verification_rejects_unsafe_sources(runtime, problem, code):
     if problem != "digest":
         closure["digest"] = closure_digest(closure)
     assert_error(code, lambda: read_closure_files(services, PROJECT, closure))
+    assert not (root / ".proscenium/snapshots").exists()
+
+
+def test_closure_verification_accepts_identical_retained_destinations(runtime):
+    services, _, root, _ = runtime
+    closure = copy.deepcopy(add_version(runtime)["source"])
+    closure["files"].append(copy.deepcopy(closure["files"][0]))
+    closure["digest"] = closure_digest(closure)
+    assert read_closure_files(services, PROJECT, closure) == {"source.json": b"{}"}
     assert not (root / ".proscenium/snapshots").exists()
 
 

@@ -521,6 +521,63 @@
       "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "item_id": {"$ref": "#/$defs/Id"}, "version_id": {"$ref": "#/$defs/Id"}, "kind": {"enum": ["asset", "scene", "storyboard", "sequence", "unity_result"]}, "name": {"type": "string", "minLength": 1}, "description": {"type": "string"}, "tags": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}, "provenance": {"$ref": "#/$defs/Provenance"}, "unity": {"$ref": "#/$defs/UnityResult"}, "derived_from": {"type": "array", "items": {"$ref": "#/$defs/VersionRef"}}, "publication_id": {"$ref": "#/$defs/Id"}, "source_commit": {"$ref": "#/$defs/Commit"}, "source": {"$ref": "#/$defs/SourceClosure"}, "artifact_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "preview_requests": {"type": "array", "items": {"$ref": "#/$defs/RenderSpec"}}, "preview_job_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "created_at": {"$ref": "#/$defs/Timestamp"}, "actor": {"$ref": "#/$defs/Actor"}},
       "allOf": [{"if": {"properties": {"kind": {"const": "unity_result"}}}, "then": {"required": ["unity"]}}]
     },
+    "RelationshipDirection": {"enum": ["uses", "used_by"]},
+    "RelationshipRelation": {"enum": ["contains_shot", "contains_panel", "board_reference", "bound_scene", "declared_dependency", "derived_from", "sequence_input"]},
+    "RelationshipVersionEndpoint": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "ref"],
+      "properties": {"kind": {"const": "version"}, "ref": {"$ref": "#/$defs/VersionRef"}}
+    },
+    "RelationshipShotEndpoint": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "board", "shot_id"],
+      "properties": {"kind": {"const": "shot"}, "board": {"$ref": "#/$defs/VersionRef"}, "shot_id": {"$ref": "#/$defs/Id"}}
+    },
+    "RelationshipPanelEndpoint": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "board", "shot_id", "frame_id"],
+      "properties": {"kind": {"const": "panel"}, "board": {"$ref": "#/$defs/VersionRef"}, "shot_id": {"$ref": "#/$defs/Id"}, "frame_id": {"$ref": "#/$defs/Id"}}
+    },
+    "RelationshipArtifactEndpoint": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "artifact_id"],
+      "properties": {"kind": {"const": "artifact"}, "artifact_id": {"$ref": "#/$defs/Id"}}
+    },
+    "RelationshipEndpoint": {
+      "oneOf": [{"$ref": "#/$defs/RelationshipVersionEndpoint"}, {"$ref": "#/$defs/RelationshipShotEndpoint"}, {"$ref": "#/$defs/RelationshipPanelEndpoint"}, {"$ref": "#/$defs/RelationshipArtifactEndpoint"}]
+    },
+    "RelationshipRoot": {
+      "oneOf": [{"$ref": "#/$defs/RelationshipVersionEndpoint"}, {"$ref": "#/$defs/RelationshipShotEndpoint"}]
+    },
+    "RelationshipSequenceInput": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["role", "entry_id", "job_id", "shot_id", "source_frames", "sequence_frames"], "properties": {"role": {"const": "entry"}, "entry_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/Id"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "sequence_frames": {"$ref": "#/$defs/FrameRange"}}},
+        {"type": "object", "additionalProperties": false, "required": ["role", "entry_id", "shot_id", "source_frames", "sequence_frames"], "properties": {"role": {"const": "contributor"}, "entry_id": {"$ref": "#/$defs/Id"}, "job_id": {"$ref": "#/$defs/NullableId"}, "shot_id": {"$ref": "#/$defs/NullableId"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "sequence_frames": {"$ref": "#/$defs/FrameRange"}}},
+        {"type": "object", "additionalProperties": false, "required": ["role", "entry_id", "source_frames", "sequence_frames"], "properties": {"role": {"const": "clip"}, "entry_id": {"$ref": "#/$defs/Id"}, "source_frames": {"$ref": "#/$defs/FrameRange"}, "sequence_frames": {"$ref": "#/$defs/FrameRange"}}},
+        {"type": "object", "additionalProperties": false, "required": ["role", "track_id", "start_seconds"], "properties": {"role": {"const": "audio"}, "track_id": {"$ref": "#/$defs/Id"}, "start_seconds": {"type": "number", "minimum": 0}}}
+      ]
+    },
+    "RelationshipEdge": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "contains_shot"}, "from": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "to": {"$ref": "#/$defs/RelationshipShotEndpoint"}, "details": {"type": "object", "additionalProperties": false, "required": ["ordinal"], "properties": {"ordinal": {"type": "integer", "minimum": 0}}}}},
+        {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "contains_panel"}, "from": {"$ref": "#/$defs/RelationshipShotEndpoint"}, "to": {"$ref": "#/$defs/RelationshipPanelEndpoint"}, "details": {"type": "object", "additionalProperties": false, "required": ["ordinal", "role", "composition", "state", "artifact_id"], "properties": {"ordinal": {"type": "integer", "minimum": 0}, "role": {"enum": ["start", "intermediate", "end"]}, "composition": {"type": "string"}, "state": {"enum": ["missing", "proposed", "available", "selected"]}, "artifact_id": {"$ref": "#/$defs/NullableId"}}}}},
+        {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"enum": ["board_reference", "declared_dependency", "derived_from"]}, "from": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "to": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "details": {"type": "object", "additionalProperties": false}}},
+        {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "bound_scene"}, "from": {"$ref": "#/$defs/RelationshipShotEndpoint"}, "to": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "details": {"type": "object", "additionalProperties": false, "required": ["source_range", "fps"], "properties": {"source_range": {"anyOf": [{"$ref": "#/$defs/FrameRange"}, {"type": "null"}]}, "fps": {"anyOf": [{"$ref": "#/$defs/Fps"}, {"type": "null"}]}}}}},
+        {"type": "object", "additionalProperties": false, "required": ["relation", "from", "to", "details"], "properties": {"relation": {"const": "sequence_input"}, "from": {"$ref": "#/$defs/RelationshipVersionEndpoint"}, "to": {"oneOf": [{"$ref": "#/$defs/RelationshipVersionEndpoint"}, {"$ref": "#/$defs/RelationshipArtifactEndpoint"}]}, "details": {"$ref": "#/$defs/RelationshipSequenceInput"}}, "allOf": [{"if": {"properties": {"to": {"properties": {"kind": {"const": "version"}}}}}, "then": {"properties": {"details": {"properties": {"role": {"enum": ["entry", "contributor"]}}}}}, "else": {"properties": {"details": {"properties": {"role": {"enum": ["clip", "audio"]}}}}}}]}
+      ]
+    },
+    "RelationshipNodeSummary": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "ref", "label", "item_kind", "is_current", "is_selected"], "properties": {"kind": {"const": "version"}, "ref": {"$ref": "#/$defs/VersionRef"}, "label": {"type": "string"}, "item_kind": {"enum": ["asset", "scene", "storyboard", "sequence", "unity_result"]}, "is_current": {"type": "boolean"}, "is_selected": {"type": "boolean"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "board", "shot_id", "label", "intent", "binding_status"], "properties": {"kind": {"const": "shot"}, "board": {"$ref": "#/$defs/VersionRef"}, "shot_id": {"$ref": "#/$defs/Id"}, "label": {"type": "string"}, "intent": {"type": "string"}, "binding_status": {"enum": ["bound", "unbound", "unknown"]}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "board", "shot_id", "frame_id", "label", "role", "authored_state", "artifact_id", "artifact_state", "owner_selected"], "properties": {"kind": {"const": "panel"}, "board": {"$ref": "#/$defs/VersionRef"}, "shot_id": {"$ref": "#/$defs/Id"}, "frame_id": {"$ref": "#/$defs/Id"}, "label": {"type": "string"}, "role": {"enum": ["start", "intermediate", "end"]}, "authored_state": {"enum": ["missing", "proposed", "available", "selected"]}, "artifact_id": {"$ref": "#/$defs/NullableId"}, "artifact_state": {"enum": ["ready", "unavailable", "corrupt", "missing"]}, "owner_selected": {"type": "boolean"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "artifact_id", "label", "artifact_kind", "purpose", "state"], "properties": {"kind": {"const": "artifact"}, "artifact_id": {"$ref": "#/$defs/Id"}, "label": {"type": "string"}, "artifact_kind": {"enum": ["image", "mask", "proxy", "proxy_map", "video", "frame_map", "document", "source_blob", "log", "audio", null]}, "purpose": {"enum": ["reference", "concept", "keyframe", "draft_motion", "final", "inspection", "metadata", "mask", "log", null]}, "state": {"enum": ["ready", "unavailable", "corrupt", "missing"]}}}
+      ]
+    },
+    "RelationshipCoverage": {
+      "type": "object", "additionalProperties": false, "required": ["state", "reasons"],
+      "properties": {"state": {"enum": ["complete", "partial"]}, "reasons": {"type": "array", "uniqueItems": true, "items": {"enum": ["indexing", "source_unavailable", "invalid_historical_record"]}}}
+    },
+    "RelationshipPage": {
+      "type": "object", "additionalProperties": false, "required": ["schema_version", "project_id", "root", "direction", "relationship_revision", "coverage", "items", "nodes", "next_cursor"],
+      "properties": {"schema_version": {"const": "1.0"}, "project_id": {"$ref": "#/$defs/Id"}, "root": {"$ref": "#/$defs/RelationshipRoot"}, "direction": {"$ref": "#/$defs/RelationshipDirection"}, "relationship_revision": {"$ref": "#/$defs/Revision"}, "coverage": {"$ref": "#/$defs/RelationshipCoverage"}, "items": {"type": "array", "items": {"$ref": "#/$defs/RelationshipEdge"}}, "nodes": {"type": "array", "items": {"$ref": "#/$defs/RelationshipNodeSummary"}}, "next_cursor": {"type": ["string", "null"]}}
+    },
     "WorkRecord": {
       "type": "object", "additionalProperties": false, "required": ["schema_version", "work_id", "project_id", "originating_request_id", "directive_request_ids", "state", "state_revision", "native_session_id", "job_ids", "generation_task_id"],
       "properties": {"schema_version": {"const": "1.0"}, "work_id": {"$ref": "#/$defs/Id"}, "project_id": {"$ref": "#/$defs/Id"}, "originating_request_id": {"$ref": "#/$defs/Id"}, "directive_request_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "state": {"enum": ["pending", "running", "awaiting_user", "completed", "failed", "stop_requested", "stopped", "outcome_uncertain", "awaiting_resume"]}, "state_revision": {"$ref": "#/$defs/Revision"}, "native_session_id": {"type": "string"}, "job_ids": {"type": "array", "items": {"$ref": "#/$defs/Id"}}, "generation_task_id": {"$ref": "#/$defs/Id"}}

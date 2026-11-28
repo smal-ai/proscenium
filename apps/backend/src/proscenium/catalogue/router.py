@@ -2,7 +2,7 @@ import json
 import re
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import JSONResponse
 
 from proscenium.api.dependencies import command, owner, tool
@@ -10,6 +10,7 @@ from proscenium.api.entity_tags import if_none_match
 from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.artifacts import Artifacts
+from proscenium.catalogue.relationship_read import read_relationships
 from proscenium.catalogue.service import Catalogue
 from proscenium.services import get_services
 
@@ -17,6 +18,12 @@ router = APIRouter()
 Owner = Annotated[Caller, Depends(owner)]
 Tool = Annotated[Caller, Depends(tool)]
 BASE = "/api/v1/projects/{project_id}"
+
+
+def relationship_owner(request: Request) -> Caller:
+    if request.headers.get("Authorization", "").lower().startswith("bearer "):
+        raise DomainError("scope_denied", 403)
+    return get_services(request).auth.owner(request, refresh=False)
 
 
 @router.get(BASE + "/artifacts", operation_id="listRetainedArtifacts")
@@ -109,6 +116,28 @@ def versions(
 def shot_plan(request: Request, project_id: str, version_id: str, caller: Owner) -> dict:
     catalogue: Catalogue = get_services(request).extension("catalogue")
     return catalogue.shot_plan(project_id, version_id)
+
+
+@router.get(BASE + "/versions/{version_id}/relationships", operation_id="getVersionRelationships")
+def version_relationships(
+    request: Request,
+    project_id: str,
+    version_id: str,
+    caller: Annotated[Caller, Depends(relationship_owner)],
+    direction: str = "uses",
+    shot_id: str | None = None,
+    cursor: str | None = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+) -> dict:
+    return read_relationships(
+        get_services(request),
+        project_id,
+        version_id,
+        direction=direction,
+        shot_id=shot_id,
+        cursor=cursor,
+        limit=limit,
+    )
 
 
 @router.get(BASE + "/versions/{version_id}/sequence-map", operation_id="getVersionSequenceMap")

@@ -344,6 +344,143 @@ export type PublishedItem = {
   provenance?: Provenance;
   unity?: UnityResult;
 };
+export type RelationshipDirection = "uses" | "used_by";
+export type RelationshipEdge =
+  | {
+      relation: "contains_shot";
+      from: RelationshipVersionEndpoint;
+      to: RelationshipShotEndpoint;
+      details: {
+        ordinal: number;
+      };
+    }
+  | {
+      relation: "contains_panel";
+      from: RelationshipShotEndpoint;
+      to: RelationshipPanelEndpoint;
+      details: {
+        ordinal: number;
+        role: "start" | "intermediate" | "end";
+        composition: string;
+        state: "missing" | "proposed" | "available" | "selected";
+        artifact_id: NullableId;
+      };
+    }
+  | {
+      relation: "board_reference" | "declared_dependency" | "derived_from";
+      from: RelationshipVersionEndpoint;
+      to: RelationshipVersionEndpoint;
+      details: {};
+    }
+  | {
+      relation: "bound_scene";
+      from: RelationshipShotEndpoint;
+      to: RelationshipVersionEndpoint;
+      details: {
+        source_range: FrameRange | null;
+        fps: Fps | null;
+      };
+    }
+  | {
+      [k: string]: unknown;
+    };
+export type RelationshipEndpoint =
+  RelationshipVersionEndpoint | RelationshipShotEndpoint | RelationshipPanelEndpoint | RelationshipArtifactEndpoint;
+export type RelationshipNodeSummary =
+  | {
+      kind: "version";
+      ref: VersionRef;
+      label: string;
+      item_kind: "asset" | "scene" | "storyboard" | "sequence" | "unity_result";
+      is_current: boolean;
+      is_selected: boolean;
+    }
+  | {
+      kind: "shot";
+      board: VersionRef;
+      shot_id: Id;
+      label: string;
+      intent: string;
+      binding_status: "bound" | "unbound" | "unknown";
+    }
+  | {
+      kind: "panel";
+      board: VersionRef;
+      shot_id: Id;
+      frame_id: Id;
+      label: string;
+      role: "start" | "intermediate" | "end";
+      authored_state: "missing" | "proposed" | "available" | "selected";
+      artifact_id: NullableId;
+      artifact_state: "ready" | "unavailable" | "corrupt" | "missing";
+      owner_selected: boolean;
+    }
+  | {
+      kind: "artifact";
+      artifact_id: Id;
+      label: string;
+      artifact_kind:
+        | "image"
+        | "mask"
+        | "proxy"
+        | "proxy_map"
+        | "video"
+        | "frame_map"
+        | "document"
+        | "source_blob"
+        | "log"
+        | "audio"
+        | null;
+      purpose:
+        | "reference"
+        | "concept"
+        | "keyframe"
+        | "draft_motion"
+        | "final"
+        | "inspection"
+        | "metadata"
+        | "mask"
+        | "log"
+        | null;
+      state: "ready" | "unavailable" | "corrupt" | "missing";
+    };
+export type RelationshipRoot = RelationshipVersionEndpoint | RelationshipShotEndpoint;
+export type RelationshipRelation =
+  | "contains_shot"
+  | "contains_panel"
+  | "board_reference"
+  | "bound_scene"
+  | "declared_dependency"
+  | "derived_from"
+  | "sequence_input";
+export type RelationshipSequenceInput =
+  | {
+      role: "entry";
+      entry_id: Id;
+      job_id: Id;
+      shot_id: NullableId;
+      source_frames: FrameRange;
+      sequence_frames: FrameRange;
+    }
+  | {
+      role: "contributor";
+      entry_id: Id;
+      job_id?: NullableId;
+      shot_id: NullableId;
+      source_frames: FrameRange;
+      sequence_frames: FrameRange;
+    }
+  | {
+      role: "clip";
+      entry_id: Id;
+      source_frames: FrameRange;
+      sequence_frames: FrameRange;
+    }
+  | {
+      role: "audio";
+      track_id: Id;
+      start_seconds: number;
+    };
 export type RequestPage = RecordPage & {
   items?: RequestRecord[];
 };
@@ -583,6 +720,19 @@ export interface ContractDefinitions {
   PublishedItem: PublishedItem;
   QueueRequest: QueueRequest;
   RecordPage: RecordPage;
+  RelationshipArtifactEndpoint: RelationshipArtifactEndpoint;
+  RelationshipCoverage: RelationshipCoverage;
+  RelationshipDirection: RelationshipDirection;
+  RelationshipEdge: RelationshipEdge;
+  RelationshipEndpoint: RelationshipEndpoint;
+  RelationshipNodeSummary: RelationshipNodeSummary;
+  RelationshipPage: RelationshipPage;
+  RelationshipPanelEndpoint: RelationshipPanelEndpoint;
+  RelationshipRelation: RelationshipRelation;
+  RelationshipRoot: RelationshipRoot;
+  RelationshipSequenceInput: RelationshipSequenceInput;
+  RelationshipShotEndpoint: RelationshipShotEndpoint;
+  RelationshipVersionEndpoint: RelationshipVersionEndpoint;
   RelativePath: RelativePath;
   RenderSpec: RenderSpec;
   RequestPage: RequestPage;
@@ -1596,6 +1746,40 @@ export interface UnityResult {
     status: "passed" | "failed" | "not_run";
     notes?: string;
   };
+}
+export interface RelationshipArtifactEndpoint {
+  kind: "artifact";
+  artifact_id: Id;
+}
+export interface RelationshipCoverage {
+  state: "complete" | "partial";
+  reasons: ("indexing" | "source_unavailable" | "invalid_historical_record")[];
+}
+export interface RelationshipVersionEndpoint {
+  kind: "version";
+  ref: VersionRef;
+}
+export interface RelationshipShotEndpoint {
+  kind: "shot";
+  board: VersionRef;
+  shot_id: Id;
+}
+export interface RelationshipPanelEndpoint {
+  kind: "panel";
+  board: VersionRef;
+  shot_id: Id;
+  frame_id: Id;
+}
+export interface RelationshipPage {
+  schema_version: "1.0";
+  project_id: Id;
+  root: RelationshipRoot;
+  direction: RelationshipDirection;
+  relationship_revision: Revision;
+  coverage: RelationshipCoverage;
+  items: RelationshipEdge[];
+  nodes: RelationshipNodeSummary[];
+  next_cursor: string | null;
 }
 export interface ResumeCommand {
   schema_version: "1.0";

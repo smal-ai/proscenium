@@ -22,6 +22,7 @@ export interface Operations {
   updateProjectSettings: { body: C.ProjectSettings; response: C.CommandReceipt; path: { project_id: string }; query: Record<string, never> };
   listItems: { body: never; response: C.ItemPage; path: { project_id: string }; query: { cursor?: string; limit?: number; kind?: "asset" | "scene" | "storyboard" | "sequence" | "unity_result" } };
   listItemVersions: { body: never; response: C.VersionPage; path: { project_id: string; item_id: string }; query: { cursor?: string; limit?: number } };
+  getVersionRelationships: { body: never; response: C.RelationshipPage; path: { project_id: string; version_id: string }; query: { direction?: "uses" | "used_by"; shot_id?: string; cursor?: string; limit?: number } };
   getVersionShotPlan: { body: never; response: C.ShotPlan; path: { project_id: string; version_id: string }; query: Record<string, never> };
   getVersionSequenceMap: { body: never; response: C.SequenceMap; path: { project_id: string; version_id: string }; query: Record<string, never> };
   getVersionProxyMapping: { body: never; response: C.ProxyMapping; path: { project_id: string; version_id: string }; query: { mapping_artifact_id?: string } };
@@ -86,6 +87,7 @@ export const routes = {
   updateProjectSettings: { method: "PUT", path: "/api/v1/projects/{project_id}/settings", binary: false },
   listItems: { method: "GET", path: "/api/v1/projects/{project_id}/items", binary: false },
   listItemVersions: { method: "GET", path: "/api/v1/projects/{project_id}/items/{item_id}/versions", binary: false },
+  getVersionRelationships: { method: "GET", path: "/api/v1/projects/{project_id}/versions/{version_id}/relationships", binary: false },
   getVersionShotPlan: { method: "GET", path: "/api/v1/projects/{project_id}/versions/{version_id}/shot-plan", binary: false },
   getVersionSequenceMap: { method: "GET", path: "/api/v1/projects/{project_id}/versions/{version_id}/sequence-map", binary: false },
   getVersionProxyMapping: { method: "GET", path: "/api/v1/projects/{project_id}/versions/{version_id}/proxy-mapping", binary: false },

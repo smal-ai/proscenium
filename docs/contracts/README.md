@@ -93,6 +93,21 @@ same-ID capture receipts. Consumers must accept historical records without them.
   The latter resolves a completed checkpoint with a closure and matching `source_commit`
   in the same project. Use it in `publication_submit` validation and `publish_outputs`
   to avoid resending large closures. Stored `VersionRecord.source` remains mandatory.
+- `getVersionRelationships` returns a `RelationshipPage` at
+  `GET /api/v1/projects/{project_id}/versions/{version_id}/relationships` for the
+  owner of the active project. Read exact pinned versions or expand one shot in
+  its storyboard version with `shot_id`. `direction=uses` (default) or `used_by`
+  returns one hop of indexed evidence, with the same edge orientation in both
+  directions. Partial coverage is not evidence that there are no consumers.
+  Cursors bind to the project, root, direction, sort and relationship revision.
+  On `409 relationship_revision_changed`, restart at page one. Current and owner
+  selection badges do not alter immutable relationships or source digests. A
+  missing artefact record has `state: missing` and null kind and purpose.
+  Shot and panel endpoints include their owning board version summary in `nodes`,
+  even on reverse pages. A sequence entry or contributor's nullable `shot_id`
+  is local to the recorded sequence input, not a storyboard pin. This route is
+  strictly read-only: it does not extend sliding owner sessions (`refresh=False`).
+  An expired owner session returns `401`.
 
 JSON HTTP bodies and successful JSON responses reference named normative definitions.
 Query parameters use explicit string/integer schemas, with string enums preserved in

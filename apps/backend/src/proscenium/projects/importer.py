@@ -15,6 +15,10 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue import validation
 from proscenium.catalogue.artifacts import Artifacts
+from proscenium.catalogue.relationship_projector import (
+    apply_version_projection,
+    project_version_relationships,
+)
 from proscenium.catalogue.service import METADATA, Catalogue
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
@@ -881,6 +885,11 @@ class Import:
                     dict(work_id=None, invocation_id=None, owner_operation_id=self.operation),
                 )
         self.catalogue.validate_documents(tx, submission, self.documents, self.maps)
+        for row in self.rows:
+            version = tx.require("versions", row["version_id"])
+            apply_version_projection(
+                tx, project_version_relationships(version, self.documents.get(row["version_id"]))
+            )
         for prepared in self.jobs.values():
             if snapshot := prepared.assembly:
                 local = {

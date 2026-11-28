@@ -117,17 +117,20 @@ class Auth:
             tx.put("auth.capabilities", digest(token), asdict(caller))
         return token
 
-    def owner(self, request: Request) -> Caller:
+    def owner(self, request: Request, *, refresh: bool = True) -> Caller:
         return self._owner(
             request.cookies.get(COOKIE_NAME),
             request.headers.get("X-CSRF-Token", ""),
             request.method not in {"GET", "HEAD", "OPTIONS"},
+            refresh=refresh,
         )
 
     def owner_socket(self, socket: WebSocket) -> Caller:
         return self._owner(socket.cookies.get(COOKIE_NAME), "", False)
 
-    def _owner(self, cookie: str | None, csrf: str, mutation: bool) -> Caller:
+    def _owner(
+        self, cookie: str | None, csrf: str, mutation: bool, *, refresh: bool = True
+    ) -> Caller:
         if not cookie:
             raise DomainError("owner_session_required", 401)
         identity = digest(cookie)
@@ -139,7 +142,7 @@ class Auth:
                 raise DomainError("owner_session_required", 401)
             if mutation and not secrets.compare_digest(csrf, session["csrf_token"]):
                 raise DomainError("permission_denied", 403)
-        if session["expires"] - current_time < refresh_threshold:
+        if refresh and session["expires"] - current_time < refresh_threshold:
             with self.store.transaction() as tx:
                 session = tx.get("auth.sessions", identity, required=False)
                 current_time = time.time()

@@ -3,12 +3,12 @@
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 from uuid import uuid4
 
 from proscenium.api.errors import DomainError
 from proscenium.contracts import canonical, validate
-from proscenium.services import Services
+from proscenium.db.registry import Registry
 from proscenium.sources.common import (
     atomic_bytes,
     fingerprint,
@@ -33,8 +33,13 @@ def closure_digest(closure: dict[str, Any]) -> str:
     return fingerprint(body)
 
 
+class SourceReaderServices(Protocol):
+    @property
+    def registry(self) -> Registry: ...
+
+
 class Resolver:
-    def __init__(self, services: Services):
+    def __init__(self, services: SourceReaderServices):
         self.services = services
 
     def git_bytes(

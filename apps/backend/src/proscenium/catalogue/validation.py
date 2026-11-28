@@ -411,13 +411,44 @@ def version_reference(
     return record
 
 
-def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[str, Any]]) -> None:
+def publication_entry(version: dict[str, Any]) -> None:
+    source = version["source"]
+    entry = next(
+        (f["origin"] for f in source["files"] if f["destination"] == source["entry_path"]), None
+    )
+    if entry is None or (entry["kind"] == "git" and entry["commit"] != version["source_commit"]):
+        raise DomainError(
+            "source_conflict",
+            409,
+            "Source closure must contain its entry_path, pinned to source_commit for a Git entry",
+            safe_for_model=True,
+        )
+
+
+def required_dependencies(version: dict[str, Any], references: list[dict[str, Any]]) -> None:
+    if any(reference not in version["source"]["dependencies"] for reference in references):
+        raise DomainError(
+            "dependency_missing",
+            422,
+            "Authored version references must be pinned in the source closure",
+            safe_for_model=True,
+        )
+
+
+def shot_plan(
+    tx: Transaction,
+    document: dict[str, Any],
+    batch: dict[str, dict[str, Any]],
+    *,
+    historical: bool = False,
+) -> None:
     validate("AuthoredShotPlan", document)
     if document["project_id"] != tx.project_id:
         raise DomainError("scope_denied", 403)
-    for identity in document["brief_artifact_ids"]:
-        if tx.require("artifacts", identity)["state"] != "ready":
-            raise DomainError("media_unavailable", 422)
+    if not historical:
+        for identity in document["brief_artifact_ids"]:
+            if tx.require("artifacts", identity)["state"] != "ready":
+                raise DomainError("media_unavailable", 422)
     for reference in document["asset_dependencies"]:
         version_reference(tx, reference, batch)
     shots = set()
@@ -450,10 +481,10 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
                 )
             frames.add(frame["frame_id"])
             if frame["artifact_id"] is not None:
-                artifact = tx.require("artifacts", frame["artifact_id"])
-                if artifact["kind"] != "image":
+                artifact = tx.get("artifacts", frame["artifact_id"], required=not historical)
+                if artifact is not None and artifact["kind"] != "image":
                     raise DomainError("source_conflict", 409)
-                if artifact["state"] != "ready":
+                if not historical and artifact is not None and artifact["state"] != "ready":
                     raise DomainError("media_unavailable", 422)
             elif frame["state"] in {"available", "selected"}:
                 raise DomainError("media_unavailable", 422)
@@ -526,7 +557,9 @@ def distinct_transition_source(contributor: dict[str, Any]) -> Any:
     )
 
 
-def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: Fraction) -> None:
+def validate_audio_tracks(
+    tx: Transaction, document: dict[str, Any], duration: Fraction, *, historical: bool = False
+) -> None:
     ids = set()
     for track in document.get("audio_tracks", []):
         identity = track["track_id"]
@@ -534,10 +567,10 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
             raise DomainError("invalid_request", 422, DUPLICATE_AUDIO_TRACK, safe_for_model=True)
         ids.add(identity)
         artifact = tx.get("artifacts", track["artifact_id"], required=False)
-        if (
+        if not (historical and artifact is None) and (
             not artifact
             or artifact["kind"] != "audio"
-            or artifact["state"] != "ready"
+            or (not historical and artifact["state"] != "ready")
             or artifact["project_id"] != tx.project_id
             or artifact["media_type"] not in AUDIO_DEMUXERS
             or not artifact.get("duration_seconds")
@@ -549,20 +582,27 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
         effective = duration - start
         if "duration_seconds" in track:
             effective = min(effective, Fraction(str(track["duration_seconds"])))
-        source = Fraction(str(artifact["duration_seconds"])) - Fraction(
-            str(track.get("trim_start_seconds", 0))
-        )
-        if source <= 0:
-            raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM, safe_for_model=True)
-        effective = min(effective, source)
+        if artifact is not None:
+            source = Fraction(str(artifact["duration_seconds"])) - Fraction(
+                str(track.get("trim_start_seconds", 0))
+            )
+            if source <= 0:
+                raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM, safe_for_model=True)
+            effective = min(effective, source)
         fades = sum(Fraction(str(track.get(k, 0))) for k in ("fade_in_seconds", "fade_out_seconds"))
         if fades > effective:
             raise DomainError("invalid_request", 422, INVALID_AUDIO_FADE, safe_for_model=True)
 
 
 def sequence_map(
-    tx: Transaction, document: dict[str, Any], version_id: str, maps: dict[str, dict[str, Any]]
+    tx: Transaction,
+    document: dict[str, Any],
+    version_id: str,
+    maps: dict[str, dict[str, Any]] | None,
 ) -> None:
+    # Historical reads verify the sealed SequenceMap, not mutable media readiness
+    # or bytes of separate FrameMap artefacts.
+    historical = maps is None
     tracks = document.get("audio_tracks")
     if document.get("silent") is True and isinstance(tracks, list) and tracks:
         raise DomainError("invalid_request", 422, SILENT_AUDIO_TRACKS, safe_for_model=True)
@@ -585,7 +625,7 @@ def sequence_map(
         )
     clip_based = True in kinds
     fps = rational(document["fps"])
-    validate_audio_tracks(tx, document, document["frame_count"] / fps)
+    validate_audio_tracks(tx, document, document["frame_count"] / fps, historical=historical)
     next_frame = 1
     entries = set()
     version_cache: dict[str, dict[str, Any]] = {}
@@ -609,10 +649,10 @@ def sequence_map(
         if clip_based:
             clip = tx.get("artifacts", entry["clip_artifact_id"], required=False)
             dimensions = (clip or {}).get("dimensions")
-            if (
+            if not (historical and clip is None) and (
                 not clip
                 or clip["kind"] != "video"
-                or clip["state"] != "ready"
+                or (not historical and clip["state"] != "ready")
                 or clip["project_id"] != tx.project_id
                 or clip["media_type"] != "video/mp4"
                 or type(clip.get("frame_count")) is not int
@@ -626,7 +666,9 @@ def sequence_map(
                 raise DomainError(
                     "media_unavailable", 422, INVALID_CLIP_ARTEFACT, safe_for_model=True
                 )
-            if source_length != length or entry["source_frames"]["end"] > clip["frame_count"]:
+            if source_length != length or (
+                clip is not None and entry["source_frames"]["end"] > clip["frame_count"]
+            ):
                 raise DomainError(
                     "invalid_frame_mapping",
                     422,
@@ -665,6 +707,8 @@ def sequence_map(
             "Sequence entries must cover frames 1 through frame_count contiguously",
             safe_for_model=True,
         )
+    if maps is None:
+        return
     for identity in {
         entry["mapping_artifact_id"]
         for entry in document["entries"]

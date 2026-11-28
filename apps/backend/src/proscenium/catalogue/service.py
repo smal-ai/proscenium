@@ -20,6 +20,7 @@ from proscenium.sources.common import active, admitted, binding, fingerprint, gi
 
 from . import validation
 from .artifacts import Artifacts
+from .relationship_projector import apply_version_projection, project_version_relationships
 
 METADATA = ("description", "tags", "provenance")
 CHECKPOINT_SOURCE_CONFLICT = "Checkpoint receipt is unavailable or does not match source_commit"
@@ -376,13 +377,7 @@ class Catalogue:
                     "player_script" in row["unity"] and row["unity"]["player_script"] not in paths
                 ):
                     raise DomainError("dependency_missing", 422)
-            if any(reference not in row["source"]["dependencies"] for reference in required_refs):
-                raise DomainError(
-                    "dependency_missing",
-                    422,
-                    "Authored version references must be pinned in the source closure",
-                    safe_for_model=True,
-                )
+            validation.required_dependencies(row, required_refs)
 
     def publish(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         validate("PublicationSubmit", body)
@@ -460,19 +455,7 @@ class Catalogue:
                         self.artifacts.ready_path(project_id, identity)
                 if row["kind"] == "sequence":
                     maps.update(self.frame_maps(project_id, document))
-            entry = [
-                f for f in row["source"]["files"] if f["destination"] == row["source"]["entry_path"]
-            ]
-            if not entry or (
-                entry[0]["origin"]["kind"] == "git"
-                and entry[0]["origin"]["commit"] != row["source_commit"]
-            ):
-                raise DomainError(
-                    "source_conflict",
-                    409,
-                    "Source closure must contain its entry_path, pinned to source_commit for a Git entry",
-                    safe_for_model=True,
-                )
+            validation.publication_entry(row)
             for identity in row["artifact_ids"]:
                 self.artifacts.ready_path(project_id, identity)
         with store.transaction() as tx:
@@ -537,6 +520,9 @@ class Catalogue:
                         actor={"kind": "tool", "id": caller.subject_id},
                     )
                     tx.put("versions", row["version_id"], version, schema="VersionRecord")
+                    apply_version_projection(
+                        tx, project_version_relationships(version, documents.get(row["version_id"]))
+                    )
                     old = tx.get("items", row["item_id"], required=False)
                     revision = tx.revision("items", row["item_id"]) if old else None
                     item = dict(

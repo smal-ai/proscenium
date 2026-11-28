@@ -652,8 +652,11 @@ def test_reused_store_rechecks_in_place_restore(tmp_path, version):
     with reused.transaction(write=False) as tx:
         assert tx.connection.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
     inode = path.stat().st_ino
-    shutil.copyfile(path, replacement)
+    if version != 1:
+        shutil.copyfile(path, replacement)
     with closing(sqlite3.connect(replacement, isolation_level=None)) as connection:
+        if version == 1:
+            connection.executescript(MIGRATIONS[0])
         assert connection.execute("PRAGMA journal_mode=DELETE").fetchone()[0] == "delete"
         connection.execute(f"PRAGMA user_version={version}")
     shutil.copyfile(replacement, path)  # All SQLite handles are closed before the offline copy.
@@ -665,7 +668,7 @@ def test_reused_store_rechecks_in_place_restore(tmp_path, version):
     else:
         with reused.transaction(write=False) as tx:
             assert tx.connection.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
-            assert tx.connection.execute("PRAGMA user_version").fetchone()[0] == version
+            assert tx.connection.execute("PRAGMA user_version").fetchone()[0] == len(MIGRATIONS)
 
 
 def test_concurrent_store_construction_serialises_fresh_migrations(tmp_path):

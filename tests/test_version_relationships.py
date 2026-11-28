@@ -1,0 +1,1281 @@
+"""Published graph contract, writer parity, recovery and page-bounded owner reads."""
+
+import copy
+import json
+import shutil
+import sqlite3
+import stat
+import subprocess
+from contextlib import closing, contextmanager
+from pathlib import Path
+from threading import Event
+from time import perf_counter
+from types import SimpleNamespace
+
+import pytest
+from fastapi.testclient import TestClient
+from proscenium.api.errors import DomainError
+from proscenium.api.lifecycle import FeatureLifecycle
+from proscenium.app import create_app
+from proscenium.auth import COOKIE_NAME, Caller
+from proscenium.catalogue import install
+from proscenium.catalogue import relationship_backfill as backfill
+from proscenium.catalogue.relationship_projector import (
+    apply_version_projection,
+    encoded,
+    project_version_relationships,
+    version_endpoint,
+)
+from proscenium.catalogue.relationship_read import SORT_VERSION, edge_query, read_relationships
+from proscenium.configuration import Settings
+from proscenium.contracts import validate
+from proscenium.db.store import MIGRATIONS, Store, Transaction
+from proscenium.projects.importer import import_project
+from proscenium.projects.service import Projects
+from proscenium.services import Services
+from proscenium.sources import closure_digest
+from proscenium.sources.common import fingerprint, git
+from proscenium.sources.read_only import read_closure_files
+from test_project_importer import FPS, IDENTITY, OWNER, P, admitted_tool, item, pin, source, write
+
+from tools.operations import recovery
+
+V3 = pin("hero", "hero-v3")
+V4 = pin("hero", "hero-v4")
+
+
+def plan(board, *, project=P, scene=None):
+    def shot(identity, text, binding=None):
+        return dict(
+            shot_id=identity,
+            intent=text,
+            camera_intent="",
+            motion_beats=["Run"],
+            scene_version=binding,
+            source_range={"start": 1, "end": 24} if binding else None,
+            fps=FPS if binding else None,
+            frames=[
+                dict(
+                    frame_id=f"{identity}-start",
+                    role="start",
+                    composition="Establish",
+                    artifact_id=None,
+                    state="missing",
+                ),
+                dict(
+                    frame_id=f"{identity}-end",
+                    role="end",
+                    composition="",
+                    artifact_id=None,
+                    state="missing",
+                ),
+            ],
+        )
+
+    return dict(
+        schema_version="1.0",
+        project_id=project,
+        plan_id=board,
+        brief_artifact_ids=[],
+        asset_dependencies=[V3] if scene else [],
+        shots=[shot("z-first", "Run down the stairs", scene), shot("a-next", "")],
+        unresolved=["A coat may be needed"],
+    )
+
+
+def manifest(*rows, identity=IDENTITY, name="relationships"):
+    return dict(schema_version="1.0", import_id=name, project=identity, items=list(rows))
+
+
+@contextmanager
+def services_at(data):
+    services = Services.create(Settings(data_directory=data, free_space_reserve_bytes=0))
+    install(services)
+    try:
+        yield services
+    finally:
+        services.close()
+
+
+@pytest.fixture
+def graph(tmp_path):
+    root = tmp_path / "project"
+    root.mkdir()
+    hero = write(root, "hero.txt", b"Hero v3")
+    landing = write(root, "landing.txt", b"Landing")
+    stairs = write(root, "stairs.txt", b"Stairs")
+    board_a = write(root, "first.json", plan("first", scene=pin("landing")))
+    board_b = write(root, "second.json", plan("second", scene=pin("landing")))
+    boot = manifest(
+        dict(
+            item("hero", "asset", source(hero)), version_id=V3["version_id"], name="Hero · old coat"
+        ),
+        item("landing", "scene", source(landing, deps=[V3])),
+        item("stairs", "scene", source(stairs, deps=[V3]), derived_from=[V3]),
+        item("first", "storyboard", source(board_a, deps=[V3, pin("landing")])),
+        item("second", "storyboard", source(board_b, deps=[V3, pin("landing")])),
+    )
+    with services_at(tmp_path / "registry") as services:
+        import_project(services, OWNER, root, boot)
+        services.registry.activate(P)
+        yield SimpleNamespace(root=root, services=services, manifest=boot)
+
+
+def page(services, version, **params):
+    return validate("RelationshipPage", read_relationships(services, P, version, **params))
+
+
+def get_version(services, version_id):
+    with services.registry.project_store(P).transaction(write=False) as tx:
+        return tx.require("versions", version_id)
+
+
+def publication(*versions, identity="publish-relationships"):
+    omit = {
+        "schema_version",
+        "project_id",
+        "publication_id",
+        "created_at",
+        "actor",
+        "preview_job_ids",
+    }
+    return dict(
+        schema_version="1.0",
+        project_id=P,
+        publication_id=identity,
+        items=[
+            dict(
+                {k: v for k, v in version.items() if k not in omit},
+                expected_current_version_id=version.get("expected_current_version_id"),
+            )
+            for version in versions
+        ],
+    )
+
+
+def publish_hero4(services, caller=None):
+    row = get_version(services, V3["version_id"])
+    return services.extension("catalogue").publish(
+        caller or admitted_tool(services),
+        publication(
+            dict(row, **V4, name="Hero · new coat", expected_current_version_id=V3["version_id"])
+        ),
+    )
+
+
+def index(services):
+    with services.registry.project_store(P).transaction(write=False) as tx:
+        db = tx.connection
+        return tuple(
+            sorted(map(tuple, db.execute(f"SELECT * FROM {table}")))
+            for table in (
+                "relationship_edges",
+                "relationship_shots",
+                "relationship_panels",
+            )
+        )
+
+
+def reset_index(services):
+    with services.registry.project_store(P).transaction() as tx:
+        for table in (
+            "relationship_edges",
+            "relationship_shots",
+            "relationship_panels",
+            "relationship_versions",
+        ):
+            tx.connection.execute(f"DELETE FROM {table}")
+        tx.connection.execute(
+            "UPDATE relationship_meta SET relationship_revision=relationship_revision+1"
+        )
+
+
+def browser_for(services):
+    return TestClient(
+        create_app(services=services, manage_features=False), base_url=services.settings.origin
+    )
+
+
+def pair(services, browser):
+    _, cookie, _ = services.auth.pair(
+        dict(
+            schema_version="1.0",
+            operation_id="pair-relationships",
+            pairing_code=services.auth.issue_pairing(),
+            client_nonce="nonce-relationships-1234567890",
+        )
+    )
+    browser.cookies.set(COOKIE_NAME, cookie)
+
+
+def url(version, project=P):
+    return f"/api/v1/projects/{project}/versions/{version}/relationships"
+
+
+def test_e1_ordered_structural_read_never_touches_sources_or_writes(graph, monkeypatch):
+    services = graph.services
+    with browser_for(services) as browser:
+        pair(services, browser)
+        assert not (graph.root / ".proscenium/snapshots").exists()
+
+        def unexpected(*args, **kwargs):
+            pytest.fail("GET touched a native/Git process or walked all stored records")
+
+        writes = []
+        connect = Store.connect
+
+        def trace(store, **kwargs):
+            db = connect(store, **kwargs)
+            db.set_trace_callback(
+                lambda statement: (
+                    writes.append(statement)
+                    if statement.startswith(
+                        ("BEGIN IMMEDIATE", "INSERT ", "UPDATE ", "DELETE ", "CREATE ")
+                    )
+                    else None
+                )
+            )
+            return db
+
+        monkeypatch.setattr(subprocess, "Popen", unexpected)
+        monkeypatch.setattr(Transaction, "all", unexpected)
+        monkeypatch.setattr(Store, "connect", trace)
+        # A normal owner read would refresh this session, but this route is read-only.
+        monkeypatch.setattr(services.auth, "SESSION_TTL", 99999)
+        result = browser.get(url("first-v1"))
+        assert result.status_code == 200, result.text
+        result = validate("RelationshipPage", result.json())
+        assert result["coverage"] == {"state": "complete", "reasons": []}
+        assert [(edge["relation"], edge["details"]) for edge in result["items"]] == [
+            ("contains_shot", {"ordinal": 0}),
+            ("contains_shot", {"ordinal": 1}),
+            ("board_reference", {}),
+        ]
+        assert [node["shot_id"] for node in result["nodes"] if node["kind"] == "shot"] == [
+            "z-first",
+            "a-next",
+        ]
+        unbound = validate(
+            "RelationshipPage", browser.get(url("first-v1"), params={"shot_id": "a-next"}).json()
+        )
+        assert unbound["nodes"][0] == dict(
+            kind="shot",
+            board=pin("first"),
+            shot_id="a-next",
+            label="a-next",
+            intent="",
+            binding_status="unbound",
+        )
+        assert [edge["to"]["frame_id"] for edge in unbound["items"]] == [
+            "a-next-start",
+            "a-next-end",
+        ]
+        assert all(
+            node["authored_state"] == "missing"
+            and node["artifact_state"] == "missing"
+            and not node["owner_selected"]
+            for node in unbound["nodes"]
+            if node["kind"] == "panel"
+        )
+        assert any(
+            node["kind"] == "version" and node["ref"] == pin("first") for node in unbound["nodes"]
+        )
+        assert not writes
+        assert not (graph.root / ".proscenium/snapshots").exists()
+
+
+def test_e2_exact_reuse_history_and_live_selection(graph):
+    services = graph.services
+    assert publish_hero4(services)[1] is False
+    slot = {"kind": "item", "item_id": "hero"}
+    choice = {"kind": "version", "version": V4}
+    with services.registry.project_store(P).transaction() as tx:
+        tx.put(
+            "selections",
+            "hero-owner",
+            dict(project_id=P, state="selected", slot=slot, choice=choice),
+        )
+        tx.put("review.selection_slots", fingerprint(slot), {"selection_id": "hero-owner"})
+    v3 = page(services, "hero-v3", direction="used_by")
+    assert [(edge["relation"], edge["from"]["ref"]["version_id"]) for edge in v3["items"]] == [
+        ("board_reference", "first-v1"),
+        ("board_reference", "second-v1"),
+        ("declared_dependency", "landing-v1"),
+        ("declared_dependency", "stairs-v1"),
+        ("derived_from", "stairs-v1"),
+    ]
+    assert (
+        v3["nodes"][0]["label"],
+        v3["nodes"][0]["is_current"],
+        v3["nodes"][0]["is_selected"],
+    ) == (
+        "Hero · old coat",
+        False,
+        False,
+    )
+    v4 = page(services, "hero-v4", direction="used_by")
+    assert not v4["items"] and v4["nodes"][0]["is_current"] and v4["nodes"][0]["is_selected"]
+    assert page(services, "stairs-v1")["items"][0]["to"]["ref"] == V3
+    landing = page(services, "landing-v1", direction="used_by")
+    assert [
+        (e["from"]["board"], e["from"]["shot_id"], e["relation"], e["details"])
+        for e in landing["items"]
+    ] == [
+        (
+            pin(board),
+            "z-first",
+            "bound_scene",
+            {"source_range": {"start": 1, "end": 24}, "fps": FPS},
+        )
+        for board in ("first", "second")
+    ]
+
+
+def test_e2_reverse_shots_include_exact_board_revision_badges(graph):
+    services = graph.services
+    old = get_version(services, "first-v1")
+    revised = dict(
+        old,
+        version_id="first-v2",
+        name="Revised storyboard",
+        expected_current_version_id="first-v1",
+    )
+    services.extension("catalogue").publish(admitted_tool(services), publication(revised))
+    slot = {"kind": "item", "item_id": "first"}
+    choice = {"kind": "version", "version": pin("first", "first-v2")}
+    with services.registry.project_store(P).transaction() as tx:
+        tx.put(
+            "selections",
+            "owner-board",
+            dict(project_id=P, state="selected", slot=slot, choice=choice),
+        )
+        tx.put("review.selection_slots", fingerprint(slot), {"selection_id": "owner-board"})
+    result = page(services, "landing-v1", direction="used_by")
+    assert {edge["from"]["board"]["version_id"] for edge in result["items"]} >= {
+        "first-v1",
+        "first-v2",
+    }
+    boards = {
+        n["ref"]["version_id"]: n for n in result["nodes"] if n.get("item_kind") == "storyboard"
+    }
+    assert (
+        boards["first-v1"]["label"],
+        boards["first-v1"]["is_current"],
+        boards["first-v1"]["is_selected"],
+    ) == (old["name"], False, False)
+    assert (
+        boards["first-v2"]["label"],
+        boards["first-v2"]["is_current"],
+        boards["first-v2"]["is_selected"],
+    ) == (revised["name"], True, True)
+
+
+def test_e4_import_publish_rebuild_transaction_and_replay(graph, tmp_path, monkeypatch):
+    offline = graph.services
+    expected = index(offline)
+    records = [get_version(offline, row["version_id"]) for row in graph.manifest["items"]]
+    new_root = tmp_path / "live"
+    shutil.copytree(graph.root, new_root, ignore=shutil.ignore_patterns(".proscenium"))
+    with services_at(tmp_path / "live-registry") as online:
+        Projects(online).open(
+            OWNER,
+            dict(
+                schema_version="1.0",
+                path=str(new_root),
+                create=True,
+                name="Live copy",
+                operation_id="open-live",
+            ),
+            identity=IDENTITY,
+            install_lfs_hooks=False,
+        )
+        online.registry.activate(P)
+        caller = admitted_tool(online)
+        catalogue = online.extension("catalogue")
+        request = publication(*records)
+        original = Transaction.emit
+
+        def fail_after_writes(self, name, *args, **kwargs):
+            if name == "publication.created":
+                assert self.get("versions", "first-v1")
+                assert self.connection.execute(
+                    "SELECT 1 FROM relationship_edges LIMIT 1"
+                ).fetchone()
+                raise DomainError("storage_full", 507)
+            return original(self, name, *args, **kwargs)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(Transaction, "emit", fail_after_writes)
+            with pytest.raises(DomainError, match="storage full"):
+                catalogue.publish(caller, request)
+        assert index(online) == ([], [], [])
+        with online.registry.project_store(P).transaction(write=False) as tx:
+            assert not tx.all("versions")
+            assert (
+                tx.connection.execute(
+                    "SELECT relationship_revision FROM relationship_meta"
+                ).fetchone()[0]
+                == 0
+            )
+        assert catalogue.publish(caller, request)[1] is False
+        assert index(online) == expected
+        stable = page(online, "first-v1")
+        assert catalogue.publish(caller, request)[1] is True
+        assert page(online, "first-v1") == stable
+        assert import_project(offline, OWNER, graph.root, graph.manifest)["replayed"]
+        assert index(offline) == expected
+        reset_index(online)
+        assert page(online, "first-v1")["coverage"]["reasons"] == ["indexing"]
+        assert backfill.backfill_relationships(online, P, batch_size=1) == 1
+        assert backfill.backfill_relationships(online, P, batch_size=3) == 3
+        assert backfill.backfill_relationships(online, P, batch_size=3) == 1
+        assert page(online, "first-v1")["coverage"]["reasons"] == ["indexing"]
+        assert {edge["relation"] for edge in page(online, "first-v1")["items"]} == {
+            "declared_dependency"
+        }
+        assert backfill.backfill_relationships(online, P, batch_size=3) == 2
+        assert backfill.backfill_relationships(online, P) == 0
+        assert index(online) == expected
+        stable = page(online, "first-v1")
+        backfill.rebuild_relationships(online, P)
+        assert page(online, "first-v1") == stable
+
+
+def test_e4_backfill_fence_does_not_replace_concurrent_index_winner(graph, monkeypatch):
+    services = graph.services
+    reset_index(services)
+    assert backfill.backfill_relationships(services, P) == 5
+    real = backfill._historical_projection
+    won = []
+
+    def race(svc, project_id, identity, raw, *, stage):
+        assert stage == 2
+        projection = real(svc, project_id, identity, raw, stage=stage)
+        # The competing writer lands a complete row while the stale reader is
+        # finishing its sealed-source work, under the same writer primitive.
+        with services.registry.project_store(P).transaction() as tx:
+            apply_version_projection(tx, projection)
+            won.append(
+                tx.connection.execute(
+                    "SELECT relationship_revision FROM relationship_meta"
+                ).fetchone()[0]
+            )
+        return project_version_relationships(json.loads(raw), reason="source_unavailable")
+
+    monkeypatch.setattr(backfill, "_historical_projection", race)
+    assert backfill.backfill_relationships(services, P, batch_size=1) == 1
+    winner = page(services, "first-v1")
+    assert winner["relationship_revision"] == won[0]
+    assert winner["coverage"]["state"] == "complete" and len(winner["items"]) == 3
+
+
+def test_e4_lifecycle_backfills_only_pending_active_versions(graph, monkeypatch):
+    services = graph.services
+    reset_index(services)
+    drained = Event()
+    real = backfill.backfill_relationships
+
+    def bounded(svc, project_id):
+        real(svc, project_id, batch_size=2)
+        with svc.registry.project_store(project_id).transaction(write=False) as tx:
+            if not backfill.has_pending_relationships(tx):
+                drained.set()
+
+    monkeypatch.setattr("proscenium.api.lifecycle.backfill_relationships", bounded)
+    app = create_app(services=services, manage_features=True, enable_control_socket=False)
+    with TestClient(app, base_url=services.settings.origin):
+        assert drained.wait(5), services.extension("lifecycle").errors
+        probe = FeatureLifecycle(services)
+        probe._activity()
+        assert not probe._relationship_pending
+        assert page(services, "landing-v1", direction="used_by")["coverage"]["state"] == "complete"
+
+
+def test_e4_backfill_git_timeout_does_not_stall_healthy_board_and_recovers(graph, monkeypatch):
+    services = graph.services
+    read_sealed = backfill.read_authored_json
+    timed_out = True
+    failures = 0
+
+    def read_with_timeout(svc, project_id, version):
+        nonlocal failures
+        if timed_out and version["version_id"] == "first-v1":
+            failures += 1
+            raise subprocess.TimeoutExpired(["git", "cat-file"], 1)
+        return read_sealed(svc, project_id, version)
+
+    monkeypatch.setattr(backfill, "read_authored_json", read_with_timeout)
+    reset_index(services)
+    assert backfill.backfill_relationships(services, P) == 5
+    pins_only = page(services, "first-v1")
+    assert backfill.backfill_relationships(services, P) == 2
+    assert page(services, "second-v1")["coverage"]["state"] == "complete"
+    after_timeout = page(services, "first-v1")
+    assert after_timeout["coverage"] == {"state": "partial", "reasons": ["indexing"]}
+    assert after_timeout["items"] == pins_only["items"]
+    assert {edge["relation"] for edge in pins_only["items"]} == {"declared_dependency"}
+    timed_out = False
+    assert backfill.backfill_relationships(services, P) == 1
+    assert page(services, "first-v1")["coverage"]["state"] == "complete"
+
+    # A persistent first-board fault must also yield to fresh work in the next
+    # batch, then pause scheduling without claiming complete reverse coverage.
+    timed_out = True
+    failures = 0
+    reset_index(services)
+    assert backfill.backfill_relationships(services, P) == 5
+    assert backfill.backfill_relationships(services, P, batch_size=1) == 1
+    assert backfill.backfill_relationships(services, P, batch_size=1) == 1
+    assert failures == 1
+    assert page(services, "second-v1")["coverage"]["state"] == "complete"
+    revision = page(services, "first-v1")["relationship_revision"]
+    for _ in range(backfill.MAX_RETRIES - 1):
+        assert backfill.backfill_relationships(services, P) == 1
+    assert backfill.backfill_relationships(services, P) == 0
+    assert failures == backfill.MAX_RETRIES
+    probe = FeatureLifecycle(services)
+    probe._activity()
+    assert not probe._relationship_pending
+    assert page(services, "first-v1")["relationship_revision"] == revision
+    assert page(services, "landing-v1", direction="used_by")["coverage"] == {
+        "state": "partial",
+        "reasons": ["indexing"],
+    }
+    timed_out = False
+    backfill.rebuild_relationships(services, P)
+    assert page(services, "first-v1")["coverage"]["state"] == "complete"
+    assert backfill.backfill_relationships(services, P) == 0
+
+
+@pytest.mark.parametrize(
+    "operational_error",
+    [DomainError("storage_unavailable", 503), sqlite3.OperationalError("database is locked")],
+)
+def test_e4_backfill_transient_storage_503_recovers_without_invalid_classification(
+    graph, monkeypatch, operational_error
+):
+    services = graph.services
+    reset_index(services)
+    assert backfill.backfill_relationships(services, P) == 5
+    before = page(services, "first-v1")
+    validate_sealed = backfill._validate_document
+
+    def validate_while_busy(version, document, tx):
+        if version["version_id"] == "first-v1":
+            raise operational_error
+        validate_sealed(version, document, tx)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(backfill, "_validate_document", validate_while_busy)
+        assert backfill.backfill_relationships(services, P) == 2
+        assert page(services, "second-v1")["coverage"]["state"] == "complete"
+        pending = page(services, "first-v1")
+        assert pending["coverage"] == {"state": "partial", "reasons": ["indexing"]}
+        assert pending["items"] == before["items"]
+    assert backfill.backfill_relationships(services, P) == 1
+    assert page(services, "first-v1")["coverage"]["state"] == "complete"
+    assert backfill.backfill_relationships(services, P) == 0
+
+
+def test_e4_invalid_authored_record_remains_partial_without_revision_churn(graph, monkeypatch):
+    services = graph.services
+    reset_index(services)
+    sealed = backfill.read_authored_json
+
+    def wrong_project(svc, project_id, version):
+        doc = sealed(svc, project_id, version)
+        return (
+            {**doc, "project_id": "somewhere-else"} if version["version_id"] == "first-v1" else doc
+        )
+
+    monkeypatch.setattr(backfill, "read_authored_json", wrong_project)
+    assert backfill.backfill_relationships(services, P) == 5
+    assert backfill.backfill_relationships(services, P) == 2
+    partial = page(services, "first-v1")
+    assert partial["coverage"] == {"state": "partial", "reasons": ["invalid_historical_record"]}
+    assert {edge["relation"] for edge in partial["items"]} == {"declared_dependency"}
+    assert page(services, "landing-v1", direction="used_by")["coverage"] == partial["coverage"]
+    backfill.rebuild_relationships(services, P)
+    assert page(services, "first-v1") == partial
+
+
+def test_e4_live_duplicate_destination_rebuild_and_restore_parity(tmp_path):
+    root = tmp_path / "duplicate-project"
+    root.mkdir()
+    data = tmp_path / "machine"
+    with services_at(data) as services:
+        import_project(
+            services,
+            OWNER,
+            root,
+            manifest(
+                item("first", "storyboard", source(write(root, "board.json", plan("first")))),
+            ),
+        )
+        services.registry.activate(P)
+        original = get_version(services, "first-v1")
+        source_row = copy.deepcopy(original["source"])
+        source_row["files"].append(copy.deepcopy(source_row["files"][0]))
+        source_row["digest"] = closure_digest(source_row)
+        revised = dict(
+            original,
+            version_id="first-v2",
+            source=source_row,
+            expected_current_version_id="first-v1",
+        )
+        caller = admitted_tool(services)
+        services.extension("catalogue").publish(caller, publication(revised))
+        live = page(services, "first-v2")
+        assert live["coverage"] == {"state": "complete", "reasons": []}
+        assert [edge["relation"] for edge in live["items"]] == ["contains_shot", "contains_shot"]
+        backfill.rebuild_relationships(services, P)
+        assert page(services, "first-v2") == live
+        assert get_version(services, "first-v2")["source"] == source_row
+        # Settle the fixture authoring records; no native session was actually spawned.
+        with services.registry.project_store(P).transaction() as tx:
+            for namespace, identity in (
+                ("work", caller.work_id),
+                ("invocations", caller.invocation_id),
+            ):
+                row = tx.require(namespace, identity)
+                tx.put(
+                    namespace,
+                    identity,
+                    dict(row, state="completed"),
+                    expected_revision=tx.revision(namespace, identity),
+                )
+        settings = services.settings
+
+    bundle = tmp_path / "duplicate-backup"
+    backup = recovery.backup(settings, P, bundle, allow_incomplete=True)
+    assert backup["limits"] == [{"code": "native_session_missing", "session_id": "test-session"}]
+    bad_manifest = {**backup, "database_revisions": {"project": 999, "registry": 0}}
+    (bundle / "manifest.json").write_text(json.dumps(bad_manifest))
+    with pytest.raises(recovery.RecoveryError, match="backup_database_revision_mismatch"):
+        recovery.verify(bundle)
+    target = tmp_path / "restored-duplicate"
+    with pytest.raises(recovery.RecoveryError, match="backup_database_revision_mismatch"):
+        recovery.restore(bundle, target, rebind=True, allow_incomplete=True)
+    assert not target.exists()
+    (bundle / "manifest.json").write_text(json.dumps(backup))
+    report = recovery.restore(bundle, target, rebind=True, allow_incomplete=True)
+    with services_at(Path(report["data_directory"])) as restored:
+        assert page(restored, "first-v2") == live
+        assert get_version(restored, "first-v2")["source"] == source_row
+
+
+@pytest.mark.parametrize("prefix", [False, True])
+def test_read_only_closure_still_rejects_conflicting_destinations(graph, prefix):
+    board = get_version(graph.services, "first-v1")
+    asset = get_version(graph.services, "hero-v3")
+    closure = copy.deepcopy(board["source"])
+    destination = closure["entry_path"] + ("/child.txt" if prefix else "")
+    closure["files"].append(
+        dict(destination=destination, origin=asset["source"]["files"][0]["origin"])
+    )
+    closure["digest"] = closure_digest(closure)
+    with pytest.raises(DomainError, match="dependency collision"):
+        read_closure_files(graph.services, P, closure)
+
+
+def test_e4_two_pass_restart_isolates_first_malformed_dependency(tmp_path, monkeypatch):
+    root = tmp_path / "isolated-project"
+    root.mkdir()
+    data = tmp_path / "isolated-machine"
+    hero = write(root, "hero.txt", b"hero")
+    board = write(root, "board.json", plan("board"))
+    with services_at(data) as services:
+        import_project(
+            services,
+            OWNER,
+            root,
+            manifest(
+                item("hero", "asset", source(hero)),
+                item("board", "storyboard", source(board)),
+            ),
+        )
+        services.registry.activate(P)
+        version = get_version(services, "board-v1")
+        first = dict(
+            version,
+            version_id="000-poison",
+            item_id="poison",
+            source={
+                **version["source"],
+                "dependencies": [pin("hero"), pin("bad", "zzz-bad")],
+            },
+        )
+        first["source"]["digest"] = closure_digest(first["source"])
+        with services.registry.project_store(P).transaction() as tx:
+            tx.put("versions", "000-poison", first, schema="VersionRecord")
+            tx.put("versions", "zzz-bad", dict(version_id="zzz-bad", item_id="bad", kind="asset"))
+        reset_index(services)
+        with monkeypatch.context() as patch:
+
+            def no_sealed_read(*args, **kwargs):
+                pytest.fail("Pass 1 opened source bytes")
+
+            patch.setattr(backfill, "read_authored_json", no_sealed_read)
+            assert backfill.backfill_relationships(services, P, batch_size=2) == 2
+        partial = page(services, "000-poison")
+        assert partial["coverage"] == {"state": "partial", "reasons": ["invalid_historical_record"]}
+        assert [edge["to"]["ref"] for edge in partial["items"]] == [pin("hero")]
+        assert page(services, "board-v1")["coverage"]["reasons"] == ["indexing"]
+
+    with services_at(data) as resumed:
+        assert backfill.backfill_relationships(resumed, P, batch_size=2) == 2
+        assert backfill.backfill_relationships(resumed, P, batch_size=2) == 1
+        assert backfill.backfill_relationships(resumed, P, batch_size=2) == 0
+        for identity in ("board-v1", "hero-v1"):
+            assert page(resumed, identity)["coverage"]["state"] == "complete"
+        assert page(resumed, "hero-v1", direction="used_by")["coverage"]["reasons"] == [
+            "invalid_historical_record"
+        ]
+
+
+@pytest.mark.parametrize("defect", ["commit", "panel-roles"])
+def test_e4_historical_validation_matches_immutable_publication_checks(graph, defect):
+    services = graph.services
+    version = get_version(services, "first-v1")
+    if defect == "commit":
+        version["source_commit"] = "0" * 40
+    else:
+        document = plan("first", scene=pin("landing"))
+        document["shots"][0]["frames"].reverse()
+        file = write(graph.root, "first.json", document)
+        git(graph.root, "add", "first.json")
+        git(
+            graph.root,
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-m",
+            "Invalid historical plan",
+        )
+        version["source_commit"] = git(graph.root, "rev-parse", "HEAD").decode().strip()
+        origin = version["source"]["files"][0]["origin"]
+        origin.update(commit=version["source_commit"], sha256=file["sha256"])
+        version["source"]["digest"] = closure_digest(version["source"])
+    with services.registry.project_store(P).transaction() as tx:
+        tx.put(
+            "versions",
+            "first-v1",
+            version,
+            expected_revision=tx.revision("versions", "first-v1"),
+            schema="VersionRecord",
+        )
+    backfill.rebuild_relationships(services, P)
+    read = page(services, "first-v1")
+    assert read["coverage"] == {"state": "partial", "reasons": ["invalid_historical_record"]}
+    assert {edge["relation"] for edge in read["items"]} == {"declared_dependency"}
+    assert page(services, "first-v1", shot_id="z-first")["items"] == []
+
+
+def test_e4_missing_local_lfs_preserves_generic_pin_then_repair(tmp_path):
+    root = tmp_path / "lfs-project"
+    root.mkdir()
+    git(root, "init", "-b", "main")
+    git(root, "lfs", "track", "first.json")
+    file = write(root, "first.json", plan("first", scene=pin("landing")))
+    hero = write(root, "hero.txt", b"old coat")
+    scene = write(root, "landing.txt", b"Landing")
+    with services_at(tmp_path / "machine") as services:
+        import_project(
+            services,
+            OWNER,
+            root,
+            manifest(
+                dict(item("hero", "asset", source(hero)), version_id="hero-v3"),
+                item("landing", "scene", source(scene)),
+                item("first", "storyboard", source(file, deps=[V3, pin("landing")])),
+            ),
+        )
+        services.registry.activate(P)
+        before = index(services)
+        record = get_version(services, "first-v1")
+        digest = file["sha256"]
+        path = root / ".git/lfs/objects" / digest[:2] / digest[2:4] / digest
+        sealed = path.read_bytes()
+        path.write_bytes(b"corrupt")
+        reset_index(services)
+        assert page(services, "first-v1", shot_id="a-next")["coverage"]["reasons"] == ["indexing"]
+        assert backfill.backfill_relationships(services, P) == 3
+        assert page(services, "first-v1")["coverage"]["reasons"] == ["indexing"]
+        assert backfill.backfill_relationships(services, P) == 1
+        partial = page(services, "first-v1")
+        assert partial["coverage"] == {"state": "partial", "reasons": ["source_unavailable"]}
+        assert {edge["relation"] for edge in partial["items"]} == {"declared_dependency"}
+        missing_shot = page(services, "first-v1", shot_id="a-next")
+        assert not missing_shot["items"] and missing_shot["nodes"][0]["binding_status"] == "unknown"
+        reverse = page(services, "landing-v1", direction="used_by")
+        assert reverse["coverage"] == partial["coverage"]
+        assert reverse["items"][0]["relation"] == "declared_dependency"
+        path.write_bytes(sealed)
+        backfill.rebuild_relationships(services, P)
+        assert get_version(services, "first-v1") == record
+        assert index(services) == before
+        assert page(services, "first-v1")["coverage"]["state"] == "complete"
+
+
+def test_e4_pre_migration_bundle_is_untouched_and_restore_rebuilds(tmp_path):
+    root = tmp_path / "restore-project"
+    root.mkdir()
+    with services_at(tmp_path / "machine") as services:
+        import_project(
+            services,
+            OWNER,
+            root,
+            manifest(
+                item("quiet", "storyboard", source(write(root, "quiet.json", plan("quiet")))),
+            ),
+        )
+        services.registry.activate(P)
+        expected = index(services)
+        settings = services.settings
+
+    # Construct genuine v1 databases from the immutable v1 migration and base
+    # records, rather than setting a version pragma on a newer schema.
+    for db_file in (
+        settings.data_directory / "registry.sqlite3",
+        root / ".proscenium/state.sqlite3",
+    ):
+        v1 = db_file.with_suffix(".original-v1.sqlite3")
+        with closing(sqlite3.connect(v1)) as db:
+            db.executescript(MIGRATIONS[0] + "; PRAGMA user_version=1;")
+            db.execute("ATTACH DATABASE ? AS newer", (str(db_file),))
+            for table in (
+                "records",
+                "operations",
+                "events",
+                "outbox",
+                "budget_reservations",
+                "resource_claims",
+            ):
+                db.execute(f"INSERT INTO main.{table} SELECT * FROM newer.{table}")
+            db.commit()
+        v1.chmod(0o600)
+        v1.replace(db_file)
+
+    bundle = tmp_path / "backup"
+    assert recovery.backup(settings, P, bundle)["database_revisions"] == {
+        "project": 1,
+        "registry": 1,
+    }
+
+    def hashes():
+        return {
+            file.relative_to(bundle): recovery.digest(file)
+            for file in bundle.rglob("*")
+            if file.is_file()
+        }
+
+    before = hashes()
+    assert recovery.verify(bundle)["database_revisions"] == {"project": 1, "registry": 1}
+    assert before == hashes()
+    target = tmp_path / "restored"
+    report = recovery.restore(bundle, target, rebind=True)
+    assert before == hashes()
+    for file in (
+        Path(report["data_directory"]) / "registry.sqlite3",
+        target / "project/.proscenium/state.sqlite3",
+    ):
+        with closing(sqlite3.connect(file)) as db:
+            assert db.execute("PRAGMA user_version").fetchone()[0] == len(MIGRATIONS)
+        sidecar = file.with_suffix(".pre-v2.sqlite3")
+        assert stat.S_IMODE(sidecar.stat().st_mode) == 0o600
+        with closing(sqlite3.connect(sidecar.as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+    with services_at(Path(report["data_directory"])) as restored:
+        assert index(restored) == expected
+        assert page(restored, "quiet-v1")["coverage"]["state"] == "complete"
+    assert not (target / "project/.proscenium/snapshots").exists()
+
+
+@pytest.mark.parametrize("revision", [0, len(MIGRATIONS) + 1])
+def test_e4_read_only_recovery_rejects_unsupported_versions(tmp_path, revision):
+    file = tmp_path / "foreign.sqlite3"
+    with closing(sqlite3.connect(file)) as db:
+        db.executescript(MIGRATIONS[0] + f"; PRAGMA user_version={revision};")
+    before = file.read_bytes()
+    with pytest.raises(recovery.RecoveryError, match="unsupported_or_corrupt_database"):
+        recovery.existing_store(file, read_only=True)
+    assert file.read_bytes() == before
+
+
+def test_e5_owner_scope_cursor_binding_and_revision(graph, tmp_path):
+    services = graph.services
+    other = {"project_id": "second-project", "repository_id": "second-repo"}
+    other_root = tmp_path / "second-project"
+    other_root.mkdir()
+    import_project(
+        services,
+        OWNER,
+        other_root,
+        manifest(
+            item(
+                "first",
+                "storyboard",
+                source(write(other_root, "plan.json", plan("first", project=other["project_id"]))),
+            ),
+            identity=other,
+        ),
+    )
+    with browser_for(services) as browser:
+
+        def error(status, code, version="first-v1", *, project=P, headers=None, **params):
+            response = browser.get(url(version, project), params=params, headers=headers)
+            assert (response.status_code, response.json()["error"]["code"]) == (status, code), (
+                response.text
+            )
+            if "cursor" in params:
+                assert params["cursor"] not in response.text
+            return response.json()["error"]
+
+        error(401, "owner_session_required")
+        tool = services.auth.issue_capability(
+            Caller(
+                "tool",
+                "read-tool",
+                P,
+                "work-a",
+                services.ownership.epoch,
+                operations=("publishOutputs",),
+                invocation_id="inv-a",
+            )
+        )
+        error(403, "scope_denied", headers={"Authorization": f"Bearer {tool}"})
+        pair(services, browser)
+        error(403, "scope_denied", project=other["project_id"])
+        error(403, "scope_denied", project="not-a-project")
+        error(404, "not_found", "not-a-version")
+        error(404, "not_found", shot_id="not-a-shot")
+        error(400, "invalid_request", "hero-v3", shot_id="z-first")
+        error(400, "invalid_request", shot_id="bad id")
+        error(400, "invalid_request", direction="up")
+        error(400, "invalid_request", limit=101)
+        error(400, "invalid_request", limit=0)
+        error(400, "invalid_request", limit="bad")
+        first = browser.get(url("first-v1"), params={"limit": 1}).json()
+        cursor = first["next_cursor"]
+        assert cursor and first["items"][0]["to"]["shot_id"] == "z-first"
+        second = browser.get(url("first-v1"), params={"cursor": cursor, "limit": 1}).json()
+        assert second["items"][0]["to"]["shot_id"] == "a-next"
+        error(400, "invalid_cursor", cursor="!!not-a-token!!")
+        error(400, "invalid_cursor", cursor=("A" if cursor[0] != "A" else "B") + cursor[1:])
+        error(400, "invalid_cursor", "second-v1", cursor=cursor)
+        error(400, "invalid_cursor", cursor=cursor, shot_id="z-first")
+        error(400, "invalid_cursor", cursor=cursor, direction="used_by")
+        wrong_sort = services.cursors.encode(
+            encoded(["relationships", SORT_VERSION + 1, P, "uses", version_endpoint(pin("first"))]),
+            encoded([first["relationship_revision"], 0, 0, "x"]),
+        )
+        error(400, "invalid_cursor", cursor=wrong_sort)
+        services.registry.activate(other["project_id"])
+        error(400, "invalid_cursor", project=other["project_id"], cursor=cursor)
+        services.registry.activate(P)
+        publish_hero4(services)
+        stale = error(409, "relationship_revision_changed", cursor=cursor)
+        assert "Restart at page one" in stale["message"]
+
+
+def test_e5_expired_owner_cookie_is_not_refreshed(graph, monkeypatch):
+    services = graph.services
+    monkeypatch.setattr(services.auth, "SESSION_TTL", -1)
+    with browser_for(services) as browser:
+        pair(services, browser)
+        response = browser.get(url("first-v1"))
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "owner_session_required"
+
+
+def test_sequence_contributor_shot_identity_survives_both_cursor_directions(graph):
+    services = graph.services
+    template = get_version(services, "stairs-v1")
+    version = dict(template, kind="sequence", item_id="edit", version_id="edit-v1", derived_from=[])
+    frames = {"start": 1, "end": 20}
+    first = dict(shot_id="unscoped-a", version_id="hero-v3", job_id=None, source_frames=frames)
+    second = dict(first, shot_id="unscoped-b")
+    entry = dict(
+        first,
+        shot_id=None,
+        entry_id="entry-a",
+        job_id="job-1",
+        sequence_frames=frames,
+        contributors=[first, second],
+    )
+    with services.registry.project_store(P).transaction() as tx:
+        tx.put("versions", "edit-v1", version, schema="VersionRecord")
+        apply_version_projection(tx, project_version_relationships(version, dict(entries=[entry])))
+    for root, direction in [("edit-v1", "uses"), ("hero-v3", "used_by")]:
+        cursors = None
+        occurrences = []
+        page_i = 0
+        while True:
+            result = page(services, root, direction=direction, limit=1, cursor=cursors)
+            assert len(result["items"]) == 1
+            edge = result["items"][0]
+            if edge["relation"] == "sequence_input" and edge["details"]["role"] == "contributor":
+                occurrences.append((page_i, edge["details"]))
+            page_i += 1
+            cursors = result["next_cursor"]
+            if cursors is None:
+                break
+        assert len(occurrences) == 2 and occurrences[0][0] != occurrences[1][0]
+        details = [copy.copy(d) for _, d in occurrences]
+        assert {d.pop("shot_id") for d in details} == {"unscoped-a", "unscoped-b"}
+        assert details[0] == details[1]
+
+
+def test_sequence_roles_and_typed_occurrences(graph):
+    services = graph.services
+    base = get_version(services, "stairs-v1")
+    version = dict(base, kind="sequence", item_id="edit", version_id="edit-v1")
+    frames = {"start": 1, "end": 20}
+    contributor = dict(
+        shot_id="unscoped-shot", version_id="hero-v3", job_id="job-1", source_frames=frames
+    )
+    entry = dict(
+        entry_id="entry-a",
+        shot_id=None,
+        version_id="hero-v3",
+        job_id="job-1",
+        source_frames=frames,
+        sequence_frames=frames,
+        contributors=[contributor, copy.deepcopy(contributor), dict(contributor, job_id="job-2")],
+    )
+    projection = project_version_relationships(
+        version, dict(entries=[entry, dict(entry, entry_id="entry-b")])
+    )
+    kinds = [(edge[-4], json.loads(edge[-1])) for edge in projection.edges]
+    assert sum(relation == "sequence_input" for relation, _ in kinds) == 6
+    assert sum(relation == "derived_from" for relation, _ in kinds) == 1
+    assert not any(relation == "declared_dependency" for relation, _ in kinds)
+    clip = dict(
+        entry_id="clip-1", clip_artifact_id="video-1", source_frames=frames, sequence_frames=frames
+    )
+    audio = dict(track_id="music-1", artifact_id="audio-1", start_seconds=0.25)
+    version = dict(version, source=dict(version["source"], dependencies=[]), derived_from=[])
+    with services.registry.project_store(P).transaction() as tx:
+        tx.put("versions", version["version_id"], version, schema="VersionRecord")
+        tx.put(
+            "artifacts",
+            "video-1",
+            dict(
+                artifact_id="video-1", project_id=P, kind="video", purpose="final", state="corrupt"
+            ),
+        )
+        apply_version_projection(
+            tx, project_version_relationships(version, dict(entries=[clip], audio_tracks=[audio]))
+        )
+    read = page(services, "edit-v1")
+    assert [edge["details"]["role"] for edge in read["items"]] == ["clip", "audio"]
+    assert [node["state"] for node in read["nodes"] if node["kind"] == "artifact"] == [
+        "corrupt",
+        "missing",
+    ]
+    with pytest.raises(DomainError, match="Invalid RelationshipEdge"):
+        validate(
+            "RelationshipEdge",
+            dict(read["items"][0], details={**read["items"][0]["details"], "job_id": "x"}),
+        )
+
+
+@contextmanager
+def measured_relationship_pages(data, monkeypatch):
+    # Fresh Services after seeding closes the writer and resets application state.
+    # SQLite connections are request scoped; this does not flush the OS page cache.
+    with services_at(data) as services, browser_for(services) as browser:
+        pair(services, browser)
+        sql, payloads, opens = [], [], []
+        connect = Store.connect
+
+        def traced(store, **kwargs):
+            db = connect(store, **kwargs)
+            opens.append(store.path)
+            db.set_trace_callback(sql.append)
+
+            def measure(cursor, row):
+                payloads.append(
+                    sum(
+                        len(v.encode("utf-8"))
+                        if isinstance(v, str)
+                        else len(v)
+                        if isinstance(v, bytes)
+                        else 0
+                        if v is None
+                        else 8
+                        for v in row
+                    )
+                )
+                return sqlite3.Row(cursor, row)
+
+            db.row_factory = measure
+            return db
+
+        def request(root, direction, cursor=None):
+            sql.clear()
+            payloads.clear()
+            opens.clear()
+            start = perf_counter()
+            response = browser.get(
+                url(root),
+                params={
+                    "direction": direction,
+                    "limit": 50,
+                    **({"cursor": cursor} if cursor else {}),
+                },
+            )
+            ms = (perf_counter() - start) * 1000
+            assert response.status_code == 200, response.text
+            queries = [stmt for stmt in sql if stmt.startswith("SELECT")]
+            assert len(queries) <= 16 and len(opens) <= 4 and len(payloads) <= 220
+            assert sum("FROM relationship_edges" in stmt for stmt in queries) == 1
+            assert any("LIMIT 51" in stmt for stmt in queries)
+            return response.json(), {
+                "ms": round(ms, 3),
+                "selects": len(queries),
+                "opens": len(opens),
+                "sqlite_rows": len(payloads),
+                "sqlite_returned_bytes": sum(payloads),
+                "http_bytes": len(response.content),
+            }
+
+        with monkeypatch.context() as patch:
+            patch.setattr(Store, "connect", traced)
+            yield request
+
+
+def open_performance_project(services, root):
+    root.mkdir()
+    Projects(services).open(
+        OWNER,
+        dict(
+            schema_version="1.0",
+            path=str(root),
+            create=True,
+            name="Relationship performance",
+            operation_id="open-relationship-perf",
+        ),
+        identity=IDENTITY,
+        install_lfs_hooks=False,
+    )
+    services.registry.activate(P)
+
+
+def test_studio_shaped_relationship_performance(graph, tmp_path, monkeypatch):
+    original = get_version(graph.services, "hero-v3")
+    data = tmp_path / "studio-registry"
+    with services_at(data) as services:
+        open_performance_project(services, tmp_path / "studio-project")
+        with services.registry.project_store(P).transaction() as tx:
+            for i in range(40):
+                kind = "storyboard" if i == 39 else "scene" if i >= 29 else "asset"
+                item_id = f"studio-{i:02}"
+                tx.put(
+                    "items",
+                    item_id,
+                    dict(project_id=P, item_id=item_id, current_version_id=f"{item_id}-v2"),
+                )
+                for revision in (1, 2):
+                    ref = pin(item_id, f"{item_id}-v{revision}")
+                    deps, doc = [], None
+                    if kind == "scene":
+                        deps = [pin(f"studio-{j:02}") for j in range(4)]
+                    elif kind == "storyboard":
+                        doc = plan(item_id, scene=pin("studio-29"))
+                        doc["asset_dependencies"] = [pin("studio-00")]
+                        deps = doc["asset_dependencies"] + [pin("studio-29")]
+                    version = dict(
+                        original,
+                        **ref,
+                        kind=kind,
+                        source=dict(original["source"], dependencies=deps),
+                    )
+                    tx.put("versions", ref["version_id"], version)
+                    apply_version_projection(tx, project_version_relationships(version, doc))
+            assert len(tx.all("items")) == 40 and len(tx.all("versions")) == 80
+    with measured_relationship_pages(data, monkeypatch) as request:
+        cold, cold_stats = request("studio-29-v1", "used_by")
+        warm, warm_stats = request("studio-29-v1", "used_by")
+        assert cold == warm and len(cold["items"]) == 2 and cold["next_cursor"] is None
+        assert {n["item_kind"] for n in cold["nodes"] if n["kind"] == "version"} == {
+            "storyboard",
+            "scene",
+        }
+        print(
+            f"Studio 40 items / 80 versions, one reverse page: cold={cold_stats}, warm={warm_stats}"
+        )
+
+
+def test_relationship_keyset_performance(graph, tmp_path, monkeypatch):
+    original = get_version(graph.services, "hero-v3")
+    data = tmp_path / "synthetic-registry"
+    refs = [pin(f"perf-{i:04d}") for i in range(1000)]
+    with services_at(data) as services:
+        open_performance_project(services, tmp_path / "synthetic-project")
+        seed_keyset_performance(services, original, refs)
+    with measured_relationship_pages(data, monkeypatch) as request:
+        root = refs[0]["version_id"]
+        cold, cold_stats = request(root, "used_by")
+        warm, warm_stats = request(root, "used_by")
+        assert cold == warm
+        seen = []
+        response = cold
+        requests = 1
+        while True:
+            assert response["relationship_revision"] == cold["relationship_revision"]
+            assert response["coverage"] == {"state": "complete", "reasons": []}
+            assert len(response["items"]) <= 50 and len(response["nodes"]) <= 51
+            seen.extend(edge["from"]["ref"]["version_id"] for edge in response["items"])
+            if not response["next_cursor"]:
+                break
+            requests += 1
+            response, _ = request(root, "used_by", response["next_cursor"])
+        expected = {ref["version_id"] for ref in refs[1:286]}
+        assert len(seen) == len(set(seen)) == len(expected) and set(seen) == expected
+        assert requests == 6
+        print(
+            f"Synthetic 1,000 versions / 10,000 edges, {requests} reverse pages: cold={cold_stats}, warm={warm_stats}"
+        )
+
+
+def seed_keyset_performance(services, original, refs):
+    with services.registry.project_store(P).transaction() as tx:
+        for i, ref in enumerate(refs):
+            dependencies = list(refs[max(0, i - 10) : i])
+            if 1 <= i <= 285 and refs[0] not in dependencies:
+                dependencies[0] = refs[0]
+            if 11 <= i <= 65:
+                dependencies.append(next(r for r in refs[1:i] if r not in dependencies))
+            version = dict(
+                original,
+                **ref,
+                kind="asset",
+                name=ref["item_id"],
+                source=dict(original["source"], dependencies=dependencies),
+            )
+            tx.put("versions", ref["version_id"], version)
+            apply_version_projection(tx, project_version_relationships(version))
+        assert (
+            tx.connection.execute("SELECT COUNT(*) FROM relationship_edges").fetchone()[0] == 10000
+        )
+        for direction, index_name in [
+            ("uses", "relationship_outgoing"),
+            ("used_by", "relationship_incoming"),
+        ]:
+            plan = [
+                row[3]
+                for row in tx.connection.execute(
+                    "EXPLAIN QUERY PLAN " + edge_query(direction),
+                    ("version", refs[0]["version_id"], "", 0, 0, "x", 51),
+                )
+            ]
+            print(f"{direction} EXPLAIN {plan}")
+            assert any(
+                f"SEARCH relationship_edges USING INDEX {index_name}" in line for line in plan
+            )
+            assert not any(
+                "SCAN relationship_edges" in line or "SCAN records" in line for line in plan
+            )
