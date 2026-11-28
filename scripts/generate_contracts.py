@@ -68,8 +68,10 @@ class ContractModel(RootModel[Any]):
     def query_wire(schema: dict) -> str:
         if schema.get("type") == "integer":
             return "number"
+        if schema.get("type") == "boolean":
+            return "boolean"
         if schema.get("type") != "string":
-            raise ValueError("Query parameters require integer or string schemas")
+            raise ValueError("Query parameters require integer, boolean or string schemas")
         if "enum" in schema:
             return " | ".join(json.dumps(value) for value in schema["enum"])
         return "string"

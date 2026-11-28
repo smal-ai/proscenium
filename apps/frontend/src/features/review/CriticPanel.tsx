@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type KeyboardEvent } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowLeft, Check, Eye, MessageSquareWarning } from "lucide-react";
 import { ApiError } from "../../api";
 import type {
@@ -22,6 +22,9 @@ import { handleSubmitEnter } from "../chat/controls";
 import { cleanTargetRole } from "./context";
 import { mediaUrl } from "./media";
 import { allPages } from "./records";
+import { reviewDisplayName } from "./reviewDisplayName";
+
+export { reviewDisplayName } from "./reviewDisplayName";
 
 export function criticRequestTarget(targets: FrameTarget[], items: ItemRecord[]): RequestTarget | null {
   const first = targets[0];
@@ -65,11 +68,6 @@ export function isPendingReview(ticket: ReviewTicket): boolean {
   return ticket.status === "pending" || ticket.status === "running";
 }
 
-export function reviewDisplayName(ticket: ReviewTicket): string {
-  const title = ticket.title?.trim();
-  return title || ticket.review_id;
-}
-
 function targetLabel(target: FrameTarget): string {
   const parts: string[] = [];
   if (target.shot_id) parts.push(target.shot_id);
@@ -86,6 +84,7 @@ export const CriticPanel = memo(function CriticPanel({
   selection,
   refreshRevision,
   reviews: suppliedReviews,
+  externalTarget,
   items = [],
   retainedArtifacts = [],
   pendingDecisions = [],
@@ -116,6 +115,8 @@ export const CriticPanel = memo(function CriticPanel({
   const [decisionAnswer, setDecisionAnswer] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const focusedNonce = useRef<string | undefined>(undefined);
+  const externalNavReviewId = useRef<string | null>(null);
 
   const tickets = (() => {
     const merged = new Map<string, ReviewTicket>();
@@ -148,6 +149,7 @@ export const CriticPanel = memo(function CriticPanel({
     };
   }, [api, projectId, suppliedReviews, refreshRevision]);
 
+  const reviewRetryNonce = externalTarget?.reviewId === reviewId ? externalTarget.nonce : undefined;
   useEffect(() => {
     if (!reviewId) {
       setDetail(null);
@@ -156,17 +158,20 @@ export const CriticPanel = memo(function CriticPanel({
       return;
     }
     setStaged(readPrivate<Record<string, StagedFinding>>(`critic.staged.${projectId}.${reviewId}`) ?? {});
-    let active = true;
+    const controller = new AbortController();
+    const { signal } = controller;
     (async () => {
       try {
         const full = await api.call("getOwnerReview", {
-          path: { project_id: projectId, review_id: reviewId },
+          path: { project_id: projectId, review_id: reviewId }, signal,
         });
-        if (!active) return;
+        if (signal.aborted) return;
+        if (full.project_id !== projectId || full.ticket.review_id !== reviewId) throw new Error("Review response scope mismatch.");
         setDetail(full);
         setFindings(full.findings);
         setLocalTickets(prev => [full.ticket, ...prev.filter(t => t.review_id !== full.ticket.review_id)]);
       } catch (err) {
+        if (signal.aborted) return;
         if (
           !(err instanceof ApiError) &&
           err instanceof Error &&
@@ -174,36 +179,61 @@ export const CriticPanel = memo(function CriticPanel({
             err.message,
           )
         ) {
-          const rows = await allPages(cursor =>
-            api.call("listOwnerReviewFindings", {
-              path: { project_id: projectId, review_id: reviewId },
-              query: { cursor, limit: 100 },
-            }),
-          );
-          if (active) {
-            setDetail(null);
-            setFindings(rows);
+          try {
+            const rows = await allPages(cursor =>
+              api.call("listOwnerReviewFindings", {
+                path: { project_id: projectId, review_id: reviewId },
+                query: { cursor, limit: 100 }, signal,
+              }),
+            );
+            if (!signal.aborted) {
+              setDetail(null);
+              setFindings(rows);
+            }
+          } catch (fallbackError) {
+            if (!signal.aborted) setError(`Could not open review ${reviewId}. ${describeError(fallbackError)}`);
           }
           return;
         }
-        if (active) setError(describeError(err));
+        setError(`Could not open review ${reviewId}. ${describeError(err)}`);
       }
     })();
-    return () => {
-      active = false;
-    };
-  }, [api, projectId, reviewId, refreshRevision]);
+    return () => controller.abort();
+  }, [api, projectId, reviewId, refreshRevision, reviewRetryNonce]);
 
-  function selectReview(nextId: string | null) {
+  const selectReview = useCallback((nextId: string | null) => {
+    if (nextId !== externalNavReviewId.current) externalNavReviewId.current = null;
+    if (nextId !== reviewId) {
+      setDetail(null);
+      setFindings([]);
+      setStaged({});
+      setDecisionAnswer("");
+    }
     setReviewId(nextId);
     writePrivate(`critic.selected.${projectId}`, nextId);
     setError("");
-  }
+  }, [projectId, reviewId]);
 
-  function changeFilter(next: "pending" | "all") {
+  const changeFilter = useCallback((next: "pending" | "all") => {
+    externalNavReviewId.current = null;
     setFilter(next);
     writePrivate(`critic.filter.${projectId}`, next);
-  }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!externalTarget || focusedNonce.current === externalTarget.nonce) return;
+    focusedNonce.current = externalTarget.nonce;
+    selectReview(externalTarget.reviewId);
+    externalNavReviewId.current = externalTarget.reviewId;
+  }, [externalTarget, selectReview]);
+
+  // The merged ticket can change once the detail read updates localTickets.
+  const latestSelectedTicket = tickets.find(ticket => ticket.review_id === reviewId);
+  useEffect(() => {
+    if (!latestSelectedTicket || latestSelectedTicket.review_id !== externalNavReviewId.current || isPendingReview(latestSelectedTicket)) return;
+    externalNavReviewId.current = null;
+    if (filter === "pending") changeFilter("all");
+  }, [externalTarget, latestSelectedTicket, filter, changeFilter]);
 
   function changeCriteria(value: string) {
     setCriteria(value);
@@ -383,7 +413,7 @@ export const CriticPanel = memo(function CriticPanel({
   const selectedTicket = reviewId
     ? detail?.ticket.review_id === reviewId
       ? detail.ticket
-      : tickets.find(t => t.review_id === reviewId) ?? null
+      : latestSelectedTicket ?? null
     : null;
 
   const selectedFindings = findings.filter(

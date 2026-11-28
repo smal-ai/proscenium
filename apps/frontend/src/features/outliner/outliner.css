@@ -3,6 +3,8 @@
 .relationship-outliner button[aria-pressed=true]{border-color:#818cf8;background:#27273c}
 .relationship-outliner [aria-disabled=true]{opacity:.5;cursor:default}
 .relationship-actions{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.relationship-controls{display:flex;flex-wrap:wrap;gap:4px 12px;margin:6px 0}
+.relationship-controls .relationship-actions{margin:0}
 .relationship-picker{display:grid;gap:8px;margin:8px 0}
 .relationship-root-identity{padding:8px 0;border-bottom:1px solid var(--border)}
 .relationship-root-identity h3{font-size:15px}

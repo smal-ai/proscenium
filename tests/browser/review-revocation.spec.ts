@@ -32,12 +32,14 @@ async function omitRetainedSummaries(studio: StudioFixture, id: string) {
 
 async function queueCurrentView(studio: StudioFixture) {
   const { page } = studio;
-  // With no usable media, Current view resolves to Project in the compact label.
-  await page.getByRole("button", { name: "Choose request target and references" }).click();
-  await expect(page.getByRole("button", { name: "Current view", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Close target picker" }).click();
   await page.getByRole("textbox", { name: "Message Copilot" }).fill("Review this view without the revoked output.");
-  await page.getByRole("button", { name: "Queue message", exact: true }).click();
+  const bar = page.getByRole("button", { name: "Choose request target and references" });
+  await bar.click();
+  const panel = page.getByRole("region", { name: "Request target", exact: true });
+  await expect(panel.getByRole("button", { name: "Current view", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(panel.getByRole("region", { name: "Attached images" })).toHaveCount(0);
+  await bar.press("Control+Enter");
+  await expect(panel).toHaveCount(0);
   await expect.poll(() => studio.submissions.length).toBe(1);
   expect(studio.contexts).toHaveLength(1);
   expect(studio.submissions[0]).toMatchObject({ context_id: studio.contexts[0].context_id });
@@ -48,6 +50,7 @@ test("retained preview revocation replaces the image and excludes it from submit
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ savedLayout: true });
   await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: /^Retained media \(\d+\)$/ }).click();
   await page.getByRole("button", { name: "Inspect retained concept image verified", exact: true }).click();
   const preview = review(page).locator(".retained-review");
   await expect(preview.locator("img")).toHaveJSProperty("naturalWidth", 1);
@@ -196,6 +199,7 @@ for (const deferredRead of [false, true]) {
       const marker = retained("revocation-observed", "verified");
       studio.retained.push(marker);
       refreshRetained(studio, marker.artifact.artifact_id);
+      await page.getByRole("button", { name: /^Retained media \(\d+\)$/ }).click();
       await expect(page.getByRole("button", { name: "Inspect retained concept image revocation-observed", exact: true })).toBeVisible();
       await expect(player).toHaveCount(0);
       await expect(capture).toHaveCount(0);

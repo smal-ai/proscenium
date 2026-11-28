@@ -76,7 +76,13 @@ export interface StoryboardSurfaceProps extends ReviewSurfaceProps {
   externalTarget?: { versionId: string; shotId: string; nonce: string };
 }
 
-export interface OutlinerSurfaceProps {
+export interface ReviewNavigationProps {
+  reviewNavigationEpoch?: number;
+  onBeginNavigation?: () => number;
+  isCurrentReviewNavigation?: (epoch: number) => boolean;
+}
+
+export interface OutlinerSurfaceProps extends ReviewNavigationProps {
   api: ApiClient;
   projectId: string;
   version: VersionRecord | null;
@@ -99,6 +105,7 @@ export interface CriticSurfaceProps {
   selection: TurnSelection;
   refreshRevision: number;
   reviews?: ReviewTicket[];
+  externalTarget?: { reviewId: string; nonce: string };
   items?: ItemRecord[];
   retainedArtifacts?: RetainedArtifactSummary[];
   pendingDecisions?: Decision[];

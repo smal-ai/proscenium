@@ -71,6 +71,85 @@ function graph(studio: StudioFixture, extraNodes: RelationshipNodeSummary[], edg
   } };
 }
 
+test("Used by defaults to Latest per item and switches modes without reusing pages or branch scope", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const [hero] = studio.versionRecords;
+  const previous = version("landing", "landing-v1", "Earlier landing", "scene");
+  const current = version("landing", "landing-v2", "Current landing", "scene");
+  const nodes = [hero, previous, current].map((record): RelationshipNodeSummary => ({
+    ...versionEndpoint(record), label: record.name, item_kind: record.kind, is_current: record === current, is_selected: false,
+  }));
+  await studio.install({ savedLayout: true, routes: [{ path: graphPath, handler: route => {
+    const url = new URL(route.request().url());
+    const direction = url.searchParams.get("direction") === "used_by" ? "used_by" : "uses";
+    const latest = url.searchParams.get("latest_per_item") === "true";
+    const root = url.pathname.endsWith(`/${hero.version_id}/relationships`) ? hero : current;
+    const firstHistoryPage = !latest && !url.searchParams.has("cursor");
+    const candidate = firstHistoryPage ? previous : current;
+    const items: RelationshipEdge[] = root === hero && direction === "used_by"
+      ? [{ relation: "declared_dependency", from: versionEndpoint(candidate), to: versionEndpoint(hero), details: {} }]
+      : [];
+    const result: RelationshipPage = {
+      schema_version: "1.0", project_id: projectId, root: versionEndpoint(root), direction, relationship_revision: 1,
+      items, nodes, coverage: { state: "complete", reasons: [] }, next_cursor: items.length && firstHistoryPage ? "history-page-2" : null,
+    };
+    return route.fulfill({ json: result });
+  } }] });
+  studio.versionRecords.push(previous, current);
+  studio.snapshot.items = [item(hero), item(current)];
+  await saveViewing(page, hero);
+  await studio.open(); await studio.ready();
+  await navigator(page).getByRole("button", { name: "Outliner", exact: true }).click();
+  const pane = outliner(page);
+  const scope = pane.getByRole("group", { name: "Used by version scope" });
+  const latest = scope.getByRole("button", { name: "Latest per item", exact: true });
+  const all = scope.getByRole("button", { name: "All versions", exact: true });
+  const currentBranch = pane.getByRole("button", { name: current.name, exact: true });
+  const earlierBranch = pane.getByRole("button", { name: previous.name, exact: true });
+  const loadMore = pane.getByRole("button", { name: "Load more", exact: true });
+  const requests = () => graphCalls(studio).map(call => call.url);
+  const rootPath = `${base}/versions/${hero.version_id}/relationships`;
+  const childPath = `${base}/versions/${current.version_id}/relationships`;
+
+  await expect(pane.getByText("No published dependencies", { exact: true })).toBeVisible();
+  await expect(scope).toHaveCount(0);
+  expect(requests().at(-1)).toBe(`${rootPath}?direction=uses`);
+
+  await pane.getByRole("button", { name: "Used by", exact: true }).click();
+  await expect(latest).toHaveAttribute("aria-pressed", "true");
+  await expect(all).toHaveAttribute("aria-pressed", "false");
+  await expect(currentBranch).toBeVisible();
+  await expect(earlierBranch).toHaveCount(0);
+  expect(requests().at(-1)).toBe(`${rootPath}?direction=used_by&latest_per_item=true`);
+  await currentBranch.click();
+  await expect(pane.getByText("No published uses of this version", { exact: true })).toBeVisible();
+  expect(requests().at(-1)).toBe(`${childPath}?direction=used_by&latest_per_item=true`);
+
+  await all.click();
+  await expect(all).toHaveAttribute("aria-pressed", "true");
+  await expect(latest).toHaveAttribute("aria-pressed", "false");
+  await expect(earlierBranch).toBeVisible();
+  await expect(currentBranch).toHaveCount(0);
+  expect(requests().at(-1)).toBe(`${rootPath}?direction=used_by`);
+  await loadMore.click();
+  await expect(currentBranch).toHaveAttribute("aria-expanded", "false");
+  expect(requests().at(-1)).toBe(`${rootPath}?direction=used_by&cursor=history-page-2`);
+  await currentBranch.click();
+  await expect(pane.getByText("No published uses of this version", { exact: true })).toBeVisible();
+  expect(requests().at(-1)).toBe(`${childPath}?direction=used_by`);
+
+  await latest.click();
+  await expect(currentBranch).toHaveAttribute("aria-expanded", "false");
+  await expect(earlierBranch).toHaveCount(0);
+  await expect(loadMore).toHaveCount(0);
+  expect(requests().at(-1)).toBe(`${rootPath}?direction=used_by&latest_per_item=true`);
+  await pane.getByRole("button", { name: "Uses", exact: true }).click();
+  await expect(pane.getByText("No published dependencies", { exact: true })).toBeVisible();
+  await expect(scope).toHaveCount(0);
+  expect(requests().at(-1)).toBe(`${rootPath}?direction=uses`);
+  studio.assertHermetic();
+});
+
 test("E1: an exact board exposes ordered unbound shots and missing panels without touching production", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   const board = studio.versionRecords.find(record => record.version_id === "b-v1")!;
@@ -260,6 +339,7 @@ test("E9: the restored Outliner shows both exact wardrobe histories", async ({ p
   await versions.selectOption("hero-v3");
   await expect(pane.getByRole("heading", { name: "Hero v3", exact: true })).toBeVisible();
   await pane.getByRole("button", { name: "Used by", exact: true }).click();
+  await pane.getByRole("button", { name: "All versions", exact: true }).click();
   await checkIncluded("Landing v2");
   await checkIncluded("Stairwell v2");
   await expect(inputs.getByText("Included by", { exact: true })).toHaveCount(2);
@@ -356,7 +436,7 @@ test("E5: keyboard browsing, render floods and explicit historical navigation pr
   await draft.fill("Retain this Composer draft");
   const bar = page.locator(".target-bar");
   await bar.press("Enter");
-  const picker = page.getByRole("region", { name: "Request target and references" });
+  const picker = page.getByRole("region", { name: "Request target", exact: true });
   await picker.getByRole("button", { name: "Project", exact: true }).press("Enter");
   await picker.locator(".target-references-disclosure > summary").press("Enter");
   await picker.getByRole("combobox", { name: "Reference item", exact: true }).selectOption(old.item_id);
@@ -531,16 +611,26 @@ test("E5: project activation aborts the old tree and reactivation reads the acti
   }
   await studio.open(); await studio.ready();
   try {
+    const retainedToggle = (count: number) => navigator(page).getByRole("button", { name: `Retained media (${count})`, exact: true });
+    const retainedRows = navigator(page).locator(".retained-output");
+    await retainedToggle(2).click();
+    await expect(retainedRows).toHaveCount(2);
     await open();
     await expect.poll(() => reads).toBe(1);
     await activate(project, other);
     await expect(page.locator("html")).toHaveAttribute("data-aborted-graph", /a-v2\/relationships/);
+    await navigator(page).getByRole("button", { name: "Assets", exact: true }).click();
+    await expect(retainedToggle(0)).toHaveAttribute("aria-expanded", "false");
+    await expect(retainedRows).toHaveCount(0);
     await open();
     delayed.release();
     await expect(outliner(page).getByText("No published versions in this project to navigate.")).toBeVisible();
     await expect(outliner(page).getByRole("tree")).toHaveCount(0);
     expect(reads).toBe(1);
     await activate(other, project);
+    await navigator(page).getByRole("button", { name: "Assets", exact: true }).click();
+    await expect(retainedToggle(2)).toHaveAttribute("aria-expanded", "false");
+    await expect(retainedRows).toHaveCount(0);
     await open();
     await expect(outliner(page).getByText("No published dependencies", { exact: true })).toBeVisible();
     await expect(outliner(page).getByRole("heading", { name: viewed.name })).toBeVisible();
@@ -712,6 +802,7 @@ test("Retained-media inspection has no viewed catalogue root until Review return
   await saveViewing(page, viewed);
   await studio.open(); await studio.ready();
   await expect(review(page).getByRole("heading", { name: viewed.name, exact: true })).toBeVisible();
+  await navigator(page).getByRole("button", { name: /^Retained media \(\d+\)$/ }).click();
   await page.getByRole("button", { name: "Inspect retained concept image legacy", exact: true }).click();
   await expect(review(page).getByText("Retained media · Not a catalogue version", { exact: true })).toBeVisible();
   await navigator(page).getByRole("button", { name: "Outliner", exact: true }).click();

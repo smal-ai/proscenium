@@ -82,10 +82,10 @@ export function readFailure(error: unknown): { stale: boolean; text: string } {
   return { stale: false, text };
 }
 
-export async function readRelationships(api: ApiClient, projectId: string, root: RelationshipRoot, direction: RelationshipDirection, signal: AbortSignal, cursor?: string) {
+export async function readRelationships(api: ApiClient, projectId: string, root: RelationshipRoot, direction: RelationshipDirection, signal: AbortSignal, cursor?: string, latestPerItem?: boolean) {
   const page = await api.call("getVersionRelationships", {
     path: { project_id: projectId, version_id: rootRef(root).version_id },
-    query: { direction, shot_id: root.kind === "shot" ? root.shot_id : undefined, cursor }, signal,
+    query: { direction, shot_id: root.kind === "shot" ? root.shot_id : undefined, cursor, latest_per_item: direction === "used_by" && latestPerItem ? true : undefined }, signal,
   });
   signal.throwIfAborted();
   if (page.project_id !== projectId || page.direction !== direction || endpointKey(page.root) !== endpointKey(root)) throw new Error("Relationship response scope mismatch");

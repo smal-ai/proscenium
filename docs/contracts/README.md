@@ -125,6 +125,10 @@ same-ID capture receipts. Consumers must accept historical records without them.
   returns one hop of indexed evidence, with the same edge orientation in both
   directions. Partial coverage is not evidence that there are no consumers.
   Cursors bind to the project, root, direction, sort and relationship revision.
+  `latest_per_item=true` limits `used_by` to the newest matching version per
+  consumer, preferring current where it matches and preserving all edges from the
+  winning version for that consumer. It defaults to `false` and is ignored for
+  `uses`. The two `used_by` modes do not share cursors.
   On `409 relationship_revision_changed`, restart at page one. Current and owner
   selection badges do not alter immutable relationships or source digests. A
   missing artefact record has `state: missing` and null kind and purpose.

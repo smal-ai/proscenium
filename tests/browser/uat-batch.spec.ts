@@ -63,6 +63,7 @@ test("explicit target and historical references stay isolated during async submi
   await page.getByRole("button", { name: "Annotate presented frame" }).click();
   await page.getByRole("textbox", { name: "Feedback" }).fill("Unrelated hidden annotation must never flush");
   await page.getByRole("button", { name: "Chat focus", exact: true }).click();
+  await page.getByRole("textbox", { name: "Message Copilot" }).fill("Use B shot one with A v1");
   await page.getByRole("button", { name: "Choose request target and references" }).click();
   await page.locator(".target-references-disclosure > summary").click();
   await page.getByLabel("Reference item", { exact: true }).selectOption("asset-a");
@@ -71,7 +72,6 @@ test("explicit target and historical references stay isolated during async submi
   await page.getByRole("button", { name: "Existing…", exact: true }).click();
   await page.getByLabel("Published item", { exact: true }).selectOption("board-b");
   await page.getByLabel("Target storyboard shot").selectOption("shot-1");
-  await page.getByRole("textbox", { name: "Message Copilot" }).fill("Use B shot one with A v1");
   const delayed = deferred(); studio.contextGate = delayed.promise;
   await page.getByRole("button", { name: "Queue message", exact: true }).click();
   await expect.poll(() => studio.contexts.length).toBe(1);
@@ -88,6 +88,7 @@ test("Navigator asset-first creation and retained verified versus legacy PNGs", 
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   const outputs = page.getByRole("region", { name: "Retained outputs" });
+  await outputs.getByRole("button", { name: "Retained media (2)", exact: true }).click();
   await expect(outputs.getByText(/Attribution unrecorded/)).toBeVisible();
   await expect(outputs.getByText(/Verified/)).toBeVisible();
   await expect(outputs.getByText(/Concept images are not 3D meshes/)).toBeVisible();
@@ -132,6 +133,15 @@ test("Composer Enter submits Queue and Steer but respects empty and unselected t
   await input.press("Enter");
   await expect(input).toHaveValue("");
   expect(studio.submissions[1]).toMatchObject({ type: "steer", text: "Steer the active turn", target_work_id: "work" });
+  await input.fill("Steer from the target panel");
+  const bar = page.locator(".target-bar");
+  const steer = page.getByRole("button", { name: "Steer active work", exact: true });
+  await bar.click();
+  await expect(steer).toBeEnabled();
+  await bar.press("Control+Enter");
+  await expect(page.locator("#request-target-picker")).toHaveCount(0);
+  await expect(input).toHaveValue("");
+  expect(studio.submissions[2]).toMatchObject({ type: "steer", text: "Steer from the target panel", target_work_id: "work" });
   studio.assertHermetic();
 });
 
@@ -183,7 +193,7 @@ for (const stop of [false, true]) {
     try {
       await action.click();
       await expect.poll(() => studio.submissions.length).toBe(1);
-      await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", stop ? "Stopping…" : "Sending…");
+      await expect(page.locator(".composer-status-row .assistant-status")).toHaveAttribute("aria-label", stop ? "Stopping…" : "Sending…");
       expect(await retainedSubmission()).toEqual(studio.submissions[0]);
       await expect(confirmation).toHaveCount(0);
       initial.release();
@@ -456,7 +466,7 @@ for (const statusCode of [422, 503]) {
     ] });
     await studio.open(); await studio.ready();
     const queue = await prepareAnnotationQueue(page, "Try external Queue");
-    const status = page.locator(".composer-footer .assistant-status");
+    const status = page.locator(".composer-status-row .assistant-status");
     const confirmation = page.getByText("Request awaiting confirmation", { exact: true });
     await expect(status).toHaveAttribute("aria-label", "Ready");
     try {
@@ -601,6 +611,7 @@ for (const submitFrom of ["Review criteria", "Review name"]) {
 
 test("send mode is deliberate, stale Steer stays guarded, held cancellation and Resume polling", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!); studio.snapshot.active_work = work(); studio.snapshot.execution!.can_steer_work_id = "work";
+  studio.snapshot.project = { ...studio.snapshot.project, native_session_id: studio.snapshot.active_work.native_session_id };
   studio.requests = [request("held", "Held request", "held")];
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   const input = page.getByRole("textbox", { name: "Message Copilot" }); await input.fill("Retain this steer draft");
@@ -653,7 +664,7 @@ test(stalled ? "Resume appears after the auto-release deadline while Queue admis
   const queue = page.getByRole("button", { name: "Queue message" });
   const resume = page.getByRole("region", { name: "Resume Copilot" });
   const banner = page.locator(".queue-hold");
-  const status = page.locator(".composer-footer .assistant-status");
+  const status = page.locator(".composer-status-row .assistant-status");
   await expect(resume).toHaveCount(0);
   await expect(banner).toHaveCount(0);
   await expect(status).toHaveAttribute("aria-label", "Ready");
@@ -727,7 +738,7 @@ test(`Idle-restart ${external ? "annotation Queue" : "Composer Queue"} keeps Res
   const input = page.getByRole("textbox", { name: "Message Copilot" });
   const resume = page.getByRole("region", { name: "Resume Copilot" });
   const banner = page.locator(".queue-hold");
-  const status = page.locator(".composer-footer .assistant-status");
+  const status = page.locator(".composer-status-row .assistant-status");
   const rail = page.locator(".panel-rail-status .assistant-status");
   const critic = page.locator(".assistant-footer .assistant-status");
   const flashes = await page.getByRole("complementary", { name: "Assistant panel" }).evaluateHandle(panel => {
@@ -1035,7 +1046,7 @@ test("journal resync replaces older projections with a lower watermark", async (
   await expect(page.getByText("Assistant reply 12", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Assistant reply 3", { exact: true })).toBeVisible();
   await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
-  await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", "Ready");
+  await expect(page.locator(".composer-status-row .assistant-status")).toHaveAttribute("aria-label", "Ready");
   await expect(page.getByRole("region", { name: "Resume Copilot" })).toHaveCount(0);
   await expect.poll(() => page.evaluate(id => localStorage.getItem(`proscenium.owner.cursor.${id}`), projectId)).toBe("3");
   studio.assertHermetic();
@@ -1116,6 +1127,7 @@ for (const active of ["running", "awaiting_user"] as const) {
 test("Resume stays visible above the Composer while scrolling a long conversation", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   studio.snapshot.active_work = work("awaiting_resume");
+  studio.snapshot.project = { ...studio.snapshot.project, native_session_id: studio.snapshot.active_work.native_session_id };
   studio.snapshot.execution!.fenced = true;
   studio.requests = Array.from({ length: 40 }, (_, i) => request(`history-${i}`, `Earlier prompt ${i}. ${"Storyboard detail. ".repeat(25)}`));
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
@@ -1130,9 +1142,9 @@ test("Resume stays visible above the Composer while scrolling a long conversatio
   await expect(page.getByRole("button", { name: "Jump to latest" })).toBeVisible();
   await expect(resume).toBeInViewport();
   expect((await resume.boundingBox())!.y).toBeCloseTo(before!.y, 0);
-  await page.getByRole("button", { name: /^Context/ }).click();
+  await page.locator(".target-bar").click();
   await expect(resume).toBeInViewport();
-  await page.getByRole("button", { name: "Back to message" }).click();
+  await page.getByRole("button", { name: "Close target picker" }).click();
   await expect(input).toHaveValue("Keep this UAT draft");
   await page.getByLabel("Resume mode").selectOption("continue_work");
   await expect(resume).toBeInViewport();
@@ -1147,11 +1159,11 @@ test("Resume stays visible above the Composer while scrolling a long conversatio
   studio.assertHermetic();
 });
 
-test("fixed Composer footer and collapsed rail retain work on disconnect", async ({ page, baseURL }) => {
+test("Composer status row and collapsed rail retain work on disconnect", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
-  const status = page.locator(".composer-footer .assistant-status");
+  const status = page.locator(".composer-status-row .assistant-status");
   await expect(status).toHaveAttribute("aria-label", "Ready");
   for (const [state, label, fenced] of [["running", "Working…", false], ["awaiting_resume", "Paused", true], ["stop_requested", "Stopping…", true], ["outcome_uncertain", "Needs recovery", true]] as const) {
     await studio.setWork(state, fenced); await expect(status).toHaveAttribute("aria-label", label);
@@ -1175,7 +1187,7 @@ test("awaiting-user status is not falsely reported as Ready without a decision p
   studio.snapshot.active_work = work("awaiting_user");
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
-  await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", "Needs your input");
+  await expect(page.locator(".composer-status-row .assistant-status")).toHaveAttribute("aria-label", "Needs your input");
 });
 
 test("a fresh native child event has a known live Agents count", async ({ page, baseURL }) => {
@@ -1186,8 +1198,9 @@ test("a fresh native child event has a known live Agents count", async ({ page, 
   await expect(page.getByRole("button", { name: /^Agents/ })).toHaveText("Agents1");
 });
 
-test("Jobs Context Agents replace textarea and restore draft caret plus accepted history", async ({ page, baseURL }) => {
+test("Jobs Target Agents replace textarea and restore draft caret plus accepted history", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work();
   studio.snapshot.jobs = [job("waiting", "waiting_resource"), job("cancelling", "cancel_requested"), job("uncertain", "outcome_uncertain"), job("finished", "succeeded")];
   const steer = request("steer", "Accepted Steer");
   steer.submission = { schema_version: "1.0", project_id: projectId, request_id: "steer", type: "steer", target_work_id: "work", text: "Accepted Steer", context_id: "context" };
@@ -1197,17 +1210,21 @@ test("Jobs Context Agents replace textarea and restore draft caret plus accepted
   studio.emit("subagent.started", { invocation_id: "child", name: "authoring-specialist", display_name: "Layout shot one", state: "running", summary: "", artifact_ids: [], model_id: "synthetic" });
   const input = page.getByRole("textbox", { name: "Message Copilot" }); await input.fill("Unsent draft\nSecond line");
   await input.evaluate(e => (e as HTMLTextAreaElement).setSelectionRange(3, 3));
-  for (const panel of ["Jobs", "Context", "Agents"]) {
-    await page.getByRole("button", { name: new RegExp(`^${panel}`) }).click();
+  const queue = page.getByRole("button", { name: "Queue message" });
+  const agents = page.getByRole("button", { name: /^Agents:/ });
+  for (const panel of ["Jobs", "Target", "Agents"]) {
+    await (panel === "Target" ? page.locator(".target-bar") : page.getByRole("button", { name: new RegExp(`^${panel}:`) })).click();
     await expect(input).toHaveCount(0);
+    if (panel === "Target") await expect(queue).toBeEnabled();
+    else await expect(queue).toBeDisabled();
     if (panel === "Agents") { await expect(page.getByText("Layout shot one", { exact: true }).last()).toBeVisible(); await expect(page.getByRole("button", { name: /^Agents/ })).toContainText("1"); }
     if (panel === "Jobs") {
-      await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs1 uncertain · 1 running · 1 queued?");
+      await expect(page.getByRole("button", { name: /^Jobs/ })).toHaveText("Jobs3?");
       const history = page.locator(".jobs-finished-group");
       await expect(history.getByText("Finished (1)")).toBeVisible();
       await expect(history).toHaveJSProperty("open", false);
     }
-    await page.getByRole("button", { name: "Back to message" }).click();
+    await page.getByRole("button", { name: panel === "Target" ? "Close target picker" : "Back to message" }).click();
     await expect(input).toHaveValue("Unsent draft\nSecond line"); await expect(input).toBeFocused();
     expect(await input.evaluate(e => (e as HTMLTextAreaElement).selectionStart)).toBe(3);
   }
@@ -1221,8 +1238,17 @@ test("Jobs Context Agents replace textarea and restore draft caret plus accepted
   await expect(input).toHaveValue("Unsent draft\nSecond line");
   await input.evaluate(e => { (e as HTMLTextAreaElement).setSelectionRange(0, 0); e.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", isComposing: true, bubbles: true })); });
   await expect(input).toHaveValue("Unsent draft\nSecond line");
+  await expect(agents).toHaveClass("active-agents");
+  await expect(agents.locator(".jobs-indicator")).toBeVisible();
   studio.emit("subagent.completed", { invocation_id: "child", name: "authoring-specialist", display_name: "Layout shot one", state: "completed", summary: "", artifact_ids: [], model_id: "synthetic" });
-  await expect(page.getByRole("button", { name: /^Agents/ })).toHaveText("Agents0");
+  await expect(agents).not.toHaveClass("active-agents");
+  await expect(agents).toHaveText("Agents1");
+  await agents.click();
+  const specialists = page.locator("#composer-agents");
+  await expect(specialists.getByText("completed · live")).toBeVisible();
+  await studio.setWork(null);
+  await expect(agents).toHaveText("Agents0");
+  await expect(specialists.getByText("No native specialists in this turn.")).toBeVisible();
   studio.assertHermetic();
 });
 
@@ -1258,7 +1284,7 @@ test("delayed older snapshot cannot resurrect a completed work event", async ({ 
   await (await staleResponse).finished();
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
-  await expect(page.locator(".composer-footer .assistant-status")).toHaveAttribute("aria-label", "Ready");
+  await expect(page.locator(".composer-status-row .assistant-status")).toHaveAttribute("aria-label", "Ready");
   await expect(page.locator(".copilot-identity small")).toHaveText("No active work");
   studio.assertHermetic();
 });

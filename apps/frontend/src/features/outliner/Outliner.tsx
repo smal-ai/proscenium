@@ -1,15 +1,16 @@
 import { memo, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { RelationshipDirection, RelationshipEndpoint, RelationshipNodeSummary, RelationshipPage, RelationshipRelation, RelationshipRoot, VersionRecord } from "../../api/generated/contracts";
-import type { OutlinerSurfaceProps } from "../../api/studio";
+import type { OutlinerSurfaceProps, ReviewNavigationProps } from "../../api/studio";
 import { nextArtifactReadOrder } from "../readyArtifactIndex";
 import { appendPage, boundedSignal, coverageMessage, endpointKey, extendPath, groupEdges, readFailure, readRelationships, readVersions, rootRef, versionRoot } from "./model";
 import { overlayNode, useNodeOverlays, type NodeOverlays } from "./overlays";
 import "./outliner.css";
 
 type FocusedRoot = { endpoint: RelationshipRoot; summary?: RelationshipNodeSummary; board?: RelationshipNodeSummary };
-type NavigationProps = Pick<OutlinerSurfaceProps, "api" | "projectId" | "visible" | "onOpenVersion" | "onOpenShot" | "onInspectArtifact">;
+type NavigationProps = ReviewNavigationProps & Pick<OutlinerSurfaceProps, "api" | "projectId" | "visible" | "onOpenVersion" | "onOpenShot" | "onInspectArtifact">;
 type BranchProps = NavigationProps & {
   direction: RelationshipDirection;
+  latestPerItem: boolean;
   readKey: string;
   restart: () => void;
   focusRoot: (root: FocusedRoot) => void;
@@ -39,8 +40,9 @@ function nodeAction(node: RelationshipNodeSummary | undefined) {
   return null;
 }
 
-function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, onInspectArtifact }: NavigationProps & { node: RelationshipNodeSummary }) {
-  const action = useRef<AbortController>(null);
+function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, onInspectArtifact, reviewNavigationEpoch = 0, onBeginNavigation, isCurrentReviewNavigation }: NavigationProps & { node: RelationshipNodeSummary }) {
+  const action = useRef<{ controller: AbortController; epoch: number }>(null);
+  const committedEpoch = useRef(reviewNavigationEpoch);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const key = endpointKey(node);
@@ -53,13 +55,26 @@ function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, 
   useLayoutEffect(() => {
     setBusy(false);
     if (enabled) setError("");
-    return () => { action.current?.abort(); action.current = null; };
+    return () => { action.current?.controller.abort(); action.current = null; };
   }, [api, projectId, key, artefactId, enabled]);
+  useLayoutEffect(() => {
+    committedEpoch.current = reviewNavigationEpoch;
+    const pending = action.current;
+    if (pending && reviewNavigationEpoch > pending.epoch) {
+      pending.controller.abort();
+      action.current = null;
+      setBusy(false);
+    }
+  }, [reviewNavigationEpoch]);
 
   async function openNode() {
     if (!enabled || action.current) return;
+    const epoch = onBeginNavigation?.() ?? committedEpoch.current;
     const controller = new AbortController();
-    action.current = controller;
+    const pending = { controller, epoch };
+    action.current = pending;
+    const isCurrent = () => action.current === pending && !controller.signal.aborted
+      && (isCurrentReviewNavigation?.(epoch) ?? committedEpoch.current === epoch);
     setError("");
     setBusy(true);
     const signal = boundedSignal(controller.signal);
@@ -67,7 +82,7 @@ function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, 
       if (node.kind === "version" || node.kind === "shot") {
         const pin = rootRef(node);
         const [record] = await readVersions(api, projectId, pin.item_id, signal, pin.version_id);
-        if (action.current !== controller) return;
+        if (!isCurrent()) return;
         signal.throwIfAborted();
         if (!record || (node.kind === "shot" && record.kind !== "storyboard")) {
           setError(`Exact publication ${pin.version_id} is unavailable. No other version was opened.`);
@@ -75,15 +90,15 @@ function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, 
         else onOpenVersion(record);
       } else if (artefactId) {
         const fresh = await api.call("getArtifact", { path: { project_id: projectId, artifact_id: artefactId }, signal });
-        if (action.current !== controller) return;
+        if (!isCurrent()) return;
         signal.throwIfAborted();
         if (fresh.project_id !== projectId || fresh.artifact_id !== artefactId || fresh.state !== "ready") setError("The exact artefact is no longer available to inspect.");
         else onInspectArtifact(fresh);
       }
     } catch (cause) {
-      if (action.current === controller && !controller.signal.aborted) setError(`Could not open the exact target. ${readFailure(cause).text}`);
+      if (isCurrent()) setError(`Could not open the exact target. ${readFailure(cause).text}`);
     } finally {
-      if (action.current === controller) { action.current = null; setBusy(false); }
+      if (action.current === pending) { action.current = null; setBusy(false); }
     }
   }
   return label && <><button type="button" disabled={!enabled} aria-disabled={busy || undefined} onClick={() => void openNode()}>{label}</button>
@@ -174,7 +189,7 @@ function RelationshipRow({ endpoint, summary: recorded, board, path, evidence, n
   </div>;
 }
 
-function usePage({ api, projectId, visible, direction, readKey }: BranchProps, root: RelationshipRoot) {
+function usePage({ api, projectId, visible, direction, latestPerItem, readKey }: BranchProps, root: RelationshipRoot) {
   const [read, setRead] = useState<{ page: RelationshipPage; nodeOrders: ReadonlyMap<string, number> }>();
   const page = read?.page;
   const [failure, setFailure] = useState<ReturnType<typeof readFailure>>();
@@ -195,7 +210,7 @@ function usePage({ api, projectId, visible, direction, readKey }: BranchProps, r
       busyRef.current = true;
       setFailure(undefined);
       const order = nextArtifactReadOrder();
-      void readRelationships(api, projectId, exact, direction, boundedSignal(controller.signal))
+      void readRelationships(api, projectId, exact, direction, boundedSignal(controller.signal), undefined, latestPerItem)
         .then(value => { if (!controller.signal.aborted) setRead({ page: value, nodeOrders: stampNodes(value, order) }); })
         .catch(error => { if (!controller.signal.aborted) setFailure(readFailure(error)); })
         .finally(() => {
@@ -210,7 +225,7 @@ function usePage({ api, projectId, visible, direction, readKey }: BranchProps, r
       lane.current = null;
       busyRef.current = false;
     };
-  }, [api, projectId, direction, item_id, version_id, shot_id, visible, readKey]);
+  }, [api, projectId, direction, latestPerItem, item_id, version_id, shot_id, visible, readKey]);
 
   async function loadMore() {
     const controller = lane.current;
@@ -220,7 +235,7 @@ function usePage({ api, projectId, visible, direction, readKey }: BranchProps, r
     setFailure(undefined);
     try {
       const order = nextArtifactReadOrder();
-      const next = await readRelationships(api, projectId, root, direction, boundedSignal(controller.signal), page.next_cursor);
+      const next = await readRelationships(api, projectId, root, direction, boundedSignal(controller.signal), page.next_cursor, latestPerItem);
       if (!controller.signal.aborted) setRead({ page: appendPage(page, next), nodeOrders: stampNodes(next, order, read.nodeOrders) });
     } catch (error) {
       if (!controller.signal.aborted) setFailure(readFailure(error));
@@ -351,6 +366,7 @@ function ProjectOutliner(props: OutlinerSurfaceProps) {
 function OutlinerRoot({ overlays, selectionError, reconnections, ...props }: OutlinerSurfaceProps & { overlays: NodeOverlays; selectionError: boolean; reconnections: number }) {
   const { version, topologyRevision, visible } = props;
   const [direction, setDirection] = useState<RelationshipDirection>("uses");
+  const [latestPerItem, setLatestPerItem] = useState(true);
   const [history, setHistory] = useState<FocusedRoot[]>([]);
   const [revision, setRevision] = useState(0);
   const panel = useRef<HTMLElement>(null);
@@ -374,11 +390,17 @@ function OutlinerRoot({ overlays, selectionError, reconnections, ...props }: Out
       <button type="button" onClick={restart}>Refresh relationships</button>
     </div>
     {focused && <>
-      <div className="relationship-actions" role="group" aria-label="Relationship direction">
-        <button type="button" aria-pressed={direction === "uses"} onClick={() => setDirection("uses")}>Uses</button>
-        <button type="button" aria-pressed={direction === "used_by"} onClick={() => setDirection("used_by")}>Used by</button>
+      <div className="relationship-controls">
+        <div className="relationship-actions" role="group" aria-label="Relationship direction">
+          <button type="button" aria-pressed={direction === "uses"} onClick={() => setDirection("uses")}>Uses</button>
+          <button type="button" aria-pressed={direction === "used_by"} onClick={() => setDirection("used_by")}>Used by</button>
+        </div>
+        {direction === "used_by" && <div className="relationship-actions" role="group" aria-label="Used by version scope">
+          <button type="button" aria-pressed={latestPerItem} onClick={() => setLatestPerItem(true)}>Latest per item</button>
+          <button type="button" aria-pressed={!latestPerItem} onClick={() => setLatestPerItem(false)}>All versions</button>
+        </div>}
       </div>
-      <RelationshipTree key={JSON.stringify([endpointKey(focused.endpoint), direction])} {...props} overlays={overlays} focused={focused} viewing={viewing} home={history.length <= Number(!version)} direction={direction} readKey={readKey} restart={restart} focusRoot={next => {
+      <RelationshipTree key={JSON.stringify([endpointKey(focused.endpoint), direction, latestPerItem])} {...props} overlays={overlays} focused={focused} viewing={viewing} home={history.length <= Number(!version)} direction={direction} latestPerItem={latestPerItem} readKey={readKey} restart={restart} focusRoot={next => {
         focusHeading.current = true;
         setHistory(previous => [...previous, next]);
       }} />

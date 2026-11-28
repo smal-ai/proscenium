@@ -47,7 +47,7 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
   const [openDisclosure, setOpenDisclosure] = useState<OpenDisclosure>(null);
   const disclosureTriggers = useRef(new Map<string, HTMLButtonElement>());
   const openKey = openDisclosure ? disclosureKey(openDisclosure) : null;
-  const [retainedExpanded, setRetainedExpanded] = useState<boolean | null>(null);
+  const [showRetained, setShowRetained] = useState(false);
   const locked = useRef(false);
 
   // Check after refs and parent visibility are committed, including when the Navigator is hidden.
@@ -234,7 +234,6 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
       && ["image/png", "image/jpeg", "image/webp"].includes(artifact.media_type)))
     && artifact.purpose !== "draft_motion"
     && !(Boolean(job_id) && published_versions.length > 0 && artifact.artifact_id.startsWith("preview-"))), [projectId, retainedArtifacts, retained]);
-  const showRetained = retainedExpanded ?? (items.length === 0 || retainedList.length > 0);
 
   return <section className="review-catalogue" aria-label="Version catalogue">
     <div className="catalogue-toolbar">
@@ -315,7 +314,7 @@ function Catalogue({api, projectId, projectName, items, selectedVersionId, refre
         </section>;
       })}
       <section className="retained-outputs" aria-label="Retained outputs">
-        <h3><button className="retained-outputs-toggle" aria-expanded={showRetained} onClick={() => setRetainedExpanded(!showRetained)}>{showRetained ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>} Retained media ({retainedList.length})</button></h3>
+        <h3><button className="retained-outputs-toggle" aria-expanded={showRetained} onClick={() => setShowRetained(expanded => !expanded)}>{showRetained ? <ChevronDown size={14} aria-hidden="true"/> : <ChevronRight size={14} aria-hidden="true"/>} Retained media ({retainedList.length})</button></h3>
         {showRetained && <><p>Ready images, audio and video, listed separately from catalogue versions. Concept images are not 3D meshes.</p>
           {retainedList.map(({artifact, published_versions, attribution_status}) => {
             const url = mediaUrl(projectId, artifact.artifact_id);

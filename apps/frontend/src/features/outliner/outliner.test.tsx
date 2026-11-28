@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ApiError, type ApiClient } from "../../api/client";
+import { ApiClient, ApiError } from "../../api/client";
 import type { Artifact, ItemRecord, ProxyMapping, RelationshipEdge, RelationshipNodeSummary, RelationshipPage, SelectionRecord, ShotPlan } from "../../api/generated/contracts";
 import { InspectionObjects } from "../review/InspectionObjects";
 import { recordArtifactObservation, type ArtifactObservation } from "../readyArtifactIndex";
@@ -102,6 +102,24 @@ test("the request checks exact scope and discards a late response even if transp
   const pending = readRelationships(api, "project", hero, "used_by", abort.signal);
   abort.abort();
   await assert.rejects(pending, { name: "AbortError" });
+});
+
+test("only the latest-per-item reverse scope serialises latest_per_item", async context => {
+  const fetch = context.mock.method(globalThis, "fetch", async (path: string) => {
+    const direction = new URL(path, "http://localhost").searchParams.get("direction");
+    return Response.json({ ...emptyPage(), direction });
+  });
+  const api = new ApiClient();
+  const signal = new AbortController().signal;
+  await readRelationships(api, "project", hero, "used_by", signal, "cursor", true);
+  await readRelationships(api, "project", hero, "used_by", signal, undefined, false);
+  await readRelationships(api, "project", hero, "uses", signal, undefined, true);
+  assert.deepEqual(fetch.mock.calls.map(({ arguments: [path] }) => {
+    assert.equal(typeof path, "string");
+    return new URL(String(path), "http://localhost").search;
+  }), [
+    "?direction=used_by&cursor=cursor&latest_per_item=true", "?direction=used_by", "?direction=uses",
+  ]);
 });
 
 test("an empty/hidden Outliner renders an honest picker state without an implied root", () => {

@@ -2,6 +2,7 @@
 
 import json
 import re
+from datetime import UTC, datetime
 from hashlib import sha256
 from typing import Any
 
@@ -21,6 +22,51 @@ SORT_VERSION = 1
 KINDS = {"asset", "scene", "storyboard", "sequence", "unity_result"}
 REASONS = ("invalid_historical_record", "source_unavailable")
 Keyset = tuple[int, int, str]
+_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
+
+# Rank the entire matching history before applying the keyset. DENSE_RANK keeps
+# every edge of the winning version, including separate sequence occurrences.
+_LATEST_CONSUMERS = """SELECT sort_group,sort_ordinal,sort_tie,relation,from_json,to_json,details_json
+FROM (
+    SELECT e.sort_group,e.sort_ordinal,e.sort_tie,e.relation,e.from_json,e.to_json,e.details_json,
+           CASE WHEN e.from_kind='artifact' THEN 1 ELSE DENSE_RANK() OVER (
+               PARTITION BY e.from_kind,e.consumer_item_id,e.from_local_id
+               ORDER BY (i.id IS NOT NULL AND v.id IS NOT NULL) DESC,
+                        relationship_timestamp_us(json_extract(v.body,'$.created_at')) DESC,
+                        coalesce(v.rowid,0) DESC,e.from_version_id DESC
+           ) END AS winner_rank
+    FROM (
+        SELECT e.*,CASE WHEN e.from_kind='version' THEN json_extract(e.from_json,'$.ref.item_id')
+                        ELSE json_extract(e.from_json,'$.board.item_id') END AS consumer_item_id
+        FROM relationship_edges AS e
+        WHERE e.to_kind=? AND e.to_version_id=? AND e.to_local_id=?
+    ) AS e
+    LEFT JOIN records AS v ON v.namespace='versions' AND v.id=e.from_version_id
+        AND json_type(v.body)='object' AND json_extract(v.body,'$.project_id')=?
+        AND json_extract(v.body,'$.item_id')=e.consumer_item_id
+        AND json_type(v.body,'$.version_id')='text'
+        AND json_extract(v.body,'$.version_id')=e.from_version_id
+    LEFT JOIN records AS i ON i.namespace='items' AND i.id=e.consumer_item_id
+        AND json_type(i.body)='object' AND json_extract(i.body,'$.project_id')=?
+        AND json_extract(i.body,'$.item_id')=e.consumer_item_id
+        AND json_type(i.body,'$.current_version_id')='text'
+        AND json_extract(i.body,'$.current_version_id')=e.from_version_id
+)
+WHERE winner_rank=1 AND (sort_group,sort_ordinal,sort_tie)>(?,?,?)
+ORDER BY sort_group,sort_ordinal,sort_tie LIMIT ?"""
+
+
+def _timestamp_us(value: object) -> int:
+    # SQLite's date functions round to milliseconds. Preserve the full published
+    # microseconds and compare timezone-equivalent stamps as the same instant.
+    if not isinstance(value, str):
+        return 0
+    try:
+        stamp = datetime.fromisoformat(value)
+    except ValueError:
+        return 0
+    delta = (stamp if stamp.tzinfo else stamp.replace(tzinfo=UTC)) - _EPOCH
+    return (delta.days * 86400 + delta.seconds) * 1_000_000 + delta.microseconds
 
 
 def edge_query(direction: str) -> str:
@@ -294,6 +340,7 @@ def read_relationships(
     shot_id: str | None = None,
     cursor: str | None = None,
     limit: int = 50,
+    latest_per_item: bool = False,
 ) -> dict:
     store = services.registry.project_store(project_id)
     if direction not in {"uses", "used_by"}:
@@ -306,6 +353,7 @@ def read_relationships(
         )
     if shot_id is not None:
         validate("Id", shot_id)
+    dedupe = bool(latest_per_item and direction == "used_by")
     with store.transaction(write=False) as tx:
         version = tx.require("versions", version_id)
         if not _exact(tx, version, {"version_id": version_id}):
@@ -327,7 +375,10 @@ def read_relationships(
                     safe_for_model=True,
                 )
             root = {"kind": "shot", "board": ref, "shot_id": shot_id}
-        scope = encoded(["relationships", SORT_VERSION, project_id, direction, root])
+        scope = encoded(
+            ["relationships", SORT_VERSION, project_id, direction, root]
+            + (["latest_per_item"] if dedupe else [])
+        )
         after = _after(services, scope, cursor, revision)
         if (
             shot_id is not None
@@ -340,9 +391,18 @@ def read_relationships(
         ):
             raise DomainError("not_found", 404)
         coverage = _coverage(tx, direction, indexed)
-        rows = tx.connection.execute(
-            edge_query(direction), (*endpoint_key(root), *after, limit + 1)
-        ).fetchall()
+        if dedupe:
+            tx.connection.create_function(
+                "relationship_timestamp_us", 1, _timestamp_us, deterministic=True
+            )
+            rows = tx.connection.execute(
+                _LATEST_CONSUMERS,
+                (*endpoint_key(root), tx.project_id, tx.project_id, *after, limit + 1),
+            ).fetchall()
+        else:
+            rows = tx.connection.execute(
+                edge_query(direction), (*endpoint_key(root), *after, limit + 1)
+            ).fetchall()
         edges = [
             {
                 "relation": row[3],

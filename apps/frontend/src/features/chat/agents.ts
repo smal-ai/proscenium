@@ -16,8 +16,8 @@ export function nativeAgents(snapshot: ProjectSnapshot | null, events: Event[], 
     agents.set(key, {
       activity_key: key,
       invocation_id: activity.invocation_id, native_agent_id: event.actor.id, name: activity.name,
-      display_name: activity.display_name ?? null, model_id: activity.model_id, work_id: event.work_id,
-      request_id: event.request_id, state: mappedState,
+      display_name: activity.display_name ?? null, model_id: activity.model_id, work_id: event.work_id ?? current?.work_id ?? null,
+      request_id: event.request_id ?? current?.request_id ?? null, state: mappedState,
       freshness: mappedState === "outcome_uncertain" ? "uncertain" : mappedState === "running" ? (parentLive ? "live" : "last_known") : "live", updated_at: event.occurred_at,
     });
   }
@@ -28,8 +28,18 @@ export function nativeAgents(snapshot: ProjectSnapshot | null, events: Event[], 
     // A replayed start cannot overwrite newer terminal child evidence.
     if (current && current.updated_at && agent.updated_at && Date.parse(current.updated_at) > Date.parse(agent.updated_at)) continue;
     if (current && !busyAgent(current) && busyAgent(agent)) continue;
-    agents.set(key, { ...agent, activity_key: key });
+    agents.set(key, { ...agent, work_id: agent.work_id ?? current?.work_id ?? null, request_id: agent.request_id ?? current?.request_id ?? null, activity_key: key });
   }
   return [...agents.values()];
 }
 export const busyAgent = (agent: NativeAgentActivity) => ["running", "outcome_uncertain"].includes(agent.state);
+
+export function belongsToTurn(work: NonNullable<ProjectSnapshot["active_work"]>) {
+  const turnRequests = new Set([work.originating_request_id, ...work.directive_request_ids]);
+  return ({ work_id, request_id }: Pick<Event, "work_id" | "request_id">) =>
+    work_id === work.work_id || (work_id === null && request_id !== null && turnRequests.has(request_id));
+}
+
+export function agentsForTurn(agents: NativeSpecialist[], work: ProjectSnapshot["active_work"] | undefined): NativeSpecialist[] {
+  return work ? agents.filter(belongsToTurn(work)) : [];
+}
