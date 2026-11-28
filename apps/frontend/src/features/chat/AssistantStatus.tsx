@@ -2,7 +2,7 @@ import { memo, useRef } from "react";
 import { AlertTriangle, Pause } from "lucide-react";
 import type { AssistantStatusProps } from "../../api/studio";
 import type { ActivityEventData } from "../../api";
-import { busyAgent, nativeAgents } from "./agents";
+import { agentsForTurn, belongsToTurn, nativeAgents } from "./agents";
 import { isIdleAutoReleaseReady } from "./resume";
 import "./chat.css";
 
@@ -32,15 +32,17 @@ export function assistantState({ snapshot, requests, events, jobs, submitting, s
   if (snapshot?.pending_decisions.length) return { state: "attention", label: "Needs your input" };
   if (work?.state === "awaiting_user") return { state: "attention", label: "Needs your input" };
   if (work?.state === "running" && !execution?.fenced) {
-    const activeEvents = events.filter(event => event.project_id === snapshot?.project.project_id && (event.work_id === work.work_id || (work.native_session_id && event.native_session_id === work.native_session_id)));
-    const completed = new Set(activeEvents.filter(event => event.event_type === "tool.completed").map(event => `${event.native_session_id ?? "app"}:${(event.payload as unknown as ActivityEventData).invocation_id}`));
-    const tool = [...activeEvents].sort((a, b) => b.sequence - a.sequence).find(event => event.event_type === "tool.started" && (event.payload as unknown as ActivityEventData).name !== "task" && !completed.has(`${event.native_session_id ?? "app"}:${(event.payload as unknown as ActivityEventData).invocation_id}`));
+    const inTurn = belongsToTurn(work);
+    const projectEvents = events.filter(event => event.project_id === snapshot?.project.project_id);
+    // Completion can lack attribution. Reconcile it by invocation before scoping starts to this turn.
+    const completed = new Set(projectEvents.filter(event => event.event_type === "tool.completed").map(event => `${event.native_session_id ?? "app"}:${(event.payload as unknown as ActivityEventData).invocation_id}`));
+    const tool = projectEvents.filter(event => event.event_type === "tool.started" && inTurn(event)).sort((a, b) => b.sequence - a.sequence).find(event => (event.payload as unknown as ActivityEventData).name !== "task" && !completed.has(`${event.native_session_id ?? "app"}:${(event.payload as unknown as ActivityEventData).invocation_id}`));
     if (tool) {
       const name = (tool.payload as unknown as ActivityEventData).name;
       const detail = toolLabels[name] ?? name.replaceAll("_", " ");
       return { state: "working", label: `Working · ${detail}…`, detail };
     }
-    const specialist = nativeAgents(snapshot, activeEvents).filter(busyAgent).find(agent => !agent.work_id || agent.work_id === work.work_id);
+    const specialist = agentsForTurn(nativeAgents(snapshot, projectEvents), work).find(agent => agent.state === "running");
     if (specialist) {
       const detail = specialist.display_name || specialist.name;
       return { state: "working", label: `Working · ${detail}…`, detail };

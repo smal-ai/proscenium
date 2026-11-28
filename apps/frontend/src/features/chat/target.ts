@@ -2,6 +2,33 @@ import type { Attachment, ItemRecord, RequestTarget, VersionRef } from "../../ap
 import { emptySelection, type ContextPreparer, type TurnSelection } from "../../api/studio";
 
 export type DraftTarget = "current_view" | RequestTarget;
+export type ReviewAttachmentOverrides = Record<string, Attachment["role"] | null>;
+
+/** Evidence that ContextValidator.attachments derives from captured context, independently of explicit attachments. */
+export function lockedReviewAttachmentIds(selection: TurnSelection): ReadonlySet<string> {
+  const ids = new Set<string>();
+  if (selection.target) ids.add(selection.target.artifact_id);
+  for (const annotation of selection.annotations) {
+    ids.add(annotation.target.artifact_id);
+    if (annotation.markup_artifact_id) ids.add(annotation.markup_artifact_id);
+    for (const markup of annotation.markups) {
+      if (markup.kind === "mask" && markup.mask_artifact_id) ids.add(markup.mask_artifact_id);
+    }
+  }
+  for (const finding of selection.approved_findings) ids.add(finding.target.artifact_id);
+  return ids;
+}
+
+export function applyReviewAttachmentOverrides(selection: TurnSelection, overrides?: ReviewAttachmentOverrides): Attachment[] {
+  const { attachments } = selection;
+  if (!overrides) return attachments;
+  const locked = lockedReviewAttachmentIds(selection);
+  return attachments.flatMap(attachment => {
+    if (locked.has(attachment.artifact_id) || !Object.hasOwn(overrides, attachment.artifact_id)) return [attachment];
+    const role = overrides[attachment.artifact_id];
+    return role === null ? [] : [{ ...attachment, role }];
+  });
+}
 
 export function versionRequestTarget(version: VersionRef, itemKind?: ItemRecord["kind"], shotId?: string | null): RequestTarget | null {
   if (itemKind === "sequence" || itemKind === "unity_result") return null;
@@ -45,13 +72,14 @@ export function cleanTargetContext(target: RequestTarget | null, refs: VersionRe
   const ref = target?.kind === "item" ? target.version : target?.kind === "shot" ? target.storyboard_version : null;
   return { ...emptySelection(), item_id: ref?.item_id ?? null, version_id: ref?.version_id ?? null, request_target: target ?? { kind: "project" }, reference_versions: structuredClone(refs), attachments: structuredClone(attachments) };
 }
-export async function prepareSubmissionContext(input: { target: DraftTarget; selection: TurnSelection; references: VersionRef[]; attachments: Attachment[]; items?: ItemRecord[] }, prepare?: ContextPreparer): Promise<TurnSelection> {
+export async function prepareSubmissionContext(input: { target: DraftTarget; selection: TurnSelection; references: VersionRef[]; attachments: Attachment[]; items?: ItemRecord[]; reviewAttachmentOverrides?: ReviewAttachmentOverrides }, prepare?: ContextPreparer): Promise<TurnSelection> {
   // Clone synchronously. Preparation may await a capture while Review navigates.
   const frozen = structuredClone(input);
   const target = resolveTarget(frozen.target, frozen.selection, frozen.items);
   const hasCurrentView = Boolean(frozen.selection.version_id || frozen.selection.annotations.length || frozen.selection.attachments.length);
   if (frozen.target !== "current_view" || !hasCurrentView) return cleanTargetContext(target, frozen.references, frozen.attachments);
   const captured = prepare ? await prepare() : frozen.selection;
+  // Compare the unedited attachments: removal from a draft is not Review navigation.
   const standaloneChanged = !frozen.selection.version_id && !frozen.selection.annotations.length
     && captured.attachments.map(a => a.artifact_id).join("\0") !== frozen.selection.attachments.map(a => a.artifact_id).join("\0");
   const pinnedShot = target?.kind === "shot" ? target.shot_id : null;
@@ -64,5 +92,6 @@ export async function prepareSubmissionContext(input: { target: DraftTarget; sel
     || (captured.target?.sequence_frame ?? null) !== (presented.sequence_frame ?? null)
   );
   if (captured.item_id !== frozen.selection.item_id || captured.version_id !== frozen.selection.version_id || shotChanged || presentedFrameChanged || standaloneChanged) throw new Error("Review changed during context capture. The draft and original target are retained. Submit again after checking the target.");
-  return { ...captured, request_target: target, reference_versions: frozen.references, attachments: [...captured.attachments, ...frozen.attachments] };
+  const reviewAttachments = applyReviewAttachmentOverrides(captured, frozen.reviewAttachmentOverrides);
+  return { ...captured, request_target: target, reference_versions: frozen.references, attachments: [...reviewAttachments, ...frozen.attachments] };
 }

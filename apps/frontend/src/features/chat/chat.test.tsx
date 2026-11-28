@@ -11,7 +11,7 @@ import { annotationContext } from "../review/context";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "../review/refreshKeys";
 import { CatalogueBrowser } from "../catalogue/CatalogueBrowser";
 import { isReadyVideo } from "../retainedVideo";
-import { cleanTargetContext, prepareSubmissionContext, resolveTarget, viewedSelectionLabel, type DraftTarget } from "./target";
+import { cleanTargetContext, lockedReviewAttachmentIds, prepareSubmissionContext, resolveTarget, viewedSelectionLabel, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
 import { agentsForTurn, busyAgent, nativeAgents } from "./agents";
@@ -216,7 +216,8 @@ test("live tool status excludes completed, wrapper and unrelated activity and se
   for (const events of [
     [start, event(2, "tool.completed", { ...activity, state: "completed" }), start],
     [event(1, "tool.started", { ...activity, name: "task" })],
-    [{ ...start, work_id: "other", native_session_id: "other" }],
+    [{ ...start, work_id: "other" }],
+    [{ ...start, work_id: null, request_id: "previous-request" }],
     [{ ...start, project_id: "other" }],
   ]) assert.equal(assistantState({ ...props, events }).label, "Working…");
   const latest = event(2, "tool.started", { ...activity, invocation_id: "latest", name: "checkpoint_sources" });
@@ -224,6 +225,7 @@ test("live tool status excludes completed, wrapper and unrelated activity and se
   assert.equal(assistantState({ ...props, events: [{ ...start, work_id: null }] }).label, "Working · Preparing image…");
   assert.equal(assistantState({ ...props, events: [{ ...start, native_session_id: null }] }).label, "Working · Preparing image…");
   assert.equal(assistantState({ ...props, events: [start, { ...event(2, "tool.completed", activity), native_session_id: "other" }] }).label, "Working · Preparing image…");
+  assert.equal(assistantState({ ...props, events: [start, { ...event(2, "tool.completed", { ...activity, invocation_id: "previous-call" }), work_id: null, request_id: "previous-request" }] }).label, "Working · Preparing image…");
 });
 
 test("native specialists precede independent jobs and live tools precede specialists", () => {
@@ -234,6 +236,50 @@ test("native specialists precede independent jobs and live tools precede special
   assert.equal(assistantState({ ...props, snapshot: current, events: [] }).label, "Working · Prepare concept…");
   assert.equal(assistantState({ ...props, events: [event(1, "subagent.started", { ...activity, display_name: null })] }).label, "Working · image specialist…");
   assert.equal(assistantState({ ...props, events: [...props.events, event(2, "tool.started", { ...activity, name: "prepare_image_generation" })] }).label, "Working · Preparing image…");
+});
+
+test("AssistantStatus and Agents exclude previous-turn specialists sharing the native session", () => {
+  const active = snapshot();
+  const previous = ["outcome_uncertain", "running"].map((state, index) => ({
+    ...event(index + 1, state === "running" ? "subagent.started" : "subagent.completed", {
+      ...activity, invocation_id: `previous-${state}`, display_name: "Previous specialist", state,
+    }), work_id: null, request_id: "previous-request",
+  }));
+  const props = { snapshot: active, requests: [], events: previous, jobs: [], connection: "Connected" };
+  assert.deepEqual(agentsForTurn(nativeAgents(active, previous), active.active_work), []);
+  assert.equal(assistantState(props).label, "Working…");
+  assert.match(chatMarkup([], props), /aria-label="Agents: 0"/);
+
+  const uncertain = { ...previous[0], request_id: active.active_work!.originating_request_id };
+  assert.equal(agentsForTurn(nativeAgents(active, [uncertain]), active.active_work)[0].state, "outcome_uncertain");
+  assert.equal(assistantState({ ...props, events: [...previous, uncertain] }).label, "Working…");
+});
+
+test("AssistantStatus reconciles unattributed specialist and tool completions before attributing the turn", () => {
+  const active = snapshot();
+  const props = { snapshot: active, requests: [], jobs: [], connection: "Connected" };
+  const portrait = { ...activity, display_name: "Portrait" };
+  const start = { ...event(1, "subagent.started", portrait), work_id: null };
+  assert.equal(assistantState({ ...props, events: [start] }).label, "Working · Portrait…");
+  for (const state of ["completed", "outcome_uncertain"] as const) {
+    const completion = { ...event(2, "subagent.completed", { ...portrait, state }), work_id: null, request_id: null };
+    const events = [start, completion];
+    const agents = agentsForTurn(nativeAgents(active, events), active.active_work);
+    assert.deepEqual(agents.map(agent => [agent.display_name, agent.state]), [["Portrait", state]]);
+    assert.equal(assistantState({ ...props, events }).label, "Working…");
+    if (state === "completed") {
+      assert.equal(agents.some(busyAgent), false);
+      const markup = chatMarkup([], { ...props, events });
+      assert.match(markup, /<button aria-label="Agents: 1"/);
+      assert.doesNotMatch(markup, /active-agents/);
+    }
+  }
+
+  const tool = { ...activity, name: "prepare_image_generation" };
+  const toolStart = { ...event(1, "tool.started", tool), work_id: null };
+  const toolCompletion = { ...event(2, "tool.completed", { ...tool, state: "completed" }), work_id: null, request_id: null };
+  assert.equal(assistantState({ ...props, events: [toolStart] }).label, "Working · Preparing image…");
+  assert.equal(assistantState({ ...props, events: [toolStart, toolCompletion] }).label, "Working…");
 });
 
 test("unfinished jobs provide live status with snapshot fallback and settled jobs leave the default label intact", () => {
@@ -311,7 +357,7 @@ test("Independent jobs shows real frame progress, attention first and only settl
   assert.equal((markup.match(/class="job-row(?: needs-attention)?"/g) ?? []).length, 10);
 });
 
-const targetMarkup = (overrides: Partial<React.ComponentProps<typeof TargetPicker>> = {}) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={[asset]} target="current_view" selection={emptySelection()} references={[]} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={false} onPendingExistingChange={() => {}} open onToggle={() => {}} onClose={() => {}} attachments={[]} onAttachments={() => {}} uploadingCount={0} {...overrides} />);
+const targetMarkup = (overrides: Partial<React.ComponentProps<typeof TargetPicker>> = {}) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={[asset]} target="current_view" selection={emptySelection()} references={[]} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={false} onPendingExistingChange={() => {}} open onToggle={() => {}} onClose={() => {}} attachments={[]} onAttachments={() => {}} reviewAttachments={overrides.selection?.attachments ?? []} onReviewAttachment={() => {}} uploadingCount={0} {...overrides} />);
 
 test("Target picker exposes four distinct modes and references do not require an existing primary target", () => {
   const markupFor = (target: DraftTarget, references = [ref], open = true, pendingExisting = false, items = [asset]) => targetMarkup({ target, references, open, pendingExisting, items });
@@ -375,6 +421,7 @@ test("Target panel merges references and image controls, and hides Review extras
   assert.equal((markup.match(/class="reference-chip"/g) ?? []).length, 1);
   assert.match(markup, /aria-label="Attached images".*src="[^"]*uploaded-image\/content".*aria-label="Image 1 role".*selected="">concept.*aria-label="Remove image 1".*src="[^"]*review-image\/content"/);
   assert.equal((markup.match(/aria-label="Image \d+ role"/g) ?? []).length, 1);
+  assert.match(markup, /aria-label="Review image 1 role".*selected="">reference.*aria-label="Remove review image 1"/);
   for (const label of ["1 object selected", "1 annotation", "2 approved findings", "Inspection camera", "Frames 5–15"]) assert.ok(markup.includes(`>${label}</li>`));
   assert.doesNotMatch(markup, /<code|private-object|private-note|Private finding text|camera_to_world/);
   for (const override of [{ target: { kind: "project" } as const }, { pendingExisting: true }]) {
@@ -474,6 +521,48 @@ test("current-view capture freezes target and attachments before asynchronous pr
   assert.deepEqual(context.request_target, { kind: "item", version: ref });
   assert.equal(context.attachments[0].artifact_id, "chosen");
   await assert.rejects(prepareSubmissionContext({ target: "current_view", selection: captured, references: [], attachments: [] }, async () => selection), /Review changed/);
+});
+
+test("standalone Review attachment overrides are applied after checking capture identity", async () => {
+  const image = { artifact_id: "inspected", role: "reference" } as const;
+  const selection = { ...emptySelection(), attachments: [image] };
+  const input = { target: "current_view" as const, selection, references: [], attachments: [] };
+  for (const role of ["mask", null] as const) {
+    const submission = { ...input, reviewAttachmentOverrides: { [image.artifact_id]: role } };
+    const context = await prepareSubmissionContext(submission, async () => selection);
+    assert.deepEqual(context.request_target, { kind: "project" });
+    assert.deepEqual(context.attachments, role ? [{ ...image, role }] : []);
+    await assert.rejects(prepareSubmissionContext(submission, async () => emptySelection()), /Review changed/);
+  }
+});
+
+test("contract-bound Review evidence is read-only and ignores draft attachment overrides", async () => {
+  const frame = reviewFrame("scene");
+  const lockedAttachments = [
+    { artifact_id: frame.artifact_id, role: "render" }, { artifact_id: "note-frame", role: "render" },
+    { artifact_id: "note-overlay", role: "markup" }, { artifact_id: "note-mask", role: "mask" },
+    { artifact_id: "finding-frame", role: "render" },
+  ] as const;
+  const standalone = { artifact_id: "standalone", role: "reference" } as const;
+  const selection = {
+    ...emptySelection(), ...reviewVersion("scene"), target: frame, attachments: [...lockedAttachments, standalone],
+    annotations: [{ annotation_id: "note", saved_revision: 1, target: { ...frame, artifact_id: "note-frame" }, range: null, camera: null,
+      markup_artifact_id: "note-overlay", markups: [{ id: "mask", kind: "mask", points: [[0, 0]], mask_artifact_id: "note-mask" }],
+      text: "Note", spatial_hits: [], spatial_status: "unavailable" }],
+    approved_findings: [{ finding_id: "finding", finding_revision: 1, approved_text: "Finding", target: { ...frame, artifact_id: "finding-frame" } }],
+  } satisfies ReturnType<typeof emptySelection>;
+  assert.deepEqual(lockedReviewAttachmentIds(selection), new Set(lockedAttachments.map(a => a.artifact_id)));
+  const markup = targetMarkup({ selection });
+  assert.match(markup, /<figcaption>Review frame · render<\/figcaption><\/figure>/);
+  assert.match(markup, /Switch target mode to exclude Review frame evidence\./);
+  assert.match(markup, /aria-label="Review image 6 role".*aria-label="Remove review image 6"/);
+  assert.equal((markup.match(/aria-label="Review image \d+ role"/g) ?? []).length, 1);
+  assert.equal((markup.match(/aria-label="Remove review image \d+"/g) ?? []).length, 1);
+  for (const override of ["concept", null] as const) {
+    const reviewAttachmentOverrides = Object.fromEntries(selection.attachments.map(a => [a.artifact_id, override]));
+    const context = await prepareSubmissionContext({ target: "current_view", selection, references: [], attachments: [], reviewAttachmentOverrides }, async () => selection);
+    assert.deepEqual(context.attachments, [...lockedAttachments, ...(override ? [{ ...standalone, role: override }] : [])]);
+  }
 });
 
 test("project and creation targets never prepare hidden Review drafts", async () => {

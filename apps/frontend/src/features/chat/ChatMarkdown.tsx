@@ -1,10 +1,10 @@
 import { Fragment, memo, useMemo, type ReactNode } from "react";
-import { disambiguateArtifactLabels, matchChatEntity, type ChatEntityIndex, type ChatEntityLink } from "./entityLinks";
+import { disambiguateArtifactLabels, isWord, matchChatEntity, type ChatEntityIndex, type ChatEntityLink } from "./entityLinks";
 import "./chatMarkdown.css";
 
 type Inline =
   | { kind: "text" | "code"; value: string }
-  | { kind: "entity"; entity: ChatEntityLink }
+  | ({ kind: "entity"; entity: ChatEntityLink } & ({ leadingUnderscore: true; raw: string } | { leadingUnderscore?: never }))
   | { kind: "break" }
   | { kind: "strong" | "em" | "strongEm" | "del"; children: Inline[] }
   | { kind: "link"; href: string; children: Inline[] };
@@ -23,7 +23,6 @@ interface ListItem { checked?: boolean; children: Block[] }
 
 const MAX_NESTING = 32;
 const isEscape = (source: string, index: number) => source[index] === "\\" && /[!-/:-@[-`{-~]/.test(source[index + 1] ?? "");
-const isWord = (text: string) => /[\p{L}\p{M}\p{N}]/u.test(text);
 
 // Match complete runs, not a prefix of a longer run. Indexing the runs also
 // keeps unmatched backticks cheap while the response is still streaming.
@@ -97,7 +96,7 @@ function safeHref(raw: string, image: boolean): string | undefined {
   } catch { /* Invalid absolute URL. */ }
 }
 
-interface Delimiter { marker: string; width: number; children: Inline[] }
+interface Delimiter { marker: string; width: number; openEnd: number; children: Inline[] }
 
 function parseInline(source: string, entities?: ChatEntityIndex, allowLinks = true): Inline[] {
   const nodes: Inline[] = [];
@@ -116,8 +115,9 @@ function parseInline(source: string, entities?: ChatEntityIndex, allowLinks = tr
   function unwrap() {
     const open = stack.pop()!;
     text(open.marker.repeat(open.width));
-    for (const child of open.children) {
+    for (const [index, child] of open.children.entries()) {
       if (child.kind === "text") text(child.value);
+      else if (index === 0 && open.marker === "_" && child.kind === "entity" && child.leadingUnderscore) text(child.raw);
       else current().push(child);
     }
   }
@@ -161,9 +161,15 @@ function parseInline(source: string, entities?: ChatEntityIndex, allowLinks = tr
       }
     }
     // An indexed ID owns its underscores before Markdown can split them into emphasis.
-    const citation = allowLinks && entities?.size ? matchChatEntity(source, index, entities) : undefined;
+    const open = stack.at(-1);
+    const afterOpenUnderscore = open?.marker === "_" && open.openEnd === index;
+    const citation = allowLinks && entities?.size ? matchChatEntity(source, index, entities, {
+      afterOpenUnderscore,
+      openUnderscoreDepth: stack.reduce((depth, delimiter) => delimiter.marker === "_" ? depth + delimiter.width : depth, 0),
+    }) : undefined;
     if (citation) {
-      current().push({ kind: "entity", entity: citation.entity });
+      current().push(afterOpenUnderscore ? { kind: "entity", entity: citation.entity, leadingUnderscore: true, raw: source.slice(index, citation.end) }
+        : { kind: "entity", entity: citation.entity });
       index = citation.end;
       continue;
     }
@@ -191,7 +197,7 @@ function parseInline(source: string, entities?: ChatEntityIndex, allowLinks = tr
           else open.children = [child];
         }
         if (width > 0) {
-          if (canOpen && stack.length < MAX_NESTING) stack.push({ marker: char, width, children: [] });
+          if (canOpen && stack.length < MAX_NESTING) stack.push({ marker: char, width, openEnd: end, children: [] });
           else text(char.repeat(width));
         }
       } else text(source.slice(index, end));

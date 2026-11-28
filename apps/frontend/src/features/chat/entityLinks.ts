@@ -94,10 +94,12 @@ export function buildEntityIndex({ projectId, items = [], retainedArtifacts = []
 const idChar = /[A-Za-z0-9._-]/;
 const startsId = /[A-Za-z0-9]/;
 const maxIdLength = 128;
+export const isWord = (text: string) => /[\p{L}\p{M}\p{N}]/u.test(text);
 
-/** Resolve the longest known ID at a whole-token boundary, leaving sentence periods intact. */
-export function matchChatEntity(source: string, start: number, entities: ChatEntityIndex) {
-  if (!startsId.test(source[start] ?? "") || (start > 0 && idChar.test(source[start - 1]))) return;
+/** Resolve the longest known ID, leaving sentence punctuation and Markdown closing delimiters intact. */
+export function matchChatEntity(source: string, start: number, entities: ChatEntityIndex, { afterOpenUnderscore = false, openUnderscoreDepth = 0 } = {}) {
+  const previous = source[start - 1];
+  if (!startsId.test(source[start] ?? "") || (start > 0 && idChar.test(previous) && !(afterOpenUnderscore && previous === "_"))) return;
   let end = start + 1;
   while (end < source.length && idChar.test(source[end])) end++;
   const raw = source.slice(start, end);
@@ -109,6 +111,16 @@ export function matchChatEntity(source: string, start: number, entities: ChatEnt
     if (length <= maxIdLength) entity = entities.get(raw.slice(0, length));
   }
   if (entity) return { entity, end: start + length };
+  if (openUnderscoreDepth === 0 || isWord(String.fromCodePoint(source.codePointAt(start + length) ?? 32))) return;
+  // The token may have swallowed a closing run. Restore only as much as the
+  // open delimiters can close, so indexed trailing underscores win first.
+  for (let closing = 1; closing <= openUnderscoreDepth && closing <= 3 && length > 1 && raw[length - 1] === "_"; closing++) {
+    length--;
+    if (length <= maxIdLength) {
+      entity = entities.get(raw.slice(0, length));
+      if (entity) return { entity, end: start + length };
+    }
+  }
 }
 
 export function disambiguateArtifactLabels(groups: ReadonlyMap<string, ReadonlySet<string>>) {

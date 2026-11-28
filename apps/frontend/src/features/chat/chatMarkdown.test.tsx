@@ -102,6 +102,28 @@ test("a whole bare citation wins before Markdown interprets underscores as empha
   assert.equal(renderToStaticMarkup(<ChatMarkdown text={prose} entities={entities} onOpenEntity={() => {}} />), markdown(prose));
 });
 
+test("bare citations respect Markdown emphasis without splitting intraword underscores", () => {
+  const entities = buildEntityIndex({ projectId: "project", items: [item("portrait", "Portrait", "portrait-v2")], retainedArtifacts: [retained("clip_"), retained("clip")] });
+  const render = (text: string) => renderToStaticMarkup(<ChatMarkdown text={text} entities={entities} onOpenEntity={() => {}} />);
+  const button = '<button type="button" class="chat-entity-link" data-entity-kind="version" title="portrait-v2">Portrait · v2</button>';
+  for (const [source, expected] of [
+    ["*portrait-v2*", `<em>${button}</em>`],
+    ["**portrait-v2**", `<strong>${button}</strong>`],
+    ["_portrait-v2_", `<em>${button}</em>`],
+    ["__portrait-v2__", `<strong>${button}</strong>`],
+    ["___portrait-v2___", `<strong><em>${button}</em></strong>`],
+    ["_portrait-v2_.", `<em>${button}</em>.`],
+    ["_portrait-v2 is ready_", `<em>${button} is ready</em>`],
+    ["__portrait-v2_", `_<em>${button}</em>`],
+  ]) assert.ok(render(source).includes(`<p>${expected}</p>`), source);
+  for (const source of ["_portrait-v2", "__portrait-v2", "_portrait-v2 is ready", "*_portrait-v2*", "foo_portrait-v2_bar", "_portrait-v2_bar", "_portrait-v2_é"]) {
+    assert.equal(render(source), markdown(source), source);
+    assert.doesNotMatch(render(source), /<button\b/, source);
+  }
+  assert.match(render("_clip__"), /<em><button[^>]+title="clip_">Concept image<\/button><\/em>/);
+  assert.match(render("_clip_"), /<p>_clip_<\/p>/); // The exact ID consumed the only possible closer.
+});
+
 test("sentence punctuation leaves the longest indexed ID ending in a period intact", () => {
   const entities = buildEntityIndex({ projectId: "project", retainedArtifacts: [retained("clip."), retained("clip")] });
   const markup = renderToStaticMarkup(<ChatMarkdown text="See clip.." entities={entities} onOpenEntity={() => {}} />);

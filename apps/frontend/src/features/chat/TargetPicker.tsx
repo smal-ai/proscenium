@@ -5,7 +5,7 @@ import type { TurnSelection } from "../../api/studio";
 import { describeError, id } from "../../app/storage";
 import { ComposerPanel } from "./ComposerPanel";
 import { artifactUrl } from "./ContextPreview";
-import { resolveTarget, targetLabel, uniqueVersions, viewedSelectionLabel, type DraftTarget } from "./target";
+import { lockedReviewAttachmentIds, resolveTarget, targetLabel, uniqueVersions, viewedSelectionLabel, type DraftTarget } from "./target";
 
 type NewTarget = Extract<DraftTarget, { kind: "new_item" }>;
 type Mode = "current_view" | "project" | "existing" | "new";
@@ -16,6 +16,7 @@ type PickerProps = Lookups & {
   open: boolean; onToggle: () => void; onClose: () => void;
   pendingExisting: boolean; onPendingExistingChange: (pending: boolean) => void;
   attachments: Attachment[]; onAttachments: (attachments: Attachment[]) => void; uploadingCount: number;
+  reviewAttachments: Attachment[]; onReviewAttachment: (artifactId: string, role: Attachment["role"] | null) => void;
 };
 
 const modes: [Mode, string][] = [["current_view", "Current view"], ["project", "Project"], ["existing", "Existing…"], ["new", "New…"]];
@@ -138,17 +139,34 @@ function References({ api, projectId, items, selection, references, includeCurre
   </details>;
 }
 
+function AttachmentPreview({ projectId, attachment, alt, label, caption, onRole, onRemove }: {
+  projectId: string; attachment: Attachment; alt: string; label: string; caption?: string; onRole: (role: Attachment["role"]) => void; onRemove: () => void;
+}) {
+  return <figure>
+    <img src={artifactUrl(projectId, attachment.artifact_id)} alt={alt} loading="lazy" />
+    {caption && <figcaption>{caption}</figcaption>}
+    <div className="attachment-controls">
+      <select aria-label={`${label} role`} value={attachment.role} onChange={event => onRole(event.target.value as Attachment["role"])}>
+        {["reference", "concept", "render", "markup", "mask"].map(role => <option key={role}>{role}</option>)}
+      </select>
+      <button type="button" className="subtle" aria-label={`Remove ${label.toLowerCase()}`} onClick={onRemove}><X size={12} /></button>
+    </div>
+  </figure>;
+}
+
 function TargetOptions({ props, count, friendly, plan, chooseMode, reviewAttachments, extras }: {
   props: PickerProps; count: number; friendly: string; plan: ReturnType<typeof useShotPlan>; chooseMode: (mode: Mode) => void; reviewAttachments: Attachment[]; extras: string[];
 }) {
-  const { target, onTarget, selection, pendingExisting: pending, onClose, attachments, onAttachments, projectId } = props;
+  const { target, onTarget, selection, pendingExisting: pending, onClose, attachments, onAttachments, onReviewAttachment, projectId } = props;
   const newTarget = target !== "current_view" && target.kind === "new_item" ? target : null;
   const mode: Mode = pending || pinnedVersion(target) ? "existing" : target === "current_view" ? "current_view" : newTarget ? "new" : "project";
+  const lockedIds = lockedReviewAttachmentIds(selection);
+  const frameLocked = reviewAttachments.some(attachment => attachment.artifact_id === selection.target?.artifact_id);
   return <div className="target-options">
     <div className="target-mode-tabs" role="group" aria-label="Target mode">{modes.map(([next, label]) =>
       <button key={next} aria-pressed={mode === next} onClick={() => chooseMode(next)}>{label}</button>
     )}</div>
-    {mode === "current_view" && <small className="target-mode-summary">{selection.version_id ? `Captures ${friendly} from Review on submit.` : selection.attachments.length ? "Captures the inspected image from Review on submit." : "Nothing open in Review · resolves to Project on submit."}</small>}
+    {mode === "current_view" && <small className="target-mode-summary">{selection.version_id ? `Captures ${friendly} from Review on submit.` : props.reviewAttachments.length ? "Captures the inspected image from Review on submit." : selection.attachments.length ? "Inspected image excluded from this draft." : "Nothing open in Review · resolves to Project on submit."}</small>}
     {mode === "project" && <small className="target-mode-summary">Project-wide planning or discussion. Hidden Review drafts are not captured.</small>}
     {mode === "existing" && <><ExistingTarget {...props} plan={plan} pending={pending} />{!pending && <small className="target-mode-summary">Uses the pinned version, independent of Review.</small>}</>}
     {mode === "new" && newTarget && <>
@@ -165,21 +183,17 @@ function TargetOptions({ props, count, friendly, plan, chooseMode, reviewAttachm
     {!!(attachments.length || reviewAttachments.length) && <section className="target-attachments" aria-label="Attached images">
       <strong>Attached images</strong>
       <div className="attachment-previews">
-        {attachments.map((attachment, i) => <figure key={`${attachment.artifact_id}.${i}`}>
-          <img src={artifactUrl(projectId, attachment.artifact_id)} alt={`Uploaded image ${i + 1}`} loading="lazy" />
-          <div className="attachment-controls">
-            <select aria-label={`Image ${i + 1} role`} value={attachment.role} onChange={event => {
-              const role = event.target.value as Attachment["role"];
-              onAttachments(attachments.map((value, j) => i === j ? { ...value, role } : value));
-            }}>{["reference", "concept", "render", "markup", "mask"].map(role => <option key={role}>{role}</option>)}</select>
-            <button className="subtle" aria-label={`Remove image ${i + 1}`} onClick={() => onAttachments(attachments.filter((_, j) => i !== j))}><X size={12} /></button>
-          </div>
-        </figure>)}
-        {reviewAttachments.map((attachment, i) => <figure key={attachment.artifact_id}>
+        {attachments.map((attachment, i) => <AttachmentPreview key={`uploaded:${attachment.artifact_id}:${i}`} projectId={projectId} attachment={attachment}
+          alt={`Uploaded image ${i + 1}`} label={`Image ${i + 1}`} onRole={role => onAttachments(attachments.map((value, j) => i === j ? { ...value, role } : value))}
+          onRemove={() => onAttachments(attachments.filter((_, j) => i !== j))} />)}
+        {reviewAttachments.map((attachment, i) => lockedIds.has(attachment.artifact_id) ? <figure key={`review:${attachment.artifact_id}`}>
           <img src={artifactUrl(projectId, attachment.artifact_id)} alt={`Review image ${i + 1}`} loading="lazy" />
-          <figcaption>Review · {attachment.role}</figcaption>
-        </figure>)}
+          <figcaption>{attachment.artifact_id === selection.target?.artifact_id ? "Review frame" : "Review evidence"} · {attachment.role}</figcaption>
+        </figure> : <AttachmentPreview key={`review:${attachment.artifact_id}`} projectId={projectId} attachment={attachment}
+          alt={`Review image ${i + 1}`} label={`Review image ${i + 1}`} caption="Review" onRole={role => onReviewAttachment(attachment.artifact_id, role)}
+          onRemove={() => onReviewAttachment(attachment.artifact_id, null)} />)}
       </div>
+      {reviewAttachments.some(attachment => lockedIds.has(attachment.artifact_id)) && <small>Switch target mode to exclude Review {frameLocked ? "frame " : ""}evidence.</small>}
     </section>}
     {!!extras.length && <ul className="target-viewport-extras" aria-label="Review context">{extras.map(extra => <li className="target-ref-count" key={extra}>{extra}</li>)}</ul>}
   </div>;
@@ -209,7 +223,7 @@ export function TargetPicker(props: PickerProps) {
   const count = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]).length;
   const capturesReview = !pending && target === "current_view";
   const imageIds = new Set(attachments.map(attachment => attachment.artifact_id));
-  const reviewAttachments = capturesReview ? selection.attachments.filter(attachment => {
+  const reviewAttachments = capturesReview ? props.reviewAttachments.filter(attachment => {
     if (imageIds.has(attachment.artifact_id)) return false;
     imageIds.add(attachment.artifact_id);
     return true;

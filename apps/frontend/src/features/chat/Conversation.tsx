@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import type { ActivityEventData, ApiClient, Artifact, ConversationEventData, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, RetainedArtifactSummary, ReviewTicket, RevisionCommand, VersionRecord } from "../../api";
+import type { ReviewNavigationProps } from "../../api/studio";
 import { durableCommand, id } from "../../app/storage";
 import { boundedSignal, readVersions } from "../outliner/model";
 import { StoredContext } from "./ContextPreview";
@@ -32,7 +33,7 @@ const artefactUnavailable = "The exact artefact is no longer available to inspec
 
 type RetainedEvidence = { readOrder?: number; readyIds: ReadonlySet<string> };
 type ArtefactClick = { id: string; evidence: RetainedEvidence };
-type EntityClick = { controller: AbortController; artefact?: ArtefactClick };
+type EntityClick = { controller: AbortController; epoch: number; artefact?: ArtefactClick };
 
 function lostRetainedReadiness(click: ArtefactClick, latest: RetainedEvidence) {
   // Compare committed snapshots, including a reset or omission. A new read can
@@ -45,7 +46,7 @@ export function reuseOutputIds(previous: string[] | undefined, ids: string[]): s
   return previous?.length === ids.length && previous.every((id, i) => id === ids[i]) ? previous : ids;
 }
 
-export const Conversation = memo(function Conversation({ visible = true, api, projectId, snapshot, requests, events, publicationEvents = events, jobs, reviews, onRefresh, onError, onStarter, items = EMPTY_ITEMS, retainedArtifacts = EMPTY_SUMMARIES, retainedArtifactReadOrder, onInspectArtifact, onOpenVersion, onOpenReview }: {
+export const Conversation = memo(function Conversation({ visible = true, api, projectId, snapshot, requests, events, publicationEvents = events, jobs, reviews, onRefresh, onError, onStarter, items = EMPTY_ITEMS, retainedArtifacts = EMPTY_SUMMARIES, retainedArtifactReadOrder, reviewNavigationEpoch = 0, onBeginNavigation, isCurrentReviewNavigation, onInspectArtifact, onOpenVersion, onOpenReview }: ReviewNavigationProps & {
   visible?: boolean; api: ApiClient; projectId: string; requests: RequestRecord[]; events: Event[]; onRefresh: () => Promise<void>; onError: (e: unknown) => void;
   onStarter?: (kind: "asset" | "scene" | "storyboard") => void; items?: ItemRecord[]; retainedArtifacts?: RetainedArtifactSummary[]; onInspectArtifact?: (artifact: Artifact) => void;
   snapshot?: ProjectSnapshot | null; jobs?: JobRecord[]; reviews?: ReviewTicket[]; publicationEvents?: Event[]; retainedArtifactReadOrder?: number;
@@ -69,56 +70,68 @@ export const Conversation = memo(function Conversation({ visible = true, api, pr
     return { readOrder: retainedArtifactReadOrder, readyIds };
   }, [projectId, retainedArtifacts, retainedArtifactReadOrder]);
   const committedRetained = useRef(retainedEvidence);
+  const committedNavEpoch = useRef(reviewNavigationEpoch);
   const opening = useRef<EntityClick | null>(null);
   useLayoutEffect(() => () => {
     opening.current?.controller.abort();
     opening.current = null;
   }, [api, projectId, visible]);
   useLayoutEffect(() => {
+    committedNavEpoch.current = reviewNavigationEpoch;
+    const pending = opening.current;
+    if (pending && reviewNavigationEpoch > pending.epoch) {
+      pending.controller.abort();
+      opening.current = null;
+    }
+  }, [reviewNavigationEpoch]);
+  useLayoutEffect(() => {
     committedRetained.current = retainedEvidence;
     const pending = opening.current;
     if (pending?.artefact && lostRetainedReadiness(pending.artefact, retainedEvidence)) {
       opening.current = null;
       pending.controller.abort();
-      onError(new Error(artefactUnavailable));
+      if (isCurrentReviewNavigation?.(pending.epoch) ?? committedNavEpoch.current === pending.epoch) onError(new Error(artefactUnavailable));
     }
-  }, [retainedEvidence, onError]);
+  }, [retainedEvidence, isCurrentReviewNavigation, onError]);
   const openEntity = useCallback(async (entity: ChatEntityLink) => {
     opening.current?.controller.abort();
     opening.current = null;
     if (!visible) return;
+    const epoch = onBeginNavigation?.() ?? committedNavEpoch.current;
     if (entity.kind === "review") {
       onOpenReview?.(entity.reviewId);
       return;
     }
     const controller = new AbortController();
     const artefact = entity.kind === "artifact" ? { id: entity.id, evidence: committedRetained.current } : undefined;
-    const click = { controller, artefact };
+    const click = { controller, epoch, artefact };
     opening.current = click;
+    const isCurrent = () => opening.current === click && !controller.signal.aborted
+      && (isCurrentReviewNavigation?.(epoch) ?? committedNavEpoch.current === epoch);
     const signal = boundedSignal(controller.signal);
     const unavailable = entity.kind === "artifact" ? artefactUnavailable
       : `Exact publication ${entity.versionId} is unavailable. No other version was opened.`;
     try {
       if (entity.kind === "artifact") {
         const fresh = await api.call("getArtifact", { path: { project_id: projectId, artifact_id: entity.id }, signal });
-        if (opening.current !== click) return;
+        if (!isCurrent()) return;
         signal.throwIfAborted();
         if ((artefact && lostRetainedReadiness(artefact, committedRetained.current))
           || fresh.project_id !== projectId || fresh.artifact_id !== entity.id || !isReadyChatMedia(fresh)) throw new Error(unavailable);
         onInspectArtifact?.(fresh);
       } else {
         const [record] = await readVersions(api, projectId, entity.itemId, signal, entity.versionId);
-        if (opening.current !== click) return;
+        if (!isCurrent()) return;
         signal.throwIfAborted();
         if (!record || record.project_id !== projectId || record.item_id !== entity.itemId || record.version_id !== entity.versionId) throw new Error(unavailable);
         onOpenVersion?.(record);
       }
     } catch {
-      if (opening.current === click && !controller.signal.aborted) onError(new Error(unavailable));
+      if (isCurrent()) onError(new Error(unavailable));
     } finally {
       if (opening.current === click) opening.current = null;
     }
-  }, [api, onError, onInspectArtifact, onOpenReview, onOpenVersion, projectId, visible]);
+  }, [api, onBeginNavigation, isCurrentReviewNavigation, onError, onInspectArtifact, onOpenReview, onOpenVersion, projectId, visible]);
   const { messages, activities, agentLabels, hasSubagents } = useMemo(() => {
     const messages = new Map<string, { event: Event; text: string }>();
     const activities = new Map<string, { start: Event; latest: Event }>();

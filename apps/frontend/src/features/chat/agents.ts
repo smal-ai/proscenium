@@ -34,8 +34,12 @@ export function nativeAgents(snapshot: ProjectSnapshot | null, events: Event[], 
 }
 export const busyAgent = (agent: NativeAgentActivity) => ["running", "outcome_uncertain"].includes(agent.state);
 
-export function agentsForTurn(agents: NativeSpecialist[], work: ProjectSnapshot["active_work"] | undefined): NativeSpecialist[] {
-  if (!work) return [];
+export function belongsToTurn(work: NonNullable<ProjectSnapshot["active_work"]>) {
   const turnRequests = new Set([work.originating_request_id, ...work.directive_request_ids]);
-  return agents.filter(agent => agent.work_id === work.work_id || (agent.work_id === null && agent.request_id !== null && turnRequests.has(agent.request_id)));
+  return ({ work_id, request_id }: Pick<Event, "work_id" | "request_id">) =>
+    work_id === work.work_id || (work_id === null && request_id !== null && turnRequests.has(request_id));
+}
+
+export function agentsForTurn(agents: NativeSpecialist[], work: ProjectSnapshot["active_work"] | undefined): NativeSpecialist[] {
+  return work ? agents.filter(belongsToTurn(work)) : [];
 }

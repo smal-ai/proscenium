@@ -149,6 +149,7 @@ export const CriticPanel = memo(function CriticPanel({
     };
   }, [api, projectId, suppliedReviews, refreshRevision]);
 
+  const reviewRetryNonce = externalTarget?.reviewId === reviewId ? externalTarget.nonce : undefined;
   useEffect(() => {
     if (!reviewId) {
       setDetail(null);
@@ -198,7 +199,7 @@ export const CriticPanel = memo(function CriticPanel({
       }
     })();
     return () => controller.abort();
-  }, [api, projectId, reviewId, refreshRevision]);
+  }, [api, projectId, reviewId, refreshRevision, reviewRetryNonce]);
 
   const selectReview = useCallback((nextId: string | null) => {
     if (nextId !== externalNavReviewId.current) externalNavReviewId.current = null;

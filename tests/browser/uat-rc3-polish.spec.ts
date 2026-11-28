@@ -1230,6 +1230,7 @@ test("Target sends a draft with an uploaded image and scopes standalone Review i
   await expect(draft).toHaveCount(0);
   await expect(queue).toBeDisabled();
   await expect(panel.getByRole("img", { name: "Review image 1" })).toHaveJSProperty("naturalWidth", 1);
+  await expect(panel.getByRole("combobox", { name: "Review image 1 role" })).toHaveValue("reference");
   await expect(panel.getByRole("combobox", { name: /^Image \d+ role$/ })).toHaveCount(0);
   const agents = page.getByRole("button", { name: /^Agents:/ });
   await agents.click();
@@ -1253,7 +1254,7 @@ test("Target sends a draft with an uploaded image and scopes standalone Review i
   await expect(bar).not.toContainText("uploading");
   await expect(panel.getByRole("img")).toHaveCount(3);
   await expect(panel.getByRole("img", { name: "Uploaded image 1" })).toHaveJSProperty("naturalWidth", 1);
-  await panel.getByLabel("Image 1 role").selectOption("concept");
+  await panel.getByLabel("Image 1 role", { exact: true }).selectOption("concept");
   await panel.getByRole("button", { name: "Remove image 2" }).click();
   await expect(bar).toContainText("+2 context");
   await panel.getByRole("button", { name: "Project", exact: true }).click();

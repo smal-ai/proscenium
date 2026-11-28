@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { base, deferred, job, projectId, request, retained, stamp, StudioFixture, version } from "./studio-fixture";
+import type { RelationshipNodeSummary, RelationshipPage } from "../../apps/frontend/src/api";
+import { base, deferred, job, pageOf, projectId, request, retained, stamp, StudioFixture, version } from "./studio-fixture";
 
 const jobId = "generation-eed081ad00b22ddeca37d74d";
 const imageId = `${jobId}-artifact-0`;
@@ -148,6 +149,210 @@ test("a stale media click cannot replace a newer publication click", async ({ pa
   } finally { release.release(); }
 });
 
+test("an Assets selection supersedes a pending Copilot citation without changing the new Current view target", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const image = prepare(studio);
+  const started = deferred(), release = deferred(), finished = deferred();
+  await studio.install({ savedLayout: true, routes: [{ path: imagePath, handler: async route => {
+    started.release();
+    try { await release.promise; await route.fulfill({ json: image }); }
+    finally { finished.release(); }
+  } }] });
+  try {
+    await studio.open();
+    await studio.ready();
+    studio.emit("assistant.completed", { message_id: "slow-citation", text: `Inspect ${imageId}.` });
+    const catalogue = page.getByRole("region", { name: "Version catalogue" });
+    await catalogue.getByRole("button", { name: `Version history for ${itemName}` }).click();
+    const assetVersion = catalogue.getByTitle(`${itemName} published v3 (${latestId})`, { exact: true });
+    await expect(assetVersion).toBeVisible();
+    const cancelled = page.waitForEvent("requestfailed", request => new URL(request.url()).pathname === imagePath);
+    await page.locator(".assistant-message").getByRole("button", { name: "Concept image", exact: true }).click();
+    await started.promise;
+    await assetVersion.click();
+    const review = page.getByRole("main", { name: "Review workspace" });
+    const heading = review.getByRole("heading", { name: `${itemName} published v3`, exact: true });
+    await expect(heading).toBeVisible();
+    release.release();
+    await finished.promise;
+    await cancelled;
+    await expect(heading).toBeVisible();
+    await expect(review.locator(".retained-review")).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+
+    await expect(page.getByRole("button", { name: "Choose request target and references" })).toHaveAttribute("title", `Target: Current view · Asset · ${itemName}`);
+    await page.getByRole("textbox", { name: "Message Copilot" }).fill("Use the version opened from Assets.");
+    await page.getByRole("button", { name: "Queue message", exact: true }).click();
+    await expect.poll(() => studio.submissions.length).toBe(1);
+    expect(studio.contexts[0]).toMatchObject({ version_id: latestId, request_target: { kind: "item", version: { item_id: itemId, version_id: latestId } }, attachments: [] });
+    studio.assertHermetic();
+  } finally { release.release(); }
+});
+
+for (const surface of ["Outliner", "View latest"] as const) for (const newer of [surface, "Copilot"] as const) {
+  test(`the newer ${newer} click wins when ${surface} and Copilot are both waiting for reads`, async ({ page, baseURL }) => {
+    const studio = new StudioFixture(page, baseURL!);
+    const image = prepare(studio);
+    const [initial, next] = studio.versionRecords;
+    const [root, leaf] = [initial, next].map((record): Extract<RelationshipNodeSummary, { kind: "version" }> => ({
+      kind: "version", ref: { item_id: record.item_id, version_id: record.version_id }, item_kind: record.kind,
+      label: record.name, is_current: record === next, is_selected: false,
+    }));
+    const media = { started: deferred(), release: deferred(), finished: deferred(), path: imagePath };
+    const versions = { started: deferred(), release: deferred(), finished: deferred(), path: versionPath };
+    let holdVersions = false;
+    await page.addInitScript(record => localStorage.setItem(`proscenium.owner.view.version.${record.project_id}`, JSON.stringify(record)), initial);
+    await studio.install({ savedLayout: true, routes: [
+      { path: imagePath, handler: async route => {
+        media.started.release();
+        try { await media.release.promise; await route.fulfill({ json: image }); }
+        finally { media.finished.release(); }
+      } },
+      { path: versionPath, handler: async route => {
+        if (!holdVersions) return route.fulfill({ json: pageOf(studio.versionRecords) });
+        versions.started.release();
+        try { await versions.release.promise; await route.fulfill({ json: pageOf(studio.versionRecords) }); }
+        finally { versions.finished.release(); }
+      } },
+      { path: new RegExp(`${base}/versions/[^/]+/relationships$`), handler: route => {
+        const viewingInitial = new URL(route.request().url()).pathname.endsWith(`/${versionId}/relationships`);
+        const body: RelationshipPage = {
+          schema_version: "1.0", project_id: projectId, root: viewingInitial ? root : leaf, direction: "uses", relationship_revision: 1,
+          items: viewingInitial ? [{ relation: "declared_dependency", from: root, to: leaf, details: {} }] : [], nodes: [root, leaf],
+          coverage: { state: "complete", reasons: [] }, next_cursor: null,
+        };
+        return route.fulfill({ json: body });
+      } },
+    ] });
+    try {
+      await studio.open();
+      await studio.ready();
+      const review = page.getByRole("main", { name: "Review workspace" });
+      const initialHeading = review.getByRole("heading", { name: initial.name, exact: true });
+      const outliner = page.getByRole("region", { name: "Published Outliner" });
+      const openVersion = surface === "Outliner" ? outliner.getByRole("treeitem", { name: next.name, exact: true }).getByRole("button", { name: "Open version", exact: true })
+        : review.getByRole("button", { name: "View v3", exact: true });
+      if (surface === "Outliner") await page.getByRole("navigation", { name: "Navigator tabs" }).getByRole("button", { name: surface, exact: true }).click();
+      await expect(initialHeading).toBeVisible();
+      await expect(openVersion).toBeVisible();
+      const originalOutliner = surface === "Outliner" ? await outliner.elementHandle() : null;
+      studio.emit("assistant.completed", { message_id: "racing-citation", text: `Inspect ${imageId}.` });
+      const citation = page.locator(".assistant-message").getByRole("button", { name: "Concept image", exact: true });
+      await expect(citation).toBeVisible();
+      holdVersions = true;
+      const [old, latest] = newer === "Copilot" ? [versions, media] : [media, versions];
+      const [oldClick, latestClick] = newer === "Copilot" ? [openVersion, citation] : [citation, openVersion];
+      const cancelled = page.waitForEvent("requestfailed", request => new URL(request.url()).pathname === old.path);
+      await oldClick.click();
+      await old.started.promise;
+      await latestClick.click();
+      await latest.started.promise;
+      old.release.release();
+      await old.finished.promise;
+      await expect(initialHeading).toBeVisible();
+      await cancelled;
+      if (originalOutliner) expect(await outliner.evaluate((current, original) => current === original, originalOutliner)).toBe(true);
+      await expect(page.getByRole("alert")).toHaveCount(0);
+
+      latest.release.release();
+      await latest.finished.promise;
+      await expect(review.getByRole("heading", { name: newer === "Copilot" ? `Retained concept image · ${imageId}` : next.name, exact: true })).toBeVisible();
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      studio.assertHermetic();
+    } finally { media.release.release(); versions.release.release(); }
+  });
+}
+
+test("a cited Review image can be re-roled or removed from the draft without changing Current view", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  prepare(studio);
+  await studio.install({ savedLayout: true });
+  await studio.open();
+  await studio.ready();
+  studio.emit("assistant.completed", { message_id: "attached-citation", text: `Inspect ${imageId}.` });
+  const cite = page.locator(".assistant-message").getByRole("button", { name: "Concept image", exact: true });
+  const review = page.getByRole("main", { name: "Review workspace" });
+  const heading = review.getByRole("heading", { name: `Retained concept image · ${imageId}` });
+  const bar = page.getByRole("button", { name: "Choose request target and references" });
+  const panel = page.getByRole("region", { name: "Request target", exact: true });
+  const images = panel.getByRole("region", { name: "Attached images", exact: true });
+  const role = images.getByRole("combobox", { name: "Review image 1 role" });
+  const remove = images.getByRole("button", { name: "Remove review image 1" });
+  const currentView = panel.getByRole("button", { name: "Current view", exact: true });
+  const draft = page.getByRole("textbox", { name: "Message Copilot" });
+  const queue = page.getByRole("button", { name: "Queue message", exact: true });
+
+  await cite.click();
+  await expect(heading).toBeVisible();
+  await draft.fill("Use the inspected image as a mask.");
+  await bar.click();
+  await expect(currentView).toHaveAttribute("aria-pressed", "true");
+  await expect(bar).toContainText("+1 context");
+  await expect(role.locator("option")).toHaveText(["reference", "concept", "render", "markup", "mask"]);
+  await role.selectOption("mask");
+  await expect(remove).toBeVisible();
+  await queue.click();
+  await expect.poll(() => studio.submissions.length).toBe(1);
+  expect(studio.contexts[0]).toMatchObject({ request_target: { kind: "project" }, attachments: [{ artifact_id: imageId, role: "mask" }] });
+  await expect(draft).toHaveValue("");
+
+  await draft.fill("Do not include the inspected image.");
+  await bar.click();
+  await expect(role).toHaveValue("reference"); // Successful submission clears draft-only overrides.
+  await remove.click();
+  await expect(images).toHaveCount(0);
+  await expect(bar).not.toContainText("context");
+  await expect(currentView).toHaveAttribute("aria-pressed", "true");
+  await expect(heading).toBeVisible();
+
+  await review.getByRole("button", { name: "Clear preview", exact: true }).click();
+  await expect(heading).toHaveCount(0);
+  await cite.click();
+  await expect(role).toHaveValue("reference"); // Leaving Review prunes the removal override.
+  await remove.click();
+  await queue.click();
+  await expect.poll(() => studio.submissions.length).toBe(2);
+  expect(studio.contexts[1]).toMatchObject({ request_target: { kind: "project" }, attachments: [] });
+  await expect(draft).toHaveValue("");
+  await bar.click();
+  await expect(currentView).toHaveAttribute("aria-pressed", "true");
+  await expect(heading).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  studio.assertHermetic();
+});
+
+test("Target shows a published Review frame as read-only evidence and submits its canonical attachment", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const image = prepare(studio);
+  const current = studio.versionRecords.find(record => record.version_id === latestId)!;
+  current.artifact_ids = [image.artifact_id];
+  await studio.install({ savedLayout: true });
+  await studio.open();
+  await studio.ready();
+  await page.getByRole("region", { name: "Version catalogue" }).getByTitle(itemName, { exact: true }).click();
+  await expect(page.getByRole("main", { name: "Review workspace" }).getByRole("heading", { name: current.name, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Annotate presented frame" })).toBeEnabled();
+  await page.getByRole("textbox", { name: "Message Copilot" }).fill("Use the published Review frame.");
+  await page.getByRole("button", { name: "Choose request target and references" }).click();
+  const panel = page.getByRole("region", { name: "Request target", exact: true });
+  const images = panel.getByRole("region", { name: "Attached images", exact: true });
+  await expect(panel.getByRole("button", { name: "Current view", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(images.getByRole("img", { name: "Review image 1" })).toBeVisible();
+  await expect(images.getByText("Review frame · concept", { exact: true })).toBeVisible();
+  await expect(images.getByText("Switch target mode to exclude Review frame evidence.")).toBeVisible();
+  await expect(images.getByRole("combobox")).toHaveCount(0);
+  await expect(images.getByRole("button", { name: /^Remove/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Queue message", exact: true }).click();
+  await expect.poll(() => studio.submissions.length).toBe(1);
+  expect(studio.contexts[0]).toMatchObject({
+    request_target: { kind: "item", version: { item_id: itemId, version_id: latestId } },
+    target: { artifact_id: imageId, origin: "concept", version_id: latestId },
+    attachments: [{ artifact_id: imageId, role: "concept" }],
+  });
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  studio.assertHermetic();
+});
+
 for (const update of ["revokes", "omits"] as const) {
   test(`a committed retained refresh that ${update} the artefact fences a delayed ready click`, async ({ page, baseURL }) => {
     const studio = new StudioFixture(page, baseURL!);
@@ -218,4 +423,28 @@ test("the detail read can resolve a pending cached Critic citation and open it u
     await expect(pending).toHaveAttribute("aria-pressed", "true");
     studio.assertHermetic();
   } finally { release.release(); }
+});
+
+test("re-clicking the same Critic citation retries a failed detail read", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  prepare(studio);
+  let detailReads = 0;
+  await studio.install({ savedLayout: true, routes: [{ path: reviewPath, handler: route => {
+    if (++detailReads === 1) return route.fulfill({ status: 503, json: { error: { code: "unavailable", message: "Temporary review failure", details: {} } } });
+    return route.fulfill({ json: studio.reviews[0] });
+  } }] });
+  await studio.open();
+  await studio.ready();
+  studio.emit("assistant.completed", { message_id: "retry-review-citation", text: `Check ${reviewId}.` });
+  const citation = page.locator(".assistant-message").getByRole("button", { name: reviewTitle, exact: true });
+  const critic = page.getByRole("region", { name: "Critic", exact: true });
+  await citation.click();
+  await expect(critic.getByRole("alert")).toContainText(`Could not open review ${reviewId}.`);
+  expect(detailReads).toBe(1);
+  await page.getByRole("navigation", { name: "Assistant tabs" }).getByRole("button", { name: "Copilot", exact: true }).click();
+  await citation.click();
+  await expect(critic.locator(".critic-thread")).toContainText(studio.reviews[0].criteria);
+  expect(detailReads).toBe(2);
+  await expect(critic.getByRole("alert")).toHaveCount(0);
+  studio.assertHermetic();
 });

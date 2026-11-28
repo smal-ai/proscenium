@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, Paperclip, RotateCcw, Square, MessageSquare } from "lucide-react";
 import type { ActivityEventData, ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, ReviewTicket, VersionRecord, VersionRef } from "../../api";
-import type { ComposerSeedIntent, ContextPreparer, TurnSelection } from "../../api/studio";
+import type { ComposerSeedIntent, ContextPreparer, ReviewNavigationProps, TurnSelection } from "../../api/studio";
 import { describeError, id, readPrivate, writePrivate } from "../../app/storage";
 import { DecisionCard } from "./DecisionCard";
 import { Conversation } from "./Conversation";
@@ -12,7 +12,7 @@ import { useChatScroll } from "./useChatScroll";
 import { ComposerPanel, JobList, jobsBadgeState, jobsForTurn } from "./ComposerPanel";
 import { AssistantStatus } from "./AssistantStatus";
 import { TargetPicker } from "./TargetPicker";
-import { prepareSubmissionContext, uniqueVersions, type DraftTarget } from "./target";
+import { applyReviewAttachmentOverrides, prepareSubmissionContext, uniqueVersions, type DraftTarget, type ReviewAttachmentOverrides } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory, type HistoryCursor } from "./promptHistory";
 import { agentsForTurn, busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
 import { SendControl } from "./SendControl";
@@ -57,7 +57,7 @@ export function shouldShowResumeCard(snapshot: ProjectSnapshot | null, requests:
 }
 
 interface Upload { uploadId: string; name: string; file: File; artifact: Artifact | null; busy: boolean; error: string }
-export interface ChatPanelProps {
+export interface ChatPanelProps extends ReviewNavigationProps {
   api: ApiClient; projectId: string; snapshot: ProjectSnapshot | null; requests: RequestRecord[]; events: Event[]; jobs: JobRecord[]; selection: TurnSelection;
   composer: ReturnType<typeof useRequestComposer>; onRefresh: () => Promise<void>;
   autoRelease?: AutoReleaseController;
@@ -75,10 +75,23 @@ export function shouldShowPendingStopCard(composer: Pick<ChatPanelProps["compose
   return Boolean(composer.pendingStop && (composer.pendingStopNeedsConfirmation ?? !composer.stopping));
 }
 
-export function ChatPanel({ visible = true, api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = EMPTY_SUMMARIES, retainedArtifactReadOrder, reviews, publicationEvents, seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, onInspectArtifact, onOpenVersion, onOpenReview }: ChatPanelProps) {
+export function ChatPanel({ visible = true, api, projectId, snapshot, requests, events, jobs, selection, prepareContext, composer, autoRelease, onRefresh, items, retainedArtifacts = EMPTY_SUMMARIES, retainedArtifactReadOrder, reviews, publicationEvents, seedIntent, hydrated = true, connection = "Connected", showHeaderStatus = true, reviewNavigationEpoch, onBeginNavigation, isCurrentReviewNavigation, onInspectArtifact, onOpenVersion, onOpenReview }: ChatPanelProps) {
   const [draft, setDraft] = useState(() => readPrivate<string>(`draft.${projectId}`) ?? "");
   const draftRef = useRef(draft); draftRef.current = draft;
   const [attachments, setAttachments] = useState<Attachment[]>(() => readPrivate<Attachment[]>(`attachments.${projectId}`) ?? []);
+  const [reviewAttachmentOverrides, setReviewAttachmentOverrides] = useState<ReviewAttachmentOverrides>({});
+  const reviewAttachments = applyReviewAttachmentOverrides(selection, reviewAttachmentOverrides);
+  useEffect(() => {
+    const ids = new Set(selection.attachments.map(attachment => attachment.artifact_id));
+    setReviewAttachmentOverrides(previous => {
+      const entries = Object.entries(previous);
+      const kept = entries.filter(([artifactId]) => ids.has(artifactId));
+      return kept.length === entries.length ? previous : Object.fromEntries(kept);
+    });
+  }, [selection.attachments]);
+  function changeReviewAttachment(artifactId: string, role: Attachment["role"] | null) {
+    setReviewAttachmentOverrides(previous => ({ ...previous, [artifactId]: role }));
+  }
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [mode, setMode] = useState<"queue" | "steer">("queue");
   const [draftTarget, setDraftTarget] = useState<DraftTarget>(() => readPrivate<DraftTarget>(`target.${projectId}`) ?? "current_view");
@@ -251,7 +264,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     const capturedAttachments = structuredClone(attachments);
     const submittedIds = new Set(capturedAttachments.map(a => a.artifact_id));
     try {
-      const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments, items: catalogue }, prepareContext);
+      const context = await prepareSubmissionContext({ target: submittedTargetMode, selection: capturedSelection, references: capturedReferences, attachments: capturedAttachments, items: catalogue, reviewAttachmentOverrides }, prepareContext);
       if (submittedMode === "steer" && steerWorkId(snapshotRef.current) !== submittedWorkId) throw new Error("Work is no longer steerable. Your Steer mode and draft are retained. Switch to Queue deliberately.");
       const autoReleasing = submittedMode === "queue" && isIdleAutoReleaseReady(snapshotRef.current, requestsRef.current, eventsRef.current);
       if (autoReleasing) activeAutoRelease.start(requestId);
@@ -259,6 +272,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
       activeAutoRelease.settle(requestId, submitted);
       if (submitted) {
         if (readPrivate<string>(`draft.${projectId}`) === text) changeDraft("");
+        setReviewAttachmentOverrides({});
         setAttachments(old => { const next = old.filter(a => !submittedIds.has(a.artifact_id)); writePrivate(`attachments.${projectId}`, next); return next; });
       }
     } catch (e) { activeAutoRelease.settle(requestId, null); setError(describeError(e)); }
@@ -303,7 +317,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
     </div>
     {fallbackOutputs}
     {work?.state === "awaiting_resume" && requests.some(r => r.receipt.work_id === work.work_id && r.receipt.detail_code === "native_turn_aborted") && <p className="run-error" role="status">Copilot interrupted this turn. Review the latest failure, then use Resume to continue the original work.</p>}
-    <Conversation visible={visible} api={api} projectId={projectId} snapshot={snapshot} requests={requests} events={events} publicationEvents={publicationEvents} jobs={jobs} reviews={reviews} onRefresh={onRefresh} onError={onConversationError} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} retainedArtifactReadOrder={retainedArtifactReadOrder} onInspectArtifact={onInspectArtifact} onOpenVersion={onOpenVersion} onOpenReview={onOpenReview} />
+    <Conversation visible={visible} api={api} projectId={projectId} snapshot={snapshot} requests={requests} events={events} publicationEvents={publicationEvents} jobs={jobs} reviews={reviews} onRefresh={onRefresh} onError={onConversationError} onStarter={starter} items={catalogue} retainedArtifacts={retainedArtifacts} retainedArtifactReadOrder={retainedArtifactReadOrder} reviewNavigationEpoch={reviewNavigationEpoch} onBeginNavigation={onBeginNavigation} isCurrentReviewNavigation={isCurrentReviewNavigation} onInspectArtifact={onInspectArtifact} onOpenVersion={onOpenVersion} onOpenReview={onOpenReview} />
   </div></div>
     {!isFollowing && <button className="chat-jump subtle" onClick={jumpToLatest}><ArrowDown size={13} />Jump to latest</button>}
     <div className="chat-recovery">
@@ -358,7 +372,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
       {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
       {showQueueHold && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
-      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={composerPanel === "target"} onToggle={() => togglePanel("target")} onClose={closePanel} attachments={attachments} onAttachments={changeAttachments} uploadingCount={uploadingCount} />
+      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={composerPanel === "target"} onToggle={() => togglePanel("target")} onClose={closePanel} attachments={attachments} onAttachments={changeAttachments} reviewAttachments={reviewAttachments} onReviewAttachment={changeReviewAttachment} uploadingCount={uploadingCount} />
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
         if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
         if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || ((e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) && ["ArrowUp", "ArrowDown"].includes(e.key))) historyCursor.current = null;

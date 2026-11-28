@@ -1,13 +1,13 @@
 import { memo, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { RelationshipDirection, RelationshipEndpoint, RelationshipNodeSummary, RelationshipPage, RelationshipRelation, RelationshipRoot, VersionRecord } from "../../api/generated/contracts";
-import type { OutlinerSurfaceProps } from "../../api/studio";
+import type { OutlinerSurfaceProps, ReviewNavigationProps } from "../../api/studio";
 import { nextArtifactReadOrder } from "../readyArtifactIndex";
 import { appendPage, boundedSignal, coverageMessage, endpointKey, extendPath, groupEdges, readFailure, readRelationships, readVersions, rootRef, versionRoot } from "./model";
 import { overlayNode, useNodeOverlays, type NodeOverlays } from "./overlays";
 import "./outliner.css";
 
 type FocusedRoot = { endpoint: RelationshipRoot; summary?: RelationshipNodeSummary; board?: RelationshipNodeSummary };
-type NavigationProps = Pick<OutlinerSurfaceProps, "api" | "projectId" | "visible" | "onOpenVersion" | "onOpenShot" | "onInspectArtifact">;
+type NavigationProps = ReviewNavigationProps & Pick<OutlinerSurfaceProps, "api" | "projectId" | "visible" | "onOpenVersion" | "onOpenShot" | "onInspectArtifact">;
 type BranchProps = NavigationProps & {
   direction: RelationshipDirection;
   latestPerItem: boolean;
@@ -40,8 +40,9 @@ function nodeAction(node: RelationshipNodeSummary | undefined) {
   return null;
 }
 
-function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, onInspectArtifact }: NavigationProps & { node: RelationshipNodeSummary }) {
-  const action = useRef<AbortController>(null);
+function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, onInspectArtifact, reviewNavigationEpoch = 0, onBeginNavigation, isCurrentReviewNavigation }: NavigationProps & { node: RelationshipNodeSummary }) {
+  const action = useRef<{ controller: AbortController; epoch: number }>(null);
+  const committedEpoch = useRef(reviewNavigationEpoch);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const key = endpointKey(node);
@@ -54,13 +55,26 @@ function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, 
   useLayoutEffect(() => {
     setBusy(false);
     if (enabled) setError("");
-    return () => { action.current?.abort(); action.current = null; };
+    return () => { action.current?.controller.abort(); action.current = null; };
   }, [api, projectId, key, artefactId, enabled]);
+  useLayoutEffect(() => {
+    committedEpoch.current = reviewNavigationEpoch;
+    const pending = action.current;
+    if (pending && reviewNavigationEpoch > pending.epoch) {
+      pending.controller.abort();
+      action.current = null;
+      setBusy(false);
+    }
+  }, [reviewNavigationEpoch]);
 
   async function openNode() {
     if (!enabled || action.current) return;
+    const epoch = onBeginNavigation?.() ?? committedEpoch.current;
     const controller = new AbortController();
-    action.current = controller;
+    const pending = { controller, epoch };
+    action.current = pending;
+    const isCurrent = () => action.current === pending && !controller.signal.aborted
+      && (isCurrentReviewNavigation?.(epoch) ?? committedEpoch.current === epoch);
     setError("");
     setBusy(true);
     const signal = boundedSignal(controller.signal);
@@ -68,7 +82,7 @@ function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, 
       if (node.kind === "version" || node.kind === "shot") {
         const pin = rootRef(node);
         const [record] = await readVersions(api, projectId, pin.item_id, signal, pin.version_id);
-        if (action.current !== controller) return;
+        if (!isCurrent()) return;
         signal.throwIfAborted();
         if (!record || (node.kind === "shot" && record.kind !== "storyboard")) {
           setError(`Exact publication ${pin.version_id} is unavailable. No other version was opened.`);
@@ -76,15 +90,15 @@ function NodeAction({ node, api, visible, projectId, onOpenVersion, onOpenShot, 
         else onOpenVersion(record);
       } else if (artefactId) {
         const fresh = await api.call("getArtifact", { path: { project_id: projectId, artifact_id: artefactId }, signal });
-        if (action.current !== controller) return;
+        if (!isCurrent()) return;
         signal.throwIfAborted();
         if (fresh.project_id !== projectId || fresh.artifact_id !== artefactId || fresh.state !== "ready") setError("The exact artefact is no longer available to inspect.");
         else onInspectArtifact(fresh);
       }
     } catch (cause) {
-      if (action.current === controller && !controller.signal.aborted) setError(`Could not open the exact target. ${readFailure(cause).text}`);
+      if (isCurrent()) setError(`Could not open the exact target. ${readFailure(cause).text}`);
     } finally {
-      if (action.current === controller) { action.current = null; setBusy(false); }
+      if (action.current === pending) { action.current = null; setBusy(false); }
     }
   }
   return label && <><button type="button" disabled={!enabled} aria-disabled={busy || undefined} onClick={() => void openNode()}>{label}</button>
