@@ -66,6 +66,16 @@ test("planned asset rows preserve exact shot occurrences and coexist with board 
   assert.deepEqual(reverse.provenance.map(row => row.node), [scene]);
 });
 
+test("source inclusion is a typed input with canonical endpoints in both directions", () => {
+  const inclusion: RelationshipEdge = { relation: "includes_source", from: scene, to: hero, details: {} };
+  const edges: RelationshipEdge[] = [inclusion, { ...inclusion, relation: "derived_from" }, inclusion];
+  const uses = groupEdges(edges, "uses");
+  const usedBy = groupEdges(edges, "used_by");
+  assert.deepEqual(uses.inputs.map(({ edge, node }) => [edge.relation, node]), [["includes_source", hero]]);
+  assert.deepEqual(usedBy.inputs.map(({ edge, node }) => [edge.from, edge.to, node]), [[scene, hero, scene]]);
+  assert.deepEqual(usedBy.provenance.map(({ edge }) => edge.relation), ["derived_from"]);
+});
+
 test("coverage, empty pages, cursor drift, HTTP and transport errors are distinct", () => {
   const page = emptyPage();
   assert.equal(coverageMessage(page)?.text, "No published uses of this version");

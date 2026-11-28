@@ -93,6 +93,21 @@ same-ID capture receipts. Consumers must accept historical records without them.
   replace inherited files at the same destination. `exclude_paths` omits exact inherited
   destinations and cannot overlap the supplied files. Both fields require `entry_path`.
   Dependencies and runtime requirements still come from the new request, not the base.
+- `CheckpointRequest.include_sources` optionally pins exact published sources in
+  the active project and requires `entry_path`. With a composed base, omission
+  retains its direct inclusions, `[]` detaches them and a non-empty list replaces
+  them. Composition imports each direct producer's whole sealed file manifest
+  at its original destinations and origins, not ordinary dependencies or live
+  files. The consumer owns its entry. It can retire a hand-copied base file with
+  `exclude_paths`, but cannot exclude one file from an active inclusion.
+- `SourceClosure.included_sources` records the sorted, non-empty direct inclusion
+  set and is omitted when empty. These pins also appear in `dependencies`.
+  Composed closures admit at most 128 includes, 4,096 distinct destinations and
+  512 MiB hydrated bytes. A shared destination must have an identical sealed
+  row, including its origin. `includes_source` edges record verified file
+  inclusion instead of a duplicate `declared_dependency` edge. Old digests and
+  receipts remain unchanged. The single-commit offline import format rejects
+  origins it cannot represent. Normal backup and restore preserve them.
 - `PublishedItem` accepts exactly one of an inline `source` or `checkpoint_operation_id`.
   The latter resolves a completed checkpoint with a closure and matching `source_commit`
   in the same project. Use it in `publication_submit` validation and `publish_outputs`

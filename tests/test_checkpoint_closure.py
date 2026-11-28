@@ -23,7 +23,7 @@ from proscenium.db import Store
 from proscenium.jobs.gate import ExecutionGate
 from proscenium.sources import Sources, closure_digest
 from proscenium.sources.checkpoint import prepared_branch
-from proscenium.sources.common import git, sha
+from proscenium.sources.common import binding, fingerprint, git, sha
 
 PROJECT = "project-one"
 
@@ -508,23 +508,241 @@ def test_checkpoint_replays_across_resumed_invocation_and_reordered_paths(runtim
     body = request(runtime, entry_path="plan.json")
     body["paths"] = ["notes.md", "plan.json"]
     receipt = runtime.sources.checkpoint(runtime.caller, body)
+    # This request has the same fingerprint in both modern formats. Remove
+    # only the sorted-ref marker to exercise the pre-Wave-4 work-bound format.
+    with runtime.store.transaction() as tx:
+        tx.connection.execute(
+            "UPDATE records SET body=json_remove(body,'$.sorted_ref_binding') WHERE namespace='checkpoint_intents' AND id=?",
+            (body["operation_id"],),
+        )
+        assert tx.require("checkpoint_intents", body["operation_id"])["modern_binding"] is True
     resumed_caller = dataclasses.replace(runtime.caller, invocation_id="resumed-tool-call")
     reordered = {**body, "paths": ["plan.json", "notes.md"]}
     assert runtime.sources.checkpoint(resumed_caller, reordered) == {**receipt, "replayed": True}
-
-    # Also verify legacy pre-fix invocation-bound operations rows replay when intent matches.
-    with runtime.store.transaction() as tx:
-        tx.connection.execute(
-            "UPDATE operations SET fingerprint='legacy' WHERE scope='sources.checkpoint' AND id=?",
-            (body["operation_id"],),
-        )
-        tx.connection.execute(
-            "UPDATE records SET body=json_remove(body,'$.modern_binding') WHERE namespace='checkpoint_intents' AND id=?",
-            (body["operation_id"],),
-        )
-    assert runtime.sources.checkpoint(resumed_caller, reordered) == {**receipt, "replayed": True}
     with pytest.raises(DomainError) as conflict:
         runtime.sources.checkpoint(resumed_caller, {**reordered, "message": "Different message"})
+    assert conflict.value.code == "idempotency_conflict"
+    with pytest.raises(DomainError) as conflict:
+        runtime.sources.checkpoint(resumed_caller, {**reordered, "include_sources": []})
+    assert conflict.value.code == "idempotency_conflict"
+
+
+def oldest_checkpoint(runtime, monkeypatch, body):
+    from proscenium.sources import checkpoint as checkpoint_module
+
+    # a3efc98 stored the unnormalised request and invocation ID in both
+    # fingerprints, with neither binding marker on the intent.
+    def oldest_binding(caller, _normalised):
+        return {"body": body, "work_id": caller.work_id, "invocation_id": caller.invocation_id}
+
+    with monkeypatch.context() as old:
+        old.setattr(checkpoint_module, "binding", oldest_binding)
+        receipt = runtime.sources.checkpoint(runtime.caller, body)
+    with runtime.store.transaction() as tx:
+        tx.connection.execute(
+            "UPDATE records SET body=json_remove(body,'$.modern_binding','$.sorted_ref_binding') WHERE namespace='checkpoint_intents' AND id=?",
+            (body["operation_id"],),
+        )
+        expected = fingerprint(oldest_binding(runtime.caller, body))
+        assert tx.require("checkpoint_intents", body["operation_id"])["fingerprint"] == expected
+        assert (
+            tx.connection.execute(
+                "SELECT fingerprint FROM operations WHERE scope='sources.checkpoint' AND id=?",
+                (body["operation_id"],),
+            ).fetchone()[0]
+            == expected
+        )
+    return receipt
+
+
+def test_oldest_checkpoint_replays_message_with_trailer_like_text(runtime, monkeypatch):
+    write_plan(runtime)
+    body = request(
+        runtime,
+        entry_path="plan.json",
+        message="Carry forward source from\n\nProscenium-Checkpoint: prior-operation",
+    )
+    receipt = oldest_checkpoint(runtime, monkeypatch, body)
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+
+    for caller, retry in (
+        (runtime.caller, {**body, "message": body["message"] + " "}),
+        (dataclasses.replace(runtime.caller, invocation_id="other-invocation"), body),
+        (dataclasses.replace(runtime.caller, work_id="other-work"), body),
+    ):
+        with pytest.raises(DomainError) as conflict:
+            runtime.sources.checkpoint(caller, retry)
+        assert conflict.value.code == "idempotency_conflict"
+
+
+@pytest.mark.parametrize("with_closure", [False, True])
+def test_oldest_checkpoint_requires_exact_fingerprint_even_without_ordered_closure_lists(
+    runtime,
+    monkeypatch,
+    with_closure,
+):
+    write_plan(runtime)
+    (runtime.root / "notes.md").write_text("Brief notes")
+    body = request(
+        runtime,
+        paths=["plan.json", "notes.md"],
+        **({"entry_path": "plan.json"} if with_closure else {}),
+    )
+    receipt = oldest_checkpoint(runtime, monkeypatch, body)
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+
+    for changed in (
+        {"paths": body["paths"][::-1]},
+        {"dependencies": []},
+        {"retained_files": []},
+        {"required_runtime": dict(application="proscenium", version="1.0", features=[])},
+    ):
+        with pytest.raises(DomainError) as conflict:
+            runtime.sources.checkpoint(runtime.caller, {**body, **changed})
+        assert conflict.value.code == "idempotency_conflict"
+    for changed_caller in (
+        {"work_id": "other-work"},
+        {"invocation_id": "other-invocation"},
+        {"work_id": "other-work", "invocation_id": "other-invocation"},
+    ):
+        with pytest.raises(DomainError) as conflict:
+            runtime.sources.checkpoint(dataclasses.replace(runtime.caller, **changed_caller), body)
+        assert conflict.value.code == "idempotency_conflict"
+
+
+@pytest.mark.parametrize("fingerprint_kind", ["synthetic", "work-bound", "tampered-intent"])
+def test_oldest_checkpoint_rejects_unprovable_fingerprints(runtime, monkeypatch, fingerprint_kind):
+    write_plan(runtime)
+    body = request(runtime, entry_path="plan.json")
+    oldest_checkpoint(runtime, monkeypatch, body)
+    with runtime.store.transaction() as tx:
+        if fingerprint_kind == "tampered-intent":
+            tx.connection.execute(
+                "UPDATE records SET body=json_set(body,'$.fingerprint','legacy') WHERE namespace='checkpoint_intents' AND id=?",
+                (body["operation_id"],),
+            )
+        else:
+            unprovable = (
+                "legacy"
+                if fingerprint_kind == "synthetic"
+                else fingerprint(binding(runtime.caller, body))
+            )
+            tx.connection.execute(
+                "UPDATE operations SET fingerprint=? WHERE scope='sources.checkpoint' AND id=?",
+                (unprovable, body["operation_id"]),
+            )
+    with pytest.raises(DomainError) as conflict:
+        runtime.sources.checkpoint(runtime.caller, body)
+    assert conflict.value.code == "idempotency_conflict"
+
+
+def test_legacy_digest_fixture_has_not_changed():
+    closure = dict(
+        entry_path="scene.blend",
+        files=[
+            dict(
+                destination="scene.blend",
+                origin=dict(
+                    kind="git",
+                    path="scene.blend",
+                    repository_id="repo-one",
+                    commit="1" * 40,
+                    sha256="2" * 64,
+                ),
+            )
+        ],
+        dependencies=[dict(item_id="z", version_id="z-v1"), dict(item_id="a", version_id="a-v1")],
+        required_runtime=dict(application="blender", version="4.5", features=[]),
+    )
+    assert (
+        closure_digest(closure)
+        == "8b15e7ff66e5dbffffe3b53aa53e688e817e78ea4490d1168f2e5fdb8cec9593"
+    )
+
+
+@pytest.mark.parametrize("names", [("z", "a"), ("a", "z")])
+def test_legacy_dependency_binding_preserves_order_and_stored_receipt_bytes(
+    runtime, monkeypatch, names
+):
+    from proscenium.sources import checkpoint as checkpoint_module
+
+    write_plan(runtime)
+    pins = [dict(item_id=name, version_id=name + "-v1") for name in names]
+    with runtime.store.transaction() as tx:
+        for ref in pins:
+            tx.put("versions", ref["version_id"], {**ref, "project_id": PROJECT})
+    body = request(runtime, entry_path="plan.json", dependencies=pins)
+    # Emulate the exact pre-composition writer's binding, including the original
+    # caller dependency order. The commit trailer captures this fingerprint.
+    with monkeypatch.context() as old:
+        old.setattr(
+            checkpoint_module,
+            "binding",
+            lambda caller, value: binding(caller, {**value, "dependencies": pins}),
+        )
+        receipt = runtime.sources.checkpoint(runtime.caller, body)
+    with runtime.store.transaction() as tx:
+        tx.connection.execute(
+            "UPDATE records SET body=json_remove(body,'$.sorted_ref_binding') WHERE namespace='checkpoint_intents' AND id=?",
+            (body["operation_id"],),
+        )
+
+    def saved():
+        with runtime.store.transaction(write=False) as tx:
+            return tuple(
+                tx.connection.execute(
+                    "SELECT fingerprint,result FROM operations WHERE scope='sources.checkpoint' AND id=?",
+                    (body["operation_id"],),
+                ).fetchone()
+            )
+
+    before = saved()
+    assert before[0] == fingerprint(binding(runtime.caller, body))
+    assert "included_sources" not in receipt["source_closure"]
+    resumed = dataclasses.replace(runtime.caller, invocation_id="resumed-tool-call")
+    assert runtime.sources.checkpoint(resumed, body) == {**receipt, "replayed": True}
+    with pytest.raises(DomainError) as conflict:
+        runtime.sources.checkpoint(resumed, {**body, "dependencies": pins[::-1]})
+    assert conflict.value.code == "idempotency_conflict"
+    assert saved() == before
+
+
+@pytest.mark.parametrize("with_retained", [False, True])
+def test_oldest_invocation_bound_checkpoint_proves_raw_closure_inputs(
+    runtime, monkeypatch, with_retained
+):
+    write_plan(runtime)
+    pins = [dict(item_id=name, version_id=name + "-v1") for name in ("a", "b")]
+    with runtime.store.transaction() as tx:
+        for ref in pins:
+            tx.put("versions", ref["version_id"], {**ref, "project_id": PROJECT})
+    attachments = (
+        [
+            dict(destination="z.txt", origin=retain(runtime, "retained-z", b"Z")),
+            dict(destination="a.txt", origin=retain(runtime, "retained-a", b"A")),
+        ]
+        if with_retained
+        else []
+    )
+    body = request(runtime, entry_path="plan.json", dependencies=pins, retained_files=attachments)
+
+    receipt = oldest_checkpoint(runtime, monkeypatch, body)
+
+    assert runtime.sources.checkpoint(runtime.caller, body) == {**receipt, "replayed": True}
+    changes = [
+        {"dependencies": pins[::-1]},
+        {"entry_path": "a.txt"},
+        {"required_runtime": dict(application="blender", version="4.5", features=[])},
+    ]
+    if with_retained:
+        changes.extend(({"retained_files": attachments[::-1]}, {"retained_files": attachments[:1]}))
+    for changed in changes:
+        with pytest.raises(DomainError) as conflict:
+            runtime.sources.checkpoint(runtime.caller, {**body, **changed})
+        assert conflict.value.code == "idempotency_conflict"
+    resumed = dataclasses.replace(runtime.caller, invocation_id="resumed-tool-call")
+    with pytest.raises(DomainError) as conflict:
+        runtime.sources.checkpoint(resumed, body)
     assert conflict.value.code == "idempotency_conflict"
 
 

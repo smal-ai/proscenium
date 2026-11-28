@@ -1,7 +1,9 @@
 """Published graph contract, writer parity, recovery and page-bounded owner reads."""
 
 import copy
+import dataclasses
 import json
+import os
 import shutil
 import sqlite3
 import stat
@@ -33,10 +35,24 @@ from proscenium.db.store import MIGRATIONS, Store, Transaction
 from proscenium.projects.importer import import_project
 from proscenium.projects.service import Projects
 from proscenium.services import Services
-from proscenium.sources import closure_digest
-from proscenium.sources.common import fingerprint, git
+from proscenium.sources import closure_digest, composition
+from proscenium.sources.common import fingerprint, git, sha
 from proscenium.sources.read_only import read_closure_files
 from test_project_importer import FPS, IDENTITY, OWNER, P, admitted_tool, item, pin, source, write
+from test_source_composition import (
+    COAT3,
+    HERO_BLEND,
+    LANDING,
+    LANDING_BLEND,
+    STAIRS,
+    STAIRS_BLEND,
+    WALK,
+    WALK_BLEND,
+    checkpoint,
+    producer,
+    publish,
+    retain,
+)
 
 from tools.operations import recovery
 
@@ -1279,3 +1295,389 @@ def seed_keyset_performance(services, original, refs):
             assert not any(
                 "SCAN relationship_edges" in line or "SCAN records" in line for line in plan
             )
+
+
+def test_offline_import_preserves_single_commit_and_rejects_multi_commit(tmp_path):
+    root = tmp_path / "project"
+    root.mkdir()
+    producer_file = write(root, "hero.txt", b"Hero")
+    consumer_file = write(root, "landing.txt", b"Landing")
+    with services_at(tmp_path / "registry") as services:
+        info = manifest(
+            {**item("hero", "asset", source(producer_file)), **V3},
+            {
+                **item(
+                    "landing",
+                    "scene",
+                    {**source(consumer_file, producer_file, deps=[V3]), "included_sources": [V3]},
+                ),
+                **LANDING,
+            },
+        )
+        import_project(services, OWNER, root, info)
+        services.registry.activate(P)
+        edges = page(services, LANDING["version_id"])["items"]
+        assert [edge["relation"] for edge in edges] == ["includes_source"]
+        backfill.rebuild_relationships(services, P)
+        assert page(services, LANDING["version_id"])["items"] == edges
+
+        other_file = write(root, "stairwell.txt", b"Would acquire a new commit")
+        new = manifest(
+            item(
+                "stairwell",
+                "scene",
+                {
+                    **source(other_file, producer_file, deps=[V3]),
+                    "included_sources": [V3],
+                },
+            ),
+            name="multi-commit-refused",
+        )
+        refs = git(root, "show-ref")
+        with pytest.raises(DomainError, match="Offline import cannot represent multi-commit"):
+            import_project(services, OWNER, root, new)
+        assert git(root, "show-ref") == refs
+        with services.registry.project_store(P).transaction(write=False) as tx:
+            assert tx.get("versions", "stairwell-v1", required=False) is None
+
+
+@pytest.mark.parametrize(
+    "fault", ["missing_file", "missing_pin", "missing_version", "changed_file"]
+)
+def test_offline_import_rejects_bad_inclusion_before_installing_refs(tmp_path, fault):
+    root = tmp_path / "project"
+    root.mkdir()
+    producer_file = write(root, "hero.txt", b"Hero")
+    consumer_file = write(root, "landing.txt", b"Landing")
+    included = pin("missing") if fault == "missing_version" else V3
+    rows = [consumer_file]
+    if fault != "missing_file":
+        rows.append(
+            {**producer_file, "sha256": sha(b"Wrong bytes")}
+            if fault == "changed_file"
+            else producer_file
+        )
+    manifest_body = manifest(
+        {**item("hero", "asset", source(producer_file)), **V3},
+        {
+            **item(
+                "landing",
+                "scene",
+                {
+                    **source(*rows, deps=[] if fault == "missing_pin" else [included]),
+                    "included_sources": [included],
+                },
+            ),
+            **LANDING,
+        },
+    )
+    with services_at(tmp_path / "registry") as services:
+        with pytest.raises(DomainError) as error:
+            import_project(services, OWNER, root, manifest_body)
+        assert error.value.code == "dependency_missing"
+        assert (
+            git(
+                root,
+                "for-each-ref",
+                "refs/proscenium/checkpoints/",
+                "refs/proscenium/import-sources/",
+            )
+            == b""
+        )
+
+
+@pytest.mark.parametrize(
+    "fault, code, message",
+    [
+        ("cycle", "source_conflict", "Dependency cycle"),
+        ("byte_limit", "invalid_request", "exceeds 512 MiB"),
+    ],
+)
+def test_offline_import_cannot_pin_refs_before_full_admission(
+    tmp_path, monkeypatch, fault, code, message
+):
+    root = tmp_path / "project"
+    root.mkdir()
+    git(root, "init", "-b", "main")
+    producer_file = write(root, "hero.txt", b"Hero")
+    scene_file = write(root, "landing.txt", b"Landing")
+    producer = {**item("hero", "asset", source(producer_file)), **V3}
+    if fault == "cycle":
+        producer["derived_from"] = [LANDING]
+    else:
+        # Both individual files fit. The sealed composition does not.
+        monkeypatch.setattr(composition, "MAX_BYTES", 8)
+    scene = {
+        **item(
+            "landing",
+            "scene",
+            {
+                **source(scene_file, producer_file, deps=[V3]),
+                "included_sources": [V3],
+            },
+        ),
+        **LANDING,
+    }
+    refs = git(root, "for-each-ref")
+    with services_at(tmp_path / "registry") as services:
+        with pytest.raises(DomainError, match=message) as error:
+            import_project(services, OWNER, root, manifest(producer, scene))
+        assert error.value.code == code
+        assert git(root, "for-each-ref") == refs
+        with services.registry.project_store(P, active=False).transaction(write=False) as tx:
+            assert tx.all("versions") == []
+
+
+def wardrobe_sequence(services, store, version):
+    # Persist a sealed observation. No encoder or player runs in this fixture.
+    clip = b"Offline clip fixture"
+    digest = sha(clip)
+    clip_path = services.extension("artifacts").path(P, digest)
+    clip_path.parent.mkdir(parents=True)
+    clip_path.write_bytes(clip)
+    with store.transaction() as tx:
+        services.extension("artifacts").put(
+            tx,
+            dict(
+                schema_version="1.0",
+                artifact_id="landing-edit",
+                project_id=P,
+                kind="video",
+                purpose="final",
+                sha256=digest,
+                bytes=len(clip),
+                media_type="video/mp4",
+                state="ready",
+                derived_from=[],
+                source_version_id=LANDING["version_id"],
+                dimensions={"width": 16, "height": 16},
+                fps=FPS,
+                frame_count=24,
+            ),
+        )
+    frames = {"start": 1, "end": 24}
+    return dict(
+        schema_version="1.0",
+        project_id=P,
+        sequence_version_id=version,
+        fps=FPS,
+        frame_count=24,
+        silent=True,
+        entries=[
+            dict(
+                entry_id="landing-edit",
+                shot_id=None,
+                clip_artifact_id="landing-edit",
+                source_frames=frames,
+                sequence_frames=frames,
+                transform="identity",
+                mapping_artifact_id=None,
+                include_audio=False,
+                choice="agent",
+            )
+        ],
+    )
+
+
+def test_wardrobe_revision_and_restore_keep_both_outliner_histories(tmp_path):
+    root = tmp_path / "project"
+    root.mkdir()
+    stairwell2, stairwell3 = pin("stairwell", "stairwell-v2"), pin("stairwell", "stairwell-v3")
+    board1, board2, seq1 = pin("escape"), pin("escape", "escape-v2"), pin("sequence")
+    coat4 = "assets/hero/source/coat_v4.txt"
+    stairwell_blend = "scenes/stairwell/stairwell.blend"
+    plan_path, sequence_path = "storyboards/escape/plan.json", "sequences/escape/cut.json"
+    retained_name = "assets/walk/source/timing.motion"
+    with services_at(tmp_path / "registry") as services:
+        starter = item("starter", "asset", source(write(root, "starter.txt", b"Bootstrap")))
+        import_project(services, OWNER, root, manifest(starter))
+        services.registry.activate(P)
+        git(root, "config", "user.name", "Wardrobe test")
+        git(root, "config", "user.email", "fixture@proscenium.invalid")
+        caller = admitted_tool(services)
+        caller = dataclasses.replace(caller, operations=(*caller.operations, "checkpoint_sources"))
+        r = SimpleNamespace(
+            root=root,
+            store=services.registry.project_store(P),
+            services=services,
+            caller=caller,
+            sources=services.extension("sources"),
+            catalogue=services.extension("catalogue"),
+        )
+        producer(r, V3, {HERO_BLEND: b"LFS v3", COAT3: b"Coat v3"}, name="Hero v3")
+        retained = retain(r, "retained-motion", b"Retained motion source")
+        producer(
+            r,
+            WALK,
+            {WALK_BLEND: b"Walk"},
+            retained_files=[dict(destination=retained_name, origin=retained)],
+        )
+        producer(r, STAIRS, {STAIRS_BLEND: b"Staircase"})
+        for ref, entry, includes in [
+            (LANDING, LANDING_BLEND, [V3, WALK]),
+            (stairwell2, stairwell_blend, [V3, WALK, STAIRS]),
+        ]:
+            write(root, entry, ref["version_id"].encode())
+            name = "Landing v2" if ref == LANDING else "Stairwell v2"
+            publish(
+                r,
+                ref,
+                checkpoint(r, ref, [entry], include_sources=includes),
+                kind="scene",
+                name=name,
+            )
+
+        board = plan("escape", scene=LANDING)
+        board["shots"][1].update(
+            scene_version=stairwell2,
+            source_range={"start": 1, "end": 24},
+            fps=FPS,
+            planned_assets=[V3],
+        )
+        write(root, plan_path, board)
+        publish(
+            r,
+            board1,
+            checkpoint(r, board1, [plan_path], dependencies=[V3, LANDING, stairwell2]),
+            kind="storyboard",
+        )
+        sequence = wardrobe_sequence(services, r.store, seq1["version_id"])
+        write(root, sequence_path, sequence)
+        publish(
+            r,
+            seq1,
+            checkpoint(r, seq1, [sequence_path], dependencies=[V3, LANDING]),
+            kind="sequence",
+        )
+
+        (root / COAT3).unlink()
+        git(root, "add", "-u", COAT3)
+        git(root, "commit", "-m", "Remove the old coat from the working revision")
+        write(root, HERO_BLEND, b"LFS v4")
+        write(root, coat4, b"Coat v4")
+        new = checkpoint(r, V4, [HERO_BLEND, coat4], base_version=V3, exclude_paths=[COAT3])
+        publish(r, V4, new, previous=V3["version_id"], name="Hero v4")
+        timing = "scenes/stairwell/timing.txt"
+        write(root, timing, b"Stairwell-specific timing revision")
+        adopted = checkpoint(
+            r,
+            stairwell3,
+            [timing],
+            entry=stairwell_blend,
+            base_version=stairwell2,
+            include_sources=[STAIRS, V4, WALK],
+        )
+        publish(
+            r,
+            stairwell3,
+            adopted,
+            kind="scene",
+            previous=stairwell2["version_id"],
+            name="Stairwell v3",
+        )
+        revised = copy.deepcopy(board)
+        revised["shots"][1].update(scene_version=stairwell3, planned_assets=[V4])
+        write(root, plan_path, revised)
+        publish(
+            r,
+            board2,
+            checkpoint(r, board2, [plan_path], dependencies=[V3, V4, LANDING, stairwell3]),
+            kind="storyboard",
+            previous=board1["version_id"],
+        )
+
+        expected = index(services)
+        backfill.rebuild_relationships(services, P)
+        assert index(services) == expected
+        old_edges = page(services, V3["version_id"], direction="used_by")["items"]
+        new_edges = page(services, V4["version_id"], direction="used_by")["items"]
+
+        def consumers(edges, relation):
+            return {
+                edge["from"]["ref"]["version_id"] for edge in edges if edge["relation"] == relation
+            }
+
+        old_scenes = {LANDING["version_id"], stairwell2["version_id"]}
+        assert consumers(old_edges, "includes_source") == old_scenes
+        assert consumers(new_edges, "includes_source") == {stairwell3["version_id"]}
+        assert consumers(old_edges, "declared_dependency").isdisjoint(old_scenes)
+        assert get_version(services, seq1["version_id"])["source"]["dependencies"] == [V3, LANDING]
+        preserved = {
+            ref["version_id"]: get_version(services, ref["version_id"])["source"]
+            for ref in (V3, V4, LANDING, stairwell2, stairwell3, board1, board2, seq1)
+        }
+        with r.store.transaction() as tx:
+            for ns, identity in (("work", caller.work_id), ("invocations", caller.invocation_id)):
+                tx.put(
+                    ns,
+                    identity,
+                    dict(tx.require(ns, identity), state="completed"),
+                    expected_revision=tx.revision(ns, identity),
+                )
+        # Archive an inert fixture history to run the ordinary complete backup path.
+        write(
+            services.settings.data_directory,
+            "copilot-runtime/home/session-state/test-session/events.jsonl",
+            b"{}\n",
+        )
+        settings = services.settings
+
+    (root / WALK_BLEND).unlink()
+    bundle, target = tmp_path / "backup", tmp_path / "restored"
+    assert recovery.backup(settings, P, bundle)["limits"] == []
+    assert recovery.verify(bundle)["limits"] == []
+    report = recovery.restore(bundle, target, rebind=True)
+    with services_at(target / "machine") as restored:
+        assert index(restored) == expected
+        assert {
+            identity: get_version(restored, identity)["source"] for identity in preserved
+        } == preserved
+        assert page(restored, V3["version_id"], direction="used_by")["items"] == old_edges
+        assert page(restored, V4["version_id"], direction="used_by")["items"] == new_edges
+        with browser_for(restored) as browser:
+            pair(restored, browser)
+            pages = {}
+            for ref, edges in ((V3, old_edges), (V4, new_edges)):
+                identity = ref["version_id"]
+                pages[identity] = {}
+                for direction in ("uses", "used_by"):
+                    response = browser.get(url(identity), params={"direction": direction})
+                    assert response.status_code == 200
+                    pages[identity][direction] = response.json()
+                assert pages[identity]["used_by"]["items"] == edges
+        if export := os.environ.get("PROSCENIUM_E9_RELATIONSHIPS_FIXTURE"):
+            Path(export).write_text(
+                json.dumps(
+                    {
+                        "pages": pages,
+                        "versions": [get_version(restored, identity) for identity in preserved],
+                    }
+                )
+            )
+        restored_root = Path(report["path"])
+        assert (restored_root / HERO_BLEND).read_bytes() == b"LFS v4"
+        assert not (restored_root / WALK_BLEND).exists()
+        restored_sources = restored.extension("sources")
+        landing = restored_sources.materialise(P, LANDING["version_id"])
+        stairs = restored_sources.materialise(P, stairwell3["version_id"])
+        assert (landing / HERO_BLEND).read_bytes() == b"LFS v3"
+        assert (landing / COAT3).read_bytes() == b"Coat v3"
+        assert not (landing / coat4).exists()
+        assert (stairs / HERO_BLEND).read_bytes() == b"LFS v4"
+        assert (stairs / coat4).read_bytes() == b"Coat v4"
+        assert not (stairs / COAT3).exists()
+        assert (
+            (stairs / retained_name).read_bytes()
+            == (landing / retained_name).read_bytes()
+            == b"Retained motion source"
+        )
+        board_snapshot = restored_sources.materialise(P, board1["version_id"])
+        seq_snapshot = restored_sources.materialise(P, seq1["version_id"])
+        assert json.loads((board_snapshot / plan_path).read_bytes()) == board
+        assert {
+            p.relative_to(board_snapshot).as_posix()
+            for p in board_snapshot.rglob("*")
+            if p.is_file()
+        } == {plan_path, ".receipt.json"}
+        assert json.loads((seq_snapshot / sequence_path).read_bytes()) == sequence
+        assert restored.registry.get(P)["path"] == report["path"]

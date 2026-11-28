@@ -17,7 +17,7 @@ from proscenium.catalogue.relationship_projector import (
 from proscenium.contracts import validate
 from proscenium.db.store import Transaction
 from proscenium.sources.read_only import read_authored_json
-from proscenium.sources.resolver import SourceReaderServices, closure_digest
+from proscenium.sources.resolver import Resolver, SourceReaderServices, closure_digest
 
 MAX_RETRIES = 3
 
@@ -133,10 +133,23 @@ def _historical_projection(
         validation.publication_entry(version)
     except DomainError as exc:
         reason = _evidence_reason(exc)
+    composed = "included_sources" in version["source"]
+    if not reason and composed:
+        try:
+            Resolver(services).verify_composed(project_id, version["source"], collect=False)
+        except DomainError as exc:
+            reason = _evidence_reason(exc)
+        except OSError:
+            reason = "source_unavailable"
+    inclusions_verified = composed and not reason
     if reason or version["kind"] not in DOCUMENTS:
-        return project_version_relationships(version, reason=reason)
+        return project_version_relationships(
+            version, reason=reason, inclusions_verified=inclusions_verified
+        )
     if stage == 1:
-        return project_version_relationships(version, reason="indexing")
+        return project_version_relationships(
+            version, reason="indexing", inclusions_verified=inclusions_verified
+        )
 
     try:
         document = read_authored_json(services, project_id, version)
@@ -150,14 +163,18 @@ def _historical_projection(
         try:
             with services.registry.project_store(project_id).transaction(write=False) as tx:
                 _validate_document(version, document, tx)
-            return project_version_relationships(version, document)
+            return project_version_relationships(
+                version, document, inclusions_verified=inclusions_verified
+            )
         except DomainError as exc:
             reason = _evidence_reason(exc)
         except (KeyError, TypeError, ValueError):
             reason = "invalid_historical_record"
         except OSError:
             reason = "source_unavailable"
-    return project_version_relationships(version, reason=reason)
+    return project_version_relationships(
+        version, reason=reason, inclusions_verified=inclusions_verified
+    )
 
 
 def _unchanged(tx: Transaction, projection: Projection, current: Any) -> bool:

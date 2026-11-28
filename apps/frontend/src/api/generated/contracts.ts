@@ -379,6 +379,12 @@ export type RelationshipEdge =
       details: {};
     }
   | {
+      relation: "includes_source";
+      from: RelationshipVersionEndpoint;
+      to: RelationshipVersionEndpoint;
+      details: {};
+    }
+  | {
       relation: "bound_scene";
       from: RelationshipShotEndpoint;
       to: RelationshipVersionEndpoint;
@@ -459,7 +465,8 @@ export type RelationshipRelation =
   | "declared_dependency"
   | "derived_from"
   | "sequence_input"
-  | "planned_asset";
+  | "planned_asset"
+  | "includes_source";
 export type RelationshipSequenceInput =
   | {
       role: "entry";
@@ -1067,6 +1074,10 @@ export interface SourceClosure {
    */
   files: [ClosureFile, ...ClosureFile[]];
   dependencies: VersionRef[];
+  /**
+   * @minItems 1
+   */
+  included_sources?: [VersionRef, ...VersionRef[]];
   required_runtime: RuntimeRequirement;
   digest: Sha256;
 }
@@ -1106,6 +1117,7 @@ export interface CheckpointRequest {
   required_runtime?: RuntimeRequirement;
   retained_files?: RetainedClosureFile[];
   base_version?: VersionRef;
+  include_sources?: VersionRef[];
   exclude_paths?: RelativePath[];
 }
 export interface RetainedClosureFile {

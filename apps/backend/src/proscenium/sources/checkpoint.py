@@ -19,6 +19,7 @@ from proscenium.contracts import validate
 from proscenium.db import Transaction
 from proscenium.db.store import now
 from proscenium.services import Services
+from proscenium.sources import composition
 from proscenium.sources.common import (
     active,
     admitted,
@@ -31,9 +32,73 @@ from proscenium.sources.common import (
     replay,
     sha,
 )
-from proscenium.sources.resolver import Resolver, closure_digest
+from proscenium.sources.resolver import Resolver, checked_file, closure_digest
 
 INHERITED_ENTRY_CONFLICT = "Inherited entry_path does not match HEAD; include entry_path in paths"
+BINARY_REQUIRES_LFS = "Binary authoring files require Git LFS tracking"
+BINARY_SUFFIXES = frozenset(
+    {
+        ".blend",
+        ".fbx",
+        ".glb",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".webp",
+        ".exr",
+        ".hdr",
+        ".mp4",
+        ".tga",
+        ".tif",
+        ".tiff",
+        ".obj",
+        ".mtl",
+        ".abc",
+        ".usd",
+        ".usda",
+        ".usdc",
+        ".usdz",
+        ".zip",
+        ".7z",
+    }
+)
+
+
+@contextmanager
+def checkpoint_index(root: Path, parent: str | None) -> Iterator[dict[str, str]]:
+    descriptor, name = tempfile.mkstemp(prefix="checkpoint-index-", dir=root / ".proscenium")
+    os.close(descriptor)
+    index = Path(name)
+    index.unlink()  # Git requires absent or valid index, not an empty file.
+    env = {"GIT_INDEX_FILE": name}
+    try:
+        git(root, "read-tree", parent or "--empty", env=env)
+        yield env
+    finally:
+        index.unlink(missing_ok=True)
+        Path(name + ".lock").unlink(missing_ok=True)
+
+
+def require_lfs_tracking(root: Path, paths: list[str], parent: str | None) -> None:
+    binaries = [os.fsencode(path) for path in paths if Path(path).suffix.lower() in BINARY_SUFFIXES]
+    if not binaries:
+        return
+    for path in binaries:
+        relative(root, os.fsdecode(path), exists=True)
+    # Match hash-object's worktree attributes and parent-index fallback, not the
+    # owner's unrelated staged .gitattributes. No clean filter runs here.
+    with checkpoint_index(root, parent) as env:
+        actual = git(
+            root,
+            "check-attr",
+            "-z",
+            "--stdin",
+            "filter",
+            env=env,
+            data=b"\0".join(binaries) + b"\0",
+        )
+    if actual != b"".join(path + b"\0filter\0lfs\0" for path in binaries):
+        raise DomainError("source_conflict", 409, BINARY_REQUIRES_LFS, safe_for_model=True)
 
 
 @contextmanager
@@ -99,36 +164,51 @@ class Checkpoints:
         root = active(self.services, caller, "checkpoint_sources", project_id)
         store = self.services.registry.project_store(project_id)
         normalized = {**request, "paths": sorted(paths)}
-        immutable = binding(caller, normalized)
+        legacy_binding = binding(caller, normalized)
+        normalized = dict(normalized)
+        for key in ("dependencies", "include_sources"):
+            if key in normalized:
+                normalized[key] = sorted(normalized[key], key=composition.ref_key)
+        sorted_binding = binding(caller, normalized)
         lockpath = store.path.parent / "checkpoint.lock"
         with os.fdopen(
             os.open(lockpath, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600), "a+b"
         ) as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             with store.transaction() as tx:
-                try:
-                    previous = replay(tx, "sources.checkpoint", identity, immutable)
-                except DomainError as exc:
-                    if exc.code != "idempotency_conflict":
-                        raise
-                    previous = self._legacy_completed_replay(tx, root, request, identity)
+                intent = tx.get("checkpoint_intents", identity, required=False)
+                recovering = intent is not None
+                immutable = (
+                    sorted_binding
+                    if intent is None or intent.get("sorted_ref_binding") is True
+                    else legacy_binding
+                )
+                if (
+                    intent is not None
+                    and intent.get("modern_binding") is not True
+                    and intent.get("sorted_ref_binding") is not True
+                ):
+                    # The oldest format is invocation-bound. Never try the
+                    # newer normalised binding against one of these intents.
+                    previous = self._legacy_completed_replay(tx, root, caller, request, identity)
                     if previous is None:
-                        raise
+                        raise DomainError("idempotency_conflict", 409)
+                else:
+                    previous = replay(tx, "sources.checkpoint", identity, immutable)
                 if previous:
                     saved = tx.require("checkpoint_intents", identity)
                     reference = "refs/proscenium/checkpoints/" + sha(identity.encode())
                     committed = git(root, "rev-parse", "--verify", reference).decode().strip()
                     if committed != previous["source_commit"]:
                         raise DomainError("source_conflict", 409)
-                    self.verify(project_id, request, saved, committed)
-                    closure = self.source_closure(project_id, root, request, saved, committed)
+                    closure = self.verify(project_id, request, saved, committed)
+                    if closure is None:
+                        closure = self.source_closure(project_id, root, request, saved, committed)
                     if previous.get("source_closure") != closure:
                         raise DomainError("source_conflict", 409)
                     validate("CheckpointReceipt", previous)
                     self.sync_index(root, saved, committed)
                     return {**previous, "replayed": True}
-                intent = tx.get("checkpoint_intents", identity, required=False)
-                recovering = intent is not None
                 if intent and intent["fingerprint"] != fingerprint(immutable):
                     raise DomainError("idempotency_conflict", 409)
                 if not intent:
@@ -140,18 +220,26 @@ class Checkpoints:
                     )
                     if head != request["expected_head"] or not branch.startswith("refs/heads/"):
                         raise DomainError("source_conflict", 409)
-                    self.validate_closure_inputs(project_id, root, request, head)
+                    inherited, includes = self.validate_closure_inputs(
+                        project_id, root, request, head
+                    )
                     if len(set(paths)) != len(paths):
                         raise DomainError("invalid_request")
-                    files = [
-                        {"path": p, "sha256": sha(relative(root, p, exists=True).read_bytes())}
-                        for p in sorted(paths)
-                    ]
+                    require_lfs_tracking(root, paths, head)
+                    files = (
+                        self.composed_input_files(project_id, root, request, inherited, head)
+                        if includes
+                        else [
+                            {"path": p, "sha256": sha(relative(root, p, exists=True).read_bytes())}
+                            for p in sorted(paths)
+                        ]
+                    )
                     # Author identity and date are frozen before any Git object/ref changes.
                     author = git(root, "var", "GIT_AUTHOR_IDENT").decode().strip()
                     intent = dict(
                         fingerprint=fingerprint(immutable),
                         modern_binding=True,
+                        sorted_ref_binding=True,
                         branch=branch,
                         files=files,
                         parent=head,
@@ -165,6 +253,8 @@ class Checkpoints:
                             for p in paths
                         },
                     )
+                    if includes:
+                        intent["composition"] = self.composition_fingerprint(inherited, includes)
                     tx.put("checkpoint_intents", identity, intent)
             reference = "refs/proscenium/checkpoints/" + sha(identity.encode())
             commit = git(root, "rev-parse", "--verify", reference, required=False).decode().strip()
@@ -196,7 +286,13 @@ class Checkpoints:
                 ):
                     raise DomainError("source_conflict", 409)
                 for row in intent["files"]:
-                    if sha(relative(root, row["path"], exists=True).read_bytes()) != row["sha256"]:
+                    path = relative(root, row["path"], exists=True)
+                    if "composition" in intent:
+                        try:
+                            checked_file(path, composition.MAX_BYTES, row["sha256"])
+                        except DomainError as exc:
+                            raise DomainError("source_conflict", 409) from exc
+                    elif sha(path.read_bytes()) != row["sha256"]:
                         raise DomainError("source_conflict", 409)
                 zero = "0" * 40
                 commands = (
@@ -221,7 +317,7 @@ class Checkpoints:
                                 expected_revision=tx.revision("checkpoint_intents", identity),
                             )
                         return self.uncertain(request, intent, replayed=False)
-            self.verify(project_id, request, intent, commit)
+            closure = self.verify(project_id, request, intent, commit)
             receipt = dict(
                 schema_version="1.0",
                 operation_id=identity,
@@ -232,7 +328,8 @@ class Checkpoints:
                 files=intent["files"],
                 replayed=False,
             )
-            closure = self.source_closure(project_id, root, request, intent, commit)
+            if closure is None:
+                closure = self.source_closure(project_id, root, request, intent, commit)
             if closure is not None:
                 receipt["source_closure"] = closure
             validate("CheckpointReceipt", receipt)
@@ -261,13 +358,12 @@ class Checkpoints:
 
     @staticmethod
     def closure_path(root: Path, path: str) -> None:
+        composition.closure_path(path)
         relative(root, path)
-        if path.split("/")[0] == ".receipt.json":
-            raise DomainError("scope_denied", 403)
 
     def validate_closure_inputs(
         self, project_id: str, root: Path, request: dict[str, Any], parent: str | None
-    ) -> dict[str, dict[str, Any]]:
+    ) -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
         if "entry_path" not in request:
             if any(
                 key in request
@@ -277,6 +373,7 @@ class Checkpoints:
                     "retained_files",
                     "base_version",
                     "exclude_paths",
+                    "include_sources",
                 )
             ):
                 raise DomainError(
@@ -284,7 +381,7 @@ class Checkpoints:
                     message="entry_path is required when building a source closure",
                     safe_for_model=True,
                 )
-            return {}
+            return {}, []
         self.closure_path(root, request["entry_path"])
         if "exclude_paths" in request and "base_version" not in request:
             raise DomainError(
@@ -303,28 +400,69 @@ class Checkpoints:
             if name in seen or name in excluded:
                 raise DomainError("dependency_collision", 409, destination=name)
             seen.add(name)
-        inherited = {}
+        inherited: dict[str, dict[str, Any]] = {}
+        includes = request.get("include_sources", [])
+        repository_id = self.services.registry.get(project_id)["repository_id"]
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+
+            def lookup(ref: dict) -> dict | None:
+                return tx.get("versions", ref["version_id"], required=False)
+
             if "base_version" in request:
-                base = self.version(tx, project_id, request["base_version"])["source"]
+                version = self.version(tx, project_id, request["base_version"])
+                base = version["source"]
                 validate("SourceClosure", base)
                 if closure_digest(base) != base["digest"]:
                     raise DomainError("hash_mismatch", 422)
-                inherited = {
-                    row["destination"]: row
-                    for row in base["files"]
-                    if row["destination"] not in excluded
-                }
+                old_included = composition.verify_included_sources(
+                    base,
+                    lookup,
+                    project_id,
+                    repository_id,
+                    source_commit=version.get("source_commit"),
+                )
+                check_origins = "include_sources" in request or "included_sources" in base
+                for row in base["files"]:
+                    name = row["destination"]
+                    if name in old_included:
+                        continue
+                    if (
+                        check_origins
+                        and name not in excluded
+                        and name in inherited
+                        and inherited[name] != row
+                    ):
+                        composition.inclusion_collision(name)
+                    inherited[name] = row
+                if "include_sources" not in request and old_included:
+                    includes = base["included_sources"]
+            retired_owned = inherited.keys() & excluded
+            inherited = {name: row for name, row in inherited.items() if name not in excluded}
+            imported = (
+                composition.included_rows(includes, lookup, project_id, repository_id)
+                if includes
+                else {}
+            )
+            for name in sorted(
+                imported.keys()
+                & (seen | inherited.keys() | (excluded - retired_owned) | {request["entry_path"]})
+            ):
+                composition.inclusion_collision(name)
+            inherited.update(imported)
             for ref in request.get("dependencies", []):
                 self.version(tx, project_id, ref)
-            for row in [
-                *retained_files,
-                *(
-                    row
-                    for name, row in inherited.items()
-                    if name not in seen and row["origin"]["kind"] == "retained"
-                ),
-            ]:
+            for row in (
+                []
+                if includes
+                else [
+                    *retained_files,
+                    *(
+                        row
+                        for name, row in inherited.items()
+                        if name not in seen and row["origin"]["kind"] == "retained"
+                    ),
+                ]
+            ):
                 origin = row["origin"]
                 retained = tx.get("retained_sources", origin["artifact_id"], required=False)
                 path = managed(root, f".proscenium/retained/{origin['sha256']}/content")
@@ -344,8 +482,13 @@ class Checkpoints:
                         sha256=origin["sha256"],
                     )
         destinations = seen | inherited.keys()
+        if includes:
+            composition.destination_bounds(destinations)
         for name in sorted(destinations):
-            self.closure_path(root, name)
+            if includes:
+                composition.closure_path(name)
+            else:
+                self.closure_path(root, name)
             parts = name.split("/")
             if any("/".join(parts[:i]) in destinations for i in range(1, len(parts))):
                 raise DomainError("dependency_collision", 409, destination=name)
@@ -353,8 +496,54 @@ class Checkpoints:
             raise DomainError("dependency_missing", 422, path=request["entry_path"])
         entry = self.inherited_git_entry(request, inherited)
         if entry is not None:
-            self.pin_entry(project_id, entry, parent)
-        return inherited
+            if not includes:
+                self.pin_entry(project_id, entry, parent)
+        return inherited, sorted(includes, key=composition.ref_key)
+
+    def composed_input_files(
+        self,
+        project_id: str,
+        root: Path,
+        request: dict,
+        inherited: dict,
+        parent: str | None,
+    ) -> list[dict]:
+        replacement = set(request["paths"]) | {
+            r["destination"] for r in request.get("retained_files", [])
+        }
+        entry = self.inherited_git_entry(request, inherited)
+        if entry is not None and parent is None:
+            raise DomainError("source_conflict", 409, INHERITED_ENTRY_CONFLICT, safe_for_model=True)
+        rows = [r for dest, r in inherited.items() if dest not in replacement]
+        rows.extend(request.get("retained_files", []))
+        remaining = composition.MAX_BYTES
+        with self.services.registry.project_store(project_id).transaction(write=False) as tx:
+            for row in sorted(rows, key=lambda row: row["destination"]):
+                origin = row["origin"]
+                if row is entry:
+                    origin = {**origin, "commit": parent}
+                retained = (
+                    tx.get("retained_sources", origin["artifact_id"], required=False)
+                    if origin["kind"] == "retained"
+                    else None
+                )
+                try:
+                    size, _ = self.resolver.bounded_origin(
+                        project_id, root, origin, remaining, retained=retained
+                    )
+                except DomainError as exc:
+                    if row is entry and exc.code != "invalid_request":
+                        raise DomainError(
+                            "source_conflict", 409, INHERITED_ENTRY_CONFLICT, safe_for_model=True
+                        ) from exc
+                    raise
+                remaining -= size
+        files = []
+        for path in sorted(request["paths"]):
+            size, digest = checked_file(relative(root, path, exists=True), remaining, None)
+            remaining -= size
+            files.append({"path": path, "sha256": digest.decode("ascii")})
+        return files
 
     @staticmethod
     def inherited_git_entry(
@@ -385,6 +574,10 @@ class Checkpoints:
             ) from exc
         return {**entry, "origin": origin}
 
+    @staticmethod
+    def composition_fingerprint(inherited: dict, includes: list[dict[str, str]]) -> str:
+        return fingerprint({"inherited": inherited, "included_sources": includes})
+
     def source_closure(
         self,
         project_id: str,
@@ -393,12 +586,18 @@ class Checkpoints:
         intent: dict[str, Any],
         commit: str,
     ) -> dict[str, Any] | None:
-        files = self.validate_closure_inputs(project_id, root, request, intent["parent"])
+        files, includes = self.validate_closure_inputs(project_id, root, request, intent["parent"])
         if "entry_path" not in request:
             return None
+        if includes and intent.get("composition") != self.composition_fingerprint(files, includes):
+            raise DomainError("source_conflict", 409)
         entry = self.inherited_git_entry(request, files)
         if entry is not None:
-            files[request["entry_path"]] = self.pin_entry(project_id, entry, commit)
+            files[request["entry_path"]] = (
+                {**entry, "origin": {**entry["origin"], "commit": commit}}
+                if includes
+                else self.pin_entry(project_id, entry, commit)
+            )
         repository_id = self.services.registry.get(project_id)["repository_id"]
         files.update(
             (
@@ -421,15 +620,21 @@ class Checkpoints:
             "entry_path": request["entry_path"],
             "files": [files[name] for name in sorted(files)],
             "dependencies": sorted(
-                request.get("dependencies", []),
-                key=lambda row: (row["item_id"], row["version_id"]),
+                {
+                    composition.ref_key(ref): ref
+                    for ref in [*request.get("dependencies", []), *includes]
+                }.values(),
+                key=composition.ref_key,
             ),
             "required_runtime": request.get(
                 "required_runtime", {"application": "proscenium", "version": "1.0", "features": []}
             ),
         }
+        if includes:
+            closure["included_sources"] = includes
         closure["digest"] = closure_digest(closure)
-        validate("SourceClosure", closure)
+        if not includes:
+            validate("SourceClosure", closure)
         return closure
 
     @staticmethod
@@ -562,28 +767,24 @@ class Checkpoints:
     def prepare(
         self, root: Path, request: dict[str, Any], intent: dict[str, Any]
     ) -> tuple[str, str]:
-        descriptor, name = tempfile.mkstemp(prefix="checkpoint-index-", dir=root / ".proscenium")
-        os.close(descriptor)
-        index = Path(name)
-        index.unlink()  # Git requires absent or valid index, not an empty file.
-        env = {"GIT_INDEX_FILE": name}
-        try:
-            if intent["parent"]:
-                git(root, "read-tree", intent["parent"], env=env)
-            else:
-                git(root, "read-tree", "--empty", env=env)
+        with checkpoint_index(root, intent["parent"]) as env:
             for row in intent["files"]:
                 path = relative(root, row["path"], exists=True)
-                data = path.read_bytes()
-                if sha(data) != row["sha256"]:
-                    raise DomainError("source_conflict", 409)
+                if "composition" in intent:
+                    checked_file(path, composition.MAX_BYTES, row["sha256"])
+                    hash_args = ["--path=" + row["path"], "--", str(path)]
+                    data = None
+                else:
+                    data = path.read_bytes()
+                    if sha(data) != row["sha256"]:
+                        raise DomainError("source_conflict", 409)
+                    hash_args = ["--stdin", "--path=" + row["path"]]
                 oid = (
                     git(
                         root,
                         "hash-object",
                         "-w",
-                        "--stdin",
-                        "--path=" + row["path"],
+                        *hash_args,
                         data=data,
                         env=env,
                     )
@@ -591,37 +792,16 @@ class Checkpoints:
                     .strip()
                 )
                 mode = intent["modes"][row["path"]]
-                if path.suffix.lower() in {
-                    ".blend",
-                    ".fbx",
-                    ".glb",
-                    ".png",
-                    ".jpg",
-                    ".jpeg",
-                    ".webp",
-                    ".exr",
-                    ".hdr",
-                    ".mp4",
-                    ".tga",
-                    ".tif",
-                    ".tiff",
-                    ".obj",
-                    ".mtl",
-                    ".abc",
-                    ".usd",
-                    ".usda",
-                    ".usdc",
-                    ".usdz",
-                    ".zip",
-                    ".7z",
-                }:
-                    if not git(root, "cat-file", "blob", oid).startswith(
+                if path.suffix.lower() in BINARY_SUFFIXES:
+                    if (
+                        "composition" in intent and int(git(root, "cat-file", "-s", oid)) > 1024
+                    ) or not git(root, "cat-file", "blob", oid).startswith(
                         b"version https://git-lfs.github.com/spec/v1\n"
                     ):
                         raise DomainError(
                             "source_conflict",
                             409,
-                            "Binary authoring files require Git LFS tracking",
+                            BINARY_REQUIRES_LFS,
                             safe_for_model=True,
                         )
                 git(root, "update-index", "--add", "--cacheinfo", mode, oid, row["path"], env=env)
@@ -649,12 +829,9 @@ class Checkpoints:
             if intent["parent"]:
                 args.extend(["-p", intent["parent"]])
             return git(root, *args, data=message.encode(), env=env).decode().strip(), tree
-        finally:
-            index.unlink(missing_ok=True)
-            Path(name + ".lock").unlink(missing_ok=True)
 
     def _legacy_completed_replay(
-        self, tx: Any, root: Path, request: dict[str, Any], identity: str
+        self, tx: Transaction, root: Path, caller: Caller, request: dict[str, Any], identity: str
     ) -> dict[str, Any] | None:
         import json
 
@@ -663,14 +840,20 @@ class Checkpoints:
             not saved
             or saved.get("state") != "completed"
             or saved.get("modern_binding") is True
-            or any(k in request for k in ("base_version", "exclude_paths"))
+            or saved.get("sorted_ref_binding") is True
+            or any(k in request for k in ("base_version", "exclude_paths", "include_sources"))
         ):
             return None
         row = tx.connection.execute(
-            "SELECT result FROM operations WHERE scope='sources.checkpoint' AND id=?",
+            "SELECT fingerprint,result FROM operations WHERE scope='sources.checkpoint' AND id=?",
             (identity,),
         ).fetchone()
-        if not row:
+        # a3efc98 fingerprinted the raw request and the original invocation.
+        # A receipt is not evidence of omitted fields or the original order.
+        exact = fingerprint(
+            {"body": request, "work_id": caller.work_id, "invocation_id": caller.invocation_id}
+        )
+        if not row or exact != row[0] or exact != saved["fingerprint"]:
             return None
         if saved.get("parent") != request["expected_head"] or [
             r["path"] for r in saved.get("files", [])
@@ -680,19 +863,47 @@ class Checkpoints:
         if not isinstance(candidate, str) or not candidate:
             return None
         commit_msg = git(root, "show", "-s", "--format=%B", candidate, required=False).decode()
-        subject = commit_msg.split("\n\nProscenium-Checkpoint:", 1)[0]
-        if subject != request["message"].rstrip():
+        trailer = (
+            "\n\nProscenium-Checkpoint: "
+            + request["operation_id"]
+            + "\nProscenium-Fingerprint: "
+            + saved["fingerprint"]
+        )
+        if commit_msg.rstrip("\n") != request["message"].rstrip() + trailer:
             return None
-        return dict(json.loads(row[0]))
+        previous = validate("CheckpointReceipt", json.loads(row[1]))
+        closure = previous.get("source_closure")
+        dependencies = request.get("dependencies", [])
+        retained = request.get("retained_files", [])
+        if closure is None:
+            if any(
+                k in request
+                for k in ("entry_path", "required_runtime", "dependencies", "retained_files")
+            ):
+                return None
+        elif (
+            closure["entry_path"] != request.get("entry_path")
+            or closure["required_runtime"]
+            != request.get(
+                "required_runtime", {"application": "proscenium", "version": "1.0", "features": []}
+            )
+            or closure["dependencies"] != sorted(dependencies, key=composition.ref_key)
+            or [item for item in closure["files"] if item["origin"]["kind"] == "retained"]
+            != sorted(retained, key=lambda item: item["destination"])
+        ):
+            return None
+
+        return previous
 
     def verify(
         self, project_id: str, request: dict[str, Any], intent: dict[str, Any], commit: str
-    ) -> None:
+    ) -> dict[str, Any] | None:
         root = Path(self.services.registry.get(project_id)["path"])
-        inherited = self.validate_closure_inputs(project_id, root, request, intent["parent"])
-        entry = self.inherited_git_entry(request, inherited)
-        if entry is not None:
-            self.pin_entry(project_id, entry, commit)
+        if "composition" not in intent:
+            inherited, _ = self.validate_closure_inputs(project_id, root, request, intent["parent"])
+            entry = self.inherited_git_entry(request, inherited)
+            if entry is not None:
+                self.pin_entry(project_id, entry, commit)
         parents = git(root, "rev-list", "--parents", "-n", "1", commit).decode().split()[1:]
         expected = [intent["parent"]] if intent["parent"] else []
         message = git(root, "show", "-s", "--format=%B", commit).decode()
@@ -705,6 +916,12 @@ class Checkpoints:
             or "Proscenium-Fingerprint: " + intent["fingerprint"] not in message.splitlines()
         ):
             raise DomainError("source_conflict", 409)
+        if "composition" in intent:
+            closure = self.source_closure(project_id, root, request, intent, commit)
+            if closure is None or "included_sources" not in closure:
+                raise DomainError("source_conflict", 409)
+            self.resolver.verify_composed(project_id, closure, collect=False, source_commit=commit)
+            return closure
         repository_id = self.services.registry.get(project_id)["repository_id"]
         for row in intent["files"]:
             self.resolver.git_bytes(
@@ -717,3 +934,4 @@ class Checkpoints:
                     sha256=row["sha256"],
                 ),
             )
+        return None

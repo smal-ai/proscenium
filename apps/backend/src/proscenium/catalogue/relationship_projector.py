@@ -23,6 +23,7 @@ GROUPS = {
 }
 # Shot-local inputs share a group. Keep existing on-disk sort groups stable.
 GROUPS["planned_asset"] = GROUPS["bound_scene"]
+GROUPS["includes_source"] = GROUPS["declared_dependency"]
 DOCUMENTS = {"storyboard": "AuthoredShotPlan", "sequence": "SequenceMap"}
 
 
@@ -65,7 +66,11 @@ class Projection:
 
 
 def project_version_relationships(
-    version: dict, document: dict | None = None, *, reason: str | None = None
+    version: dict,
+    document: dict | None = None,
+    *,
+    reason: str | None = None,
+    inclusions_verified: bool = False,
 ) -> Projection:
     """Project a validated record and document. A reason permits pins-only projection."""
     board = version_ref(version)
@@ -217,6 +222,10 @@ def project_version_relationships(
                 },
                 ordinal=ordinal,
             )
+    if inclusions_verified:
+        for ref in version["source"].get("included_sources", []):
+            specific.add((ref["item_id"], ref["version_id"]))
+            add("includes_source", root, version_endpoint(ref))
     for ref in version["source"]["dependencies"]:
         if (ref["item_id"], ref["version_id"]) not in specific:
             add("declared_dependency", root, version_endpoint(ref))

@@ -13,6 +13,7 @@ from proscenium.catalogue.service import CHECKPOINT_SOURCE_CONFLICT
 from proscenium.catalogue.validation import SAFE_VALIDATION_REASONS
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.db.store import now
+from proscenium.guidance import reviewed_reason
 from proscenium.previews.journal import (
     UNSUPPORTED_BLENDER_FEATURE_REASON,
     unsupported_blender_features,
@@ -34,6 +35,7 @@ from proscenium.providers.preparation import (
 from proscenium.shot_plan_impact import compare, impact
 from proscenium.sources.common import git, relative
 from proscenium.sources.read_only import read_authored_json, read_closure_files
+from proscenium.sources.resolver import Resolver
 
 from .native import (
     Configuration,
@@ -498,17 +500,7 @@ def validate_authored_document(
                 }
                 for row in batch.values():
                     git(root, "cat-file", "-e", row["source_commit"] + "^{commit}")
-                    files = read_closure_files(services, project_id, row["source"], batch=batch)
-                    entry = next(
-                        f
-                        for f in row["source"]["files"]
-                        if f["destination"] == row["source"]["entry_path"]
-                    )
-                    if (
-                        entry["origin"]["kind"] == "git"
-                        and entry["origin"]["commit"] != row["source_commit"]
-                    ):
-                        raise DomainError("source_conflict", 409)
+                    validation.publication_entry(row)
                     if row["kind"] in {"storyboard", "sequence"}:
                         authored = read_authored_json(services, project_id, row, batch=batch)
                         issues = validation.schema_issues(
@@ -520,8 +512,12 @@ def validate_authored_document(
                         documents[row["version_id"]] = authored
                         if row["kind"] == "sequence":
                             maps.update(catalogue.frame_maps(project_id, authored))
-                    if row["source"]["entry_path"] not in files:
-                        raise DomainError("dependency_missing", 422)
+                    elif "included_sources" in row["source"]:
+                        Resolver(services).verify_composed(
+                            project_id, row["source"], batch=batch, collect=False
+                        )
+                    else:
+                        read_closure_files(services, project_id, row["source"], batch=batch)
                     for identity in row["artifact_ids"]:
                         catalogue.artifacts.ready_path(project_id, identity)
                 with store.transaction(write=False) as tx:
@@ -578,6 +574,16 @@ def validate_authored_document(
                     details = validation.safe_pin_diagnostics(exc, (SCHEMA["$defs"][definition],))
                     if kind == "publication_submit" and definition == "PublicationSubmit":
                         details.pop("consuming_version", None)
+                elif (
+                    kind == "publication_submit"
+                    and isinstance(exc, DomainError)
+                    and exc.safe_for_model
+                    and reviewed_reason(exc.message)
+                    and exc.code in {"dependency_collision", "dependency_missing"}
+                ):
+                    details = validation.safe_pin_diagnostics(
+                        exc, (SCHEMA["$defs"]["PublicationSubmit"],)
+                    )
                 result["issues"] = [
                     dict(
                         phase="semantic",
@@ -588,6 +594,7 @@ def validate_authored_document(
                         and (
                             exc.message in SAFE_VALIDATION_REASONS
                             or exc.message == CHECKPOINT_SOURCE_CONFLICT
+                            or (exc.safe_for_model and reviewed_reason(exc.message) is not None)
                         )
                         else "Authored document relationships or pinned sources failed validation",
                         **details,

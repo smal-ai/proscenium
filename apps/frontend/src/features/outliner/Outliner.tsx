@@ -17,7 +17,7 @@ type BranchProps = NavigationProps & {
 };
 const names: Record<RelationshipRelation, string> = {
   contains_shot: "Shot", contains_panel: "Panel", board_reference: "Board reference", planned_asset: "Planned asset", bound_scene: "Bound scene",
-  sequence_input: "Sequence input", declared_dependency: "Declared dependency", derived_from: "Derived from",
+  sequence_input: "Sequence input", declared_dependency: "Declared dependency", includes_source: "Includes source", derived_from: "Derived from",
 };
 const groupNames = { structure: "Structure", inputs: "Inputs & bindings", provenance: "Origins / Derivatives" } as const;
 
@@ -253,7 +253,8 @@ function RelationshipBranch({ root, path, initial, viewing, top, ...props }: Bra
       {groups[group].map(({ key, node, edge }) => {
         const range = edge.relation === "bound_scene" ? edge.details.source_range as { start: number; end: number } | null : null;
         const sequenceSlot = edge.relation === "sequence_input" ? [edge.details.role, edge.details.entry_id ?? edge.details.track_id].filter(part => typeof part === "string").join(" · ") : "";
-        const evidence = `${props.direction === "used_by" && edge.relation === "derived_from" ? "Derivative" : names[edge.relation]}${range ? ` · frames ${range.start}–${range.end}` : ""}${sequenceSlot ? ` · ${sequenceSlot}` : ""}`;
+        const inverse = edge.relation === "derived_from" ? "Derivative" : edge.relation === "includes_source" ? "Included by" : null;
+        const evidence = `${(props.direction === "used_by" && inverse) || names[edge.relation]}${range ? ` · frames ${range.start}–${range.end}` : ""}${sequenceSlot ? ` · ${sequenceSlot}` : ""}`;
         return <RelationshipRow key={key} endpoint={node} summary={nodes.get(endpointKey(node))} nodeReadOrder={nodeOrders?.get(endpointKey(node)) ?? 0} board={boardFor(node)} path={path} evidence={evidence} {...props} />;
       })}
     </div>

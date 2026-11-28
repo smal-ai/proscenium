@@ -17,6 +17,8 @@ def read_closure_files(
     *,
     batch: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, bytes]:
+    if "included_sources" in closure:
+        return Resolver(services).verify_composed(project_id, closure, batch=batch)[1]
     validate("SourceClosure", closure)
     if closure_digest(closure) != closure["digest"]:
         raise DomainError("hash_mismatch", 422)
@@ -89,7 +91,16 @@ def read_authored_json(
     if version["project_id"] != project_id:
         raise DomainError("scope_denied", 403)
     closure = version["source"]
-    files = read_closure_files(services, project_id, closure, batch=batch)
+    if "included_sources" in closure:
+        _, files = Resolver(services).verify_composed(
+            project_id,
+            closure,
+            batch=batch,
+            entry_only=True,
+            source_commit=version.get("source_commit"),
+        )
+    else:
+        files = read_closure_files(services, project_id, closure, batch=batch)
     try:
         document = json.loads(files[closure["entry_path"]])
         if not isinstance(document, dict):

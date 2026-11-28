@@ -1,3 +1,7 @@
+import { execFile } from "node:child_process";
+import { chmod, mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { promisify } from "node:util";
 import { expect, test, type Page } from "@playwright/test";
 import type { Camera, ItemRecord, ProjectRecord, RelationshipDirection, RelationshipEdge, RelationshipEndpoint, RelationshipNodeSummary, RelationshipPage, RelationshipRoot, SelectionRecord, ShotPlan, VersionRecord } from "../../apps/frontend/src/api";
 import type { MockRoute } from "./fixtures";
@@ -196,6 +200,78 @@ test("E2: historical pins, duplicate shot IDs and repeated paths stay distinct",
   await expect(navigator(page).getByRole("heading", { name: "1. shot-1" })).toBeFocused();
   await expect(review(page).getByRole("heading", { name: board.name })).toBeVisible();
   expect(studio.submissions).toEqual([]);
+  studio.assertHermetic();
+});
+
+async function unlockFixtureDirectories(directory: string): Promise<void> {
+  await chmod(directory, 0o700);
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    // pytest leaves symlinks to its test directories. Never follow them.
+    if (entry.isDirectory()) await unlockFixtureDirectories(join(directory, entry.name));
+  }
+}
+
+test("E9: the restored Outliner shows both exact wardrobe histories", async ({ page, baseURL }, testInfo) => {
+  const receipt = testInfo.outputPath("restored-relationships.json");
+  await mkdir(dirname(receipt), { recursive: true });
+  // Replay actual authenticated HTTP responses from the disposable E9 restore.
+  // Other Studio APIs stay hermetic; no live Proscenium server is needed.
+  // Only JSON goes in Playwright's output directory. pytest materialises
+  // sealed snapshots whose directories are not writable by default.
+  const workspace = await mkdtemp("/tmp/opencode/proscenium-e9-");
+  try {
+    await promisify(execFile)("uv", ["run", "pytest", "-q", "--basetemp", join(workspace, "pytest"),
+      "tests/test_version_relationships.py::test_wardrobe_revision_and_restore_keep_both_outliner_histories"], {
+      env: { ...process.env, PROSCENIUM_E9_RELATIONSHIPS_FIXTURE: receipt }, timeout: 20_000,
+    });
+  } finally {
+    await unlockFixtureDirectories(workspace);
+    await rm(workspace, { recursive: true });
+  }
+  const restored = JSON.parse(await readFile(receipt, "utf8")) as {
+    pages: Record<string, Record<RelationshipDirection, RelationshipPage>>;
+    versions: VersionRecord[];
+  };
+  const studio = new StudioFixture(page, baseURL!);
+  studio.versionRecords = restored.versions.map(record => ({ ...record, project_id: projectId }));
+  await studio.install({ savedLayout: true, routes: [{ path: graphPath, handler: route => {
+    const url = new URL(route.request().url());
+    const pin = url.pathname.split("/").at(-2)!;
+    const direction = url.searchParams.get("direction") as RelationshipDirection;
+    const response = restored.pages[pin]?.[direction];
+    if (!response) throw new Error(`Missing restored relationship response for ${pin} ${direction}`);
+    // Adapt only the enclosing project ID to the fixed Studio test harness.
+    return route.fulfill({ json: { ...response, project_id: projectId } });
+  } }] });
+  const hero4 = studio.versionRecords.find(record => record.version_id === "hero-v4")!;
+  studio.snapshot.items = [item(hero4)];
+  await studio.open(); await studio.ready();
+  await navigator(page).getByRole("button", { name: "Outliner", exact: true }).click();
+  const pane = outliner(page);
+  await pane.getByRole("combobox", { name: "Published item", exact: true }).selectOption("hero");
+  const versions = pane.getByRole("combobox", { name: "Exact published version", exact: true });
+  const inputs = pane.getByRole("tree").getByRole("group", { name: "Inputs & bindings", exact: true });
+  const row = (name: string) => inputs.getByRole("treeitem", { name, exact: true });
+  const checkIncluded = async (name: string) => {
+    await expect(row(name)).toHaveCount(1);
+    await expect(row(name)).toContainText("Included by");
+    await expect(row(name)).not.toContainText("Declared dependency");
+  };
+  await versions.selectOption("hero-v3");
+  await expect(pane.getByRole("heading", { name: "Hero v3", exact: true })).toBeVisible();
+  await pane.getByRole("button", { name: "Used by", exact: true }).click();
+  await checkIncluded("Landing v2");
+  await checkIncluded("Stairwell v2");
+  await expect(inputs.getByText("Included by", { exact: true })).toHaveCount(2);
+  await expect(row("Stairwell v3")).toHaveCount(0);
+
+  await versions.selectOption("hero-v4");
+  await expect(pane.getByRole("heading", { name: "Hero v4", exact: true })).toBeVisible();
+  await checkIncluded("Stairwell v3");
+  await expect(inputs.getByText("Included by", { exact: true })).toHaveCount(1);
+  await expect(row("Landing v2")).toHaveCount(0);
+  await expect(row("Stairwell v2")).toHaveCount(0);
+  expect(graphCalls(studio).map(call => call.url)).toContain(`${base}/versions/hero-v4/relationships?direction=used_by`);
   studio.assertHermetic();
 });
 

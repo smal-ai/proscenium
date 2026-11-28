@@ -20,7 +20,7 @@ export function extendPath(path: ReadonlySet<string>, node: RelationshipEndpoint
 
 const relationGroup = {
   contains_shot: "structure", contains_panel: "structure",
-  board_reference: "inputs", planned_asset: "inputs", bound_scene: "inputs", sequence_input: "inputs", declared_dependency: "inputs",
+  board_reference: "inputs", planned_asset: "inputs", bound_scene: "inputs", sequence_input: "inputs", declared_dependency: "inputs", includes_source: "inputs",
   derived_from: "provenance",
 } as const satisfies Record<RelationshipRelation, string>;
 

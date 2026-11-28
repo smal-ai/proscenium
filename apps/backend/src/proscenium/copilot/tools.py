@@ -28,6 +28,7 @@ from proscenium.catalogue.validation import (
 from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.guidance import reviewed_reason
 from proscenium.services import Services
+from proscenium.sources.composition import closure_path
 
 from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
@@ -266,6 +267,7 @@ ERROR_GUIDANCE = {
     "frame_conflict": "The frame or its dimensions do not match the registered artefact. Check the original frame receipt before retrying.",
     "unsupported_media_type": "This operation does not support the supplied media type. Check the supported formats before retrying.",
     "dependency_missing": "A pinned source dependency is missing. Check the published source closure and dependency versions.",
+    "dependency_collision": "Source destinations conflict. Change the owned path or publish a non-conflicting library before retrying.",
     "idempotency_conflict": "This operation ID already binds different input or invocation authority. Inspect its original receipt; do not blindly repeat the effect.",
     "revision_conflict": "The record revision changed. Read the current record before submitting a corrected command.",
     "project_busy": "Execution is held or the project is unsettled. Reconcile the existing work and wait for explicit owner Resume.",
@@ -351,6 +353,33 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
     if pin_diagnostic:
         schemas, scope = _tool_issue_schemas(name)
         details.update(safe_pin_diagnostics(error, schemas, scope=scope))
+    if name in {
+        "checkpoint_sources",
+        "publish_outputs",
+        "validate_authored_document",
+    } and error.code in {"dependency_collision", "dependency_missing"}:
+        if error.safe_for_model and safe_message:
+            schemas, scope = _tool_issue_schemas(name)
+            details.update(safe_pin_diagnostics(error, schemas, scope=scope))
+            refs = error.details.get("conflicting_references")
+            if error.code == "dependency_collision" and isinstance(refs, list) and len(refs) == 2:
+                try:
+                    details["conflicting_references"] = [
+                        validate("VersionRef", ref) for ref in refs
+                    ]
+                except DomainError:
+                    pass
+        destination = error.details.get("destination")
+        if (
+            isinstance(destination, str)
+            and len(destination) <= 512
+            and re.fullmatch(r"[A-Za-z0-9._ /-]+", destination)
+        ):
+            try:
+                closure_path(destination)
+                details["destination"] = destination
+            except DomainError:
+                pass
     if name == "get_unity_result" and error.code == "project_busy" and not safe_message:
         message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
     revision = error.details.get("current_revision")
@@ -397,7 +426,15 @@ def result_text(name: str, result: dict[str, Any]) -> str:
     if isinstance(closure, dict):
         ordered_closure = {
             key: closure[key]
-            for key in ("digest", "entry_path", "dependencies", "required_runtime", "files")
+            for key in (
+                "digest",
+                "entry_path",
+                "included_sources",
+                "dependencies",
+                "required_runtime",
+                "files",
+            )
+            if key in closure
         }
         if len(canonical({**header, "source_closure": {"digest": closure["digest"]}})) > 512:
             # Maximum-length IDs and SHA-256 commits cannot all fit before the digest.

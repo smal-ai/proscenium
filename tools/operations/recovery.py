@@ -28,6 +28,8 @@ from proscenium.contracts import validate
 from proscenium.db import Store
 from proscenium.db.registry import Registry
 from proscenium.db.store import MIGRATIONS, now
+from proscenium.sources.composition import verify_included_sources
+from proscenium.sources.resolver import Resolver
 
 from .safety import (
     RecoveryError,
@@ -211,6 +213,16 @@ def required_bytes(root: Path, store: Store) -> dict[str, str]:
             raise RecoveryError("invalid_content_hash")
         relative(path)
     return required
+
+
+def composed_versions(store: Store):
+    # Read only composed records. Older bundles do not acquire any new defaults.
+    with store.transaction(write=False) as tx:
+        for (body,) in tx.connection.execute(
+            "SELECT body FROM records WHERE namespace='versions' AND "
+            "json_type(body, '$.source.included_sources') IS NOT NULL"
+        ):
+            yield validate("VersionRecord", json.loads(body))
 
 
 def git_snapshot(root: Path, destination: Path, store: Store) -> dict:
@@ -438,6 +450,23 @@ def backup(settings: Settings, project_id: str, target: Path, *, allow_incomplet
             source = target / "source"
             source.mkdir(mode=0o700)
             source_manifest = git_snapshot(root, source, store)
+            resolver = Resolver(SimpleNamespace(registry=registry))
+            for record in composed_versions(store):
+                try:
+                    resolver.verify_composed(
+                        project_id,
+                        record["source"],
+                        store=store,
+                        collect=False,
+                        source_commit=record["source_commit"],
+                    )
+                except DomainError as exc:
+                    if not (
+                        allow_incomplete
+                        and exc.code == "retained_source_missing"
+                        and any(row["code"] == "retained_source_missing" for row in limits)
+                    ):
+                        raise RecoveryError("invalid_composed_source:" + exc.code) from exc
             assert_stopped([root, data])
             manifest: dict[str, Any] = {
                 "format": FORMAT,
@@ -558,11 +587,25 @@ def verify(bundle: Path) -> dict:
     existing_store(
         bundle / "machine/registry.sqlite3", read_only=True, expected_revision=revisions["registry"]
     )
-    existing_store(
+    project = manifest["project"]
+    store = existing_store(
         bundle / "project/.proscenium/state.sqlite3",
+        project["project_id"],
         read_only=True,
         expected_revision=revisions["project"],
     )
+    try:
+        with store.transaction(write=False) as tx:
+            for version in composed_versions(store):
+                verify_included_sources(
+                    version["source"],
+                    lambda ref: tx.get("versions", ref["version_id"], required=False),
+                    project["project_id"],
+                    project["repository_id"],
+                    source_commit=version["source_commit"],
+                )
+    except DomainError as exc:
+        raise RecoveryError("invalid_composed_source:" + exc.code) from exc
     return manifest
 
 

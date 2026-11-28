@@ -17,6 +17,7 @@ from proscenium.previews.journal import (
 from proscenium.services import Services
 from proscenium.sources import Sources
 from proscenium.sources.common import active, admitted, binding, fingerprint, git, replay
+from proscenium.sources.composition import verify_included_sources
 
 from . import validation
 from .artifacts import Artifacts
@@ -224,6 +225,28 @@ class Catalogue:
                 message="Publication must use unique item_id and version_id values",
                 safe_for_model=True,
             )
+        project_id = body["project_id"]
+        if any("included_sources" in row["source"] for row in items):
+            record = self.services.registry.get(project_id)
+
+            def lookup(ref: dict) -> dict | None:
+                version = batch.get(ref["version_id"])
+                return (
+                    {**version, "project_id": project_id}
+                    if version is not None
+                    else tx.get("versions", ref["version_id"], required=False)
+                )
+
+            for row in items:
+                if "included_sources" in row["source"]:
+                    verify_included_sources(
+                        row["source"],
+                        lookup,
+                        project_id,
+                        record["repository_id"],
+                        consuming_version={key: row[key] for key in ("item_id", "version_id")},
+                        source_commit=row["source_commit"],
+                    )
         visiting: set[str] = set()
         visited: set[str] = set()
 
@@ -386,7 +409,10 @@ class Catalogue:
                 row["source_commit"] + "^{commit}",
             )
             materialised = self.sources.resolve(
-                project_id, row["source"], batch={r["version_id"]: r for r in body["items"]}
+                project_id,
+                row["source"],
+                batch={r["version_id"]: {**r, "project_id": project_id} for r in body["items"]},
+                source_commit=row["source_commit"],
             )
             if row["kind"] in {"storyboard", "sequence"}:
                 try:
@@ -503,7 +529,10 @@ class Catalogue:
                     )
                     tx.put("versions", row["version_id"], version, schema="VersionRecord")
                     apply_version_projection(
-                        tx, project_version_relationships(version, documents.get(row["version_id"]))
+                        tx,
+                        project_version_relationships(
+                            version, documents.get(row["version_id"]), inclusions_verified=True
+                        ),
                     )
                     old = tx.get("items", row["item_id"], required=False)
                     revision = tx.revision("items", row["item_id"]) if old else None
