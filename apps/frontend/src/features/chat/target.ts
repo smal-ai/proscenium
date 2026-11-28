@@ -66,14 +66,3 @@ export async function prepareSubmissionContext(input: { target: DraftTarget; sel
   if (captured.item_id !== frozen.selection.item_id || captured.version_id !== frozen.selection.version_id || shotChanged || presentedFrameChanged || standaloneChanged) throw new Error("Review changed during context capture. The draft and original target are retained. Submit again after checking the target.");
   return { ...captured, request_target: target, reference_versions: frozen.references, attachments: [...captured.attachments, ...frozen.attachments] };
 }
-export function contextCount(selection: TurnSelection): number {
-  const images = new Set(selection.attachments.map(a => a.artifact_id));
-  if (selection.target?.artifact_id) images.add(selection.target.artifact_id);
-  for (const annotation of selection.annotations) {
-    images.add(annotation.target.artifact_id);
-    if (annotation.markup_artifact_id) images.add(annotation.markup_artifact_id);
-    for (const markup of annotation.markups) if (markup.mask_artifact_id) images.add(markup.mask_artifact_id);
-  }
-  const primary = selection.request_target === null ? Boolean(selection.version_id) : Boolean(selection.request_target && selection.request_target.kind !== "project");
-  return Number(primary) + uniqueVersions(selection.reference_versions ?? []).length + images.size + selection.selected_objects.length + selection.annotations.length + selection.approved_findings.length;
-}

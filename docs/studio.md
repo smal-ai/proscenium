@@ -11,7 +11,7 @@
 | **Viewport** | The active 3D, keyframe or animation viewing surface inside the Review workspace. |
 | **Assistant panel** | Right panel containing **Copilot**, **Critic**, activity status, **Chat focus** and collapse controls. |
 | **Conversation** | Scrollable Copilot log of requests, replies, tool/specialist activity, output cards and owner decisions. |
-| **Composer** | Target bar, message input, attachments, split **Queue/Steer** Send button, **Stop** and **Jobs / Context / Agents** panel links. |
+| **Composer** | Target and context picker, message input, attachments, split **Queue/Steer** Send button, **Stop**, and a row with **Jobs**, **Agents** and Copilot status. |
 | **Splitter** | Keyboard-accessible draggable divider used to resize Navigator and Assistant panels. |
 | **Review selection** | The published version, frame, camera and objects currently inspected in the Review workspace. |
 | **Request target** | What the next Copilot message asks to create, discuss or revise. |
@@ -86,14 +86,14 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
 
 ## Request targeting and references
 
-The **Target** picker above the message input separates what you are viewing from what you want Copilot to change. You can keep editing and send with the picker open. Close it with **Done**, `Escape` or the Target bar to return to your draft.
+The **Target** bar above the draft opens the picker in place of the text box. It separates what you are viewing from what you want Copilot to change. Queue or Steer can still send a valid draft from the picker. Close it with **X**, `Escape` or the Target bar to return to editing.
 
 - **Current view:** Pins the inspected asset, scene, storyboard version or storyboard shot at submission time. An inspected sequence or Unity result is attached as a viewed version (`request_target: null`), not as an item or shot target. With nothing selected, the target is **Project**. Subsequent browsing never changes an admitted request.
 - **Project:** General project discussion, research or cross-item planning.
 - **Existing…:** Choose a published asset, scene or storyboard and pin an exact version, including older versions. Sending is disabled until you choose an item or switch target mode, even if you close the picker. For a storyboard, choose the entire version or a specific shot. Later publications do not move the pin.
 - **New…:** Choose **Asset**, **Scene** or **Storyboard** and optionally name it. This records creation intent without inventing a published version ID.
 
-Open the separate **References** disclosure to add published versions without changing the primary target. You can also include the current Review version when one is open. The Target bar shows the count of distinct references. Use the Composer's attachment control for supporting images. Explicit targets do not capture hidden Review drafts or viewport images.
+Open **References** inside the picker to add published versions without changing the primary target. You can also include the current Review version when one is open. Use the Composer's attachment control to upload supporting images, then use **Attached images** in the picker to preview, change the role of or remove an upload. The Target bar counts distinct references and extra context, with uploads in progress counted separately. **Current view** shows any Review images and a compact summary of selected objects, annotations, approved findings, camera and frame range. Explicit targets do not capture hidden Review drafts or viewport images.
 
 ## Composer controls, counters and history
 
@@ -102,15 +102,14 @@ Open the separate **References** disclosure to add published versions without ch
 - **Split Send button:** Click the main button to submit using the active mode (**Queue** or **Steer**). Use the chevron menu to switch modes without sending.
 - **Guarded Steer:** Steer is enabled only when eligible work is actively running or awaiting input with execution unfenced. If work finishes or pauses, your Steer selection and draft are preserved with an explicit **Switch to Queue** action.
 - **Prompt history:** Press `ArrowUp` in an empty Composer (or with the caret at index `0`) to recall earlier project prompts, and `ArrowDown` to move forward back to your unsent draft. Recalling history restores text only, keeping your current target, mode and attachments intact.
-- **Panel links:** **Jobs**, **Context** and **Agents** sit beneath the input. Opening one closes the Target picker and temporarily replaces the text box. Closing it restores your draft, selection and focus.
-  - **Jobs:** Shows failed, uncertain, running and queued counts separately, in that order. The badge shows a done count only when no jobs are running, queued or uncertain. A `?` marks last known counts or an uncertain outcome. Failed jobs and uncertain outcomes appear first under **Needs attention**. **Finished (N)** contains only succeeded and cancelled jobs and is collapsed by default. Open a row's **Details** for exact IDs, provider information and, where offered, cancellation of that independent job only.
-  - **Context:** Counts logical items in the next request (explicit target, reference versions, deduplicated images, object selections, annotations and approved findings), showing active uploads separately until ready.
-  - **Agents:** Counts busy or uncertain product-native specialists (`subagent.*`), showing each specialist's task label, state, freshness and model without counting wrapper `task` calls.
+- **Panel links:** **Jobs** and **Agents** sit beneath the text box. Either replaces the text box or switches directly from the Target picker. Returning to the draft restores your selection and focus.
+  - **Jobs:** The badge counts unfinished jobs. A `?` marks last known counts or an uncertain outcome. Failed jobs from the current turn and uncertain jobs appear first under **Needs attention**. **Finished (N)** contains only succeeded and cancelled jobs from the current turn and is collapsed by default. Settled jobs leave the panel when the turn ends, while unfinished jobs remain visible regardless of turn. Open **Details** for exact IDs, provider information and, where offered, cancellation of that independent job only.
+  - **Agents:** Counts all native specialists invoked in the current turn, highlights running or uncertain activity and clears on idle. The panel shows each specialist's task label, state, freshness and model without counting wrapper `task` calls.
 
 ## Live output, failures and retained media
 
 - **Live following:** Conversation follows new requests, streamed replies and tool updates automatically, pauses when you scroll up and offers **Jump to latest**. Empty tool-only assistant turns and `usage.recorded` telemetry events do not render inline rows in Conversation.
-- **Copilot status:** Anchored at the bottom right of the Assistant panel (Composer footer, Critic footer and bottom of the collapsed right rail), displaying **Sending…**, **Working…** (with live active tool, specialist or running-job step detail), **Needs your input**, **Paused**, **Stopping…**, **Needs recovery** or **Ready**, and marking disconnected states as reconnecting rather than assuming idle.
+- **Copilot status:** On the right of the Composer row opposite **Jobs** and **Agents**, or in the Critic footer and at the bottom of the collapsed right rail. It displays **Sending…**, **Working…** (with live active tool, specialist or running-job step detail), **Needs your input**, **Paused**, **Stopping…**, **Needs recovery** or **Ready**, and marks disconnected states as reconnecting rather than assuming idle.
 - **Actionable diagnostics:** Failed and uncertain tool calls expand their sanitised reason immediately while keeping technical IDs collapsed. Automatic policy rejections, owner declines, host holds, non-zero shell exit codes and structured schema/publication errors are distinguished explicitly.
 - **Retained outputs vs publication:** Registered images remain viewable and downloadable through authenticated artefact cards in Conversation and **Navigator → Assets → Retained outputs** even when catalogue publication fails (**Finished · publication blocked**). Clicking a retained image opens it directly in the Review workspace without fabricating a catalogue version, and selecting a published storyboard displays its ready `ShotPlan` panels in **Keyframes** mode. Standalone concept images are never labelled as 3D meshes.
 

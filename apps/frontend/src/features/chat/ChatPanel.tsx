@@ -1,24 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, Paperclip, RotateCcw, Square, X, MessageSquare } from "lucide-react";
+import { ArrowDown, Paperclip, RotateCcw, Square, MessageSquare } from "lucide-react";
 import type { ActivityEventData, ApiClient, Artifact, Attachment, Event, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeCommand, RetainedArtifactSummary, VersionRef } from "../../api";
 import type { ComposerSeedIntent, ContextPreparer, TurnSelection } from "../../api/studio";
 import { describeError, id, readPrivate, writePrivate } from "../../app/storage";
 import { DecisionCard } from "./DecisionCard";
-import { ContextPreview } from "./ContextPreview";
 import { Conversation } from "./Conversation";
 import type { useRequestComposer } from "./useRequestComposer";
 import { canStartFreshSession, defaultResumeMode, executeResumeCommand, heldRequestIds, isAutoReleasingWork, isIdleAutoReleaseReady, isNativeSessionMissing, resumableWork, resumeCommand } from "./resume";
 import { useAutoRelease, type AutoReleaseController } from "./useAutoRelease";
 import { useChatScroll } from "./useChatScroll";
-import { ComposerPanel, JobList, jobsBadgeState } from "./ComposerPanel";
+import { ComposerPanel, JobList, jobsBadgeState, jobsForTurn } from "./ComposerPanel";
 import { AssistantStatus } from "./AssistantStatus";
 import { TargetPicker } from "./TargetPicker";
-import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, uniqueVersions, type DraftTarget } from "./target";
+import { prepareSubmissionContext, uniqueVersions, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory, type HistoryCursor } from "./promptHistory";
-import { busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
+import { agentsForTurn, busyAgent, nativeAgents, type NativeSpecialist } from "./agents";
 import { SendControl } from "./SendControl";
 import { canAttributeRetainedOutputToRequest, isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
-import { handleSubmitEnter, steerWorkId, stopWorkId } from "./controls";
+import { draftBlocksSend, handleSubmitEnter, steerWorkId, stopWorkId, type ComposerPanelMode } from "./controls";
 import "./chat.css";
 
 export { AssistantStatus } from "./AssistantStatus";
@@ -98,8 +97,7 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   const [preparing, setPreparing] = useState(false);
   const preparingLatch = useRef(false);
   const messageRef = useRef<HTMLTextAreaElement>(null);
-  const [composerPanel, setComposerPanel] = useState<"message" | "jobs" | "context" | "agents">("message");
-  const [targetOpen, setTargetOpen] = useState(false);
+  const [composerPanel, setComposerPanel] = useState<ComposerPanelMode>("message");
   const caret = useRef({ start: 0, end: 0 });
   const historyCursor = useRef<HistoryCursor | null>(null);
   const seenSeeds = useRef(new Set<string>());
@@ -114,9 +112,14 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   const hasUncertainStop = useMemo(() => requests.some(record => record.submission.type === "stop" && record.receipt.state === "outcome_uncertain"), [requests]);
   const uncertainStop = hasUncertainStop || snapshot?.execution?.hold_reason_code === "uncertain_stop";
   const stale = connection !== "Connected" || !hydrated;
-  const jobsBadge = useMemo(() => jobsBadgeState(jobs, stale), [jobs, stale]);
+  const activeWorkId = work?.work_id ?? null;
+  const turnJobs = jobsForTurn(jobs, activeWorkId);
+  const jobsBadge = jobsBadgeState(turnJobs, stale, activeWorkId);
   const agents = useMemo(() => nativeAgents(snapshot, events, agentsRef.current), [snapshot, events]);
   agentsRef.current = agents;
+  const turnAgents = agentsForTurn(agents, work);
+  const agentsActive = turnAgents.some(busyAgent);
+  const agentsUncertain = turnAgents.some(agent => busyAgent(agent) && agent.freshness !== "live");
   const history = useMemo(() => promptHistory(projectId, requests), [projectId, requests]);
   const catalogue = items ?? snapshot?.items ?? EMPTY_ITEMS;
   const { artifactsById, suppressedOutputIds } = useMemo(() => {
@@ -172,13 +175,10 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   useEffect(() => { if (!canReset) setConfirmReset(false); }, [canReset]);
   useEffect(() => { if (confirmReset && canReset) confirmButtonRef.current?.focus(); }, [confirmReset, canReset]);
   const showResetQueueNote = (confirmReset || (showResumeCard && resumeMode === "reset_session")) && heldRequestIds(snapshot, requests).size > 0;
-  const resolvedTarget = resolveTarget(draftTarget, selection, catalogue);
   const effectiveReferences = uniqueVersions([...references, ...(includeCurrentViewAsReference && selection.item_id && selection.version_id ? [{ item_id: selection.item_id, version_id: selection.version_id }] : [])]);
-  const currentSelection: TurnSelection = pendingExisting
-    ? { ...cleanTargetContext({ kind: "project" }, effectiveReferences, attachments), request_target: undefined }
-    : draftTarget === "current_view" && (selection.version_id || selection.annotations.length || selection.attachments.length)
-      ? { ...selection, request_target: resolvedTarget, reference_versions: effectiveReferences, attachments: [...selection.attachments, ...attachments] }
-      : cleanTargetContext(resolvedTarget, effectiveReferences, attachments);
+  const uploadingCount = uploads.filter(upload => upload.busy).length;
+  const validSteerTarget = mode === "queue" || (!!canSteerWorkId && targetWork === canSteerWorkId);
+  const sendBlocked = draftBlocksSend(composerPanel, draft, uploads) || composer.busy || !!composer.pending;
   const changeDraft = useCallback((value: string) => { setDraft(value); writePrivate(`draft.${projectId}`, value); }, [projectId]);
   const changeTarget = useCallback((target: DraftTarget) => {
     setPendingExisting(false);
@@ -188,28 +188,16 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   }, [projectId]);
   function changeReferences(versions: VersionRef[]) { setReferences(versions); writePrivate(`ref_versions.${projectId}`, versions); }
   function changeIncludeView(include: boolean) { setIncludeCurrentViewAsReference(include); writePrivate(`include_current_view_ref.${projectId}`, include); }
-  const restoreMessageCaret = useCallback((focus: boolean) => {
+  const focusMessage = useCallback(() => {
     requestAnimationFrame(() => {
       const input = messageRef.current;
       if (!input) return;
-      if (focus) input.focus();
+      input.focus();
       input.setSelectionRange(caret.current.start, caret.current.end);
     });
   }, []);
-  const focusMessage = useCallback(() => restoreMessageCaret(true), [restoreMessageCaret]);
   function rememberCaret() {
     if (messageRef.current) caret.current = { start: messageRef.current.selectionStart, end: messageRef.current.selectionEnd };
-  }
-  function openTargetPicker() {
-    const remountingMessage = !messageRef.current;
-    rememberCaret();
-    setComposerPanel("message");
-    setTargetOpen(true);
-    if (remountingMessage) restoreMessageCaret(false);
-  }
-  function closeTargetPicker() {
-    setTargetOpen(false);
-    focusMessage();
   }
   const starter = useCallback((kind: "asset" | "scene" | "storyboard") => {
     changeTarget({ kind: "new_item", item_kind: kind, intent_id: id() });
@@ -217,23 +205,22 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
       const text = kind === "storyboard" ? "Plan a storyboard for " : kind === "asset" ? "Create an asset: " : "Build a scene: ";
       changeDraft(text); caret.current = { start: text.length, end: text.length };
     }
-    setTargetOpen(false); setComposerPanel("message"); focusMessage();
+    setComposerPanel("message"); focusMessage();
   }, [changeTarget, changeDraft, focusMessage]);
   useEffect(() => {
     if (!seedIntent || seenSeeds.current.has(seedIntent.nonce)) return;
     seenSeeds.current.add(seedIntent.nonce);
     changeTarget(structuredClone(seedIntent.target));
     if (!draft.trim() && seedIntent.templateText) { changeDraft(seedIntent.templateText); caret.current = { start: seedIntent.templateText.length, end: seedIntent.templateText.length }; }
-    setTargetOpen(false); setComposerPanel("message"); focusMessage();
+    setComposerPanel("message"); focusMessage();
   }, [seedIntent, projectId]);
   function changeAttachments(value: Attachment[]) { setAttachments(value); writePrivate(`attachments.${projectId}`, value); }
   function closePanel() {
     setComposerPanel("message");
     focusMessage();
   }
-  function togglePanel(panel: "jobs" | "context" | "agents") {
+  function togglePanel(panel: Exclude<ComposerPanelMode, "message">) {
     rememberCaret();
-    setTargetOpen(false);
     if (composerPanel === panel) closePanel();
     else setComposerPanel(panel);
   }
@@ -248,8 +235,9 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
   }
   async function send() {
     if (pendingExisting) { setError(pendingExistingError); return; }
-    if (preparingLatch.current || composer.busy || composer.pending || uploads.length || !draft.trim()) return;
-    if (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId)) { setError("Steer is unavailable for this work. Switch to Queue deliberately to send a new request."); return; }
+    if (preparingLatch.current || sendBlocked) return;
+    if (!validSteerTarget) { setError("Steer is unavailable for this work. Switch to Queue deliberately to send a new request."); return; }
+    if (composerPanel === "target") closePanel();
     preparingLatch.current = true; setPreparing(true); setError("");
     const requestId = id();
     const text = draft;
@@ -354,15 +342,22 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
       {pendingResume && <section className="retry-card" aria-label="Resume awaiting confirmation"><strong>Resume awaiting confirmation</strong><p>{pendingResume.mode === "reset_session" ? "Start fresh Copilot session" : pendingResume.mode} · {pendingResume.work_id ?? "project"}. The original command and target revision are retained.</p><button disabled={resuming} onClick={() => void resume(pendingResume)}>Reconcile original Resume</button></section>}
     </div>
     <div className="composer" onKeyDown={event => {
-      if (targetOpen && event.key === "Escape" && !event.nativeEvent.isComposing && !event.defaultPrevented) closeTargetPicker();
+      if (composerPanel === "message" || event.defaultPrevented || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closePanel();
+      } else if (composerPanel === "target" && (event.ctrlKey || event.metaKey)) {
+        handleSubmitEnter(event, () => { void send(); });
+      }
     }}>
       {(composer.error || error) && <p role="alert">{composer.error || error}</p>}
       {shouldShowPendingRequestCard(composer) && <div className="retry-card"><strong>Request awaiting confirmation</strong><code>{composer.pending?.submission.request_id}</code><p>Its original text and context are frozen. Your draft is retained.</p><button disabled={composer.busy} onClick={() => void composer.retry(false)}>Reconcile original request / retry same ID</button></div>}
       {shouldShowPendingStopCard(composer) && <div className="retry-card"><strong>Stop awaiting confirmation</strong>{uncertainStop ? <p>The original Stop needs reconciliation through Resume → Reconcile only. Do not send another Stop.</p> : <button disabled={composer.stopping} onClick={() => void composer.retry(true)}>Reconcile original Stop receipt</button>}</div>}
       {uncertainStop && <p className="publication-status" role="status">The original Stop has an uncertain outcome. Use Resume → Reconcile only before continuing. No duplicate Stop is available.</p>}
       {showQueueHold && <p className="queue-hold" role="status">Queue will be held until resumed or released. {snapshot?.execution?.hold_reason || snapshot?.execution?.fence_reason || "Execution awaits explicit Resume."}</p>}
-      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={targetOpen} onOpenChange={next => next ? openTargetPicker() : closeTargetPicker()} />
       {uploads.map(u => <div className="upload-state" key={u.uploadId}><span>{u.name} · {u.busy ? "Uploading and validating…" : u.error}</span>{!u.busy && <><button onClick={() => void upload(u)}>Retry same upload</button><button onClick={() => setUploads(old => old.filter(x => x.uploadId !== u.uploadId))}>Remove</button></>}</div>)}
+      <TargetPicker api={api} projectId={projectId} items={catalogue} selection={selection} target={draftTarget} references={references} includeCurrentViewAsReference={includeCurrentViewAsReference} onTarget={changeTarget} onReferences={changeReferences} onIncludeView={changeIncludeView} pendingExisting={pendingExisting} onPendingExistingChange={setPendingExisting} open={composerPanel === "target"} onToggle={() => togglePanel("target")} onClose={closePanel} attachments={attachments} onAttachments={changeAttachments} uploadingCount={uploadingCount} />
       {composerPanel === "message" && <><label className="sr-only" htmlFor="message-draft">Message Copilot</label><textarea ref={messageRef} id="message-draft" aria-label="Message Copilot" value={draft} onChange={e => { historyCursor.current = null; changeDraft(e.target.value); }} onCompositionStart={() => { historyCursor.current = null; }} onClick={() => { historyCursor.current = null; }} onSelect={e => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }} placeholder="Describe the next iteration…" onKeyDown={e => {
         if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
         if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || ((e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) && ["ArrowUp", "ArrowDown"].includes(e.key))) historyCursor.current = null;
@@ -372,23 +367,21 @@ export function ChatPanel({ visible = true, api, projectId, snapshot, requests, 
           if (next.text !== draft || next.cursor) { e.preventDefault(); historyCursor.current = next.cursor; changeDraft(next.text); caret.current = { start: next.text.length, end: next.text.length }; focusMessage(); }
         }
       }} /></>}
-      {composerPanel === "jobs" && <ComposerPanel panelId="composer-jobs" title="Independent jobs" onClose={closePanel}><JobList api={api} projectId={projectId} jobs={jobs} items={catalogue} onRefresh={onRefresh} onError={e => setError(describeError(e))} /></ComposerPanel>}
-      {composerPanel === "context" && <ComposerPanel panelId="composer-context" title="Next request context" onClose={closePanel}>
-        <ContextPreview projectId={projectId} selection={currentSelection} items={catalogue} />
-        {references.map(ref => <div className="reference-version" key={`${ref.item_id}:${ref.version_id}`}><code>{ref.item_id} · {ref.version_id}</code><button aria-label={`Remove reference version ${ref.version_id}`} onClick={() => changeReferences(references.filter(value => value.item_id !== ref.item_id || value.version_id !== ref.version_id))}>Remove reference</button></div>)}
-        {attachments.map((a, i) => <div className="attachment-controls" key={`${a.artifact_id}.${i}`}><select aria-label={`Image ${i + 1} role`} value={a.role} onChange={e => changeAttachments(attachments.map((x, j) => i === j ? { ...x, role: e.target.value as Attachment["role"] } : x))}>{["reference", "concept", "render", "markup", "mask"].map(role => <option key={role}>{role}</option>)}</select><button aria-label={`Remove image ${i + 1}`} onClick={() => changeAttachments(attachments.filter((_, j) => i !== j))}><X size={13} /></button></div>)}
-      </ComposerPanel>}
-      {composerPanel === "agents" && <ComposerPanel panelId="composer-agents" title="Native specialists" onClose={closePanel}>{agents.map(agent => <div className="native-agent-row" key={agent.activity_key}><strong>{agent.display_name || agent.name}</strong><small>{agent.state.replaceAll("_", " ")} · {agent.state === "outcome_uncertain" ? "uncertain" : stale ? "last known" : agent.freshness.replaceAll("_", " ")}</small><small>Model: {agent.model_id ?? "not reported"}</small></div>)}{!agents.length && <small>{stale ? "Native specialist activity is not confirmed while reconnecting." : "No native specialists reported."}</small>}</ComposerPanel>}
-      <nav className="composer-links" aria-label="Composer panels">
-        <button className={`${jobsBadge.tone}-jobs`} aria-label={jobsBadge.ariaLabel} aria-controls="composer-jobs" aria-expanded={composerPanel === "jobs"} onClick={() => togglePanel("jobs")}>Jobs{["active", "attention"].includes(jobsBadge.tone) && <span className="jobs-indicator" aria-hidden="true" />}<span className={`composer-count${jobsBadge.tone === "empty" ? " empty" : ""}`}>{jobsBadge.text}</span></button>
-        {([{ panel: "context", label: "Context", count: contextCount(currentSelection), uncertain: preparing }, { panel: "agents", label: "Agents", count: agents.filter(busyAgent).length, uncertain: agents.some(agent => busyAgent(agent) && agent.freshness !== "live") }] as const).map(link => <button key={link.panel} aria-controls={`composer-${link.panel}`} aria-expanded={composerPanel === link.panel} onClick={() => togglePanel(link.panel)}>{link.label}<span className={`composer-count${link.count === 0 ? " empty" : ""}`} aria-label={`${link.count}${stale || link.uncertain ? " last known or uncertain" : ""}`}>{link.count}{stale || link.uncertain ? "?" : ""}</span>{link.panel === "context" && uploads.some(upload => upload.busy) && <small>+{uploads.filter(upload => upload.busy).length} uploading</small>}</button>)}
-      </nav>
+      {composerPanel === "jobs" && <ComposerPanel panelId="composer-jobs" title="Independent jobs" onClose={closePanel}><JobList api={api} projectId={projectId} jobs={turnJobs} items={catalogue} onRefresh={onRefresh} onError={e => setError(describeError(e))} /></ComposerPanel>}
+      {composerPanel === "agents" && <ComposerPanel panelId="composer-agents" title="Native specialists" onClose={closePanel}>{turnAgents.map(agent => <div className="native-agent-row" key={agent.activity_key}><strong>{agent.display_name || agent.name}</strong><small>{agent.state.replaceAll("_", " ")} · {agent.state === "outcome_uncertain" ? "uncertain" : stale ? "last known" : agent.freshness.replaceAll("_", " ")}</small><small>Model: {agent.model_id ?? "not reported"}</small></div>)}{!turnAgents.length && <small>{stale ? "Native specialist activity is not confirmed while reconnecting." : "No native specialists in this turn."}</small>}</ComposerPanel>}
+      <div className="composer-status-row">
+        <nav className="composer-links" aria-label="Composer panels">
+          <button className={`${jobsBadge.tone}-jobs`} aria-label={jobsBadge.ariaLabel} aria-controls="composer-jobs" aria-expanded={composerPanel === "jobs"} onClick={() => togglePanel("jobs")}>Jobs{jobsBadge.tone !== "empty" && <span className="jobs-indicator" aria-hidden="true" />}<span className={`composer-count${jobsBadge.tone === "empty" ? " empty" : ""}`}>{jobsBadge.text}</span></button>
+          <button className={agentsActive ? "active-agents" : undefined} aria-label={`Agents: ${turnAgents.length}${stale ? " · last known" : ""}${agentsUncertain ? " · uncertain specialist activity" : ""}`} aria-controls="composer-agents" aria-expanded={composerPanel === "agents"} onClick={() => togglePanel("agents")}>Agents{agentsActive && <span className="jobs-indicator" aria-hidden="true" />}<span className={`composer-count${turnAgents.length ? "" : " empty"}`}>{turnAgents.length}{stale || agentsUncertain ? "?" : ""}</span></button>
+        </nav>
+        <AssistantStatus {...statusProps} />
+      </div>
       {mode === "steer" && <label className="steer-target">Active work target<select aria-label="Steer active work target" value={targetWork} onChange={e => setTargetWork(e.target.value)}><option value="">Select active work explicitly</option>{canSteerWorkId && <option value={canSteerWorkId}>{canSteerWorkId} · {work?.state}</option>}{targetWork && targetWork !== canSteerWorkId && <option value={targetWork}>{targetWork} · unavailable</option>}</select><small>Steer corrects active work. It does not undo completed actions.</small></label>}
       {mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId) && <div className="steer-unavailable" role="status"><p>{!canSteerWorkId ? `Steer is unavailable because work is ${work?.state.replaceAll("_", " ") ?? "not active"}${snapshot?.execution?.fenced ? " or execution is paused" : ""}. Your draft and mode are retained.` : "Select the eligible work explicitly before sending Steer."}</p><button onClick={() => setMode("queue")}>Switch to Queue</button></div>}
       <div className="composer-actions"><label className="attach-button" title="Attach PNG, JPEG or WebP"><Paperclip size={15} /><span className="sr-only">Attach images</span><input aria-label="Attach images" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e => { const next = [...(e.target.files ?? [])].map(file => ({ uploadId: id(), name: file.name, file, artifact: null, busy: true, error: "" })); setUploads(old => [...old, ...next]); next.forEach(u => void upload(u)); e.target.value = ""; }} /></label>
         <button className="stop" disabled={!canStopWorkId || uncertainStop || composer.stopping || !!composer.pendingStop || work?.state === "stop_requested"} onClick={() => { if (canStopWorkId && stopWorkId(snapshotRef.current) === canStopWorkId) void composer.stop(canStopWorkId); }}><Square size={11} fill="currentColor" />{composer.stopping || work?.state === "stop_requested" ? "Stop requested" : "Stop"}</button>
-        <SendControl mode={mode} onMode={setMode} disabled={composerPanel !== "message" || !draft.trim() || !!uploads.length || preparing || composer.busy || !!composer.pending || pendingExisting || (mode === "steer" && (!canSteerWorkId || targetWork !== canSteerWorkId))} onSend={() => void send()} />
-      </div><div className="composer-footer"><small className="composer-hint">Enter to {mode} · Shift+Enter for newline · Context is captured on submit</small><AssistantStatus {...statusProps} /></div>
+        <SendControl mode={mode} onMode={setMode} disabled={sendBlocked || preparing || pendingExisting || !validSteerTarget} onSend={() => void send()} />
+      </div>
     </div>
   </div>;
 }

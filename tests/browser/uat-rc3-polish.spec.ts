@@ -6,7 +6,7 @@ import type { Camera, JobRecord, ProjectOpen, ProjectRecord } from "../../apps/f
 import { projectBlenderPoint } from "../../apps/frontend/src/features/review/media";
 import type { Draft } from "../../apps/frontend/src/features/review/outbox";
 import { boardName, kitId, kitName, kitV, makePolishStudio, restoredRenderCamera } from "./rc3-polish-fixture";
-import { base, deferred, job, pageOf, project, projectId, request, StudioFixture } from "./studio-fixture";
+import { base, deferred, job, pageOf, png, project, projectId, request, retained, StudioFixture, work } from "./studio-fixture";
 
 const screenshotDir = process.env.PROSCENIUM_UAT_SCREENSHOT_DIR;
 const reviewPanel = (page: Page) => page.locator("main.review-panel");
@@ -1058,15 +1058,16 @@ test("Target picker keeps naming, References and Composer panels independent at 
   await kinds.getByRole("button", { name: "Asset", exact: true }).click();
   await expect(name).toBeVisible();
   await name.fill("Broken relay dish");
-  const intentId = JSON.parse((await bar.getAttribute("title"))!).intent_id;
+  const savedTarget = () => page.evaluate(project => JSON.parse(localStorage.getItem(`proscenium.owner.target.${project}`)!), projectId);
+  const intentId = (await savedTarget()).intent_id;
   expect(intentId).toBeTruthy();
   await kinds.getByRole("button", { name: "Scene", exact: true }).click();
   await expect(name).toHaveValue("Broken relay dish");
   await kinds.getByRole("button", { name: "Asset", exact: true }).click();
-  expect(JSON.parse((await bar.getAttribute("title"))!).intent_id).toBe(intentId);
+  expect((await savedTarget()).intent_id).toBe(intentId);
   await expect(picker.getByRole("combobox", { name: "Published item", exact: true })).toHaveCount(0);
   await expect(assistant.getByRole("button", { name: "Queue message" })).toBeEnabled();
-  await expect(input).toBeVisible();
+  await expect(input).toHaveCount(0);
   await expect(disclosure).toHaveJSProperty("open", false);
   await screenshot(page, testInfo, "09b-target-picker-new-asset.png");
 
@@ -1085,7 +1086,7 @@ test("Target picker keeps naming, References and Composer panels independent at 
   await expect(bar).toContainText("+1 ref");
   await expect(disclosure.locator(".reference-chip")).toContainText("Asset A · a-v1");
   await noHorizontalOverflow(picker, composer, composer.locator(".composer-links"));
-  expect(await picker.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(280);
+  expect(await picker.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(420);
   const overlaps = await composer.evaluate(el => {
     const controls = Array.from(el.querySelectorAll(".target-bar, .target-options button, .target-options select, .target-options input, .target-options summary, textarea, .composer-links button, .composer-actions button"));
     const boxes = controls.flatMap(control => Array.from(control.getClientRects(), rect => {
@@ -1110,7 +1111,8 @@ test("Target picker keeps naming, References and Composer panels independent at 
   await expect(input).toHaveCount(0);
   await bar.click();
   await expect(jobs).toHaveCount(0);
-  await expect(input).toBeVisible();
+  await expect(input).toHaveCount(0);
+  await expect(picker).toBeVisible();
   await button("Existing…").click();
   const publishedItem = picker.getByRole("combobox", { name: "Published item" });
   const publishedVersion = picker.getByRole("combobox", { name: "Published version" });
@@ -1121,7 +1123,7 @@ test("Target picker keeps naming, References and Composer panels independent at 
   await expect(navigator(page).locator(".catalogue-item-header").filter({ hasText: "Asset A" })).toContainText("Latest v3");
   await expect(publishedVersion.locator('option[value="a-v3"]')).toBeAttached();
   await expect(publishedVersion).toHaveValue("a-v1");
-  expect(JSON.parse((await bar.getAttribute("title"))!)).toEqual({ kind: "item", version: { item_id: "asset-a", version_id: "a-v1" } });
+  expect((await savedTarget())).toEqual({ kind: "item", version: { item_id: "asset-a", version_id: "a-v1" } });
   await publishedItem.selectOption("board-b");
   const shots = picker.getByRole("combobox", { name: "Target storyboard shot" });
   await shots.selectOption("shot-1");
@@ -1131,7 +1133,7 @@ test("Target picker keeps naming, References and Composer panels independent at 
   await page.getByRole("separator", { name: "Resize Assistant" }).press("End");
   await screenshot(page, testInfo, "09c-target-picker-existing-refs.png");
   await shots.selectOption("");
-  expect(JSON.parse((await bar.getAttribute("title"))!)).toEqual({ kind: "item", version: { item_id: "board-b", version_id: "b-v1" } });
+  expect((await savedTarget())).toEqual({ kind: "item", version: { item_id: "board-b", version_id: "b-v1" } });
   await shots.press("Escape");
   await expect(input).toBeFocused();
   await expect(picker).toHaveCount(0);
@@ -1158,22 +1160,21 @@ test("Pending Existing target blocks queue and hidden Review capture until a tar
   const input = composerMessage(page);
   const assistant = assistantPanel(page);
   const queue = assistant.getByRole("button", { name: "Queue message", exact: true });
-  const context = assistant.getByRole("button", { name: /^Context/ });
   const picker = assistant.locator("#request-target-picker");
   const mode = (name: string) => picker.getByRole("button", { name, exact: true });
   const warning = "Choose a published item for Existing… or switch target mode before sending.";
   await input.fill("Use a published target only");
   await expect(bar).toContainText("Target: Current view");
-  await expect(context).toHaveText(/^Context[1-9]\d*$/);
+  await expect(bar).toContainText(/\+[1-9]\d* context/);
   await expect(queue).toBeEnabled();
   await bar.click();
   await mode("Existing…").click();
   await expect(bar).toHaveText("Target: Choose published item…");
   await expect(bar).toHaveAttribute("aria-invalid", "true");
   await expect(picker.locator(".target-pending-hint")).toBeVisible();
-  await expect(context).toHaveText("Context0");
+  await expect(picker.locator(".target-viewport-extras, .target-attachments, code")).toHaveCount(0);
   await expect(queue).toBeDisabled();
-  await input.press("Control+Enter");
+  await bar.press("Control+Enter");
   await expect(assistant.getByRole("alert")).toHaveText(warning);
   expect(studio.contexts).toEqual([]);
   expect(studio.submissions).toEqual([]);
@@ -1184,11 +1185,6 @@ test("Pending Existing target blocks queue and hidden Review capture until a tar
   await expect(picker).toHaveCount(0);
   await expect(bar).toHaveText("Target: Choose published item…");
   await expect(queue).toBeDisabled();
-  await context.click();
-  const preview = assistant.getByRole("region", { name: "Next request context" }).locator(".context-preview");
-  await expect(preview).toBeVisible();
-  await expect(preview.locator(".target-badge, .annotation-context, img, code")).toHaveCount(0);
-  await expect(preview).not.toContainText("Version ");
   await bar.click();
   await expect(mode("Existing…")).toHaveAttribute("aria-pressed", "true");
   await expect(picker.getByRole("combobox", { name: "Published item", exact: true })).toHaveValue("");
@@ -1205,6 +1201,8 @@ test("Pending Existing target blocks queue and hidden Review capture until a tar
   await expect(bar).not.toHaveAttribute("aria-invalid");
   await expect(queue).toBeEnabled();
   await queue.click();
+  await expect(picker).toHaveCount(0);
+  await expect(input).toBeFocused();
   await expect.poll(() => studio.submissions.length).toBe(1);
   expect(studio.contexts).toHaveLength(1);
   expect(studio.contexts[0]).toMatchObject({ request_target: { kind: "item", version: { item_id: "board-b", version_id: "b-v1" } }, annotations: [], attachments: [] });
@@ -1212,9 +1210,103 @@ test("Pending Existing target blocks queue and hidden Review capture until a tar
   studio.assertHermetic();
 });
 
+test("Target sends a draft with an uploaded image and scopes standalone Review images", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const delayedUpload = deferred();
+  let uploadNumber = 0;
+  await studio.install({ savedLayout: true, routes: [{ method: "PUT", path: new RegExp(`${base}/uploads/[^/]+$`), handler: async route => {
+    const response = retained(`draft-upload-${++uploadNumber}`, "verified").artifact;
+    await delayedUpload.promise;
+    await route.fulfill({ status: 201, json: response });
+  } }] });
+  await studio.open(); await studio.ready();
+  await page.getByRole("button", { name: "Inspect retained concept image verified", exact: true }).click();
+  const bar = targetBar(page);
+  const panel = page.getByRole("region", { name: "Request target", exact: true });
+  const draft = composerMessage(page);
+  const queue = page.getByRole("button", { name: "Queue message" });
+  await bar.click();
+  await expect(draft).toHaveCount(0);
+  await expect(queue).toBeDisabled();
+  await expect(panel.getByRole("img", { name: "Review image 1" })).toHaveJSProperty("naturalWidth", 1);
+  await expect(panel.getByRole("combobox", { name: /^Image \d+ role$/ })).toHaveCount(0);
+  const agents = page.getByRole("button", { name: /^Agents:/ });
+  await agents.click();
+  await expect(page.locator("#composer-agents")).toBeVisible();
+  await expect(panel).toHaveCount(0);
+  await bar.click();
+  await expect(page.locator("#composer-agents")).toHaveCount(0);
+  await expect(panel).toBeVisible();
+  await bar.dispatchEvent("keydown", { key: "Escape", isComposing: true });
+  await expect(panel).toBeVisible();
+  await page.getByRole("button", { name: "Select send mode" }).press("Escape");
+  await expect(draft).toBeFocused();
+  await draft.fill("Use the uploaded image, not the inspected output");
+  await bar.click();
+  const upload = page.getByLabel("Attach images");
+  try {
+    await upload.setInputFiles(["draft.png", "remove.png"].map(name => ({ name, mimeType: "image/png", buffer: png })));
+    await expect(bar).toContainText("+2 uploading");
+    await expect(queue).toBeDisabled();
+  } finally { delayedUpload.release(); }
+  await expect(bar).not.toContainText("uploading");
+  await expect(panel.getByRole("img")).toHaveCount(3);
+  await expect(panel.getByRole("img", { name: "Uploaded image 1" })).toHaveJSProperty("naturalWidth", 1);
+  await panel.getByLabel("Image 1 role").selectOption("concept");
+  await panel.getByRole("button", { name: "Remove image 2" }).click();
+  await expect(bar).toContainText("+2 context");
+  await panel.getByRole("button", { name: "Project", exact: true }).click();
+  await expect(panel.getByRole("img", { name: "Review image 1" })).toHaveCount(0);
+  await expect(bar).toContainText("+1 context");
+  await expect(queue).toBeEnabled();
+  await queue.click();
+  await expect(panel).toHaveCount(0);
+  await expect(draft).toBeFocused();
+  await expect.poll(() => studio.submissions.length).toBe(1);
+  expect(studio.contexts[0]).toMatchObject({ request_target: { kind: "project" }, attachments: [{ artifact_id: expect.stringMatching(/^draft-upload-/), role: "concept" }] });
+  studio.assertHermetic();
+});
+
+test("failed uploads block Queue until removed or retried successfully", async ({ page, baseURL }) => {
+  const studio = new StudioFixture(page, baseURL!);
+  const attempted = new Set<string>();
+  await studio.install({ savedLayout: true, routes: [{ method: "PUT", path: new RegExp(`${base}/uploads/[^/]+$`), handler: route => {
+    const url = route.request().url();
+    const retry = attempted.has(url);
+    attempted.add(url);
+    const artifact = retained("retried-upload", "verified").artifact;
+    return route.fulfill({ status: 201, json: { ...artifact, state: retry ? "ready" : "unavailable" } });
+  } }] });
+  await studio.open(); await studio.ready();
+  const draft = composerMessage(page);
+  const bar = targetBar(page);
+  const queue = page.getByRole("button", { name: "Queue message" });
+  await draft.fill("Use the attachment");
+  await page.getByLabel("Attach images").setInputFiles(["skip.png", "keep.png"].map(name => ({ name, mimeType: "image/png", buffer: png })));
+  await expect(page.getByRole("button", { name: "Retry same upload" })).toHaveCount(2);
+  await expect(bar).not.toContainText("uploading");
+  await expect(queue).toBeDisabled();
+  await draft.press("Control+Enter");
+  await bar.click();
+  await expect(queue).toBeDisabled();
+  await bar.press("Control+Enter");
+  await page.locator(".upload-state").filter({ hasText: "skip.png" }).getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(queue).toBeDisabled();
+  expect(studio.contexts).toEqual([]);
+  expect(studio.submissions).toEqual([]);
+
+  await page.getByRole("button", { name: "Retry same upload" }).click();
+  await expect(queue).toBeEnabled();
+  await queue.click();
+  await expect.poll(() => studio.submissions.length).toBe(1);
+  expect(studio.contexts[0].attachments).toEqual([{ artifact_id: "retried-upload", role: "reference" }]);
+  studio.assertHermetic();
+});
+
 test("Independent jobs shows real frame progress, actionable failure and collapsed settled history", async ({ page, baseURL }, testInfo) => {
   const studio = new StudioFixture(page, baseURL!);
   studio.retained = [];
+  studio.snapshot.active_work = work();
   const render = (id: string, shot_id: string | null, expected_frames: number, completed_frames: number | null): JobRecord => ({
     ...job(id, completed_frames === null ? "planned" : "running"), kind: "render", completed_frames, expected_frames,
     provider_id: null, target: { target_id: shot_id ?? "asset-a", shot_id, version: shot_id ? { item_id: "board-b", version_id: "b-v1" } : { item_id: "asset-a", version_id: "a-v1" } },
@@ -1235,7 +1327,7 @@ test("Independent jobs shows real frame progress, actionable failure and collaps
   await draft.fill("Don't queue the final assembly yet.");
   await draft.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(6, 11));
   const badge = jobsPill(page);
-  await expect(badge).toHaveText("Jobs1 failed · 1 running · 5 queued");
+  await expect(badge).toHaveText("Jobs6");
   await expect(badge).toHaveClass("attention-jobs");
   await badge.click();
   const panel = assistantPanel(page).getByRole("region", { name: "Independent jobs" });

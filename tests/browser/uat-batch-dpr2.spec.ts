@@ -13,13 +13,38 @@ test("DPR 2 bottom-right live status and Chat-focus click-to-review geometry", a
   await studio.install({ catalogue: true, savedLayout: true }); await studio.open(); await studio.ready();
   expect(await page.evaluate(() => devicePixelRatio)).toBe(2);
   await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
-  const status = page.locator(".composer-footer .assistant-status");
+  const row = page.locator(".composer-status-row");
+  const status = row.getByRole("status");
+  const pills = [row.getByRole("button", { name: /^Jobs:/ }), row.getByRole("button", { name: /^Agents:/ }), status];
   for (const focus of [false, true]) {
     if (focus) await page.getByRole("button", { name: "Chat focus", exact: true }).click();
     await expect(status).toBeVisible();
     expect((await status.boundingBox())!.y).toBeGreaterThan(850);
     expect((await status.boundingBox())!.x).toBeGreaterThan(1400);
+    const bounds = await Promise.all(pills.map(pill => pill.boundingBox()));
+    expect(bounds.map(box => box!.height)).toEqual([26, 26, 26]);
+    expect(bounds[0]!.y).toBe(bounds[2]!.y);
+    expect(bounds[1]!.y).toBe(bounds[2]!.y);
+    expect(bounds[1]!.x + bounds[1]!.width).toBeLessThan(bounds[2]!.x);
+    for (const pill of pills) {
+      await expect(pill).toHaveCSS("border-radius", "999px");
+      await expect(pill).toHaveCSS("font-size", "11px");
+    }
   }
+  await expect(page.locator(".composer-footer, .composer-hint")).toHaveCount(0);
+  await page.getByRole("button", { name: "Restore split view", exact: true }).click();
+  await page.getByRole("separator", { name: "Resize Assistant" }).press("Home");
+  const specialist = { invocation_id: "long-status", name: "authoring-specialist", display_name: "Checking every published reference and its source relationships for the next shot", state: "running", summary: "", artifact_ids: [], model_id: null };
+  studio.emit("subagent.started", specialist);
+  const fullLabel = `Working · ${specialist.display_name}…`;
+  await expect(status).toHaveAttribute("title", fullLabel);
+  await expect(status).toHaveAttribute("aria-label", fullLabel);
+  const label = status.locator(".assistant-status-label");
+  await expect(label).toHaveCSS("text-overflow", "ellipsis");
+  expect(await label.evaluate(el => el.scrollWidth)).toBeGreaterThan(await label.evaluate(el => el.clientWidth));
+  expect(await row.evaluate(el => el.scrollWidth)).toBe(await row.evaluate(el => el.clientWidth));
+  studio.emit("subagent.completed", { ...specialist, state: "completed" });
+  await page.getByRole("button", { name: "Chat focus", exact: true }).click();
   studio.emit("tool.started", { invocation_id: "prepare", name: "prepare_image_generation", state: "running", summary: "", artifact_ids: [], model_id: null });
   await expect(status).toHaveAttribute("aria-label", "Working · Preparing image…");
   await expect(status).toHaveText("Working · Preparing image…");

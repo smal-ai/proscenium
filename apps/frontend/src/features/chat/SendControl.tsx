@@ -15,7 +15,7 @@ export function SendControl({ mode, disabled, onMode, onSend }: { mode: "queue" 
   }, [open]);
   function close() { setOpen(false); toggle.current?.focus(); }
   return <div className="split-send" ref={root} onKeyDown={event => {
-    if (event.key === "Escape") { event.preventDefault(); close(); }
+    if (open && event.key === "Escape" && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) { event.preventDefault(); close(); }
     if (open && ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
       event.preventDefault();
       const buttons = [...(menu.current?.querySelectorAll<HTMLButtonElement>("button") ?? [])];

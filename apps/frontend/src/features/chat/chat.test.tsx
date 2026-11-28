@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ApiError } from "../../api";
-import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
+import type { ActivityEventData, AnnotationSnapshot, ApiClient, Artifact, Event, FrameTarget, ItemRecord, JobRecord, Matrix4, ProjectSnapshot, RequestRecord, ResumeOperationStatus, RetainedArtifactSummary, ReviewTicket } from "../../api";
 import { emptySelection } from "../../api/studio";
 import { backfillWindows, mergeReviews, mergeSnapshot, orderedEventBuffer, readProjectHydration, revisionScope, validateWindowEvents, versionRefreshBuffer } from "../../app/useProjectData";
 import { ASSISTANT_MAX_WIDTH, defaultStudioLayout, NAVIGATOR_MAX_WIDTH } from "../../app/useStudioLayout";
@@ -11,25 +11,25 @@ import { annotationContext } from "../review/context";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "../review/refreshKeys";
 import { CatalogueBrowser } from "../catalogue/CatalogueBrowser";
 import { isReadyVideo } from "../retainedVideo";
-import { cleanTargetContext, contextCount, prepareSubmissionContext, resolveTarget, viewedSelectionLabel, type DraftTarget } from "./target";
+import { cleanTargetContext, prepareSubmissionContext, resolveTarget, viewedSelectionLabel, type DraftTarget } from "./target";
 import { canNavigateHistory, promptHistory, stepHistory } from "./promptHistory";
 import { assistantState, AssistantStatus } from "./AssistantStatus";
-import { busyAgent, nativeAgents } from "./agents";
+import { agentsForTurn, busyAgent, nativeAgents } from "./agents";
 import { compareConversationEntries, Conversation, reuseOutputIds } from "./Conversation";
 import { ActivityEntry } from "./ActivityEntry";
 import { isRenderPassStreamArtifact, OutputCards } from "./OutputCards";
 import { awaitResume, canStartFreshSession, defaultResumeMode, executeResumeCommand, heldRequestIds, isIdleAutoReleaseReady, isNativeSessionMissing, resumableWork, resumeCommand, ResumeConfirmationError } from "./resume";
-import { handleSubmitEnter, isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
+import { draftBlocksSend, handleSubmitEnter, isSubmitEnter, steerWorkId, stopWorkId } from "./controls";
 import { SendControl } from "./SendControl";
 import { ChatPanel, shouldShowPendingRequestCard, shouldShowPendingStopCard, shouldShowQueueHold, shouldShowResumeCard, type ChatPanelProps } from "./ChatPanel";
-import { JobList, jobsBadgeState } from "./ComposerPanel";
+import { isUnfinishedJob, JobList, jobsBadgeState, jobsForTurn } from "./ComposerPanel";
 import { TargetPicker } from "./TargetPicker";
 
 const api = { call: () => { throw new Error("Unconfigured API operation in offline test"); } } as unknown as ApiClient;
 const ref = { item_id: "asset-a", version_id: "version-old" };
 const receipt = { state: "queued", state_revision: 1 };
 const request = (request_id: string, accepted_at: string, text: string, type = "queue") => ({ project_id: "project", request_id, accepted_at, receipt, submission: { type, text, context_id: "context", project_id: "project", request_id } }) as RequestRecord;
-const snapshot = (state = "running", fenced = false) => ({ project: { project_id: "project", state: "active" }, active_work: { work_id: "work", state, native_session_id: "session" }, pending_decisions: [], execution: { fenced, hold_reason: fenced ? "Owner stopped work" : null, active_agents: [], work_outputs: [] }, items: [] }) as unknown as ProjectSnapshot;
+const snapshot = (state = "running", fenced = false) => ({ project: { project_id: "project", state: "active" }, active_work: { work_id: "work", state, native_session_id: "session", originating_request_id: "request", directive_request_ids: [] }, pending_decisions: [], execution: { fenced, hold_reason: fenced ? "Owner stopped work" : null, active_agents: [], work_outputs: [] }, items: [] }) as unknown as ProjectSnapshot;
 const event = (sequence: number, event_type: Event["event_type"], payload: object, occurred_at = "2026-11-15T10:00:00Z") => ({ sequence, event_type, payload, occurred_at, project_id: "project", actor: { kind: "lead", id: "lead" }, native_session_id: "session", request_id: "request", work_id: "work" }) as Event;
 const activity: ActivityEventData = { invocation_id: "invocation", name: "image specialist", state: "running", summary: "", artifact_ids: [], model_id: "reported-model", display_name: "Prepare concept" };
 const job = (state: JobRecord["state"], job_id: string = state): JobRecord => ({
@@ -53,6 +53,18 @@ test("Request and Stop cards distinguish an initial submission from confirmation
   }
   assert.equal(shouldShowPendingRequestCard({ pending: null, busy: false, pendingNeedsConfirmation: true }), false);
   assert.equal(shouldShowPendingStopCard({ pendingStop: null, stopping: false, pendingStopNeedsConfirmation: true }), false);
+});
+
+test("an unresolved upload blocks Send from the message and Target panels even after it fails", () => {
+  const draft = "Use the attached image";
+  for (const panel of ["message", "target"] as const) {
+    assert.equal(draftBlocksSend(panel, draft, [{ busy: true }]), true);
+    assert.equal(draftBlocksSend(panel, draft, [{ busy: false }]), true);
+    assert.equal(draftBlocksSend(panel, draft, []), false);
+    assert.equal(draftBlocksSend(panel, " \n", []), true);
+  }
+  assert.equal(draftBlocksSend("jobs", draft, []), true);
+  assert.equal(draftBlocksSend("agents", draft, []), true);
 });
 
 test("submit Enter accepts plain and legacy shortcuts but leaves multiline editing and IME alone", () => {
@@ -236,45 +248,42 @@ test("unfinished jobs provide live status with snapshot fallback and settled job
   assert.equal(assistantState({ ...props, snapshot: current }).label, "Working…");
 });
 
-test("Jobs badge partitions every job into running, queued, uncertain, failed or settled without double-counting", () => {
-  assert.deepEqual(jobsBadgeState([], false), { text: "0", ariaLabel: "Jobs: 0", tone: "empty" });
-  assert.equal(jobsBadgeState([], true).text, "0?");
-  const queued = [job("planned", "one"), job("planned", "two"), job("planned", "three"), job("planned", "four"), job("waiting_resource")];
-  assert.deepEqual(jobsBadgeState([job("running"), ...queued], false), { text: "1 running · 5 queued", ariaLabel: "Jobs: 1 running · 5 queued", tone: "active" });
-  assert.equal(jobsBadgeState(queued, false).text, "5 queued");
-  assert.equal(jobsBadgeState([job("cancel_requested"), job("starting")], false).text, "2 running");
-  const active = [job("running"), job("planned")];
-  assert.equal(jobsBadgeState(active, true).text, "1 running · 1 queued?");
-  assert.match(jobsBadgeState(active, true).ariaLabel, /last known/);
-  const uncertain = job("outcome_uncertain");
-  assert.equal(jobsBadgeState([uncertain], false).text, "1 uncertain?");
-  assert.deepEqual(jobsBadgeState([...active, uncertain, job("succeeded")], false), { text: "1 uncertain · 1 running · 1 queued?", ariaLabel: "Jobs: 1 uncertain · 1 running · 1 queued? · uncertain job outcome", tone: "attention" });
-  const settled = [job("succeeded", "a"), job("succeeded", "b"), job("cancelled", "c"), job("succeeded", "d")];
-  assert.equal(jobsBadgeState(settled, false).text, "4 done"); assert.equal(jobsBadgeState(settled, false).tone, "done");
-  assert.equal(jobsBadgeState(settled, true).text, "4 done?");
-  const failed = job("failed");
-  assert.deepEqual(jobsBadgeState([failed, job("succeeded")], false), { text: "1 failed · 1 done", ariaLabel: "Jobs: 1 failed · 1 done · failed job recorded", tone: "attention" });
-  assert.deepEqual(jobsBadgeState([failed, job("running"), ...queued, ...settled.slice(0, 2)], false), { text: "1 failed · 1 running · 5 queued", ariaLabel: "Jobs: 1 failed · 1 running · 5 queued · failed job recorded", tone: "attention" });
-  assert.equal(jobsBadgeState([failed, uncertain, ...active], false).text, "1 failed · 1 uncertain · 1 running · 1 queued?");
+test("Jobs remain visible while unfinished, but only the active turn keeps settled jobs", () => {
+  const unfinished = [job("running"), job("starting"), job("cancel_requested"), job("planned"), job("waiting_resource"), job("outcome_uncertain")];
+  unfinished[0].work_id = "earlier-work";
+  const settled = [job("failed"), job("succeeded"), job("cancelled")].map(record => ({ ...record, work_id: "work" }));
+  const oldFailure = { ...job("failed", "old-failure"), work_id: "earlier-work" };
+  const jobs = [...unfinished, ...settled, oldFailure];
+  assert.deepEqual(jobs.filter(isUnfinishedJob), unfinished);
+  assert.deepEqual(jobsForTurn(jobs, null), unfinished);
+  assert.deepEqual(jobsForTurn(jobs, "work"), [...unfinished, ...settled]);
+  assert.deepEqual(jobsForTurn(jobs, "earlier-work"), [...unfinished, oldFailure]);
+  assert.deepEqual(jobsBadgeState([], false, null), { text: "0", ariaLabel: "Jobs: 0", tone: "empty" });
+  assert.deepEqual(jobsBadgeState([], true, null), { text: "0?", ariaLabel: "Jobs: 0 · last known", tone: "empty" });
+  assert.deepEqual(jobsBadgeState(unfinished.slice(0, -1), false, null), { text: "5", ariaLabel: "Jobs: 5", tone: "active" });
+  assert.deepEqual(jobsBadgeState(jobs, false, null), { text: "6?", ariaLabel: "Jobs: 6 · uncertain job outcome", tone: "attention" });
+  assert.deepEqual(jobsBadgeState(settled, false, "work"), { text: "0", ariaLabel: "Jobs: 0 · failed job recorded this turn", tone: "attention" });
+  assert.equal(jobsBadgeState(settled, false, "next-work").tone, "empty");
+  assert.equal(jobsBadgeState(settled, false, null).tone, "empty");
 });
 
-test("Composer renders accented Jobs counts and its status as the final bottom-right footer row", () => {
+test("Composer renders two left pills and the status in the same row below the draft", () => {
   for (const [jobs, text, tone] of [
     [[], "0", "empty"],
-    [[job("running"), job("planned")], "1 running · 1 queued", "active"],
-    [[job("running"), job("planned"), job("outcome_uncertain")], "1 uncertain · 1 running · 1 queued?", "attention"],
-    [[job("succeeded", "a"), job("cancelled", "b"), job("succeeded", "c"), job("succeeded", "d")], "4 done", "done"],
-    [[{ ...job("failed"), error_code: "corrupt_provider_output" }], "1 failed", "attention"],
+    [[job("running"), job("planned")], "2", "active"],
+    [[job("running"), job("planned"), job("outcome_uncertain")], "3?", "attention"],
+    [[job("succeeded", "a"), job("cancelled", "b")], "0", "empty"],
+    [[{ ...job("failed"), work_id: "work", error_code: "corrupt_provider_output" }], "0", "attention"],
   ] as [JobRecord[], string, string][]) {
     const markup = chatMarkup(jobs);
+    assert.match(markup, /<\/textarea><div class="composer-status-row"><nav class="composer-links" aria-label="Composer panels">.*aria-controls="composer-jobs".*aria-controls="composer-agents".*<\/nav><span class="assistant-status /);
     assert.ok(markup.includes(`class="${tone}-jobs"`));
     assert.ok(markup.includes(`>${text}</span>`));
     assert.equal((markup.match(/class="assistant-status /g) ?? []).length, 1);
-    assert.match(markup, /<div class="composer-footer"><small class="composer-hint">Enter to queue · Shift\+Enter for newline · Context is captured on submit<\/small><span class="assistant-status [\s\S]*<\/span><\/div><\/div><\/div>$/);
-    assert.ok(markup.indexOf('class="composer-footer"') > markup.indexOf('class="composer-actions"'));
-    if (["active", "attention"].includes(tone)) assert.match(markup, /class="jobs-indicator" aria-hidden="true"/);
+    assert.doesNotMatch(markup, /composer-footer|composer-hint|composer-context|Shift\+Enter for newline/);
+    if (tone !== "empty") assert.match(markup, /class="jobs-indicator" aria-hidden="true"/);
   }
-  assert.match(chatMarkup([job("running")], { connection: "Reconnecting" }), /1 running\?/);
+  assert.match(chatMarkup([job("running")], { connection: "Reconnecting" }), />1\?<\/span>/);
   assert.equal((chatMarkup([], { showHeaderStatus: true }).match(/class="assistant-status /g) ?? []).length, 2);
 });
 
@@ -301,8 +310,10 @@ test("Independent jobs shows real frame progress, attention first and only settl
   assert.equal((markup.match(/class="job-row(?: needs-attention)?"/g) ?? []).length, 10);
 });
 
+const targetMarkup = (overrides: Partial<React.ComponentProps<typeof TargetPicker>> = {}) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={[asset]} target="current_view" selection={emptySelection()} references={[]} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={false} onPendingExistingChange={() => {}} open onToggle={() => {}} onClose={() => {}} attachments={[]} onAttachments={() => {}} uploadingCount={0} {...overrides} />);
+
 test("Target picker exposes four distinct modes and references do not require an existing primary target", () => {
-  const markupFor = (target: DraftTarget, references = [ref], open = true, pendingExisting?: boolean, items = [asset]) => renderToStaticMarkup(<TargetPicker api={api} projectId="project" items={items} target={target} selection={emptySelection()} references={references} includeCurrentViewAsReference={false} onTarget={() => {}} onReferences={() => {}} onIncludeView={() => {}} pendingExisting={pendingExisting} {...(open ? { open } : {})} />);
+  const markupFor = (target: DraftTarget, references = [ref], open = true, pendingExisting = false, items = [asset]) => targetMarkup({ target, references, open, pendingExisting, items });
   const current = markupFor("current_view", []);
   assert.match(current, /Target mode.*aria-pressed="true">Current view.*aria-pressed="false">Project.*aria-pressed="false">Existing….*aria-pressed="false">New…/);
   assert.match(current, /Nothing open in Review · resolves to Project on submit/);
@@ -344,6 +355,35 @@ const reviewFrame = (kind: ItemRecord["kind"], origin: FrameTarget["origin"] = "
   shot_id: shotId, render_job_id: "draft-motion-1", source_frame: 1, media_artifact_id: null,
 });
 
+test("Target panel merges references and image controls, and hides Review extras for explicit or pending targets", () => {
+  const frame = reviewFrame("scene");
+  const identity: Matrix4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+  const selection = {
+    ...emptySelection(), ...ref, target: frame,
+    range: { start: 5, end: 15 },
+    camera: { space: "blender_world_m", kind: "perspective", camera_to_world: identity, projection: identity, aspect: 1, near_m: 0.1, far_m: 100, source_camera_id: null },
+    attachments: [{ artifact_id: "review-image", role: "reference" }, { artifact_id: "uploaded-image", role: "render" }],
+    selected_objects: [{ object_id: "private-object", instance_id: "private-instance" }],
+    annotations: [{ annotation_id: "private-note", saved_revision: 1, target: frame, range: null, camera: null, markups: [], text: "Private annotation", spatial_hits: [], spatial_status: "unavailable" }],
+    approved_findings: [1, 2].map(n => ({ finding_id: `finding-${n}`, finding_revision: n, approved_text: "Private finding text", target: frame })),
+  } satisfies ReturnType<typeof emptySelection>;
+  const input = { selection, references: [ref], attachments: [{ artifact_id: "uploaded-image", role: "concept" as const }], uploadingCount: 1 };
+  const markup = targetMarkup(input);
+  assert.match(markup, /\+1 ref.*\+6 context.*\+1 uploading/);
+  assert.match(markup, /class="composer-panel" id="request-target-picker" aria-label="Request target"/);
+  assert.equal((markup.match(/class="reference-chip"/g) ?? []).length, 1);
+  assert.match(markup, /aria-label="Attached images".*src="[^"]*uploaded-image\/content".*aria-label="Image 1 role".*selected="">concept.*aria-label="Remove image 1".*src="[^"]*review-image\/content"/);
+  assert.equal((markup.match(/aria-label="Image \d+ role"/g) ?? []).length, 1);
+  for (const label of ["1 object selected", "1 annotation", "2 approved findings", "Inspection camera", "Frames 5–15"]) assert.ok(markup.includes(`>${label}</li>`));
+  assert.doesNotMatch(markup, /<code|private-object|private-note|Private finding text|camera_to_world/);
+  for (const override of [{ target: { kind: "project" } as const }, { pendingExisting: true }]) {
+    const hidden = targetMarkup({ ...input, ...override });
+    assert.doesNotMatch(hidden, /review-image|target-viewport-extras|\+6 context/);
+    assert.match(hidden, /\+1 context.*aria-label="Attached images".*uploaded-image/);
+  }
+  assert.doesNotMatch(targetMarkup(), /target-ref-count">\+|aria-label="Attached images"|target-viewport-extras/);
+});
+
 test("Current view targets only storyboard shots, even when scene receipts carry a shot ID", () => {
   const scene = { ...emptySelection(), ...reviewVersion("scene"), target: reviewFrame("scene") };
   const board = { ...emptySelection(), ...reviewVersion("storyboard"), target: reviewFrame("storyboard") };
@@ -369,7 +409,6 @@ test("Current view keeps sequences and Unity results as viewed versions without 
     assert.deepEqual(await prepareSubmissionContext({ target: "current_view", selection, references: [], attachments: [], items }), { ...selection, reference_versions: [] });
   }
   assert.equal(resolveTarget("current_view", { ...assembledSequence, request_target: undefined }), null);
-  assert.equal(contextCount(pendingSequence), 1);
   assert.equal(viewedSelectionLabel(pendingSequence, [reviewItem("sequence")]), "Sequence · Signal Lost");
   assert.equal(viewedSelectionLabel(unity, [reviewItem("unity_result")]), "Unity result · Signal Lost");
   assert.equal(viewedSelectionLabel(unity), "Version · unity_result-v1");
@@ -454,10 +493,9 @@ test("history sorts canonical UTC, deduplicates receipts rather than repeated te
   assert.deepEqual(stepHistory(history, forward.cursor, forward.text, "newer"), { cursor: null, text: "unsent draft" });
 });
 
-test("context counts unique images without changing attachment roles", () => {
+test("explicit target context preserves every attachment role", () => {
   const context = cleanTargetContext({ kind: "item", version: ref }, [ref, ref], [{ artifact_id: "image", role: "reference" }, { artifact_id: "image", role: "concept" }]);
-  assert.equal(contextCount(context), 3);
-  assert.equal(context.attachments.length, 2);
+  assert.deepEqual(context.attachments.map(attachment => attachment.role), ["reference", "concept"]);
 });
 
 test("history entry respects selections, multiline caret movement, modifiers and IME", () => {
@@ -514,6 +552,61 @@ test("native children survive disconnect and parent pause until terminal evidenc
   assert.equal(nativeAgents(null, [started], completed).filter(busyAgent).length, 0);
   const secondSession = { ...started, native_session_id: "other-session" };
   assert.equal(nativeAgents(null, [started, secondSession]).length, 2);
+});
+
+test("Agents scope specialists by work or request, not by a shared session or busy state", () => {
+  const turn1 = { ...snapshot().active_work!, work_id: "earlier-work", originating_request_id: "earlier-request" };
+  const turn2 = { ...snapshot().active_work!, directive_request_ids: ["steer-request"] };
+  const active = { ...snapshot(), active_work: turn2 };
+  const specialist = (sequence: number, invocation_id: string, work_id: string | null, request_id: string | null, state: ActivityEventData["state"]) => ({
+    ...event(sequence, state === "running" ? "subagent.started" : "subagent.completed", { ...activity, invocation_id, state }), work_id, request_id,
+  });
+  const events = [
+    specialist(1, "earlier-completed", null, turn1.originating_request_id, "completed"),
+    specialist(2, "current-completed", turn2.work_id, null, "completed"),
+    specialist(3, "originating-request", null, turn2.originating_request_id, "completed"),
+    specialist(4, "directive-request", null, turn2.directive_request_ids[0], "completed"),
+    specialist(5, "earlier-request-running", null, turn1.originating_request_id, "running"),
+    specialist(6, "unscoped-uncertain", null, null, "outcome_uncertain"),
+    specialist(7, "earlier-scoped-running", turn1.work_id, turn1.originating_request_id, "running"),
+    specialist(8, "unscoped-completed", null, null, "completed"),
+  ];
+  const agents = nativeAgents(active, events);
+  assert.ok(agentsForTurn(agents, turn1).some(agent => agent.invocation_id === "earlier-completed"));
+  assert.deepEqual(agentsForTurn(agents, turn2).map(agent => agent.invocation_id), ["current-completed", "originating-request", "directive-request"]);
+  assert.deepEqual(agentsForTurn(agents, null), []);
+  const markup = chatMarkup([], { events, snapshot: active });
+  assert.match(markup, /aria-label="Agents: 3"/);
+  assert.doesNotMatch(markup, /class="active-agents"/);
+  assert.match(chatMarkup([], { events, snapshot: { ...active, active_work: null } }), /aria-label="Agents: 0"/);
+});
+
+test("request-scoped specialists retain turn membership when completion omits work and request IDs", () => {
+  const work = { ...snapshot().active_work!, work_id: "work-b", originating_request_id: "req-b" };
+  const active = { ...snapshot(), active_work: work };
+  const earlier = { ...event(1, "subagent.started", { ...activity, invocation_id: "earlier", state: "outcome_uncertain" }), work_id: null, request_id: "req-a" };
+  const started = { ...event(2, "subagent.started", activity), work_id: null, request_id: "req-b" };
+  const events = [earlier, started];
+  const initial = agentsForTurn(nativeAgents(active, events), work);
+  assert.deepEqual(initial.map(agent => agent.invocation_id), [activity.invocation_id]);
+  assert.equal(initial.some(busyAgent), true);
+  assert.match(chatMarkup([], { events, snapshot: active }), /class="active-agents" aria-label="Agents: 1"/);
+
+  const completedAt = "2026-11-15T10:00:01Z";
+  const completed = { ...event(3, "subagent.completed", { ...activity, state: "completed" }, completedAt), work_id: null, request_id: null };
+  const activeWithCompletion = { ...active, execution: { ...active.execution!, active_agents: [{
+    invocation_id: activity.invocation_id, native_agent_id: started.actor.id, name: activity.name, display_name: activity.display_name ?? null, model_id: activity.model_id,
+    work_id: null, request_id: null, state: "completed" as const, freshness: "live" as const, updated_at: completedAt,
+  }] } };
+  const updates: [string, ProjectSnapshot, Event[]][] = [["event", active, [...events, completed]], ["snapshot", activeWithCompletion, events]];
+  for (const [source, snapshotWithUpdate, eventsWithUpdate] of updates) {
+    const agents = agentsForTurn(nativeAgents(snapshotWithUpdate, eventsWithUpdate), work);
+    assert.deepEqual(agents.map(agent => [agent.invocation_id, agent.work_id, agent.request_id, agent.state]), [[activity.invocation_id, null, "req-b", "completed"]], source);
+    assert.equal(agents.some(busyAgent), false, source);
+    const markup = chatMarkup([], { events: eventsWithUpdate, snapshot: snapshotWithUpdate });
+    assert.match(markup, /aria-label="Agents: 1"/, source);
+    assert.doesNotMatch(markup, /class="active-agents"/, source);
+  }
 });
 
 test("Conversation suppresses tool-only bubbles, usage lines, sorts UTC and offers neutral starters", () => {

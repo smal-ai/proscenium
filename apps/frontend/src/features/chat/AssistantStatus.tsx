@@ -60,6 +60,6 @@ export const AssistantStatus = memo(function AssistantStatus(props: AssistantSta
   const label = `${state.label}${stale ? " · reconnecting" : ""}`;
   return <span className={`assistant-status status-${state.state}${stale ? " stale" : ""}${props.compact ? " compact" : ""}`} role="status" title={state.reason ? `${label} · ${state.reason}` : label} aria-label={label}>
     {state.state === "recovery" ? <AlertTriangle size={12} /> : state.state === "paused" ? <Pause size={12} /> : <span className="assistant-status-dot" aria-hidden="true" />}
-    {!props.compact && <span>{label}</span>}
+    {!props.compact && <span className="assistant-status-label">{label}</span>}
   </span>;
 });

@@ -16,25 +16,28 @@ function partitionJobs(jobs: JobRecord[]) {
   return groups;
 }
 
-export function jobsBadgeState(jobs: JobRecord[], stale: boolean): { text: string; ariaLabel: string; tone: "empty" | "active" | "done" | "attention" } {
-  const { running, queued, uncertain, failed, settled } = partitionJobs(jobs);
-  const unfinished = running.length + queued.length + uncertain.length > 0;
-  const parts: string[] = [];
-  if (failed.length) parts.push(`${failed.length} failed`);
-  if (uncertain.length) parts.push(`${uncertain.length} uncertain`);
-  if (running.length) parts.push(`${running.length} running`);
-  if (queued.length) parts.push(`${queued.length} queued`);
-  if (!unfinished && settled.length) parts.push(`${settled.length} done`);
-  const text = (parts.join(" · ") || "0") + (stale || uncertain.length ? "?" : "");
-  const tone = uncertain.length || failed.length ? "attention" : unfinished ? "active" : jobs.length ? "done" : "empty";
-  return { text, ariaLabel: `Jobs: ${text}${stale ? " · last known" : ""}${uncertain.length ? " · uncertain job outcome" : ""}${failed.length ? " · failed job recorded" : ""}`, tone };
+export function isUnfinishedJob(job: JobRecord): boolean {
+  return ["running", "queued", "uncertain"].includes(jobGroup[job.state]);
 }
 
-export function ComposerPanel({ panelId, title, onClose, children }: {
-  panelId: string; title: string; onClose: () => void; children: ReactNode;
+export function jobsForTurn(jobs: JobRecord[], activeWorkId: string | null): JobRecord[] {
+  return jobs.filter(job => isUnfinishedJob(job) || (activeWorkId !== null && job.work_id === activeWorkId));
+}
+
+export function jobsBadgeState(jobs: JobRecord[], stale: boolean, activeWorkId: string | null): { text: string; ariaLabel: string; tone: "empty" | "active" | "attention" } {
+  const count = jobs.filter(isUnfinishedJob).length;
+  const uncertain = jobs.some(job => job.state === "outcome_uncertain");
+  const failed = activeWorkId !== null && jobs.some(job => job.work_id === activeWorkId && job.state === "failed");
+  const text = `${count}${stale || uncertain ? "?" : ""}`;
+  const tone = uncertain || failed ? "attention" : count ? "active" : "empty";
+  return { text, ariaLabel: `Jobs: ${count}${stale ? " · last known" : ""}${uncertain ? " · uncertain job outcome" : ""}${failed ? " · failed job recorded this turn" : ""}`, tone };
+}
+
+export function ComposerPanel({ panelId, title, onClose, closeLabel = "Back to message", children }: {
+  panelId: string; title: string; onClose: () => void; closeLabel?: string; children: ReactNode;
 }) {
   return <section className="composer-panel" id={panelId} aria-label={title}>
-    <header><strong>{title}</strong><button className="subtle" aria-label="Back to message" title="Back to message" onClick={onClose}><X size={13} /></button></header>
+    <header><strong>{title}</strong><button className="subtle" aria-label={closeLabel} title={closeLabel} onClick={onClose}><X size={13} /></button></header>
     <div className="composer-panel-content">{children}</div>
   </section>;
 }
@@ -86,7 +89,7 @@ export function JobList({ api, projectId, jobs, items = [], onRefresh, onError }
   const { failed, uncertain, running, queued, settled } = partitionJobs(jobs);
   const names = new Map(items.map(item => [item.item_id, item.name]));
   const rows = (records: readonly JobRecord[]) => records.map(job => <JobRow key={job.job_id} job={job} cancel={cancel} itemName={names.get(job.target.version?.item_id ?? job.target.target_id)} />);
-  if (!jobs.length) return <small>No jobs recorded.</small>;
+  if (!jobs.length) return <small>No active jobs.</small>;
   return <div className="job-groups">
     {([["Needs attention", [...failed, ...uncertain]], ["Running", running], ["Planned / waiting", queued]] as const).map(([label, records]) => records.length > 0 && <section className="job-group" key={label}>
       <h4>{label} ({records.length})</h4>{rows(records)}

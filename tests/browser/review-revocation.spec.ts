@@ -32,12 +32,14 @@ async function omitRetainedSummaries(studio: StudioFixture, id: string) {
 
 async function queueCurrentView(studio: StudioFixture) {
   const { page } = studio;
-  // With no usable media, Current view resolves to Project in the compact label.
-  await page.getByRole("button", { name: "Choose request target and references" }).click();
-  await expect(page.getByRole("button", { name: "Current view", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Close target picker" }).click();
   await page.getByRole("textbox", { name: "Message Copilot" }).fill("Review this view without the revoked output.");
-  await page.getByRole("button", { name: "Queue message", exact: true }).click();
+  const bar = page.getByRole("button", { name: "Choose request target and references" });
+  await bar.click();
+  const panel = page.getByRole("region", { name: "Request target", exact: true });
+  await expect(panel.getByRole("button", { name: "Current view", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(panel.getByRole("region", { name: "Attached images" })).toHaveCount(0);
+  await bar.press("Control+Enter");
+  await expect(panel).toHaveCount(0);
   await expect.poll(() => studio.submissions.length).toBe(1);
   expect(studio.contexts).toHaveLength(1);
   expect(studio.submissions[0]).toMatchObject({ context_id: studio.contexts[0].context_id });

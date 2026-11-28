@@ -189,7 +189,7 @@ test("status stays bottom-right across Split, Chat focus, Critic and collapsed r
   studio.snapshot.active_work = work();
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   await expect(page.locator(".assistant-heading .assistant-status")).toHaveCount(0);
-  const status = page.locator(".composer-footer .assistant-status");
+  const status = page.locator(".composer-status-row .assistant-status");
   const bottomRight = async () => {
     await expect(status).toBeVisible();
     await expect.poll(async () => (await status.boundingBox())!.y).toBeGreaterThan(850);
@@ -327,20 +327,22 @@ for (const surface of ["Navigator", "Conversation"] as const) {
   }
 }
 
-test("Jobs badge updates empty, active, failed attention and all-succeeded history live", async ({ page, baseURL }) => {
+test("Jobs badge counts unfinished jobs and drops settled jobs when the turn ends", async ({ page, baseURL }) => {
   const studio = new StudioFixture(page, baseURL!);
+  studio.snapshot.active_work = work();
   await studio.install({ savedLayout: true }); await studio.open(); await studio.ready();
   const badge = page.getByRole("button", { name: /^Jobs:/ });
   await expect(badge).toHaveClass("empty-jobs"); await expect(badge).toHaveText("Jobs0");
   await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
   const first = job("one", "running"), second = job("two", "waiting_resource");
+  const independent = { ...job("independent", "running"), work_id: null };
   for (const record of [first, second]) studio.emit("job.state_changed", record);
-  await expect(badge).toHaveClass("active-jobs"); await expect(badge).toHaveText("Jobs1 running · 1 queued");
+  await expect(badge).toHaveClass("active-jobs"); await expect(badge).toHaveText("Jobs2");
   await expect(badge.locator(".jobs-indicator")).toBeVisible();
   studio.emit("job.state_changed", { ...first, state: "failed", state_revision: 2, error_code: "corrupt_provider_output" });
-  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1 failed · 1 queued");
+  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1");
   studio.emit("job.state_changed", { ...second, state: "succeeded", state_revision: 2 });
-  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs1 failed · 1 done");
+  await expect(badge).toHaveClass("attention-jobs"); await expect(badge).toHaveText("Jobs0");
   await badge.click();
   const panel = page.getByRole("region", { name: "Independent jobs" });
   await expect(panel.getByText("Failure: corrupt_provider_output", { exact: true })).toBeVisible();
@@ -356,11 +358,18 @@ test("Jobs badge updates empty, active, failed attention and all-succeeded histo
   await history.locator(":scope > summary").click();
   await history.locator(".job-row-details > summary").click();
   await expect(providers.last()).toBeVisible();
-  studio.emit("job.state_changed", { ...first, state: "succeeded", state_revision: 3 });
-  await expect(badge).toHaveClass("done-jobs"); await expect(badge).toHaveText("Jobs2 done");
-  await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
+  studio.emit("job.state_changed", independent);
+  await expect(badge).toHaveText("Jobs1");
+  await studio.setWork(null);
+  await expect(badge).toHaveClass("active-jobs");
   await expect(panel.getByText("Failure: corrupt_provider_output")).toHaveCount(0);
-  await expect(history.locator(":scope > summary")).toHaveText("Finished (2)");
+  await expect(history).toHaveCount(0);
+  await expect(panel.locator(".job-row")).toHaveCount(1);
+  studio.emit("job.state_changed", { ...independent, state: "succeeded", state_revision: 2 });
+  await expect(badge).toHaveClass("empty-jobs");
+  await expect(badge).toHaveText("Jobs0");
+  await expect(badge.locator(".jobs-indicator")).toHaveCount(0);
+  await expect(panel.getByText("No active jobs.", { exact: true })).toBeVisible();
   studio.assertHermetic();
 });
 
@@ -438,7 +447,7 @@ test("ten unchanged waiting-resource job events cause no retained or catalogue H
   await expect.poll(() => page.evaluate(project => JSON.parse(localStorage.getItem(`proscenium.owner.cursor.${project}`)!), projectId)).toBe(10);
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   expect(reads().slice(before)).toEqual([]);
-  await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1 queued");
+  await expect(page.getByRole("button", { name: /^Jobs:/ })).toHaveText("Jobs1");
   studio.assertHermetic();
 });
 

@@ -356,7 +356,7 @@ test("E5: keyboard browsing, render floods and explicit historical navigation pr
   await draft.fill("Retain this Composer draft");
   const bar = page.locator(".target-bar");
   await bar.press("Enter");
-  const picker = page.getByRole("region", { name: "Request target and references" });
+  const picker = page.getByRole("region", { name: "Request target", exact: true });
   await picker.getByRole("button", { name: "Project", exact: true }).press("Enter");
   await picker.locator(".target-references-disclosure > summary").press("Enter");
   await picker.getByRole("combobox", { name: "Reference item", exact: true }).selectOption(old.item_id);

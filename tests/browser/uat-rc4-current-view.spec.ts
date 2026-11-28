@@ -114,14 +114,13 @@ async function openStudio(page: Page, origin: string) {
 
 const queue = (page: Page) => page.getByRole("button", { name: "Queue message", exact: true });
 const message = (page: Page) => page.getByRole("textbox", { name: "Message Copilot" });
-const contextButton = (page: Page) => page.locator('button[aria-controls="composer-context"]');
 const attemptedWrites = (studio: StudioFixture) => studio.guard!.calls.filter(call => call.method === "POST" && (call.url === `${base}/contexts` || call.url === `${base}/requests`));
 
 async function selectView(page: Page, name: string, label: string) {
   const navigator = page.getByRole("complementary", { name: "Navigator", exact: true });
   await navigator.locator(".catalogue-item-header").filter({ has: page.getByText(name, { exact: true }) }).click();
   await expect(page.getByRole("region", { name: "Review workspace" })).toBeVisible();
-  await expect(page.locator(".target-bar")).toHaveText(`Target: Current view · ${label} · ${name}`);
+  await expect(page.locator(".target-bar-label")).toHaveText(`Target: Current view · ${label} · ${name}`);
 }
 
 async function selectSceneFrameOne(page: Page) {
@@ -148,14 +147,13 @@ test("Current view queues an unassembled sequence as a viewed version", async ({
   const studio = await openStudio(page, baseURL!);
   await selectView(page, sequence.name, "Sequence");
   await expect(page.getByText("No ready review image. Rendering is an explicit Queue request.")).toBeVisible();
-  await expect(contextButton(page)).toHaveText("Context1");
-  await expect(page.locator(".target-bar")).toHaveAttribute("title", JSON.stringify({ viewed_version: { item_id: sequence.item_id, version_id: sequence.version_id } }));
-  await page.locator(".target-bar").click();
+  const bar = page.locator(".target-bar");
+  await expect(bar).toHaveAttribute("title", `Target: Current view · Sequence · ${sequence.name}`);
+  await expect(bar.locator(".target-ref-count")).toHaveCount(0);
+  await bar.click();
   await expect(page.getByText(`Captures Sequence · ${sequence.name} from Review on submit.`)).toBeVisible();
+  await expect(page.locator("#request-target-picker").getByRole("region", { name: "Attached images" })).toHaveCount(0);
   await page.getByRole("button", { name: "Close target picker" }).click();
-  await contextButton(page).click();
-  await expect(page.locator("#composer-context .target-badge")).toHaveText(`Viewed: Sequence · ${sequence.name}`);
-  await contextButton(page).click();
 
   const text = "Review the draft before assembly.";
   await queueAndVerifyReceipts(page, text);
@@ -164,6 +162,7 @@ test("Current view queues an unassembled sequence as a viewed version", async ({
   expect(studio.submissions).toHaveLength(1);
   expect(studio.submissions[0]).toMatchObject({ text, context_id: studio.contexts[0].context_id });
   await expect(page.locator(".user-message .stored-context-row > .target-badge")).toHaveText(`Viewed: Sequence · ${sequence.name}`);
+  await expect(page.locator(".user-message .stored-context")).toHaveJSProperty("open", false);
   studio.assertHermetic();
 });
 

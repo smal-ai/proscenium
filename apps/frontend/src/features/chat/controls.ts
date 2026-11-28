@@ -1,5 +1,12 @@
 import type { ProjectSnapshot } from "../../api";
 
+export type ComposerPanelMode = "message" | "target" | "jobs" | "agents";
+
+export function draftBlocksSend(panel: ComposerPanelMode, draft: string, uploads: readonly { busy: boolean }[]): boolean {
+  // A failed upload remains unresolved until it succeeds on retry or is removed.
+  return (panel !== "message" && panel !== "target") || !draft.trim() || uploads.length > 0;
+}
+
 export interface SubmitKeyEvent {
   key: string;
   shiftKey: boolean;
