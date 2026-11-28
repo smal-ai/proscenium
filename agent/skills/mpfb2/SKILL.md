@@ -14,6 +14,11 @@ description: Author parametric humanoid characters in Blender with the installed
   scene ownership and dirty/outside-project checks. Preserve unsaved work. Never
   call `bpy.ops.wm.read_factory_settings` or disable add-ons in
   `blender-execute_blender_code`.
+- Before any interactive mutation, verify the actual linked library files Blender
+  resolves against the hashes of any selected published origin, current or
+  historical. Even current pins can differ from unpublished working edits. If
+  the hashes differ or cannot be verified, stop before editing. Never overwrite
+  the working file, reset Git or edit a sealed snapshot.
 - In Blender, resolve the enabled `bl_ext.blender_org.mpfb` extension as `mpfb_mod`,
   falling back to `bl_ext.user_default.mpfb` for a local extension. Record `mpfb_mod.VERSION`.
   The workflow below was verified with MPFB2 `v2.0.18` on Blender `4.5.16 LTS`.
@@ -118,6 +123,17 @@ description: Author parametric humanoid characters in Blender with the installed
 
 ## Source, packaging and validation
 
+- Publish the clothed, weighted character once with packed textures and an
+  optional `character` tag. Keep reusable performances as named Blender Actions
+  with fake-user or NLA-strip retention, verified across save/reopen. Compose
+  per-instance performance via Blender Library Overrides using portable `//...`
+  library paths, never absolute or `.proscenium/snapshots/...` paths. Do not
+  duplicate the character `.blend` per animation.
+- Compose pinned sources with `checkpoint_sources(entry_path=..., paths=[owned],
+  include_sources=[pinned producer VersionRefs], ...)`. For explicit adoption,
+  use `base_version` with the complete replacement `include_sources` set. Use
+  the observed Git `expected_head`, then publish with the receipt's `source_commit`
+  and the item's observed `expected_current_version_id`.
 - Before saving and checkpointing the `.blend`, verify only intended character meshes
   remain, with no `*_reduced` objects. Every renderable `MESH` needs a stable
   `proscenium_object_id` (shared across instances of the same object) and a unique

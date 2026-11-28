@@ -41,7 +41,12 @@ contract revision.
 acceptance archives remain on
 [`impl/studio`](https://github.com/smal-ai/proscenium/tree/impl/studio/docs/evidence/release).
 
-## Proposals under review
+## Published version relationships
 
-- [Published relationships, the Outliner and reusable scene inputs](design/version-relationships.md) is the agreed design, not part of the current runtime contract.
-- [Implementation plan: published relationships, Outliner and reusable scene inputs](design/version-relationships-plan.md) sequences the agreed design. It does not change the current runtime contract.
+`feat/version-relationships` implements the read-only Outliner, optional shot-local
+asset pins and explicitly pinned source composition as additive contract 1.0
+extensions. See the [design](design/version-relationships.md),
+[implementation plan](design/version-relationships-plan.md),
+[Wave 4 recovery evidence](design/version-relationships-wave4-2026-11-28.md) and
+[Wave 5 native Blender evidence](design/version-relationships-wave5-e10-2026-11-28.md).
+Branch implementation is not deployment or release acceptance.

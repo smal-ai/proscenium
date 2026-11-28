@@ -108,6 +108,12 @@ same-ID capture receipts. Consumers must accept historical records without them.
   inclusion instead of a duplicate `declared_dependency` edge. Old digests and
   receipts remain unchanged. The single-commit offline import format rejects
   origins it cannot represent. Normal backup and restore preserve them.
+- Replays of completed pre-`modern_binding` checkpoints require strict proof:
+  the exact original request body (including order and omission), work and invocation
+  must reproduce both persisted fingerprints and match the original candidate commit
+  message and fingerprint trailers, parent, owned paths and receipt closure inputs.
+  A receipt alone is not proof. This compatibility path never ignores `base_version`,
+  `exclude_paths` or `include_sources`, and does not apply to sorted-ref or modern intents.
 - `PublishedItem` accepts exactly one of an inline `source` or `checkpoint_operation_id`.
   The latter resolves a completed checkpoint with a closure and matching `source_commit`
   in the same project. Use it in `publication_submit` validation and `publish_outputs`

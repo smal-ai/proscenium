@@ -1,7 +1,7 @@
 # Implementation plan: published relationships, Outliner and reusable scene inputs
 
 - **Owner decision, 28 November 2026 (SAST):** Proceed with the three-increment build. Keep `asset`, `scene`, `storyboard`, `sequence` and `unity_result`. Do not add a dedicated `character` item kind. `character`, `motion`, `wardrobe` and similar labels are optional searchable tags, not capabilities.
-- **Status:** Agreed design and plan, not current runtime behaviour. Wave 0 is documentation only on `docs/version-relationships-spec`, based on `5c0709b`. Run Waves 1–5 on `feat/version-relationships`, branched from `main` after the docs PR merges.
+- **Status:** Waves 1–5 are implemented on `feat/version-relationships`. [Wave 4 evidence](version-relationships-wave4-2026-11-28.md) records composition and recovery. [Wave 5 evidence](version-relationships-wave5-e10-2026-11-28.md) records the bounded E10 pass and the three baseline failures still present in the full browser suite. This is the branch delivery record, not release or deployment approval.
 - **References:** Follow the [design](version-relationships.md), its [acceptance tests](version-relationships.md#9-acceptance-tests), the [owner policy](../owner-policy.md) and [contract compatibility rules](../contracts/README.md#compatible-uat-extensions). Use ISO 8601 dates in evidence filenames (for example `2026-11-28`) and 24-hour SAST for recorded local times.
 - **Path shorthand:** Backend module paths below are relative to `apps/backend/src/proscenium/` and frontend module paths to `apps/frontend/src/`. Contract, test, skill and operations paths are relative to the repository root.
 
@@ -66,7 +66,7 @@
 | Surface | Work |
 | --- | --- |
 | `agent/skills/{storyboard,hero-assets,blender-authoring,mpfb2,mixamo,research,unity}/SKILL.md`, `agent/skills/storyboard/templates.md` | Teach board-wide versus shot-local intent, explicit adoption, portable pinned library paths, scene-owned per-instance timing and the difference between motion source, retained Action and rendered video. Preserve upload approval, source attribution and MPFB safeguards. Do not promise Unity skinning or animation export. |
-| `agent/skills/blender-authoring/SKILL.md`, `agent/skills/mpfb2/SKILL.md` | Require the [Design §6 pre-edit check](version-relationships.md#L211-L213): verify the actual linked library files against the selected published origins before interactive editing. Stop if they differ or cannot be verified. Exercise this refusal in E10. |
+| `agent/skills/blender-authoring/SKILL.md`, `agent/skills/mpfb2/SKILL.md` | Require the [Design §6 pre-edit check](version-relationships.md#authoring-is-not-materialisation): verify the actual linked library files against the selected published origins before interactive editing. Stop if they differ or cannot be verified. Exercise this refusal in E10. |
 | `copilot/native.py` (`apps/backend/src/proscenium/copilot/native.py`) | Route via existing capability, catalogue, validation, checkpoint and publication tools. Keep prompt changes short. No owner GET via borrowed credentials, new always-on graph tool or broader worker approval. |
 | `docs/studio.md`, `docs/specification.md`, `docs/operator.md`, `docs/contracts/README.md`, `docs/design/version-relationships*.md` | Document landed behaviour, operator recovery, deployment/downgrade boundaries and actual verification evidence. Update both design statuses only to reflect what passed. |
 

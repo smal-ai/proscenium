@@ -86,7 +86,11 @@ this conversational review loop on an explicit autonomous production request.
    explicit in each frame's role/composition and its actual artefact identity.
    Missing images use null artefact IDs and missing/proposed states, not invented
    images. List unresolved assets, decisions, references and bindings explicitly.
-5. Pin asset dependencies by item/version. Bind actual authored Blender scenes
+5. Use `asset_dependencies` for board-wide version pins. Use optional
+   `Shot.planned_assets` for shot-local intent and pin exact published `kind: "asset"`
+   `VersionRef`s there.
+   Omit `planned_assets` when unrecorded, or use `[]` when no pins are declared.
+   Never invent pins from `motion_beats` prose. Bind actual authored Blender scenes
    using `scene_version`, inclusive `source_range` and rational `fps` only when
    known. Otherwise use null and explain the gap in `unresolved`. Preserve proposed
    editorial holds, cuts and title cues as prose in `motion_beats`, not invented
@@ -102,8 +106,12 @@ this conversational review loop on an explicit autonomous production request.
    regenerates images or resolves dependencies by filesystem modification time.
 7. For publication, checkpoint the exact owned brief/plan sources through
    `checkpoint_sources(entry_path=...)`, with dependencies/`required_runtime` when
-   needed. Omit `retained_files` (registered frame/concept image artefacts belong in
-   `plan.json` frames and `PublishedItem.artifact_ids`, never in `retained_files`).
+   needed. `SourceClosure.dependencies` must contain the deduplicated union of
+   board-wide assets, shot-local pins and all bound `scene_version`s. Do not copy
+   shot-local pins into `asset_dependencies`. An asset can point back to board v1
+   via `derived_from` and be planned in board v2 without mutating v1 or forming a
+   same-version cycle. Omit `retained_files`. Registered frame/concept image
+   artefacts belong in `plan.json` frames and `PublishedItem.artifact_ids`.
    Pass the receipt's `source_closure` directly to `publish_outputs`.
    Never script closure sorting or SHA-256 digests.
    Publish through the configured accepted source/publication tool with exact

@@ -6,7 +6,7 @@
 | --- | --- |
 | **Studio** | The complete desktop interface (`1920 × 1080` reference viewport). |
 | **Studio header** | Top bar with **Projects**, workspace path, connection health, metadata refresh and configuration. |
-| **Navigator** | Left panel containing **Shots**, **Outliner** and **Assets**. |
+| **Navigator** | Left panel containing **Shots** (storyboards), **Outliner** (published relationships) and **Assets** (catalogue and retained outputs). |
 | **Review workspace** | Central panel containing review modes (**3D Inspection**, **Keyframes**, **Animation**), viewer and review controls. |
 | **Viewport** | The active 3D, keyframe or animation viewing surface inside the Review workspace. |
 | **Assistant panel** | Right panel containing **Copilot**, **Critic**, activity status, **Chat focus** and collapse controls. |
@@ -45,10 +45,36 @@ Each project maintains one persistent Conversation. Storyboard-first is optional
 - **Asset-first workflow:** Use **New asset** at the top of **Navigator → Assets** (or target a new asset in the Composer) to author, import or generate standalone assets without creating a storyboard first.
 - **Version history:** Assets starts with version histories collapsed. Expand an item to inspect its versions without changing the owner selection. Only one item or version `⋯` disclosure stays open at a time. Press `Escape` to close it and return focus to its button. **Check selection status** appears only when a selection change needs reconciliation.
 - **Pinned reuse:** Publishing a new asset version never silently updates existing scenes or storyboards. Dependent items adopt newer versions only through an explicit revision.
+- **Asset tags:** `character`, `motion` and `wardrobe` are optional searchable tags on assets, not item kinds or proof of compatibility.
+
+## Exploring published relationships
+
+- **Shots** shows the selected published board's shots and panels. A shot can list
+  exact **Planned assets** from `planned_assets`. The optional field records shot
+  intent, not scene binding, included source files or evidence of on-screen use.
+  An omitted field means unrecorded, while an empty list declares no shot-local
+  pins. Board-wide asset dependencies remain separate.
+- **Outliner** is read-only. Choose an exact published version, then switch between
+  **Uses** and **Used by**. Expand one node at a time to read its direct relationships.
+  **Structure** shows local occurrences such as shots and panels. **Inputs & bindings**
+  distinguishes planned assets, declared dependencies, scene bindings and verified
+  source inclusions. **Origins / Derivatives** shows provenance between versions.
+  Follow pagination for more direct relationships. Partial coverage is not proof
+  that nothing uses the version. Use **Refresh relationships** after a stale page
+  or to check coverage again.
+- Browsing and expanding the Outliner leave Review, the Composer and drafts alone.
+  Use **Open version**, **Open shot in Shots**, **Inspect panel** or **Inspect artefact**
+  for deliberate navigation to the exact recorded target. These controls do not
+  publish, re-pin dependencies, rewrite Composer drafts or confer owner approval.
 
 ## Reviewing published versions
 
 - **3D Inspection navigation:** Drag to orbit, right-drag to pan and use the wheel to zoom. Use **Shift+wheel** or **W/S** to move forwards and backwards without changing the orbit distance, **A/D** to move sideways, and **Q/E** to move down or up. Hold **Shift** with a movement key for faster travel. Double-click a surface outside pin mode to centre the orbit on that point. **Frame model** restores the fitted view.
+- **3D Inspection → Objects at frame N** lists the persistent object and instance
+  pairs for the active verified proxy map only. Select an object or hold **Ctrl**
+  / **Cmd** to toggle multiple objects. This selects object context, not a spatial
+  hit. If the historical map is unavailable, the list reports that state rather
+  than substituting another sample or accepting a hit against it.
 
 - **Version status:** The Review header shows **Viewing vX · vY available** when there is a newer publication. Use **View vY** to switch. Unsaved drafts stay on their original version. Dismiss **Draft kept on vX** without changing the draft.
 - **3D Inspection:** **Render output format** offers **16:9 · 1920 × 1080**, **16:10 · 1920 × 1200** and **Match viewport**. Fixed formats show a live safe frame inside the canvas, including when inspecting through a restored render camera. Spatial pin placement and editing hide the guide. **Render this view** captures the framed composition at the selected camera aspect, or uses the full viewport at its native pixel size for **Match viewport**. If upload fails, **Retry captured view upload** uses the same capture, camera and retained dimensions rather than taking a new image.

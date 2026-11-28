@@ -371,6 +371,23 @@ Owner-created profile definitions are retained in the backed-up machine registry
 alongside the selected project's profile preference. Authentication and unrelated
 project records remain excluded.
 
+Database migration #2 adds the disposable per-project relationship index. The
+index can be rebuilt from publication evidence and is not the authoritative source
+of pins or provenance. `verify` accepts supported pre-migration v1 bundles without
+changing them. `restore` verifies first, migrates the restored project and registry
+copies, then rebuilds the project index. Unknown future database versions are rejected.
+
+Normal `backup` and `restore` preserve composed sources across all their pinned Git
+commits, including local Git LFS objects. The offline import manifest uses a single
+source commit per publication and explicitly rejects multi-commit composed origins it
+cannot represent. Use backup and restore to move a project with those publications.
+
+For rollback, disable the new Studio surface and writers first. Do not expect a prior
+binary to read a migrated database or records containing newer optional fields.
+A binary downgrade needs a verified compatible backup and a plan for newer work.
+Keep the newer store and sources intact rather than deleting records or forcing a
+database version change.
+
 The runtime identity manifest at `docs/implementation/runtime-lock.json` is retained
 because the backup tool reads it. The verified native relocation used the same
 workstation with the old source directory present. Arbitrary old opaque attachment

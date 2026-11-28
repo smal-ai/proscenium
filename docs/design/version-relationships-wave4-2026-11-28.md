@@ -38,4 +38,4 @@ distinct destinations from the byte limit.
 The test passed in 44.52 seconds. These results describe the retained-heavy
 fixture on tmpfs with instrumentation enabled, not a cold physical-disk workload
 or a 4,096-object Git/LFS workload. Linked animated Blender integrity-check
-cost and native evaluation remain Wave 5 checks.
+cost and native evaluation are recorded separately in the [Wave 5 E10 evidence](version-relationships-wave5-e10-2026-11-28.md).
