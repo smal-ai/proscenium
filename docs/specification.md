@@ -40,3 +40,8 @@ contract revision.
 `make test-browser` runs the hermetic Playwright browser suite. Historical native
 acceptance archives remain on
 [`impl/studio`](https://github.com/smal-ai/proscenium/tree/impl/studio/docs/evidence/release).
+
+## Proposals under review
+
+- [Published relationships, the Outliner and reusable scene inputs](design/version-relationships.md) is the agreed design, not part of the current runtime contract.
+- [Implementation plan: published relationships, Outliner and reusable scene inputs](design/version-relationships-plan.md) sequences the agreed design. It does not change the current runtime contract.
